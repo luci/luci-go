@@ -18,17 +18,18 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNamespaces(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing datastore`, t, func() {
+	ftt.Run(`A testing datastore`, t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		// Call to add a datastore entry under the supplied namespace.
@@ -52,29 +53,29 @@ func TestNamespaces(t *testing.T) {
 			ds.GetTestable(ctx).CatchupIndexes()
 		}
 
-		Convey(`A datastore with no namespaces returns {}.`, func() {
+		t.Run(`A datastore with no namespaces returns {}.`, func(t *ftt.Test) {
 			var coll NamespacesCollector
-			So(Namespaces(ctx, coll.Callback), ShouldBeNil)
-			So(coll, ShouldResemble, NamespacesCollector(nil))
+			assert.Loosely(t, Namespaces(ctx, coll.Callback), should.BeNil)
+			assert.Loosely(t, coll, should.Resemble(NamespacesCollector(nil)))
 		})
 
-		Convey(`With namespaces {<default>, foo, bar, baz-a, baz-b}`, func() {
+		t.Run(`With namespaces {<default>, foo, bar, baz-a, baz-b}`, func(t *ftt.Test) {
 			addNamespace("")
 			addNamespace("foo")
 			addNamespace("bar")
 			addNamespace("baz-a")
 			addNamespace("baz-b")
 
-			Convey(`Can collect all namespaces.`, func() {
+			t.Run(`Can collect all namespaces.`, func(t *ftt.Test) {
 				var coll NamespacesCollector
-				So(Namespaces(ctx, coll.Callback), ShouldBeNil)
-				So(coll, ShouldResemble, NamespacesCollector{"", "bar", "baz-a", "baz-b", "foo"})
+				assert.Loosely(t, Namespaces(ctx, coll.Callback), should.BeNil)
+				assert.Loosely(t, coll, should.Resemble(NamespacesCollector{"", "bar", "baz-a", "baz-b", "foo"}))
 			})
 
-			Convey(`Can get namespaces with prefix "baz-".`, func() {
+			t.Run(`Can get namespaces with prefix "baz-".`, func(t *ftt.Test) {
 				var coll NamespacesCollector
-				So(NamespacesWithPrefix(ctx, "baz-", coll.Callback), ShouldBeNil)
-				So(coll, ShouldResemble, NamespacesCollector{"baz-a", "baz-b"})
+				assert.Loosely(t, NamespacesWithPrefix(ctx, "baz-", coll.Callback), should.BeNil)
+				assert.Loosely(t, coll, should.Resemble(NamespacesCollector{"baz-a", "baz-b"}))
 			})
 		})
 	})

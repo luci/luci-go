@@ -20,40 +20,43 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("project", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("project", func(t *ftt.Test) {
 				cfg := &Config{}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "project is required")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("project is required"))
 			})
 
-			Convey("revision", func() {
+			t.Run("revision", func(t *ftt.Test) {
 				cfg := &Config{
 					Revision: "revision",
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "revision must not be specified")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("revision must not be specified"))
 			})
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			cfg := &Config{
 				Project: "project",
 			}
 			cfg.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})
 }

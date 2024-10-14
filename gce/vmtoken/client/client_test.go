@@ -22,29 +22,30 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 	"go.chromium.org/luci/gce/vmtoken"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNewClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewClient", t, func(c C) {
+	ftt.Run("NewClient", t, func(c *ftt.Test) {
 		// Create a test server which expects the token.
 		srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, req *http.Request) {
-			c.So(req.Header.Get(vmtoken.Header), ShouldEqual, "token")
+			assert.Loosely(c, req.Header.Get(vmtoken.Header), should.Equal("token"))
 		}))
 
 		// Create a mock metadata client which returns the token.
 		meta := metadata.NewClient(&http.Client{
 			Transport: &roundtripper.StringRoundTripper{
 				Handler: func(req *http.Request) (int, string) {
-					So(req.URL.Path, ShouldEqual, "/computeMetadata/v1/instance/service-accounts/account/identity")
+					assert.Loosely(c, req.URL.Path, should.Equal("/computeMetadata/v1/instance/service-accounts/account/identity"))
 					url, err := url.Parse(srv.URL)
-					So(err, ShouldBeNil)
-					So(req.URL.Query().Get("audience"), ShouldEqual, "http://"+url.Host)
+					assert.Loosely(c, err, should.BeNil)
+					assert.Loosely(c, req.URL.Query().Get("audience"), should.Equal("http://"+url.Host))
 					return http.StatusOK, "token"
 				},
 			},
@@ -52,6 +53,6 @@ func TestNewClient(t *testing.T) {
 
 		cli := NewClient(meta, "account")
 		_, err := cli.Get(srv.URL)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 	})
 }

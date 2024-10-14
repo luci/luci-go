@@ -28,6 +28,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	tspb "go.chromium.org/luci/tree_status/proto/v1"
@@ -35,8 +38,6 @@ import (
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // fakeTreeStatusClient simulates the behaviour of a real tree status instance,
@@ -82,7 +83,7 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, tr
 }
 
 func TestUpdateTrees(t *testing.T) {
-	Convey("Test environment", t, func() {
+	ftt.Run("Test environment", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify-test")
 
@@ -103,14 +104,14 @@ func TestUpdateTrees(t *testing.T) {
 		builder5 := &config.Builder{ProjectKey: project2Key, ID: "ci/builder5"}
 		builder6 := &config.Builder{ProjectKey: project2Key, ID: "ci/builder6"}
 
-		So(datastore.Put(c, project1, builder1, builder2, builder3, builder4, project2, builder5, builder6), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, project1, builder1, builder2, builder3, builder4, project2, builder5, builder6), should.BeNil)
 
 		earlierTime := time.Now().AddDate(-1, 0, 0).UTC()
 		evenEarlierTime := time.Now().AddDate(-2, 0, 0).UTC()
 
 		cleanup := func() {
 			var treeClosers []*config.TreeCloser
-			So(datastore.GetAll(c, datastore.NewQuery("TreeClosers"), &treeClosers), ShouldBeNil)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeClosers"), &treeClosers), should.BeNil)
 			datastore.Delete(c, treeClosers)
 		}
 
@@ -134,7 +135,7 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
@@ -142,8 +143,8 @@ func TestUpdateTrees(t *testing.T) {
 				Timestamp:  time.Now().UTC(),
 				// In fully automatic operation, this should not be considered.
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
-			So(datastore.Put(c, &config.TreeCloser{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
@@ -151,41 +152,41 @@ func TestUpdateTrees(t *testing.T) {
 				Timestamp:  time.Now().UTC(),
 				// In fully automatic operation, this should not be considered.
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, expectedStatus)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(expectedStatus))
 		}
 
-		Convey("Open, both TCs failing, closes", func() {
+		t.Run("Open, both TCs failing, closes", func(t *ftt.Test) {
 			testUpdateTrees(config.Open, config.Closed, config.Closed, config.Closed)
 		})
 
-		Convey("Open, 1 failing & 1 passing TC, closes", func() {
+		t.Run("Open, 1 failing & 1 passing TC, closes", func(t *ftt.Test) {
 			testUpdateTrees(config.Open, config.Closed, config.Open, config.Closed)
 		})
 
-		Convey("Open, both TCs passing, stays open", func() {
+		t.Run("Open, both TCs passing, stays open", func(t *ftt.Test) {
 			testUpdateTrees(config.Open, config.Open, config.Open, config.Open)
 		})
 
-		Convey("Closed, both TCs failing, stays closed", func() {
+		t.Run("Closed, both TCs failing, stays closed", func(t *ftt.Test) {
 			testUpdateTrees(config.Closed, config.Closed, config.Closed, config.Closed)
 		})
 
-		Convey("Closed, 1 failing & 1 passing TC, stays closed", func() {
+		t.Run("Closed, 1 failing & 1 passing TC, stays closed", func(t *ftt.Test) {
 			testUpdateTrees(config.Closed, config.Closed, config.Open, config.Closed)
 		})
 
-		Convey("Closed, both TCs, stays closed", func() {
+		t.Run("Closed, both TCs, stays closed", func(t *ftt.Test) {
 			testUpdateTrees(config.Closed, config.Closed, config.Open, config.Closed)
 		})
 
-		Convey("Closed manually, doesn't re-open", func() {
+		t.Run("Closed manually, doesn't re-open", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -197,24 +198,24 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Open,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
 		})
 
-		Convey("Opened manually, stays open with no new failures", func() {
+		t.Run("Opened manually, stays open with no new failures", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -226,25 +227,25 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Opened, because I feel like it")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.Equal("Opened, because I feel like it"))
 		})
 
-		Convey("Opened manually, stays open with new failures on previously started builds", func() {
+		t.Run("Opened manually, stays open with new failures on previously started builds", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -256,25 +257,25 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Opened, because I feel like it")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.Equal("Opened, because I feel like it"))
 		})
 
-		Convey("Opened manually, closes on new failure", func() {
+		t.Run("Opened manually, closes on new failure", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -286,25 +287,25 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
-			So(status.closingBuilderName, ShouldEqual, "projects/chromium/buckets/ci/builders/builder1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.closingBuilderName, should.Equal("projects/chromium/buckets/ci/builders/builder1"))
 		})
 
-		Convey("Opened manually, closes on new failure, with old builder ID", func() {
+		t.Run("Opened manually, closes on new failure, with old builder ID", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -316,25 +317,25 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder7),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Closed,
 				Timestamp:       time.Now().UTC(),
 				BuildCreateTime: time.Now().UTC(),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
-			So(status.closingBuilderName, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.closingBuilderName, should.BeEmpty)
 		})
 
-		Convey("Multiple trees", func() {
+		t.Run("Multiple trees", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -352,68 +353,68 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
-			So(datastore.Put(c, &config.TreeCloser{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
-			So(datastore.Put(c, &config.TreeCloser{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder3),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder2),
 				TreeName:   "v8",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
-			So(datastore.Put(c, &config.TreeCloser{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder3),
 				TreeName:   "v8",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
-			So(datastore.Put(c, &config.TreeCloser{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder4),
 				TreeName:   "v8",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  earlierTime,
 				Message:    "Correct message",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.HavePrefix("Tree is open (Automatic: "))
 
 			status, err = ts.getStatus(c, "v8")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
-			So(status.message, ShouldEqual, "Tree is closed (Automatic: Correct message)")
-			So(status.closingBuilderName, ShouldEqual, "projects/chromium/buckets/ci/builders/builder4")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.message, should.Equal("Tree is closed (Automatic: Correct message)"))
+			assert.Loosely(t, status.closingBuilderName, should.Equal("projects/chromium/buckets/ci/builders/builder4"))
 		})
 
-		Convey("Doesn't open when build is older than last status update", func() {
+		t.Run("Doesn't open when build is older than last status update", func(t *ftt.Test) {
 			// This test replicates the likely state just after we've
 			// automatically closed the tree: the tree is closed with
 			// our username, and there is some failing TreeCloser older
@@ -429,7 +430,7 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
@@ -443,18 +444,18 @@ func TestUpdateTrees(t *testing.T) {
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
-			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.message, should.Equal("Tree is closed (Automatic: some builder failed)"))
 		})
 
-		Convey("Doesn't open when a builder is still failing", func() {
+		t.Run("Doesn't open when a builder is still failing", func(t *ftt.Test) {
 			// This test replicates the likely state after we've automatically
 			// closed the tree, but some other builder has had a successful
 			// build.
@@ -469,7 +470,7 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey:      datastore.KeyForObj(c, builder1),
 				TreeName:        "chromium",
 				TreeCloser:      notifypb.TreeCloser{},
@@ -483,18 +484,18 @@ func TestUpdateTrees(t *testing.T) {
 				Status:          config.Closed,
 				Timestamp:       evenEarlierTime,
 				BuildCreateTime: evenEarlierTime,
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Closed)
-			So(status.message, ShouldEqual, "Tree is closed (Automatic: some builder failed)")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.message, should.Equal("Tree is closed (Automatic: some builder failed)"))
 		})
 
-		Convey("Multiple projects", func() {
+		t.Run("Multiple projects", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -512,7 +513,7 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
@@ -525,33 +526,33 @@ func TestUpdateTrees(t *testing.T) {
 				Status:     config.Closed,
 				Timestamp:  time.Now().UTC(),
 				Message:    "Close it up!",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.HavePrefix("Tree is open (Automatic: "))
 
 			status, err = ts.getStatus(c, "infra")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.HavePrefix("Tree is open (Automatic: "))
 
 			hasExpectedLog := false
 			for _, log := range log.Messages() {
 				if log.Level == logging.Info {
 					hasExpectedLog = true
-					So(log.Msg, ShouldEqual, `Would update status for infra to "Tree is closed (Automatic: Close it up!)"`)
+					assert.Loosely(t, log.Msg, should.Equal(`Would update status for infra to "Tree is closed (Automatic: Close it up!)"`))
 				}
 			}
 
-			So(hasExpectedLog, ShouldBeTrue)
+			assert.Loosely(t, hasExpectedLog, should.BeTrue)
 		})
 
-		Convey("Multiple projects, overlapping tree status hosts", func() {
+		t.Run("Multiple projects, overlapping tree status hosts", func(t *ftt.Test) {
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -569,7 +570,7 @@ func TestUpdateTrees(t *testing.T) {
 				},
 			}
 
-			So(datastore.Put(c, &config.TreeCloser{
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
 				BuilderKey: datastore.KeyForObj(c, builder1),
 				TreeName:   "chromium",
 				TreeCloser: notifypb.TreeCloser{},
@@ -593,66 +594,66 @@ func TestUpdateTrees(t *testing.T) {
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Closed,
 				Timestamp:  time.Now().UTC(),
-			}), ShouldBeNil)
+			}), should.BeNil)
 			defer cleanup()
 
-			So(updateTrees(c, &ts), ShouldBeNil)
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
 
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldEqual, "Tree is open (Flake)")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.Equal("Tree is open (Flake)"))
 
 			status, err = ts.getStatus(c, "infra")
-			So(err, ShouldBeNil)
-			So(status.status, ShouldEqual, config.Open)
-			So(status.message, ShouldStartWith, "Tree is open (Automatic: ")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.HavePrefix("Tree is open (Automatic: "))
 		})
 	})
 }
 
 func TestHttpTreeStatusClient(t *testing.T) {
-	Convey("Test environment for httpTreeStatusClient", t, func() {
+	ftt.Run("Test environment for httpTreeStatusClient", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify-test")
 
 		fakePrpcClient := &fakePRPCTreeStatusClient{}
 		ts := httpTreeStatusClient{fakePrpcClient}
 
-		Convey("getStatus, open tree", func() {
+		t.Run("getStatus, open tree", func(t *ftt.Test) {
 			status, err := ts.getStatus(c, "chromium")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedTime := time.Date(2020, time.March, 31, 5, 33, 52, 682351000, time.UTC)
-			So(status, ShouldResemble, &treeStatus{
+			assert.Loosely(t, status, should.Resemble(&treeStatus{
 				username:  "someone@google.com",
 				message:   "Tree is throttled (win rel 32 appears to be a goma flake. the other builds seem to be charging ahead OK. will fully open / fully close if win32 does/doesn't improve)",
 				status:    config.Closed,
 				timestamp: expectedTime,
-			})
+			}))
 		})
 
-		Convey("getStatus, closed tree", func() {
+		t.Run("getStatus, closed tree", func(t *ftt.Test) {
 			status, err := ts.getStatus(c, "v8")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedTime := time.Date(2020, time.April, 2, 15, 21, 39, 981072000, time.UTC)
-			So(status, ShouldResemble, &treeStatus{
+			assert.Loosely(t, status, should.Resemble(&treeStatus{
 				username:  "someone-else@google.com",
 				message:   "open (flake?)",
 				status:    config.Open,
 				timestamp: expectedTime,
-			})
+			}))
 		})
 
-		Convey("postStatus", func() {
+		t.Run("postStatus", func(t *ftt.Test) {
 			err := ts.postStatus(c, "open for business", "dart", config.Open, "projects/chromium/buckets/bucket/builders/builder")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(fakePrpcClient.latestStatus, ShouldNotBeNil)
-			So(fakePrpcClient.latestStatus.Message, ShouldEqual, "open for business")
-			So(fakePrpcClient.latestStatus.GeneralState, ShouldEqual, tspb.GeneralState_OPEN)
-			So(fakePrpcClient.latestStatus.ClosingBuilderName, ShouldEqual, "projects/chromium/buckets/bucket/builders/builder")
+			assert.Loosely(t, fakePrpcClient.latestStatus, should.NotBeNil)
+			assert.Loosely(t, fakePrpcClient.latestStatus.Message, should.Equal("open for business"))
+			assert.Loosely(t, fakePrpcClient.latestStatus.GeneralState, should.Equal(tspb.GeneralState_OPEN))
+			assert.Loosely(t, fakePrpcClient.latestStatus.ClosingBuilderName, should.Equal("projects/chromium/buckets/bucket/builders/builder"))
 		})
 	})
 }

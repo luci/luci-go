@@ -24,15 +24,16 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/mmutex/lib"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExclusive(t *testing.T) {
-	Convey("RunExclusive", t, func() {
+	ftt.Run("RunExclusive", t, func(t *ftt.Test) {
 		lockFileDir, err := ioutil.TempDir("", "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
 			lib.LockFileEnvVariable: subcommands.EnvVar{
@@ -41,9 +42,9 @@ func TestExclusive(t *testing.T) {
 			},
 		}
 
-		Convey("executes the command", func() {
+		t.Run("executes the command", func(t *ftt.Test) {
 			tempDir, err := ioutil.TempDir("", "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer os.Remove(tempDir)
 
 			testFilePath := filepath.Join(tempDir, "test")
@@ -54,10 +55,10 @@ func TestExclusive(t *testing.T) {
 				command = createCommand([]string{"touch", testFilePath})
 			}
 
-			So(RunExclusive(context.Background(), env, command), ShouldBeNil)
+			assert.Loosely(t, RunExclusive(context.Background(), env, command), should.BeNil)
 
 			_, err = os.Stat(testFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

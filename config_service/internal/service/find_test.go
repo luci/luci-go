@@ -25,23 +25,25 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFinder(t *testing.T) {
 	t.Parallel()
 
-	Convey("Finder", t, func() {
+	ftt.Run("Finder", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		configSet := config.MustProjectSet("my-project")
 
-		Convey("Single service", func() {
+		t.Run("Single service", func(t *ftt.Test) {
 			const serviceName = "my-service"
 			updateService := func(updateFn func(*model.Service)) {
 				srv := &model.Service{
@@ -51,12 +53,12 @@ func TestFinder(t *testing.T) {
 					},
 				}
 				updateFn(srv)
-				So(datastore.Put(ctx, srv), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 			}
 
-			Convey("Exact match", func() {
+			t.Run("Exact match", func(t *ftt.Test) {
 				for _, prefix := range []string{"exact:", "text:", ""} {
-					Convey(fmt.Sprintf("With prefix %q", prefix), func() {
+					t.Run(fmt.Sprintf("With prefix %q", prefix), func(t *ftt.Test) {
 						updateService(func(srv *model.Service) {
 							srv.Metadata = &cfgcommonpb.ServiceMetadata{
 								ConfigPatterns: []*cfgcommonpb.ConfigPattern{
@@ -68,16 +70,16 @@ func TestFinder(t *testing.T) {
 							}
 						})
 						finder, err := NewFinder(ctx)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						services := finder.FindInterestedServices(ctx, configSet, "foo.cfg")
-						So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-						So(finder.FindInterestedServices(ctx, configSet, "boo.cfg"), ShouldBeEmpty)
+						assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+						assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "boo.cfg"), should.BeEmpty)
 					})
 				}
 			})
 
-			Convey("Regexp match", func() {
-				Convey("Anchored", func() {
+			t.Run("Regexp match", func(t *ftt.Test) {
+				t.Run("Anchored", func(t *ftt.Test) {
 					updateService(func(srv *model.Service) {
 						srv.Metadata = &cfgcommonpb.ServiceMetadata{
 							ConfigPatterns: []*cfgcommonpb.ConfigPattern{
@@ -89,13 +91,13 @@ func TestFinder(t *testing.T) {
 						}
 					})
 					finder, err := NewFinder(ctx)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
-					So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-					So(finder.FindInterestedServices(ctx, configSet, "bucket-foo1.cfg"), ShouldBeEmpty)
+					assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+					assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "bucket-foo1.cfg"), should.BeEmpty)
 				})
 
-				Convey("Auto anchor", func() {
+				t.Run("Auto anchor", func(t *ftt.Test) {
 					updateService(func(srv *model.Service) {
 						srv.Metadata = &cfgcommonpb.ServiceMetadata{
 							ConfigPatterns: []*cfgcommonpb.ConfigPattern{
@@ -107,15 +109,15 @@ func TestFinder(t *testing.T) {
 						}
 					})
 					finder, err := NewFinder(ctx)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					services := finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg")
-					So(convertToServiceNames(services), ShouldResemble, []string{serviceName})
-					So(finder.FindInterestedServices(ctx, "abc"+configSet, "bucket-foo.cfg"), ShouldBeEmpty)
-					So(finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg.gz"), ShouldBeEmpty)
+					assert.Loosely(t, convertToServiceNames(services), should.Resemble([]string{serviceName}))
+					assert.Loosely(t, finder.FindInterestedServices(ctx, "abc"+configSet, "bucket-foo.cfg"), should.BeEmpty)
+					assert.Loosely(t, finder.FindInterestedServices(ctx, configSet, "bucket-foo.cfg.gz"), should.BeEmpty)
 				})
 			})
 
-			Convey("Log warning if a service is interested in the config of another service", func() {
+			t.Run("Log warning if a service is interested in the config of another service", func(t *ftt.Test) {
 				updateService(func(srv *model.Service) {
 					srv.Metadata = &cfgcommonpb.ServiceMetadata{
 						ConfigPatterns: []*cfgcommonpb.ConfigPattern{
@@ -129,14 +131,14 @@ func TestFinder(t *testing.T) {
 				ctx = memlogger.Use(ctx)
 				logs := logging.Get(ctx).(*memlogger.MemLogger)
 				finder, err := NewFinder(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				services := finder.FindInterestedServices(ctx, config.MustServiceSet("not-my-service"), "settings-foo.cfg")
-				So(services, ShouldNotBeEmpty)
-				So(logs, memlogger.ShouldHaveLog, logging.Warning, fmt.Sprintf("crbug/1466976 - service %q declares it is interested in the config \"settings-foo.cfg\" of another service \"not-my-service\"", serviceName))
+				assert.Loosely(t, services, should.NotBeEmpty)
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, fmt.Sprintf("crbug/1466976 - service %q declares it is interested in the config \"settings-foo.cfg\" of another service \"not-my-service\"", serviceName)))
 			})
 		})
 
-		Convey("Multiple services", func() {
+		t.Run("Multiple services", func(t *ftt.Test) {
 			services := []*model.Service{
 				{
 					Name: "buildbucket",
@@ -207,18 +209,18 @@ func TestFinder(t *testing.T) {
 					Name: "no-metadata",
 				},
 			}
-			So(datastore.Put(ctx, services), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, services), should.BeNil)
 
 			finder, err := NewFinder(ctx)
-			So(err, ShouldBeNil)
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "bucket-abc.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-shadow"})
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "commit-queue.cfg")), ShouldResemble, []string{"luci-change-verifier"})
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "swarming.cfg")), ShouldResemble, []string{"swarming"})
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("foo"), "buildbucket.cfg")), ShouldResemble, []string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "bucket-abc.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-shadow"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "buildbucket.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-shadow"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "commit-queue.cfg")), should.Resemble([]string{"luci-change-verifier"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("my-proj"), "swarming.cfg")), should.Resemble([]string{"swarming"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, config.MustProjectSet("foo"), "buildbucket.cfg")), should.Resemble([]string{"buildbucket", "buildbucket-project-foo-specific", "buildbucket-shadow"}))
 		})
 
-		Convey("Refresh", func() {
+		t.Run("Refresh", func(t *ftt.Test) {
 			cs := config.MustProjectSet("my-proj")
 			srv := &model.Service{
 				Name: "foo",
@@ -231,18 +233,18 @@ func TestFinder(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(ctx, srv), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 			finder, err := NewFinder(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			go func() {
 				finder.RefreshPeriodically(cctx)
 			}()
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), ShouldResemble, []string{"foo"})
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), ShouldBeEmpty)
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), should.Resemble([]string{"foo"}))
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), should.BeEmpty)
 			srv.Metadata.ConfigPatterns[0].Path = "new.cfg"
-			So(datastore.Put(ctx, srv), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 			tc := clock.Get(ctx).(testclock.TestClock)
 			start := time.Now()
 			for {
@@ -254,8 +256,8 @@ func TestFinder(t *testing.T) {
 					t.Fatal("finder doesn't appear to be refreshed")
 				}
 			}
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), ShouldBeEmpty)
-			So(convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), ShouldResemble, []string{"foo"})
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "old.cfg")), should.BeEmpty)
+			assert.Loosely(t, convertToServiceNames(finder.FindInterestedServices(ctx, cs, "new.cfg")), should.Resemble([]string{"foo"}))
 		})
 	})
 }

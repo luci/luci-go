@@ -19,38 +19,39 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTasks(t *testing.T) {
 	t.Parallel()
 
-	Convey("Tasks", t, func() {
+	ftt.Run("Tasks", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
 
-		Convey("TaskCount", func() {
+		t.Run("TaskCount", func(t *ftt.Test) {
 			tc := &TaskCount{}
-			So(tc.Executing, ShouldEqual, 0)
-			So(tc.Total, ShouldEqual, 0)
-			So(tc.Update(c, "queue", 1, 2), ShouldBeNil)
+			assert.Loosely(t, tc.Executing, should.BeZero)
+			assert.Loosely(t, tc.Total, should.BeZero)
+			assert.Loosely(t, tc.Update(c, "queue", 1, 2), should.BeNil)
 
 			tc = &TaskCount{
 				ID: "queue",
 			}
-			So(datastore.Get(c, tc), ShouldBeNil)
-			So(tc.Executing, ShouldEqual, 1)
-			So(tc.Total, ShouldEqual, 2)
-			So(tc.Queue, ShouldEqual, tc.ID)
+			assert.Loosely(t, datastore.Get(c, tc), should.BeNil)
+			assert.Loosely(t, tc.Executing, should.Equal(1))
+			assert.Loosely(t, tc.Total, should.Equal(2))
+			assert.Loosely(t, tc.Queue, should.Equal(tc.ID))
 		})
 
-		Convey("updateTasks", func() {
+		t.Run("updateTasks", func(t *ftt.Test) {
 			fields := []any{"queue"}
 
 			tc := &TaskCount{
@@ -61,24 +62,24 @@ func TestTasks(t *testing.T) {
 			}
 
 			tc.Computed = time.Time{}
-			So(datastore.Put(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 			updateTasks(c)
-			So(s.Get(c, tasksExecuting, time.Time{}, fields), ShouldBeNil)
-			So(s.Get(c, tasksPending, time.Time{}, fields), ShouldBeNil)
-			So(s.Get(c, tasksTotal, time.Time{}, fields), ShouldBeNil)
-			So(datastore.Get(c, &TaskCount{
+			assert.Loosely(t, s.Get(c, tasksExecuting, time.Time{}, fields), should.BeNil)
+			assert.Loosely(t, s.Get(c, tasksPending, time.Time{}, fields), should.BeNil)
+			assert.Loosely(t, s.Get(c, tasksTotal, time.Time{}, fields), should.BeNil)
+			assert.Loosely(t, datastore.Get(c, &TaskCount{
 				ID: tc.ID,
-			}), ShouldEqual, datastore.ErrNoSuchEntity)
+			}), should.Equal(datastore.ErrNoSuchEntity))
 
 			tc.Computed = time.Now().UTC()
-			So(datastore.Put(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 			updateTasks(c)
-			So(s.Get(c, tasksExecuting, time.Time{}, fields).(int64), ShouldEqual, 1)
-			So(s.Get(c, tasksPending, time.Time{}, fields).(int64), ShouldEqual, 2)
-			So(s.Get(c, tasksTotal, time.Time{}, fields).(int64), ShouldEqual, 3)
-			So(datastore.Get(c, &TaskCount{
+			assert.Loosely(t, s.Get(c, tasksExecuting, time.Time{}, fields).(int64), should.Equal(1))
+			assert.Loosely(t, s.Get(c, tasksPending, time.Time{}, fields).(int64), should.Equal(2))
+			assert.Loosely(t, s.Get(c, tasksTotal, time.Time{}, fields).(int64), should.Equal(3))
+			assert.Loosely(t, datastore.Get(c, &TaskCount{
 				ID: tc.ID,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 	})
 }

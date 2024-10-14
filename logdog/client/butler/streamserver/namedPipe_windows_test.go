@@ -19,10 +19,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestWindowsNamedPipeServer(t *testing.T) {
@@ -30,30 +30,30 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 
 	t.Parallel()
 
-	Convey(`A named pipe server`, t, func() {
+	ftt.Run(`A named pipe server`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`Will generate a prefix if none is provided.`, func() {
+		t.Run(`Will generate a prefix if none is provided.`, func(t *ftt.Test) {
 			srv, err := newStreamServer(ctx, "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(srv.Address(), ShouldStartWith, "net.pipe:"+defaultWinPipePrefix)
+			assert.Loosely(t, srv.Address(), should.HavePrefix("net.pipe:"+defaultWinPipePrefix))
 		})
 
-		Convey(`Will refuse to create if longer than maximum length.`, func() {
+		t.Run(`Will refuse to create if longer than maximum length.`, func(t *ftt.Test) {
 			_, err := newStreamServer(ctx, strings.Repeat("A", maxWindowsNamedPipeLength+1))
-			So(err, ShouldErrLike, "path exceeds maximum length")
+			assert.Loosely(t, err, should.ErrLike("path exceeds maximum length"))
 		})
 
-		Convey(`When created and listening.`, func() {
+		t.Run(`When created and listening.`, func(t *ftt.Test) {
 			svr, err := newStreamServer(ctx, "ButlerNamedPipeTest")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(svr.Listen(), ShouldBeNil)
+			assert.Loosely(t, svr.Listen(), should.BeNil)
 			defer svr.Close()
 
 			client, err := streamclient.New(svr.Address(), "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			testClientServer(svr, client)
 		})

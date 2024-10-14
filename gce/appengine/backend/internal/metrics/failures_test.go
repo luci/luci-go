@@ -19,20 +19,21 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFailures(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateFailures", t, func() {
+	ftt.Run("UpdateFailures", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
@@ -48,7 +49,7 @@ func TestFailures(t *testing.T) {
 			Hostname: "name-1",
 			Prefix:   "prefix",
 		})
-		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 1)
+		assert.Loosely(t, s.Get(c, creationFailures, time.Time{}, fields).(int64), should.Equal(1))
 
 		UpdateFailures(c, 400, &model.VM{
 			Attributes: config.VM{
@@ -58,6 +59,6 @@ func TestFailures(t *testing.T) {
 			Hostname: "name-1",
 			Prefix:   "prefix",
 		})
-		So(s.Get(c, creationFailures, time.Time{}, fields).(int64), ShouldEqual, 2)
+		assert.Loosely(t, s.Get(c, creationFailures, time.Time{}, fields).(int64), should.Equal(2))
 	})
 }

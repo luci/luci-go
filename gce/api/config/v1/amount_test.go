@@ -23,59 +23,62 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAmount(t *testing.T) {
 	t.Parallel()
 
-	Convey("getAmount", t, func() {
+	ftt.Run("getAmount", t, func(t *ftt.Test) {
 		now := time.Time{}
-		So(now.Weekday(), ShouldEqual, time.Monday)
-		So(now.Hour(), ShouldEqual, 0)
+		assert.Loosely(t, now.Weekday(), should.Equal(time.Monday))
+		assert.Loosely(t, now.Hour(), should.BeZero)
 
-		Convey("min", func() {
+		t.Run("min", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 1,
 				Max: 3,
 			}
 			n, err := a.getAmount(0, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
 		})
 
-		Convey("max", func() {
+		t.Run("max", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 1,
 				Max: 3,
 			}
 			n, err := a.getAmount(4, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(3))
 		})
 
-		Convey("proposed", func() {
+		t.Run("proposed", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 1,
 				Max: 3,
 			}
 			n, err := a.getAmount(2, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 		})
 
-		Convey("equal", func() {
+		t.Run("equal", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 2,
 				Max: 2,
 			}
 			n, err := a.getAmount(2, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 		})
 
-		Convey("schedule", func() {
+		t.Run("schedule", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 1,
 				Max: 1,
@@ -96,27 +99,27 @@ func TestAmount(t *testing.T) {
 				},
 			}
 			n, err := a.getAmount(5, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 
 			n, err = a.getAmount(5, now.Add(time.Minute*59))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 
 			n, err = a.getAmount(5, now.Add(time.Hour))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
 
 			n, err = a.getAmount(5, now.Add(time.Hour*-1))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 
 			n, err = a.getAmount(5, now.Add(time.Minute*-61))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
 		})
 
-		Convey("schedules", func() {
+		t.Run("schedules", func(t *ftt.Test) {
 			a := &Amount{
 				Min: 1,
 				Max: 1,
@@ -150,57 +153,57 @@ func TestAmount(t *testing.T) {
 				},
 			}
 			n, err := a.getAmount(5, now)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 
 			n, err = a.getAmount(5, now.Add(time.Minute*59))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
 
 			n, err = a.getAmount(5, now.Add(time.Hour))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(3))
 
 			n, err = a.getAmount(5, now.Add(time.Minute*61))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
 		})
 	})
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("min", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("min", func(t *ftt.Test) {
 				a := &Amount{
 					Min: -1,
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "minimum amount must be non-negative")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must be non-negative"))
 			})
 
-			Convey("max", func() {
+			t.Run("max", func(t *ftt.Test) {
 				a := &Amount{
 					Max: -1,
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "maximum amount must be non-negative")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("maximum amount must be non-negative"))
 			})
 
-			Convey("min > max", func() {
+			t.Run("min > max", func(t *ftt.Test) {
 				a := &Amount{
 					Min: 2,
 					Max: 1,
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "minimum amount must not exceed maximum amount")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must not exceed maximum amount"))
 			})
 
-			Convey("schedule", func() {
-				Convey("empty", func() {
+			t.Run("schedule", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{
 							{},
@@ -208,12 +211,12 @@ func TestAmount(t *testing.T) {
 					}
 					a.Validate(c)
 					errs := c.Finalize().(*validation.Error).Errors
-					So(errs, ShouldContainErr, "duration or seconds is required")
-					So(errs, ShouldContainErr, "time must match regex")
+					assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration or seconds is required"))
+					assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("time must match regex"))
 				})
 
-				Convey("conflict", func() {
-					Convey("same day", func() {
+				t.Run("conflict", func(t *ftt.Test) {
+					t.Run("same day", func(t *ftt.Test) {
 						a := &Amount{
 							Change: []*Schedule{
 								{
@@ -237,10 +240,10 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						So(errs, ShouldContainErr, "start time is before")
+						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
 					})
 
-					Convey("different day", func() {
+					t.Run("different day", func(t *ftt.Test) {
 						a := &Amount{
 							Change: []*Schedule{
 								{
@@ -264,10 +267,10 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						So(errs, ShouldContainErr, "start time is before")
+						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
 					})
 
-					Convey("different week", func() {
+					t.Run("different week", func(t *ftt.Test) {
 						a := &Amount{
 							Change: []*Schedule{
 								{
@@ -291,38 +294,38 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						So(errs, ShouldContainErr, "start time is before")
+						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
 					})
 				})
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("empty", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				a := &Amount{}
 				a.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 
-			Convey("non-empty", func() {
+			t.Run("non-empty", func(t *ftt.Test) {
 				a := &Amount{
 					Min: 1,
 					Max: 1,
 				}
 				a.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 
-			Convey("schedule", func() {
-				Convey("empty", func() {
+			t.Run("schedule", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{},
 					}
 					a.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 
-				Convey("same day", func() {
+				t.Run("same day", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{
 							{
@@ -350,10 +353,10 @@ func TestAmount(t *testing.T) {
 						},
 					}
 					a.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 
-				Convey("different day", func() {
+				t.Run("different day", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{
 							{
@@ -381,10 +384,10 @@ func TestAmount(t *testing.T) {
 						},
 					}
 					a.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 
-				Convey("different week", func() {
+				t.Run("different week", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{
 							{
@@ -414,10 +417,10 @@ func TestAmount(t *testing.T) {
 						},
 					}
 					a.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 
-				Convey("different location", func() {
+				t.Run("different location", func(t *ftt.Test) {
 					a := &Amount{
 						Change: []*Schedule{
 							{
@@ -446,7 +449,7 @@ func TestAmount(t *testing.T) {
 						},
 					}
 					a.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 			})
 		})

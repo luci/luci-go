@@ -20,24 +20,27 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			cfgs := &Configs{}
 			cfgs.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 
-		Convey("prefixes", func() {
-			Convey("missing", func() {
+		t.Run("prefixes", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				cfgs := &Configs{
 					Vms: []*Config{
 						{},
@@ -45,10 +48,10 @@ func TestValidateConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "prefix is required")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("prefix is required"))
 			})
 
-			Convey("duplicate", func() {
+			t.Run("duplicate", func(t *ftt.Test) {
 				cfgs := &Configs{
 					Vms: []*Config{
 						{
@@ -64,7 +67,7 @@ func TestValidateConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "is a prefix of")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("is a prefix of"))
 			})
 		})
 	})

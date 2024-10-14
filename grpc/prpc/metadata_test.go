@@ -19,88 +19,88 @@ import (
 	"net/http"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/grpc/metadata"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBinaryHeader(t *testing.T) {
 	t.Parallel()
 
-	Convey("from headers", t, func() {
-		Convey("regular", func() {
+	ftt.Run("from headers", t, func(t *ftt.Test) {
+		t.Run("regular", func(t *ftt.Test) {
 			md, err := headersIntoMetadata(http.Header{
 				"Key":         {"v1", "v2"},
 				"Another-Key": {"v3"},
 			})
-			So(err, ShouldBeNil)
-			So(md, ShouldResemble, metadata.MD{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble(metadata.MD{
 				"key":         {"v1", "v2"},
 				"another-key": {"v3"},
-			})
+			}))
 		})
 
-		Convey("binary", func() {
+		t.Run("binary", func(t *ftt.Test) {
 			data := []byte{10}
 			md, err := headersIntoMetadata(http.Header{
 				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
 			})
-			So(err, ShouldBeNil)
-			So(md, ShouldResemble, metadata.MD{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble(metadata.MD{
 				"key-bin": {string(data)},
-			})
+			}))
 		})
 
-		Convey("binary invalid", func() {
+		t.Run("binary invalid", func(t *ftt.Test) {
 			_, err := headersIntoMetadata(http.Header{
 				"Key-Bin": {"Z"},
 			})
-			So(err, ShouldErrLike, "illegal base64 data at input byte 0")
+			assert.Loosely(t, err, should.ErrLike("illegal base64 data at input byte 0"))
 		})
 
-		Convey("reserved", func() {
+		t.Run("reserved", func(t *ftt.Test) {
 			md, err := headersIntoMetadata(http.Header{
 				"Content-Type": {"zzz"},
 				"X-Prpc-Zzz":   {"zzz"},
 			})
-			So(err, ShouldBeNil)
-			So(md, ShouldResemble, metadata.MD(nil))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, md, should.Resemble(metadata.MD(nil)))
 		})
 	})
 
-	Convey("to headers", t, func() {
-		Convey("regular", func() {
+	ftt.Run("to headers", t, func(t *ftt.Test) {
+		t.Run("regular", func(t *ftt.Test) {
 			h := http.Header{}
 			err := metaIntoHeaders(metadata.MD{
 				"key":         {"v1", "v2"},
 				"another-key": {"v3"},
 			}, h)
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, http.Header{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, h, should.Resemble(http.Header{
 				"Key":         {"v1", "v2"},
 				"Another-Key": {"v3"},
-			})
+			}))
 		})
 
-		Convey("binary", func() {
+		t.Run("binary", func(t *ftt.Test) {
 			data := []byte{10}
 			h := http.Header{}
 			err := metaIntoHeaders(metadata.MD{
 				"key-bin": {string(data)},
 			}, h)
-			So(err, ShouldBeNil)
-			So(h, ShouldResemble, http.Header{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, h, should.Resemble(http.Header{
 				"Key-Bin": {base64.StdEncoding.EncodeToString(data)},
-			})
+			}))
 		})
 
-		Convey("reserved", func() {
+		t.Run("reserved", func(t *ftt.Test) {
 			h := http.Header{}
 			err := metaIntoHeaders(metadata.MD{
 				"content-type": {"zzz"},
 			}, h)
-			So(err, ShouldErrLike, "using reserved metadata key")
+			assert.Loosely(t, err, should.ErrLike("using reserved metadata key"))
 		})
 	})
 }

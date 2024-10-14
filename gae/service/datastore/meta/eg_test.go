@@ -19,17 +19,18 @@ import (
 	"errors"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetEntityGroupVersion(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetEntityGroupVersion", t, func() {
+	ftt.Run("GetEntityGroupVersion", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c, fb := featureBreaker.FilterRDS(c, errors.New("INTERNAL_ERROR"))
 
@@ -37,27 +38,27 @@ func TestGetEntityGroupVersion(t *testing.T) {
 			"$key": ds.MkPropertyNI(ds.MakeKey(c, "A", "")),
 			"Val":  ds.MkProperty(10),
 		}
-		So(ds.Put(c, pm), ShouldBeNil)
+		assert.Loosely(t, ds.Put(c, pm), should.BeNil)
 		aKey := ds.KeyForObj(c, pm)
-		So(aKey, ShouldNotBeNil)
+		assert.Loosely(t, aKey, should.NotBeNil)
 
 		v, err := GetEntityGroupVersion(c, aKey)
-		So(err, ShouldBeNil)
-		So(v, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, v, should.Equal(1))
 
-		So(ds.Delete(c, aKey), ShouldBeNil)
+		assert.Loosely(t, ds.Delete(c, aKey), should.BeNil)
 
 		v, err = GetEntityGroupVersion(c, ds.NewKey(c, "madeUp", "thing", 0, aKey))
-		So(err, ShouldBeNil)
-		So(v, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, v, should.Equal(2))
 
 		v, err = GetEntityGroupVersion(c, ds.NewKey(c, "madeUp", "thing", 0, nil))
-		So(err, ShouldBeNil)
-		So(v, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, v, should.BeZero)
 
 		fb.BreakFeatures(nil, "GetMulti")
 
 		v, err = GetEntityGroupVersion(c, aKey)
-		So(err.Error(), ShouldContainSubstring, "INTERNAL_ERROR")
+		assert.Loosely(t, err.Error(), should.ContainSubstring("INTERNAL_ERROR"))
 	})
 }

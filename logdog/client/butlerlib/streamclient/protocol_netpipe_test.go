@@ -25,9 +25,10 @@ import (
 
 	"github.com/Microsoft/go-winio"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNamedPipe(t *testing.T) {
@@ -38,7 +39,7 @@ func TestNamedPipe(t *testing.T) {
 
 	counter := 0
 
-	Convey(`test windows NamedPipe`, t, func() {
+	ftt.Run(`test windows NamedPipe`, t, func(t *ftt.Test) {
 		defer timebomb()()
 
 		ctx, cancel := mkTestCtx()
@@ -51,7 +52,7 @@ func TestNamedPipe(t *testing.T) {
 			return winio.ListenPipe(streamproto.LocalNamedPipePath(name), nil)
 		})
 		client, err := New("net.pipe:"+name, "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		runWireProtocolTest(ctx, dataChan, client, true)
 	})

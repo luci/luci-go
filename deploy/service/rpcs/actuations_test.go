@@ -29,14 +29,17 @@ import (
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestActuationsRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
@@ -77,74 +80,74 @@ func TestActuationsRPC(t *testing.T) {
 
 		srv := &Actuations{}
 
-		Convey("Begin + End", func() {
+		t.Run("Begin + End", func(t *ftt.Test) {
 			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(beginResp, ShouldResembleProto, &rpcpb.BeginActuationResponse{
+			assert.Loosely(t, beginResp, should.Resemble(&rpcpb.BeginActuationResponse{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
 				},
-			})
+			}))
 
 			_, err = srv.EndActuation(ctx, endReq(1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Begin retry", func() {
+		t.Run("Begin retry", func(t *ftt.Test) {
 			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			beginResp, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(beginResp, ShouldResembleProto, &rpcpb.BeginActuationResponse{
+			assert.Loosely(t, beginResp, should.Resemble(&rpcpb.BeginActuationResponse{
 				Decisions: map[string]*modelpb.ActuationDecision{
 					"apps/app": {Decision: modelpb.ActuationDecision_ACTUATE_STALE},
 				},
-			})
+			}))
 		})
 
-		Convey("End retry", func() {
+		t.Run("End retry", func(t *ftt.Test) {
 			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = srv.EndActuation(ctx, endReq(1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = srv.EndActuation(ctx, endReq(1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Begin retry: wrong caller", func() {
+		t.Run("Begin retry: wrong caller", func(t *ftt.Test) {
 			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:another-actuator@example.com",
 			})
 
 			_, err = srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
 		})
 
-		Convey("End: missing actuation", func() {
+		t.Run("End: missing actuation", func(t *ftt.Test) {
 			_, err := srv.EndActuation(ctx, endReq(1000))
-			So(err, ShouldHaveGRPCStatus, codes.NotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
 		})
 
-		Convey("End wrong caller", func() {
+		t.Run("End wrong caller", func(t *ftt.Test) {
 			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:another-actuator@example.com",
 			})
 
 			_, err = srv.EndActuation(ctx, endReq(1000))
-			So(err, ShouldHaveGRPCStatus, codes.FailedPrecondition)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
 		})
 
-		Convey("End wrong asset list", func() {
+		t.Run("End wrong asset list", func(t *ftt.Test) {
 			_, err := srv.BeginActuation(ctx, beginReq(0, 1000))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			req := endReq(1000)
 			req.Assets["apps/another"] = &rpcpb.ActuatedAsset{
@@ -152,7 +155,7 @@ func TestActuationsRPC(t *testing.T) {
 			}
 
 			_, err = srv.EndActuation(ctx, req)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 	})
 }
@@ -160,7 +163,7 @@ func TestActuationsRPC(t *testing.T) {
 func TestActuationsValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateBeginActuation", t, func() {
+	ftt.Run("validateBeginActuation", t, func(t *ftt.Test) {
 		rpc := &rpcpb.BeginActuationRequest{
 			Actuation: &modelpb.Actuation{
 				Id:         "some-actuation",
@@ -185,38 +188,38 @@ func TestActuationsValidation(t *testing.T) {
 			},
 		}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			assets, err := validateBeginActuation(rpc)
-			So(err, ShouldBeNil)
-			So(assets, ShouldResemble, []string{"apps/app1", "apps/app2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, assets, should.Resemble([]string{"apps/app1", "apps/app2"}))
 		})
 
-		Convey("No id", func() {
+		t.Run("No id", func(t *ftt.Test) {
 			rpc.Actuation.Id = ""
 			_, err := validateBeginActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("No deployment", func() {
+		t.Run("No deployment", func(t *ftt.Test) {
 			rpc.Actuation.Deployment = nil
 			_, err := validateBeginActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("No actuator", func() {
+		t.Run("No actuator", func(t *ftt.Test) {
 			rpc.Actuation.Actuator = nil
 			_, err := validateBeginActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("No assets", func() {
+		t.Run("No assets", func(t *ftt.Test) {
 			rpc.Assets = nil
 			_, err := validateBeginActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 	})
 
-	Convey("validateEndActuation", t, func() {
+	ftt.Run("validateEndActuation", t, func(t *ftt.Test) {
 		rpc := &rpcpb.EndActuationRequest{
 			ActuationId: "some-actuation",
 			Assets: map[string]*rpcpb.ActuatedAsset{
@@ -229,22 +232,22 @@ func TestActuationsValidation(t *testing.T) {
 			},
 		}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			assets, err := validateEndActuation(rpc)
-			So(err, ShouldBeNil)
-			So(assets, ShouldResemble, []string{"apps/app1", "apps/app2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, assets, should.Resemble([]string{"apps/app1", "apps/app2"}))
 		})
 
-		Convey("No id", func() {
+		t.Run("No id", func(t *ftt.Test) {
 			rpc.ActuationId = ""
 			_, err := validateEndActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 
-		Convey("No assets", func() {
+		t.Run("No assets", func(t *ftt.Test) {
 			rpc.Assets = nil
 			_, err := validateEndActuation(rpc)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 		})
 	})
 }

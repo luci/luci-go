@@ -17,11 +17,11 @@ package bundler
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
 )
 
 func TestBundler(t *testing.T) {
-	Convey(`A test Bundler`, t, func() {
+	ftt.Run(`A test Bundler`, t, func(t *ftt.Test) {
 
 	})
 }

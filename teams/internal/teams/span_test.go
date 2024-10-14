@@ -19,67 +19,67 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/teams/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
-	Convey("Validate", t, func() {
-		Convey("valid", func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			err := Validate(NewTeamBuilder().Build())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("id", func() {
-			Convey("must be specified", func() {
+		t.Run("id", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := Validate(NewTeamBuilder().WithID("").Build())
-				So(err, ShouldErrLike, "id: must be specified")
+				assert.Loosely(t, err, should.ErrLike("id: must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := Validate(NewTeamBuilder().WithID("INVALID").Build())
-				So(err, ShouldErrLike, "id: expected format")
+				assert.Loosely(t, err, should.ErrLike("id: expected format"))
 			})
 		})
 	})
 }
 
 func TestStatusTable(t *testing.T) {
-	Convey("Create", t, func() {
+	ftt.Run("Create", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		team := NewTeamBuilder().Build()
 
 		m, err := Create(team)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 		team.CreateTime = ts.UTC()
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fetched, err := Read(span.Single(ctx), team.ID)
-		So(err, ShouldBeNil)
-		So(fetched, ShouldResemble, team)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fetched, should.Resemble(team))
 	})
 
-	Convey("Read", t, func() {
-		Convey("Single", func() {
+	ftt.Run("Read", t, func(t *ftt.Test) {
+		t.Run("Single", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			team, err := NewTeamBuilder().CreateInDB(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			fetched, err := Read(span.Single(ctx), team.ID)
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldResemble, team)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Resemble(team))
 		})
 
-		Convey("Not exists", func() {
+		t.Run("Not exists", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 
 			_, err := Read(span.Single(ctx), "123456")
 
-			So(err, ShouldEqual, NotExistsErr)
+			assert.Loosely(t, err, should.Equal(NotExistsErr))
 		})
 	})
 }

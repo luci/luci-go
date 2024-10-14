@@ -24,25 +24,25 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestActuationEndOp(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
 
-		Convey("Missing assets", func() {
+		t.Run("Missing assets", func(t *ftt.Test) {
 			_, err := NewActuationEndOp(ctx, &Actuation{
 				Decisions: &modelpb.ActuationDecisions{
 					Decisions: map[string]*modelpb.ActuationDecision{
@@ -50,10 +50,10 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, "assets entities unexpectedly missing: apps/missing")
+			assert.Loosely(t, err, should.ErrLike("assets entities unexpectedly missing: apps/missing"))
 		})
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			assets := []*Asset{
 				{
 					ID: "apps/app1",
@@ -121,7 +121,7 @@ func TestActuationEndOp(t *testing.T) {
 					ConsecutiveFailures: 222,
 				},
 			}
-			So(datastore.Put(ctx, assets), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, assets), should.BeNil)
 
 			op, err := NewActuationEndOp(ctx, &Actuation{
 				ID: "actuation-id",
@@ -139,9 +139,9 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				op.UpdateActuationStatus(ctx, nil, "new-log-url")
 				op.HandleActuatedState(ctx, "apps/app1", &rpcpb.ActuatedAsset{
 					State: &modelpb.AssetState{
@@ -158,26 +158,26 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				})
 
-				So(op.Apply(ctx), ShouldBeNil)
+				assert.Loosely(t, op.Apply(ctx), should.BeNil)
 
 				// Updated Actuation entity.
 				storedActuation := &Actuation{ID: "actuation-id"}
-				So(datastore.Get(ctx, storedActuation), ShouldBeNil)
-				So(storedActuation.Actuation, ShouldResembleProto, &modelpb.Actuation{
+				assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
+				assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
 					Id:         "actuation-id",
 					State:      modelpb.Actuation_SUCCEEDED,
 					Deployment: mockedDeployment,
 					Actuator:   mockedActuator,
 					Finished:   timestamppb.New(now),
 					LogUrl:     "new-log-url",
-				})
-				So(storedActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+				}))
+				assert.Loosely(t, storedActuation.State, should.Equal(modelpb.Actuation_SUCCEEDED))
 
 				// Updated the asset assigned to this actuation.
 				assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(assets["apps/app1"].Asset, ShouldResembleProto, &modelpb.Asset{
+				assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
 					Id:                   "apps/app1",
 					LastActuation:        storedActuation.Actuation,
 					LastActuateActuation: storedActuation.Actuation,
@@ -207,9 +207,9 @@ func TestActuationEndOp(t *testing.T) {
 							Appengine: mockedReportedState("intended", 0),
 						},
 					},
-				})
-				So(assets["apps/app1"].LastHistoryID, ShouldEqual, 124)
-				So(assets["apps/app1"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+				}))
+				assert.Loosely(t, assets["apps/app1"].LastHistoryID, should.Equal(124))
+				assert.Loosely(t, assets["apps/app1"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
 					AssetId:   "apps/app1",
 					HistoryId: 124,
 					Actuation: storedActuation.Actuation,
@@ -222,16 +222,16 @@ func TestActuationEndOp(t *testing.T) {
 						},
 					},
 					PriorConsecutiveFailures: 111,
-				})
-				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 0)
+				}))
+				assert.Loosely(t, assets["apps/app1"].ConsecutiveFailures, should.BeZero)
 
 				// Created the history entity.
 				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
-				So(datastore.Get(ctx, &rec), ShouldBeNil)
-				So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
+				assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
+				assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
 
 				// Wasn't touched.
-				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
+				assert.Loosely(t, assets["apps/app2"].Asset, should.Resemble(&modelpb.Asset{
 					Id: "apps/app2",
 					IntendedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
@@ -244,19 +244,19 @@ func TestActuationEndOp(t *testing.T) {
 					LastActuateActuation: &modelpb.Actuation{
 						Id: "another-actuation",
 					},
-				})
-				So(assets["apps/app2"].LastHistoryID, ShouldEqual, 123)
-				So(assets["apps/app2"].HistoryEntry, ShouldResembleProto, &modelpb.AssetHistory{
+				}))
+				assert.Loosely(t, assets["apps/app2"].LastHistoryID, should.Equal(123))
+				assert.Loosely(t, assets["apps/app2"].HistoryEntry, should.Resemble(&modelpb.AssetHistory{
 					AssetId:   "apps/app2",
 					HistoryId: 123,
 					Actuation: &modelpb.Actuation{
 						Id: "phony-to-be-untouched",
 					},
-				})
-				So(assets["apps/app2"].ConsecutiveFailures, ShouldEqual, 222)
+				}))
+				assert.Loosely(t, assets["apps/app2"].ConsecutiveFailures, should.Equal(222))
 			})
 
-			Convey("Failed", func() {
+			t.Run("Failed", func(t *ftt.Test) {
 				op.UpdateActuationStatus(ctx, &statuspb.Status{
 					Code:    int32(codes.FailedPrecondition),
 					Message: "actuation boom",
@@ -278,12 +278,12 @@ func TestActuationEndOp(t *testing.T) {
 					},
 				})
 
-				So(op.Apply(ctx), ShouldBeNil)
+				assert.Loosely(t, op.Apply(ctx), should.BeNil)
 
 				// Updated Actuation entity.
 				storedActuation := &Actuation{ID: "actuation-id"}
-				So(datastore.Get(ctx, storedActuation), ShouldBeNil)
-				So(storedActuation.Actuation, ShouldResembleProto, &modelpb.Actuation{
+				assert.Loosely(t, datastore.Get(ctx, storedActuation), should.BeNil)
+				assert.Loosely(t, storedActuation.Actuation, should.Resemble(&modelpb.Actuation{
 					Id:    "actuation-id",
 					State: modelpb.Actuation_FAILED,
 					Status: &statuspb.Status{
@@ -294,14 +294,14 @@ func TestActuationEndOp(t *testing.T) {
 					Actuator:   mockedActuator,
 					Finished:   timestamppb.New(now),
 					LogUrl:     "old-log-url",
-				})
-				So(storedActuation.State, ShouldEqual, modelpb.Actuation_FAILED)
+				}))
+				assert.Loosely(t, storedActuation.State, should.Equal(modelpb.Actuation_FAILED))
 
 				// Updated the asset assigned to this actuation.
 				assets, err := fetchAssets(ctx, []string{"apps/app1", "apps/app2"}, true)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(assets["apps/app1"].Asset, ShouldResembleProto, &modelpb.Asset{
+				assert.Loosely(t, assets["apps/app1"].Asset, should.Resemble(&modelpb.Asset{
 					Id:                   "apps/app1",
 					LastActuation:        storedActuation.Actuation,
 					LastActuateActuation: storedActuation.Actuation,
@@ -324,19 +324,19 @@ func TestActuationEndOp(t *testing.T) {
 						Code:    int32(codes.InvalidArgument),
 						Message: "status boom",
 					},
-				})
+				}))
 
 				// Stored the historical record with correct PriorConsecutiveFailures
 				// counter.
-				So(assets["apps/app1"].ConsecutiveFailures, ShouldEqual, 112)
-				So(assets["apps/app1"].LastHistoryID, ShouldEqual, 124)
-				So(assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, ShouldEqual, 111)
+				assert.Loosely(t, assets["apps/app1"].ConsecutiveFailures, should.Equal(112))
+				assert.Loosely(t, assets["apps/app1"].LastHistoryID, should.Equal(124))
+				assert.Loosely(t, assets["apps/app1"].HistoryEntry.PriorConsecutiveFailures, should.Equal(111))
 				rec := AssetHistory{ID: 124, Parent: datastore.KeyForObj(ctx, assets["apps/app1"])}
-				So(datastore.Get(ctx, &rec), ShouldBeNil)
-				So(rec.Entry, ShouldResembleProto, assets["apps/app1"].HistoryEntry)
+				assert.Loosely(t, datastore.Get(ctx, &rec), should.BeNil)
+				assert.Loosely(t, rec.Entry, should.Resemble(assets["apps/app1"].HistoryEntry))
 
 				// Wasn't touched.
-				So(assets["apps/app2"].Asset, ShouldResembleProto, &modelpb.Asset{
+				assert.Loosely(t, assets["apps/app2"].Asset, should.Resemble(&modelpb.Asset{
 					Id: "apps/app2",
 					IntendedState: &modelpb.AssetState{
 						State: &modelpb.AssetState_Appengine{
@@ -349,8 +349,8 @@ func TestActuationEndOp(t *testing.T) {
 					LastActuateActuation: &modelpb.Actuation{
 						Id: "another-actuation",
 					},
-				})
-				So(assets["apps/app2"].ConsecutiveFailures, ShouldEqual, 222)
+				}))
+				assert.Loosely(t, assets["apps/app2"].ConsecutiveFailures, should.Equal(222))
 			})
 		})
 	})

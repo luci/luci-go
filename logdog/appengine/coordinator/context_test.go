@@ -30,14 +30,17 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestWithProjectNamespace(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing environment`, t, func() {
+	ftt.Run(`A testing environment`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
 
@@ -45,25 +48,25 @@ func TestWithProjectNamespace(t *testing.T) {
 			"existing": {ArchiveGsBucket: "some-bucket"},
 		})
 
-		Convey(`Entering existing project`, func() {
-			So(WithProjectNamespace(&ctx, "existing"), ShouldBeNil)
-			So(Project(ctx), ShouldEqual, "existing")
+		t.Run(`Entering existing project`, func(t *ftt.Test) {
+			assert.Loosely(t, WithProjectNamespace(&ctx, "existing"), should.BeNil)
+			assert.Loosely(t, Project(ctx), should.Equal("existing"))
 			cfg, err := ProjectConfig(ctx)
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "some-bucket")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("some-bucket"))
 		})
 
-		Convey(`Entering non-existing project`, func() {
-			Convey(`Anonymous`, func() {
+		t.Run(`Entering non-existing project`, func(t *ftt.Test) {
+			t.Run(`Anonymous`, func(t *ftt.Test) {
 				err := WithProjectNamespace(&ctx, "non-existing")
-				So(err, ShouldHaveGRPCStatus, codes.Unauthenticated)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unauthenticated))
 			})
-			Convey(`Non-anonymous`, func() {
+			t.Run(`Non-anonymous`, func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				err := WithProjectNamespace(&ctx, "non-existing")
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 			})
 		})
 	})

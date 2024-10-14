@@ -34,6 +34,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
@@ -44,9 +47,6 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func dummyBuildWithEmails(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
@@ -103,21 +103,21 @@ func dummyBuildWithFailingSteps(status buildbucketpb.Status, failingSteps []stri
 }
 
 func TestExtractEmailNotifyValues(t *testing.T) {
-	Convey(`Test Environment for extractEmailNotifyValues`, t, func() {
+	ftt.Run(`Test Environment for extractEmailNotifyValues`, t, func(t *ftt.Test) {
 		extract := func(buildJSONPB string) ([]EmailNotify, error) {
 			build := &buildbucketpb.Build{}
 			err := protojson.Unmarshal([]byte(buildJSONPB), build)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return extractEmailNotifyValues(build, "")
 		}
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			results, err := extract(`{}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
 		})
 
-		Convey(`populated without email_notify`, func() {
+		t.Run(`populated without email_notify`, func(t *ftt.Test) {
 			results, err := extract(`{
 				"input": {
 					"properties": {
@@ -125,11 +125,11 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					}
 				}
 			}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
 		})
 
-		Convey(`single email_notify value in input`, func() {
+		t.Run(`single email_notify value in input`, func(t *ftt.Test) {
 			results, err := extract(`{
 				"input": {
 					"properties": {
@@ -137,16 +137,16 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					}
 				}
 			}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "",
 				},
-			})
+			}))
 		})
 
-		Convey(`single email_notify value_with_template`, func() {
+		t.Run(`single email_notify value_with_template`, func(t *ftt.Test) {
 			results, err := extract(`{
 				"input": {
 					"properties": {
@@ -157,16 +157,16 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					}
 				}
 			}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "test-template",
 				},
-			})
+			}))
 		})
 
-		Convey(`multiple email_notify values`, func() {
+		t.Run(`multiple email_notify values`, func(t *ftt.Test) {
 			results, err := extract(`{
 				"input": {
 					"properties": {
@@ -177,8 +177,8 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					}
 				}
 			}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble([]EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "",
@@ -187,10 +187,10 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					Email:    "test2@email",
 					Template: "",
 				},
-			})
+			}))
 		})
 
-		Convey(`output takes precedence`, func() {
+		t.Run(`output takes precedence`, func(t *ftt.Test) {
 			results, err := extract(`{
 				"input": {
 					"properties": {
@@ -207,13 +207,13 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					}
 				}
 			}`)
-			So(err, ShouldBeNil)
-			So(results, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble([]EmailNotify{
 				{
 					Email:    "test2@email",
 					Template: "",
 				},
-			})
+			}))
 		})
 	})
 }
@@ -225,10 +225,10 @@ func init() {
 func TestHandleBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test Environment for handleBuild`, t, func() {
+	ftt.Run(`Test Environment for handleBuild`, t, func(t *ftt.Test) {
 		cfgName := "basic"
 		cfg, err := testutil.LoadProjectConfig(cfgName)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify-test")
@@ -245,7 +245,7 @@ func TestHandleBuild(t *testing.T) {
 			Name:                "template",
 			SubjectTextTemplate: "Builder {{.Build.Builder.Builder}} failed on steps {{stepNames .MatchingFailedSteps}}",
 		}
-		So(datastore.Put(c, project, builders, template), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, project, builders, template), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
@@ -260,7 +260,7 @@ func TestHandleBuild(t *testing.T) {
 
 			// Test handleBuild.
 			err := handleBuild(c, build, checkoutFunc, history)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Verify tasks were scheduled.
 			var actualEmails []string
@@ -274,7 +274,7 @@ func TestHandleBuild(t *testing.T) {
 			}
 			sort.Strings(actualEmails)
 			sort.Strings(expectedEmails)
-			So(actualEmails, ShouldResemble, expectedEmails)
+			assert.Loosely(t, actualEmails, should.Resemble(expectedEmails))
 		}
 
 		verifyBuilder := func(build *Build, revision string, checkout Checkout) {
@@ -284,11 +284,11 @@ func TestHandleBuild(t *testing.T) {
 				ProjectKey: datastore.KeyForObj(c, project),
 				ID:         id,
 			}
-			So(datastore.Get(c, &builder), ShouldBeNil)
-			So(builder.Revision, ShouldResemble, revision)
-			So(builder.Status, ShouldEqual, build.Status)
+			assert.Loosely(t, datastore.Get(c, &builder), should.BeNil)
+			assert.Loosely(t, builder.Revision, should.Resemble(revision))
+			assert.Loosely(t, builder.Status, should.Equal(build.Status))
 			expectCommits := checkout.ToGitilesCommits()
-			So(builder.GitilesCommits, ShouldResembleProto, expectCommits)
+			assert.Loosely(t, builder.GitilesCommits, should.Resemble(expectCommits))
 		}
 
 		propEmail := EmailNotify{
@@ -319,27 +319,27 @@ func TestHandleBuild(t *testing.T) {
 		grepLog := func(substring string) {
 			buf := new(bytes.Buffer)
 			_, err := memlogger.Dump(c, buf)
-			So(err, ShouldBeNil)
-			So(buf.String(), ShouldContainSubstring, substring)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf.String(), should.ContainSubstring(substring))
 		}
 
-		Convey(`no config`, func() {
+		t.Run(`no config`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil))
 			grepLog("No builder")
 		})
 
-		Convey(`no config w/property`, func() {
+		t.Run(`no config w/property`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), propEmail)
 		})
 
-		Convey(`no repository in-order`, func() {
+		t.Run(`no repository in-order`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-no-repo", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 		})
 
-		Convey(`no repository out-of-order`, func() {
+		t.Run(`no repository out-of-order`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-no-repo", buildbucketpb.Status_FAILURE, newTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 
@@ -348,7 +348,7 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("old time")
 		})
 
-		Convey(`no revision`, func() {
+		t.Run(`no revision`, func(t *ftt.Test) {
 			build := &Build{
 				Build: buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
@@ -363,26 +363,26 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("revision")
 		})
 
-		Convey(`init builder`, func() {
+		t.Run(`init builder`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail)
 			verifyBuilder(build, rev1, nil)
 		})
 
-		Convey(`init builder w/property`, func() {
+		t.Run(`init builder w/property`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 		})
 
-		Convey(`source manifest return error`, func() {
+		t.Run(`source manifest return error`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutReturnsErrorFunc(), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
 			grepLog("Got error when getting source manifest for build")
 		})
 
-		Convey(`repository mismatch`, func() {
+		t.Run(`repository mismatch`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), failEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
@@ -408,7 +408,7 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("triggered by commit")
 		})
 
-		Convey(`out-of-order revision`, func() {
+		t.Run(`out-of-order revision`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			verifyBuilder(build, rev2, nil)
@@ -418,7 +418,7 @@ func TestHandleBuild(t *testing.T) {
 			grepLog("old commit")
 		})
 
-		Convey(`revision update`, func() {
+		t.Run(`revision update`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
 			verifyBuilder(build, rev1, nil)
@@ -429,7 +429,7 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(newBuild, rev2, nil)
 		})
 
-		Convey(`revision update w/property`, func() {
+		t.Run(`revision update w/property`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propEmail)
 			assertTasks(build, mockCheckoutFunc(nil), successEmail, propEmail)
 			verifyBuilder(build, rev1, nil)
@@ -440,7 +440,7 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(newBuild, rev2, nil)
 		})
 
-		Convey(`out-of-order creation time`, func() {
+		t.Run(`out-of-order creation time`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
 			build.Id = 2
 			assertTasks(build, mockCheckoutFunc(nil), successEmail)
@@ -472,15 +472,15 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(newBuild, rev2, checkoutNew)
 		}
 
-		Convey(`blamelist no allowlist`, func() {
+		t.Run(`blamelist no allowlist`, func(t *ftt.Test) {
 			testBlamelistConfig("test-builder-blamelist-1", changeEmail, commit2Email)
 		})
 
-		Convey(`blamelist with allowlist`, func() {
+		t.Run(`blamelist with allowlist`, func(t *ftt.Test) {
 			testBlamelistConfig("test-builder-blamelist-2", changeEmail, commit1Email)
 		})
 
-		Convey(`blamelist against last non-empty checkout`, func() {
+		t.Run(`blamelist against last non-empty checkout`, func(t *ftt.Test) {
 			build := dummyBuildWithEmails("test-builder-blamelist-2", buildbucketpb.Status_SUCCESS, oldTime, rev1)
 			assertTasks(build, mockCheckoutFunc(checkoutOld))
 			verifyBuilder(build, rev1, checkoutOld)
@@ -497,15 +497,15 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(newestBuild, rev2, checkoutNew)
 		})
 
-		Convey(`blamelist mixed`, func() {
+		t.Run(`blamelist mixed`, func(t *ftt.Test) {
 			testBlamelistConfig("test-builder-blamelist-3", commit1Email, commit2Email)
 		})
 
-		Convey(`blamelist duplicate`, func() {
+		t.Run(`blamelist duplicate`, func(t *ftt.Test) {
 			testBlamelistConfig("test-builder-blamelist-4", commit2Email, commit2Email, commit2Email)
 		})
 
-		Convey(`failure type infra`, func() {
+		t.Run(`failure type infra`, func(t *ftt.Test) {
 			infra_failure_build := dummyBuildWithEmails("test-builder-infra-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(infra_failure_build, mockCheckoutFunc(nil))
 
@@ -516,7 +516,7 @@ func TestHandleBuild(t *testing.T) {
 			assertTasks(infra_failure_build, mockCheckoutFunc(nil), infraFailEmail)
 		})
 
-		Convey(`failure type mixed`, func() {
+		t.Run(`failure type mixed`, func(t *ftt.Test) {
 			failure_and_infra_failure_build := dummyBuildWithEmails("test-builder-failure-and-infra-failures-1", buildbucketpb.Status_SUCCESS, oldTime, rev2)
 			assertTasks(failure_and_infra_failure_build, mockCheckoutFunc(nil))
 
@@ -549,15 +549,15 @@ func TestHandleBuild(t *testing.T) {
 				Status:    initialStatus,
 				Timestamp: initialTimestamp,
 			}
-			So(datastore.Put(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 
 			// Handle a new build.
 			build := dummyBuildWithFailingSteps(buildStatus, failingSteps)
 			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
-			So(handleBuild(c, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+			assert.Loosely(t, handleBuild(c, build, mockCheckoutFunc(nil), history), should.BeNil)
 
 			// Fetch the new tree closer.
-			So(datastore.Get(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(c, tc), should.BeNil)
 			return tc
 		}
 
@@ -565,8 +565,8 @@ func TestHandleBuild(t *testing.T) {
 			tc := runHandleBuild(buildStatus, initialStatus, failingSteps)
 
 			// Assert the resulting state of the tree closer.
-			So(tc.Status, ShouldEqual, expectedNewStatus)
-			So(tc.Timestamp.After(initialTimestamp), ShouldEqual, expectingUpdatedTimestamp)
+			assert.Loosely(t, tc.Status, should.Equal(expectedNewStatus))
+			assert.Loosely(t, tc.Timestamp.After(initialTimestamp), should.Equal(expectingUpdatedTimestamp))
 		}
 
 		// We want to exhaustively test all combinations of the following:
@@ -575,49 +575,49 @@ func TestHandleBuild(t *testing.T) {
 		//   * Is the resulting status the same as the old status?
 		// All possibilities are explored in the tests below.
 
-		Convey(`Build passed, Closed -> Open`, func() {
+		t.Run(`Build passed, Closed -> Open`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_SUCCESS, config.Closed, config.Open, true, []string{})
 		})
 
-		Convey(`Build passed, Open -> Open`, func() {
+		t.Run(`Build passed, Open -> Open`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_SUCCESS, config.Open, config.Open, true, []string{})
 		})
 
-		Convey(`Build failed, filters don't match, Closed -> Open`, func() {
+		t.Run(`Build failed, filters don't match, Closed -> Open`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Open, true, []string{"exclude"})
 		})
 
-		Convey(`Build failed, filters don't match, Open -> Open`, func() {
+		t.Run(`Build failed, filters don't match, Open -> Open`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Open, true, []string{"exclude"})
 		})
 
-		Convey(`Build failed, filters match, Open -> Closed`, func() {
+		t.Run(`Build failed, filters match, Open -> Closed`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_FAILURE, config.Open, config.Closed, true, []string{"include"})
 		})
 
-		Convey(`Build failed, filters match, Closed -> Closed`, func() {
+		t.Run(`Build failed, filters match, Closed -> Closed`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_FAILURE, config.Closed, config.Closed, true, []string{"include"})
 		})
 
 		// In addition, we want to test that statuses other than SUCCESS and FAILURE don't
 		// cause any updates, regardless of the initial state.
 
-		Convey(`Infra failure, stays Open`, func() {
+		t.Run(`Infra failure, stays Open`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_INFRA_FAILURE, config.Open, config.Open, false, []string{"include"})
 		})
 
-		Convey(`Infra failure, stays Closed`, func() {
+		t.Run(`Infra failure, stays Closed`, func(t *ftt.Test) {
 			testStatus(buildbucketpb.Status_INFRA_FAILURE, config.Closed, config.Closed, false, []string{"include"})
 		})
 
 		// Test that the correct status message is generated.
-		Convey(`Status message`, func() {
+		t.Run(`Status message`, func(t *ftt.Test) {
 			tc := runHandleBuild(buildbucketpb.Status_FAILURE, config.Open, []string{"include"})
 
-			So(tc.Message, ShouldEqual, `Builder test-builder-tree-closer failed on steps "include"`)
+			assert.Loosely(t, tc.Message, should.Equal(`Builder test-builder-tree-closer failed on steps "include"`))
 		})
 
-		Convey(`All failed steps listed if no filter`, func() {
+		t.Run(`All failed steps listed if no filter`, func(t *ftt.Test) {
 			// Insert the tree closer to test into datastore.
 			builderKey := datastore.KeyForObj(c, &config.Builder{
 				ProjectKey: datastore.KeyForObj(c, &config.Project{Name: "chromium"}),
@@ -631,17 +631,17 @@ func TestHandleBuild(t *testing.T) {
 				Status:     config.Open,
 				Timestamp:  initialTimestamp,
 			}
-			So(datastore.Put(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 
 			// Handle a new build.
 			build := dummyBuildWithFailingSteps(buildbucketpb.Status_FAILURE, []string{"step1", "step2"})
 			history := mockHistoryFunc(map[string][]*gitpb.Commit{})
-			So(handleBuild(c, build, mockCheckoutFunc(nil), history), ShouldBeNil)
+			assert.Loosely(t, handleBuild(c, build, mockCheckoutFunc(nil), history), should.BeNil)
 
 			// Fetch the new tree closer.
-			So(datastore.Get(c, tc), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(c, tc), should.BeNil)
 
-			So(tc.Message, ShouldEqual, `Builder test-builder-tree-closer failed on steps "step1", "step2"`)
+			assert.Loosely(t, tc.Message, should.Equal(`Builder test-builder-tree-closer failed on steps "step1", "step2"`))
 		})
 	})
 }
@@ -679,8 +679,8 @@ func mockCheckoutReturnsErrorFunc() CheckoutFunc {
 func TestExtractBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("builds_v2 pubsub message", t, func() {
-		Convey("success", func() {
+	ftt.Run("builds_v2 pubsub message", t, func(t *ftt.Test) {
+		t.Run("success", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			props := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -717,21 +717,21 @@ func TestExtractBuild(t *testing.T) {
 				Steps: []*buildbucketpb.Step{{Name: "step1"}},
 			}
 			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := extractBuild(ctx, pubsubMsg)
-			So(err, ShouldBeNil)
-			So(b.Id, ShouldEqual, originalBuild.Id)
-			So(b.Builder, ShouldResembleProto, originalBuild.Builder)
-			So(b.Status, ShouldEqual, buildbucketpb.Status_SUCCESS)
-			So(b.Infra, ShouldResembleProto, originalBuild.Infra)
-			So(b.Input, ShouldResembleProto, originalBuild.Input)
-			So(b.Output, ShouldResembleProto, originalBuild.Output)
-			So(b.Steps, ShouldResembleProto, originalBuild.Steps)
-			So(b.BuildbucketHostname, ShouldEqual, originalBuild.Infra.Buildbucket.Hostname)
-			So(b.EmailNotify, ShouldResemble, []EmailNotify{{Email: "abc@gmail.com"}})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
+			assert.Loosely(t, b.Builder, should.Resemble(originalBuild.Builder))
+			assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_SUCCESS))
+			assert.Loosely(t, b.Infra, should.Resemble(originalBuild.Infra))
+			assert.Loosely(t, b.Input, should.Resemble(originalBuild.Input))
+			assert.Loosely(t, b.Output, should.Resemble(originalBuild.Output))
+			assert.Loosely(t, b.Steps, should.Resemble(originalBuild.Steps))
+			assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
+			assert.Loosely(t, b.EmailNotify, should.Resemble([]EmailNotify{{Email: "abc@gmail.com"}}))
 		})
 
-		Convey("success with no email_notify field", func() {
+		t.Run("success with no email_notify field", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			props := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -768,21 +768,21 @@ func TestExtractBuild(t *testing.T) {
 				Steps: []*buildbucketpb.Step{{Name: "step1"}},
 			}
 			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := extractBuild(ctx, pubsubMsg)
-			So(err, ShouldBeNil)
-			So(b.Id, ShouldEqual, originalBuild.Id)
-			So(b.Builder, ShouldResembleProto, originalBuild.Builder)
-			So(b.Status, ShouldEqual, buildbucketpb.Status_CANCELED)
-			So(b.Infra, ShouldResembleProto, originalBuild.Infra)
-			So(b.Input, ShouldResembleProto, originalBuild.Input)
-			So(b.Output, ShouldResembleProto, originalBuild.Output)
-			So(b.Steps, ShouldResembleProto, originalBuild.Steps)
-			So(b.BuildbucketHostname, ShouldEqual, originalBuild.Infra.Buildbucket.Hostname)
-			So(b.EmailNotify, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b.Id, should.Equal(originalBuild.Id))
+			assert.Loosely(t, b.Builder, should.Resemble(originalBuild.Builder))
+			assert.Loosely(t, b.Status, should.Equal(buildbucketpb.Status_CANCELED))
+			assert.Loosely(t, b.Infra, should.Resemble(originalBuild.Infra))
+			assert.Loosely(t, b.Input, should.Resemble(originalBuild.Input))
+			assert.Loosely(t, b.Output, should.Resemble(originalBuild.Output))
+			assert.Loosely(t, b.Steps, should.Resemble(originalBuild.Steps))
+			assert.Loosely(t, b.BuildbucketHostname, should.Equal(originalBuild.Infra.Buildbucket.Hostname))
+			assert.Loosely(t, b.EmailNotify, should.BeNil)
 		})
 
-		Convey("incompleted build", func() {
+		t.Run("incompleted build", func(t *ftt.Test) {
 			ctx := memory.Use(context.Background())
 			originalBuild := &buildbucketpb.Build{
 				Id: 123,
@@ -802,10 +802,10 @@ func TestExtractBuild(t *testing.T) {
 				Steps:  []*buildbucketpb.Step{{Name: "step1"}},
 			}
 			pubsubMsg, err := makeBuildsV2PubsubMsg(originalBuild)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b, err := extractBuild(ctx, pubsubMsg)
-			So(err, ShouldBeNil)
-			So(b, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.BeNil)
 		})
 
 	})

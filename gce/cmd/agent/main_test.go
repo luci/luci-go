@@ -18,13 +18,15 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSubstitute(t *testing.T) {
 	t.Parallel()
 
-	Convey("substitute", t, func() {
+	ftt.Run("substitute", t, func(t *ftt.Test) {
 		c := context.Background()
 		subs := map[string]string{
 			"Field1": "Value1",
@@ -32,22 +34,22 @@ func TestSubstitute(t *testing.T) {
 			"Field3": "Value3",
 		}
 
-		Convey("err", func() {
+		t.Run("err", func(t *ftt.Test) {
 			s, err := substitute(c, "Test {{", subs)
-			So(err, ShouldNotBeNil)
-			So(s, ShouldEqual, "")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, s, should.BeEmpty)
 		})
 
-		Convey("partial", func() {
+		t.Run("partial", func(t *ftt.Test) {
 			s, err := substitute(c, "Test {{.Field2}}", subs)
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, "Test Value2")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Equal("Test Value2"))
 		})
 
-		Convey("full", func() {
+		t.Run("full", func(t *ftt.Test) {
 			s, err := substitute(c, "Test {{.Field1}} {{.Field2}} {{.Field3}}", subs)
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, "Test Value1 Value2 Value3")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Equal("Test Value1 Value2 Value3"))
 		})
 	})
 }

@@ -17,20 +17,26 @@
 
 package demo
 
-import "testing"
-import "google.golang.org/appengine/aetest"
-import . "github.com/smartystreets/goconvey/convey"
+import (
+	"testing"
+
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/datastore"
+)
 
 // START OMIT
 
-import "google.golang.org/appengine/datastore" // HL
+// HL
 
 func TestNative(t *testing.T) {
 	type Model struct{ A, B int } // HL
 
-	Convey("Put/Get", t, func() {
+	ftt.Run("Put/Get", t, func(t *ftt.Test) {
 		ctx, shtap, err := aetest.NewContext()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer shtap()
 
 		keys := []*datastore.Key{
@@ -38,11 +44,11 @@ func TestNative(t *testing.T) {
 			datastore.NewKey(ctx, "Model", "or another", 0, nil), // HL
 		}
 		_, err = datastore.PutMulti(ctx, keys, []*Model{{10, 20}, {20, 30}}) // HL
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ms := make([]*Model, 2)
-		So(datastore.GetMulti(ctx, keys, ms), ShouldBeNil) // HL
-		So(ms, ShouldResemble, []*Model{{10, 20}, {20, 30}})
+		assert.Loosely(t, datastore.GetMulti(ctx, keys, ms), should.BeNil) // HL
+		assert.Loosely(t, ms, should.Resemble([]*Model{{10, 20}, {20, 30}}))
 	})
 }
 

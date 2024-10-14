@@ -19,16 +19,18 @@ import (
 	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"cloud.google.com/go/bigquery"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBQSchemaUpdater(t *testing.T) {
 	ctx := context.Background()
-	Convey("Update", t, func() {
+	ftt.Run("Update", t, func(t *ftt.Test) {
 		ts := localTableStore{}
 		datasetID := "test_dataset"
 		tableID := "test_table"
@@ -54,24 +56,24 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Schema:    tc,
 			}
 			err := updateFromTableDef(ctx, true, ts, td)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			got, err := ts.getTableMetadata(ctx, datasetID, tableID)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			want := &bigquery.TableMetadata{
 				Schema:           tc,
 				TimePartitioning: &bigquery.TimePartitioning{},
 			}
-			So(got, ShouldResemble, want)
+			assert.Loosely(t, got, should.Resemble(want))
 		}
 	})
-	Convey("Schema", t, func() {
+	ftt.Run("Schema", t, func(t *ftt.Test) {
 		descBytes, err := os.ReadFile("testdata/event.desc")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		var desc descriptorpb.FileDescriptorSet
-		So(proto.Unmarshal(descBytes, &desc), ShouldBeNil)
+		assert.Loosely(t, proto.Unmarshal(descBytes, &desc), should.BeNil)
 		schema, description, err := schemaFromMessage(&desc, "testdata.BuildEvent")
-		So(err, ShouldBeNil)
-		So(description, ShouldEqual, "Build events.\n\nLine after blank line.")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, description, should.Equal("Build events.\n\nLine after blank line."))
 		ioSchema := bigquery.Schema{
 			{
 				Name:     "properties",
@@ -89,7 +91,7 @@ func TestBQSchemaUpdater(t *testing.T) {
 				},
 			},
 		}
-		So(schema, ShouldResemble, bigquery.Schema{
+		assert.Loosely(t, schema, should.Resemble(bigquery.Schema{
 			{
 				Name:        "build_id",
 				Description: "Universal build id.",
@@ -131,6 +133,6 @@ func TestBQSchemaUpdater(t *testing.T) {
 				Name: "bq_type_override",
 				Type: bigquery.TimestampFieldType,
 			},
-		})
+		}))
 	})
 }

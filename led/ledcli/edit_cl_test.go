@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseCLURL(t *testing.T) {
@@ -122,10 +122,10 @@ func TestParseCLURL(t *testing.T) {
 		},
 	}
 
-	Convey(`parseCrChangeListURL`, t, func() {
+	ftt.Run(`parseCrChangeListURL`, t, func(t *ftt.Test) {
 		for _, tc := range cases {
 			tc := tc
-			Convey(fmt.Sprintf("%q", tc.url), func() {
+			t.Run(fmt.Sprintf("%q", tc.url), func(t *ftt.Test) {
 				cl, err := parseCrChangeListURL(tc.url, func(string, int64) (string, int64, error) {
 					if tc.resolvePatchset != 0 {
 						return "project", tc.resolvePatchset, nil
@@ -133,11 +133,11 @@ func TestParseCLURL(t *testing.T) {
 					return "", 0, errors.New("TEST: resolvePatchset not set")
 				})
 				if tc.err != "" {
-					So(err, ShouldErrLike, tc.err)
-					So(cl, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
+					assert.Loosely(t, cl, should.BeNil)
 				} else {
-					So(err, ShouldBeNil)
-					So(cl, ShouldResembleProto, tc.cl)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cl, should.Resemble(tc.cl))
 				}
 			})
 		}

@@ -22,132 +22,132 @@ import (
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFakeProtocol(t *testing.T) {
 	t.Parallel()
 
-	Convey(`"fake" protocol Client`, t, func() {
+	ftt.Run(`"fake" protocol Client`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
-		Convey(`good`, func() {
+		t.Run(`good`, func(t *ftt.Test) {
 			scFake, client := NewUnregisteredFake("namespace")
 
-			Convey(`can use a text stream`, func() {
+			t.Run(`can use a text stream`, func(t *ftt.Test) {
 				stream, err := client.NewStream(ctx, "test")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				n, err := stream.Write([]byte("hi"))
-				So(n, ShouldEqual, 2)
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, n, should.Equal(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 
 				streamData := scFake.Data()["namespace/test"]
-				So(streamData, ShouldNotBeNil)
-				So(streamData.GetStreamData(), ShouldEqual, "hi")
-				So(streamData.GetDatagrams(), ShouldResemble, []string{})
-				So(streamData.GetFlags(), ShouldResemble, streamproto.Flags{
+				assert.Loosely(t, streamData, should.NotBeNil)
+				assert.Loosely(t, streamData.GetStreamData(), should.Equal("hi"))
+				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{}))
+				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestTimeUTC),
 					Tags:        nil,
-				})
+				}))
 			})
 
-			Convey(`can use a binary stream`, func() {
+			t.Run(`can use a binary stream`, func(t *ftt.Test) {
 				stream, err := client.NewStream(ctx, "test", Binary())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				n, err := stream.Write([]byte{0, 1, 2, 3})
-				So(n, ShouldEqual, 4)
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, n, should.Equal(4))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 
 				streamData := scFake.Data()["namespace/test"]
-				So(streamData, ShouldNotBeNil)
-				So(streamData.GetStreamData(), ShouldEqual, "\x00\x01\x02\x03")
-				So(streamData.GetDatagrams(), ShouldResemble, []string{})
-				So(streamData.GetFlags(), ShouldResemble, streamproto.Flags{
+				assert.Loosely(t, streamData, should.NotBeNil)
+				assert.Loosely(t, streamData.GetStreamData(), should.Equal("\x00\x01\x02\x03"))
+				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{}))
+				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "application/octet-stream",
 					Type:        streamproto.StreamType(logpb.StreamType_BINARY),
 					Timestamp:   clockflag.Time(testclock.TestTimeUTC),
 					Tags:        nil,
-				})
+				}))
 			})
 
-			Convey(`can use a datagram stream`, func() {
+			t.Run(`can use a datagram stream`, func(t *ftt.Test) {
 				stream, err := client.NewDatagramStream(ctx, "test")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(stream.WriteDatagram([]byte("hi")), ShouldBeNil)
-				So(stream.WriteDatagram([]byte("there")), ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, stream.WriteDatagram([]byte("hi")), should.BeNil)
+				assert.Loosely(t, stream.WriteDatagram([]byte("there")), should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 
 				streamData := scFake.Data()["namespace/test"]
-				So(streamData, ShouldNotBeNil)
-				So(streamData.GetStreamData(), ShouldEqual, "")
-				So(streamData.GetDatagrams(), ShouldResemble, []string{"hi", "there"})
-				So(streamData.GetFlags(), ShouldResemble, streamproto.Flags{
+				assert.Loosely(t, streamData, should.NotBeNil)
+				assert.Loosely(t, streamData.GetStreamData(), should.BeEmpty)
+				assert.Loosely(t, streamData.GetDatagrams(), should.Resemble([]string{"hi", "there"}))
+				assert.Loosely(t, streamData.GetFlags(), should.Resemble(streamproto.Flags{
 					Name:        "namespace/test",
 					ContentType: "application/x-logdog-datagram",
 					Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 					Timestamp:   clockflag.Time(testclock.TestTimeUTC),
 					Tags:        nil,
-				})
+				}))
 			})
 		})
 
-		Convey(`bad`, func() {
-			Convey(`duplicate stream`, func() {
+		t.Run(`bad`, func(t *ftt.Test) {
+			t.Run(`duplicate stream`, func(t *ftt.Test) {
 				_, client := NewUnregisteredFake("")
 
 				stream, err := client.NewStream(ctx, "test")
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 
 				_, err = client.NewStream(ctx, "test")
-				So(err, ShouldErrLike, `stream "test": stream "test" already dialed`)
+				assert.Loosely(t, err, should.ErrLike(`stream "test": stream "test" already dialed`))
 
 				_, err = client.NewStream(ctx, "test", Binary())
-				So(err, ShouldErrLike, `stream "test": stream "test" already dialed`)
+				assert.Loosely(t, err, should.ErrLike(`stream "test": stream "test" already dialed`))
 
 				_, err = client.NewDatagramStream(ctx, "test")
-				So(err, ShouldErrLike, `datagram stream "test": stream "test" already dialed`)
+				assert.Loosely(t, err, should.ErrLike(`datagram stream "test": stream "test" already dialed`))
 			})
 
-			Convey(`simulated stream errors`, func() {
-				Convey(`connection error`, func() {
+			t.Run(`simulated stream errors`, func(t *ftt.Test) {
+				t.Run(`connection error`, func(t *ftt.Test) {
 					scFake, client := NewUnregisteredFake("")
 					scFake.SetError(errors.New("bad juju"))
 
 					_, err := client.NewStream(ctx, "test")
-					So(err, ShouldErrLike, `stream "test": bad juju`)
+					assert.Loosely(t, err, should.ErrLike(`stream "test": bad juju`))
 				})
 
-				Convey(`use of a stream after close`, func() {
+				t.Run(`use of a stream after close`, func(t *ftt.Test) {
 					_, client := NewUnregisteredFake("")
 
 					stream, err := client.NewStream(ctx, "test")
-					So(err, ShouldBeNil)
-					So(stream.Close(), ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, stream.Close(), should.BeNil)
 
-					So(stream.Close(), ShouldErrLike, io.ErrClosedPipe)
+					assert.Loosely(t, stream.Close(), should.ErrLike(io.ErrClosedPipe))
 					_, err = stream.Write([]byte("hi"))
-					So(err, ShouldErrLike, io.ErrClosedPipe)
+					assert.Loosely(t, err, should.ErrLike(io.ErrClosedPipe))
 
 					stream2, err := client.NewDatagramStream(ctx, "test2")
-					So(err, ShouldBeNil)
-					So(stream2.Close(), ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, stream2.Close(), should.BeNil)
 
-					So(stream2.Close(), ShouldErrLike, io.ErrClosedPipe)
-					So(stream2.WriteDatagram([]byte("hi")), ShouldErrLike, io.ErrClosedPipe)
+					assert.Loosely(t, stream2.Close(), should.ErrLike(io.ErrClosedPipe))
+					assert.Loosely(t, stream2.WriteDatagram([]byte("hi")), should.ErrLike(io.ErrClosedPipe))
 				})
 			})
 		})

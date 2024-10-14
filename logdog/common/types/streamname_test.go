@@ -20,29 +20,31 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStreamNameAsFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Given an FlagSet configured with a StreamName flag`, t, func() {
+	ftt.Run(`Given an FlagSet configured with a StreamName flag`, t, func(t *ftt.Test) {
 		var stream StreamName
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.Var(&stream, "stream", "The stream name.")
 
-		Convey(`When the stream flag is set to "test"`, func() {
+		t.Run(`When the stream flag is set to "test"`, func(t *ftt.Test) {
 			err := fs.Parse([]string{"-stream", "test"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`The stream variable should be populated with "test".`, func() {
-				So(stream, ShouldEqual, StreamName("test"))
+			t.Run(`The stream variable should be populated with "test".`, func(t *ftt.Test) {
+				assert.Loosely(t, stream, should.Equal(StreamName("test")))
 			})
 		})
 
-		Convey(`An invalid stream name should fail to parse.`, func() {
+		t.Run(`An invalid stream name should fail to parse.`, func(t *ftt.Test) {
 			err := fs.Parse([]string{"-stream", "_beginsWithUnderscore"})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
@@ -50,7 +52,7 @@ func TestStreamNameAsFlag(t *testing.T) {
 func TestStreamName(t *testing.T) {
 	t.Parallel()
 
-	Convey(`MakeStreamName`, t, func() {
+	ftt.Run(`MakeStreamName`, t, func(t *ftt.Test) {
 		type e struct {
 			t []string // Test value.
 			e string   // Expected value.
@@ -61,29 +63,29 @@ func TestStreamName(t *testing.T) {
 			{[]string{"", "foo", "ba!r", "¿baz"}, "FILL/foo/ba_r/FILL_baz"},
 			{[]string{"foo", "bar baz"}, "foo/bar_baz"},
 		} {
-			Convey(fmt.Sprintf(`Transforms "%#v" into "%s".`, entry.t, entry.e), func() {
+			t.Run(fmt.Sprintf(`Transforms "%#v" into "%s".`, entry.t, entry.e), func(t *ftt.Test) {
 				s, err := MakeStreamName("FILL", entry.t...)
-				So(err, ShouldBeNil)
-				So(s, ShouldEqual, StreamName(entry.e))
-				So(s.Validate(), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Equal(StreamName(entry.e)))
+				assert.Loosely(t, s.Validate(), should.BeNil)
 			})
 		}
 
-		Convey(`Fails if the fill string is not a valid path.`, func() {
+		t.Run(`Fails if the fill string is not a valid path.`, func(t *ftt.Test) {
 			_, err := MakeStreamName("__not_a_path", "", "b", "c")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 
 			_, err = MakeStreamName("", "", "b", "c")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`Doesn't care about the fill string if it's not needed.`, func() {
+		t.Run(`Doesn't care about the fill string if it's not needed.`, func(t *ftt.Test) {
 			_, err := MakeStreamName("", "a", "b", "c")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey(`StreamName.Trim`, t, func() {
+	ftt.Run(`StreamName.Trim`, t, func(t *ftt.Test) {
 		type e struct {
 			t string     // Test value.
 			e StreamName // Expected value.
@@ -95,13 +97,13 @@ func TestStreamName(t *testing.T) {
 			{`foo/bar/`, `foo/bar`},
 			{`//foo//bar///`, `foo//bar`},
 		} {
-			Convey(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func() {
-				So(StreamName(entry.t).Trim(), ShouldEqual, entry.e)
+			t.Run(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func(t *ftt.Test) {
+				assert.Loosely(t, StreamName(entry.t).Trim(), should.Equal(entry.e))
 			})
 		}
 	})
 
-	Convey(`StreamName.Namespaces`, t, func() {
+	ftt.Run(`StreamName.Namespaces`, t, func(t *ftt.Test) {
 		type e struct {
 			t string       // Test value.
 			e []StreamName // Expected value.
@@ -115,13 +117,13 @@ func TestStreamName(t *testing.T) {
 			// This is malformed input (GIGO), but don't want infinite loop
 			{`/`, []StreamName{`/`, ``}},
 		} {
-			Convey(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func() {
-				So(StreamName(entry.t).Namespaces(), ShouldResemble, entry.e)
+			t.Run(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func(t *ftt.Test) {
+				assert.Loosely(t, StreamName(entry.t).Namespaces(), should.Resemble(entry.e))
 			})
 		}
 	})
 
-	Convey(`StreamName.AsNamespace`, t, func() {
+	ftt.Run(`StreamName.AsNamespace`, t, func(t *ftt.Test) {
 		type e struct {
 			t string     // Test value.
 			e StreamName // Expected value.
@@ -133,13 +135,13 @@ func TestStreamName(t *testing.T) {
 			{`foo/bar`, `foo/bar/`},
 			{`foo/bar/`, `foo/bar/`},
 		} {
-			Convey(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func() {
-				So(StreamName(entry.t).AsNamespace(), ShouldEqual, entry.e)
+			t.Run(fmt.Sprintf(`On "%s", returns "%s".`, entry.t, entry.e), func(t *ftt.Test) {
+				assert.Loosely(t, StreamName(entry.t).AsNamespace(), should.Equal(entry.e))
 			})
 		}
 	})
 
-	Convey(`StreamName.Validate`, t, func() {
+	ftt.Run(`StreamName.Validate`, t, func(t *ftt.Test) {
 		type e struct {
 			t string // Test value
 			v bool   // Is the test value expected to be valid?
@@ -156,23 +158,23 @@ func TestStreamName(t *testing.T) {
 			{`foo/_bar/baz`, false}, // Segment begins with non-alphanumeric.
 		} {
 			if entry.v {
-				Convey(fmt.Sprintf(`"%s" is valid.`, entry.t), func() {
-					So(StreamName(entry.t).Validate(), ShouldBeNil)
+				t.Run(fmt.Sprintf(`"%s" is valid.`, entry.t), func(t *ftt.Test) {
+					assert.Loosely(t, StreamName(entry.t).Validate(), should.BeNil)
 				})
 			} else {
-				Convey(fmt.Sprintf(`"%s" is invalid.`, entry.t), func() {
-					So(StreamName(entry.t).Validate(), ShouldNotBeNil)
+				t.Run(fmt.Sprintf(`"%s" is invalid.`, entry.t), func(t *ftt.Test) {
+					assert.Loosely(t, StreamName(entry.t).Validate(), should.NotBeNil)
 				})
 			}
 		}
 
-		Convey(`A stream name that is too long will not validate.`, func() {
-			So(StreamName(strings.Repeat("A", MaxStreamNameLength)).Validate(), ShouldBeNil)
-			So(StreamName(strings.Repeat("A", MaxStreamNameLength+1)).Validate(), ShouldNotBeNil)
+		t.Run(`A stream name that is too long will not validate.`, func(t *ftt.Test) {
+			assert.Loosely(t, StreamName(strings.Repeat("A", MaxStreamNameLength)).Validate(), should.BeNil)
+			assert.Loosely(t, StreamName(strings.Repeat("A", MaxStreamNameLength+1)).Validate(), should.NotBeNil)
 		})
 	})
 
-	Convey(`StreamName.Join`, t, func() {
+	ftt.Run(`StreamName.Join`, t, func(t *ftt.Test) {
 		type e struct {
 			a string // Initial stream name.
 			b string // Join value.
@@ -185,13 +187,13 @@ func TestStreamName(t *testing.T) {
 			{"", "bar", "/+/bar"},
 			{"/foo/", "/bar/baz/", "foo/+/bar/baz"},
 		} {
-			Convey(fmt.Sprintf(`Joining "%s" to "%s" yields "%s".`, entry.a, entry.b, entry.e), func() {
-				So(StreamName(entry.a).Join(StreamName(entry.b)), ShouldEqual, StreamPath(entry.e))
+			t.Run(fmt.Sprintf(`Joining "%s" to "%s" yields "%s".`, entry.a, entry.b, entry.e), func(t *ftt.Test) {
+				assert.Loosely(t, StreamName(entry.a).Join(StreamName(entry.b)), should.Equal(StreamPath(entry.e)))
 			})
 		}
 	})
 
-	Convey(`StreamName.Segments, StreamName.SegmentCount`, t, func() {
+	ftt.Run(`StreamName.Segments, StreamName.SegmentCount`, t, func(t *ftt.Test) {
 		type e struct {
 			s StreamName // Initial stream name.
 			p []string   // Expected split pieces.
@@ -203,15 +205,15 @@ func TestStreamName(t *testing.T) {
 			{StreamName("foo/bar"), []string{"foo", "bar"}, 2},
 			{StreamName("foo/bar/baz"), []string{"foo", "bar", "baz"}, 3},
 		} {
-			Convey(fmt.Sprintf(`Stream Name "%s" has %d segments: %v`, entry.s, entry.n, entry.p), func() {
-				So(entry.s.Segments(), ShouldResemble, entry.p)
-				So(len(entry.s.Segments()), ShouldEqual, entry.s.SegmentCount())
-				So(len(entry.s.Segments()), ShouldEqual, entry.n)
+			t.Run(fmt.Sprintf(`Stream Name "%s" has %d segments: %v`, entry.s, entry.n, entry.p), func(t *ftt.Test) {
+				assert.Loosely(t, entry.s.Segments(), should.Resemble(entry.p))
+				assert.Loosely(t, len(entry.s.Segments()), should.Equal(entry.s.SegmentCount()))
+				assert.Loosely(t, len(entry.s.Segments()), should.Equal(entry.n))
 			})
 		}
 	})
 
-	Convey(`StreamName.Split`, t, func() {
+	ftt.Run(`StreamName.Split`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			s    StreamName
 			base StreamName
@@ -223,10 +225,10 @@ func TestStreamName(t *testing.T) {
 			{"foo/bar", "foo", "bar"},
 			{"foo/bar/baz", "foo/bar", "baz"},
 		} {
-			Convey(fmt.Sprintf(`Stream name %q splits into %q and %q.`, tc.s, tc.base, tc.last), func() {
+			t.Run(fmt.Sprintf(`Stream name %q splits into %q and %q.`, tc.s, tc.base, tc.last), func(t *ftt.Test) {
 				base, last := tc.s.Split()
-				So(base, ShouldEqual, tc.base)
-				So(last, ShouldEqual, tc.last)
+				assert.Loosely(t, base, should.Equal(tc.base))
+				assert.Loosely(t, last, should.Equal(tc.last))
 			})
 		}
 	})
@@ -235,7 +237,7 @@ func TestStreamName(t *testing.T) {
 func TestStreamPath(t *testing.T) {
 	t.Parallel()
 
-	Convey(`StreamPath.Split, StreamPath.Validate`, t, func() {
+	ftt.Run(`StreamPath.Split, StreamPath.Validate`, t, func(t *ftt.Test) {
 		type e struct {
 			p      string     // The stream path.
 			prefix StreamName // The split prefix.
@@ -256,26 +258,26 @@ func TestStreamPath(t *testing.T) {
 			{"/+/", "", "", true, false},
 			{"foo/bar/+/baz/qux", "foo/bar", "baz/qux", true, true},
 		} {
-			Convey(fmt.Sprintf(`Stream Path "%s" splits into "%s" and "%s".`, entry.p, entry.prefix, entry.name), func() {
+			t.Run(fmt.Sprintf(`Stream Path "%s" splits into "%s" and "%s".`, entry.p, entry.prefix, entry.name), func(t *ftt.Test) {
 				prefix, sep, name := StreamPath(entry.p).SplitParts()
-				So(prefix, ShouldEqual, entry.prefix)
-				So(sep, ShouldEqual, entry.sep)
-				So(name, ShouldEqual, entry.name)
+				assert.Loosely(t, prefix, should.Equal(entry.prefix))
+				assert.Loosely(t, sep, should.Equal(entry.sep))
+				assert.Loosely(t, name, should.Equal(entry.name))
 			})
 
 			if entry.valid {
-				Convey(fmt.Sprintf(`Stream Path "%s" is valid`, entry.p), func() {
-					So(StreamPath(entry.p).Validate(), ShouldBeNil)
+				t.Run(fmt.Sprintf(`Stream Path "%s" is valid`, entry.p), func(t *ftt.Test) {
+					assert.Loosely(t, StreamPath(entry.p).Validate(), should.BeNil)
 				})
 			} else {
-				Convey(fmt.Sprintf(`Stream Path "%s" is not valid`, entry.p), func() {
-					So(StreamPath(entry.p).Validate(), ShouldNotBeNil)
+				t.Run(fmt.Sprintf(`Stream Path "%s" is not valid`, entry.p), func(t *ftt.Test) {
+					assert.Loosely(t, StreamPath(entry.p).Validate(), should.NotBeNil)
 				})
 			}
 		}
 	})
 
-	Convey(`StreamPath.SplitLast`, t, func() {
+	ftt.Run(`StreamPath.SplitLast`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			p StreamPath
 			c []string
@@ -286,7 +288,7 @@ func TestStreamPath(t *testing.T) {
 			{"foo/bar/+/baz", []string{"baz", "+", "bar", "foo"}},
 			{"/foo/+/bar/", []string{"", "bar", "+", "/foo"}},
 		} {
-			Convey(fmt.Sprintf(`Splitting %q repeatedly yields %v`, tc.p, tc.c), func() {
+			t.Run(fmt.Sprintf(`Splitting %q repeatedly yields %v`, tc.p, tc.c), func(t *ftt.Test) {
 				var parts []string
 				p := tc.p
 				for {
@@ -298,7 +300,7 @@ func TestStreamPath(t *testing.T) {
 						break
 					}
 				}
-				So(parts, ShouldResemble, tc.c)
+				assert.Loosely(t, parts, should.Resemble(tc.c))
 			})
 		}
 	})

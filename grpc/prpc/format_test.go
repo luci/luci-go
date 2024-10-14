@@ -17,18 +17,19 @@ package prpc
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFormat(t *testing.T) {
-	Convey("requestFormat", t, func() {
+	ftt.Run("requestFormat", t, func(t *ftt.Test) {
 		test := func(contentType string, expectedFormat Format, expectedErr any) {
-			Convey("Content-Type: "+contentType, func() {
+			t.Run("Content-Type: "+contentType, func(t *ftt.Test) {
 				actualFormat, err := FormatFromContentType(contentType)
-				So(err, ShouldErrLike, expectedErr)
+				assert.Loosely(t, err, should.ErrLike(expectedErr))
 				if err == nil {
-					So(actualFormat, ShouldEqual, expectedFormat)
+					assert.Loosely(t, actualFormat, should.Equal(expectedFormat))
 				}
 			})
 		}

@@ -20,135 +20,134 @@ import (
 
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gce/api/config/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Delete", t, func() {
+	ftt.Run("Delete", t, func(t *ftt.Test) {
 		c := context.Background()
 		srv := &Config{}
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			cfg, err := srv.Delete(c, nil)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			cfg, err := srv.Delete(c, &config.DeleteRequest{})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
 		})
 
-		Convey("ID", func() {
+		t.Run("ID", func(t *ftt.Test) {
 			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
 		})
 
-		Convey("deleted", func() {
+		t.Run("deleted", func(t *ftt.Test) {
 			srv.cfg.Store("id", &config.Config{})
 			cfg, err := srv.Delete(c, &config.DeleteRequest{
 				Id: "id",
 			})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
 			_, ok := srv.cfg.Load("id")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 	})
 
-	Convey("Ensure", t, func() {
+	ftt.Run("Ensure", t, func(t *ftt.Test) {
 		c := context.Background()
 		srv := &Config{}
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, nil)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, (*config.Config)(nil))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, &config.EnsureRequest{})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, (*config.Config)(nil))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
-		Convey("ID", func() {
+		t.Run("ID", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
 			})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, (*config.Config)(nil))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble((*config.Config)(nil)))
 			_, ok := srv.cfg.Load("id")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
-		Convey("config", func() {
+		t.Run("config", func(t *ftt.Test) {
 			cfg, err := srv.Ensure(c, &config.EnsureRequest{
 				Id: "id",
 				Config: &config.Config{
 					Prefix: "prefix",
 				},
 			})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&config.Config{
 				Prefix: "prefix",
-			})
+			}))
 			_, ok := srv.cfg.Load("id")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 	})
 
-	Convey("Get", t, func() {
+	ftt.Run("Get", t, func(t *ftt.Test) {
 		c := context.Background()
 		srv := &Config{}
 
-		Convey("not found", func() {
-			Convey("nil", func() {
+		t.Run("not found", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				cfg, err := srv.Get(c, nil)
-				So(err, ShouldErrLike, "no config found")
-				So(cfg, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("no config found"))
+				assert.Loosely(t, cfg, should.BeNil)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				cfg, err := srv.Get(c, &config.GetRequest{})
-				So(err, ShouldErrLike, "no config found")
-				So(cfg, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("no config found"))
+				assert.Loosely(t, cfg, should.BeNil)
 			})
 
-			Convey("ID", func() {
+			t.Run("ID", func(t *ftt.Test) {
 				cfg, err := srv.Get(c, &config.GetRequest{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "no config found")
-				So(cfg, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("no config found"))
+				assert.Loosely(t, cfg, should.BeNil)
 			})
 		})
 
-		Convey("found", func() {
+		t.Run("found", func(t *ftt.Test) {
 			srv.cfg.Store("id", &config.Config{
 				Prefix: "prefix",
 			})
 			cfg, err := srv.Get(c, &config.GetRequest{
 				Id: "id",
 			})
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&config.Config{
 				Prefix: "prefix",
-			})
+			}))
 		})
 	})
 }

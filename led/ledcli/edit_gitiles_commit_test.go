@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseGitilesURL(t *testing.T) {
@@ -100,17 +100,17 @@ func TestParseGitilesURL(t *testing.T) {
 		},
 	}
 
-	Convey(`parseGitilesURL`, t, func() {
+	ftt.Run(`parseGitilesURL`, t, func(t *ftt.Test) {
 		for _, tc := range cases {
 			tc := tc
-			Convey(fmt.Sprintf("%q", tc.url), func() {
+			t.Run(fmt.Sprintf("%q", tc.url), func(t *ftt.Test) {
 				commit, err := parseGitilesURL(tc.url, tc.ref)
 				if tc.err != "" {
-					So(commit, ShouldBeNil)
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, commit, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				} else {
-					So(commit, ShouldResembleProto, tc.commit)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, commit, should.Resemble(tc.commit))
+					assert.Loosely(t, err, should.BeNil)
 				}
 			})
 		}

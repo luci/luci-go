@@ -21,45 +21,48 @@ import (
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/server/auth"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestServiceAuth(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 
 		svr := New(ServerSettings{NumQueues: 2}).(*logdog.DecoratedServices)
 
-		Convey(`With an application config installed`, func() {
-			Convey(`Will reject users if there is an authentication error (no state).`, func() {
+		t.Run(`With an application config installed`, func(t *ftt.Test) {
+			t.Run(`Will reject users if there is an authentication error (no state).`, func(t *ftt.Test) {
 				c = auth.WithState(c, nil)
 
 				_, err := svr.Prelude(c, "test", nil)
-				So(err, ShouldBeRPCInternal)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 			})
 
-			Convey(`With an authentication state`, func() {
-				Convey(`Will reject users who are not logged in.`, func() {
+			t.Run(`With an authentication state`, func(t *ftt.Test) {
+				t.Run(`Will reject users who are not logged in.`, func(t *ftt.Test) {
 					_, err := svr.Prelude(c, "test", nil)
-					So(err, ShouldBeRPCPermissionDenied)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 				})
 
-				Convey(`When a user is logged in`, func() {
+				t.Run(`When a user is logged in`, func(t *ftt.Test) {
 					env.AuthState.Identity = "user:user@example.com"
 
-					Convey(`Will reject users who are not members of the service group.`, func() {
+					t.Run(`Will reject users who are not members of the service group.`, func(t *ftt.Test) {
 						_, err := svr.Prelude(c, "test", nil)
-						So(err, ShouldBeRPCPermissionDenied)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 					})
 
-					Convey(`Will allow users who are members of the service group.`, func() {
+					t.Run(`Will allow users who are members of the service group.`, func(t *ftt.Test) {
 						env.ActAsService()
 
 						_, err := svr.Prelude(c, "test", nil)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 					})
 				})
 			})

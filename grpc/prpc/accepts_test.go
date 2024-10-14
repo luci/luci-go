@@ -18,19 +18,20 @@ import (
 	"net/http"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAccept(t *testing.T) {
 	t.Parallel()
 
-	Convey("parseAccept", t, func() {
+	ftt.Run("parseAccept", t, func(t *ftt.Test) {
 		test := func(value string, expectedErr any, expectedTypes ...acceptItem) {
-			Convey("mediaType="+value, func() {
+			t.Run("mediaType="+value, func(t *ftt.Test) {
 				actual, err := parseAccept(value)
-				So(err, ShouldErrLike, expectedErr)
-				So(actual, ShouldResemble, accept(expectedTypes))
+				assert.Loosely(t, err, should.ErrLike(expectedErr))
+				assert.Loosely(t, actual, should.Resemble(accept(expectedTypes)))
 			})
 		}
 		test("", nil)
@@ -122,12 +123,12 @@ func TestAccept(t *testing.T) {
 		test("text/html;q=q", "q parameter: expected a floating-point number")
 	})
 
-	Convey("qParamSplit", t, func() {
+	ftt.Run("qParamSplit", t, func(t *ftt.Test) {
 		test := func(item, mediaType, qValue string) {
-			Convey(item, func() {
+			t.Run(item, func(t *ftt.Test) {
 				actualMediaType, actualQValue := qParamSplit(item)
-				So(actualMediaType, ShouldEqual, mediaType)
-				So(actualQValue, ShouldEqual, qValue)
+				assert.Loosely(t, actualMediaType, should.Equal(mediaType))
+				assert.Loosely(t, actualQValue, should.Equal(qValue))
 			})
 		}
 
@@ -160,32 +161,32 @@ func TestAccept(t *testing.T) {
 
 func TestAcceptContentEncoding(t *testing.T) {
 	t.Parallel()
-	Convey("Accept-Encoding", t, func() {
+	ftt.Run("Accept-Encoding", t, func(t *ftt.Test) {
 		h := http.Header{}
-		Convey(`Empty`, func() {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			ok, err := acceptsGZipResponse(h)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey(`gzip`, func() {
+		t.Run(`gzip`, func(t *ftt.Test) {
 			h.Set("Accept-Encoding", "gzip")
 			ok, err := acceptsGZipResponse(h)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
-		Convey(`multiple values`, func() {
+		t.Run(`multiple values`, func(t *ftt.Test) {
 			h.Add("Accept-Encoding", "gzip, deflate, br")
 			ok, err := acceptsGZipResponse(h)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 		})
 
-		Convey(`invalid input`, func() {
+		t.Run(`invalid input`, func(t *ftt.Test) {
 			h.Add("Accept-Encoding", "gzip; q=a, deflate, br")
 			_, err := acceptsGZipResponse(h)
-			So(err, ShouldErrLike, "q parameter: expected a floating-point number")
+			assert.Loosely(t, err, should.ErrLike("q parameter: expected a floating-point number"))
 		})
 	})
 }

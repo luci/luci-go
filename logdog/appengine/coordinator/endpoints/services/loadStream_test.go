@@ -27,15 +27,17 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLoadStream(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 
 		svr := New(ServerSettings{NumQueues: 2})
@@ -53,28 +55,28 @@ func TestLoadStream(t *testing.T) {
 			Id:      string(tls.Stream.ID),
 		}
 
-		Convey(`Returns Forbidden error if not a service.`, func() {
+		t.Run(`Returns Forbidden error if not a service.`, func(t *ftt.Test) {
 			_, err := svr.LoadStream(c, &logdog.LoadStreamRequest{})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey(`When logged in as a service`, func() {
+		t.Run(`When logged in as a service`, func(t *ftt.Test) {
 			env.ActAsService()
 
-			Convey(`Will succeed.`, func() {
+			t.Run(`Will succeed.`, func(t *ftt.Test) {
 				resp, err := svr.LoadStream(c, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
 						Secret:        tls.State.Secret,
 					},
 					Age: durationpb.New(0),
-				})
+				}))
 			})
 
-			Convey(`Will return archival properties.`, func() {
+			t.Run(`Will return archival properties.`, func(t *ftt.Test) {
 				// Add an hour to the clock. Created is +0, Updated is +1hr.
 				env.Clock.Add(1 * time.Hour)
 				tls.State.ArchivalKey = []byte("archival key")
@@ -86,8 +88,8 @@ func TestLoadStream(t *testing.T) {
 				// Set time to +2hr, age should now be 1hr.
 				env.Clock.Add(1 * time.Hour)
 				resp, err := svr.LoadStream(c, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -95,10 +97,10 @@ func TestLoadStream(t *testing.T) {
 					},
 					ArchivalKey: []byte("archival key"),
 					Age:         durationpb.New(1 * time.Hour),
-				})
+				}))
 			})
 
-			Convey(`Will succeed, and return the descriptor when requested.`, func() {
+			t.Run(`Will succeed, and return the descriptor when requested.`, func(t *ftt.Test) {
 				req.Desc = true
 
 				d, err := proto.Marshal(tls.Desc)
@@ -107,8 +109,8 @@ func TestLoadStream(t *testing.T) {
 				}
 
 				resp, err := svr.LoadStream(c, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &logdog.LoadStreamResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&logdog.LoadStreamResponse{
 					State: &logdog.InternalLogStreamState{
 						ProtoVersion:  "1",
 						TerminalIndex: -1,
@@ -116,29 +118,29 @@ func TestLoadStream(t *testing.T) {
 					},
 					Desc: d,
 					Age:  durationpb.New(0),
-				})
+				}))
 			})
 
-			Convey(`Will return InvalidArgument if the stream hash is not valid.`, func() {
+			t.Run(`Will return InvalidArgument if the stream hash is not valid.`, func(t *ftt.Test) {
 				req.Id = string("!!! not a hash !!!")
 
 				_, err := svr.LoadStream(c, req)
-				So(err, ShouldBeRPCInvalidArgument, "Invalid ID")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid ID"))
 			})
 
-			Convey(`Will return NotFound for non-existent streams.`, func() {
+			t.Run(`Will return NotFound for non-existent streams.`, func(t *ftt.Test) {
 				req.Id = string(coordinator.LogStreamID("this/stream/+/does/not/exist"))
 
 				_, err := svr.LoadStream(c, req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey(`Will return Internal for random datastore failures.`, func() {
+			t.Run(`Will return Internal for random datastore failures.`, func(t *ftt.Test) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
 				_, err := svr.LoadStream(c, req)
-				So(err, ShouldBeRPCInternal)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 			})
 		})
 	})

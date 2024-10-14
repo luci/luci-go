@@ -19,56 +19,56 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestClientGeneral(t *testing.T) {
 	t.Parallel()
 
-	Convey(`General Client checks`, t, func() {
+	ftt.Run(`General Client checks`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`fails to instantiate a Client with an invalid protocol.`, func() {
+		t.Run(`fails to instantiate a Client with an invalid protocol.`, func(t *ftt.Test) {
 			_, err := New("notreal:foo", "")
-			So(err, ShouldErrLike, "no protocol registered for [notreal]")
+			assert.Loosely(t, err, should.ErrLike("no protocol registered for [notreal]"))
 		})
 
 		scFake := NewFake()
 		defer scFake.Unregister()
 
-		Convey(`ForProcess used with datagram stream`, func() {
+		t.Run(`ForProcess used with datagram stream`, func(t *ftt.Test) {
 			client, err := New(scFake.StreamServerPath(), "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = client.NewDatagramStream(ctx, "test", ForProcess())
-			So(err, ShouldErrLike, "cannot specify ForProcess on a datagram stream")
+			assert.Loosely(t, err, should.ErrLike("cannot specify ForProcess on a datagram stream"))
 		})
 
-		Convey(`bad options`, func() {
+		t.Run(`bad options`, func(t *ftt.Test) {
 			client, err := New(scFake.StreamServerPath(), "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"))
-			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
+			assert.Loosely(t, err, should.ErrLike(`invalid tag "bad+@!tag"`))
 
 			// for coverage, whee.
 			_, err = client.NewStream(ctx, "test", WithTags("bad+@!tag", "value"), Binary())
-			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
+			assert.Loosely(t, err, should.ErrLike(`invalid tag "bad+@!tag"`))
 
 			_, err = client.NewDatagramStream(ctx, "test", WithTags("bad+@!tag", "value"))
-			So(err, ShouldErrLike, `invalid tag "bad+@!tag"`)
+			assert.Loosely(t, err, should.ErrLike(`invalid tag "bad+@!tag"`))
 		})
 
-		Convey(`simulated stream errors`, func() {
-			Convey(`connection error`, func() {
+		t.Run(`simulated stream errors`, func(t *ftt.Test) {
+			t.Run(`connection error`, func(t *ftt.Test) {
 				client, err := New(scFake.StreamServerPath(), "")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				scFake.SetError(errors.New("bad juju"))
 
 				_, err = client.NewStream(ctx, "test")
-				So(err, ShouldErrLike, `stream "test": bad juju`)
+				assert.Loosely(t, err, should.ErrLike(`stream "test": bad juju`))
 			})
 		})
 	})

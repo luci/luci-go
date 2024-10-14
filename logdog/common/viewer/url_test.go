@@ -18,15 +18,16 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetURL(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing viewer URL generation`, t, func() {
+	ftt.Run(`Testing viewer URL generation`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			host    string
 			project string
@@ -38,8 +39,8 @@ func TestGetURL(t *testing.T) {
 			{"example.appspot.com", "test", []types.StreamPath{"foo/bar/+/baz", "qux/+/quux"},
 				"https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz&s=test%2Fqux%2F%2B%2Fquux"},
 		} {
-			Convey(fmt.Sprintf(`Can generate a URL for host %q, project %q, paths %q: [%s]`, tc.host, tc.project, tc.paths, tc.url), func() {
-				So(GetURL(tc.host, tc.project, tc.paths...), ShouldEqual, tc.url)
+			t.Run(fmt.Sprintf(`Can generate a URL for host %q, project %q, paths %q: [%s]`, tc.host, tc.project, tc.paths, tc.url), func(t *ftt.Test) {
+				assert.Loosely(t, GetURL(tc.host, tc.project, tc.paths...), should.Equal(tc.url))
 			})
 		}
 	})

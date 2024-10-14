@@ -18,47 +18,48 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/settings"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSettingsURLToHostTranslation(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing settings configuration`, t, func() {
+	ftt.Run(`A testing settings configuration`, t, func(t *ftt.Test) {
 		c := context.Background()
 
 		memSettings := settings.MemoryStorage{}
 		c = settings.Use(c, settings.New(&memSettings))
 
-		Convey(`Loaded with a URL value in ConfigServiceHost`, func() {
+		t.Run(`Loaded with a URL value in ConfigServiceHost`, func(t *ftt.Test) {
 			s := Settings{
 				ConfigServiceHost: "https://example.com/foo/bar",
 			}
-			So(s.SetIfChanged(c), ShouldBeNil)
+			assert.Loosely(t, s.SetIfChanged(c), should.BeNil)
 
-			Convey(`Will load the setting as a host.`, func() {
+			t.Run(`Will load the setting as a host.`, func(t *ftt.Test) {
 				s, err := FetchCachedSettings(c)
-				So(err, ShouldBeNil)
-				So(s, ShouldResemble, Settings{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Resemble(Settings{
 					ConfigServiceHost: "example.com",
-				})
+				}))
 			})
 		})
 
-		Convey(`Loaded with a host value in ConfigServiceHost`, func() {
+		t.Run(`Loaded with a host value in ConfigServiceHost`, func(t *ftt.Test) {
 			s := Settings{
 				ConfigServiceHost: "example.com",
 			}
-			So(s.SetIfChanged(c), ShouldBeNil)
+			assert.Loosely(t, s.SetIfChanged(c), should.BeNil)
 
-			Convey(`Will load the setting as a host.`, func() {
+			t.Run(`Will load the setting as a host.`, func(t *ftt.Test) {
 				s, err := FetchCachedSettings(c)
-				So(err, ShouldBeNil)
-				So(s, ShouldResemble, Settings{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Resemble(Settings{
 					ConfigServiceHost: "example.com",
-				})
+				}))
 			})
 		})
 	})

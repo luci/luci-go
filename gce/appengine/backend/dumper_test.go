@@ -20,13 +20,14 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeBQDataset struct {
@@ -41,32 +42,32 @@ func (f *fakeBQDataset) putToTable(c context.Context, table string, src []proto.
 func TestDumper(t *testing.T) {
 	t.Parallel()
 
-	Convey("dumpDatastore", t, func() {
+	ftt.Run("dumpDatastore", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).Consistent(true)
 		bq := &fakeBQDataset{result: make(map[string]any)}
-		Convey("none", func() {
-			So(uploadToBQ(c, bq), ShouldBeNil)
-			So(bq.result, ShouldResemble, map[string]any{})
+		t.Run("none", func(t *ftt.Test) {
+			assert.Loosely(t, uploadToBQ(c, bq), should.BeNil)
+			assert.Loosely(t, bq.result, should.Resemble(map[string]any{}))
 		})
-		Convey("one config", func() {
-			So(datastore.Put(c, &model.Config{
+		t.Run("one config", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "id",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			So(uploadToBQ(c, bq), ShouldBeNil)
-			So(bq.result["config"], ShouldHaveLength, 1)
-			So(bq.result["instance_count"], ShouldBeNil)
+			assert.Loosely(t, uploadToBQ(c, bq), should.BeNil)
+			assert.Loosely(t, bq.result["config"], should.HaveLength(1))
+			assert.Loosely(t, bq.result["instance_count"], should.BeNil)
 		})
-		Convey("one config one instance_count", func() {
-			So(datastore.Put(c, &model.Config{
+		t.Run("one config one instance_count", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "id",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &metrics.InstanceCount{ID: "id"}), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &metrics.InstanceCount{ID: "id"}), should.BeNil)
 
-			So(uploadToBQ(c, bq), ShouldBeNil)
-			So(bq.result["config"], ShouldHaveLength, 1)
-			So(bq.result["instance_count"], ShouldHaveLength, 1)
+			assert.Loosely(t, uploadToBQ(c, bq), should.BeNil)
+			assert.Loosely(t, bq.result["config"], should.HaveLength(1))
+			assert.Loosely(t, bq.result["instance_count"], should.HaveLength(1))
 		})
 	})
 }

@@ -20,18 +20,21 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("missing", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				cfgs := &Configs{
 					Project: []*Config{
 						{},
@@ -39,10 +42,10 @@ func TestConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "project is required")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("project is required"))
 			})
 
-			Convey("duplicate", func() {
+			t.Run("duplicate", func(t *ftt.Test) {
 				cfgs := &Configs{
 					Project: []*Config{
 						{
@@ -58,18 +61,18 @@ func TestConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "is not unique")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("is not unique"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("empty", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				cfgs := &Configs{}
 				cfgs.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 
-			Convey("project", func() {
+			t.Run("project", func(t *ftt.Test) {
 				cfgs := &Configs{
 					Project: []*Config{
 						{
@@ -78,7 +81,7 @@ func TestConfigs(t *testing.T) {
 					},
 				}
 				cfgs.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 		})
 	})

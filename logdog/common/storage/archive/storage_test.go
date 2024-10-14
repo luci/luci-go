@@ -23,6 +23,9 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/renderer"
@@ -31,10 +34,6 @@ import (
 
 	cloudStorage "cloud.google.com/go/storage"
 	"google.golang.org/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const (
@@ -217,7 +216,7 @@ func (c *fakeGSClient) NewReader(p gs.Path, offset, length int64) (io.ReadCloser
 }
 
 func testArchiveStorage(t *testing.T, limit int64) {
-	Convey(`A testing archive instance`, t, func() {
+	ftt.Run(`A testing archive instance`, t, func(t *ftt.Test) {
 		var (
 			c      = context.Background()
 			client fakeGSClient
@@ -238,16 +237,16 @@ func testArchiveStorage(t *testing.T, limit int64) {
 		}
 
 		st, err := New(opts)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer st.Close()
 
 		stImpl := st.(*storageImpl)
 
-		Convey(`Will fail to Put with ErrReadOnly`, func() {
-			So(st.Put(c, storage.PutRequest{}), ShouldEqual, storage.ErrReadOnly)
+		t.Run(`Will fail to Put with ErrReadOnly`, func(t *ftt.Test) {
+			assert.Loosely(t, st.Put(c, storage.PutRequest{}), should.Equal(storage.ErrReadOnly))
 		})
 
-		Convey(`Given a stream with 5 log entries`, func() {
+		t.Run(`Given a stream with 5 log entries`, func(t *ftt.Test) {
 			gen.generate("foo", "bar", "baz", "qux", "quux")
 
 			// Basic test cases.
@@ -263,7 +262,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 				{`Sparse index with a terminal entry`, func() { gen.sparseIndex(1, 3, 4) }},
 				{`Sparse index missing a terminal entry`, func() { gen.sparseIndex(1, 3) }},
 			} {
-				Convey(fmt.Sprintf(`Test Case: %q`, tc.title), func() {
+				t.Run(fmt.Sprintf(`Test Case: %q`, tc.title), func(t *ftt.Test) {
 					tc.mod()
 
 					// Run through per-testcase variant set.
@@ -274,7 +273,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 						{"with hints", func() {}},
 						{"without hints", func() { gen.pruneIndexHints() }},
 					} {
-						Convey(variant.title, func() {
+						t.Run(variant.title, func(t *ftt.Test) {
 							variant.mod()
 							client.load(&gen)
 
@@ -284,35 +283,35 @@ func testArchiveStorage(t *testing.T, limit int64) {
 								return true
 							}
 
-							Convey(`Can Get [0..]`, func() {
-								So(st.Get(c, storage.GetRequest{}, collect), ShouldBeNil)
-								So(entries, ShouldResemble, gen.lines)
+							t.Run(`Can Get [0..]`, func(t *ftt.Test) {
+								assert.Loosely(t, st.Get(c, storage.GetRequest{}, collect), should.BeNil)
+								assert.Loosely(t, entries, should.Resemble(gen.lines))
 							})
 
-							Convey(`Can Get [1..].`, func() {
-								So(st.Get(c, storage.GetRequest{Index: 1}, collect), ShouldBeNil)
-								So(entries, ShouldResemble, gen.lines[1:])
+							t.Run(`Can Get [1..].`, func(t *ftt.Test) {
+								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 1}, collect), should.BeNil)
+								assert.Loosely(t, entries, should.Resemble(gen.lines[1:]))
 							})
 
-							Convey(`Can Get [1..2].`, func() {
-								So(st.Get(c, storage.GetRequest{Index: 1, Limit: 2}, collect), ShouldBeNil)
-								So(entries, ShouldResemble, gen.lines[1:3])
+							t.Run(`Can Get [1..2].`, func(t *ftt.Test) {
+								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 1, Limit: 2}, collect), should.BeNil)
+								assert.Loosely(t, entries, should.Resemble(gen.lines[1:3]))
 							})
 
-							Convey(`Can Get [5..].`, func() {
-								So(st.Get(c, storage.GetRequest{Index: 5}, collect), ShouldBeNil)
-								So(entries, ShouldHaveLength, 0)
+							t.Run(`Can Get [5..].`, func(t *ftt.Test) {
+								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 5}, collect), should.BeNil)
+								assert.Loosely(t, entries, should.HaveLength(0))
 							})
 
-							Convey(`Can Get [4].`, func() {
-								So(st.Get(c, storage.GetRequest{Index: 4, Limit: 1}, collect), ShouldBeNil)
-								So(entries, ShouldResemble, gen.lines[4:])
+							t.Run(`Can Get [4].`, func(t *ftt.Test) {
+								assert.Loosely(t, st.Get(c, storage.GetRequest{Index: 4, Limit: 1}, collect), should.BeNil)
+								assert.Loosely(t, entries, should.Resemble(gen.lines[4:]))
 							})
 
-							Convey(`Can tail.`, func() {
+							t.Run(`Can tail.`, func(t *ftt.Test) {
 								e, err := st.Tail(c, "", "")
-								So(err, ShouldBeNil)
-								So(gen.lineFromEntry(e), ShouldEqual, gen.lines[len(gen.lines)-1])
+								assert.Loosely(t, err, should.BeNil)
+								assert.Loosely(t, gen.lineFromEntry(e), should.Equal(gen.lines[len(gen.lines)-1]))
 							})
 						})
 					}
@@ -331,44 +330,44 @@ func testArchiveStorage(t *testing.T, limit int64) {
 				return
 			}},
 		} {
-			Convey(fmt.Sprintf("Testing retrieval: %q", tc.title), func() {
-				Convey(`With missing log stream returns ErrDoesNotExist.`, func() {
+			t.Run(fmt.Sprintf("Testing retrieval: %q", tc.title), func(t *ftt.Test) {
+				t.Run(`With missing log stream returns ErrDoesNotExist.`, func(t *ftt.Test) {
 					stImpl.Stream = "does-not-exist"
 
-					So(st.Get(c, storage.GetRequest{}, nil), ShouldEqual, storage.ErrDoesNotExist)
+					assert.Loosely(t, st.Get(c, storage.GetRequest{}, nil), should.Equal(storage.ErrDoesNotExist))
 				})
 
-				Convey(`With a client error returns that error.`, func() {
+				t.Run(`With a client error returns that error.`, func(t *ftt.Test) {
 					client.err = errors.New("test error")
 
-					So(errors.Unwrap(tc.fn()), ShouldEqual, client.err)
+					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.err))
 				})
 
-				Convey(`With an index reader error returns that error.`, func() {
+				t.Run(`With an index reader error returns that error.`, func(t *ftt.Test) {
 					client.indexErr = errors.New("test error")
 
-					So(errors.Unwrap(tc.fn()), ShouldEqual, client.indexErr)
+					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.indexErr))
 				})
 
-				Convey(`With an stream reader error returns that error.`, func() {
+				t.Run(`With an stream reader error returns that error.`, func(t *ftt.Test) {
 					client.streamErr = errors.New("test error")
 
-					So(errors.Unwrap(tc.fn()), ShouldEqual, client.streamErr)
+					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.streamErr))
 				})
 
-				Convey(`With junk index data returns an error.`, func() {
+				t.Run(`With junk index data returns an error.`, func(t *ftt.Test) {
 					client.index = []byte{0x00}
 
-					So(tc.fn(), ShouldErrLike, "failed to unmarshal index")
+					assert.Loosely(t, tc.fn(), should.ErrLike("failed to unmarshal index"))
 				})
 
-				Convey(`With junk stream data returns an error.`, func() {
+				t.Run(`With junk stream data returns an error.`, func(t *ftt.Test) {
 					client.stream = []byte{0x00, 0x01, 0xff}
 
-					So(tc.fn(), ShouldErrLike, "failed to unmarshal")
+					assert.Loosely(t, tc.fn(), should.ErrLike("failed to unmarshal"))
 				})
 
-				Convey(`With data entries and a cache, only loads the index once.`, func() {
+				t.Run(`With data entries and a cache, only loads the index once.`, func(t *ftt.Test) {
 					var cache memory.Cache
 					stImpl.Cache = &cache
 
@@ -379,7 +378,7 @@ func testArchiveStorage(t *testing.T, limit int64) {
 					// we don't accidentally test something that doesn't follow the path
 					// we're intending to follow.
 					client.indexErr = errors.New("not using a cache")
-					So(errors.Unwrap(tc.fn()), ShouldEqual, client.indexErr)
+					assert.Loosely(t, errors.Unwrap(tc.fn()), should.Equal(client.indexErr))
 
 					for i := 0; i < 10; i++ {
 						if i == 0 {
@@ -392,17 +391,17 @@ func testArchiveStorage(t *testing.T, limit int64) {
 							client.indexErr = errors.New("not using a cache")
 						}
 
-						So(tc.fn(), ShouldBeNil)
+						assert.Loosely(t, tc.fn(), should.BeNil)
 					}
 				})
 			})
 		}
 
-		Convey(`Tail with no log entries returns ErrDoesNotExist.`, func() {
+		t.Run(`Tail with no log entries returns ErrDoesNotExist.`, func(t *ftt.Test) {
 			client.load(&gen)
 
 			_, err := st.Tail(c, "", "")
-			So(err, ShouldEqual, storage.ErrDoesNotExist)
+			assert.Loosely(t, err, should.Equal(storage.ErrDoesNotExist))
 		})
 	})
 }

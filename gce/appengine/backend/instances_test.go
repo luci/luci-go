@@ -26,6 +26,9 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -34,47 +37,44 @@ import (
 	"go.chromium.org/luci/gce/appengine/backend/internal/metrics"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCreate(t *testing.T) {
 	t.Parallel()
 
-	Convey("createInstance", t, func() {
+	ftt.Run("createInstance", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gce})
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 		s := tsmon.Store(c)
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := createInstance(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
+				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := createInstance(c, &tasks.CreateInstance{})
-				So(err, ShouldErrLike, "ID is required")
+				assert.Loosely(t, err, should.ErrLike("ID is required"))
 			})
 
-			Convey("missing", func() {
+			t.Run("missing", func(t *ftt.Test) {
 				err := createInstance(c, &tasks.CreateInstance{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "failed to fetch VM")
+				assert.Loosely(t, err, should.ErrLike("failed to fetch VM"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("exists", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("exists", func(t *ftt.Test) {
 				datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
@@ -83,14 +83,14 @@ func TestCreate(t *testing.T) {
 				err := createInstance(c, &tasks.CreateInstance{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("drained", func() {
+			t.Run("drained", func(t *ftt.Test) {
 				rt.Handler = func(req any) (int, any) {
 					inst, ok := req.(*compute.Instance)
-					So(ok, ShouldBeTrue)
-					So(inst.Name, ShouldEqual, "name")
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, inst.Name, should.Equal("name"))
 					return http.StatusOK, &compute.Operation{}
 				}
 				rt.Type = reflect.TypeOf(compute.Instance{})
@@ -102,12 +102,12 @@ func TestCreate(t *testing.T) {
 				err := createInstance(c, &tasks.CreateInstance{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("error", func() {
-				Convey("http", func() {
-					Convey("transient", func() {
+			t.Run("error", func(t *ftt.Test) {
+				t.Run("http", func(t *ftt.Test) {
+					t.Run("transient", func(t *ftt.Test) {
 						rt.Handler = func(req any) (int, any) {
 							return http.StatusInternalServerError, nil
 						}
@@ -119,15 +119,15 @@ func TestCreate(t *testing.T) {
 						err := createInstance(c, &tasks.CreateInstance{
 							Id: "id",
 						})
-						So(err, ShouldErrLike, "transiently failed to create instance")
+						assert.Loosely(t, err, should.ErrLike("transiently failed to create instance"))
 						v := &model.VM{
 							ID: "id",
 						}
-						So(datastore.Get(c, v), ShouldBeNil)
-						So(v.Hostname, ShouldEqual, "name")
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Hostname, should.Equal("name"))
 					})
 
-					Convey("permanent", func() {
+					t.Run("permanent", func(t *ftt.Test) {
 						rt.Handler = func(req any) (int, any) {
 							return http.StatusConflict, nil
 						}
@@ -139,15 +139,15 @@ func TestCreate(t *testing.T) {
 						err := createInstance(c, &tasks.CreateInstance{
 							Id: "id",
 						})
-						So(err, ShouldErrLike, "failed to create instance")
+						assert.Loosely(t, err, should.ErrLike("failed to create instance"))
 						v := &model.VM{
 							ID: "id",
 						}
-						So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+						assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 					})
 				})
 
-				Convey("operation", func() {
+				t.Run("operation", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Error: &compute.OperationError{
@@ -165,22 +165,22 @@ func TestCreate(t *testing.T) {
 					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "failed to create instance")
+					assert.Loosely(t, err, should.ErrLike("failed to create instance"))
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+					assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 				})
 			})
 
-			Convey("created", func() {
+			t.Run("created", func(t *ftt.Test) {
 				confFields := []any{"", "", "", "", "name"}
-				So(s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), ShouldBeNil)
-				Convey("pending", func() {
+				assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), should.BeNil)
+				t.Run("pending", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						inst, ok := req.(*compute.Instance)
-						So(ok, ShouldBeTrue)
-						So(inst.Name, ShouldEqual, "name")
+						assert.Loosely(t, ok, should.BeTrue)
+						assert.Loosely(t, inst.Name, should.Equal("name"))
 						return http.StatusOK, &compute.Operation{}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
@@ -191,23 +191,23 @@ func TestCreate(t *testing.T) {
 					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Created, ShouldEqual, 0)
-					So(v.URL, ShouldBeEmpty)
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, v.Created, should.BeZero)
+					assert.Loosely(t, v.URL, should.BeEmpty)
 				})
 
-				Convey("done", func() {
+				t.Run("done", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						switch rt.Type {
 						case reflect.TypeOf(compute.Instance{}):
 							// First call, to create the instance.
 							inst, ok := req.(*compute.Instance)
-							So(ok, ShouldBeTrue)
-							So(inst.Name, ShouldEqual, "name")
+							assert.Loosely(t, ok, should.BeTrue)
+							assert.Loosely(t, inst.Name, should.Equal("name"))
 							rt.Type = reflect.TypeOf(map[string]string{})
 							return http.StatusOK, &compute.Operation{
 								EndTime:    "2018-12-14T15:07:48.200-08:00",
@@ -217,7 +217,7 @@ func TestCreate(t *testing.T) {
 						default:
 							// Second call, to check the reason for the conflict.
 							// This request should have no body.
-							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
+							assert.Loosely(t, *(req.(*map[string]string)), should.HaveLength(0))
 							return http.StatusOK, &compute.Instance{
 								CreationTimestamp: "2018-12-14T15:07:48.200-08:00",
 								NetworkInterfaces: []*compute.NetworkInterface{
@@ -256,13 +256,13 @@ func TestCreate(t *testing.T) {
 					err := createInstance(c, &tasks.CreateInstance{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Created, ShouldNotEqual, 0)
-					So(v.NetworkInterfaces, ShouldResemble, []model.NetworkInterface{
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, v.Created, should.NotEqual(0))
+					assert.Loosely(t, v.NetworkInterfaces, should.Resemble([]model.NetworkInterface{
 						{
 							InternalIP: "0.0.0.1",
 						},
@@ -274,9 +274,9 @@ func TestCreate(t *testing.T) {
 							ExternalIP: "3.0.0.0",
 							InternalIP: "0.0.0.3",
 						},
-					})
-					So(v.URL, ShouldEqual, "url")
-					So(s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, v.URL, should.Equal("url"))
+					assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), should.Equal(1))
 				})
 			})
 		})
@@ -286,49 +286,49 @@ func TestCreate(t *testing.T) {
 func TestDestroyInstance(t *testing.T) {
 	t.Parallel()
 
-	Convey("destroyInstance", t, func() {
+	ftt.Run("destroyInstance", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), ComputeService{Stable: gce})
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := destroyInstance(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := destroyInstance(c, &tasks.DestroyInstance{})
-				So(err, ShouldErrLike, "ID is required")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("ID is required"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("url", func() {
+			t.Run("url", func(t *ftt.Test) {
 				err := destroyInstance(c, &tasks.DestroyInstance{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "URL is required")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("URL is required"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("missing", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				err := destroyInstance(c, &tasks.DestroyInstance{
 					Id:  "id",
 					Url: "url",
 				})
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("replaced", func() {
+			t.Run("replaced", func(t *ftt.Test) {
 				datastore.Put(c, &model.VM{
 					ID:  "id",
 					URL: "new",
@@ -337,38 +337,38 @@ func TestDestroyInstance(t *testing.T) {
 					Id:  "id",
 					Url: "old",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldBeNil)
-				So(v.URL, ShouldEqual, "new")
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.URL, should.Equal("new"))
 			})
 
-			Convey("error", func() {
-				Convey("http", func() {
+			t.Run("error", func(t *ftt.Test) {
+				t.Run("http", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						return http.StatusInternalServerError, nil
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID:       "id",
+						URL:      "url",
 						Hostname: "name",
 					})
 					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldErrLike, "destroy instance \"name\": googleapi: got HTTP response code 500 with body: null")
+					assert.Loosely(t, err, should.ErrLike("destroy instance \"name\": googleapi: got HTTP response code 500 with body: null"))
 					v := &model.VM{
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.URL, ShouldEqual, "url")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, v.URL, should.Equal("url"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("operation", func() {
+				t.Run("operation", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Error: &compute.OperationError{
@@ -379,26 +379,26 @@ func TestDestroyInstance(t *testing.T) {
 						}
 					}
 					datastore.Put(c, &model.VM{
-						ID:  "id",
-						URL: "url",
+						ID:       "id",
+						URL:      "url",
 						Hostname: "name",
 					})
 					err := destroyInstance(c, &tasks.DestroyInstance{
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldErrLike, "Destroy instance \"name\": failed to destroy")
+					assert.Loosely(t, err, should.ErrLike("Destroy instance \"name\": failed to destroy"))
 					v := &model.VM{
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.URL, ShouldEqual, "url")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, v.URL, should.Equal("url"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("destroys", func() {
-				Convey("pending", func() {
+			t.Run("destroys", func(t *ftt.Test) {
+				t.Run("pending", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{}
 					}
@@ -412,18 +412,18 @@ func TestDestroyInstance(t *testing.T) {
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Created, ShouldEqual, 1)
-					So(v.Hostname, ShouldEqual, "name")
-					So(v.URL, ShouldEqual, "url")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, v.Created, should.Equal(1))
+					assert.Loosely(t, v.Hostname, should.Equal("name"))
+					assert.Loosely(t, v.URL, should.Equal("url"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("done", func() {
+				t.Run("done", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						return http.StatusOK, &compute.Operation{
 							Status:     "DONE",
@@ -440,15 +440,15 @@ func TestDestroyInstance(t *testing.T) {
 						Id:  "id",
 						Url: "url",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
 					datastore.Get(c, v)
-					So(v.Created, ShouldEqual, 1)
-					So(v.Hostname, ShouldEqual, "name")
-					So(v.URL, ShouldEqual, "url")
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+					assert.Loosely(t, v.Created, should.Equal(1))
+					assert.Loosely(t, v.Hostname, should.Equal("name"))
+					assert.Loosely(t, v.URL, should.Equal("url"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 				})
 			})
 		})
@@ -458,42 +458,42 @@ func TestDestroyInstance(t *testing.T) {
 func TestAuditInstanceInZone(t *testing.T) {
 	t.Parallel()
 
-	Convey("auditInstanceInZone", t, func() {
+	ftt.Run("auditInstanceInZone", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
 		c := context.Background()
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := auditInstanceInZone(c, nil)
-				So(err, ShouldErrLike, "Unexpected payload")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("Unexpected payload"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := auditInstanceInZone(c, &tasks.AuditProject{})
-				So(err, ShouldErrLike, "Project is required")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("Project is required"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("empty region", func() {
+			t.Run("empty region", func(t *ftt.Test) {
 				err := auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 				})
-				So(err, ShouldErrLike, "Zone is required")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("Zone is required"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("VM entry exists", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("VM entry exists", func(t *ftt.Test) {
 				count := 0
 				// The first request must be to the List API. Should not
 				// do any consequent requests
@@ -516,17 +516,17 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("VM entry exists double, page token", func() {
+			t.Run("VM entry exists double, page token", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -550,24 +550,24 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = datastore.Put(c, &model.VM{
 					ID:       "thes-1",
 					Hostname: "thes-1-puts",
 					Prefix:   "thes",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
 				// The next token should schedule a job
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 
-			Convey("VM leaked (single)", func() {
+			t.Run("VM leaked (single)", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -591,17 +591,17 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 2)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(2))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("VM leaked (double)", func() {
+			t.Run("VM leaked (double)", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -630,23 +630,23 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = datastore.Put(c, &model.VM{
 					ID:       "thes-1",
 					Hostname: "thes-1-puts",
 					Prefix:   "thes",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(count, ShouldEqual, 3)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, count, should.Equal(3))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("VM leaked (mix)", func() {
+			t.Run("VM leaked (mix)", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -678,14 +678,14 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(count, ShouldEqual, 2)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, count, should.Equal(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 		})
 
-		Convey("error", func() {
-			Convey("list failure", func() {
+		t.Run("error", func(t *ftt.Test) {
+			t.Run("list failure", func(t *ftt.Test) {
 				rt.Handler = func(req any) (int, any) {
 					return http.StatusInternalServerError, nil
 				}
@@ -693,10 +693,10 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(err, ShouldErrLike, "failed to list")
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.ErrLike("failed to list"))
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
-			Convey("VM delete failure", func() {
+			t.Run("VM delete failure", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -726,14 +726,14 @@ func TestAuditInstanceInZone(t *testing.T) {
 					Hostname: "double-11-puts",
 					Prefix:   "double",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = auditInstanceInZone(c, &tasks.AuditProject{
 					Project: "libreboot",
 					Zone:    "us-mex-1",
 				})
-				So(count, ShouldEqual, 2)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				assert.Loosely(t, count, should.Equal(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 		})
 	})
@@ -742,7 +742,7 @@ func TestAuditInstanceInZone(t *testing.T) {
 func TestIsLeakHuerestic(t *testing.T) {
 	t.Parallel()
 
-	Convey("isLeakHuerestic", t, func() {
+	ftt.Run("isLeakHuerestic", t, func(t *ftt.Test) {
 		c := context.Background()
 		c = memory.Use(c)
 		datastore.GetTestable(c).Consistent(true)
@@ -752,35 +752,35 @@ func TestIsLeakHuerestic(t *testing.T) {
 			Hostname: "host-vm-test-time-10-xyz3",
 			Prefix:   "host-vm-test-time",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = datastore.Put(c, &model.VM{
 			ID:       "host-vm-test-time-11",
 			Hostname: "host-vm-test-time-11-xwz2",
 			Prefix:   "host-vm-test-time",
 		})
-		So(err, ShouldBeNil)
-		Convey("positive results", func() {
-			Convey("valid leak with replacement", func() {
+		assert.Loosely(t, err, should.BeNil)
+		t.Run("positive results", func(t *ftt.Test) {
+			t.Run("valid leak with replacement", func(t *ftt.Test) {
 				// Leak replaced by host-vm-test-time-10-xyz3
 				leak := isLeakHuerestic(c, "host-vm-test-time-10-ijk1", "project", "us-numba-1")
-				So(leak, ShouldBeTrue)
+				assert.Loosely(t, leak, should.BeTrue)
 			})
-			Convey("valid leak resized pool", func() {
+			t.Run("valid leak resized pool", func(t *ftt.Test) {
 				// Leak and pool resized
 				leak := isLeakHuerestic(c, "host-vm-test-time-12-abc2", "project", "us-numba-1")
-				So(leak, ShouldBeTrue)
+				assert.Loosely(t, leak, should.BeTrue)
 			})
 		})
-		Convey("negative results", func() {
-			Convey("non gce-provider instance", func() {
+		t.Run("negative results", func(t *ftt.Test) {
+			t.Run("non gce-provider instance", func(t *ftt.Test) {
 				// gce-provider didn't create this instance
 				leak := isLeakHuerestic(c, "sha512-collision-detect", "project", "us-numba-1")
-				So(leak, ShouldBeFalse)
+				assert.Loosely(t, leak, should.BeFalse)
 			})
-			Convey("instance without a current config", func() {
+			t.Run("instance without a current config", func(t *ftt.Test) {
 				// Config is deleted for this prefix
 				leak := isLeakHuerestic(c, "dut-12-abc2", "project", "us-numba-1")
-				So(leak, ShouldBeFalse)
+				assert.Loosely(t, leak, should.BeFalse)
 			})
 		})
 	})

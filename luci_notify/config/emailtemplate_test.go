@@ -20,18 +20,19 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 
 	"go.chromium.org/luci/luci_notify/common"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEmailTemplate(t *testing.T) {
 	t.Parallel()
 
-	Convey("fetchAllEmailTemplates", t, func() {
+	ftt.Run("fetchAllEmailTemplates", t, func(t *ftt.Test) {
 		c := gologger.StdConfig.Use(context.Background())
 		c = logging.SetLevel(c, logging.Debug)
 		c = common.SetAppIDForTest(c, "luci-notify")
@@ -47,9 +48,9 @@ func TestEmailTemplate(t *testing.T) {
 			},
 		})
 		templates, err := fetchAllEmailTemplates(c, cfgService, "x")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(templates, ShouldResemble, map[string]*EmailTemplate{
+		assert.Loosely(t, templates, should.Resemble(map[string]*EmailTemplate{
 			"a": {
 				Name:                "a",
 				SubjectTextTemplate: "aSubject",
@@ -62,6 +63,6 @@ func TestEmailTemplate(t *testing.T) {
 				BodyHTMLTemplate:    "bBody",
 				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/b.template",
 			},
-		})
+		}))
 	})
 }

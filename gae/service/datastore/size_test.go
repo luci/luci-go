@@ -21,9 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/blobstore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func mps(vals ...any) PropertySlice {
@@ -85,10 +86,10 @@ func stablePmString(pm PropertyMap) string {
 func TestEstimateSizes(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test EstimateSize", t, func() {
+	ftt.Run("Test EstimateSize", t, func(t *ftt.Test) {
 		for _, tc := range estimateSizeTests {
-			Convey(stablePmString(tc.pm), func() {
-				So(tc.pm.EstimateSize(), ShouldEqual, tc.expect)
+			t.Run(stablePmString(tc.pm), func(t *ftt.Test) {
+				assert.Loosely(t, tc.pm.EstimateSize(), should.Equal(tc.expect))
 			})
 		}
 	})

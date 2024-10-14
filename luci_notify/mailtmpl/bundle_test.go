@@ -19,20 +19,20 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBundle(t *testing.T) {
 	t.Parallel()
 
-	Convey(`bundle`, t, func() {
+	ftt.Run(`bundle`, t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-config")
 
@@ -71,14 +71,14 @@ Reusing templates from other files.
 				BodyHTMLTemplate:    `{{.FieldDoesNotExist}}`,
 			},
 		}
-		So(datastore.Put(c, templates), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, templates), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		bundle := NewBundle(templates)
-		So(bundle.Err, ShouldBeNil)
-		So(bundle.bodies.Lookup("default"), ShouldNotBeNil)
+		assert.Loosely(t, bundle.Err, should.BeNil)
+		assert.Loosely(t, bundle.bodies.Lookup("default"), should.NotBeNil)
 
-		Convey(`GenerateEmail`, func() {
+		t.Run(`GenerateEmail`, func(t *ftt.Test) {
 			input := &config.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build: &buildbucketpb.Build{
@@ -93,34 +93,34 @@ Reusing templates from other files.
 				},
 			}
 
-			Convey("simple template", func() {
+			t.Run("simple template", func(t *ftt.Test) {
 				subject, body := bundle.GenerateEmail("default", input)
 				// Assert on body first, since errors would be rendered in body.
-				So(body, ShouldEqual, "Build 54 completed with status SUCCESS")
-				So(subject, ShouldEqual, "Build 54 completed")
+				assert.Loosely(t, body, should.Equal("Build 54 completed with status SUCCESS"))
+				assert.Loosely(t, subject, should.Equal("Build 54 completed"))
 			})
 
-			Convey("markdown", func() {
+			t.Run("markdown", func(t *ftt.Test) {
 				_, body := bundle.GenerateEmail("markdown", input)
-				So(body, ShouldEqual, "<p><em>ninja</em> compiled <code>11</code> files</p>\n")
+				assert.Loosely(t, body, should.Equal("<p><em>ninja</em> compiled <code>11</code> files</p>\n"))
 			})
 
-			Convey("template using other files", func() {
+			t.Run("template using other files", func(t *ftt.Test) {
 				_, body := bundle.GenerateEmail("using_other_files", input)
-				So(body, ShouldEqual, `
+				assert.Loosely(t, body, should.Equal(`
 Reusing templates from other files.
 Build 54
-steps of build 54 go here`)
+steps of build 54 go here`))
 			})
 
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				_, body := bundle.GenerateEmail("bad", input)
-				So(body, ShouldContainSubstring, "spartan")
-				So(body, ShouldContainSubstring, "buildbucket.example.com")
+				assert.Loosely(t, body, should.ContainSubstring("spartan"))
+				assert.Loosely(t, body, should.ContainSubstring("buildbucket.example.com"))
 			})
 		})
 
-		Convey(`generateDefaultStatusMessage`, func() {
+		t.Run(`generateDefaultStatusMessage`, func(t *ftt.Test) {
 			input := &config.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build: &buildbucketpb.Build{
@@ -142,12 +142,12 @@ steps of build 54 go here`)
 				},
 			}
 
-			So(generateDefaultStatusMessage(input), ShouldEqual,
-				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel from deadbeefdeadbeef`)
+			assert.Loosely(t, generateDefaultStatusMessage(input), should.Equal(
+				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel from deadbeefdeadbeef`))
 		})
 
 		// Regression test for https://crbug.com/1084358.
-		Convey(`GenerateStatusMessage, nil commit`, func() {
+		t.Run(`GenerateStatusMessage, nil commit`, func(t *ftt.Test) {
 			input := &config.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build: &buildbucketpb.Build{
@@ -165,60 +165,60 @@ steps of build 54 go here`)
 				},
 			}
 
-			So(generateDefaultStatusMessage(input), ShouldEqual,
-				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel`)
+			assert.Loosely(t, generateDefaultStatusMessage(input), should.Equal(
+				`"test1", "test2" on https://buildbucket.example.com/build/123 linux-rel`))
 		})
 	})
 }
 
 func TestSplitTemplateFile(t *testing.T) {
 	t.Parallel()
-	Convey(`SplitTemplateFile`, t, func() {
-		Convey(`valid template`, func() {
+	ftt.Run(`SplitTemplateFile`, t, func(t *ftt.Test) {
+		t.Run(`valid template`, func(t *ftt.Test) {
 			s, b, err := SplitTemplateFile(`subject
 
         body`)
 
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, "subject")
-			So(b, ShouldEqual, "body")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Equal("subject"))
+			assert.Loosely(t, b, should.Equal("body"))
 		})
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			_, _, err := SplitTemplateFile(``)
-			So(err, ShouldErrLike, "empty")
+			assert.Loosely(t, err, should.ErrLike("empty"))
 		})
 
-		Convey(`single line`, func() {
+		t.Run(`single line`, func(t *ftt.Test) {
 			s, b, err := SplitTemplateFile("one line")
 
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, "one line")
-			So(b, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Equal("one line"))
+			assert.Loosely(t, b, should.BeEmpty)
 		})
 
-		Convey(`blank second line`, func() {
+		t.Run(`blank second line`, func(t *ftt.Test) {
 			s, b, err := SplitTemplateFile(`subject
 `)
 
-			So(err, ShouldBeNil)
-			So(s, ShouldEqual, "subject")
-			So(b, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Equal("subject"))
+			assert.Loosely(t, b, should.BeEmpty)
 		})
 
-		Convey(`non-blank second line`, func() {
+		t.Run(`non-blank second line`, func(t *ftt.Test) {
 			_, _, err := SplitTemplateFile(`subject
         body`)
 
-			So(err, ShouldErrLike, "second line is not blank")
+			assert.Loosely(t, err, should.ErrLike("second line is not blank"))
 		})
 
-		Convey(`no blank line`, func() {
+		t.Run(`no blank line`, func(t *ftt.Test) {
 			_, _, err := SplitTemplateFile(`subject
         body
         second line
         `)
-			So(err, ShouldErrLike, "second line is not blank")
+			assert.Loosely(t, err, should.ErrLike("second line is not blank"))
 		})
 	})
 }

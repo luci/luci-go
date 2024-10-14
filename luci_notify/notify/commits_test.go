@@ -22,11 +22,11 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -88,33 +88,33 @@ func TestCheckout(t *testing.T) {
 			},
 		},
 	}
-	Convey(`Conversion with GitilesCommits Empty`, t, func() {
+	ftt.Run(`Conversion with GitilesCommits Empty`, t, func(t *ftt.Test) {
 		checkout := NewCheckout(&notifypb.GitilesCommits{})
-		So(checkout, ShouldHaveLength, 0)
+		assert.Loosely(t, checkout, should.HaveLength(0))
 		result := checkout.ToGitilesCommits()
-		So(result, ShouldBeNil)
+		assert.Loosely(t, result, should.BeNil)
 	})
 
-	Convey(`Conversion with GitilesCommits Non-Empty`, t, func() {
+	ftt.Run(`Conversion with GitilesCommits Non-Empty`, t, func(t *ftt.Test) {
 		checkout := NewCheckout(gitilesCheckout)
-		So(checkout, ShouldResemble, Checkout{
+		assert.Loosely(t, checkout, should.Resemble(Checkout{
 			protoutil.GitilesRepoURL(gitilesCheckout.Commits[0]): rev1,
 			protoutil.GitilesRepoURL(gitilesCheckout.Commits[1]): rev2,
-		})
+		}))
 		result := checkout.ToGitilesCommits()
-		So(result, ShouldResembleProto, gitilesCheckout)
+		assert.Loosely(t, result, should.Resemble(gitilesCheckout))
 	})
 
-	Convey(`Filter repositories from allowlist`, t, func() {
+	ftt.Run(`Filter repositories from allowlist`, t, func(t *ftt.Test) {
 		checkout := NewCheckout(gitilesCheckout)
 		repoURL := protoutil.GitilesRepoURL(gitilesCheckout.Commits[0])
 		filteredCheckout := checkout.Filter(stringset.NewFromSlice([]string{repoURL}...))
-		So(filteredCheckout, ShouldResemble, Checkout{repoURL: rev1})
+		assert.Loosely(t, filteredCheckout, should.Resemble(Checkout{repoURL: rev1}))
 	})
 }
 
 func TestLogs(t *testing.T) {
-	Convey(`ComputeLogs`, t, func() {
+	ftt.Run(`ComputeLogs`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		history := mockHistoryFunc(map[string][]*gitpb.Commit{
 			"chromium/src":      testCommits,
@@ -136,35 +136,35 @@ func TestLogs(t *testing.T) {
 		checkout3 := Checkout{
 			"https://chromium.googlesource.com/third_party/what": rev2,
 		}
-		Convey(`Both empty`, func() {
+		t.Run(`Both empty`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", nil, nil, history)
-			So(err, ShouldBeNil)
-			So(logs, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs, should.HaveLength(0))
 		})
-		Convey(`One empty`, func() {
+		t.Run(`One empty`, func(t *ftt.Test) {
 			logs1, err := ComputeLogs(ctx, "luci-proj", checkout1Old, nil, history)
-			So(err, ShouldBeNil)
-			So(logs1, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs1, should.HaveLength(0))
 
 			logs2, err := ComputeLogs(ctx, "luci-proj", nil, checkout1Old, history)
-			So(err, ShouldBeNil)
-			So(logs2, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs2, should.HaveLength(0))
 		})
-		Convey(`Both valid, full overlap`, func() {
+		t.Run(`Both valid, full overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout1New, history)
-			So(err, ShouldBeNil)
-			So(logs["https://chromium.googlesource.com/chromium/src"], ShouldResembleProto, testCommits[:1])
-			So(logs["https://chromium.googlesource.com/third_party/hello"], ShouldResembleProto, testCommits[:1])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits[:1]))
+			assert.Loosely(t, logs["https://chromium.googlesource.com/third_party/hello"], should.Resemble(testCommits[:1]))
 		})
-		Convey(`Both valid, partial overlap`, func() {
+		t.Run(`Both valid, partial overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout2, history)
-			So(err, ShouldBeNil)
-			So(logs["https://chromium.googlesource.com/chromium/src"], ShouldResembleProto, testCommits[:1])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits[:1]))
 		})
-		Convey(`Both valid, no overlap`, func() {
+		t.Run(`Both valid, no overlap`, func(t *ftt.Test) {
 			logs, err := ComputeLogs(ctx, "luci-proj", checkout1Old, checkout3, history)
-			So(err, ShouldBeNil)
-			So(logs, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logs, should.HaveLength(0))
 		})
 	})
 
@@ -173,16 +173,16 @@ func TestLogs(t *testing.T) {
 		"https://chromium.googlesource.com/third_party/hello": testCommits,
 	}
 
-	Convey(`Filter repositories from allowlist`, t, func() {
+	ftt.Run(`Filter repositories from allowlist`, t, func(t *ftt.Test) {
 		filteredLogs := testLogs.Filter(stringset.NewFromSlice([]string{
 			"https://chromium.googlesource.com/chromium/src",
 		}...))
-		So(filteredLogs["https://chromium.googlesource.com/chromium/src"], ShouldResembleProto, testCommits)
+		assert.Loosely(t, filteredLogs["https://chromium.googlesource.com/chromium/src"], should.Resemble(testCommits))
 	})
 
-	Convey(`Blamelist`, t, func() {
+	ftt.Run(`Blamelist`, t, func(t *ftt.Test) {
 		blamelist := testLogs.Blamelist("default")
-		So(blamelist, ShouldResemble, []EmailNotify{
+		assert.Loosely(t, blamelist, should.Resemble([]EmailNotify{
 			{
 				Email:    "example1@google.com",
 				Template: "default",
@@ -191,7 +191,7 @@ func TestLogs(t *testing.T) {
 				Email:    "example2@google.com",
 				Template: "default",
 			},
-		})
+		}))
 	})
 }
 

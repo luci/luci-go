@@ -20,16 +20,19 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestVM(t *testing.T) {
 	t.Parallel()
 
-	Convey("VM", t, func() {
-		Convey("SetZone", func() {
-			Convey("no replacement", func() {
+	ftt.Run("VM", t, func(t *ftt.Test) {
+		t.Run("SetZone", func(t *ftt.Test) {
+			t.Run("no replacement", func(t *ftt.Test) {
 				vm := &VM{
 					Disk: []*Disk{
 						{
@@ -39,13 +42,13 @@ func TestVM(t *testing.T) {
 					MachineType: "type",
 				}
 				vm.SetZone("zone")
-				So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
-				So(vm.MachineType, ShouldEqual, "type")
-				So(vm.Zone, ShouldEqual, "zone")
+				assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/zone/diskTypes/type"))
+				assert.Loosely(t, vm.MachineType, should.Equal("type"))
+				assert.Loosely(t, vm.Zone, should.Equal("zone"))
 			})
 
-			Convey("replacement", func() {
-				Convey("disk type", func() {
+			t.Run("replacement", func(t *ftt.Test) {
+				t.Run("disk type", func(t *ftt.Test) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
@@ -55,12 +58,12 @@ func TestVM(t *testing.T) {
 						MachineType: "type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
-					So(vm.MachineType, ShouldEqual, "type")
-					So(vm.Zone, ShouldEqual, "zone")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/zone/diskTypes/type"))
+					assert.Loosely(t, vm.MachineType, should.Equal("type"))
+					assert.Loosely(t, vm.Zone, should.Equal("zone"))
 				})
 
-				Convey("machine type", func() {
+				t.Run("machine type", func(t *ftt.Test) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
@@ -70,12 +73,12 @@ func TestVM(t *testing.T) {
 						MachineType: "{{.Zone}}/type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type")
-					So(vm.MachineType, ShouldEqual, "zone/type")
-					So(vm.Zone, ShouldEqual, "zone")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/zone/diskTypes/type"))
+					assert.Loosely(t, vm.MachineType, should.Equal("zone/type"))
+					assert.Loosely(t, vm.Zone, should.Equal("zone"))
 				})
 
-				Convey("multiple", func() {
+				t.Run("multiple", func(t *ftt.Test) {
 					vm := &VM{
 						Disk: []*Disk{
 							{
@@ -88,31 +91,31 @@ func TestVM(t *testing.T) {
 						MachineType: "{{.Zone}}/type",
 					}
 					vm.SetZone("zone")
-					So(vm.Disk[0].Type, ShouldEqual, "zones/zone/diskTypes/type-1")
-					So(vm.Disk[1].Type, ShouldEqual, "zones/zone/diskTypes/type-2")
-					So(vm.MachineType, ShouldEqual, "zone/type")
-					So(vm.Zone, ShouldEqual, "zone")
+					assert.Loosely(t, vm.Disk[0].Type, should.Equal("zones/zone/diskTypes/type-1"))
+					assert.Loosely(t, vm.Disk[1].Type, should.Equal("zones/zone/diskTypes/type-2"))
+					assert.Loosely(t, vm.MachineType, should.Equal("zone/type"))
+					assert.Loosely(t, vm.Zone, should.Equal("zone"))
 				})
 			})
 		})
 
-		Convey("Validate", func() {
+		t.Run("Validate", func(t *ftt.Test) {
 			c := &validation.Context{Context: context.Background()}
 
-			Convey("invalid", func() {
-				Convey("empty", func() {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("empty", func(t *ftt.Test) {
 					vm := &VM{}
 					vm.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "at least one disk is required")
-					So(err, ShouldContainErr, "machine type is required")
-					So(err, ShouldContainErr, "at least one network interface is required")
-					So(err, ShouldContainErr, "project is required")
-					So(err, ShouldContainErr, "zone is required")
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("at least one disk is required"))
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("machine type is required"))
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("at least one network interface is required"))
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("project is required"))
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("zone is required"))
 				})
 
-				Convey("metadata", func() {
-					Convey("format", func() {
+				t.Run("metadata", func(t *ftt.Test) {
+					t.Run("format", func(t *ftt.Test) {
 						vm := &VM{
 							Metadata: []*Metadata{
 								{},
@@ -120,10 +123,10 @@ func TestVM(t *testing.T) {
 						}
 						vm.Validate(c)
 						err := c.Finalize().(*validation.Error).Errors
-						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+						assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("metadata from text must be in key:value form"))
 					})
 
-					Convey("file", func() {
+					t.Run("file", func(t *ftt.Test) {
 						vm := &VM{
 							Metadata: []*Metadata{
 								{
@@ -135,12 +138,12 @@ func TestVM(t *testing.T) {
 						}
 						vm.Validate(c)
 						err := c.Finalize().(*validation.Error).Errors
-						So(err, ShouldContainErr, "metadata from text must be in key:value form")
+						assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("metadata from text must be in key:value form"))
 					})
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				vm := &VM{
 					Disk: []*Disk{
 						{
@@ -163,7 +166,7 @@ func TestVM(t *testing.T) {
 					Zone:    "zone",
 				}
 				vm.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 		})
 	})

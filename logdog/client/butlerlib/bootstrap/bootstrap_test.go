@@ -19,75 +19,75 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBootstrap(t *testing.T) {
-	Convey(`A test Environment`, t, func() {
+	ftt.Run(`A test Environment`, t, func(t *ftt.Test) {
 		env := environ.New([]string{
 			"IRRELEVANT=VALUE",
 		})
 
-		Convey(`With no Butler values will return ErrNotBootstrapped.`, func() {
+		t.Run(`With no Butler values will return ErrNotBootstrapped.`, func(t *ftt.Test) {
 			_, err := GetFromEnv(env)
-			So(err, ShouldEqual, ErrNotBootstrapped)
+			assert.Loosely(t, err, should.Equal(ErrNotBootstrapped))
 		})
 
-		Convey(`With a Butler stream server path`, func() {
+		t.Run(`With a Butler stream server path`, func(t *ftt.Test) {
 			env.Set(EnvStreamServerPath, "null")
 
-			Convey(`Yields a Bootstrap with a Client, but nothing else`, func() {
+			t.Run(`Yields a Bootstrap with a Client, but nothing else`, func(t *ftt.Test) {
 				bs, err := GetFromEnv(env)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(bs.Client, ShouldNotBeNil)
+				assert.Loosely(t, bs.Client, should.NotBeNil)
 				bs.Client = nil
-				So(bs, ShouldResemble, &Bootstrap{})
+				assert.Loosely(t, bs, should.Resemble(&Bootstrap{}))
 			})
 
-			Convey(`And the remaining environment parameters`, func() {
+			t.Run(`And the remaining environment parameters`, func(t *ftt.Test) {
 				env.Set(EnvStreamPrefix, "butler/prefix")
 				env.Set(EnvStreamProject, "test-project")
 				env.Set(EnvCoordinatorHost, "example.appspot.com")
 				env.Set(EnvNamespace, "some/namespace")
 
-				Convey(`Yields a fully-populated Bootstrap.`, func() {
+				t.Run(`Yields a fully-populated Bootstrap.`, func(t *ftt.Test) {
 					bs, err := GetFromEnv(env)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Check that the client is populated, so we can test the remaining
 					// fields without reconstructing it.
-					So(bs.Client, ShouldNotBeNil)
+					assert.Loosely(t, bs.Client, should.NotBeNil)
 					bs.Client = nil
 
-					So(bs, ShouldResemble, &Bootstrap{
+					assert.Loosely(t, bs, should.Resemble(&Bootstrap{
 						CoordinatorHost: "example.appspot.com",
 						Project:         "test-project",
 						Prefix:          "butler/prefix",
 						Namespace:       "some/namespace",
-					})
+					}))
 				})
 			})
 
-			Convey(`With an invalid Butler prefix, will fail.`, func() {
+			t.Run(`With an invalid Butler prefix, will fail.`, func(t *ftt.Test) {
 				env.Set(EnvStreamPrefix, "_notavaildprefix")
 				_, err := GetFromEnv(env)
-				So(err, ShouldErrLike, "failed to validate prefix")
+				assert.Loosely(t, err, should.ErrLike("failed to validate prefix"))
 			})
 
-			Convey(`With an invalid Namespace, will fail.`, func() {
+			t.Run(`With an invalid Namespace, will fail.`, func(t *ftt.Test) {
 				env.Set(EnvNamespace, "!!! invalid")
 				_, err := GetFromEnv(env)
-				So(err, ShouldErrLike, "failed to validate namespace")
+				assert.Loosely(t, err, should.ErrLike("failed to validate namespace"))
 			})
 
-			Convey(`With an invalid Butler project, will fail.`, func() {
+			t.Run(`With an invalid Butler project, will fail.`, func(t *ftt.Test) {
 				env.Set(EnvStreamProject, "_notavaildproject")
 				_, err := GetFromEnv(env)
-				So(err, ShouldErrLike, "failed to validate project")
+				assert.Loosely(t, err, should.ErrLike("failed to validate project"))
 			})
 		})
 	})
@@ -96,14 +96,14 @@ func TestBootstrap(t *testing.T) {
 func TestBootstrapURLGeneration(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A bootstrap instance`, t, func() {
+	ftt.Run(`A bootstrap instance`, t, func(t *ftt.Test) {
 		bs := &Bootstrap{
 			Project:         "test",
 			Prefix:          "foo",
 			CoordinatorHost: "example.appspot.com",
 		}
 
-		Convey(`Can generate viewer URLs`, func() {
+		t.Run(`Can generate viewer URLs`, func(t *ftt.Test) {
 			for _, tc := range []struct {
 				paths []types.StreamPath
 				url   string
@@ -114,26 +114,26 @@ func TestBootstrapURLGeneration(t *testing.T) {
 					"foo/bar/+/qux",
 				}, "https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz&s=test%2Ffoo%2Fbar%2F%2B%2Fqux"},
 			} {
-				Convey(fmt.Sprintf(`Will generate [%s] from %q`, tc.url, tc.paths), func() {
+				t.Run(fmt.Sprintf(`Will generate [%s] from %q`, tc.url, tc.paths), func(t *ftt.Test) {
 					url, err := bs.GetViewerURL(tc.paths...)
-					So(err, ShouldBeNil)
-					So(url, ShouldEqual, tc.url)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, url, should.Equal(tc.url))
 				})
 			}
 		})
 
-		Convey(`With no project, will not generate URLs.`, func() {
+		t.Run(`With no project, will not generate URLs.`, func(t *ftt.Test) {
 			bs.Project = ""
 
 			_, err := bs.GetViewerURL("bar")
-			So(err, ShouldErrLike, "no project is configured")
+			assert.Loosely(t, err, should.ErrLike("no project is configured"))
 		})
 
-		Convey(`With no coordinator host, will not generate URLs.`, func() {
+		t.Run(`With no coordinator host, will not generate URLs.`, func(t *ftt.Test) {
 			bs.CoordinatorHost = ""
 
 			_, err := bs.GetViewerURL("bar")
-			So(err, ShouldErrLike, "no coordinator host is configured")
+			assert.Loosely(t, err, should.ErrLike("no coordinator host is configured"))
 		})
 	})
 }

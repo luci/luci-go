@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -25,15 +28,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSync(t *testing.T) {
 	t.Parallel()
 
-	Convey("With initial configs", t, func() {
+	ftt.Run("With initial configs", t, func(t *ftt.Test) {
 		configs := map[config.Set]cfgmem.Files{
 			"services/${appid}": {
 				"services.cfg": `coordinator { admin_auth_group: "a" }`,
@@ -49,9 +49,9 @@ func TestSync(t *testing.T) {
 
 		sync := func(expectedErr string) {
 			if expectedErr == "" {
-				So(Sync(ctx), ShouldBeNil)
+				assert.Loosely(t, Sync(ctx), should.BeNil)
 			} else {
-				So(Sync(ctx), ShouldErrLike, expectedErr)
+				assert.Loosely(t, Sync(ctx), should.ErrLike(expectedErr))
 			}
 			datastore.GetTestable(ctx).CatchupIndexes()
 		}
@@ -71,66 +71,66 @@ func TestSync(t *testing.T) {
 		sync("")
 
 		svc, err := serviceCfg()
-		So(err, ShouldBeNil)
-		So(svc, ShouldEqual, "a")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, svc, should.Equal("a"))
 
 		prj, err := projectCfg("proj1")
-		So(err, ShouldBeNil)
-		So(prj, ShouldEqual, "a")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, prj, should.Equal("a"))
 
-		Convey("No changes", func() {
+		t.Run("No changes", func(t *ftt.Test) {
 			sync("")
 
 			svc, err := serviceCfg()
-			So(err, ShouldBeNil)
-			So(svc, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, svc, should.Equal("a"))
 
 			prj, err := projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj, should.Equal("a"))
 		})
 
-		Convey("Service config change", func() {
+		t.Run("Service config change", func(t *ftt.Test) {
 			configs["services/${appid}"]["services.cfg"] = `coordinator { admin_auth_group: "b" }`
 
 			sync("")
 
 			svc, err := serviceCfg()
-			So(err, ShouldBeNil)
-			So(svc, ShouldEqual, "b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, svc, should.Equal("b"))
 		})
 
-		Convey("Broken service config", func() {
+		t.Run("Broken service config", func(t *ftt.Test) {
 			configs["services/${appid}"]["services.cfg"] = `wat`
 
 			sync("bad service config")
 
 			svc, err := serviceCfg()
-			So(err, ShouldBeNil)
-			So(svc, ShouldEqual, "a") // unchanged
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, svc, should.Equal("a")) // unchanged
 		})
 
-		Convey("Project config change", func() {
+		t.Run("Project config change", func(t *ftt.Test) {
 			configs["projects/proj1"]["${appid}.cfg"] = `archive_gs_bucket: "b"`
 
 			sync("")
 
 			prj, err := projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj, ShouldEqual, "b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj, should.Equal("b"))
 		})
 
-		Convey("Broken project config", func() {
+		t.Run("Broken project config", func(t *ftt.Test) {
 			configs["projects/proj1"]["${appid}.cfg"] = `wat`
 
 			sync("bad project config")
 
 			prj, err := projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj, ShouldEqual, "a") // unchanged
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj, should.Equal("a")) // unchanged
 		})
 
-		Convey("New project", func() {
+		t.Run("New project", func(t *ftt.Test) {
 			configs["projects/proj2"] = cfgmem.Files{
 				"${appid}.cfg": `archive_gs_bucket: "new"`,
 			}
@@ -138,24 +138,24 @@ func TestSync(t *testing.T) {
 			sync("")
 
 			prj1, err := projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj1, ShouldEqual, "a") // still there
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj1, should.Equal("a")) // still there
 
 			prj2, err := projectCfg("proj2")
-			So(err, ShouldBeNil)
-			So(prj2, ShouldEqual, "new")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj2, should.Equal("new"))
 		})
 
-		Convey("Removed project", func() {
+		t.Run("Removed project", func(t *ftt.Test) {
 			delete(configs, "projects/proj1")
 
 			sync("")
 
 			_, err = projectCfg("proj1")
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("Broken project doesn't block updated", func() {
+		t.Run("Broken project doesn't block updated", func(t *ftt.Test) {
 			configs["projects/proj1"]["${appid}.cfg"] = `wat`
 			configs["projects/proj2"] = cfgmem.Files{
 				"${appid}.cfg": `archive_gs_bucket: "new"`,
@@ -164,23 +164,23 @@ func TestSync(t *testing.T) {
 			sync("bad project config")
 
 			prj1, err := projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj1, ShouldEqual, "a") // unchanged
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj1, should.Equal("a")) // unchanged
 
 			prj2, err := projectCfg("proj2")
-			So(err, ShouldBeNil)
-			So(prj2, ShouldEqual, "new")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj2, should.Equal("new"))
 
 			delete(configs, "projects/proj2")
 
 			sync("bad project config")
 
 			prj1, err = projectCfg("proj1")
-			So(err, ShouldBeNil)
-			So(prj1, ShouldEqual, "a") // still unchanged
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, prj1, should.Equal("a")) // still unchanged
 
 			_, err = projectCfg("proj2")
-			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 		})
 	})
 }

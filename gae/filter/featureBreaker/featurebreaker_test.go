@@ -19,11 +19,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBrokenFeatures(t *testing.T) {
@@ -31,54 +32,54 @@ func TestBrokenFeatures(t *testing.T) {
 
 	e := errors.New("default err")
 
-	Convey("BrokenFeatures", t, func() {
+	ftt.Run("BrokenFeatures", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
-		Convey("Can break ds", func() {
-			Convey("without a default", func() {
+		t.Run("Can break ds", func(t *ftt.Test) {
+			t.Run("without a default", func(t *ftt.Test) {
 				c, bf := FilterRDS(c, nil)
 				vals := []ds.PropertyMap{{
 					"$key": ds.MkPropertyNI(ds.NewKey(c, "Wut", "", 1, nil)),
 				}}
 
-				Convey("by specifying an error", func() {
+				t.Run("by specifying an error", func(t *ftt.Test) {
 					bf.BreakFeatures(e, "GetMulti", "PutMulti")
-					So(ds.Get(c, vals), ShouldEqual, e)
+					assert.Loosely(t, ds.Get(c, vals), should.Equal(e))
 
-					Convey("and you can unbreak them as well", func() {
+					t.Run("and you can unbreak them as well", func(t *ftt.Test) {
 						bf.UnbreakFeatures("GetMulti")
 
-						So(errors.SingleError(ds.Get(c, vals)), ShouldEqual, ds.ErrNoSuchEntity)
+						assert.Loosely(t, errors.SingleError(ds.Get(c, vals)), should.Equal(ds.ErrNoSuchEntity))
 
-						Convey("no broken features at all is a shortcut", func() {
+						t.Run("no broken features at all is a shortcut", func(t *ftt.Test) {
 							bf.UnbreakFeatures("PutMulti")
-							So(errors.SingleError(ds.Get(c, vals)), ShouldEqual, ds.ErrNoSuchEntity)
+							assert.Loosely(t, errors.SingleError(ds.Get(c, vals)), should.Equal(ds.ErrNoSuchEntity))
 						})
 					})
 				})
 
-				Convey("Not specifying an error gets you a generic error", func() {
+				t.Run("Not specifying an error gets you a generic error", func(t *ftt.Test) {
 					bf.BreakFeatures(nil, "GetMulti")
-					So(ds.Get(c, vals).Error(), ShouldContainSubstring, `feature "GetMulti" is broken`)
+					assert.Loosely(t, ds.Get(c, vals).Error(), should.ContainSubstring(`feature "GetMulti" is broken`))
 				})
 
-				Convey("Callback work and receives correct context", func() {
+				t.Run("Callback work and receives correct context", func(t *ftt.Test) {
 					errToReturn := errors.New("err from callback")
 					key := "some key"
 
 					bf.BreakFeaturesWithCallback(func(c context.Context, feature string) error {
-						So(c.Value(&key), ShouldEqual, "some value")
+						assert.Loosely(t, c.Value(&key), should.Equal("some value"))
 						return errToReturn
 					}, "GetMulti")
 
 					ctx := context.WithValue(c, &key, "some value")
-					So(ds.Get(ctx, vals), ShouldEqual, errToReturn)
+					assert.Loosely(t, ds.Get(ctx, vals), should.Equal(errToReturn))
 
 					errToReturn = nil
-					So(errors.SingleError(ds.Get(ctx, vals)), ShouldEqual, ds.ErrNoSuchEntity)
+					assert.Loosely(t, errors.SingleError(ds.Get(ctx, vals)), should.Equal(ds.ErrNoSuchEntity))
 				})
 
-				Convey("Transaction hooks work", func() {
+				t.Run("Transaction hooks work", func(t *ftt.Test) {
 					// A sequence of errors emulating a bunch of failing RPCs that cause
 					// the transaction body to be retried once.
 					errs := []struct {
@@ -93,31 +94,31 @@ func TestBrokenFeatures(t *testing.T) {
 					}
 
 					bf.BreakFeaturesWithCallback(func(c context.Context, feature string) error {
-						So(len(errs), ShouldBeGreaterThan, 0)
-						So(errs[0].name, ShouldEqual, feature)
+						assert.Loosely(t, len(errs), should.BeGreaterThan(0))
+						assert.Loosely(t, errs[0].name, should.Equal(feature))
 						err := errs[0].err
 						errs = errs[1:]
 						return err
 					}, "BeginTransaction", "CommitTransaction")
 
 					calls := 0
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						calls++
 						return nil
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 
-					So(calls, ShouldEqual, 2)
-					So(errs, ShouldBeEmpty)
+					assert.Loosely(t, calls, should.Equal(2))
+					assert.Loosely(t, errs, should.BeEmpty)
 				})
 			})
 
-			Convey("with a default", func() {
+			t.Run("with a default", func(t *ftt.Test) {
 				c, bf := FilterRDS(c, e)
 				vals := []ds.PropertyMap{{
 					"$key": ds.MkPropertyNI(ds.NewKey(c, "Wut", "", 1, nil)),
 				}}
 				bf.BreakFeatures(nil, "GetMulti")
-				So(ds.Get(c, vals), ShouldEqual, e)
+				assert.Loosely(t, ds.Get(c, vals), should.Equal(e))
 			})
 		})
 	})

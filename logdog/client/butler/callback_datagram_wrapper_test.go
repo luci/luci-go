@@ -17,10 +17,10 @@ package butler
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkDatagramLogEntry(data []byte, partial, last bool, index uint32, size uint64, seq uint64) *logpb.LogEntry {
@@ -54,65 +54,65 @@ func mkWrappedDatagramCb(values *[][]byte, seq *[]uint64) StreamChunkCallback {
 func TestDatagramReassembler(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Callback wrapper works`, t, func() {
-		Convey(`With nil`, func() {
+	ftt.Run(`Callback wrapper works`, t, func(t *ftt.Test) {
+		t.Run(`With nil`, func(t *ftt.Test) {
 			values, seq := [][]byte{}, []uint64{}
 			mkWrappedDatagramCb(&values, &seq)(nil)
-			So(values, ShouldResemble, [][]byte{})
+			assert.Loosely(t, values, should.Resemble([][]byte{}))
 		})
 
-		Convey(`With a complete datagram`, func() {
+		t.Run(`With a complete datagram`, func(t *ftt.Test) {
 			values, seq := [][]byte{}, []uint64{}
 			cbWrapped := mkWrappedDatagramCb(&values, &seq)
 			cbWrapped(mkDatagramLogEntry([]byte{0xca, 0xfe}, false, true, 0, 2, 0))
-			So(values, ShouldResemble, [][]byte{
+			assert.Loosely(t, values, should.Resemble([][]byte{
 				{0xca, 0xfe, 0xbb},
-			})
-			So(seq, ShouldResemble, []uint64{0})
+			}))
+			assert.Loosely(t, seq, should.Resemble([]uint64{0}))
 
-			Convey(`And doesn't call on an incomplete datagram`, func() {
+			t.Run(`And doesn't call on an incomplete datagram`, func(t *ftt.Test) {
 				cbWrapped(mkDatagramLogEntry([]byte{0xd0}, true, false, 0, 1, 1))
 				cbWrapped(mkDatagramLogEntry([]byte{0x65, 0x10}, true, false, 1, 2, 1))
-				So(values, ShouldResemble, [][]byte{
+				assert.Loosely(t, values, should.Resemble([][]byte{
 					{0xca, 0xfe, 0xbb},
-				})
-				So(seq, ShouldResemble, []uint64{0})
+				}))
+				assert.Loosely(t, seq, should.Resemble([]uint64{0}))
 
-				Convey(`Until a LogEntry completes it`, func() {
+				t.Run(`Until a LogEntry completes it`, func(t *ftt.Test) {
 					cbWrapped(mkDatagramLogEntry([]byte{0xbb, 0x12}, true, true, 2, 2, 1))
-					So(values, ShouldResemble, [][]byte{
+					assert.Loosely(t, values, should.Resemble([][]byte{
 						{0xca, 0xfe, 0xbb},
 						{0xd0, 0x65, 0x10, 0xbb, 0x12, 0xbb},
-					})
-					So(seq, ShouldResemble, []uint64{0, 1})
+					}))
+					assert.Loosely(t, seq, should.Resemble([]uint64{0, 1}))
 				})
 			})
 		})
 	})
 
-	Convey(`Callback wrapper panics`, t, func() {
+	ftt.Run(`Callback wrapper panics`, t, func(t *ftt.Test) {
 		cbWrapped := mkWrappedDatagramCb(nil, nil)
 
-		Convey(`When called on non-datagram LogEntries`, func() {
-			So(
+		t.Run(`When called on non-datagram LogEntries`, func(t *ftt.Test) {
+			assert.Loosely(t,
 				func() {
 					cbWrapped(&logpb.LogEntry{Content: &logpb.LogEntry_Text{}})
 				},
-				ShouldPanicLike,
-				"expected *logpb.LogEntry_Datagram",
-			)
+				should.PanicLike(
+					"expected *logpb.LogEntry_Datagram",
+				))
 		})
 
-		Convey(`When called on a complete datagram while buffered entries exist`, func() {
+		t.Run(`When called on a complete datagram while buffered entries exist`, func(t *ftt.Test) {
 			cbWrapped(mkDatagramLogEntry([]byte{0xd0}, true, false, 0, 1, 0))
 			cbWrapped(mkDatagramLogEntry([]byte{0x65, 0x10}, true, false, 1, 2, 0))
-			So(
+			assert.Loosely(t,
 				func() {
 					cbWrapped(mkDatagramLogEntry([]byte{0xbb}, false, true, 0, 1, 1))
 				},
-				ShouldPanicLike,
-				"got self-contained Datagram LogEntry while buffered LogEntries exist",
-			)
+				should.PanicLike(
+					"got self-contained Datagram LogEntry while buffered LogEntries exist",
+				))
 		})
 	})
 }

@@ -22,9 +22,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 )
 
@@ -66,13 +67,13 @@ func TestFSImpl(t *testing.T) {
 			"Url": "https://something.example.com"
 		}`,
 	}, func(folder string) {
-		Convey("basic Test Filesystem config client", t, func() {
+		ftt.Run("basic Test Filesystem config client", t, func(t *ftt.Test) {
 			const expectedRev = "a1b9f654acc5008452980a98ec930cbfdeec82d6"
 
 			client, err := New(folder)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("GetConfig", func() {
+			t.Run("GetConfig", func(t *ftt.Test) {
 				expect := &config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/foobar",
@@ -84,16 +85,16 @@ func TestFSImpl(t *testing.T) {
 					Content: "projects/foobar/something/file.cfg",
 				}
 
-				Convey("All content", func() {
+				t.Run("All content", func(t *ftt.Test) {
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, expect)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(expect))
 				})
 
-				Convey("services", func() {
+				t.Run("services", func(t *ftt.Test) {
 					cfg, err := client.GetConfig(ctx, "services/foosrv", "something.cfg", false)
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResemble, &config.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(&config.Config{
 						Meta: config.Meta{
 							ConfigSet:   "services/foosrv",
 							Path:        "something.cfg",
@@ -102,27 +103,27 @@ func TestFSImpl(t *testing.T) {
 							ViewURL:     "file://./something.cfg",
 						},
 						Content: "services/foosrv/something.cfg",
-					})
+					}))
 				})
 
-				Convey("just meta", func() {
+				t.Run("just meta", func(t *ftt.Test) {
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", true)
-					So(err, ShouldBeNil)
-					So(cfg.ContentHash, ShouldEqual, "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8")
-					So(cfg.Content, ShouldEqual, "")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg.ContentHash, should.Equal("v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8"))
+					assert.Loosely(t, cfg.Content, should.BeEmpty)
 
-					Convey("make sure it doesn't poison the cache", func() {
+					t.Run("make sure it doesn't poison the cache", func(t *ftt.Test) {
 						cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
-						So(err, ShouldBeNil)
-						So(cfg, ShouldResemble, expect)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, cfg, should.Resemble(expect))
 					})
 				})
 			})
 
-			Convey("GetConfigs", func() {
+			t.Run("GetConfigs", func(t *ftt.Test) {
 				cfg, err := client.GetConfigs(ctx, "projects/foobar", nil, false)
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, map[string]config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(map[string]config.Config{
 					"another/file.cfg": {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
@@ -143,22 +144,22 @@ func TestFSImpl(t *testing.T) {
 						},
 						Content: "projects/foobar/something/file.cfg",
 					},
-				})
+				}))
 			})
 
-			Convey("ListFiles", func() {
+			t.Run("ListFiles", func(t *ftt.Test) {
 				cfg, err := client.ListFiles(ctx, "projects/foobar")
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble([]string{
 					"another/file.cfg",
 					"something/file.cfg",
-				})
+				}))
 			})
 
-			Convey("GetProjectConfigs", func() {
+			t.Run("GetProjectConfigs", func(t *ftt.Test) {
 				cfgs, err := client.GetProjectConfigs(ctx, "something/file.cfg", false)
-				So(err, ShouldBeNil)
-				So(cfgs, ShouldResemble, []config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfgs, should.Resemble([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly",
@@ -179,13 +180,13 @@ func TestFSImpl(t *testing.T) {
 						},
 						Content: "projects/foobar/something/file.cfg",
 					},
-				})
+				}))
 			})
 
-			Convey("GetProjects", func() {
+			t.Run("GetProjects", func(t *ftt.Test) {
 				projs, err := client.GetProjects(ctx)
-				So(err, ShouldBeNil)
-				So(projs, ShouldResemble, []config.Project{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, projs, should.Resemble([]config.Project{
 					{
 						ID:       "doodly",
 						Name:     "doodly",
@@ -197,7 +198,7 @@ func TestFSImpl(t *testing.T) {
 						RepoType: "FILESYSTEM",
 						RepoURL:  &url.URL{Scheme: "https", Host: "something.example.com"},
 					},
-				})
+				}))
 			})
 
 		})
@@ -207,13 +208,13 @@ func TestFSImpl(t *testing.T) {
 		"projects/doodly/file.cfg": "",
 		"projects/woodly/file.cfg": "",
 	}, func(folder string) {
-		Convey("rereads configs in sloppy mode", t, func() {
+		ftt.Run("rereads configs in sloppy mode", t, func(t *ftt.Test) {
 			client, err := New(folder)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cfgs, err := client.GetProjectConfigs(ctx, "file.cfg", false)
-			So(err, ShouldBeNil)
-			So(cfgs, ShouldResemble, []config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",
@@ -233,17 +234,17 @@ func TestFSImpl(t *testing.T) {
 					},
 					Content: "projects/woodly/file.cfg",
 				},
-			})
+			}))
 
 			err = os.WriteFile(
 				filepath.Join(folder, filepath.FromSlash("projects/doodly/file.cfg")),
 				[]byte("blarg"),
 				0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cfgs, err = client.GetProjectConfigs(ctx, "file.cfg", false)
-			So(err, ShouldBeNil)
-			So(cfgs, ShouldResemble, []config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly",
@@ -263,7 +264,7 @@ func TestFSImpl(t *testing.T) {
 					},
 					Content: "projects/woodly/file.cfg",
 				},
-			})
+			}))
 		})
 	})
 
@@ -275,24 +276,24 @@ func TestFSImpl(t *testing.T) {
 	withFolder(versioned, func(folder string) {
 		symlink := filepath.Join(folder, "link")
 
-		Convey("Test versioned Filesystem", t, func() {
-			So(errors.FilterFunc(os.Remove(symlink), os.IsNotExist), ShouldBeNil)
-			So(os.Symlink(filepath.Join(folder, "v1"), symlink), ShouldBeNil)
+		ftt.Run("Test versioned Filesystem", t, func(t *ftt.Test) {
+			assert.Loosely(t, errors.FilterFunc(os.Remove(symlink), os.IsNotExist), should.BeNil)
+			assert.Loosely(t, os.Symlink(filepath.Join(folder, "v1"), symlink), should.BeNil)
 			client, err := New(symlink)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("v1", func() {
+			t.Run("v1", func(t *ftt.Test) {
 				cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
-				So(err, ShouldBeNil)
-				So(cfg.Content, ShouldEqual, "v1/projects/foobar/something/file.cfg")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Content, should.Equal("v1/projects/foobar/something/file.cfg"))
 
-				Convey("v2", func() {
-					So(errors.Filter(os.Remove(symlink), os.ErrNotExist), ShouldBeNil)
-					So(os.Symlink(filepath.Join(folder, "v2"), symlink), ShouldBeNil)
+				t.Run("v2", func(t *ftt.Test) {
+					assert.Loosely(t, errors.Filter(os.Remove(symlink), os.ErrNotExist), should.BeNil)
+					assert.Loosely(t, os.Symlink(filepath.Join(folder, "v2"), symlink), should.BeNil)
 
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", false)
-					So(err, ShouldBeNil)
-					So(cfg.Content, ShouldEqual, "v2/projects/foobar/something/file.cfg")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg.Content, should.Equal("v2/projects/foobar/something/file.cfg"))
 				})
 			})
 

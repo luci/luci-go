@@ -20,19 +20,20 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		configs := map[config.Set]cfgmem.Files{
 			"services/${appid}": {
 				"services.cfg": `coordinator { admin_auth_group: "a" }`,
@@ -49,58 +50,58 @@ func TestCache(t *testing.T) {
 		ctx = WithStore(ctx, &Store{})
 
 		sync := func() {
-			So(Sync(ctx), ShouldBeNil)
+			assert.Loosely(t, Sync(ctx), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 		}
 
 		sync()
 
-		Convey("Service config cache", func() {
+		t.Run("Service config cache", func(t *ftt.Test) {
 			cfg, err := Config(ctx)
-			So(err, ShouldBeNil)
-			So(cfg.Coordinator.AdminAuthGroup, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Coordinator.AdminAuthGroup, should.Equal("a"))
 
 			configs["services/${appid}"]["services.cfg"] = `coordinator { admin_auth_group: "b" }`
 			sync()
 
 			// Still seeing the cached config.
 			cfg, err = Config(ctx)
-			So(err, ShouldBeNil)
-			So(cfg.Coordinator.AdminAuthGroup, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Coordinator.AdminAuthGroup, should.Equal("a"))
 
 			tc.Add(2 * time.Minute)
 
 			// The cache expired and we loaded a newer config.
 			cfg, err = Config(ctx)
-			So(err, ShouldBeNil)
-			So(cfg.Coordinator.AdminAuthGroup, ShouldEqual, "b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.Coordinator.AdminAuthGroup, should.Equal("b"))
 		})
 
-		Convey("Project config cache", func() {
+		t.Run("Project config cache", func(t *ftt.Test) {
 			cfg, err := ProjectConfig(ctx, "a")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("a"))
 
 			configs["projects/a"]["${appid}.cfg"] = `archive_gs_bucket: "b"`
 			sync()
 
 			// Still seeing the cached config.
 			cfg, err = ProjectConfig(ctx, "a")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("a"))
 
 			tc.Add(2 * time.Minute)
 
 			// The cache expired and we loaded a newer config.
 			cfg, err = ProjectConfig(ctx, "a")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "b")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("b"))
 		})
 
-		Convey("New project", func() {
+		t.Run("New project", func(t *ftt.Test) {
 			// Missing initially.
 			_, err := ProjectConfig(ctx, "new")
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 
 			// Appears.
 			configs["projects/new"] = cfgmem.Files{
@@ -110,20 +111,20 @@ func TestCache(t *testing.T) {
 
 			// Its absence is still cached.
 			_, err = ProjectConfig(ctx, "new")
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 
 			tc.Add(2 * time.Minute)
 
 			// Appears now.
 			cfg, err := ProjectConfig(ctx, "new")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("a"))
 		})
 
-		Convey("Deleted project", func() {
+		t.Run("Deleted project", func(t *ftt.Test) {
 			cfg, err := ProjectConfig(ctx, "a")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("a"))
 
 			// Gone.
 			delete(configs, "projects/a")
@@ -131,14 +132,14 @@ func TestCache(t *testing.T) {
 
 			// Old config is still cached.
 			cfg, err = ProjectConfig(ctx, "a")
-			So(err, ShouldBeNil)
-			So(cfg.ArchiveGsBucket, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.ArchiveGsBucket, should.Equal("a"))
 
 			tc.Add(2 * time.Minute)
 
 			// Gone now.
 			_, err = ProjectConfig(ctx, "a")
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 		})
 	})
 }

@@ -20,10 +20,10 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/logging/gologger"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	logs "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/client/coordinator"
@@ -33,34 +33,34 @@ import (
 func TestFakeLogs(t *testing.T) {
 	t.Parallel()
 
-	Convey(`fakelogs`, t, func() {
+	ftt.Run(`fakelogs`, t, func(t *ftt.Test) {
 		c := NewClient()
 		ctx := gologger.StdConfig.Use(context.Background())
 
-		Convey(`can open streams`, func() {
+		t.Run(`can open streams`, func(t *ftt.Test) {
 			st, err := c.OpenTextStream("some/prefix", "some/path", &streamproto.Flags{
 				Tags: streamproto.TagMap{"tag": "value"}})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer st.Close()
 
 			_, err = c.Get(ctx, &logs.GetRequest{
 				Path:  "some/prefix/+/some/path",
 				State: true,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			sd, err := c.OpenDatagramStream("some/prefix", "other/path", &streamproto.Flags{
 				ContentType: "application/json"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer sd.Close()
 
-			Convey(`can't open streams twice`, func() {
+			t.Run(`can't open streams twice`, func(t *ftt.Test) {
 				_, err := c.OpenTextStream("some/prefix", "some/path", &streamproto.Flags{
 					Tags: streamproto.TagMap{"tag": "value"}})
-				So(err, ShouldErrLike, `duplicate stream`)
+				assert.Loosely(t, err, should.ErrLike(`duplicate stream`))
 			})
 
-			Convey(`can query`, func() {
+			t.Run(`can query`, func(t *ftt.Test) {
 				rsp, err := c.Query(ctx, &logs.QueryRequest{
 					Project: Project,
 					Path:    "some/prefix/+/**",
@@ -68,78 +68,78 @@ func TestFakeLogs(t *testing.T) {
 						"tag": "",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &logs.QueryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&logs.QueryResponse{
 					Project: Project,
 					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/some/path"},
 					},
-				})
+				}))
 
 				rsp, err = c.Query(ctx, &logs.QueryRequest{
 					Path: "some/prefix/+/other/**",
 				})
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResembleProto, &logs.QueryResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&logs.QueryResponse{
 					Project: Project,
 					Realm:   Realm,
 					Streams: []*logs.QueryResponse_Stream{
 						{Path: "some/prefix/+/other/path"},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey(`can write text streams`, func() {
+		t.Run(`can write text streams`, func(t *ftt.Test) {
 			st, err := c.OpenTextStream("some/prefix", "some/path")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			fmt.Fprintf(st, "I am a banana")
 			fmt.Fprintf(st, "this is\ntwo lines")
-			So(st.Close(), ShouldBeNil)
+			assert.Loosely(t, st.Close(), should.BeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
 			stream := client.Stream(Project, "some/prefix/+/some/path")
 			data, err := io.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 
-			So(string(data), ShouldResemble, "I am a banana\nthis is\ntwo lines\n")
+			assert.Loosely(t, string(data), should.Match("I am a banana\nthis is\ntwo lines\n"))
 		})
 
-		Convey(`can write datagram streams`, func() {
+		t.Run(`can write datagram streams`, func(t *ftt.Test) {
 			st, err := c.OpenDatagramStream("some/prefix", "some/path")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			fmt.Fprintf(st, "I am a banana")
 			fmt.Fprintf(st, "this is\ntwo lines")
-			So(st.Close(), ShouldBeNil)
+			assert.Loosely(t, st.Close(), should.BeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
 			stream := client.Stream(Project, "some/prefix/+/some/path")
 			ent, err := stream.Tail(ctx)
-			So(err, ShouldBeNil)
-			So(string(ent.GetDatagram().Data), ShouldResemble, "this is\ntwo lines")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(ent.GetDatagram().Data), should.Match("this is\ntwo lines"))
 		})
 
-		Convey(`can write binary streams`, func() {
+		t.Run(`can write binary streams`, func(t *ftt.Test) {
 			st, err := c.OpenBinaryStream("some/prefix", "some/path")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			fmt.Fprintf(st, "I am a banana")
 			fmt.Fprintf(st, "this is\ntwo lines")
-			So(st.Close(), ShouldBeNil)
+			assert.Loosely(t, st.Close(), should.BeNil)
 
 			client := &coordinator.Client{C: c, Host: "testing-host.example.com"}
 			stream := client.Stream(Project, "some/prefix/+/some/path")
 			data, err := io.ReadAll(stream.Fetcher(ctx, &fetcher.Options{
 				RequireCompleteStream: true,
 			}).Reader())
-			So(err, ShouldErrLike, nil)
+			assert.Loosely(t, err, should.ErrLike(nil))
 
-			So(data, ShouldResemble, []byte("I am a bananathis is\ntwo lines"))
+			assert.Loosely(t, data, should.Resemble([]byte("I am a bananathis is\ntwo lines")))
 		})
 
 	})

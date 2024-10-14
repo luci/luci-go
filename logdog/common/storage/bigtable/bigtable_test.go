@@ -17,21 +17,22 @@ package bigtable
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/storage"
 
 	"cloud.google.com/go/bigtable"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBigTable(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing BigTable internal functions`, t, func() {
+	ftt.Run(`Testing BigTable internal functions`, t, func(t *ftt.Test) {
 		s := NewMemoryInstance(nil)
 		defer s.Close()
 
-		Convey(`Given a fake BigTable row`, func() {
+		t.Run(`Given a fake BigTable row`, func(t *ftt.Test) {
 			fakeRow := bigtable.Row{
 				"log": []bigtable.ReadItem{
 					{
@@ -42,25 +43,25 @@ func TestBigTable(t *testing.T) {
 				},
 			}
 
-			Convey(`Can extract log data.`, func() {
+			t.Run(`Can extract log data.`, func(t *ftt.Test) {
 				d, err := getLogRowData(fakeRow)
-				So(err, ShouldBeNil)
-				So(d, ShouldResemble, []byte("here is my data"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, d, should.Resemble([]byte("here is my data")))
 			})
 
-			Convey(`Will fail to extract if the column is missing.`, func() {
+			t.Run(`Will fail to extract if the column is missing.`, func(t *ftt.Test) {
 				fakeRow["log"][0].Column = "not-data"
 
 				_, err := getLogRowData(fakeRow)
-				So(err, ShouldEqual, storage.ErrDoesNotExist)
+				assert.Loosely(t, err, should.Equal(storage.ErrDoesNotExist))
 			})
 
-			Convey(`Will fail to extract if the family does not exist.`, func() {
-				So(getReadItem(fakeRow, "invalid", "invalid"), ShouldBeNil)
+			t.Run(`Will fail to extract if the family does not exist.`, func(t *ftt.Test) {
+				assert.Loosely(t, getReadItem(fakeRow, "invalid", "invalid"), should.BeNil)
 			})
 
-			Convey(`Will fail to extract if the column does not exist.`, func() {
-				So(getReadItem(fakeRow, "log", "invalid"), ShouldBeNil)
+			t.Run(`Will fail to extract if the column does not exist.`, func(t *ftt.Test) {
+				assert.Loosely(t, getReadItem(fakeRow, "log", "invalid"), should.BeNil)
 			})
 		})
 

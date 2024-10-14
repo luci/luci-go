@@ -22,35 +22,35 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMatches(t *testing.T) {
 	t.Parallel()
 
-	Convey("Matches", t, func() {
-		Convey("no payload", func() {
+	ftt.Run("Matches", t, func(t *ftt.Test) {
+		t.Run("no payload", func(t *ftt.Test) {
 			c := context.Background()
-			So(Matches(c, "instance", "zone", "project"), ShouldBeFalse)
+			assert.Loosely(t, Matches(c, "instance", "zone", "project"), should.BeFalse)
 		})
 
-		Convey("payload", func() {
+		t.Run("payload", func(t *ftt.Test) {
 			c := withPayload(context.Background(), &Payload{
 				Instance: "instance",
 				Project:  "project",
 				Zone:     "zone",
 			})
 
-			Convey("mismatch", func() {
-				So(Matches(c, "mismatch", "zone", "project"), ShouldBeFalse)
-				So(Matches(c, "instance", "mismatch", "project"), ShouldBeFalse)
-				So(Matches(c, "instance", "zone", "mismatch"), ShouldBeFalse)
+			t.Run("mismatch", func(t *ftt.Test) {
+				assert.Loosely(t, Matches(c, "mismatch", "zone", "project"), should.BeFalse)
+				assert.Loosely(t, Matches(c, "instance", "mismatch", "project"), should.BeFalse)
+				assert.Loosely(t, Matches(c, "instance", "zone", "mismatch"), should.BeFalse)
 			})
 
-			Convey("match", func() {
-				So(Matches(c, "instance", "zone", "project"), ShouldBeTrue)
+			t.Run("match", func(t *ftt.Test) {
+				assert.Loosely(t, Matches(c, "instance", "zone", "project"), should.BeTrue)
 			})
 		})
 	})
@@ -86,83 +86,83 @@ func TestVerify(t *testing.T) {
 		testAudience = "https://example.com"
 	)
 
-	Convey("With mocked certs and time", t, func() {
+	ftt.Run("With mocked certs and time", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), time.Unix(testIat, 0))
 		certs := mockedCerts{}
 
-		Convey("Decode real token", func() {
+		t.Run("Decode real token", func(t *ftt.Test) {
 			payload, err := verifyImpl(ctx, realToken, &certs)
-			So(err, ShouldBeNil)
-			So(payload, ShouldResemble, &Payload{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, payload, should.Resemble(&Payload{
 				Project:  testProject,
 				Zone:     testZone,
 				Instance: testInstance,
 				Audience: testAudience,
-			})
-			So(certs.calls, ShouldHaveLength, 1)
-			So(certs.calls[0], ShouldResemble, checkSignatureCall{
+			}))
+			assert.Loosely(t, certs.calls, should.HaveLength(1))
+			assert.Loosely(t, certs.calls[0], should.Resemble(checkSignatureCall{
 				key:       testKeyID,
 				signed:    []byte(realTokenUnsigned),
 				signature: []byte("REDACTED_SIGNATURE"),
-			})
+			}))
 		})
 
-		Convey("Token used too soon", func() {
+		t.Run("Token used too soon", func(t *ftt.Test) {
 			ctx, _ = testclock.UseTime(context.Background(), time.Unix(testIat-60, 0))
 			_, err := verifyImpl(ctx, realToken, &certs)
-			So(err, ShouldErrLike, "bad JWT: too early (now 1553564372 < iat 1553564432)")
+			assert.Loosely(t, err, should.ErrLike("bad JWT: too early (now 1553564372 < iat 1553564432)"))
 		})
 
-		Convey("Token used too late", func() {
+		t.Run("Token used too late", func(t *ftt.Test) {
 			ctx, _ = testclock.UseTime(context.Background(), time.Unix(testExp+60, 0))
 			_, err := verifyImpl(ctx, realToken, &certs)
-			So(err, ShouldErrLike, "bad JWT: expired (now 1553568092 > exp 1553568032)")
+			assert.Loosely(t, err, should.ErrLike("bad JWT: expired (now 1553568092 > exp 1553568032)"))
 		})
 
-		Convey("Bad JWT structure", func() {
+		t.Run("Bad JWT structure", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, realTokenUnsigned, &certs) // no signature part
-			So(err, ShouldErrLike, "expected 3 components")
+			assert.Loosely(t, err, should.ErrLike("expected 3 components"))
 		})
 
-		Convey("Not base64 header", func() {
+		t.Run("Not base64 header", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, "!!!!.AAAA.AAAA", &certs)
-			So(err, ShouldErrLike, "bad JWT header: not base64")
+			assert.Loosely(t, err, should.ErrLike("bad JWT header: not base64"))
 		})
 
-		Convey("Not JSON header", func() {
+		t.Run("Not JSON header", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, b64("huh")+".AAAA.AAAA", &certs)
-			So(err, ShouldErrLike, "bad JWT header: not JSON")
+			assert.Loosely(t, err, should.ErrLike("bad JWT header: not JSON"))
 		})
 
-		Convey("Wrong algo", func() {
+		t.Run("Wrong algo", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, b64(`{"alg":"huh"}`)+".AAAA.AAAA", &certs)
-			So(err, ShouldErrLike, `bad JWT: only RS256 alg is supported, not "huh"`)
+			assert.Loosely(t, err, should.ErrLike(`bad JWT: only RS256 alg is supported, not "huh"`))
 		})
 
-		Convey("Missing key ID", func() {
+		t.Run("Missing key ID", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, b64(`{"alg":"RS256"}`)+".AAAA.AAAA", &certs)
-			So(err, ShouldErrLike, `bad JWT: missing the signing key ID in the header`)
+			assert.Loosely(t, err, should.ErrLike(`bad JWT: missing the signing key ID in the header`))
 		})
 
-		Convey("Bad base64 signature", func() {
+		t.Run("Bad base64 signature", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, hdr()+".AAAA.!!!!", &certs)
-			So(err, ShouldErrLike, "bad JWT: can't base64 decode the signature")
+			assert.Loosely(t, err, should.ErrLike("bad JWT: can't base64 decode the signature"))
 		})
 
-		Convey("Signature check error", func() {
+		t.Run("Signature check error", func(t *ftt.Test) {
 			certs.err = fmt.Errorf("boom")
 			_, err := verifyImpl(ctx, hdr()+".AAAA."+b64("sig"), &certs)
-			So(err, ShouldErrLike, "bad JWT: bad signature: boom")
+			assert.Loosely(t, err, should.ErrLike("bad JWT: bad signature: boom"))
 		})
 
-		Convey("Bad payload", func() {
+		t.Run("Bad payload", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, hdr()+".!!!!."+b64("sig"), &certs)
-			So(err, ShouldErrLike, "bad JWT payload: not base64")
+			assert.Loosely(t, err, should.ErrLike("bad JWT payload: not base64"))
 		})
 
-		Convey("Missing `google.compute_engine` section", func() {
+		t.Run("Missing `google.compute_engine` section", func(t *ftt.Test) {
 			_, err := verifyImpl(ctx, hdr()+"."+b64(`{}`)+"."+b64("sig"), &certs)
-			So(err, ShouldErrLike, "no google.compute_engine in the GCE VM token, use 'full' format")
+			assert.Loosely(t, err, should.ErrLike("no google.compute_engine in the GCE VM token, use 'full' format"))
 		})
 	})
 }

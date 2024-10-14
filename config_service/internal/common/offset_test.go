@@ -20,29 +20,31 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 )
 
 func TestOffset(t *testing.T) {
 	t.Parallel()
 
-	Convey("DistributeOffset forms uniformish distribution", t, func() {
+	ftt.Run("DistributeOffset forms uniformish distribution", t, func(t *ftt.Test) {
 		testIntervalOf100x := func(d time.Duration) {
-			Convey((100 * d).String(), func() {
+			t.Run((100 * d).String(), func(t *ftt.Test) {
 				offsets := make([]time.Duration, 101)
 				for i := 0; i < 101; i++ {
 					cs := config.MustProjectSet(fmt.Sprintf("example-%d", i))
 					offsets[i] = DistributeOffset(100*d, "config_set", string(cs))
 				}
 				sort.Slice(offsets, func(i, j int) bool { return offsets[i] < offsets[j] })
-				So(offsets[0], ShouldBeGreaterThanOrEqualTo, time.Duration(0))
+				assert.Loosely(t, offsets[0], should.BeGreaterThanOrEqual(time.Duration(0)))
 				for i, o := range offsets {
 					min := time.Duration(i-10) * d
 					max := time.Duration(i+10) * d
-					So(o, ShouldBeBetweenOrEqual, min, max)
+					assert.Loosely(t, o, should.BeBetweenOrEqual(min, max))
 				}
-				So(offsets[100], ShouldBeLessThan, 100*d)
+				assert.Loosely(t, offsets[100], should.BeLessThan(100*d))
 			})
 		}
 

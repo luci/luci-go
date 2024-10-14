@@ -20,7 +20,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -64,7 +67,7 @@ func (o *textTestOutput) testLines() logpb.Text {
 }
 
 func TestTextParser(t *testing.T) {
-	Convey(`Using a parser test stream`, t, func() {
+	ftt.Run(`Using a parser test stream`, t, func(t *ftt.Test) {
 		s := &parserTestStream{
 			now:         time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
 			prefixIndex: 1337,
@@ -193,7 +196,7 @@ func TestTextParser(t *testing.T) {
 				tst.limit = 1024
 			}
 
-			Convey(fmt.Sprintf(`Test case: %q`, tst.title), func() {
+			t.Run(fmt.Sprintf(`Test case: %q`, tst.title), func(t *ftt.Test) {
 				p := &textParser{
 					baseParser: s.base(),
 				}
@@ -212,17 +215,17 @@ func TestTextParser(t *testing.T) {
 				c.allowSplit = tst.allowSplit
 				c.closed = tst.closed
 
-				Convey(fmt.Sprintf(`Processes source %q.`, aggregate), func() {
+				t.Run(fmt.Sprintf(`Processes source %q.`, aggregate), func(t *ftt.Test) {
 					for _, o := range tst.out {
 						le, err := p.nextEntry(c)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(le, shouldMatchLogEntry, s.add(o.increment).le(o.seq, o.testLines()))
+						assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(o.increment).le(o.seq, o.testLines())))
 					}
 
 					le, err := p.nextEntry(c)
-					So(err, ShouldBeNil)
-					So(le, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, le, should.BeNil)
 				})
 			})
 		}

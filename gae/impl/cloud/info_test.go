@@ -20,16 +20,16 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing Info service`, t, func() {
+	ftt.Run(`A testing Info service`, t, func(t *ftt.Test) {
 		const maxNamespaceLen = 100
 
 		gi := serviceInstanceGlobalInfo{
@@ -43,29 +43,29 @@ func TestInfo(t *testing.T) {
 		}
 		c := useInfo(context.Background(), &gi)
 
-		Convey(`Can set valid namespaces.`, func() {
+		t.Run(`Can set valid namespaces.`, func(t *ftt.Test) {
 			for _, v := range []string{
 				"",
 				"test",
 				"0123456789-ABCDEFGHIJKLMNOPQRSTUVWXYZ.abcdefghijklmnopqrstuvwxyz_",
 				strings.Repeat("X", maxNamespaceLen),
 			} {
-				Convey(fmt.Sprintf(`Rejects %q`, v), func() {
+				t.Run(fmt.Sprintf(`Rejects %q`, v), func(t *ftt.Test) {
 					c, err := info.Namespace(c, v)
-					So(err, ShouldBeNil)
-					So(info.GetNamespace(c), ShouldEqual, v)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, info.GetNamespace(c), should.Equal(v))
 				})
 			}
 		})
 
-		Convey(`Rejects invalid namespaces on the client.`, func() {
+		t.Run(`Rejects invalid namespaces on the client.`, func(t *ftt.Test) {
 			for _, v := range []string{
 				" ",
 				strings.Repeat("X", maxNamespaceLen+1),
 			} {
-				Convey(fmt.Sprintf(`Rejects %q`, v), func() {
+				t.Run(fmt.Sprintf(`Rejects %q`, v), func(t *ftt.Test) {
 					_, err := info.Namespace(c, v)
-					So(err, ShouldErrLike, "does not match")
+					assert.Loosely(t, err, should.ErrLike("does not match"))
 				})
 			}
 		})

@@ -19,7 +19,9 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // A proto.Message implementation with test fields.
@@ -32,7 +34,7 @@ func (t *testMessage) String() string { return "" }
 func (t *testMessage) ProtoMessage()  {}
 
 func TestFastSizerVarintLength(t *testing.T) {
-	Convey(`A test message`, t, func() {
+	ftt.Run(`A test message`, t, func(t *ftt.Test) {
 		for _, threshold := range []uint64{
 			0,
 			0x80,
@@ -65,7 +67,7 @@ func TestFastSizerVarintLength(t *testing.T) {
 				}
 
 				expected := varintLength(u64)
-				Convey(fmt.Sprintf(`Testing threshold 0x%x should encode to varint size %d`, u64, expected), func() {
+				t.Run(fmt.Sprintf(`Testing threshold 0x%x should encode to varint size %d`, u64, expected), func(t *ftt.Test) {
 					m := &testMessage{
 						U64: u64,
 					}
@@ -79,17 +81,17 @@ func TestFastSizerVarintLength(t *testing.T) {
 						// Accommodate the tag ("1").
 						expectedSize -= varintLength(1)
 					}
-					So(expected, ShouldEqual, expectedSize)
+					assert.Loosely(t, expected, should.Equal(expectedSize))
 				})
 			}
 		}
 	})
 
-	Convey(`Calculates protobuf size.`, t, func() {
+	ftt.Run(`Calculates protobuf size.`, t, func(t *ftt.Test) {
 		pbuf := &testMessage{
 			U64: 0x600dd065,
 		}
 
-		So(protoSize(pbuf), ShouldEqual, proto.Size(pbuf))
+		assert.Loosely(t, protoSize(pbuf), should.Equal(proto.Size(pbuf)))
 	})
 }

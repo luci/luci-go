@@ -25,17 +25,18 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHTTP(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 		c, tc := testclock.UseTime(c, testclock.TestRecentTimeUTC)
 
@@ -46,7 +47,7 @@ func TestHTTP(t *testing.T) {
 		env.ActAsReader(project, realm)
 
 		tls := ct.MakeStream(c, project, realm, "testing/+/foo/bar")
-		So(tls.Put(c), ShouldBeNil)
+		assert.Loosely(t, tls.Put(c), should.BeNil)
 
 		resp := httptest.NewRecorder()
 		var options userOptions
@@ -67,23 +68,23 @@ func TestHTTP(t *testing.T) {
 			return result
 		}
 
-		Convey(`Do nothing`, func() {
+		t.Run(`Do nothing`, func(t *ftt.Test) {
 			data := fakeData([]logResp{})
-			So(serve(c, data, resp), ShouldBeNil)
+			assert.Loosely(t, serve(c, data, resp), should.BeNil)
 		})
 
-		Convey(`Single Log raw`, func() {
+		t.Run(`Single Log raw`, func(t *ftt.Test) {
 			options.format = "raw"
 			data := fakeData([]logResp{
 				{desc: tls.Desc, log: tls.LogEntry(c, 0)},
 			})
-			So(serve(c, data, resp), ShouldBeNil)
-			So(resp.Body.String(), ShouldResemble, "log entry #0\n")
+			assert.Loosely(t, serve(c, data, resp), should.BeNil)
+			assert.Loosely(t, resp.Body.String(), should.Match("log entry #0\n"))
 			// Note: It's not helpful to assert HTTP header values here,
 			// because this tests serve(), which doesn't set HTTP headers.
 		})
 
-		Convey(`Single Log full HTML`, func() {
+		t.Run(`Single Log full HTML`, func(t *ftt.Test) {
 			options.format = "full"
 			l1 := tls.LogEntry(c, 0)
 			tc.Add(time.Minute)
@@ -92,27 +93,27 @@ func TestHTTP(t *testing.T) {
 				{desc: tls.Desc, log: l1},
 				{desc: tls.Desc, log: l2},
 			})
-			So(serve(c, data, resp), ShouldBeNil)
+			assert.Loosely(t, serve(c, data, resp), should.BeNil)
 			body := resp.Body.String()
 			body = strings.Replace(body, "\n", "", -1)
 			body = strings.Replace(body, "\t", "", -1)
-			So(body, ShouldContainSubstring, `<div class="line" id="L0_0">`)
-			So(body, ShouldContainSubstring, `data-timestamp="1454472306000"`)
-			So(body, ShouldContainSubstring, `log entry #1`)
+			assert.Loosely(t, body, should.ContainSubstring(`<div class="line" id="L0_0">`))
+			assert.Loosely(t, body, should.ContainSubstring(`data-timestamp="1454472306000"`))
+			assert.Loosely(t, body, should.ContainSubstring(`log entry #1`))
 		})
 
-		Convey(`Single error, full HTML`, func() {
+		t.Run(`Single error, full HTML`, func(t *ftt.Test) {
 			options.format = "full"
 			msg := "error encountered <script>alert()</script>"
 			data := fakeData([]logResp{
 				{err: errors.New(msg)},
 			})
-			So(serve(c, data, resp).Error(), ShouldResemble, msg)
+			assert.Loosely(t, serve(c, data, resp).Error(), should.Resemble(msg))
 			body := resp.Body.String()
 			body = strings.Replace(body, "\n", "", -1)
 			body = strings.Replace(body, "\t", "", -1)
 			// Note: HTML escapes don't show up in the GoConvey web interface.
-			So(body, ShouldEqual, fmt.Sprintf(`<div class="error line">LOGDOG ERROR: %s</div>`, template.HTMLEscapeString(msg)))
+			assert.Loosely(t, body, should.Equal(fmt.Sprintf(`<div class="error line">LOGDOG ERROR: %s</div>`, template.HTMLEscapeString(msg))))
 		})
 	})
 
@@ -121,103 +122,103 @@ func TestHTTP(t *testing.T) {
 func TestHelperFunctions(t *testing.T) {
 	t.Parallel()
 
-	Convey(`linkify changes URLs to HTML links`, t, func() {
-		Convey(`with nothing that looks like a URL`, func() {
-			So(linkify(""), ShouldEqual, template.HTML(""))
-			So(linkify(" foo "), ShouldEqual, template.HTML(" foo "))
+	ftt.Run(`linkify changes URLs to HTML links`, t, func(t *ftt.Test) {
+		t.Run(`with nothing that looks like a URL`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify(""), should.Equal(template.HTML("")))
+			assert.Loosely(t, linkify(" foo "), should.Equal(template.HTML(" foo ")))
 		})
 
-		Convey(`does normal HTML escaping`, func() {
-			So(linkify("<foo>"), ShouldEqual, template.HTML("&lt;foo&gt;"))
+		t.Run(`does normal HTML escaping`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify("<foo>"), should.Equal(template.HTML("&lt;foo&gt;")))
 		})
 
-		Convey(`with invalid URLs`, func() {
-			So(linkify("example.com"), ShouldEqual, template.HTML("example.com"))
-			So(linkify("http: //example.com"), ShouldEqual, template.HTML("http: //example.com"))
-			So(linkify("ftp://example.com/foo"), ShouldEqual, template.HTML("ftp://example.com/foo"))
-			So(linkify("xhttp://example.com/"), ShouldEqual, template.HTML("xhttp://example.com/"))
-			So(linkify("http://ex~ample.com"), ShouldEqual, template.HTML("http://ex~ample.com"))
+		t.Run(`with invalid URLs`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify("example.com"), should.Equal(template.HTML("example.com")))
+			assert.Loosely(t, linkify("http: //example.com"), should.Equal(template.HTML("http: //example.com")))
+			assert.Loosely(t, linkify("ftp://example.com/foo"), should.Equal(template.HTML("ftp://example.com/foo")))
+			assert.Loosely(t, linkify("xhttp://example.com/"), should.Equal(template.HTML("xhttp://example.com/")))
+			assert.Loosely(t, linkify("http://ex~ample.com"), should.Equal(template.HTML("http://ex~ample.com")))
 		})
 
-		Convey(`with single simple URLs`, func() {
-			So(linkify("http://example.com"), ShouldEqual,
-				template.HTML(`<a href="http://example.com">http://example.com</a>`))
-			So(linkify("https://example2.com"), ShouldEqual,
-				template.HTML(`<a href="https://example2.com">https://example2.com</a>`))
-			So(linkify("https://example.com/$foo"), ShouldEqual,
-				template.HTML(`<a href="https://example.com/$foo">https://example.com/$foo</a>`))
-			So(linkify("https://example.com/5%20%22/#x x"), ShouldEqual,
-				template.HTML(`<a href="https://example.com/5%20%22/#x">https://example.com/5%20%22/#x</a> x`))
-			So(linkify("https://example.com.:443"), ShouldEqual,
-				template.HTML(`<a href="https://example.com.:443">https://example.com.:443</a>`))
+		t.Run(`with single simple URLs`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify("http://example.com"), should.Equal(
+				template.HTML(`<a href="http://example.com">http://example.com</a>`)))
+			assert.Loosely(t, linkify("https://example2.com"), should.Equal(
+				template.HTML(`<a href="https://example2.com">https://example2.com</a>`)))
+			assert.Loosely(t, linkify("https://example.com/$foo"), should.Equal(
+				template.HTML(`<a href="https://example.com/$foo">https://example.com/$foo</a>`)))
+			assert.Loosely(t, linkify("https://example.com/5%20%22/#x x"), should.Equal(
+				template.HTML(`<a href="https://example.com/5%20%22/#x">https://example.com/5%20%22/#x</a> x`)))
+			assert.Loosely(t, linkify("https://example.com.:443"), should.Equal(
+				template.HTML(`<a href="https://example.com.:443">https://example.com.:443</a>`)))
 		})
 
-		Convey(`with single URLs that have " and & in the path part`, func() {
-			So(linkify("https://example.com/\"/x"), ShouldEqual,
-				template.HTML(`<a href="https://example.com/%22/x">https://example.com/&#34;/x</a>`))
-			So(linkify("https://example.com/&/x"), ShouldEqual,
-				template.HTML(`<a href="https://example.com/&amp;/x">https://example.com/&amp;/x</a>`))
+		t.Run(`with single URLs that have " and & in the path part`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify("https://example.com/\"/x"), should.Equal(
+				template.HTML(`<a href="https://example.com/%22/x">https://example.com/&#34;/x</a>`)))
+			assert.Loosely(t, linkify("https://example.com/&/x"), should.Equal(
+				template.HTML(`<a href="https://example.com/&amp;/x">https://example.com/&amp;/x</a>`)))
 		})
 
-		Convey(`with single URLs that have " and <> immediately after the domain`, func() {
-			So(linkify(`https://example.com"lol</a>CRAFTED_HTML`), ShouldEqual,
-				template.HTML(`<a href="https://example.com">https://example.com</a>&#34;lol&lt;/a&gt;CRAFTED_HTML`))
+		t.Run(`with single URLs that have " and <> immediately after the domain`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify(`https://example.com"lol</a>CRAFTED_HTML`), should.Equal(
+				template.HTML(`<a href="https://example.com">https://example.com</a>&#34;lol&lt;/a&gt;CRAFTED_HTML`)))
 		})
 
-		Convey(`with single URLs that have " and <> in the path part`, func() {
-			So(linkify(`https://example.com/"lol</a>CRAFTED_HTML`), ShouldEqual,
-				template.HTML(`<a href="https://example.com/%22lol%3c/a%3eCRAFTED_HTML">https://example.com/&#34;lol&lt;/a&gt;CRAFTED_HTML</a>`))
+		t.Run(`with single URLs that have " and <> in the path part`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify(`https://example.com/"lol</a>CRAFTED_HTML`), should.Equal(
+				template.HTML(`<a href="https://example.com/%22lol%3c/a%3eCRAFTED_HTML">https://example.com/&#34;lol&lt;/a&gt;CRAFTED_HTML</a>`)))
 		})
 
-		Convey(`with multiple URLs`, func() {
-			So(linkify("x http://x.com z http://y.com y"), ShouldEqual,
-				template.HTML(`x <a href="http://x.com">http://x.com</a> z <a href="http://y.com">http://y.com</a> y`))
-			So(linkify("http://x.com http://y.com"), ShouldEqual,
-				template.HTML(`<a href="http://x.com">http://x.com</a> <a href="http://y.com">http://y.com</a>`))
+		t.Run(`with multiple URLs`, func(t *ftt.Test) {
+			assert.Loosely(t, linkify("x http://x.com z http://y.com y"), should.Equal(
+				template.HTML(`x <a href="http://x.com">http://x.com</a> z <a href="http://y.com">http://y.com</a> y`)))
+			assert.Loosely(t, linkify("http://x.com http://y.com"), should.Equal(
+				template.HTML(`<a href="http://x.com">http://x.com</a> <a href="http://y.com">http://y.com</a>`)))
 		})
 
-		Convey(`lineTemplate uses linkify`, func() {
+		t.Run(`lineTemplate uses linkify`, func(t *ftt.Test) {
 			lt := logLineStruct{Text: "See https://crbug.com/1167332."}
 			w := bytes.NewBuffer([]byte{})
-			So(lineTemplate.Execute(w, lt), ShouldBeNil)
-			So(w.String(), ShouldContainSubstring,
-				`<span class="text">See <a href="https://crbug.com/1167332">https://crbug.com/1167332</a>.</span>`)
+			assert.Loosely(t, lineTemplate.Execute(w, lt), should.BeNil)
+			assert.Loosely(t, w.String(), should.ContainSubstring(
+				`<span class="text">See <a href="https://crbug.com/1167332">https://crbug.com/1167332</a>.</span>`))
 		})
 
 	})
 
-	Convey(`contentTypeHeader adjusts based on format and data content type`, t, func() {
+	ftt.Run(`contentTypeHeader adjusts based on format and data content type`, t, func(t *ftt.Test) {
 		// Using incomplete logData as the headers only depend on metadata, not
 		// actual log responses. This is a small unit test only testing one
 		// small behavior which is not covered by the larger serve() tests
 		// above.
 
-		Convey(`Raw text with default text encoding`, func() {
-			So(contentTypeHeader(logData{
+		t.Run(`Raw text with default text encoding`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
 				options: userOptions{format: "raw"},
 				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=utf-8"},
-			}), ShouldEqual, "text/plain; charset=utf-8")
+			}), should.Equal("text/plain; charset=utf-8"))
 		})
 
-		Convey(`Raw text with alternate text encoding`, func() {
-			So(contentTypeHeader(logData{
+		t.Run(`Raw text with alternate text encoding`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
 				options: userOptions{format: "raw"},
 				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=iso-unicorns"},
-			}), ShouldEqual, "text/plain; charset=iso-unicorns")
+			}), should.Equal("text/plain; charset=iso-unicorns"))
 		})
 
-		Convey(`HTML with default text encoding`, func() {
-			So(contentTypeHeader(logData{
+		t.Run(`HTML with default text encoding`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
 				options: userOptions{format: "full"},
 				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=utf-8"},
-			}), ShouldEqual, "text/html; charset=utf-8")
+			}), should.Equal("text/html; charset=utf-8"))
 		})
 
-		Convey(`HTML with alternate text encoding`, func() {
-			So(contentTypeHeader(logData{
+		t.Run(`HTML with alternate text encoding`, func(t *ftt.Test) {
+			assert.Loosely(t, contentTypeHeader(logData{
 				options: userOptions{format: "full"},
 				logDesc: &logpb.LogStreamDescriptor{ContentType: "text/plain; charset=iso-unicorns"},
-			}), ShouldEqual, "text/html; charset=iso-unicorns")
+			}), should.Equal("text/html; charset=iso-unicorns"))
 		})
 	})
 }

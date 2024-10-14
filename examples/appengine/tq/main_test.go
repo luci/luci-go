@@ -26,19 +26,19 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/examples/appengine/tq/taskspb"
 
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueue(t *testing.T) {
 	t.Parallel()
 
-	Convey("Chain works", t, func() {
+	ftt.Run("Chain works", t, func(t *ftt.Test) {
 		var epoch = time.Unix(1500000000, 0).UTC()
 
 		// Need the test clock to emulate delayed tasks. Tick it whenever TQ waits.
@@ -65,12 +65,12 @@ func TestQueue(t *testing.T) {
 		sched.TaskFailed = func(ctx context.Context, task *tqtesting.Task) { panic("should not fail") }
 
 		// Enqueue the first task.
-		So(EnqueueCountDown(ctx, 5), ShouldBeNil)
+		assert.Loosely(t, EnqueueCountDown(ctx, 5), should.BeNil)
 
 		// Examine currently enqueue tasks.
-		So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 			&taskspb.CountDownTask{Number: 5},
-		})
+		}))
 
 		// Simulate the Cloud Tasks run loop until there's no more pending or
 		// executing tasks left
@@ -82,22 +82,22 @@ func TestQueue(t *testing.T) {
 		datastore.Run(ctx, datastore.NewQuery("ExampleEntity"), func(e *ExampleEntity) {
 			numbers[e.ID] = e.LastUpdate.Sub(epoch)
 		})
-		So(numbers, ShouldResemble, map[int64]time.Duration{
+		assert.Loosely(t, numbers, should.Resemble(map[int64]time.Duration{
 			5: 100 * time.Millisecond,
 			4: 200 * time.Millisecond,
 			3: 300 * time.Millisecond,
 			2: 400 * time.Millisecond,
 			1: 500 * time.Millisecond,
-		})
+		}))
 
 		// Can also examine all executed tasks.
-		So(succeeded.Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		assert.Loosely(t, succeeded.Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 			&taskspb.CountDownTask{Number: 5},
 			&taskspb.CountDownTask{Number: 4},
 			&taskspb.CountDownTask{Number: 3},
 			&taskspb.CountDownTask{Number: 2},
 			&taskspb.CountDownTask{Number: 1},
 			&taskspb.CountDownTask{Number: 0},
-		})
+		}))
 	})
 }

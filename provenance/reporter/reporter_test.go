@@ -18,67 +18,68 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	snooperpb "go.chromium.org/luci/provenance/api/snooperpb/v1"
 )
 
 func TestSelfReportClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("testing self reports", t, func() {
+	ftt.Run("testing self reports", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		reporter := Report{RClient: &fakeClient{}}
 
-		Convey("cipd admission works", func() {
+		t.Run("cipd admission works", func(t *ftt.Test) {
 			ok, err := reporter.ReportCipdAdmission(ctx, "package", "deadbeef")
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("git checkout works", func() {
+		t.Run("git checkout works", func(t *ftt.Test) {
 			ok, err := reporter.ReportGitCheckout(ctx, "https://repo.git", "deadbeef", "refs/branch")
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("gcs download works", func() {
+		t.Run("gcs download works", func(t *ftt.Test) {
 			ok, err := reporter.ReportGcsDownload(ctx, "gs://unique/path/to/artifact", "deadbeef")
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("report stage works", func() {
+		t.Run("report stage works", func(t *ftt.Test) {
 			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_FETCH, "", 0)
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("report stage fails", func() {
+		t.Run("report stage fails", func(t *ftt.Test) {
 			ok, err := reporter.ReportStage(ctx, snooperpb.TaskStage_STARTED, "", 0)
-			So(ok, ShouldEqual, false)
-			So(err, ShouldErrLike, "a recipe and pid must be provided when task starts")
+			assert.Loosely(t, ok, should.Equal(false))
+			assert.Loosely(t, err, should.ErrLike("a recipe and pid must be provided when task starts"))
 		})
-		Convey("report cipd digest works", func() {
+		t.Run("report cipd digest works", func(t *ftt.Test) {
 			ok, err := reporter.ReportCipdDigest(ctx, "deadbeef", "package", "iid")
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("report gcs digest works", func() {
+		t.Run("report gcs digest works", func(t *ftt.Test) {
 			ok, err := reporter.ReportGcsDigest(ctx, "deadbeef", "gs://bucket/example/1.2.3/app")
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			ok, err := reporter.ReportPID(ctx, 123)
-			So(ok, ShouldEqual, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ok, should.Equal(true))
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("fails pid validation", func() {
+		t.Run("fails pid validation", func(t *ftt.Test) {
 			ok, err := reporter.ReportPID(ctx, 0)
-			So(ok, ShouldEqual, false)
-			So(err, ShouldErrLike, "pid must be present")
+			assert.Loosely(t, ok, should.Equal(false))
+			assert.Loosely(t, err, should.ErrLike("pid must be present"))
 		})
 	})
 }

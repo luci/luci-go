@@ -21,8 +21,9 @@ import (
 	"net/url"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStreamAddr(t *testing.T) {
@@ -48,78 +49,78 @@ func TestStreamAddr(t *testing.T) {
 		{"logdog://example.com/foo/bar/+/ba!", "invalid stream path"},
 	}
 
-	Convey(`Testing StreamAddr`, t, func() {
+	ftt.Run(`Testing StreamAddr`, t, func(t *ftt.Test) {
 
 		for _, tc := range successes {
-			Convey(fmt.Sprintf(`Success: %q`, tc.s), func() {
+			t.Run(fmt.Sprintf(`Success: %q`, tc.s), func(t *ftt.Test) {
 				addr, err := ParseURL(tc.s)
-				So(err, ShouldBeNil)
-				So(addr, ShouldResemble, &tc.exp)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, addr, should.Resemble(&tc.exp))
 
 				u, err := url.Parse(tc.s)
-				So(err, ShouldBeNil)
-				So(addr.URL(), ShouldResemble, u)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, addr.URL(), should.Resemble(u))
 			})
 		}
 
 		for _, tc := range failures {
-			Convey(fmt.Sprintf(`Failure: %q fails like: %q`, tc.s, tc.err), func() {
+			t.Run(fmt.Sprintf(`Failure: %q fails like: %q`, tc.s, tc.err), func(t *ftt.Test) {
 				_, err := ParseURL(tc.s)
-				So(err, ShouldErrLike, tc.err)
+				assert.Loosely(t, err, should.ErrLike(tc.err))
 			})
 		}
 	})
 
-	Convey(`StreamAddr is a flag.Value`, t, func() {
+	ftt.Run(`StreamAddr is a flag.Value`, t, func(t *ftt.Test) {
 		fs := flag.NewFlagSet("testing", flag.ContinueOnError)
 		a := &StreamAddr{}
 
 		fs.Var(a, "addr", "its totally an address of a thing")
 
-		Convey(`good`, func() {
-			So(fs.Parse([]string{"-addr", "logdog://host/project/a/+/b"}), ShouldBeNil)
-			So(a, ShouldResemble, &StreamAddr{
+		t.Run(`good`, func(t *ftt.Test) {
+			assert.Loosely(t, fs.Parse([]string{"-addr", "logdog://host/project/a/+/b"}), should.BeNil)
+			assert.Loosely(t, a, should.Resemble(&StreamAddr{
 				"host",
 				"project",
 				"a/+/b",
-			})
+			}))
 		})
 
-		Convey(`bad`, func() {
-			So(fs.Parse([]string{"-addr", "://host/project/a/+/b"}), ShouldErrLike,
-				"failed to parse URL")
+		t.Run(`bad`, func(t *ftt.Test) {
+			assert.Loosely(t, fs.Parse([]string{"-addr", "://host/project/a/+/b"}), should.ErrLike(
+				"failed to parse URL"))
 		})
 	})
 
-	Convey(`StreamAddr as a json value`, t, func() {
+	ftt.Run(`StreamAddr as a json value`, t, func(t *ftt.Test) {
 		a := &StreamAddr{}
 
-		Convey(`good`, func() {
-			Convey(`zero`, func() {
+		t.Run(`good`, func(t *ftt.Test) {
+			t.Run(`zero`, func(t *ftt.Test) {
 				data, err := json.Marshal(a)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble, `{}`)
-				So(json.Unmarshal(data, a), ShouldBeNil)
-				So(a, ShouldResemble, &StreamAddr{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(`{}`))
+				assert.Loosely(t, json.Unmarshal(data, a), should.BeNil)
+				assert.Loosely(t, a, should.Resemble(&StreamAddr{}))
 			})
 
-			Convey(`full`, func() {
+			t.Run(`full`, func(t *ftt.Test) {
 				a.Host = "host"
 				a.Project = "project"
 				a.Path = "a/+/b"
 				data, err := json.Marshal(a)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble, `{"host":"host","project":"project","path":"a/+/b"}`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(`{"host":"host","project":"project","path":"a/+/b"}`))
 
 				a2 := &StreamAddr{}
-				So(json.Unmarshal(data, a2), ShouldBeNil)
-				So(a2, ShouldResemble, a)
+				assert.Loosely(t, json.Unmarshal(data, a2), should.BeNil)
+				assert.Loosely(t, a2, should.Resemble(a))
 			})
 		})
 
-		Convey(`bad`, func() {
-			So(json.Unmarshal([]byte(`{"host":"host","project":"project","path":"fake"}`), a), ShouldErrLike,
-				"must contain at least one character") // from bad Path
+		t.Run(`bad`, func(t *ftt.Test) {
+			assert.Loosely(t, json.Unmarshal([]byte(`{"host":"host","project":"project","path":"fake"}`), a), should.ErrLike(
+				"must contain at least one character")) // from bad Path
 		})
 	})
 }

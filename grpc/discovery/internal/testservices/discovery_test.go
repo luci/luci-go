@@ -28,16 +28,17 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/discovery"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // force test services registration.
 var _ = CalcServer(nil)
 
 func TestDiscovery(t *testing.T) {
-	Convey("Discovery", t, func() {
+	ftt.Run("Discovery", t, func(t *ftt.Test) {
 
 		server := discovery.New(
 			"discovery.Discovery",
@@ -47,40 +48,40 @@ func TestDiscovery(t *testing.T) {
 
 		c := context.Background()
 		res, err := server.Describe(c, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(res.Services, ShouldResemble, []string{
+		assert.Loosely(t, res.Services, should.Resemble([]string{
 			"discovery.Discovery",
 			"testservices.Greeter",
 			"testservices.Calc",
-		})
+		}))
 
 		desc := res.Description
 
 		// this checks that file deduplication actually works.
-		So(len(desc.File), ShouldEqual, 3)
+		assert.Loosely(t, len(desc.File), should.Equal(3))
 
 		_, discoveryIndex := descutil.FindService(desc, "discovery.Discovery")
-		So(discoveryIndex, ShouldNotEqual, -1)
+		assert.Loosely(t, discoveryIndex, should.NotEqual(-1))
 
 		_, calcIndex := descutil.FindService(desc, "testservices.Calc")
-		So(calcIndex, ShouldNotEqual, -1)
+		assert.Loosely(t, calcIndex, should.NotEqual(-1))
 
 		file, greeterIndex := descutil.FindService(desc, "testservices.Greeter")
-		So(greeterIndex, ShouldNotEqual, -1)
+		assert.Loosely(t, greeterIndex, should.NotEqual(-1))
 		greeter := file.Service[greeterIndex]
 
 		sayHelloIndex := descutil.FindMethodForService(greeter, "SayHello")
-		So(sayHelloIndex, ShouldNotEqual, -1)
+		assert.Loosely(t, sayHelloIndex, should.NotEqual(-1))
 		sayHello := greeter.Method[sayHelloIndex]
 
-		So(sayHello.GetInputType(), ShouldEqual, ".testservices.HelloRequest")
+		assert.Loosely(t, sayHello.GetInputType(), should.Equal(".testservices.HelloRequest"))
 		_, obj, _ := descutil.Resolve(desc, "testservices.HelloRequest")
-		So(obj, ShouldNotBeNil)
+		assert.Loosely(t, obj, should.NotBeNil)
 		helloReq := obj.(*descriptorpb.DescriptorProto)
-		So(helloReq, ShouldNotBeNil)
-		So(helloReq.Field, ShouldHaveLength, 1)
-		So(helloReq.Field[0].GetName(), ShouldEqual, "name")
-		So(helloReq.Field[0].GetType(), ShouldEqual, descriptorpb.FieldDescriptorProto_TYPE_STRING)
+		assert.Loosely(t, helloReq, should.NotBeNil)
+		assert.Loosely(t, helloReq.Field, should.HaveLength(1))
+		assert.Loosely(t, helloReq.Field[0].GetName(), should.Equal("name"))
+		assert.Loosely(t, helloReq.Field[0].GetType(), should.Equal(descriptorpb.FieldDescriptorProto_TYPE_STRING))
 	})
 }

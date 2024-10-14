@@ -21,14 +21,17 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("ComputeAmount", t, func() {
+	ftt.Run("ComputeAmount", t, func(t *ftt.Test) {
 		cfg := &Config{
 			Amount: &Amount{
 				Min: 1,
@@ -36,43 +39,43 @@ func TestConfig(t *testing.T) {
 			},
 		}
 		amt, err := cfg.ComputeAmount(2, time.Time{})
-		So(err, ShouldBeNil)
-		So(amt, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, amt, should.Equal(2))
 	})
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				cfg := &Config{}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "at least one disk is required")
-				So(errs, ShouldContainErr, "prefix is required")
-				So(errs, ShouldContainErr, "duration or seconds is required")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("at least one disk is required"))
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("prefix is required"))
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration or seconds is required"))
 			})
 
-			Convey("current amount", func() {
+			t.Run("current amount", func(t *ftt.Test) {
 				cfg := &Config{
 					CurrentAmount: 1,
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "current amount must not be specified")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("current amount must not be specified"))
 			})
 
-			Convey("revision", func() {
+			t.Run("revision", func(t *ftt.Test) {
 				cfg := &Config{
 					Revision: "revision",
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "revision must not be specified")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("revision must not be specified"))
 			})
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			cfg := &Config{
 				Attributes: &VM{
 					Disk: []*Disk{
@@ -95,7 +98,7 @@ func TestConfig(t *testing.T) {
 				Prefix: "prefix",
 			}
 			cfg.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})
 }

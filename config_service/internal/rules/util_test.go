@@ -21,33 +21,34 @@ import (
 
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/data/stringset"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateAccess(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate access", t, func() {
+	ftt.Run("Validate access", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 
-		Convey("not specified", func() {
+		t.Run("not specified", func(t *ftt.Test) {
 			validateAccess(vctx, "")
-			So(vctx.Finalize(), ShouldErrLike, `not specified`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`not specified`))
 		})
-		Convey("invalid group", func() {
+		t.Run("invalid group", func(t *ftt.Test) {
 			validateAccess(vctx, "group:foo^")
-			So(vctx.Finalize(), ShouldErrLike, `invalid auth group: "foo^"`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid auth group: "foo^"`))
 		})
-		Convey("unknown identity", func() {
+		t.Run("unknown identity", func(t *ftt.Test) {
 			validateAccess(vctx, "bad-kind:abc")
-			So(vctx.Finalize(), ShouldErrLike, `invalid identity "bad-kind:abc"; reason:`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid identity "bad-kind:abc"; reason:`))
 		})
-		Convey("bad email", func() {
+		t.Run("bad email", func(t *ftt.Test) {
 			validateAccess(vctx, "not-a-valid-email")
-			So(vctx.Finalize(), ShouldErrLike, `invalid email address:`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid email address:`))
 		})
 	})
 }
@@ -55,17 +56,17 @@ func TestValidateAccess(t *testing.T) {
 func TestValidateEmail(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate email", t, func() {
+	ftt.Run("Validate email", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 
-		Convey("not specified", func() {
+		t.Run("not specified", func(t *ftt.Test) {
 			validateEmail(vctx, "")
-			So(vctx.Finalize(), ShouldErrLike, `email not specified`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`email not specified`))
 		})
-		Convey("invalid email", func() {
+		t.Run("invalid email", func(t *ftt.Test) {
 			validateEmail(vctx, "not-a-valid-email")
-			So(vctx.Finalize(), ShouldErrLike, `invalid email address:`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid email address:`))
 		})
 	})
 }
@@ -73,7 +74,7 @@ func TestValidateEmail(t *testing.T) {
 func TestValidateSorted(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate sorted", t, func() {
+	ftt.Run("Validate sorted", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 
@@ -82,22 +83,22 @@ func TestValidateSorted(t *testing.T) {
 		}
 		getIDFn := func(ti testItem) string { return ti.id }
 
-		Convey("handle empty", func() {
+		t.Run("handle empty", func(t *ftt.Test) {
 			validateSorted[testItem](vctx, []testItem{}, "test_items", getIDFn)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
-		Convey("sorted", func() {
+		t.Run("sorted", func(t *ftt.Test) {
 			validateSorted[testItem](vctx, []testItem{{"a"}, {"b"}, {"c"}}, "test_items", getIDFn)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
-		Convey("ignore empty", func() {
+		t.Run("ignore empty", func(t *ftt.Test) {
 			validateSorted[testItem](vctx, []testItem{{"a"}, {""}, {"c"}}, "test_items", getIDFn)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
-		Convey("not sorted", func() {
+		t.Run("not sorted", func(t *ftt.Test) {
 			validateSorted[testItem](vctx, []testItem{{"a"}, {"c"}, {"b"}, {"d"}}, "test_items", getIDFn)
 			verr := vctx.Finalize().(*validation.Error)
-			So(verr.WithSeverity(validation.Warning), ShouldErrLike, `test_items are not sorted by id. First offending id: "b"`)
+			assert.Loosely(t, verr.WithSeverity(validation.Warning), should.ErrLike(`test_items are not sorted by id. First offending id: "b"`))
 		})
 	})
 }
@@ -105,28 +106,28 @@ func TestValidateSorted(t *testing.T) {
 func TestValidateUniqueID(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate unique ID", t, func() {
+	ftt.Run("Validate unique ID", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			validateUniqueID(vctx, "", stringset.New(0), nil)
-			So(vctx.Finalize(), ShouldErrLike, `not specified`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`not specified`))
 		})
 
-		Convey("duplicate", func() {
+		t.Run("duplicate", func(t *ftt.Test) {
 			seen := stringset.New(2)
 			validateUniqueID(vctx, "id", seen, nil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			validateUniqueID(vctx, "id", seen, nil)
-			So(vctx.Finalize(), ShouldErrLike, `duplicate: "id"`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`duplicate: "id"`))
 		})
 
-		Convey("apply validateIDFn", func() {
+		t.Run("apply validateIDFn", func(t *ftt.Test) {
 			validateUniqueID(vctx, "id", stringset.New(0), func(vctx *validation.Context, id string) {
 				vctx.Errorf("bad bad bad")
 			})
-			So(vctx.Finalize(), ShouldErrLike, `bad bad bad`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`bad bad bad`))
 		})
 	})
 }
@@ -134,25 +135,25 @@ func TestValidateUniqueID(t *testing.T) {
 func TestValidateURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate url", t, func() {
+	ftt.Run("Validate url", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			validateURL(vctx, "")
-			So(vctx.Finalize(), ShouldErrLike, `not specified`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`not specified`))
 		})
-		Convey("invalid url", func() {
+		t.Run("invalid url", func(t *ftt.Test) {
 			validateURL(vctx, "https://example.com\\foo")
-			So(vctx.Finalize(), ShouldErrLike, `invalid url:`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid url:`))
 		})
-		Convey("missing host name", func() {
+		t.Run("missing host name", func(t *ftt.Test) {
 			validateURL(vctx, "https://")
-			So(vctx.Finalize(), ShouldErrLike, `hostname must be specified`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`hostname must be specified`))
 		})
-		Convey("must use https", func() {
+		t.Run("must use https", func(t *ftt.Test) {
 			validateURL(vctx, "http://example.com")
-			So(vctx.Finalize(), ShouldErrLike, `scheme must be "https"`)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`scheme must be "https"`))
 		})
 	})
 }

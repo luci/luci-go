@@ -18,25 +18,26 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLUCIExe(t *testing.T) {
-	Convey(`test luciexe`, t, func() {
+	ftt.Run(`test luciexe`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`can get from empty ctx`, func() {
-			So(GetLUCIExe(ctx), ShouldResembleProto, (*LUCIExe)(nil))
+		t.Run(`can get from empty ctx`, func(t *ftt.Test) {
+			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
 		})
 
-		Convey(`can set in ctx`, func() {
+		t.Run(`can set in ctx`, func(t *ftt.Test) {
 			ctx = SetLUCIExe(ctx, &LUCIExe{CacheDir: "hello"})
-			So(GetLUCIExe(ctx), ShouldResembleProto, &LUCIExe{CacheDir: "hello"})
+			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble(&LUCIExe{CacheDir: "hello"}))
 
-			Convey(`setting nil clears it out`, func() {
+			t.Run(`setting nil clears it out`, func(t *ftt.Test) {
 				ctx = SetLUCIExe(ctx, nil)
-				So(GetLUCIExe(ctx), ShouldResembleProto, (*LUCIExe)(nil))
+				assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
 			})
 		})
 	})

@@ -30,6 +30,9 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -39,10 +42,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testTopic struct {
@@ -129,7 +128,7 @@ func deconstructMessage(msg *pubsub.Message) (*logpb.ButlerMetadata, *logpb.Butl
 }
 
 func TestOutput(t *testing.T) {
-	Convey(`An Output using a test Pub/Sub instance`, t, func() {
+	ftt.Run(`An Output using a test Pub/Sub instance`, t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
@@ -140,7 +139,7 @@ func TestOutput(t *testing.T) {
 			Topic: tt,
 		}
 		o := newPubsub(ctx, conf).(*pubSubOutput)
-		So(o, ShouldNotBeNil)
+		assert.Loosely(t, o, should.NotBeNil)
 		defer o.Close()
 
 		bundle := &logpb.ButlerLogBundle{
@@ -150,35 +149,35 @@ func TestOutput(t *testing.T) {
 			},
 		}
 
-		Convey(`Can send/receive a bundle.`, func() {
+		t.Run(`Can send/receive a bundle.`, func(t *ftt.Test) {
 			errC := make(chan error)
 			go func() {
 				errC <- o.SendBundle(bundle)
 			}()
 			msg := <-tt.msgC
-			So(<-errC, ShouldBeNil)
+			assert.Loosely(t, <-errC, should.BeNil)
 
 			h, b, err := deconstructMessage(msg)
-			So(err, ShouldBeNil)
-			So(h.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
-			So(b, ShouldResembleProto, bundle)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, h.Compression, should.Equal(logpb.ButlerMetadata_NONE))
+			assert.Loosely(t, b, should.Resemble(bundle))
 
-			Convey(`And records stats.`, func() {
+			t.Run(`And records stats.`, func(t *ftt.Test) {
 				st := o.Stats()
-				So(st.Errors(), ShouldEqual, 0)
-				So(st.SentBytes(), ShouldBeGreaterThan, 0)
-				So(st.SentMessages(), ShouldEqual, 1)
-				So(st.DiscardedMessages(), ShouldEqual, 0)
+				assert.Loosely(t, st.Errors(), should.BeZero)
+				assert.Loosely(t, st.SentBytes(), should.BeGreaterThan(0))
+				assert.Loosely(t, st.SentMessages(), should.Equal(1))
+				assert.Loosely(t, st.DiscardedMessages(), should.BeZero)
 			})
 		})
 
-		Convey(`Will return an error if Publish failed non-transiently.`, func() {
+		t.Run(`Will return an error if Publish failed non-transiently.`, func(t *ftt.Test) {
 			err := status.Error(codes.InvalidArgument, "boom")
 			tt.err = func() error { return err }
-			So(o.SendBundle(bundle), ShouldEqual, err)
+			assert.Loosely(t, o.SendBundle(bundle), should.Equal(err))
 		})
 
-		Convey(`Will retry indefinitely if Publish fails transiently (Context deadline).`, func() {
+		t.Run(`Will retry indefinitely if Publish fails transiently (Context deadline).`, func(t *ftt.Test) {
 			const retries = 30
 
 			stopErr := status.Error(codes.InvalidArgument, "boom")
@@ -206,11 +205,11 @@ func TestOutput(t *testing.T) {
 			// Time our our RPC. Because of our timer callback, this will always be
 			// hit.
 			o.RPCTimeout = 30 * time.Second
-			So(o.SendBundle(bundle), ShouldEqual, stopErr)
-			So(count, ShouldEqual, retries)
+			assert.Loosely(t, o.SendBundle(bundle), should.Equal(stopErr))
+			assert.Loosely(t, count, should.Equal(retries))
 		})
 
-		Convey(`Will retry indefinitely if Publish fails transiently (gRPC).`, func() {
+		t.Run(`Will retry indefinitely if Publish fails transiently (gRPC).`, func(t *ftt.Test) {
 			const retries = 30
 
 			// Advance our clock each time there is a delay up until count.
@@ -232,8 +231,8 @@ func TestOutput(t *testing.T) {
 
 			// Time our our RPC. Because of our timer callback, this will always be
 			// hit.
-			So(o.SendBundle(bundle), ShouldEqual, stopErr)
-			So(count, ShouldEqual, retries)
+			assert.Loosely(t, o.SendBundle(bundle), should.Equal(stopErr))
+			assert.Loosely(t, count, should.Equal(retries))
 		})
 	})
 }

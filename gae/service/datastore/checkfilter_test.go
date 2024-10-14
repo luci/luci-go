@@ -20,10 +20,10 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type fakeRDS struct{ RawInterface }
@@ -33,7 +33,7 @@ func (fakeRDS) Constraints() Constraints { return Constraints{} }
 func TestCheckFilter(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test checkFilter", t, func() {
+	ftt.Run("Test checkFilter", t, func(t *ftt.Test) {
 		// Note that the way we have this context set up, any calls which aren't
 		// stopped at the checkFilter will nil-pointer panic. We use this panic
 		// behavior to indicate that the checkfilter has allowed a call to pass
@@ -42,109 +42,109 @@ func TestCheckFilter(t *testing.T) {
 		// to the implementation.
 		c := SetRaw(info.Set(context.Background(), fakeInfo{}), fakeRDS{})
 		rds := Raw(c) // has checkFilter
-		So(rds, ShouldNotBeNil)
+		assert.Loosely(t, rds, should.NotBeNil)
 
-		Convey("RunInTransaction", func() {
-			So(rds.RunInTransaction(nil, nil), ShouldErrLike, "is nil")
+		t.Run("RunInTransaction", func(t *ftt.Test) {
+			assert.Loosely(t, rds.RunInTransaction(nil, nil), should.ErrLike("is nil"))
 			hit := false
-			So(func() {
-				So(rds.RunInTransaction(func(context.Context) error {
+			assert.Loosely(t, func() {
+				assert.Loosely(t, rds.RunInTransaction(func(context.Context) error {
 					hit = true
 					return nil
-				}, nil), ShouldBeNil)
-			}, ShouldPanic)
-			So(hit, ShouldBeFalse)
+				}, nil), should.BeNil)
+			}, should.Panic)
+			assert.Loosely(t, hit, should.BeFalse)
 		})
 
-		Convey("Run", func() {
-			So(rds.Run(nil, nil), ShouldErrLike, "query is nil")
+		t.Run("Run", func(t *ftt.Test) {
+			assert.Loosely(t, rds.Run(nil, nil), should.ErrLike("query is nil"))
 			fq, err := NewQuery("sup").Finalize()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(rds.Run(fq, nil), ShouldErrLike, "callback is nil")
+			assert.Loosely(t, rds.Run(fq, nil), should.ErrLike("callback is nil"))
 			hit := false
-			So(func() {
-				So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
+			assert.Loosely(t, func() {
+				assert.Loosely(t, rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
 					hit = true
 					return nil
-				}), ShouldBeNil)
-			}, ShouldPanic)
-			So(hit, ShouldBeFalse)
+				}), should.BeNil)
+			}, should.Panic)
+			assert.Loosely(t, hit, should.BeFalse)
 		})
 
-		Convey("GetMulti", func() {
-			So(rds.GetMulti(nil, nil, func(int, PropertyMap, error) {}), ShouldBeNil)
-			So(rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil), ShouldErrLike, "is nil")
+		t.Run("GetMulti", func(t *ftt.Test) {
+			assert.Loosely(t, rds.GetMulti(nil, nil, func(int, PropertyMap, error) {}), should.BeNil)
+			assert.Loosely(t, rds.GetMulti([]*Key{mkKey("", "", "", "")}, nil, nil), should.ErrLike("is nil"))
 
 			// this is in the wrong aid/ns
 			keys := []*Key{MkKeyContext("wut", "wrong").MakeKey("Kind", 1)}
-			So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
-				So(pm, ShouldBeNil)
-				So(IsErrInvalidKey(err), ShouldBeTrue)
-			}), ShouldBeNil)
+			assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
+				assert.Loosely(t, pm, should.BeNil)
+				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+			}), should.BeNil)
 
 			keys[0] = mkKey("Kind", 1)
 			hit := false
-			So(func() {
-				So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
+			assert.Loosely(t, func() {
+				assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
 					hit = true
-				}), ShouldBeNil)
-			}, ShouldPanic)
-			So(hit, ShouldBeFalse)
+				}), should.BeNil)
+			}, should.Panic)
+			assert.Loosely(t, hit, should.BeFalse)
 		})
 
-		Convey("PutMulti", func() {
+		t.Run("PutMulti", func(t *ftt.Test) {
 			nullCb := func(int, *Key, error) {}
 			keys := []*Key{}
 			vals := []PropertyMap{{}}
-			So(rds.PutMulti(keys, vals, nullCb), ShouldErrLike, "mismatched keys/vals")
-			So(rds.PutMulti(nil, nil, nullCb), ShouldBeNil)
+			assert.Loosely(t, rds.PutMulti(keys, vals, nullCb), should.ErrLike("mismatched keys/vals"))
+			assert.Loosely(t, rds.PutMulti(nil, nil, nullCb), should.BeNil)
 
 			keys = append(keys, mkKey("aid", "ns", "Wut", 0, "Kind", 0))
-			So(rds.PutMulti(keys, vals, nil), ShouldErrLike, "callback is nil")
+			assert.Loosely(t, rds.PutMulti(keys, vals, nil), should.ErrLike("callback is nil"))
 
-			So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
-				So(k, ShouldBeNil)
-				So(IsErrInvalidKey(err), ShouldBeTrue)
-			}), ShouldBeNil)
+			assert.Loosely(t, rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
+				assert.Loosely(t, k, should.BeNil)
+				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+			}), should.BeNil)
 
 			keys = []*Key{mkKey("s~aid", "ns", "Kind", 0)}
 			vals = []PropertyMap{nil}
-			So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
-				So(k, ShouldBeNil)
-				So(err, ShouldErrLike, "nil vals entry")
-			}), ShouldBeNil)
+			assert.Loosely(t, rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
+				assert.Loosely(t, k, should.BeNil)
+				assert.Loosely(t, err, should.ErrLike("nil vals entry"))
+			}), should.BeNil)
 
 			vals = []PropertyMap{{}}
 			hit := false
-			So(func() {
-				So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
+			assert.Loosely(t, func() {
+				assert.Loosely(t, rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {
 					hit = true
-				}), ShouldBeNil)
-			}, ShouldPanic)
-			So(hit, ShouldBeFalse)
+				}), should.BeNil)
+			}, should.Panic)
+			assert.Loosely(t, hit, should.BeFalse)
 		})
 
-		Convey("DeleteMulti", func() {
-			So(rds.DeleteMulti(nil, func(int, error) {}), ShouldBeNil)
+		t.Run("DeleteMulti", func(t *ftt.Test) {
+			assert.Loosely(t, rds.DeleteMulti(nil, func(int, error) {}), should.BeNil)
 
-			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil), ShouldErrLike, "is nil")
-			So(rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(_ int, err error) {
-				So(IsErrInvalidKey(err), ShouldBeTrue)
-			}), ShouldBeNil)
+			assert.Loosely(t, rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, nil), should.ErrLike("is nil"))
+			assert.Loosely(t, rds.DeleteMulti([]*Key{mkKey("", "", "", "")}, func(_ int, err error) {
+				assert.Loosely(t, IsErrInvalidKey(err), should.BeTrue)
+			}), should.BeNil)
 
 			hit := false
-			So(func() {
-				So(rds.DeleteMulti([]*Key{mkKey("s~aid", "ns", "Kind", 1)}, func(int, error) {
+			assert.Loosely(t, func() {
+				assert.Loosely(t, rds.DeleteMulti([]*Key{mkKey("s~aid", "ns", "Kind", 1)}, func(int, error) {
 					hit = true
-				}), ShouldBeNil)
-			}, ShouldPanic)
-			So(hit, ShouldBeFalse)
+				}), should.BeNil)
+			}, should.Panic)
+			assert.Loosely(t, hit, should.BeFalse)
 		})
 
 	})
 
-	Convey("Test context done", t, func() {
+	ftt.Run("Test context done", t, func(t *ftt.Test) {
 		ctx := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		ctx = SetRawFactory(ctx, fds.factory())
@@ -155,15 +155,15 @@ func TestCheckFilter(t *testing.T) {
 		vals := []PropertyMap{{}}
 		cancel()
 
-		So(err, ShouldBeNil)
-		So(rds.DeleteMulti(keys, func(int, error) {}), ShouldEqual, context.Canceled)
-		So(rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, rds.DeleteMulti(keys, func(int, error) {}), should.Equal(context.Canceled))
+		assert.Loosely(t, rds.Run(fq, func(*Key, PropertyMap, CursorCB) error {
 			return nil
-		}), ShouldEqual, context.Canceled)
-		So(rds.RunInTransaction(func(context.Context) error {
+		}), should.Equal(context.Canceled))
+		assert.Loosely(t, rds.RunInTransaction(func(context.Context) error {
 			return nil
-		}, nil), ShouldEqual, context.Canceled)
-		So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {}), ShouldEqual, context.Canceled)
-		So(rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {}), ShouldEqual, context.Canceled)
+		}, nil), should.Equal(context.Canceled))
+		assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {}), should.Equal(context.Canceled))
+		assert.Loosely(t, rds.PutMulti(keys, vals, func(_ int, k *Key, err error) {}), should.Equal(context.Canceled))
 	})
 }

@@ -20,46 +20,47 @@ import (
 	"reflect"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestJSONRoundTripper(t *testing.T) {
 	t.Parallel()
 
-	Convey("RoundTrip", t, func() {
+	ftt.Run("RoundTrip", t, func(t *ftt.Test) {
 		rt := &JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		srv := compute.NewInstancesService(gce)
 		call := srv.Insert("project", "zone", &compute.Instance{Name: "name"})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			rt.Handler = func(req any) (int, any) {
 				inst, ok := req.(*compute.Instance)
-				So(ok, ShouldBeTrue)
-				So(inst.Name, ShouldEqual, "name")
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, inst.Name, should.Equal("name"))
 				return http.StatusOK, &compute.Operation{
 					ClientOperationId: "id",
 				}
 			}
 			rt.Type = reflect.TypeOf(compute.Instance{})
 			rsp, err := call.Do()
-			So(err, ShouldBeNil)
-			So(rsp, ShouldNotBeNil)
-			So(rsp.ClientOperationId, ShouldEqual, "id")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.NotBeNil)
+			assert.Loosely(t, rsp.ClientOperationId, should.Equal("id"))
 		})
 
-		Convey("error", func() {
+		t.Run("error", func(t *ftt.Test) {
 			rt.Handler = func(_ any) (int, any) {
 				return http.StatusNotFound, nil
 			}
 			rt.Type = reflect.TypeOf(compute.Instance{})
 			rsp, err := call.Do()
-			So(err.(*googleapi.Error).Code, ShouldEqual, http.StatusNotFound)
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err.(*googleapi.Error).Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
 	})
 }
@@ -67,19 +68,19 @@ func TestJSONRoundTripper(t *testing.T) {
 func TestStringRoundTripper(t *testing.T) {
 	t.Parallel()
 
-	Convey("RoundTrip", t, func() {
+	ftt.Run("RoundTrip", t, func(t *ftt.Test) {
 		rt := &StringRoundTripper{}
 		cli := &http.Client{Transport: rt}
 		rt.Handler = func(req *http.Request) (int, string) {
-			So(req, ShouldNotBeNil)
+			assert.Loosely(t, req, should.NotBeNil)
 			return http.StatusOK, "test"
 		}
 		rsp, err := cli.Get("https://example.com")
-		So(err, ShouldBeNil)
-		So(rsp, ShouldNotBeNil)
-		So(rsp.StatusCode, ShouldEqual, http.StatusOK)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, rsp, should.NotBeNil)
+		assert.Loosely(t, rsp.StatusCode, should.Equal(http.StatusOK))
 		b, err := io.ReadAll(rsp.Body)
-		So(err, ShouldBeNil)
-		So(string(b), ShouldEqual, "test")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(b), should.Equal("test"))
 	})
 }

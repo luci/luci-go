@@ -20,16 +20,17 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func testStorageCache(t *testing.T, compress bool) {
 	t.Parallel()
 
-	Convey(`Testing storage cache in a testing environment`, t, func() {
+	ftt.Run(`Testing storage cache in a testing environment`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = caching.WithEmptyProcessCache(c)
 		cache := StorageCache{}
@@ -47,56 +48,56 @@ func testStorageCache(t *testing.T, compress bool) {
 			{storage.CacheKey{"otherschema", "othertype", "foo"}, []byte("foo3")},
 		}
 
-		Convey(`Can load those items into cache`, func() {
+		t.Run(`Can load those items into cache`, func(t *ftt.Test) {
 			for _, it := range items {
 				cache.Put(c, it.k, it.v, time.Minute)
 			}
-			So(storageCache.LRU(c).Len(), ShouldEqual, 4)
+			assert.Loosely(t, storageCache.LRU(c).Len(), should.Equal(4))
 
 			for _, it := range items {
 				v, ok := cache.Get(c, it.k)
-				So(ok, ShouldBeTrue)
-				So(v, ShouldResemble, it.v)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, v, should.Resemble(it.v))
 			}
 		})
 
-		Convey(`Get on missing item returns false.`, func() {
+		t.Run(`Get on missing item returns false.`, func(t *ftt.Test) {
 			_, ok := cache.Get(c, items[0].k)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey(`Will replace existing item value.`, func() {
+		t.Run(`Will replace existing item value.`, func(t *ftt.Test) {
 			cache.Put(c, items[0].k, items[0].v, time.Minute)
 			v, ok := cache.Get(c, items[0].k)
-			So(ok, ShouldBeTrue)
-			So(v, ShouldResemble, items[0].v)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Resemble(items[0].v))
 
 			cache.Put(c, items[0].k, []byte("ohai"), time.Minute)
 			v, ok = cache.Get(c, items[0].k)
-			So(ok, ShouldBeTrue)
-			So(v, ShouldResemble, []byte("ohai"))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Resemble([]byte("ohai")))
 		})
 
-		Convey(`Applies expiration (or lack thereof).`, func() {
+		t.Run(`Applies expiration (or lack thereof).`, func(t *ftt.Test) {
 			cache.Put(c, items[0].k, items[0].v, time.Minute)
 			cache.Put(c, items[1].k, items[1].v, -1)
 
 			v, has := cache.Get(c, items[0].k)
-			So(has, ShouldBeTrue)
-			So(v, ShouldResemble, items[0].v)
+			assert.Loosely(t, has, should.BeTrue)
+			assert.Loosely(t, v, should.Resemble(items[0].v))
 
 			v, has = cache.Get(c, items[1].k)
-			So(has, ShouldBeTrue)
-			So(v, ShouldResemble, items[1].v)
+			assert.Loosely(t, has, should.BeTrue)
+			assert.Loosely(t, v, should.Resemble(items[1].v))
 
 			tc.Add(time.Minute + 1) // Expires items[0].
 
 			v, has = cache.Get(c, items[0].k)
-			So(has, ShouldBeFalse)
+			assert.Loosely(t, has, should.BeFalse)
 
 			v, has = cache.Get(c, items[1].k)
-			So(has, ShouldBeTrue)
-			So(v, ShouldResemble, items[1].v)
+			assert.Loosely(t, has, should.BeTrue)
+			assert.Loosely(t, v, should.Resemble(items[1].v))
 		})
 	})
 }

@@ -21,16 +21,17 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCleanupOldEntities(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
@@ -38,7 +39,7 @@ func TestCleanupOldEntities(t *testing.T) {
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		Convey("Cleanup works", func() {
+		t.Run("Cleanup works", func(t *ftt.Test) {
 			oldActuation := &Actuation{
 				ID:      "old-actuation",
 				Created: clock.Now(ctx).Add(-retentionPeriod - time.Hour).UTC(),
@@ -57,14 +58,14 @@ func TestCleanupOldEntities(t *testing.T) {
 				Parent:  datastore.NewKey(ctx, "Asset", "new-asset", 0, nil),
 				Created: clock.Now(ctx).Add(-retentionPeriod + time.Hour).UTC(),
 			}
-			So(datastore.Put(ctx, oldActuation, newActuation, oldEntry, newEntry), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, oldActuation, newActuation, oldEntry, newEntry), should.BeNil)
 
-			So(CleanupOldEntities(ctx), ShouldBeNil)
+			assert.Loosely(t, CleanupOldEntities(ctx), should.BeNil)
 
-			So(datastore.Get(ctx, oldActuation), ShouldEqual, datastore.ErrNoSuchEntity)
-			So(datastore.Get(ctx, newActuation), ShouldBeNil)
-			So(datastore.Get(ctx, oldEntry), ShouldEqual, datastore.ErrNoSuchEntity)
-			So(datastore.Get(ctx, newEntry), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, oldActuation), should.Equal(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, datastore.Get(ctx, newActuation), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, oldEntry), should.Equal(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, datastore.Get(ctx, newEntry), should.BeNil)
 		})
 	})
 }

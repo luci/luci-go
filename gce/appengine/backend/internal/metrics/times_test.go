@@ -20,16 +20,17 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTimes(t *testing.T) {
 	t.Parallel()
 
-	Convey("ReportCreationTime", t, func() {
+	ftt.Run("ReportCreationTime", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
@@ -37,21 +38,21 @@ func TestTimes(t *testing.T) {
 
 		ReportCreationTime(c, 60.0, "prefix", "project", "zone")
 		d := s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 1)
-		So(d.Sum(), ShouldEqual, 60.0)
+		assert.Loosely(t, d.Count(), should.Equal(1))
+		assert.Loosely(t, d.Sum(), should.Equal(60.0))
 
 		ReportCreationTime(c, 120.0, "prefix", "project", "zone")
 		d = s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 2)
-		So(d.Sum(), ShouldEqual, 180.0)
+		assert.Loosely(t, d.Count(), should.Equal(2))
+		assert.Loosely(t, d.Sum(), should.Equal(180.0))
 
 		ReportCreationTime(c, math.Inf(1), "prefix", "project", "zone")
 		d = s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 3)
-		So(d.Sum(), ShouldEqual, math.Inf(1))
+		assert.Loosely(t, d.Count(), should.Equal(3))
+		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
 
-	Convey("ReportConnectionTime", t, func() {
+	ftt.Run("ReportConnectionTime", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
@@ -59,21 +60,21 @@ func TestTimes(t *testing.T) {
 
 		ReportConnectionTime(c, 120.0, "prefix", "project", "server", "zone")
 		d := s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 1)
-		So(d.Sum(), ShouldEqual, 120.0)
+		assert.Loosely(t, d.Count(), should.Equal(1))
+		assert.Loosely(t, d.Sum(), should.Equal(120.0))
 
 		ReportConnectionTime(c, 180.0, "prefix", "project", "server", "zone")
 		d = s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 2)
-		So(d.Sum(), ShouldEqual, 300.0)
+		assert.Loosely(t, d.Count(), should.Equal(2))
+		assert.Loosely(t, d.Sum(), should.Equal(300.0))
 
 		ReportConnectionTime(c, math.Inf(1), "prefix", "project", "server", "zone")
 		d = s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 3)
-		So(d.Sum(), ShouldEqual, math.Inf(1))
+		assert.Loosely(t, d.Count(), should.Equal(3))
+		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
 
-	Convey("ReportOnlineTime", t, func() {
+	ftt.Run("ReportOnlineTime", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
@@ -81,17 +82,17 @@ func TestTimes(t *testing.T) {
 
 		ReportBotConnectionTime(c, 120.0, "prefix", "project", "resource_group", "server", "zone")
 		d := s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 1)
-		So(d.Sum(), ShouldEqual, 120.0)
+		assert.Loosely(t, d.Count(), should.Equal(1))
+		assert.Loosely(t, d.Sum(), should.Equal(120.0))
 
 		ReportBotConnectionTime(c, 180.0, "prefix", "project", "resource_group", "server", "zone")
 		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 2)
-		So(d.Sum(), ShouldEqual, 300.0)
+		assert.Loosely(t, d.Count(), should.Equal(2))
+		assert.Loosely(t, d.Sum(), should.Equal(300.0))
 
 		ReportBotConnectionTime(c, math.Inf(1), "prefix", "project", "resource_group", "server", "zone")
 		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
-		So(d.Count(), ShouldEqual, 3)
-		So(d.Sum(), ShouldEqual, math.Inf(1))
+		assert.Loosely(t, d.Count(), should.Equal(3))
+		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
 }

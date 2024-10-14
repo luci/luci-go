@@ -19,17 +19,18 @@ import (
 	"errors"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestChainUnaryServerInterceptors(t *testing.T) {
 	t.Parallel()
 
-	Convey("With interceptors", t, func() {
+	ftt.Run("With interceptors", t, func(t *ftt.Test) {
 		testCtxKey := "testing"
 		testInfo := &grpc.UnaryServerInfo{} // constant address for assertions
 		testResponse := new(int)            // constant address for assertions
@@ -59,7 +60,7 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 
 		checkContext := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkContext")()
-			So(ctx.Value(&testCtxKey), ShouldEqual, "value")
+			assert.Loosely(t, ctx.Value(&testCtxKey), should.Equal("value"))
 			return handler(ctx, req)
 		}
 
@@ -70,14 +71,14 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 
 		checkReq := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkReq")()
-			So(req.(string), ShouldEqual, "modified request")
+			assert.Loosely(t, req.(string), should.Equal("modified request"))
 			return handler(ctx, req)
 		}
 
 		checkErr := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			defer record("checkErr")()
 			resp, err := handler(ctx, req)
-			So(err, ShouldEqual, testError)
+			assert.Loosely(t, err, should.Equal(testError))
 			return resp, err
 		}
 
@@ -96,41 +97,41 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 			return nil, testError
 		}
 
-		Convey("Noop chain", func() {
+		t.Run("Noop chain", func(t *ftt.Test) {
 			resp, err := callChain(ChainUnaryServerInterceptors(nil, nil), successHandler)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, testResponse)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal(testResponse))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> successHandler",
 				"<- successHandler",
-			})
+			}))
 		})
 
-		Convey("One link chain", func() {
+		t.Run("One link chain", func(t *ftt.Test) {
 			resp, err := callChain(ChainUnaryServerInterceptors(doNothing), successHandler)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, testResponse)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal(testResponse))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Nils are OK", func() {
+		t.Run("Nils are OK", func(t *ftt.Test) {
 			resp, err := callChain(ChainUnaryServerInterceptors(nil, doNothing, nil, nil), successHandler)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, testResponse)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal(testResponse))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Changes propagate", func() {
+		t.Run("Changes propagate", func(t *ftt.Test) {
 			chain := ChainUnaryServerInterceptors(
 				populateContext,
 				modifyReq,
@@ -139,9 +140,9 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 				checkReq,
 			)
 			resp, err := callChain(chain, successHandler)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, testResponse)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal(testResponse))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> populateContext",
 				"-> modifyReq",
 				"-> doNothing",
@@ -154,27 +155,27 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 				"<- doNothing",
 				"<- modifyReq",
 				"<- populateContext",
-			})
+			}))
 		})
 
-		Convey("Request error propagates", func() {
+		t.Run("Request error propagates", func(t *ftt.Test) {
 			chain := ChainUnaryServerInterceptors(
 				doNothing,
 				checkErr,
 			)
 			_, err := callChain(chain, errorHandler)
-			So(err, ShouldEqual, testError)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.Equal(testError))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> checkErr",
 				"-> errorHandler",
 				"<- errorHandler",
 				"<- checkErr",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Interceptor can abort the chain", func() {
+		t.Run("Interceptor can abort the chain", func(t *ftt.Test) {
 			chain := ChainUnaryServerInterceptors(
 				doNothing,
 				abortChain,
@@ -184,13 +185,13 @@ func TestChainUnaryServerInterceptors(t *testing.T) {
 				doNothing,
 			)
 			_, err := callChain(chain, successHandler)
-			So(err, ShouldEqual, testError)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.Equal(testError))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> abortChain",
 				"<- abortChain",
 				"<- doNothing",
-			})
+			}))
 		})
 	})
 }
@@ -201,7 +202,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 	// Note: this is 80% copy-pasta of TestChainUnaryServerInterceptors just using
 	// different types to match StreamServerInterceptor API.
 
-	Convey("With interceptors", t, func() {
+	ftt.Run("With interceptors", t, func(t *ftt.Test) {
 		testCtxKey := "testing"
 		testInfo := &grpc.StreamServerInfo{} // constant address for assertions
 		testError := errors.New("boom")      // constant address for assertions
@@ -235,7 +236,7 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 
 		checkContext := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkContext")()
-			So(ss.Context().Value(&testCtxKey), ShouldEqual, "value")
+			assert.Loosely(t, ss.Context().Value(&testCtxKey), should.Equal("value"))
 			return handler(srv, ss)
 		}
 
@@ -246,14 +247,14 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 
 		checkSrv := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkSrv")()
-			So(srv.(string), ShouldEqual, "modified srv")
+			assert.Loosely(t, srv.(string), should.Equal("modified srv"))
 			return handler(srv, ss)
 		}
 
 		checkErr := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			defer record("checkErr")()
 			err := handler(srv, ss)
-			So(err, ShouldEqual, testError)
+			assert.Loosely(t, err, should.Equal(testError))
 			return err
 		}
 
@@ -272,38 +273,38 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 			return testError
 		}
 
-		Convey("Noop chain", func() {
+		t.Run("Noop chain", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(nil, nil), successHandler)
-			So(err, ShouldBeNil)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> successHandler",
 				"<- successHandler",
-			})
+			}))
 		})
 
-		Convey("One link chain", func() {
+		t.Run("One link chain", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(doNothing), successHandler)
-			So(err, ShouldBeNil)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Nils are OK", func() {
+		t.Run("Nils are OK", func(t *ftt.Test) {
 			err := callChain(ChainStreamServerInterceptors(nil, doNothing, nil, nil), successHandler)
-			So(err, ShouldBeNil)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> successHandler",
 				"<- successHandler",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Changes propagate", func() {
+		t.Run("Changes propagate", func(t *ftt.Test) {
 			chain := ChainStreamServerInterceptors(
 				populateContext,
 				modifySrv,
@@ -312,8 +313,8 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 				checkSrv,
 			)
 			err := callChain(chain, successHandler)
-			So(err, ShouldBeNil)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> populateContext",
 				"-> modifySrv",
 				"-> doNothing",
@@ -326,27 +327,27 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 				"<- doNothing",
 				"<- modifySrv",
 				"<- populateContext",
-			})
+			}))
 		})
 
-		Convey("Request error propagates", func() {
+		t.Run("Request error propagates", func(t *ftt.Test) {
 			chain := ChainStreamServerInterceptors(
 				doNothing,
 				checkErr,
 			)
 			err := callChain(chain, errorHandler)
-			So(err, ShouldEqual, testError)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.Equal(testError))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> checkErr",
 				"-> errorHandler",
 				"<- errorHandler",
 				"<- checkErr",
 				"<- doNothing",
-			})
+			}))
 		})
 
-		Convey("Interceptor can abort the chain", func() {
+		t.Run("Interceptor can abort the chain", func(t *ftt.Test) {
 			chain := ChainStreamServerInterceptors(
 				doNothing,
 				abortChain,
@@ -356,13 +357,13 @@ func TestChainStreamServerInterceptors(t *testing.T) {
 				doNothing,
 			)
 			err := callChain(chain, successHandler)
-			So(err, ShouldEqual, testError)
-			So(calls, ShouldResemble, []string{
+			assert.Loosely(t, err, should.Equal(testError))
+			assert.Loosely(t, calls, should.Resemble([]string{
 				"-> doNothing",
 				"-> abortChain",
 				"<- abortChain",
 				"<- doNothing",
-			})
+			}))
 		})
 	})
 }
@@ -382,34 +383,34 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 	server := &struct{}{}
 	stream := &wrappedSS{nil, rootCtx}
 
-	Convey("Passes requests, modifies the context", t, func() {
+	ftt.Run("Passes requests, modifies the context", t, func(t *ftt.Test) {
 		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
-			So(ctx, ShouldEqual, rootCtx)
-			So(fullMethod, ShouldEqual, "/svc/method")
+			assert.Loosely(t, ctx, should.Equal(rootCtx))
+			assert.Loosely(t, fullMethod, should.Equal("/svc/method"))
 			return handler(context.WithValue(ctx, key("key"), "val"))
 		}
 
-		Convey("Unary", func() {
+		t.Run("Unary", func(t *ftt.Test) {
 			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
-				So(ctx.Value(key("key")).(string), ShouldEqual, "val")
-				So(req, ShouldEqual, &reqBody)
+				assert.Loosely(t, ctx.Value(key("key")).(string), should.Equal("val"))
+				assert.Loosely(t, req, should.Equal(&reqBody))
 				return &resBody, nil
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, &resBody)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal(&resBody))
 		})
 
-		Convey("Stream", func() {
+		t.Run("Stream", func(t *ftt.Test) {
 			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
-				So(srv, ShouldEqual, server)
-				So(ss.Context().Value(key("key")).(string), ShouldEqual, "val")
+				assert.Loosely(t, srv, should.Equal(server))
+				assert.Loosely(t, ss.Context().Value(key("key")).(string), should.Equal("val"))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey("Sees errors", t, func() {
+	ftt.Run("Sees errors", t, func(t *ftt.Test) {
 		retErr := status.Errorf(codes.Unknown, "boo")
 		var seenErr error
 
@@ -418,48 +419,48 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 			return seenErr
 		}
 
-		Convey("Unary", func() {
+		t.Run("Unary", func(t *ftt.Test) {
 			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				return &resBody, retErr
 			})
-			So(err, ShouldEqual, retErr)
-			So(seenErr, ShouldEqual, retErr)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(retErr))
+			assert.Loosely(t, seenErr, should.Equal(retErr))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("Stream", func() {
+		t.Run("Stream", func(t *ftt.Test) {
 			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				return retErr
 			})
-			So(err, ShouldEqual, retErr)
-			So(seenErr, ShouldEqual, retErr)
+			assert.Loosely(t, err, should.Equal(retErr))
+			assert.Loosely(t, seenErr, should.Equal(retErr))
 		})
 	})
 
-	Convey("Can block requests", t, func() {
+	ftt.Run("Can block requests", t, func(t *ftt.Test) {
 		retErr := status.Errorf(codes.Unknown, "boo")
 
 		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
 			return retErr
 		}
 
-		Convey("Unary", func() {
+		t.Run("Unary", func(t *ftt.Test) {
 			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				panic("must not be called")
 			})
-			So(err, ShouldEqual, retErr)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(retErr))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("Stream", func() {
+		t.Run("Stream", func(t *ftt.Test) {
 			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				panic("must not be called")
 			})
-			So(err, ShouldEqual, retErr)
+			assert.Loosely(t, err, should.Equal(retErr))
 		})
 	})
 
-	Convey("Can override error", t, func() {
+	ftt.Run("Can override error", t, func(t *ftt.Test) {
 		retErr := status.Errorf(codes.Unknown, "boo")
 
 		var u UnifiedServerInterceptor = func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) error {
@@ -467,19 +468,19 @@ func TestUnifiedServerInterceptor(t *testing.T) {
 			return retErr
 		}
 
-		Convey("Unary", func() {
+		t.Run("Unary", func(t *ftt.Test) {
 			resp, err := u.Unary()(rootCtx, &reqBody, unaryInfo, func(ctx context.Context, req any) (any, error) {
 				return &resBody, nil
 			})
-			So(err, ShouldEqual, retErr)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(retErr))
+			assert.Loosely(t, resp, should.BeNil)
 		})
 
-		Convey("Stream", func() {
+		t.Run("Stream", func(t *ftt.Test) {
 			err := u.Stream()(server, stream, streamInfo, func(srv any, ss grpc.ServerStream) error {
 				return status.Errorf(codes.Unknown, "another")
 			})
-			So(err, ShouldEqual, retErr)
+			assert.Loosely(t, err, should.Equal(retErr))
 		})
 	})
 }

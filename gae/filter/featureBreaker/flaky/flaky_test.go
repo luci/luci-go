@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFlakyErrors(t *testing.T) {
@@ -35,26 +36,26 @@ func TestFlakyErrors(t *testing.T) {
 		return out
 	}
 
-	Convey("Deadlines only", t, func() {
+	ftt.Run("Deadlines only", t, func(t *ftt.Test) {
 		params := Params{
 			DeadlineProbability:              0.05,
 			ConcurrentTransactionProbability: 0.1,
 		}
-		So(sample(Errors(params), "AllocateIDs"), ShouldResemble, map[error]int{
+		assert.Loosely(t, sample(Errors(params), "AllocateIDs"), should.Resemble(map[error]int{
 			nil:                 950,
 			ErrFlakyRPCDeadline: 50,
-		})
+		}))
 	})
 
-	Convey("Deadlines and commits", t, func() {
+	ftt.Run("Deadlines and commits", t, func(t *ftt.Test) {
 		params := Params{
 			DeadlineProbability:              0.05,
 			ConcurrentTransactionProbability: 0.1,
 		}
-		So(sample(Errors(params), "CommitTransaction"), ShouldResemble, map[error]int{
+		assert.Loosely(t, sample(Errors(params), "CommitTransaction"), should.Resemble(map[error]int{
 			nil:                                853,
 			datastore.ErrConcurrentTransaction: 95,
 			ErrFlakyRPCDeadline:                52,
-		})
+		}))
 	})
 }

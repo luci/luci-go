@@ -23,21 +23,21 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/quotabeta"
+	quota "go.chromium.org/luci/server/quotabeta"
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDemo(t *testing.T) {
 	t.Parallel()
 
-	Convey("Demo", t, func() {
+	ftt.Run("Demo", t, func(t *ftt.Test) {
 		// Fix clock to control quota replenishment over time.
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 
@@ -48,7 +48,7 @@ func TestDemo(t *testing.T) {
 
 		// Set up in-memory Redis instance.
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		ctx = redisconn.UsePool(ctx, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
@@ -70,178 +70,178 @@ func TestDemo(t *testing.T) {
 				Replenishment: 1,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = quota.Use(ctx, m)
 		srv := &Demo{}
 
-		Convey("GlobalRateLimit", func() {
-			Convey("error", func() {
+		t.Run("GlobalRateLimit", func(t *ftt.Test) {
+			t.Run("error", func(t *ftt.Test) {
 				_, err := srv.GlobalRateLimit(quota.Use(context.Background(), m), nil)
-				So(err, ShouldErrLike, "connection pool is not configured")
+				assert.Loosely(t, err, should.ErrLike("connection pool is not configured"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("rate limit", func() {
+			t.Run("rate limit", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 			})
 
-			Convey("replenish", func() {
+			t.Run("replenish", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 
 				// Ensure quota is replenished.
 				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Minute))
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 			})
 
-			Convey("replenish excess", func() {
+			t.Run("replenish excess", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 
 				// Ensure quota is replenished only up to the cap.
 				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Hour))
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 			})
 
-			Convey("per-user", func() {
+			t.Run("per-user", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 
 				// Ensure user is irrelevant.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:other@example.com",
 				})
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 			})
 		})
 
-		Convey("GlobalQuotaReset", func() {
-			Convey("error", func() {
+		t.Run("GlobalQuotaReset", func(t *ftt.Test) {
+			t.Run("error", func(t *ftt.Test) {
 				_, err := srv.GlobalQuotaReset(quota.Use(context.Background(), m), nil)
-				So(err, ShouldErrLike, "connection pool is not configured")
+				assert.Loosely(t, err, should.ErrLike("connection pool is not configured"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 
 				// Ensure quota is reset.
 				_, err = srv.GlobalQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("reset cap", func() {
+			t.Run("reset cap", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 
 				// Reset multiple times.
 				_, err = srv.GlobalQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Ensure only enough quota for one call.
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.GlobalRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "global rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("global rate limit exceeded"))
 			})
 		})
 
-		Convey("PerUserRateLimit", func() {
-			Convey("error", func() {
+		t.Run("PerUserRateLimit", func(t *ftt.Test) {
+			t.Run("error", func(t *ftt.Test) {
 				_, err := srv.PerUserRateLimit(quota.Use(context.Background(), m), nil)
-				So(err, ShouldErrLike, "connection pool is not configured")
+				assert.Loosely(t, err, should.ErrLike("connection pool is not configured"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("rate limit", func() {
+			t.Run("rate limit", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 
-			Convey("replenish", func() {
+			t.Run("replenish", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Ensure quota is replenished.
 				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Minute))
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 
-			Convey("per-user", func() {
+			t.Run("per-user", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Ensure another user's quota isn't impacted.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:other@example.com",
 				})
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 
-			Convey("per-user replenishment", func() {
+			t.Run("per-user replenishment", func(t *ftt.Test) {
 				// Timeline for two users, "caller" and "other".
 				// t:     caller's quota is reduced to 0, other's quota is 60.
 				// t+30s: caller's quota is replenished to 30, other's quota is reduced to 0.
@@ -249,11 +249,11 @@ func TestDemo(t *testing.T) {
 
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Replenish enough quota for one call.
 				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(30*time.Second))
@@ -263,11 +263,11 @@ func TestDemo(t *testing.T) {
 					Identity: "user:other@example.com",
 				})
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Replenish enough quota for one more call.
 				ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(60*time.Second))
@@ -277,91 +277,91 @@ func TestDemo(t *testing.T) {
 					Identity: "user:caller@example.com",
 				})
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Ensure secondary user has quota for one call.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:other@example.com",
 				})
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 		})
 
-		Convey("PerUserQuotaReset", func() {
-			Convey("error", func() {
+		t.Run("PerUserQuotaReset", func(t *ftt.Test) {
+			t.Run("error", func(t *ftt.Test) {
 				_, err := srv.PerUserQuotaReset(quota.Use(context.Background(), m), nil)
-				So(err, ShouldErrLike, "connection pool is not configured")
+				assert.Loosely(t, err, should.ErrLike("connection pool is not configured"))
 			})
 
-			Convey("ok", func() {
+			t.Run("ok", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Ensure quota is reset.
 				_, err = srv.PerUserQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("reset cap", func() {
+			t.Run("reset cap", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Reset multiple times.
 				_, err = srv.PerUserQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Ensure only enough quota for two calls.
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 
-			Convey("per-user", func() {
+			t.Run("per-user", func(t *ftt.Test) {
 				// Ensure quota is exhausted.
 				_, err := srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 
 				// Replenish another user's quota.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:other@example.com",
 				})
 				_, err = srv.PerUserQuotaReset(ctx, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Ensure original user's quota is still exhausted.
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:caller@example.com",
 				})
 				_, err = srv.PerUserRateLimit(ctx, nil)
-				So(err, ShouldErrLike, "per-user rate limit exceeded")
+				assert.Loosely(t, err, should.ErrLike("per-user rate limit exceeded"))
 			})
 		})
 	})

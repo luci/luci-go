@@ -26,9 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestShared(t *testing.T) {
@@ -38,9 +38,9 @@ func TestShared(t *testing.T) {
 		}
 	}
 
-	Convey("RunShared", t, func() {
+	ftt.Run("RunShared", t, func(t *ftt.Test) {
 		lockFileDir, err := ioutil.TempDir("", "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
 			LockFileEnvVariable: subcommands.EnvVar{
@@ -49,46 +49,46 @@ func TestShared(t *testing.T) {
 			},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx := context.Background()
 
-		Convey("returns error from the command", func() {
-			So(RunShared(ctx, env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+		t.Run("returns error from the command", func(t *ftt.Test) {
+			assert.Loosely(t, RunShared(ctx, env, fnThatReturns(errors.Reason("test error").Err())), should.ErrLike("test error"))
 		})
 
-		Convey("times out if an exclusive lock isn't released", func() {
+		t.Run("times out if an exclusive lock isn't released", func(t *ftt.Test) {
 			handle, err := fslock.Lock(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
-			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
-			So(ctx.Err(), ShouldErrLike, context.DeadlineExceeded)
+			assert.Loosely(t, RunShared(ctx, env, fnThatReturns(nil)), should.ErrLike("fslock: lock is held"))
+			assert.Loosely(t, ctx.Err(), should.ErrLike(context.DeadlineExceeded))
 		})
 
-		Convey("uses context parameter as basis for new context", func() {
+		t.Run("uses context parameter as basis for new context", func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			cancel()
 			err := RunShared(ctx, env, func(ctx context.Context) error {
 				return clock.Sleep(ctx, time.Millisecond).Err
 			})
-			So(err, ShouldErrLike, context.Canceled)
+			assert.Loosely(t, err, should.ErrLike(context.Canceled))
 		})
 
-		Convey("executes the command if shared lock already held", func() {
+		t.Run("executes the command if shared lock already held", func(t *ftt.Test) {
 			handle, err := fslock.LockShared(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
-			So(RunShared(ctx, env, fnThatReturns(nil)), ShouldBeNil)
+			assert.Loosely(t, RunShared(ctx, env, fnThatReturns(nil)), should.BeNil)
 		})
 
-		Convey("waits for drain file to go away before requesting lock", func() {
+		t.Run("waits for drain file to go away before requesting lock", func(t *ftt.Test) {
 			file, err := os.OpenFile(drainFilePath, os.O_RDONLY|os.O_CREATE, 0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = file.Close()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			commandResult := make(chan error)
 			runSharedErr := make(chan error)
@@ -106,23 +106,23 @@ func TestShared(t *testing.T) {
 			// The lock should be available: RunShared() didn't acquire it due to the presence
 			// of the drain file. Verify this by acquiring and immediately releasing the lock.
 			handle, err := fslock.Lock(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = handle.Unlock()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Removing the drain file should allow RunShared() to progress as normal.
 			err = os.Remove(drainFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			commandResult <- nil
-			So(<-runSharedErr, ShouldBeNil)
+			assert.Loosely(t, <-runSharedErr, should.BeNil)
 		})
 
-		Convey("times out if drain file doesn't go away", func() {
+		t.Run("times out if drain file doesn't go away", func(t *ftt.Test) {
 			file, err := os.OpenFile(drainFilePath, os.O_RDONLY|os.O_CREATE, 0666)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = file.Close()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer os.Remove(drainFilePath)
 
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Millisecond)
@@ -132,11 +132,11 @@ func TestShared(t *testing.T) {
 				runSharedErr <- RunShared(ctx, env, fnThatReturns(nil))
 			}()
 
-			So(<-runSharedErr, ShouldErrLike, "timed out waiting for drain file to disappear")
+			assert.Loosely(t, <-runSharedErr, should.ErrLike("timed out waiting for drain file to disappear"))
 		})
 
-		Convey("acts as a passthrough if lockFileDir is empty", func() {
-			So(RunShared(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		t.Run("acts as a passthrough if lockFileDir is empty", func(t *ftt.Test) {
+			assert.Loosely(t, RunShared(ctx, subcommands.Env{}, fnThatReturns(nil)), should.BeNil)
 		})
 	})
 }

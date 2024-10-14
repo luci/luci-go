@@ -23,10 +23,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
@@ -170,7 +171,7 @@ func loadLogs(f *Fetcher, count int) (result []types.MessageIndex, err error) {
 func TestFetcher(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing log Source`, t, func() {
+	ftt.Run(`A testing log Source`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c, cancelFunc := context.WithCancel(c)
 
@@ -190,19 +191,19 @@ func TestFetcher(t *testing.T) {
 			loadLogs(f, 0)
 		}
 
-		Convey(`Uses defaults values when not overridden, and stops when cancelled.`, func() {
+		t.Run(`Uses defaults values when not overridden, and stops when cancelled.`, func(t *ftt.Test) {
 			f := newFetcher()
 			defer reap(f)
 
-			So(f.o.BufferCount, ShouldEqual, 0)
-			So(f.o.BufferBytes, ShouldEqual, DefaultBufferBytes)
-			So(f.o.PrefetchFactor, ShouldEqual, 1)
+			assert.Loosely(t, f.o.BufferCount, should.BeZero)
+			assert.Loosely(t, f.o.BufferBytes, should.Equal(DefaultBufferBytes))
+			assert.Loosely(t, f.o.PrefetchFactor, should.Equal(1))
 		})
 
-		Convey(`With a Count limit of 3.`, func() {
+		t.Run(`With a Count limit of 3.`, func(t *ftt.Test) {
 			o.BufferCount = 3
 
-			Convey(`Will pull 6 sequential log records.`, func() {
+			t.Run(`Will pull 6 sequential log records.`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.logs(0, 1, 2, 3, 4, 5).terminalIndex(5))
 
@@ -210,11 +211,11 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				logs, err := loadLogs(f, 0)
-				So(err, ShouldEqual, io.EOF)
-				So(logs, ShouldResemble, []types.MessageIndex{0, 1, 2, 3, 4, 5})
+				assert.Loosely(t, err, should.Equal(io.EOF))
+				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1, 2, 3, 4, 5}))
 			})
 
-			Convey(`Will immediately bail out if RequireCompleteStream is set`, func() {
+			t.Run(`Will immediately bail out if RequireCompleteStream is set`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.logs(0, 1, 2, 3, 4, 5).terminalIndex(-1))
 
@@ -223,11 +224,11 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				logs, err := loadLogs(f, 0)
-				So(err, ShouldEqual, ErrIncompleteStream)
-				So(logs, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal(ErrIncompleteStream))
+				assert.Loosely(t, logs, should.BeNil)
 			})
 
-			Convey(`Can read two log records and be cancelled.`, func() {
+			t.Run(`Can read two log records and be cancelled.`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.logs(0, 1, 2, 3, 4, 5))
 
@@ -235,15 +236,15 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				logs, err := loadLogs(f, 2)
-				So(err, ShouldBeNil)
-				So(logs, ShouldResemble, []types.MessageIndex{0, 1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1}))
 
 				cancelFunc()
 				_, err = loadLogs(f, 0)
-				So(err, ShouldEqual, context.Canceled)
+				assert.Loosely(t, err, should.Equal(context.Canceled))
 			})
 
-			Convey(`Will delay for more log records if none are available.`, func() {
+			t.Run(`Will delay for more log records if none are available.`, func(t *ftt.Test) {
 				delayed := false
 				tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
 					// Add the remaining logs.
@@ -262,16 +263,16 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				logs, err := loadLogs(f, 1)
-				So(err, ShouldBeNil)
-				So(logs, ShouldResemble, []types.MessageIndex{0})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0}))
 
 				logs, err = loadLogs(f, 0)
-				So(err, ShouldEqual, io.EOF)
-				So(logs, ShouldResemble, []types.MessageIndex{1, 2})
-				So(delayed, ShouldBeTrue)
+				assert.Loosely(t, err, should.Equal(io.EOF))
+				assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{1, 2}))
+				assert.Loosely(t, delayed, should.BeTrue)
 			})
 
-			Convey(`When an error is countered getting the terminal index, returns the error.`, func() {
+			t.Run(`When an error is countered getting the terminal index, returns the error.`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.error(errors.New("test error"), false))
 
@@ -279,10 +280,10 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				_, err := loadLogs(f, 0)
-				So(err, assertions.ShouldErrLike, "test error")
+				assert.Loosely(t, err, should.ErrLike("test error"))
 			})
 
-			Convey(`When an error is countered fetching logs, returns the error.`, func() {
+			t.Run(`When an error is countered fetching logs, returns the error.`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.logs(0, 1, 2).error(errors.New("test error"), false))
 
@@ -290,10 +291,10 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				_, err := loadLogs(f, 0)
-				So(err, assertions.ShouldErrLike, "test error")
+				assert.Loosely(t, err, should.ErrLike("test error"))
 			})
 
-			Convey(`If the source panics, it is caught and returned as an error.`, func() {
+			t.Run(`If the source panics, it is caught and returned as an error.`, func(t *ftt.Test) {
 				var cmd testSourceCommand
 				ts.send(cmd.error(errors.New("test error"), true))
 
@@ -301,11 +302,11 @@ func TestFetcher(t *testing.T) {
 				defer reap(f)
 
 				_, err := loadLogs(f, 0)
-				So(err, assertions.ShouldErrLike, "panic during fetch")
+				assert.Loosely(t, err, should.ErrLike("panic during fetch"))
 			})
 		})
 
-		Convey(`With a byte limit of 15`, func() {
+		t.Run(`With a byte limit of 15`, func(t *ftt.Test) {
 			o.BufferBytes = 15
 			o.PrefetchFactor = 2
 
@@ -318,13 +319,13 @@ func TestFetcher(t *testing.T) {
 			// First fetch should have asked for 30 bytes (2*15), so 6 logs. After
 			// first log was kicked, there is a deficit of one log.
 			logs, err := loadLogs(f, 0)
-			So(err, ShouldEqual, io.EOF)
-			So(logs, ShouldResemble, []types.MessageIndex{0, 1, 2, 3, 4, 5, 6})
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{0, 1, 2, 3, 4, 5, 6}))
 
-			So(ts.getHistory(), ShouldResemble, []int{6, 1})
+			assert.Loosely(t, ts.getHistory(), should.Resemble([]int{6, 1}))
 		})
 
-		Convey(`With an index of 1 and a maximum count of 1, fetches exactly 1 log.`, func() {
+		t.Run(`With an index of 1 and a maximum count of 1, fetches exactly 1 log.`, func(t *ftt.Test) {
 			o.Index = 1
 			o.Count = 1
 
@@ -336,10 +337,10 @@ func TestFetcher(t *testing.T) {
 
 			// First fetch will ask for exactly one log.
 			logs, err := loadLogs(f, 0)
-			So(err, ShouldEqual, io.EOF)
-			So(logs, ShouldResemble, []types.MessageIndex{1})
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, logs, should.Resemble([]types.MessageIndex{1}))
 
-			So(ts.getHistory(), ShouldResemble, []int{1})
+			assert.Loosely(t, ts.getHistory(), should.Resemble([]int{1}))
 		})
 	})
 }

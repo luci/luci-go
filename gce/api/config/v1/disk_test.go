@@ -20,50 +20,53 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDisk(t *testing.T) {
 	t.Parallel()
 
-	Convey("Disk", t, func() {
-		Convey("isValidImage", func() {
-			Convey("invalid", func() {
-				So(isValidImage("image"), ShouldBeFalse)
-				So(isValidImage("global/image"), ShouldBeFalse)
-				So(isValidImage("projects/image"), ShouldBeFalse)
-				So(isValidImage("projects/global/image"), ShouldBeFalse)
-				So(isValidImage("projects/project/region/image"), ShouldBeFalse)
-				So(isValidImage("projects/project/region/images/image"), ShouldBeFalse)
+	ftt.Run("Disk", t, func(t *ftt.Test) {
+		t.Run("isValidImage", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				assert.Loosely(t, isValidImage("image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("global/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("projects/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("projects/global/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("projects/project/region/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("projects/project/region/images/image"), should.BeFalse)
 			})
 
-			Convey("valid", func() {
-				So(isValidImage("global/images/image"), ShouldBeTrue)
-				So(isValidImage("projects/project/global/images/image"), ShouldBeTrue)
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, isValidImage("global/images/image"), should.BeTrue)
+				assert.Loosely(t, isValidImage("projects/project/global/images/image"), should.BeTrue)
 			})
 		})
 
-		Convey("GetImageBase", func() {
-			Convey("short", func() {
+		t.Run("GetImageBase", func(t *ftt.Test) {
+			t.Run("short", func(t *ftt.Test) {
 				d := &Disk{
 					Image: "global/images/image",
 				}
-				So(d.GetImageBase(), ShouldEqual, "image")
+				assert.Loosely(t, d.GetImageBase(), should.Equal("image"))
 			})
 
-			Convey("long", func() {
+			t.Run("long", func(t *ftt.Test) {
 				d := &Disk{
 					Image: "projects/project/global/images/image",
 				}
-				So(d.GetImageBase(), ShouldEqual, "image")
+				assert.Loosely(t, d.GetImageBase(), should.Equal("image"))
 			})
 		})
 
-		Convey("Validate", func() {
+		t.Run("Validate", func(t *ftt.Test) {
 			c := &validation.Context{Context: context.Background()}
-			Convey("invalid", func() {
-				Convey("Persistent + NVMe", func() {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("Persistent + NVMe", func(t *ftt.Test) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/pd-standard",
 						Interface: DiskInterface_NVME,
@@ -71,9 +74,9 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "persistent disk must use SCSI")
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("persistent disk must use SCSI"))
 				})
-				Convey("Persistent + No Image", func() {
+				t.Run("Persistent + No Image", func(t *ftt.Test) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/pd-ssd",
 						Interface: DiskInterface_SCSI,
@@ -81,9 +84,9 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "image must match")
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("image must match"))
 				})
-				Convey("Scratch + Image", func() {
+				t.Run("Scratch + Image", func(t *ftt.Test) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/local-ssd",
 						Interface: DiskInterface_NVME,
@@ -91,28 +94,28 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					So(err, ShouldContainErr, "local ssd cannot use an image")
+					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("local ssd cannot use an image"))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("Persistent + SCSI + Image", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("Persistent + SCSI + Image", func(t *ftt.Test) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/pd-standard",
 						Interface: DiskInterface_SCSI,
 						Image:     "global/images/image",
 					}
 					d.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
-				Convey("Scratch + No Image", func() {
+				t.Run("Scratch + No Image", func(t *ftt.Test) {
 					d := &Disk{
 						Type:      "zones/zone/diskTypes/local-ssd",
 						Interface: DiskInterface_NVME,
 						Image:     "",
 					}
 					d.Validate(c)
-					So(c.Finalize(), ShouldBeNil)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})
 			})
 		})

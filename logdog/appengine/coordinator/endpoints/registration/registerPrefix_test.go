@@ -39,15 +39,17 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRegisterPrefix(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
@@ -80,7 +82,7 @@ func TestRegisterPrefix(t *testing.T) {
 
 		svr := New()
 
-		Convey(`Authorization rules`, func() {
+		t.Run(`Authorization rules`, func(t *ftt.Test) {
 			const (
 				User   = "user:caller@example.com"
 				Anon   = "anonymous:anonymous"
@@ -116,7 +118,7 @@ func TestRegisterPrefix(t *testing.T) {
 			}
 
 			for i, test := range cases {
-				Convey(fmt.Sprintf("Case #%d", i), func() {
+				t.Run(fmt.Sprintf("Case #%d", i), func(t *ftt.Test) {
 					// Note: this overrides mocks set by ActAsWriter.
 					c := auth.WithState(c, &authtest.FakeState{
 						Identity: test.ident,
@@ -124,23 +126,23 @@ func TestRegisterPrefix(t *testing.T) {
 					})
 					req.Realm = test.realm
 					_, err := svr.RegisterPrefix(c, &req)
-					So(status.Code(err), ShouldEqual, test.code)
+					assert.Loosely(t, status.Code(err), should.Equal(test.code))
 				})
 			}
 		})
 
-		Convey(`Will register a new prefix.`, func() {
+		t.Run(`Will register a new prefix.`, func(t *ftt.Test) {
 			resp, err := svr.RegisterPrefix(c, &req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&logdog.RegisterPrefixResponse{
 				LogBundleTopic: "projects/logdog-app-id/topics/test-topic",
 				Secret:         randSecret,
-			})
+			}))
 
 			ct.WithProjectNamespace(c, project, func(c context.Context) {
-				So(ds.Get(c, pfx), ShouldBeNil)
+				assert.Loosely(t, ds.Get(c, pfx), should.BeNil)
 			})
-			So(pfx, ShouldResemble, &coordinator.LogPrefix{
+			assert.Loosely(t, pfx, should.Resemble(&coordinator.LogPrefix{
 				Schema:  coordinator.CurrentSchemaVersion,
 				ID:      pfx.ID,
 				Prefix:  "testing/prefix",
@@ -152,75 +154,75 @@ func TestRegisterPrefix(t *testing.T) {
 
 				// 24 hours is default service prefix expiration.
 				Expiration: ds.RoundTime(clock.Now(c).Add(24 * time.Hour)),
-			})
+			}))
 
-			Convey(`Will refuse to register it again without nonce.`, func() {
+			t.Run(`Will refuse to register it again without nonce.`, func(t *ftt.Test) {
 				req.OpNonce = nil
 				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeRPCAlreadyExists)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
 			})
 
-			Convey(`Is happy to return the same data if the nonce matches.`, func() {
+			t.Run(`Is happy to return the same data if the nonce matches.`, func(t *ftt.Test) {
 				resp, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &logdog.RegisterPrefixResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&logdog.RegisterPrefixResponse{
 					LogBundleTopic: "projects/logdog-app-id/topics/test-topic",
 					Secret:         randSecret,
-				})
+				}))
 			})
 
-			Convey(`Expires the nonce after 15 minutes.`, func() {
+			t.Run(`Expires the nonce after 15 minutes.`, func(t *ftt.Test) {
 				env.Clock.Add(coordinator.RegistrationNonceTimeout + time.Second)
 				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeRPCAlreadyExists)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
 			})
 		})
 
-		Convey(`Uses the correct prefix expiration`, func() {
+		t.Run(`Uses the correct prefix expiration`, func(t *ftt.Test) {
 
-			Convey(`When service, project, and request have expiration, chooses smallest.`, func() {
+			t.Run(`When service, project, and request have expiration, chooses smallest.`, func(t *ftt.Test) {
 				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
 					pcfg.PrefixExpiration = durationpb.New(time.Hour)
 				})
 				req.Expiration = durationpb.New(time.Minute)
 
 				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					So(ds.Get(c, pfx), ShouldBeNil)
+					assert.Loosely(t, ds.Get(c, pfx), should.BeNil)
 				})
-				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Minute))
+				assert.Loosely(t, pfx.Expiration, should.Resemble(clock.Now(c).Add(time.Minute)))
 			})
 
-			Convey(`When service, and project have expiration, chooses smallest.`, func() {
+			t.Run(`When service, and project have expiration, chooses smallest.`, func(t *ftt.Test) {
 				env.ModProjectConfig(c, project, func(pcfg *svcconfig.ProjectConfig) {
 					pcfg.PrefixExpiration = durationpb.New(time.Hour)
 				})
 
 				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				ct.WithProjectNamespace(c, project, func(c context.Context) {
-					So(ds.Get(c, pfx), ShouldBeNil)
+					assert.Loosely(t, ds.Get(c, pfx), should.BeNil)
 				})
-				So(pfx.Expiration, ShouldResemble, clock.Now(c).Add(time.Hour))
+				assert.Loosely(t, pfx.Expiration, should.Resemble(clock.Now(c).Add(time.Hour)))
 			})
 
-			Convey(`When no expiration is defined, failed with internal error.`, func() {
+			t.Run(`When no expiration is defined, failed with internal error.`, func(t *ftt.Test) {
 				env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
 					cfg.Coordinator.PrefixExpiration = nil
 				})
 
 				_, err := svr.RegisterPrefix(c, &req)
-				So(err, ShouldBeRPCInvalidArgument, "no prefix expiration defined")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("no prefix expiration defined"))
 			})
 		})
 
-		Convey(`Will fail to register the prefix if Put is broken.`, func() {
+		t.Run(`Will fail to register the prefix if Put is broken.`, func(t *ftt.Test) {
 			fb.BreakFeatures(errors.New("test error"), "PutMulti")
 			_, err := svr.RegisterPrefix(c, &req)
-			So(err, ShouldBeRPCInternal)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 		})
 	})
 }

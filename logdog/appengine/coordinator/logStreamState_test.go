@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -33,7 +33,7 @@ import (
 func TestLogStreamState(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing log stream state`, t, func() {
+	ftt.Run(`A testing log stream state`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 
@@ -57,37 +57,37 @@ func TestLogStreamState(t *testing.T) {
 		lst.Secret = bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)
 		lst.TerminalIndex = -1
 
-		Convey(`Will validate`, func() {
-			So(lst.Validate(), ShouldBeNil)
+		t.Run(`Will validate`, func(t *ftt.Test) {
+			assert.Loosely(t, lst.Validate(), should.BeNil)
 		})
 
-		Convey(`Will not validate`, func() {
-			Convey(`Without a valid created time`, func() {
+		t.Run(`Will not validate`, func(t *ftt.Test) {
+			t.Run(`Without a valid created time`, func(t *ftt.Test) {
 				lst.Created = time.Time{}
-				So(lst.Validate(), ShouldErrLike, "missing created time")
+				assert.Loosely(t, lst.Validate(), should.ErrLike("missing created time"))
 			})
-			Convey(`Without a valid updated time`, func() {
+			t.Run(`Without a valid updated time`, func(t *ftt.Test) {
 				lst.Updated = time.Time{}
-				So(lst.Validate(), ShouldErrLike, "missing updated time")
+				assert.Loosely(t, lst.Validate(), should.ErrLike("missing updated time"))
 			})
-			Convey(`Without a valid stream secret`, func() {
+			t.Run(`Without a valid stream secret`, func(t *ftt.Test) {
 				lst.Secret = nil
-				So(lst.Validate(), ShouldErrLike, "invalid prefix secret length")
+				assert.Loosely(t, lst.Validate(), should.ErrLike("invalid prefix secret length"))
 			})
-			Convey(`With a terminal index, will not validate without a TerminatedTime.`, func() {
+			t.Run(`With a terminal index, will not validate without a TerminatedTime.`, func(t *ftt.Test) {
 				lst.ArchivalKey = []byte{0xd0, 0x65}
 				lst.TerminalIndex = 1337
-				So(lst.Validate(), ShouldErrLike, "missing terminated time")
+				assert.Loosely(t, lst.Validate(), should.ErrLike("missing terminated time"))
 
 				lst.TerminatedTime = now
-				So(lst.Validate(), ShouldBeNil)
+				assert.Loosely(t, lst.Validate(), should.BeNil)
 			})
 		})
 
-		Convey(`Can write to the Datastore.`, func() {
-			So(ds.Put(c, lst), ShouldBeNil)
+		t.Run(`Can write to the Datastore.`, func(t *ftt.Test) {
+			assert.Loosely(t, ds.Put(c, lst), should.BeNil)
 
-			Convey(`Can be queried`, func() {
+			t.Run(`Can be queried`, func(t *ftt.Test) {
 				q := ds.NewQuery("LogStreamState")
 
 				// runQuery will run the query, panic if it fails, and return whether the
@@ -100,38 +100,38 @@ func TestLogStreamState(t *testing.T) {
 					return len(states) > 0
 				}
 
-				Convey(`A non-terminated stream will satisfy !Terminated, !Archived`, func() {
-					So(runQuery(q.Eq("_Terminated", false)), ShouldBeTrue)
-					So(runQuery(q.Eq("_ArchivalState", NotArchived)), ShouldBeTrue)
+				t.Run(`A non-terminated stream will satisfy !Terminated, !Archived`, func(t *ftt.Test) {
+					assert.Loosely(t, runQuery(q.Eq("_Terminated", false)), should.BeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_ArchivalState", NotArchived)), should.BeTrue)
 				})
 
-				Convey(`A terminated stream will satisfy Terminated, but !Archived`, func() {
+				t.Run(`A terminated stream will satisfy Terminated, but !Archived`, func(t *ftt.Test) {
 					lst.TerminalIndex = 1337
 					lst.TerminatedTime = now
-					So(ds.Put(c, lst), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, lst), should.BeNil)
 
-					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
-					So(runQuery(q.Eq("_ArchivalState", NotArchived)), ShouldBeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_Terminated", true)), should.BeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_ArchivalState", NotArchived)), should.BeTrue)
 				})
 
-				Convey(`An incomplete archived stream will satisfy Terminated, and ArchivedPartial`, func() {
+				t.Run(`An incomplete archived stream will satisfy Terminated, and ArchivedPartial`, func(t *ftt.Test) {
 					lst.TerminalIndex = 10
 					lst.ArchiveLogEntryCount = 9
 					lst.ArchivedTime = now
-					So(ds.Put(c, lst), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, lst), should.BeNil)
 
-					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
-					So(runQuery(q.Eq("_ArchivalState", ArchivedPartial)), ShouldBeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_Terminated", true)), should.BeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_ArchivalState", ArchivedPartial)), should.BeTrue)
 				})
 
-				Convey(`A complete archived stream will satisfy Terminated, and ArchivedComplete`, func() {
+				t.Run(`A complete archived stream will satisfy Terminated, and ArchivedComplete`, func(t *ftt.Test) {
 					lst.TerminalIndex = 10
 					lst.ArchiveLogEntryCount = 11
 					lst.ArchivedTime = now
-					So(ds.Put(c, lst), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, lst), should.BeNil)
 
-					So(runQuery(q.Eq("_Terminated", true)), ShouldBeTrue)
-					So(runQuery(q.Eq("_ArchivalState", ArchivedComplete)), ShouldBeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_Terminated", true)), should.BeTrue)
+					assert.Loosely(t, runQuery(q.Eq("_ArchivalState", ArchivedComplete)), should.BeTrue)
 				})
 			})
 		})

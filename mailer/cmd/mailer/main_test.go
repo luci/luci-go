@@ -27,13 +27,13 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/mailer/api/mailer"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching/cachingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMailer(t *testing.T) {
@@ -65,7 +65,7 @@ func TestMailer(t *testing.T) {
 	expectedEmail.HTML = []byte(testReq.HtmlBody)
 	expectedEmail.Headers.Set("Message-Id", fmt.Sprintf("<%s@luci.api.cr.dev>", expectedMessageID))
 
-	Convey("With mailer", t, func() {
+	ftt.Run("With mailer", t, func(t *ftt.Test) {
 		var sendErr error
 		var mails []*email.Email
 
@@ -87,44 +87,44 @@ func TestMailer(t *testing.T) {
 			IdentityGroups: []string{"auth-mailer-access"},
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			resp, err := srv.SendMail(ctx, testReq)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &mailer.SendMailResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&mailer.SendMailResponse{
 				MessageId: expectedMessageID,
-			})
+			}))
 
-			So(mails, ShouldHaveLength, 1)
-			So(mails[0], ShouldResemble, expectedEmail)
+			assert.Loosely(t, mails, should.HaveLength(1))
+			assert.Loosely(t, mails[0], should.Resemble(expectedEmail))
 
-			Convey("Deduplication", func() {
+			t.Run("Deduplication", func(t *ftt.Test) {
 				resp, err := srv.SendMail(ctx, testReq)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResembleProto, &mailer.SendMailResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&mailer.SendMailResponse{
 					MessageId: expectedMessageID,
-				})
-				So(mails, ShouldHaveLength, 1) // no new calls
+				}))
+				assert.Loosely(t, mails, should.HaveLength(1)) // no new calls
 			})
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			sendErr = &textproto.Error{Code: 400}
 			_, err := srv.SendMail(ctx, testReq)
-			So(status.Code(err), ShouldEqual, codes.Internal)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
 		})
 
-		Convey("Fatal error", func() {
+		t.Run("Fatal error", func(t *ftt.Test) {
 			sendErr = &textproto.Error{Code: 500}
 			_, err := srv.SendMail(ctx, testReq)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Authorization error", func() {
+		t.Run("Authorization error", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:user@example.com",
 			})
 			_, err := srv.SendMail(ctx, testReq)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 		})
 	})
 }

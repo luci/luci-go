@@ -20,33 +20,34 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
 
 		store := func(a *modelpb.Asset) {
-			So(datastore.Put(ctx, &Asset{
+			assert.Loosely(t, datastore.Put(ctx, &Asset{
 				ID:    a.Id,
 				Asset: a,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		fetch := func(assetID string) *modelpb.Asset {
 			ent := &Asset{ID: assetID}
-			So(datastore.Get(ctx, ent), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ent), should.BeNil)
 			return ent.Asset
 		}
 
@@ -77,7 +78,7 @@ func TestRoundTrip(t *testing.T) {
 			}
 		}
 
-		Convey("Two assets, one up-to-date", func() {
+		t.Run("Two assets, one up-to-date", func(t *ftt.Test) {
 			store(&modelpb.Asset{
 				Id:           "apps/app-1",
 				AppliedState: intendedState("app-1", 0),
@@ -96,7 +97,7 @@ func TestRoundTrip(t *testing.T) {
 			beginOp, err := NewActuationBeginOp(ctx, []string{"apps/app-1", "apps/app-2"}, &modelpb.Actuation{
 				Id: "new-actuation",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// SKIP_UPTODATE decision.
 			beginOp.MakeDecision(ctx, "apps/app-1", &rpcpb.AssetToActuate{
@@ -112,45 +113,45 @@ func TestRoundTrip(t *testing.T) {
 			})
 
 			_, err = beginOp.Apply(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			asset1 := fetch("apps/app-1")
 			asset2 := fetch("apps/app-2")
 
 			// Both assets are associated with the actuation in EXECUTING state.
-			So(asset1.LastActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
-			So(asset2.LastActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
+			assert.Loosely(t, asset1.LastActuation.State, should.Equal(modelpb.Actuation_EXECUTING))
+			assert.Loosely(t, asset2.LastActuation.State, should.Equal(modelpb.Actuation_EXECUTING))
 
 			// LastActuateActuation changes only for the stale asset.
-			So(asset1.LastActuateActuation.Id, ShouldEqual, "old-actuation")
-			So(asset2.LastActuateActuation.Id, ShouldEqual, "new-actuation")
-			So(asset2.LastActuateActuation.State, ShouldEqual, modelpb.Actuation_EXECUTING)
+			assert.Loosely(t, asset1.LastActuateActuation.Id, should.Equal("old-actuation"))
+			assert.Loosely(t, asset2.LastActuateActuation.Id, should.Equal("new-actuation"))
+			assert.Loosely(t, asset2.LastActuateActuation.State, should.Equal(modelpb.Actuation_EXECUTING))
 
 			// Finish the executing actuation.
 			actuation := &Actuation{ID: "new-actuation"}
-			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, actuation), should.BeNil)
 			endOp, err := NewActuationEndOp(ctx, actuation)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			endOp.UpdateActuationStatus(ctx, nil, "")
 			endOp.HandleActuatedState(ctx, "apps/app-2", &rpcpb.ActuatedAsset{
 				State: reportedState("app-2", 500),
 			})
-			So(endOp.Apply(ctx), ShouldBeNil)
+			assert.Loosely(t, endOp.Apply(ctx), should.BeNil)
 
 			asset1 = fetch("apps/app-1")
 			asset2 = fetch("apps/app-2")
 
 			// Both assets are associated with the actuation in SUCCEEDED state.
-			So(asset1.LastActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
-			So(asset2.LastActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+			assert.Loosely(t, asset1.LastActuation.State, should.Equal(modelpb.Actuation_SUCCEEDED))
+			assert.Loosely(t, asset2.LastActuation.State, should.Equal(modelpb.Actuation_SUCCEEDED))
 
 			// LastActuateActuation changes only for the stale asset.
-			So(asset1.LastActuateActuation.Id, ShouldEqual, "old-actuation")
-			So(asset2.LastActuateActuation.Id, ShouldEqual, "new-actuation")
-			So(asset2.LastActuateActuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+			assert.Loosely(t, asset1.LastActuateActuation.Id, should.Equal("old-actuation"))
+			assert.Loosely(t, asset2.LastActuateActuation.Id, should.Equal("new-actuation"))
+			assert.Loosely(t, asset2.LastActuateActuation.State, should.Equal(modelpb.Actuation_SUCCEEDED))
 		})
 
-		Convey("Crashing actuation", func() {
+		t.Run("Crashing actuation", func(t *ftt.Test) {
 			store(&modelpb.Asset{
 				Id:           "apps/app",
 				AppliedState: intendedState("app", 0),
@@ -159,7 +160,7 @@ func TestRoundTrip(t *testing.T) {
 			beginOp, err := NewActuationBeginOp(ctx, []string{"apps/app"}, &modelpb.Actuation{
 				Id: "actuation-0",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// ACTUATE_STALE decision.
 			beginOp.MakeDecision(ctx, "apps/app", &rpcpb.AssetToActuate{
@@ -168,18 +169,18 @@ func TestRoundTrip(t *testing.T) {
 				ReportedState: reportedState("app", 0),
 			})
 			_, err = beginOp.Apply(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The asset points to this actuation.
 			asset := fetch("apps/app")
-			So(asset.LastActuation.Id, ShouldEqual, "actuation-0")
-			So(asset.LastActuateActuation.Id, ShouldEqual, "actuation-0")
+			assert.Loosely(t, asset.LastActuation.Id, should.Equal("actuation-0"))
+			assert.Loosely(t, asset.LastActuateActuation.Id, should.Equal("actuation-0"))
 
 			// Another actuation starts before the previous one finishes.
 			beginOp, err = NewActuationBeginOp(ctx, []string{"apps/app"}, &modelpb.Actuation{
 				Id: "actuation-1",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// ACTUATE_STALE decision.
 			beginOp.MakeDecision(ctx, "apps/app", &rpcpb.AssetToActuate{
@@ -188,47 +189,47 @@ func TestRoundTrip(t *testing.T) {
 				ReportedState: reportedState("app", 0),
 			})
 			_, err = beginOp.Apply(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The asset points to the new actuation.
 			asset = fetch("apps/app")
-			So(asset.LastActuation.Id, ShouldEqual, "actuation-1")
-			So(asset.LastActuateActuation.Id, ShouldEqual, "actuation-1")
+			assert.Loosely(t, asset.LastActuation.Id, should.Equal("actuation-1"))
+			assert.Loosely(t, asset.LastActuateActuation.Id, should.Equal("actuation-1"))
 
 			// There's a history log that points to the crashed actuation.
 			hist := history("apps/app", 1)
-			So(hist.Actuation.Id, ShouldEqual, "actuation-0")
-			So(hist.Actuation.State, ShouldEqual, modelpb.Actuation_EXPIRED)
+			assert.Loosely(t, hist.Actuation.Id, should.Equal("actuation-0"))
+			assert.Loosely(t, hist.Actuation.State, should.Equal(modelpb.Actuation_EXPIRED))
 
 			// Finish the stale actuation, it should be a noop.
 			actuation := &Actuation{ID: "actuation-0"}
-			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, actuation), should.BeNil)
 			endOp, err := NewActuationEndOp(ctx, actuation)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			endOp.UpdateActuationStatus(ctx, nil, "")
 			endOp.HandleActuatedState(ctx, "apps/app", &rpcpb.ActuatedAsset{
 				State: reportedState("app", 777),
 			})
-			So(endOp.Apply(ctx), ShouldBeNil)
+			assert.Loosely(t, endOp.Apply(ctx), should.BeNil)
 
 			// No new history entries.
-			So(history("apps/app", 2), ShouldBeNil)
+			assert.Loosely(t, history("apps/app", 2), should.BeNil)
 
 			// Finish the active actuation.
 			actuation = &Actuation{ID: "actuation-1"}
-			So(datastore.Get(ctx, actuation), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, actuation), should.BeNil)
 			endOp, err = NewActuationEndOp(ctx, actuation)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			endOp.UpdateActuationStatus(ctx, nil, "")
 			endOp.HandleActuatedState(ctx, "apps/app", &rpcpb.ActuatedAsset{
 				State: reportedState("app", 500),
 			})
-			So(endOp.Apply(ctx), ShouldBeNil)
+			assert.Loosely(t, endOp.Apply(ctx), should.BeNil)
 
 			// Have the new history log entry.
 			hist = history("apps/app", 2)
-			So(hist.Actuation.Id, ShouldEqual, "actuation-1")
-			So(hist.Actuation.State, ShouldEqual, modelpb.Actuation_SUCCEEDED)
+			assert.Loosely(t, hist.Actuation.Id, should.Equal("actuation-1"))
+			assert.Loosely(t, hist.Actuation.State, should.Equal(modelpb.Actuation_SUCCEEDED))
 		})
 	})
 }

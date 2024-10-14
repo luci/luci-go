@@ -18,22 +18,24 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLocalAuth(t *testing.T) {
 	t.Parallel()
 
-	Convey("SwitchLocalAccount works", t, func() {
+	ftt.Run("SwitchLocalAccount works", t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey("No local_auth at all", func() {
+		t.Run("No local_auth at all", func(t *ftt.Test) {
 			ctx, err := SwitchLocalAccount(c, "some")
-			So(ctx, ShouldBeNil)
-			So(err, ShouldEqual, ErrNoLocalAuthAccount)
+			assert.Loosely(t, ctx, should.BeNil)
+			assert.Loosely(t, err, should.Equal(ErrNoLocalAuthAccount))
 		})
 
-		Convey("Noop change", func() {
+		t.Run("Noop change", func(t *ftt.Test) {
 			c := SetLocalAuth(c, &LocalAuth{
 				DefaultAccountId: "some",
 				Accounts: []*LocalAuthAccount{
@@ -41,11 +43,11 @@ func TestLocalAuth(t *testing.T) {
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "some")
-			So(ctx, ShouldEqual, c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ctx, should.Equal(c))
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Switching into existing account", func() {
+		t.Run("Switching into existing account", func(t *ftt.Test) {
 			c := SetLocalAuth(c, &LocalAuth{
 				DefaultAccountId: "one",
 				Accounts: []*LocalAuthAccount{
@@ -54,12 +56,12 @@ func TestLocalAuth(t *testing.T) {
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "two")
-			So(ctx, ShouldNotBeNil)
-			So(err, ShouldBeNil)
-			So(GetLocalAuth(ctx).DefaultAccountId, ShouldEqual, "two")
+			assert.Loosely(t, ctx, should.NotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, GetLocalAuth(ctx).DefaultAccountId, should.Equal("two"))
 		})
 
-		Convey("Switching into non-existing account", func() {
+		t.Run("Switching into non-existing account", func(t *ftt.Test) {
 			c := SetLocalAuth(c, &LocalAuth{
 				DefaultAccountId: "one",
 				Accounts: []*LocalAuthAccount{
@@ -67,11 +69,11 @@ func TestLocalAuth(t *testing.T) {
 				},
 			})
 			ctx, err := SwitchLocalAccount(c, "two")
-			So(ctx, ShouldBeNil)
-			So(err, ShouldEqual, ErrNoLocalAuthAccount)
+			assert.Loosely(t, ctx, should.BeNil)
+			assert.Loosely(t, err, should.Equal(ErrNoLocalAuthAccount))
 		})
 
-		Convey("Clearing local auth", func() {
+		t.Run("Clearing local auth", func(t *ftt.Test) {
 			c := SetLocalAuth(c, &LocalAuth{
 				DefaultAccountId: "one",
 				Accounts: []*LocalAuthAccount{
@@ -80,11 +82,11 @@ func TestLocalAuth(t *testing.T) {
 			})
 			c = SetLocalAuth(c, nil)
 
-			So(GetLocalAuth(c), ShouldBeNil)
+			assert.Loosely(t, GetLocalAuth(c), should.BeNil)
 
 			ctx, err := SwitchLocalAccount(c, "some")
-			So(ctx, ShouldBeNil)
-			So(err, ShouldEqual, ErrNoLocalAuthAccount)
+			assert.Loosely(t, ctx, should.BeNil)
+			assert.Loosely(t, err, should.Equal(ErrNoLocalAuthAccount))
 		})
 	})
 }

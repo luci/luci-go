@@ -19,15 +19,16 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 )
 
 func TestMemory(t *testing.T) {
-	Convey(`Test Memory Output`, t, func() {
+	ftt.Run(`Test Memory Output`, t, func(t *ftt.Test) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -35,80 +36,80 @@ func TestMemory(t *testing.T) {
 		defer m.Close() // noop
 
 		butler, err := butler.New(ctx, butler.Config{Output: m})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		didStop := false
 		butlerStop := func() {
 			if !didStop {
 				didStop = true
 				butler.Activate()
-				So(butler.Wait(), ShouldBeNil)
+				assert.Loosely(t, butler.Wait(), should.BeNil)
 			}
 		}
 		defer butlerStop()
 
 		sc := streamclient.NewLoopback(butler, "ns")
 
-		Convey(`text`, func() {
+		t.Run(`text`, func(t *ftt.Test) {
 			stream, err := sc.NewStream(ctx, "hello", streamclient.WithTags("neat", "thingy"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = fmt.Fprintln(stream, "hello world!")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = fmt.Fprintln(stream, "this is pretty cool.")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(stream.Close(), ShouldBeNil)
+			assert.Loosely(t, stream.Close(), should.BeNil)
 			butlerStop()
 
 			outStream := m.GetStream("", "ns/hello")
-			So(outStream, ShouldNotBeNil)
+			assert.Loosely(t, outStream, should.NotBeNil)
 
-			So(outStream.Tags(), ShouldResemble, map[string]string{"neat": "thingy"})
-			So(outStream.LastData(), ShouldEqual, "hello world!\nthis is pretty cool.\n")
-			So(outStream.StreamType(), ShouldEqual, logpb.StreamType_TEXT)
+			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.LastData(), should.Equal("hello world!\nthis is pretty cool.\n"))
+			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_TEXT))
 		})
 
-		Convey(`binary`, func() {
+		t.Run(`binary`, func(t *ftt.Test) {
 			stream, err := sc.NewStream(ctx, "hello", streamclient.WithTags("neat", "thingy"), streamclient.Binary())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = fmt.Fprintln(stream, "hello world!")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = fmt.Fprintln(stream, "this is pretty cool.")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(stream.Close(), ShouldBeNil)
+			assert.Loosely(t, stream.Close(), should.BeNil)
 			butlerStop()
 
 			outStream := m.GetStream("", "ns/hello")
-			So(outStream, ShouldNotBeNil)
+			assert.Loosely(t, outStream, should.NotBeNil)
 
-			So(outStream.Tags(), ShouldResemble, map[string]string{"neat": "thingy"})
-			So(outStream.LastData(), ShouldEqual, "hello world!\nthis is pretty cool.\n")
-			So(outStream.StreamType(), ShouldEqual, logpb.StreamType_BINARY)
+			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.LastData(), should.Equal("hello world!\nthis is pretty cool.\n"))
+			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_BINARY))
 		})
 
-		Convey(`datagram`, func() {
+		t.Run(`datagram`, func(t *ftt.Test) {
 			stream, err := sc.NewDatagramStream(ctx, "hello", streamclient.WithTags("neat", "thingy"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(stream.WriteDatagram([]byte("hello world")), ShouldBeNil)
-			So(stream.WriteDatagram([]byte("this is pretty cool")), ShouldBeNil)
+			assert.Loosely(t, stream.WriteDatagram([]byte("hello world")), should.BeNil)
+			assert.Loosely(t, stream.WriteDatagram([]byte("this is pretty cool")), should.BeNil)
 
-			So(stream.Close(), ShouldBeNil)
+			assert.Loosely(t, stream.Close(), should.BeNil)
 			butlerStop()
 
 			outStream := m.GetStream("", "ns/hello")
-			So(outStream, ShouldNotBeNil)
+			assert.Loosely(t, outStream, should.NotBeNil)
 
-			So(outStream.Tags(), ShouldResemble, map[string]string{"neat": "thingy"})
-			So(outStream.LastData(), ShouldEqual, "this is pretty cool")
-			So(outStream.AllData(), ShouldResemble, []string{
+			assert.Loosely(t, outStream.Tags(), should.Resemble(map[string]string{"neat": "thingy"}))
+			assert.Loosely(t, outStream.LastData(), should.Equal("this is pretty cool"))
+			assert.Loosely(t, outStream.AllData(), should.Resemble([]string{
 				"hello world",
 				"this is pretty cool",
-			})
-			So(outStream.StreamType(), ShouldEqual, logpb.StreamType_DATAGRAM)
+			}))
+			assert.Loosely(t, outStream.StreamType(), should.Equal(logpb.StreamType_DATAGRAM))
 		})
 
 	})

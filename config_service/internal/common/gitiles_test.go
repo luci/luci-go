@@ -18,58 +18,58 @@ import (
 	"testing"
 
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGitiles(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateGitilesLocation", t, func() {
-		Convey("valid", func() {
+	ftt.Run("ValidateGitilesLocation", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			loc := &cfgcommonpb.GitilesLocation{
 				Repo: "https://a.googlesource.com/ok",
 				Ref:  "refs/heads/main",
 				Path: "infra/config/generated",
 			}
-			So(ValidateGitilesLocation(loc), ShouldBeNil)
+			assert.Loosely(t, ValidateGitilesLocation(loc), should.BeNil)
 		})
 
-		Convey("invalid", func() {
-			Convey("ref", func() {
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{}), ShouldErrLike, `ref must start with 'refs/'`)
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("ref", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{}), should.ErrLike(`ref must start with 'refs/'`))
 			})
 
-			Convey("path", func() {
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{Ref: "refs/heads/infra", Path: "/abc"}), ShouldErrLike, `path must not start with '/'`)
+			t.Run("path", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{Ref: "refs/heads/infra", Path: "/abc"}), should.ErrLike(`path must not start with '/'`))
 			})
 
-			Convey("repo", func() {
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{Ref: "refs/heads/infra", Path: "abc"}), ShouldErrLike, "repo: not specified")
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
+			t.Run("repo", func(t *ftt.Test) {
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{Ref: "refs/heads/infra", Path: "abc"}), should.ErrLike("repo: not specified"))
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
 					Repo: "hostname",
 					Ref:  "refs/heads/infra",
 					Path: "dir/abc",
-				}), ShouldErrLike, "repo: only https scheme is supported")
+				}), should.ErrLike("repo: only https scheme is supported"))
 
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
 					Repo: "https://a.googlesource.com/project/.git",
 					Ref:  "refs/heads/infra",
 					Path: "dir/abc",
-				}), ShouldErrLike, "repo: must not end with '.git'")
+				}), should.ErrLike("repo: must not end with '.git'"))
 
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
 					Repo: "https://a.googlesource.com/a/project/",
 					Ref:  "refs/heads/infra",
 					Path: "dir/abc",
-				}), ShouldErrLike, "repo: must not have '/a/' prefix of a path component")
+				}), should.ErrLike("repo: must not have '/a/' prefix of a path component"))
 
-				So(ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
+				assert.Loosely(t, ValidateGitilesLocation(&cfgcommonpb.GitilesLocation{
 					Repo: "https://a.googlesource.com/project/",
 					Ref:  "refs/heads/infra",
 					Path: "dir/abc",
-				}), ShouldErrLike, "repo: must not end with '/'")
+				}), should.ErrLike("repo: must not end with '/'"))
 			})
 		})
 	})

@@ -19,13 +19,14 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMemoryImpl(t *testing.T) {
-	Convey("with memory implementation", t, func() {
+	ftt.Run("with memory implementation", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		impl := New(map[config.Set]Files{
 			"services/abc": {
@@ -40,10 +41,10 @@ func TestMemoryImpl(t *testing.T) {
 			},
 		})
 
-		Convey("GetConfig works", func() {
+		t.Run("GetConfig works", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", false)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&config.Config{
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
@@ -52,13 +53,13 @@ func TestMemoryImpl(t *testing.T) {
 					ViewURL:     "https://example.com/view/here/file",
 				},
 				Content: "body",
-			})
+			}))
 		})
 
-		Convey("GetConfig metaOnly works", func() {
+		t.Run("GetConfig metaOnly works", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "file", true)
-			So(err, ShouldBeNil)
-			So(cfg, ShouldResemble, &config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg, should.Resemble(&config.Config{
 				Meta: config.Meta{
 					ConfigSet:   "services/abc",
 					Path:        "file",
@@ -66,13 +67,13 @@ func TestMemoryImpl(t *testing.T) {
 					Revision:    "4435ce6f8ad97b8b3df8bddf1c9cbe88feed13fb",
 					ViewURL:     "https://example.com/view/here/file",
 				},
-			})
+			}))
 		})
 
-		Convey("GetConfigs", func() {
+		t.Run("GetConfigs", func(t *ftt.Test) {
 			out, err := impl.GetConfigs(ctx, "projects/proj2", nil, false)
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, map[string]config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble(map[string]config.Config{
 				"another/file": {
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj2",
@@ -93,47 +94,47 @@ func TestMemoryImpl(t *testing.T) {
 					},
 					Content: "project2 file",
 				},
-			})
+			}))
 		})
 
-		Convey("ListFiles", func() {
+		t.Run("ListFiles", func(t *ftt.Test) {
 			templates, err := impl.ListFiles(ctx, "projects/proj2")
-			So(err, ShouldBeNil)
-			So(templates, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, templates, should.Resemble([]string{
 				"another/file",
 				"file",
-			})
+			}))
 		})
 
-		Convey("GetConfig missing set", func() {
+		t.Run("GetConfig missing set", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "missing/set", "path", false)
-			So(cfg, ShouldBeNil)
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, cfg, should.BeNil)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 		})
 
-		Convey("GetConfig missing path", func() {
+		t.Run("GetConfig missing path", func(t *ftt.Test) {
 			cfg, err := impl.GetConfig(ctx, "services/abc", "missing file", false)
-			So(cfg, ShouldBeNil)
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, cfg, should.BeNil)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 		})
 
-		Convey("GetConfig returns error when set", func() {
+		t.Run("GetConfig returns error when set", func(t *ftt.Test) {
 			testErr := errors.New("test error")
 			SetError(impl, testErr)
 			_, err := impl.GetConfig(ctx, "missing/set", "path", false)
-			So(err, ShouldEqual, testErr)
+			assert.Loosely(t, err, should.Equal(testErr))
 
 			// Resetting error to nil makes things work again.
 			SetError(impl, nil)
 			cfg, err := impl.GetConfig(ctx, "services/abc", "missing file", false)
-			So(cfg, ShouldBeNil)
-			So(err, ShouldEqual, config.ErrNoConfig)
+			assert.Loosely(t, cfg, should.BeNil)
+			assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 		})
 
-		Convey("GetProjectConfigs works", func() {
+		t.Run("GetProjectConfigs works", func(t *ftt.Test) {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", false)
-			So(err, ShouldBeNil)
-			So(cfgs, ShouldResemble, []config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
@@ -154,13 +155,13 @@ func TestMemoryImpl(t *testing.T) {
 					},
 					Content: "project2 file",
 				},
-			})
+			}))
 		})
 
-		Convey("GetProjectConfigs metaOnly works", func() {
+		t.Run("GetProjectConfigs metaOnly works", func(t *ftt.Test) {
 			cfgs, err := impl.GetProjectConfigs(ctx, "file", true)
-			So(err, ShouldBeNil)
-			So(cfgs, ShouldResemble, []config.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfgs, should.Resemble([]config.Config{
 				{
 					Meta: config.Meta{
 						ConfigSet:   "projects/proj1",
@@ -179,19 +180,19 @@ func TestMemoryImpl(t *testing.T) {
 						ViewURL:     "https://example.com/view/here/file",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("GetProjectConfigs unknown file", func() {
+		t.Run("GetProjectConfigs unknown file", func(t *ftt.Test) {
 			cfgs, err := impl.GetProjectConfigs(ctx, "unknown file", false)
-			So(err, ShouldBeNil)
-			So(len(cfgs), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cfgs), should.BeZero)
 		})
 
-		Convey("GetProjects works", func() {
+		t.Run("GetProjects works", func(t *ftt.Test) {
 			proj, err := impl.GetProjects(ctx)
-			So(err, ShouldBeNil)
-			So(proj, ShouldResemble, []config.Project{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Resemble([]config.Project{
 				{
 					ID:       "proj1",
 					Name:     "Proj1",
@@ -202,7 +203,7 @@ func TestMemoryImpl(t *testing.T) {
 					Name:     "Proj2",
 					RepoType: config.GitilesRepo,
 				},
-			})
+			}))
 		})
 	})
 }

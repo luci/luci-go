@@ -19,100 +19,101 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInstances(t *testing.T) {
 	t.Parallel()
 
-	Convey("Instances", t, func() {
+	ftt.Run("Instances", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(memory.Use(context.Background()))
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		s := tsmon.Store(c)
 
-		Convey("InstanceCount", func() {
+		t.Run("InstanceCount", func(t *ftt.Test) {
 			ic := &InstanceCount{
 				ScalingType: "dynamic",
 			}
-			So(ic.Configured, ShouldBeEmpty)
-			So(ic.Created, ShouldBeEmpty)
-			So(ic.Connected, ShouldBeEmpty)
+			assert.Loosely(t, ic.Configured, should.BeEmpty)
+			assert.Loosely(t, ic.Created, should.BeEmpty)
+			assert.Loosely(t, ic.Connected, should.BeEmpty)
 
-			Convey("Configured", func() {
+			t.Run("Configured", func(t *ftt.Test) {
 				ic.AddConfigured(1, "project-1")
 				ic.AddConfigured(1, "project-2")
 				ic.AddConfigured(1, "project-1")
-				So(ic.Configured, ShouldHaveLength, 2)
-				So(ic.Configured, ShouldContain, configuredCount{
+				assert.Loosely(t, ic.Configured, should.HaveLength(2))
+				assert.Loosely(t, ic.Configured, should.Contain(configuredCount{
 					Count:   2,
 					Project: "project-1",
-				})
-				So(ic.Configured, ShouldContain, configuredCount{
+				}))
+				assert.Loosely(t, ic.Configured, should.Contain(configuredCount{
 					Count:   1,
 					Project: "project-2",
-				})
+				}))
 			})
 
-			Convey("Created", func() {
+			t.Run("Created", func(t *ftt.Test) {
 				ic.AddCreated(1, "project", "zone-1")
 				ic.AddCreated(1, "project", "zone-2")
 				ic.AddCreated(1, "project", "zone-1")
-				So(ic.Created, ShouldHaveLength, 2)
-				So(ic.Created, ShouldContain, createdCount{
+				assert.Loosely(t, ic.Created, should.HaveLength(2))
+				assert.Loosely(t, ic.Created, should.Contain(createdCount{
 					Count:   2,
 					Project: "project",
 					Zone:    "zone-1",
-				})
-				So(ic.Created, ShouldContain, createdCount{
+				}))
+				assert.Loosely(t, ic.Created, should.Contain(createdCount{
 					Count:   1,
 					Project: "project",
 					Zone:    "zone-2",
-				})
+				}))
 			})
 
-			Convey("Connected", func() {
+			t.Run("Connected", func(t *ftt.Test) {
 				ic.AddConnected(1, "project", "server-1", "zone")
 				ic.AddConnected(1, "project", "server-2", "zone")
 				ic.AddConnected(1, "project", "server-1", "zone")
-				So(ic.Connected, ShouldHaveLength, 2)
-				So(ic.Connected, ShouldContain, connectedCount{
+				assert.Loosely(t, ic.Connected, should.HaveLength(2))
+				assert.Loosely(t, ic.Connected, should.Contain(connectedCount{
 					Count:   2,
 					Project: "project",
 					Server:  "server-1",
 					Zone:    "zone",
-				})
-				So(ic.Connected, ShouldContain, connectedCount{
+				}))
+				assert.Loosely(t, ic.Connected, should.Contain(connectedCount{
 					Count:   1,
 					Project: "project",
 					Server:  "server-2",
 					Zone:    "zone",
-				})
+				}))
 			})
 
-			Convey("Update", func() {
+			t.Run("Update", func(t *ftt.Test) {
 				ic.AddConfigured(1, "project")
 				ic.AddCreated(1, "project", "zone")
 				ic.AddConnected(1, "project", "server", "zone")
-				So(ic.Update(c, "prefix", "resource_group", "dynamic"), ShouldBeNil)
+				assert.Loosely(t, ic.Update(c, "prefix", "resource_group", "dynamic"), should.BeNil)
 				ic = &InstanceCount{
 					ID: "prefix",
 				}
-				So(datastore.Get(c, ic), ShouldBeNil)
-				So(ic.Configured, ShouldHaveLength, 1)
-				So(ic.Created, ShouldHaveLength, 1)
-				So(ic.Connected, ShouldHaveLength, 1)
-				So(ic.Prefix, ShouldEqual, ic.ID)
-				So(ic.ResourceGroup, ShouldEqual, "resource_group")
-				So(ic.ScalingType, ShouldEqual, "dynamic")
+				assert.Loosely(t, datastore.Get(c, ic), should.BeNil)
+				assert.Loosely(t, ic.Configured, should.HaveLength(1))
+				assert.Loosely(t, ic.Created, should.HaveLength(1))
+				assert.Loosely(t, ic.Connected, should.HaveLength(1))
+				assert.Loosely(t, ic.Prefix, should.Equal(ic.ID))
+				assert.Loosely(t, ic.ResourceGroup, should.Equal("resource_group"))
+				assert.Loosely(t, ic.ScalingType, should.Equal("dynamic"))
 			})
 		})
 
-		Convey("updateInstances", func() {
+		t.Run("updateInstances", func(t *ftt.Test) {
 			confFields := []any{"prefix", "project", "resource_group", "dynamic"}
 			creaFields1 := []any{"prefix", "project", "dynamic", "zone-1"}
 			creaFields2 := []any{"prefix", "project", "dynamic", "zone-2"}
@@ -152,26 +153,26 @@ func TestInstances(t *testing.T) {
 			}
 
 			ic.Computed = time.Time{}
-			So(datastore.Put(c, ic), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, ic), should.BeNil)
 			updateInstances(c)
-			So(s.Get(c, configuredInstances, time.Time{}, confFields), ShouldBeNil)
-			So(s.Get(c, createdInstances, time.Time{}, creaFields1), ShouldBeNil)
-			So(s.Get(c, createdInstances, time.Time{}, creaFields2), ShouldBeNil)
-			So(s.Get(c, connectedInstances, time.Time{}, connFields), ShouldBeNil)
-			So(datastore.Get(c, &InstanceCount{
+			assert.Loosely(t, s.Get(c, configuredInstances, time.Time{}, confFields), should.BeNil)
+			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields1), should.BeNil)
+			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields2), should.BeNil)
+			assert.Loosely(t, s.Get(c, connectedInstances, time.Time{}, connFields), should.BeNil)
+			assert.Loosely(t, datastore.Get(c, &InstanceCount{
 				ID: ic.ID,
-			}), ShouldEqual, datastore.ErrNoSuchEntity)
+			}), should.Equal(datastore.ErrNoSuchEntity))
 
 			ic.Computed = time.Now().UTC()
-			So(datastore.Put(c, ic), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, ic), should.BeNil)
 			updateInstances(c)
-			So(s.Get(c, configuredInstances, time.Time{}, confFields).(int64), ShouldEqual, 3)
-			So(s.Get(c, createdInstances, time.Time{}, creaFields1).(int64), ShouldEqual, 2)
-			So(s.Get(c, createdInstances, time.Time{}, creaFields2).(int64), ShouldEqual, 1)
-			So(s.Get(c, connectedInstances, time.Time{}, connFields).(int64), ShouldEqual, 1)
-			So(datastore.Get(c, &InstanceCount{
+			assert.Loosely(t, s.Get(c, configuredInstances, time.Time{}, confFields).(int64), should.Equal(3))
+			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields1).(int64), should.Equal(2))
+			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields2).(int64), should.Equal(1))
+			assert.Loosely(t, s.Get(c, connectedInstances, time.Time{}, connFields).(int64), should.Equal(1))
+			assert.Loosely(t, datastore.Get(c, &InstanceCount{
 				ID: ic.ID,
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 	})
 }

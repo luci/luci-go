@@ -18,19 +18,19 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetchAssets(t *testing.T) {
 	t.Parallel()
 
-	Convey("With entities", t, func() {
+	ftt.Run("With entities", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		datastore.Put(ctx, []*Asset{
@@ -39,33 +39,33 @@ func TestFetchAssets(t *testing.T) {
 			{ID: "5", Asset: &modelpb.Asset{Id: "5"}},
 		})
 
-		Convey("shouldExist = false", func() {
+		t.Run("shouldExist = false", func(t *ftt.Test) {
 			assets, err := fetchAssets(ctx, []string{"1", "2", "3", "4", "5"}, false)
-			So(err, ShouldBeNil)
-			So(assets, ShouldHaveLength, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, assets, should.HaveLength(5))
 			for assetID, ent := range assets {
-				So(ent.ID, ShouldEqual, assetID)
-				So(ent.Asset.Id, ShouldEqual, assetID)
+				assert.Loosely(t, ent.ID, should.Equal(assetID))
+				assert.Loosely(t, ent.Asset.Id, should.Equal(assetID))
 			}
 		})
 
-		Convey("shouldExist = true", func() {
+		t.Run("shouldExist = true", func(t *ftt.Test) {
 			_, err := fetchAssets(ctx, []string{"1", "2", "3", "4", "5"}, true)
-			So(err, ShouldErrLike, "assets entities unexpectedly missing: 2, 4")
+			assert.Loosely(t, err, should.ErrLike("assets entities unexpectedly missing: 2, 4"))
 		})
 
-		Convey("One missing", func() {
-			Convey("shouldExist = false", func() {
+		t.Run("One missing", func(t *ftt.Test) {
+			t.Run("shouldExist = false", func(t *ftt.Test) {
 				assets, err := fetchAssets(ctx, []string{"missing"}, false)
-				So(err, ShouldBeNil)
-				So(assets, ShouldHaveLength, 1)
-				So(assets["missing"].ID, ShouldEqual, "missing")
-				So(assets["missing"].Asset.Id, ShouldEqual, "missing")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, assets, should.HaveLength(1))
+				assert.Loosely(t, assets["missing"].ID, should.Equal("missing"))
+				assert.Loosely(t, assets["missing"].Asset.Id, should.Equal("missing"))
 			})
 
-			Convey("shouldExist = true", func() {
+			t.Run("shouldExist = true", func(t *ftt.Test) {
 				_, err := fetchAssets(ctx, []string{"missing"}, true)
-				So(err, ShouldErrLike, "assets entities unexpectedly missing: missing")
+				assert.Loosely(t, err, should.ErrLike("assets entities unexpectedly missing: missing"))
 			})
 		})
 	})

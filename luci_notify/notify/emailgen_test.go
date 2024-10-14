@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
@@ -26,21 +29,19 @@ import (
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEmailGen(t *testing.T) {
 	t.Parallel()
 
-	Convey(`bundle`, t, func() {
+	ftt.Run(`bundle`, t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-config")
 		c = caching.WithEmptyProcessCache(c)
 
 		chromium := &config.Project{Name: "chromium", Revision: "deadbeef"}
 		chromiumKey := datastore.KeyForObj(c, chromium)
-		So(datastore.Put(c, chromium), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, chromium), should.BeNil)
 
 		templates := []*config.EmailTemplate{
 			{
@@ -77,27 +78,27 @@ Reusing templates from another files.
 				BodyHTMLTemplate:    `{{.FieldDoesNotExist}}`,
 			},
 		}
-		So(datastore.Put(c, templates), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, templates), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		bundle, err := getBundle(c, chromium.Name)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("bundles are cached", func() {
+		t.Run("bundles are cached", func(t *ftt.Test) {
 			secondBundle, err := getBundle(c, chromium.Name)
-			So(err, ShouldBeNil)
-			So(secondBundle, ShouldEqual, bundle) // pointers match
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, secondBundle, should.Equal(bundle)) // pointers match
 		})
 
-		Convey("caching honors revision", func() {
+		t.Run("caching honors revision", func(t *ftt.Test) {
 			chromium.Revision = "badcoffee"
-			So(datastore.Put(c, chromium), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, chromium), should.BeNil)
 			secondBundle, err := getBundle(c, chromium.Name)
-			So(err, ShouldBeNil)
-			So(secondBundle, ShouldNotEqual, bundle) // pointers mismatch, new bundle
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, secondBundle, should.NotEqual(bundle)) // pointers mismatch, new bundle
 		})
 
-		Convey(`GenerateEmail`, func() {
+		t.Run(`GenerateEmail`, func(t *ftt.Test) {
 			input := &notifypb.TemplateInput{
 				BuildbucketHostname: "buildbucket.example.com",
 				Build: &buildbucketpb.Build{
@@ -110,23 +111,23 @@ Reusing templates from another files.
 					Status: buildbucketpb.Status_SUCCESS,
 				},
 			}
-			Convey("simple template", func() {
+			t.Run("simple template", func(t *ftt.Test) {
 				subject, body := bundle.GenerateEmail("default", input)
-				So(subject, ShouldEqual, "Build 54 completed")
-				So(body, ShouldEqual, "Build 54 completed with status SUCCESS")
+				assert.Loosely(t, subject, should.Equal("Build 54 completed"))
+				assert.Loosely(t, body, should.Equal("Build 54 completed with status SUCCESS"))
 			})
 
-			Convey("template using other files", func() {
+			t.Run("template using other files", func(t *ftt.Test) {
 				_, body := bundle.GenerateEmail("using_other_files", input)
-				So(body, ShouldEqual, `
+				assert.Loosely(t, body, should.Equal(`
 Reusing templates from another files.
 Build 54
-steps of build 54 go here`)
+steps of build 54 go here`))
 			})
 
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				_, body := bundle.GenerateEmail("bad", input)
-				So(body, ShouldContainSubstring, "spartan")
+				assert.Loosely(t, body, should.ContainSubstring("spartan"))
 			})
 		})
 	})

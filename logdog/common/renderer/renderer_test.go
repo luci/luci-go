@@ -19,9 +19,10 @@ import (
 	"io"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testSource implements the Source interface using stubbed data.
@@ -89,85 +90,85 @@ func (ts *testSource) loadDatagram(data []byte, term bool) {
 func TestRenderer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Renderer connected to a test Source`, t, func() {
+	ftt.Run(`A Renderer connected to a test Source`, t, func(t *ftt.Test) {
 		ts := testSource{}
 		b := bytes.Buffer{}
 		r := &Renderer{
 			Source: &ts,
 		}
 
-		Convey(`With no log data, will render nothing and return.`, func() {
+		t.Run(`With no log data, will render nothing and return.`, func(t *ftt.Test) {
 			c, err := b.ReadFrom(r)
-			So(err, ShouldBeNil)
-			So(c, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c, should.BeZero)
 		})
 
-		Convey(`With TEXT log entries ["1", "2"] using "DELIM" as the delimiter`, func() {
+		t.Run(`With TEXT log entries ["1", "2"] using "DELIM" as the delimiter`, func(t *ftt.Test) {
 			ts.loadText("1", "DELIM")
 			ts.loadText("2", "DELIM")
 
-			Convey(`When not configured to render raw, renders "1\n2\n".`, func() {
+			t.Run(`When not configured to render raw, renders "1\n2\n".`, func(t *ftt.Test) {
 				_, err := b.ReadFrom(r)
-				So(err, ShouldBeNil)
-				So(b.String(), ShouldEqual, "1\n2\n")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.String(), should.Equal("1\n2\n"))
 			})
 
-			Convey(`When configured to render raw, renders "1DELIM2DELIM".`, func() {
+			t.Run(`When configured to render raw, renders "1DELIM2DELIM".`, func(t *ftt.Test) {
 				r.Raw = true
 
 				_, err := b.ReadFrom(r)
-				So(err, ShouldBeNil)
-				So(b.String(), ShouldEqual, "1DELIM2DELIM")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.String(), should.Equal("1DELIM2DELIM"))
 			})
 		})
 
-		Convey(`With BINARY log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}`, func() {
+		t.Run(`With BINARY log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}`, func(t *ftt.Test) {
 			ts.loadBinary([]byte{0x00})
 			ts.loadBinary([]byte{0x01, 0x02})
 			ts.loadBinary([]byte{})
 			ts.loadBinary([]byte{0x03})
 
-			Convey(`Renders {0x00, 0x01, 0x02, 0x03}.`, func() {
+			t.Run(`Renders {0x00, 0x01, 0x02, 0x03}.`, func(t *ftt.Test) {
 				_, err := b.ReadFrom(r)
-				So(err, ShouldBeNil)
-				So(b.Bytes(), ShouldResemble, []byte("00010203"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.Bytes(), should.Resemble([]byte("00010203")))
 			})
 
-			Convey(`Renders raw {0x00, 0x01, 0x02, 0x03}.`, func() {
+			t.Run(`Renders raw {0x00, 0x01, 0x02, 0x03}.`, func(t *ftt.Test) {
 				r.Raw = true
 
 				_, err := b.ReadFrom(r)
-				So(err, ShouldBeNil)
-				So(b.Bytes(), ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0x00, 0x01, 0x02, 0x03}))
 			})
 
-			Convey(`Can read the raw stream byte-by-byte.`, func() {
+			t.Run(`Can read the raw stream byte-by-byte.`, func(t *ftt.Test) {
 				r.Raw = true
 				b := [1]byte{}
 
 				c, err := r.Read(b[:])
-				So(err, ShouldBeNil)
-				So(c, ShouldEqual, 1)
-				So(b[0], ShouldEqual, 0x00)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, c, should.Equal(1))
+				assert.Loosely(t, b[0], should.Equal(0x00))
 
 				c, err = r.Read(b[:])
-				So(err, ShouldBeNil)
-				So(c, ShouldEqual, 1)
-				So(b[0], ShouldEqual, 0x01)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, c, should.Equal(1))
+				assert.Loosely(t, b[0], should.Equal(0x01))
 
 				c, err = r.Read(b[:])
-				So(err, ShouldBeNil)
-				So(c, ShouldEqual, 1)
-				So(b[0], ShouldEqual, 0x02)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, c, should.Equal(1))
+				assert.Loosely(t, b[0], should.Equal(0x02))
 
 				c, err = r.Read(b[:])
-				So(err, ShouldEqual, io.EOF)
-				So(c, ShouldEqual, 1)
-				So(b[0], ShouldEqual, 0x03)
+				assert.Loosely(t, err, should.Equal(io.EOF))
+				assert.Loosely(t, c, should.Equal(1))
+				assert.Loosely(t, b[0], should.Equal(0x03))
 			})
 		})
 
-		Convey(`With partial DATAGRAM log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}.`, func() {
+		t.Run(`With partial DATAGRAM log entries {{0x00}, {0x01, 0x02}, {}, {0x03}}.`, func(t *ftt.Test) {
 			ts.loadDatagram([]byte{0x00}, false)
 			ts.loadDatagram([]byte{0x01, 0x02}, false)
 			ts.loadDatagram([]byte{}, false)
@@ -176,15 +177,15 @@ func TestRenderer(t *testing.T) {
 			hexDump := "Datagram #0 (4 bytes)\n" +
 				"00000000  00 01 02 03                                       |....|\n\n"
 
-			Convey(`Renders a full hex dump.`, func() {
+			t.Run(`Renders a full hex dump.`, func(t *ftt.Test) {
 				_, err := b.ReadFrom(r)
-				So(err, ShouldBeNil)
-				So(b.String(), ShouldEqual, hexDump)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b.String(), should.Equal(hexDump))
 			})
 
-			Convey(`When deferring to a datagram writer`, func() {
+			t.Run(`When deferring to a datagram writer`, func(t *ftt.Test) {
 
-				Convey(`Uses the writer instead of a hex dump.`, func() {
+				t.Run(`Uses the writer instead of a hex dump.`, func(t *ftt.Test) {
 					var bytes []byte
 					r.DatagramWriter = func(w io.Writer, dg []byte) bool {
 						bytes = make([]byte, len(dg))
@@ -195,26 +196,26 @@ func TestRenderer(t *testing.T) {
 					}
 
 					_, err := b.ReadFrom(r)
-					So(err, ShouldBeNil)
-					So(b.String(), ShouldEqual, "Datagram #0 (4 bytes)\nrendered\n")
-					So(bytes, ShouldResemble, []byte{0x00, 0x01, 0x02, 0x03})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, b.String(), should.Equal("Datagram #0 (4 bytes)\nrendered\n"))
+					assert.Loosely(t, bytes, should.Resemble([]byte{0x00, 0x01, 0x02, 0x03}))
 				})
 
-				Convey(`Renders a full hex dump when the writer returns false.`, func() {
+				t.Run(`Renders a full hex dump when the writer returns false.`, func(t *ftt.Test) {
 					r.DatagramWriter = func(w io.Writer, dg []byte) bool { return false }
 
 					_, err := b.ReadFrom(r)
-					So(err, ShouldBeNil)
-					So(b.String(), ShouldEqual, hexDump)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, b.String(), should.Equal(hexDump))
 				})
 			})
 		})
 
-		Convey(`With empty log entries, renders nothing.`, func() {
+		t.Run(`With empty log entries, renders nothing.`, func(t *ftt.Test) {
 			ts.loadLogEntry(&logpb.LogEntry{})
 			c, err := b.ReadFrom(r)
-			So(err, ShouldBeNil)
-			So(c, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c, should.BeZero)
 		})
 	})
 }

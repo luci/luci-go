@@ -20,23 +20,24 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestButlerCallbacks(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing Butler instance`, t, func() {
+	ftt.Run(`A testing Butler instance`, t, func(t *ftt.Test) {
 		c := gologger.StdConfig.Use(context.Background())
 		b, err := New(c, Config{
 			Output:     &null.Output{},
 			BufferLogs: false,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		defer func() {
 		}()
@@ -70,39 +71,39 @@ func TestButlerCallbacks(t *testing.T) {
 			}
 		}
 
-		Convey(`ignores unrelated streams`, func() {
+		t.Run(`ignores unrelated streams`, func(t *ftt.Test) {
 			s := newTestStream("test")
-			So(b.AddStream(s, s.desc), ShouldBeNil)
+			assert.Loosely(t, b.AddStream(s, s.desc), should.BeNil)
 			s.data([]byte("Hello!\n"), nil)
 			s.data([]byte("This\nis\na\ntest."), nil)
 			s.data(nil, io.EOF)
-			So(streamLines, ShouldBeNil)
+			assert.Loosely(t, streamLines, should.BeNil)
 			b.Activate()
-			So(b.Wait(), ShouldBeNil)
+			assert.Loosely(t, b.Wait(), should.BeNil)
 		})
 
-		Convey(`is called for target_stream`, func() {
+		t.Run(`is called for target_stream`, func(t *ftt.Test) {
 			s := newTestStream("target_stream")
-			So(b.AddStream(s, s.desc), ShouldBeNil)
+			assert.Loosely(t, b.AddStream(s, s.desc), should.BeNil)
 			s.data([]byte("Hello!\n"), nil)
 			s.data([]byte("This\nis\na\ntest."), nil)
 			s.data(nil, io.EOF)
 			b.Activate()
-			So(b.Wait(), ShouldBeNil)
+			assert.Loosely(t, b.Wait(), should.BeNil)
 
-			So(streamLines, ShouldResemble, []string{
+			assert.Loosely(t, streamLines, should.Resemble([]string{
 				"Hello!\n", "This\n", "is\n", "a\n", "test.", "<EOF>",
-			})
+			}))
 		})
 
-		Convey(`is called for target_stream (without data)`, func() {
+		t.Run(`is called for target_stream (without data)`, func(t *ftt.Test) {
 			s := newTestStream("target_stream")
-			So(b.AddStream(s, s.desc), ShouldBeNil)
+			assert.Loosely(t, b.AddStream(s, s.desc), should.BeNil)
 			s.data(nil, io.EOF)
 			b.Activate()
-			So(b.Wait(), ShouldBeNil)
+			assert.Loosely(t, b.Wait(), should.BeNil)
 
-			So(streamLines, ShouldResemble, []string{"<EOF>"})
+			assert.Loosely(t, streamLines, should.Resemble([]string{"<EOF>"}))
 		})
 	})
 }

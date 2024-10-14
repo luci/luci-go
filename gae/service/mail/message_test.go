@@ -18,13 +18,15 @@ import (
 	net_mail "net/mail"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDataTypes(t *testing.T) {
 	t.Parallel()
 
-	Convey("data types", t, func() {
+	ftt.Run("data types", t, func(t *ftt.Test) {
 		m := &Message{
 			"from@example.com",
 			"reply_to@example.com",
@@ -40,58 +42,58 @@ func TestDataTypes(t *testing.T) {
 			},
 		}
 
-		Convey("empty copy doesn't do extra allocations", func() {
+		t.Run("empty copy doesn't do extra allocations", func(t *ftt.Test) {
 			m := (&Message{}).Copy()
-			So(m.To, ShouldBeNil)
-			So(m.Cc, ShouldBeNil)
-			So(m.Bcc, ShouldBeNil)
-			So(m.Attachments, ShouldBeNil)
-			So(m.Headers, ShouldBeNil)
+			assert.Loosely(t, m.To, should.BeNil)
+			assert.Loosely(t, m.Cc, should.BeNil)
+			assert.Loosely(t, m.Bcc, should.BeNil)
+			assert.Loosely(t, m.Attachments, should.BeNil)
+			assert.Loosely(t, m.Headers, should.BeNil)
 
 			tm := (&TestMessage{}).Copy()
-			So(tm.MIMETypes, ShouldBeNil)
+			assert.Loosely(t, tm.MIMETypes, should.BeNil)
 		})
 
-		Convey("can copy nil", func() {
-			So((*Message)(nil).Copy(), ShouldBeNil)
-			So((*Message)(nil).ToSDKMessage(), ShouldBeNil)
-			So((*TestMessage)(nil).Copy(), ShouldBeNil)
+		t.Run("can copy nil", func(t *ftt.Test) {
+			assert.Loosely(t, (*Message)(nil).Copy(), should.BeNil)
+			assert.Loosely(t, (*Message)(nil).ToSDKMessage(), should.BeNil)
+			assert.Loosely(t, (*TestMessage)(nil).Copy(), should.BeNil)
 		})
 
-		Convey("Message is copyable", func() {
+		t.Run("Message is copyable", func(t *ftt.Test) {
 			m2 := m.Copy()
-			So(m2, ShouldResemble, m)
+			assert.Loosely(t, m2, should.Resemble(m))
 
 			// make sure it's really a copy
 			m2.To[0] = "fake@faker.example.com"
-			So(m2.To, ShouldNotResemble, m.To)
+			assert.Loosely(t, m2.To, should.NotResemble(m.To))
 
 			m2.Headers["SomethingElse"] = []string{"noooo"}
-			So(m2.Headers, ShouldNotResemble, m.Headers)
+			assert.Loosely(t, m2.Headers, should.NotResemble(m.Headers))
 		})
 
-		Convey("TestMessage is copyable", func() {
+		t.Run("TestMessage is copyable", func(t *ftt.Test) {
 			tm := &TestMessage{*m, []string{"application/msword"}}
 			tm2 := tm.Copy()
-			So(tm, ShouldResemble, tm2)
+			assert.Loosely(t, tm, should.Resemble(tm2))
 
 			tm2.MIMETypes[0] = "spam"
-			So(tm, ShouldNotResemble, tm2)
+			assert.Loosely(t, tm, should.NotResemble(tm2))
 		})
 
-		Convey("Message can be cast to an SDK Message", func() {
+		t.Run("Message can be cast to an SDK Message", func(t *ftt.Test) {
 			m2 := m.ToSDKMessage()
-			So(m2.Sender, ShouldResemble, m.Sender)
-			So(m2.ReplyTo, ShouldResemble, m.ReplyTo)
-			So(m2.To, ShouldResemble, m.To)
-			So(m2.Cc, ShouldResemble, m.Cc)
-			So(m2.Bcc, ShouldResemble, m.Bcc)
-			So(m2.Subject, ShouldResemble, m.Subject)
-			So(m2.Body, ShouldResemble, m.Body)
-			So(m2.HTMLBody, ShouldResemble, m.HTMLBody)
-			So(m2.Headers, ShouldResemble, m.Headers)
+			assert.Loosely(t, m2.Sender, should.Resemble(m.Sender))
+			assert.Loosely(t, m2.ReplyTo, should.Resemble(m.ReplyTo))
+			assert.Loosely(t, m2.To, should.Resemble(m.To))
+			assert.Loosely(t, m2.Cc, should.Resemble(m.Cc))
+			assert.Loosely(t, m2.Bcc, should.Resemble(m.Bcc))
+			assert.Loosely(t, m2.Subject, should.Resemble(m.Subject))
+			assert.Loosely(t, m2.Body, should.Resemble(m.Body))
+			assert.Loosely(t, m2.HTMLBody, should.Resemble(m.HTMLBody))
+			assert.Loosely(t, m2.Headers, should.Resemble(m.Headers))
 
-			So((Attachment)(m2.Attachments[0]), ShouldResemble, m.Attachments[0])
+			assert.Loosely(t, (Attachment)(m2.Attachments[0]), should.Resemble(m.Attachments[0]))
 		})
 	})
 }

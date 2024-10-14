@@ -18,23 +18,23 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetCurrentIsolated(t *testing.T) {
 	t.Parallel()
 
-	Convey(`GetCurrentIsolated`, t, func() {
-		Convey(`none (bb)`, func() {
+	ftt.Run(`GetCurrentIsolated`, t, func(t *ftt.Test) {
+		t.Run(`none (bb)`, func(t *ftt.Test) {
 			current, err := testBBJob(false).Info().CurrentIsolated()
-			So(err, ShouldBeNil)
-			So(current, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, current, should.BeNil)
 		})
 
-		Convey(`CasUserPayload`, func() {
+		t.Run(`CasUserPayload`, func(t *ftt.Test) {
 			jd := testBBJob(false)
 			jd.GetBuildbucket().BbagentArgs = &bbpb.BBAgentArgs{
 				Build: &bbpb.Build{
@@ -63,13 +63,13 @@ func TestGetCurrentIsolated(t *testing.T) {
 				},
 			}
 			current, err := jd.Info().CurrentIsolated()
-			So(err, ShouldBeNil)
-			So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 		})
 
-		Convey(`Swarming`, func() {
-			Convey(`rbe-cas`, func() {
-				Convey(`one slice`, func() {
+		t.Run(`Swarming`, func(t *ftt.Test) {
+			t.Run(`rbe-cas`, func(t *ftt.Test) {
+				t.Run(`one slice`, func(t *ftt.Test) {
 					jd := testSWJob()
 					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
 						TaskSlices: []*swarmingpb.TaskSlice{
@@ -81,11 +81,11 @@ func TestGetCurrentIsolated(t *testing.T) {
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
-					So(err, ShouldBeNil)
-					So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 				})
 
-				Convey(`slice+CasUserPayload (match)`, func() {
+				t.Run(`slice+CasUserPayload (match)`, func(t *ftt.Test) {
 					jd := testSWJob()
 					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{CasInstance: "instance"}
 					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
@@ -98,11 +98,11 @@ func TestGetCurrentIsolated(t *testing.T) {
 						},
 					}
 					current, err := jd.Info().CurrentIsolated()
-					So(err, ShouldBeNil)
-					So(current, ShouldResembleProto, &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, current, should.Resemble(&swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "hash"}}))
 				})
 
-				Convey(`slice+CasUserPayload (mismatch)`, func() {
+				t.Run(`slice+CasUserPayload (mismatch)`, func(t *ftt.Test) {
 					jd := testSWJob()
 					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{Digest: &swarmingpb.Digest{Hash: "new hash"}}
 					jd.GetSwarming().Task = &swarmingpb.NewTaskRequest{
@@ -115,7 +115,7 @@ func TestGetCurrentIsolated(t *testing.T) {
 						},
 					}
 					_, err := jd.Info().CurrentIsolated()
-					So(err, ShouldErrLike, "Definition contains multiple RBE-CAS inputs")
+					assert.Loosely(t, err, should.ErrLike("Definition contains multiple RBE-CAS inputs"))
 				})
 			})
 		})

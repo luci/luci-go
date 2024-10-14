@@ -21,10 +21,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // START OMIT
@@ -36,14 +37,14 @@ func TestGAE(t *testing.T) {
 		ID   string `gae:"$id"` // HL
 		A, B int    // HL
 	} // HL
-	Convey("Put/Get w/ gae", t, func() {
+	ftt.Run("Put/Get w/ gae", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
-		So(datastore.Put(ctx, // HL
-			&Model{"one thing", 10, 20},                // HL
-			&Model{"or another", 20, 30}), ShouldBeNil) // HL
+		assert.Loosely(t, datastore.Put(ctx, // HL
+			&Model{"one thing", 10, 20},                 // HL
+			&Model{"or another", 20, 30}), should.BeNil) // HL
 		ms := []*Model{{ID: "one thing"}, {ID: "or another"}}
-		So(datastore.Get(ctx, ms), ShouldBeNil) // HL
-		So(ms, ShouldResemble, []*Model{{"one thing", 10, 20}, {"or another", 20, 30}})
+		assert.Loosely(t, datastore.Get(ctx, ms), should.BeNil) // HL
+		assert.Loosely(t, ms, should.Resemble([]*Model{{"one thing", 10, 20}, {"or another", 20, 30}}))
 	})
 }
 

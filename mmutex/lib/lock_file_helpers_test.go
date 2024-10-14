@@ -22,58 +22,58 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMain(t *testing.T) {
-	Convey("computeMutexPaths returns empty strings without environment variable set", t, func() {
+	ftt.Run("computeMutexPaths returns empty strings without environment variable set", t, func(t *ftt.Test) {
 		env := subcommands.Env{
 			"MMUTEX_LOCK_DIR": subcommands.EnvVar{"", false},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldBeNil)
-		So(lockFilePath, ShouldBeBlank)
-		So(drainFilePath, ShouldBeBlank)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, lockFilePath, should.BeZero)
+		assert.Loosely(t, drainFilePath, should.BeZero)
 	})
 
-	Convey("computeMutexPaths returns empty strings when lock dir doesn't exist", t, func() {
+	ftt.Run("computeMutexPaths returns empty strings when lock dir doesn't exist", t, func(t *ftt.Test) {
 		tempDir, err := ioutil.TempDir("", "")
-		So(err, ShouldBeNil)
-		So(os.Remove(tempDir), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, os.Remove(tempDir), should.BeNil)
 
 		env := subcommands.Env{
 			"MMUTEX_LOCK_DIR": subcommands.EnvVar{tempDir, true},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(lockFilePath, ShouldBeBlank)
-		So(drainFilePath, ShouldBeBlank)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, lockFilePath, should.BeZero)
+		assert.Loosely(t, drainFilePath, should.BeZero)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("computeMutexPaths returns env variable based path", t, func() {
+	ftt.Run("computeMutexPaths returns env variable based path", t, func(t *ftt.Test) {
 		tempDir, err := ioutil.TempDir("", "")
 		defer os.Remove(tempDir)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		env := subcommands.Env{
 			"MMUTEX_LOCK_DIR": subcommands.EnvVar{tempDir, true},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldBeNil)
-		So(lockFilePath, ShouldEqual, filepath.Join(tempDir, "mmutex.lock"))
-		So(drainFilePath, ShouldEqual, filepath.Join(tempDir, "mmutex.drain"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, lockFilePath, should.Equal(filepath.Join(tempDir, "mmutex.lock")))
+		assert.Loosely(t, drainFilePath, should.Equal(filepath.Join(tempDir, "mmutex.drain")))
 	})
 
-	Convey("computeMutexPaths returns error when lock dir is a relative path", t, func() {
+	ftt.Run("computeMutexPaths returns error when lock dir is a relative path", t, func(t *ftt.Test) {
 		path := filepath.Join("a", "b", "c")
 		env := subcommands.Env{
 			"MMUTEX_LOCK_DIR": subcommands.EnvVar{path, true},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldErrLike, fmt.Sprintf("Lock file directory %s must be an absolute path", path))
-		So(lockFilePath, ShouldBeBlank)
-		So(drainFilePath, ShouldBeBlank)
+		assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("Lock file directory %s must be an absolute path", path)))
+		assert.Loosely(t, lockFilePath, should.BeZero)
+		assert.Loosely(t, drainFilePath, should.BeZero)
 	})
 }

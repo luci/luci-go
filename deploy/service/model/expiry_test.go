@@ -22,18 +22,19 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExpireActuations(t *testing.T) {
 	t.Parallel()
 
-	Convey("With datastore", t, func() {
+	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, tc := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
@@ -59,13 +60,13 @@ func TestExpireActuations(t *testing.T) {
 
 		actuation := func(actuationID string) *modelpb.Actuation {
 			ent := &Actuation{ID: actuationID}
-			So(datastore.Get(ctx, ent), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ent), should.BeNil)
 			return ent.Actuation
 		}
 
 		assetEntity := func(assetID string) *Asset {
 			ent := &Asset{ID: assetID}
-			So(datastore.Get(ctx, ent), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, ent), should.BeNil)
 			return ent
 		}
 
@@ -80,12 +81,12 @@ func TestExpireActuations(t *testing.T) {
 			return ent.Entry
 		}
 
-		Convey("Expiry works", func() {
-			So(datastore.Put(ctx, &Asset{
+		t.Run("Expiry works", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &Asset{
 				ID:                  "apps/app-1",
 				Asset:               &modelpb.Asset{Id: "apps/app-1"},
 				ConsecutiveFailures: 111,
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			// Start the new actuation.
 			op, err := NewActuationBeginOp(ctx, []string{"apps/app-1"}, &modelpb.Actuation{
@@ -96,37 +97,37 @@ func TestExpireActuations(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			op.MakeDecision(ctx, "apps/app-1", &rpcpb.AssetToActuate{
 				Config:        &modelpb.AssetConfig{EnableAutomation: true},
 				IntendedState: intendedState("app-1", 0),
 				ReportedState: reportedState("app-1", 0),
 			})
 			_, err = op.Apply(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// It is executing now.
-			So(actuation("new-actuation").State, ShouldEqual, modelpb.Actuation_EXECUTING)
+			assert.Loosely(t, actuation("new-actuation").State, should.Equal(modelpb.Actuation_EXECUTING))
 
 			// Run the expiration cron a bit later (but before the expiry).
 			tc.Add(4 * time.Minute)
-			So(ExpireActuations(ctx), ShouldBeNil)
+			assert.Loosely(t, ExpireActuations(ctx), should.BeNil)
 
 			// Still executing.
-			So(actuation("new-actuation").State, ShouldEqual, modelpb.Actuation_EXECUTING)
+			assert.Loosely(t, actuation("new-actuation").State, should.Equal(modelpb.Actuation_EXECUTING))
 
 			// Run the expiration cron after the expiry.
 			tc.Add(2 * time.Minute)
-			So(ExpireActuations(ctx), ShouldBeNil)
+			assert.Loosely(t, ExpireActuations(ctx), should.BeNil)
 
 			// The actuation has expired.
-			So(actuation("new-actuation").State, ShouldEqual, modelpb.Actuation_EXPIRED)
+			assert.Loosely(t, actuation("new-actuation").State, should.Equal(modelpb.Actuation_EXPIRED))
 
 			// There's a history record for the asset being actuated.
-			So(history("apps/app-1", 1).Actuation.State, ShouldEqual, modelpb.Actuation_EXPIRED)
+			assert.Loosely(t, history("apps/app-1", 1).Actuation.State, should.Equal(modelpb.Actuation_EXPIRED))
 
 			// Failure counter incremented.
-			So(assetEntity("apps/app-1").ConsecutiveFailures, ShouldEqual, 112)
+			assert.Loosely(t, assetEntity("apps/app-1").ConsecutiveFailures, should.Equal(112))
 		})
 	})
 }

@@ -23,55 +23,56 @@ import (
 
 	lucierr "go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCode(t *testing.T) {
 	t.Parallel()
 
-	Convey("Code returns the correct error code", t, func() {
-		Convey("For simple errors", func() {
+	ftt.Run("Code returns the correct error code", t, func(t *ftt.Test) {
+		t.Run("For simple errors", func(t *ftt.Test) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
-			So(Code(errGRPCNotFound), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, Code(errGRPCNotFound), should.Equal(codes.NotFound))
 		})
 
-		Convey("For errors missing tags", func() {
+		t.Run("For errors missing tags", func(t *ftt.Test) {
 			err := errors.New("foobar")
-			So(Code(err), ShouldEqual, codes.Unknown)
+			assert.Loosely(t, Code(err), should.Equal(codes.Unknown))
 		})
 
-		Convey("For wrapped errors", func() {
+		t.Run("For wrapped errors", func(t *ftt.Test) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
 			errWrapped := lucierr.Annotate(errGRPCNotFound, "wrapped").Err()
-			So(Code(errWrapped), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, Code(errWrapped), should.Equal(codes.NotFound))
 		})
 
-		Convey("Multi-errors with multiple different codes return Unknown", func() {
+		t.Run("Multi-errors with multiple different codes return Unknown", func(t *ftt.Test) {
 			errGRPCNotFound := status.Errorf(codes.NotFound, "not found")
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := lucierr.NewMultiError(errGRPCNotFound, errGRPCInvalidArgument)
-			So(Code(errMulti), ShouldEqual, codes.Unknown)
+			assert.Loosely(t, Code(errMulti), should.Equal(codes.Unknown))
 		})
 
-		Convey("Multi-errors with one error return that error's code", func() {
+		t.Run("Multi-errors with one error return that error's code", func(t *ftt.Test) {
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := lucierr.NewMultiError(errGRPCInvalidArgument)
-			So(Code(errMulti), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, Code(errMulti), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Multi-errors with the same code return that code", func() {
+		t.Run("Multi-errors with the same code return that code", func(t *ftt.Test) {
 			errGRPCInvalidArgument1 := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errGRPCInvalidArgument2 := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti := lucierr.NewMultiError(errGRPCInvalidArgument1, errGRPCInvalidArgument2)
-			So(Code(errMulti), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, Code(errMulti), should.Equal(codes.InvalidArgument))
 		})
 
-		Convey("Nested multi-errors work correctly", func() {
+		t.Run("Nested multi-errors work correctly", func(t *ftt.Test) {
 			errGRPCInvalidArgument := status.Errorf(codes.InvalidArgument, "invalid argument")
 			errMulti1 := lucierr.NewMultiError(errGRPCInvalidArgument)
 			errMulti2 := lucierr.NewMultiError(errMulti1)
-			So(Code(errMulti2), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, Code(errMulti2), should.Equal(codes.InvalidArgument))
 		})
 	})
 }
@@ -79,18 +80,18 @@ func TestCode(t *testing.T) {
 func TestWrapIfTransient(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		newErr := func(code codes.Code) error { return status.Errorf(code, "...") }
 		check := func(err error) bool { return transient.Tag.In(err) }
 
-		So(check(WrapIfTransient(newErr(codes.Internal))), ShouldBeTrue)
-		So(check(WrapIfTransient(newErr(codes.Unknown))), ShouldBeTrue)
-		So(check(WrapIfTransient(newErr(codes.Unavailable))), ShouldBeTrue)
+		assert.Loosely(t, check(WrapIfTransient(newErr(codes.Internal))), should.BeTrue)
+		assert.Loosely(t, check(WrapIfTransient(newErr(codes.Unknown))), should.BeTrue)
+		assert.Loosely(t, check(WrapIfTransient(newErr(codes.Unavailable))), should.BeTrue)
 
-		So(check(WrapIfTransient(nil)), ShouldBeFalse)
-		So(check(WrapIfTransient(newErr(codes.FailedPrecondition))), ShouldBeFalse)
+		assert.Loosely(t, check(WrapIfTransient(nil)), should.BeFalse)
+		assert.Loosely(t, check(WrapIfTransient(newErr(codes.FailedPrecondition))), should.BeFalse)
 
-		So(check(WrapIfTransientOr(newErr(codes.DeadlineExceeded))), ShouldBeFalse)
-		So(check(WrapIfTransientOr(newErr(codes.DeadlineExceeded), codes.DeadlineExceeded)), ShouldBeTrue)
+		assert.Loosely(t, check(WrapIfTransientOr(newErr(codes.DeadlineExceeded))), should.BeFalse)
+		assert.Loosely(t, check(WrapIfTransientOr(newErr(codes.DeadlineExceeded), codes.DeadlineExceeded)), should.BeTrue)
 	})
 }

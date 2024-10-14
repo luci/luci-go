@@ -20,9 +20,10 @@ import (
 	"os/exec"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLiveExported(t *testing.T) {
@@ -34,13 +35,13 @@ func TestLiveExported(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	Convey("LiveExports", t, func() {
+	ftt.Run("LiveExports", t, func(t *ftt.Test) {
 		os.Unsetenv(EnvKey)
 
 		tf, err := ioutil.TempFile(dir, "exported_test.liveExport")
 		tfn := tf.Name()
 		tf.Close()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(tfn)
 
 		closed := false
@@ -49,44 +50,44 @@ func TestLiveExported(t *testing.T) {
 			closer: func() { closed = true },
 		}
 
-		Convey("Can only be closed once", func() {
+		t.Run("Can only be closed once", func(t *ftt.Test) {
 			le.Close()
-			So(func() { le.Close() }, ShouldPanic)
+			assert.Loosely(t, func() { le.Close() }, should.Panic)
 		})
 
-		Convey("Calls closer when it is closed", func() {
-			So(closed, ShouldBeFalse)
+		t.Run("Calls closer when it is closed", func(t *ftt.Test) {
+			assert.Loosely(t, closed, should.BeFalse)
 			le.Close()
-			So(closed, ShouldBeTrue)
+			assert.Loosely(t, closed, should.BeTrue)
 		})
 
-		Convey("Can add to command", func() {
+		t.Run("Can add to command", func(t *ftt.Test) {
 			cmd := exec.Command("test", "arg")
 			cmd.Env = os.Environ()
 			le.SetInCmd(cmd)
-			So(len(cmd.Env), ShouldEqual, len(os.Environ())+1)
-			So(cmd.Env[len(cmd.Env)-1], ShouldStartWith, EnvKey)
-			So(cmd.Env[len(cmd.Env)-1], ShouldEndWith, le.path)
+			assert.Loosely(t, len(cmd.Env), should.Equal(len(os.Environ())+1))
+			assert.Loosely(t, cmd.Env[len(cmd.Env)-1], should.HavePrefix(EnvKey))
+			assert.Loosely(t, cmd.Env[len(cmd.Env)-1], should.HaveSuffix(le.path))
 		})
 
-		Convey("Can modify in command", func() {
+		t.Run("Can modify in command", func(t *ftt.Test) {
 			cmd := exec.Command("test", "arg")
 			cmd.Env = os.Environ()
 			cmd.Env[0] = EnvKey + "=helloworld"
 			le.SetInCmd(cmd)
-			So(len(cmd.Env), ShouldEqual, len(os.Environ()))
-			So(cmd.Env[0], ShouldStartWith, EnvKey)
-			So(cmd.Env[0], ShouldEndWith, le.path)
+			assert.Loosely(t, len(cmd.Env), should.Equal(len(os.Environ())))
+			assert.Loosely(t, cmd.Env[0], should.HavePrefix(EnvKey))
+			assert.Loosely(t, cmd.Env[0], should.HaveSuffix(le.path))
 		})
 
-		Convey("Can add to environ", func() {
+		t.Run("Can add to environ", func(t *ftt.Test) {
 			env := environ.System()
 			_, ok := env.Lookup(EnvKey)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 			le.SetInEnviron(env)
 			val, ok := env.Lookup(EnvKey)
-			So(ok, ShouldBeTrue)
-			So(val, ShouldEqual, le.path)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Equal(le.path))
 		})
 	})
 }
@@ -97,31 +98,31 @@ func TestNullExported(t *testing.T) {
 	n := nullExport{}
 	someEnv := []string{"SOME_STUFF=0"}
 
-	Convey("SetInCmd, no LUCI_CONTEXT", t, func() {
+	ftt.Run("SetInCmd, no LUCI_CONTEXT", t, func(t *ftt.Test) {
 		cmd := exec.Cmd{
 			Env: append([]string(nil), someEnv...),
 		}
 		n.SetInCmd(&cmd)
-		So(cmd.Env, ShouldResemble, someEnv)
+		assert.Loosely(t, cmd.Env, should.Resemble(someEnv))
 	})
 
-	Convey("SetInCmd, with LUCI_CONTEXT", t, func() {
+	ftt.Run("SetInCmd, with LUCI_CONTEXT", t, func(t *ftt.Test) {
 		cmd := exec.Cmd{
 			Env: append([]string{"LUCI_CONTEXT=abc"}, someEnv...),
 		}
 		n.SetInCmd(&cmd)
-		So(cmd.Env, ShouldResemble, someEnv) // no LUCI_CONTEXT anymore
+		assert.Loosely(t, cmd.Env, should.Resemble(someEnv)) // no LUCI_CONTEXT anymore
 	})
 
-	Convey("SetInEnviron, no LUCI_CONTEXT", t, func() {
+	ftt.Run("SetInEnviron, no LUCI_CONTEXT", t, func(t *ftt.Test) {
 		env := environ.New(someEnv)
 		n.SetInEnviron(env)
-		So(env.Sorted(), ShouldResemble, someEnv)
+		assert.Loosely(t, env.Sorted(), should.Resemble(someEnv))
 	})
 
-	Convey("SetInEnviron, with LUCI_CONTEXT", t, func() {
+	ftt.Run("SetInEnviron, with LUCI_CONTEXT", t, func(t *ftt.Test) {
 		env := environ.New(append([]string{"LUCI_CONTEXT=abc"}, someEnv...))
 		n.SetInEnviron(env)
-		So(env.Sorted(), ShouldResemble, someEnv) // no LUCI_CONTEXT anymore
+		assert.Loosely(t, env.Sorted(), should.Resemble(someEnv)) // no LUCI_CONTEXT anymore
 	})
 }

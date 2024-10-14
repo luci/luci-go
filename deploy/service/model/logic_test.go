@@ -17,9 +17,10 @@ package model
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/deploy/api/modelpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // service name => version name => traffic portion it gets
@@ -28,7 +29,7 @@ type serviceMap map[string]map[string]int32
 func TestIntendedMatchesReported(t *testing.T) {
 	t.Parallel()
 
-	Convey("GAE", t, func() {
+	ftt.Run("GAE", t, func(t *ftt.Test) {
 		type testCase struct {
 			intended serviceMap
 			reported serviceMap
@@ -37,10 +38,10 @@ func TestIntendedMatchesReported(t *testing.T) {
 			return appengineIntendedMatchesReported(stateProto(true, tc.intended), stateProto(false, tc.reported))
 		}
 
-		So(check(testCase{}), ShouldBeTrue)
+		assert.Loosely(t, check(testCase{}), should.BeTrue)
 
 		// Ignored extra services and versions.
-		So(check(testCase{
+		assert.Loosely(t, check(testCase{
 			intended: serviceMap{
 				"svc1": {"ver1": 200, "ver2": 800},
 				"svc2": {"ver1": 1000},
@@ -50,10 +51,10 @@ func TestIntendedMatchesReported(t *testing.T) {
 				"svc2":    {"ver1": 1000, "ignored": 0},
 				"ignored": {"ver1": 1000},
 			},
-		}), ShouldBeTrue)
+		}), should.BeTrue)
 
 		// Moving traffic.
-		So(check(testCase{
+		assert.Loosely(t, check(testCase{
 			intended: serviceMap{
 				"svc1": {"ver1": 800, "ver2": 200},
 				"svc2": {"ver1": 1000},
@@ -62,10 +63,10 @@ func TestIntendedMatchesReported(t *testing.T) {
 				"svc1": {"ver1": 200, "ver2": 800},
 				"svc2": {"ver1": 1000},
 			},
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 
 		// Deploying new version.
-		So(check(testCase{
+		assert.Loosely(t, check(testCase{
 			intended: serviceMap{
 				"svc1": {"ver1": 200, "ver2": 800},
 				"svc2": {"ver2": 1000},
@@ -74,10 +75,10 @@ func TestIntendedMatchesReported(t *testing.T) {
 				"svc1": {"ver1": 200, "ver2": 800},
 				"svc2": {"ver1": 1000},
 			},
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 
 		// Deploying new version, but not shifting any traffic to it.
-		So(check(testCase{
+		assert.Loosely(t, check(testCase{
 			intended: serviceMap{
 				"svc1": {"ver1": 200, "ver2": 800, "ver3": 0},
 				"svc2": {"ver1": 1000},
@@ -86,7 +87,7 @@ func TestIntendedMatchesReported(t *testing.T) {
 				"svc1": {"ver1": 200, "ver2": 800},
 				"svc2": {"ver1": 1000},
 			},
-		}), ShouldBeFalse)
+		}), should.BeFalse)
 	})
 }
 

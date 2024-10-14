@@ -20,6 +20,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -27,14 +30,12 @@ import (
 
 	"go.chromium.org/luci/logdog/server/archivist"
 	srvcfg "go.chromium.org/luci/logdog/server/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetSettingsLoader(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetSettingsLoader", t, func() {
+	ftt.Run("GetSettingsLoader", t, func(t *ftt.Test) {
 		project := "test-project"
 		lucicfg := map[config.Set]cfgmem.Files{
 			"services/${appid}": {
@@ -47,42 +48,42 @@ func TestGetSettingsLoader(t *testing.T) {
 		getSettings := func(ctx context.Context, s string) *archivist.Settings {
 			lucicfg[config.Set("projects/"+project)]["${appid}.cfg"] = s
 			ctx = cfgclient.Use(ctx, cfgmem.New(lucicfg))
-			So(srvcfg.Sync(ctx), ShouldBeNil)
+			assert.Loosely(t, srvcfg.Sync(ctx), should.BeNil)
 
 			f := GetSettingsLoader("", &CommandLineFlags{})
 			settings, err := f(ctx, project)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return settings
 		}
 
 		var buf bytes.Buffer
 		buf.WriteString(`archive_gs_bucket: "a"`)
 
-		Convey("works with ArchiveIndexConfig", func() {
+		t.Run("works with ArchiveIndexConfig", func(t *ftt.Test) {
 			buf.WriteString(`
 				archive_index_config: {
 					stream_range: 3,
 					prefix_range: 2,
 					byte_range: 1,
 				},`)
-			So(getSettings(ctx, buf.String()), ShouldResemble, &archivist.Settings{
+			assert.Loosely(t, getSettings(ctx, buf.String()), should.Resemble(&archivist.Settings{
 				GSBase:           gs.Path("gs://a"),
 				IndexStreamRange: 3,
 				IndexPrefixRange: 2,
 				IndexByteRange:   1,
-			})
+			}))
 		})
 
-		Convey("works with CloudLoggingConfig", func() {
+		t.Run("works with CloudLoggingConfig", func(t *ftt.Test) {
 			buf.WriteString(`
 				cloud_logging_config: {
 					destination: "foo",
 				},
 			`)
-			So(getSettings(ctx, buf.String()), ShouldResemble, &archivist.Settings{
+			assert.Loosely(t, getSettings(ctx, buf.String()), should.Resemble(&archivist.Settings{
 				GSBase:                gs.Path("gs://a"),
 				CloudLoggingProjectID: "foo",
-			})
+			}))
 		})
 	})
 }

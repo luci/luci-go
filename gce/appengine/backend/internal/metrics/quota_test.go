@@ -19,28 +19,29 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestQuota(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateQuota", t, func() {
+	ftt.Run("UpdateQuota", t, func(t *ftt.Test) {
 		c, _ := tsmon.WithDummyInMemory(context.Background())
 		s := tsmon.Store(c)
 
 		fields := []any{"metric", "region", "project"}
 
 		UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
-		So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 100.0)
-		So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 75.0)
-		So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 25.0)
+		assert.Loosely(t, s.Get(c, quotaLimit, time.Time{}, fields).(float64), should.Equal(100.0))
+		assert.Loosely(t, s.Get(c, quotaRemaining, time.Time{}, fields).(float64), should.Equal(75.0))
+		assert.Loosely(t, s.Get(c, quotaUsage, time.Time{}, fields).(float64), should.Equal(25.0))
 
 		UpdateQuota(c, 120.0, 40.0, "metric", "region", "project")
-		So(s.Get(c, quotaLimit, time.Time{}, fields).(float64), ShouldEqual, 120.0)
-		So(s.Get(c, quotaRemaining, time.Time{}, fields).(float64), ShouldEqual, 80.0)
-		So(s.Get(c, quotaUsage, time.Time{}, fields).(float64), ShouldEqual, 40.0)
+		assert.Loosely(t, s.Get(c, quotaLimit, time.Time{}, fields).(float64), should.Equal(120.0))
+		assert.Loosely(t, s.Get(c, quotaRemaining, time.Time{}, fields).(float64), should.Equal(80.0))
+		assert.Loosely(t, s.Get(c, quotaUsage, time.Time{}, fields).(float64), should.Equal(40.0))
 	})
 }

@@ -23,21 +23,21 @@ import (
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
 	"go.chromium.org/luci/deploy/service/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAssetsRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		now := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), now)
 		ctx = memory.Use(ctx)
@@ -66,64 +66,64 @@ func TestAssetsRPC(t *testing.T) {
 			PostActuationStatus: phonyStatus(1000),
 		}
 
-		So(datastore.Put(ctx, &model.Asset{
+		assert.Loosely(t, datastore.Put(ctx, &model.Asset{
 			ID:            "apps/test",
 			Asset:         asset,
 			LastHistoryID: 9,
 			HistoryEntry:  phonyHistory(10), // being recorded now
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		for i := 1; i < 10; i++ {
-			So(datastore.Put(ctx, &model.AssetHistory{
+			assert.Loosely(t, datastore.Put(ctx, &model.AssetHistory{
 				ID:     int64(i),
 				Parent: datastore.NewKey(ctx, "Asset", "apps/test", 0, nil),
 				Entry:  phonyHistory(i),
-			}), ShouldBeNil)
+			}), should.BeNil)
 		}
 
 		srv := Assets{}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			resp, err := srv.ListAssetHistory(ctx, &rpcpb.ListAssetHistoryRequest{
 				AssetId: "apps/test",
 				Limit:   4,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Asset, ShouldResembleProto, asset)
-			So(resp.Current, ShouldResembleProto, phonyHistory(10))
-			So(resp.History, ShouldResembleProto, []*modelpb.AssetHistory{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Asset, should.Resemble(asset))
+			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
 				phonyHistory(9),
 				phonyHistory(8),
 				phonyHistory(7),
 				phonyHistory(6),
-			})
+			}))
 
 			resp, err = srv.ListAssetHistory(ctx, &rpcpb.ListAssetHistoryRequest{
 				AssetId:         "apps/test",
 				LatestHistoryId: 5,
 				Limit:           4,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Asset, ShouldResembleProto, asset)
-			So(resp.Current, ShouldResembleProto, phonyHistory(10))
-			So(resp.History, ShouldResembleProto, []*modelpb.AssetHistory{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Asset, should.Resemble(asset))
+			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
 				phonyHistory(5),
 				phonyHistory(4),
 				phonyHistory(3),
 				phonyHistory(2),
-			})
+			}))
 
 			resp, err = srv.ListAssetHistory(ctx, &rpcpb.ListAssetHistoryRequest{
 				AssetId:         "apps/test",
 				LatestHistoryId: 1,
 				Limit:           4,
 			})
-			So(err, ShouldBeNil)
-			So(resp.Asset, ShouldResembleProto, asset)
-			So(resp.Current, ShouldResembleProto, phonyHistory(10))
-			So(resp.History, ShouldResembleProto, []*modelpb.AssetHistory{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Asset, should.Resemble(asset))
+			assert.Loosely(t, resp.Current, should.Resemble(phonyHistory(10)))
+			assert.Loosely(t, resp.History, should.Resemble([]*modelpb.AssetHistory{
 				phonyHistory(1),
-			})
+			}))
 		})
 	})
 }

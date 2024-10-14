@@ -25,6 +25,9 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -32,255 +35,252 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("cron", t, func() {
+	ftt.Run("cron", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
 		c := context.Background()
 		gce, err := compute.NewService(c, option.WithHTTPClient(&http.Client{Transport: rt}))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c = withCompute(withDispatcher(memory.Use(c), dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("countTasks", func() {
+		t.Run("countTasks", func(t *ftt.Test) {
 			dsp := &tq.Dispatcher{}
 			c = withDispatcher(c, dsp)
 			q := datastore.NewQuery("TaskCount")
 
-			Convey("none", func() {
-				So(countTasks(c), ShouldBeNil)
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, countTasks(c), should.BeNil)
 				var k []*datastore.Key
-				So(datastore.GetAll(c, q, &k), ShouldBeNil)
-				So(k, ShouldBeEmpty)
+				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
+				assert.Loosely(t, k, should.BeEmpty)
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				dsp.RegisterTask(&tasks.CountVMs{}, countVMs, countVMsQueue, nil)
 				dsp.RegisterTask(&tasks.ManageBot{}, manageBot, manageBotQueue, nil)
-				So(countTasks(c), ShouldBeNil)
+				assert.Loosely(t, countTasks(c), should.BeNil)
 				var k []*datastore.Key
-				So(datastore.GetAll(c, q, &k), ShouldBeNil)
-				So(k, ShouldHaveLength, 2)
+				assert.Loosely(t, datastore.GetAll(c, q, &k), should.BeNil)
+				assert.Loosely(t, k, should.HaveLength(2))
 			})
 		})
 
-		Convey("countVMsAsync", func() {
-			Convey("none", func() {
-				So(countVMsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("countVMsAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, countVMsAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.Config{
 					ID: "id",
 				})
-				So(countVMsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, countVMsAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("createInstancesAsync", func() {
-			Convey("none", func() {
-				Convey("zero", func() {
-					So(createInstancesAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("createInstancesAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				t.Run("zero", func(t *ftt.Test) {
+					assert.Loosely(t, createInstancesAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("exists", func() {
+				t.Run("exists", func(t *ftt.Test) {
 					datastore.Put(c, &model.VM{
 						ID:  "id",
 						URL: "url",
 					})
-					So(createInstancesAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, createInstancesAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.VM{
 					ID: "id",
 					Attributes: config.VM{
 						Zone: "zone",
 					},
 				})
-				So(createInstancesAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, createInstancesAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("expandConfigsAsync", func() {
-			Convey("none", func() {
-				So(expandConfigsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("expandConfigsAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.Config{
 					ID: "id",
 				})
-				So(expandConfigsAsync(c), ShouldBeNil)
+				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
 				ts := tqt.GetScheduledTasks()
-				So(ts, ShouldHaveLength, 1)
+				assert.Loosely(t, ts, should.HaveLength(1))
 				cfg, ok := ts[0].Payload.(*tasks.ExpandConfig)
-				So(ok, ShouldBeTrue)
-				So(cfg.GetId(), ShouldNotBeEmpty)
-				So(cfg.GetTriggeredUnixTime(), ShouldBeGreaterThan, 1704096000) // 2024-01-01
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, cfg.GetId(), should.NotBeEmpty)
+				assert.Loosely(t, cfg.GetTriggeredUnixTime(), should.BeGreaterThan(1704096000)) // 2024-01-01
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				for i := 0; i < 100; i++ {
 					datastore.Put(c, &model.Config{
 						ID: fmt.Sprintf("id-%d", i),
 					})
 				}
-				So(expandConfigsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
+				assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(100))
 			})
 		})
 
-		Convey("manageBotsAsync", func() {
-			Convey("none", func() {
-				Convey("missing", func() {
-					So(manageBotsAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("manageBotsAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				t.Run("missing", func(t *ftt.Test) {
+					assert.Loosely(t, manageBotsAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("url", func() {
+				t.Run("url", func(t *ftt.Test) {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 					})
-					So(manageBotsAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, manageBotsAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.VM{
 					ID:  "id",
 					URL: "url",
 				})
-				So(manageBotsAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, manageBotsAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("drainVMsAsync", func() {
-			Convey("none", func() {
+		t.Run("drainVMsAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
 				// No VMs will be drained as config is set for 2 VMs
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-0",
 					Index:  0,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.VM{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-1",
 					Index:  1,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.Config{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.Config{
 					ID: "id",
 					Config: &config.Config{
 						Prefix:        "id",
 						CurrentAmount: 2,
 					},
-				}), ShouldBeNil)
-				Convey("missing", func() {
-					So(drainVMsAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				}), should.BeNil)
+				t.Run("missing", func(t *ftt.Test) {
+					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				// 1 VM will be drained as config is set for 1 VM
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-0",
 					Index:  0,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.VM{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-1",
 					Index:  1,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.Config{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.Config{
 					ID: "id",
 					Config: &config.Config{
 						Prefix:        "id",
 						CurrentAmount: 1,
 					},
-				}), ShouldBeNil)
-				Convey("missing", func() {
-					So(drainVMsAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				}), should.BeNil)
+				t.Run("missing", func(t *ftt.Test) {
+					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 				})
 			})
 
-			Convey("all", func() {
+			t.Run("all", func(t *ftt.Test) {
 				// 2 VMs will be drained as config is set for 0 VM
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-0",
 					Index:  0,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.VM{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id-1",
 					Index:  1,
 					Config: "id",
-				}), ShouldBeNil)
-				So(datastore.Put(c, &model.Config{
+				}), should.BeNil)
+				assert.Loosely(t, datastore.Put(c, &model.Config{
 					ID: "id",
 					Config: &config.Config{
 						Prefix:        "id",
 						CurrentAmount: 0,
 					},
-				}), ShouldBeNil)
-				Convey("missing", func() {
-					So(drainVMsAsync(c), ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+				}), should.BeNil)
+				t.Run("missing", func(t *ftt.Test) {
+					assert.Loosely(t, drainVMsAsync(c), should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 				})
 			})
 		})
 
-		Convey("payloadFactory", func() {
+		t.Run("payloadFactory", func(t *ftt.Test) {
 			f := payloadFactory(&tasks.CountVMs{})
 			p := f("id")
-			So(p, ShouldResemble, &tasks.CountVMs{
+			assert.Loosely(t, p, should.Resemble(&tasks.CountVMs{
 				Id: "id",
-			})
+			}))
 		})
 
-		Convey("reportQuotasAsync", func() {
-			Convey("none", func() {
-				So(reportQuotasAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("reportQuotasAsync", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, reportQuotasAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.Project{
 					ID: "id",
 				})
-				So(reportQuotasAsync(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, reportQuotasAsync(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
 
-		Convey("auditInstances", func() {
-			Convey("none", func() {
-				So(auditInstances(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("auditInstances", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, auditInstances(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("zero", func() {
+			t.Run("zero", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -300,12 +300,12 @@ func TestCron(t *testing.T) {
 						Project: "gnu-hurd",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(auditInstances(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, auditInstances(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -329,12 +329,12 @@ func TestCron(t *testing.T) {
 						Project: "gnu-hurd",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(auditInstances(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, auditInstances(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 			})
 
-			Convey("two", func() {
+			t.Run("two", func(t *ftt.Test) {
 				count := 0
 				rt.Handler = func(req any) (int, any) {
 					switch count {
@@ -365,34 +365,34 @@ func TestCron(t *testing.T) {
 						Project: "gnu-hurd",
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = datastore.Put(c, &model.Project{
 					ID: "id2",
 					Config: &projects.Config{
 						Project: "libreboot",
 					},
 				})
-				So(err, ShouldBeNil)
-				So(auditInstances(c), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, auditInstances(c), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(3))
 			})
 		})
 
-		Convey("trigger", func() {
-			Convey("none", func() {
-				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+		t.Run("trigger", func(t *ftt.Test) {
+			t.Run("none", func(t *ftt.Test) {
+				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				datastore.Put(c, &model.VM{
 					ID: "id",
 				})
-				So(trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-				So(tqt.GetScheduledTasks()[0].Payload, ShouldResembleProto, &tasks.ManageBot{
+				assert.Loosely(t, trigger(c, &tasks.ManageBot{}, datastore.NewQuery(model.VMKind)), should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+				assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.Resemble(&tasks.ManageBot{
 					Id: "id",
-				})
+				}))
 			})
 		})
 	})

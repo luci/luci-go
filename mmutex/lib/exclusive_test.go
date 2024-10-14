@@ -26,9 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExclusive(t *testing.T) {
@@ -38,9 +38,9 @@ func TestExclusive(t *testing.T) {
 		}
 	}
 
-	Convey("RunExclusive", t, func() {
+	ftt.Run("RunExclusive", t, func(t *ftt.Test) {
 		lockFileDir, err := ioutil.TempDir("", "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.Remove(lockFileDir)
 		env := subcommands.Env{
 			LockFileEnvVariable: subcommands.EnvVar{
@@ -49,56 +49,56 @@ func TestExclusive(t *testing.T) {
 			},
 		}
 		lockFilePath, drainFilePath, err := computeMutexPaths(env)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx := context.Background()
 
-		Convey("returns error from the command", func() {
-			So(RunExclusive(ctx, env, fnThatReturns(errors.Reason("test error").Err())), ShouldErrLike, "test error")
+		t.Run("returns error from the command", func(t *ftt.Test) {
+			assert.Loosely(t, RunExclusive(ctx, env, fnThatReturns(errors.Reason("test error").Err())), should.ErrLike("test error"))
 		})
 
-		Convey("times out if exclusive lock isn't released", func() {
+		t.Run("times out if exclusive lock isn't released", func(t *ftt.Test) {
 			handle, err := fslock.Lock(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
-			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			assert.Loosely(t, RunExclusive(ctx, env, fnThatReturns(nil)), should.ErrLike("fslock: lock is held"))
 		})
 
-		Convey("times out if shared lock isn't released", func() {
+		t.Run("times out if shared lock isn't released", func(t *ftt.Test) {
 			handle, err := fslock.LockShared(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
-			So(RunExclusive(ctx, env, fnThatReturns(nil)), ShouldErrLike, "fslock: lock is held")
+			assert.Loosely(t, RunExclusive(ctx, env, fnThatReturns(nil)), should.ErrLike("fslock: lock is held"))
 		})
 
-		Convey("uses context parameter as basis for new context", func() {
+		t.Run("uses context parameter as basis for new context", func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			cancel()
 			err := RunExclusive(ctx, env, func(ctx context.Context) error {
 				return clock.Sleep(ctx, time.Millisecond).Err
 			})
-			So(err, ShouldErrLike, context.Canceled)
+			assert.Loosely(t, err, should.ErrLike(context.Canceled))
 		})
 
-		Convey("respects timeout", func() {
+		t.Run("respects timeout", func(t *ftt.Test) {
 			handle, err := fslock.Lock(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
 			ctx, cancel := context.WithTimeout(ctx, time.Millisecond)
 			defer cancel()
 			RunExclusive(ctx, env, fnThatReturns(nil))
-			So(ctx.Err(), ShouldErrLike, context.DeadlineExceeded)
+			assert.Loosely(t, ctx.Err(), should.ErrLike(context.DeadlineExceeded))
 		})
 
-		Convey("creates drain file while acquiring the lock", func() {
+		t.Run("creates drain file while acquiring the lock", func(t *ftt.Test) {
 			handle, err := fslock.LockShared(lockFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer handle.Unlock()
 
 			go func() {
@@ -109,10 +109,10 @@ func TestExclusive(t *testing.T) {
 			clock.Sleep(ctx, 3*time.Millisecond)
 
 			_, err = os.Stat(drainFilePath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("removes drain file immediately after acquiring the lock", func() {
+		t.Run("removes drain file immediately after acquiring the lock", func(t *ftt.Test) {
 			commandStarted := make(chan struct{})
 			commandResult := make(chan error)
 			runExclusiveErr := make(chan error)
@@ -131,14 +131,14 @@ func TestExclusive(t *testing.T) {
 			// should be removed.
 			<-commandStarted
 			_, err = os.Stat(drainFilePath)
-			So(os.IsNotExist(err), ShouldBeTrue)
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 
 			commandResult <- nil
-			So(<-runExclusiveErr, ShouldBeNil)
+			assert.Loosely(t, <-runExclusiveErr, should.BeNil)
 		})
 
-		Convey("acts as a passthrough if lockFileDir is empty", func() {
-			So(RunExclusive(ctx, subcommands.Env{}, fnThatReturns(nil)), ShouldBeNil)
+		t.Run("acts as a passthrough if lockFileDir is empty", func(t *ftt.Test) {
+			assert.Loosely(t, RunExclusive(ctx, subcommands.Env{}, fnThatReturns(nil)), should.BeNil)
 		})
 	})
 }

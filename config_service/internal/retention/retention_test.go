@@ -23,20 +23,21 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/gcloud/gs"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRetention(t *testing.T) {
 	t.Parallel()
 
-	Convey("DeleteStaleConfigs", t, func() {
+	ftt.Run("DeleteStaleConfigs", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctl := gomock.NewController(t)
 		mockGsClient := clients.NewMockGsClient(ctl)
@@ -80,16 +81,16 @@ func TestRetention(t *testing.T) {
 		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg1_sha256")).Return(nil)
 		// Don't expect oldCfg2's Gcs file to be deleted as it's referred by another in use File entity.
 		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg2_sha256")).Times(0)
-		So(datastore.Put(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg), should.BeNil)
 
-		So(DeleteStaleConfigs(ctx), ShouldBeNil)
+		assert.Loosely(t, DeleteStaleConfigs(ctx), should.BeNil)
 		exists, err := datastore.Exists(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg)
-		So(err, ShouldBeNil)
-		So(exists.Get(0), ShouldBeTrue)  // cfgset
-		So(exists.Get(1), ShouldBeTrue)  // latestCfg
-		So(exists.Get(2), ShouldBeFalse) // oldCfg1
-		So(exists.Get(3), ShouldBeFalse) // oldCfg2
-		So(exists.Get(4), ShouldBeTrue)  // anotherCfgset
-		So(exists.Get(5), ShouldBeTrue)  // barCfg
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, exists.Get(0), should.BeTrue)  // cfgset
+		assert.Loosely(t, exists.Get(1), should.BeTrue)  // latestCfg
+		assert.Loosely(t, exists.Get(2), should.BeFalse) // oldCfg1
+		assert.Loosely(t, exists.Get(3), should.BeFalse) // oldCfg2
+		assert.Loosely(t, exists.Get(4), should.BeTrue)  // anotherCfgset
+		assert.Loosely(t, exists.Get(5), should.BeTrue)  // barCfg
 	})
 }

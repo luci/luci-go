@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestVarSet(t *testing.T) {
@@ -28,44 +29,44 @@ func TestVarSet(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		vs := VarSet{}
 		vs.Register("a", func(context.Context) (string, error) { return "a_val", nil })
 		vs.Register("b", func(context.Context) (string, error) { return "b_val", nil })
 
 		out, err := vs.RenderTemplate(ctx, "${a}")
-		So(err, ShouldBeNil)
-		So(out, ShouldEqual, "a_val")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Equal("a_val"))
 
 		out, err = vs.RenderTemplate(ctx, "${a}${b}")
-		So(err, ShouldBeNil)
-		So(out, ShouldEqual, "a_valb_val")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Equal("a_valb_val"))
 
 		out, err = vs.RenderTemplate(ctx, "${a}_${b}_${a}")
-		So(err, ShouldBeNil)
-		So(out, ShouldEqual, "a_val_b_val_a_val")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, out, should.Equal("a_val_b_val_a_val"))
 	})
 
-	Convey("Error in the callback", t, func() {
+	ftt.Run("Error in the callback", t, func(t *ftt.Test) {
 		vs := VarSet{}
 		vs.Register("a", func(context.Context) (string, error) { return "", fmt.Errorf("boom") })
 
 		_, err := vs.RenderTemplate(ctx, "zzz_${a}")
-		So(err, ShouldErrLike, "boom")
+		assert.Loosely(t, err, should.ErrLike("boom"))
 	})
 
-	Convey("Missing var", t, func() {
+	ftt.Run("Missing var", t, func(t *ftt.Test) {
 		vs := VarSet{}
 		vs.Register("a", func(context.Context) (string, error) { return "a_val", nil })
 
 		_, err := vs.RenderTemplate(ctx, "zzz_${a}_${zzz}_${a}")
-		So(err, ShouldErrLike, `no placeholder named "zzz" is registered`)
+		assert.Loosely(t, err, should.ErrLike(`no placeholder named "zzz" is registered`))
 	})
 
-	Convey("Double registration", t, func() {
+	ftt.Run("Double registration", t, func(t *ftt.Test) {
 		vs := VarSet{}
 		vs.Register("a", func(context.Context) (string, error) { return "a_val", nil })
 
-		So(func() { vs.Register("a", func(context.Context) (string, error) { return "a_val", nil }) }, ShouldPanic)
+		assert.Loosely(t, func() { vs.Register("a", func(context.Context) (string, error) { return "a_val", nil }) }, should.Panic)
 	})
 }

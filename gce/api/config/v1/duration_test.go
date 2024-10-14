@@ -21,80 +21,83 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDuration(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToSeconds", t, func() {
-		Convey("invalid", func() {
-			Convey("mismatch", func() {
+	ftt.Run("ToSeconds", t, func(t *ftt.Test) {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("mismatch", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{
 					Duration: "1yr",
 				}
 				_, err := d.ToSeconds()
-				So(err, ShouldErrLike, "duration must match regex")
+				assert.Loosely(t, err, should.ErrLike("duration must match regex"))
 			})
 
-			Convey("overflow", func() {
+			t.Run("overflow", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{
 					Duration: "9223372036854775808s",
 				}
 				_, err := d.ToSeconds()
-				So(err, ShouldErrLike, "duration must not exceed")
+				assert.Loosely(t, err, should.ErrLike("duration must not exceed"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("converts", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("converts", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{
 					Duration: "1h",
 				}
 				n, err := d.ToSeconds()
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, 3600)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(3600))
 			})
 
-			Convey("clamps", func() {
+			t.Run("clamps", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{
 					Duration: "9223372036854775807mo",
 				}
 				n, err := d.ToSeconds()
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, int64(math.MaxInt64))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(int64(math.MaxInt64)))
 			})
 		})
 	})
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{}
 				d.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "duration must match regex")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration must match regex"))
 			})
 
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				d := &TimePeriod_Duration{
 					Duration: "1yr",
 				}
 				d.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldErrLike, "duration must match regex")
+				assert.Loosely(t, errs, should.ErrLike("duration must match regex"))
 			})
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			d := &TimePeriod_Duration{
 				Duration: "1h",
 			}
 			d.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})
 }

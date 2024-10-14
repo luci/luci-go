@@ -21,8 +21,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -33,9 +34,9 @@ var (
 func TestMain(t *testing.T) {
 	t.Parallel()
 
-	Convey("svxmux", t, func() {
+	ftt.Run("svxmux", t, func(t *ftt.Test) {
 		tmpDir, err := ioutil.TempDir("", "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(tmpDir)
 
 		run := func(args ...string) error {
@@ -44,32 +45,32 @@ func TestMain(t *testing.T) {
 			return t.Run(context.Background(), generate)
 		}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			output := filepath.Join(tmpDir, "s1server_mux.go")
 			err := run(
 				"-output", output,
 				"-type", "S1Server,S2Server",
 				inputDir,
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			want, err := os.ReadFile(goldenFile)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			got, err := os.ReadFile(output)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(string(got), ShouldEqual, string(want))
+			assert.Loosely(t, string(got), should.Equal(string(want)))
 		})
 
-		Convey("Type not found", func() {
+		t.Run("Type not found", func(t *ftt.Test) {
 			err := run("-type", "XServer", inputDir)
-			So(err, ShouldErrLike, "type XServer not found")
+			assert.Loosely(t, err, should.ErrLike("type XServer not found"))
 		})
 
-		Convey("Embedded interface", func() {
+		t.Run("Embedded interface", func(t *ftt.Test) {
 			err := run("-type", "CompoundServer", "testdata")
-			So(err, ShouldErrLike, "CompoundServer embeds test.S1Server")
+			assert.Loosely(t, err, should.ErrLike("CompoundServer embeds test.S1Server"))
 		})
 	})
 }

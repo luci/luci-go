@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type line struct {
@@ -64,104 +64,104 @@ func mkWrappedTextCb(values *[]string, seq *[]uint64) StreamChunkCallback {
 func TestTextReassembler(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Callback wrapper works`, t, func() {
-		Convey(`With nil`, func() {
+	ftt.Run(`Callback wrapper works`, t, func(t *ftt.Test) {
+		t.Run(`With nil`, func(t *ftt.Test) {
 			values, seq := []string{}, []uint64{}
 			mkWrappedTextCb(&values, &seq)(nil)
-			So(values, ShouldResemble, []string{})
+			assert.Loosely(t, values, should.Resemble([]string{}))
 		})
 
-		Convey(`With only complete lines`, func() {
+		t.Run(`With only complete lines`, func(t *ftt.Test) {
 			values, seq := []string{}, []uint64{}
 			mkWrappedTextCb(&values, &seq)(mkTextLogEntry([]line{
 				{"hi", "\n"},
 				{"there", "\n"},
 			}, 0))
-			So(values, ShouldResemble, []string{
+			assert.Loosely(t, values, should.Resemble([]string{
 				"hi!\n",
 				"there!\n",
-			})
-			So(seq, ShouldResemble, []uint64{0})
+			}))
+			assert.Loosely(t, seq, should.Resemble([]uint64{0}))
 		})
 
-		Convey(`With partial lines`, func() {
+		t.Run(`With partial lines`, func(t *ftt.Test) {
 			values, seq := []string{}, []uint64{}
 			cbWrapped := mkWrappedTextCb(&values, &seq)
 
-			Convey(`At the beginning of a LogEntry`, func() {
+			t.Run(`At the beginning of a LogEntry`, func(t *ftt.Test) {
 				cbWrapped(mkTextLogEntry([]line{
 					{"h", ""},
 				}, 0))
-				So(values, ShouldResemble, []string{})
-				So(seq, ShouldResemble, []uint64{})
+				assert.Loosely(t, values, should.Resemble([]string{}))
+				assert.Loosely(t, seq, should.Resemble([]uint64{}))
 			})
 
-			Convey(`At the end of a LogEntry`, func() {
+			t.Run(`At the end of a LogEntry`, func(t *ftt.Test) {
 				cbWrapped(mkTextLogEntry([]line{
 					{"hi", "\n"},
 					{"there", "\n"},
 					{"ho", ""},
 				}, 0))
-				So(values, ShouldResemble, []string{
+				assert.Loosely(t, values, should.Resemble([]string{
 					"hi!\n",
 					"there!\n",
-				})
-				So(seq, ShouldResemble, []uint64{0})
+				}))
+				assert.Loosely(t, seq, should.Resemble([]uint64{0}))
 
-				Convey(`And correctly completes with the next LogEntry`, func() {
+				t.Run(`And correctly completes with the next LogEntry`, func(t *ftt.Test) {
 					cbWrapped(mkTextLogEntry([]line{
 						{"w are you", "\n"},
 					}, 2))
-					So(values, ShouldResemble, []string{
+					assert.Loosely(t, values, should.Resemble([]string{
 						"hi!\n",
 						"there!\n",
 						"how are you!\n",
-					})
-					So(seq, ShouldResemble, []uint64{0, 2})
+					}))
+					assert.Loosely(t, seq, should.Resemble([]uint64{0, 2}))
 				})
 
-				Convey(`Flushes when called with niil`, func() {
+				t.Run(`Flushes when called with niil`, func(t *ftt.Test) {
 					cbWrapped(nil)
-					So(values, ShouldResemble, []string{
+					assert.Loosely(t, values, should.Resemble([]string{
 						"hi!\n",
 						"there!\n",
 						"ho!",
-					})
-					So(seq, ShouldResemble, []uint64{0, 2})
+					}))
+					assert.Loosely(t, seq, should.Resemble([]uint64{0, 2}))
 				})
 			})
 		})
 	})
 
-	Convey(`Callback wrapper panics`, t, func() {
+	ftt.Run(`Callback wrapper panics`, t, func(t *ftt.Test) {
 		cbWrapped := mkWrappedTextCb(nil, nil)
 
-		Convey(`When called on non-text LogEntries`, func() {
-			So(
+		t.Run(`When called on non-text LogEntries`, func(t *ftt.Test) {
+			assert.Loosely(t,
 				func() {
 					cbWrapped(&logpb.LogEntry{Content: &logpb.LogEntry_Datagram{}})
 				},
-				ShouldPanicLike,
-				"expected *logpb.LogEntry_Text",
-			)
+				should.PanicLike(
+					"expected *logpb.LogEntry_Text",
+				))
 		})
 
-		Convey(`When the partial line is not in expected location`, func() {
-			Convey(`Like the first of multiple lines`, func() {
-				So(
+		t.Run(`When the partial line is not in expected location`, func(t *ftt.Test) {
+			t.Run(`Like the first of multiple lines`, func(t *ftt.Test) {
+				assert.Loosely(t,
 					func() {
 						cbWrapped(mkTextLogEntry([]line{
 							{"w ar", ""},
 							{"e yo", ""},
 						}, 2))
 					},
-					ShouldPanicLike,
-					"partial line not last",
-				)
+					should.PanicLike(
+						"partial line not last",
+					))
 			})
 
-			Convey(`Like interspersed with complete lines`, func() {
-				So(
+			t.Run(`Like interspersed with complete lines`, func(t *ftt.Test) {
+				assert.Loosely(t,
 					func() {
 						cbWrapped(mkTextLogEntry([]line{
 							{"w", "\n"},
@@ -169,9 +169,9 @@ func TestTextReassembler(t *testing.T) {
 							{"e you", "\n"},
 						}, 2))
 					},
-					ShouldPanicLike,
-					"partial line not last",
-				)
+					should.PanicLike(
+						"partial line not last",
+					))
 			})
 		})
 	})

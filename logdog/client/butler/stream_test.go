@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -134,7 +136,7 @@ func (rc *testReadCloser) Close() error {
 }
 
 func TestStream(t *testing.T) {
-	Convey(`A testing stream`, t, func() {
+	ftt.Run(`A testing stream`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		bs := &testBundlerStream{}
 		rc := &testReadCloser{}
@@ -147,48 +149,48 @@ func TestStream(t *testing.T) {
 			bs:  bs,
 		}
 
-		Convey(`Will read chunks until EOF.`, func() {
+		t.Run(`Will read chunks until EOF.`, func(t *ftt.Test) {
 			rc.data = []byte("foo")
-			So(s.readChunk(), ShouldBeTrue)
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
 
 			rc.data = []byte(nil)
-			So(s.readChunk(), ShouldBeTrue)
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
 
 			tc.Add(time.Second)
 			rc.data = []byte("bar")
-			So(s.readChunk(), ShouldBeTrue)
+			assert.Loosely(t, s.readChunk(), should.BeTrue)
 
 			s.closeStream()
-			So(s.readChunk(), ShouldBeFalse)
-			So(bs.appended, ShouldResemble, []byte("foobar"))
-			So(bs.ts, ShouldResemble, []time.Time{testclock.TestTimeUTC, testclock.TestTimeUTC.Add(time.Second)})
-			So(bs.closedAndReleased(), ShouldBeTrue)
+			assert.Loosely(t, s.readChunk(), should.BeFalse)
+			assert.Loosely(t, bs.appended, should.Resemble([]byte("foobar")))
+			assert.Loosely(t, bs.ts, should.Resemble([]time.Time{testclock.TestTimeUTC, testclock.TestTimeUTC.Add(time.Second)}))
+			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
 		})
 
-		Convey(`Will NOT release Data on Append error.`, func() {
+		t.Run(`Will NOT release Data on Append error.`, func(t *ftt.Test) {
 			bs.err = errors.New("test error")
 			rc.data = []byte("bar")
-			So(s.readChunk(), ShouldBeFalse)
+			assert.Loosely(t, s.readChunk(), should.BeFalse)
 
 			s.closeStream()
-			So(bs.closed, ShouldBeTrue)
-			So(bs.allReleased(), ShouldBeFalse)
+			assert.Loosely(t, bs.closed, should.BeTrue)
+			assert.Loosely(t, bs.allReleased(), should.BeFalse)
 		})
 
-		Convey(`Will halt if a stream error is encountered.`, func() {
+		t.Run(`Will halt if a stream error is encountered.`, func(t *ftt.Test) {
 			rc.data = []byte("foo")
 			rc.err = errors.New("test error")
-			So(s.readChunk(), ShouldBeFalse)
+			assert.Loosely(t, s.readChunk(), should.BeFalse)
 
 			s.closeStream()
-			So(bs.appended, ShouldResemble, []byte("foo"))
-			So(bs.closedAndReleased(), ShouldBeTrue)
+			assert.Loosely(t, bs.appended, should.Resemble([]byte("foo")))
+			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
 		})
 
-		Convey(`Will close Bundler Stream even if Closer returns an error.`, func() {
+		t.Run(`Will close Bundler Stream even if Closer returns an error.`, func(t *ftt.Test) {
 			rc.err = errors.New("test error")
 			s.closeStream()
-			So(bs.closedAndReleased(), ShouldBeTrue)
+			assert.Loosely(t, bs.closedAndReleased(), should.BeTrue)
 		})
 	})
 }

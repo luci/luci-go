@@ -22,41 +22,42 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apiconfig "go.chromium.org/luci/luci_notify/api/config"
 	pb "go.chromium.org/luci/luci_notify/api/service/v1"
 	"go.chromium.org/luci/luci_notify/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidateRequest(t *testing.T) {
 	t.Parallel()
-	Convey("Validate request", t, func() {
+	ftt.Run("Validate request", t, func(t *ftt.Test) {
 		req := &pb.CheckTreeCloserRequest{}
-		So(validateRequest(req), ShouldNotBeNil)
+		assert.Loosely(t, validateRequest(req), should.NotBeNil)
 		req.Project = "project"
-		So(validateRequest(req), ShouldNotBeNil)
+		assert.Loosely(t, validateRequest(req), should.NotBeNil)
 		req.Bucket = "bucket"
-		So(validateRequest(req), ShouldNotBeNil)
+		assert.Loosely(t, validateRequest(req), should.NotBeNil)
 		req.Builder = "builder"
-		So(validateRequest(req), ShouldNotBeNil)
+		assert.Loosely(t, validateRequest(req), should.NotBeNil)
 		req.Step = "step"
-		So(validateRequest(req), ShouldBeNil)
+		assert.Loosely(t, validateRequest(req), should.BeNil)
 	})
 }
 
 func TestStepMatchesRule(t *testing.T) {
 	t.Parallel()
-	Convey("Step Matches Rule", t, func() {
+	ftt.Run("Step Matches Rule", t, func(t *ftt.Test) {
 		stepName := "compile"
-		So(stepMatchesRule(stepName, "", ""), ShouldBeTrue)
-		So(stepMatchesRule(stepName, "compile", ""), ShouldBeTrue)
-		So(stepMatchesRule(stepName, "noncompile", ""), ShouldBeFalse)
-		So(stepMatchesRule(stepName, "", "compile"), ShouldBeFalse)
-		So(stepMatchesRule(stepName, "", "noncompile"), ShouldBeTrue)
+		assert.Loosely(t, stepMatchesRule(stepName, "", ""), should.BeTrue)
+		assert.Loosely(t, stepMatchesRule(stepName, "compile", ""), should.BeTrue)
+		assert.Loosely(t, stepMatchesRule(stepName, "noncompile", ""), should.BeFalse)
+		assert.Loosely(t, stepMatchesRule(stepName, "", "compile"), should.BeFalse)
+		assert.Loosely(t, stepMatchesRule(stepName, "", "noncompile"), should.BeTrue)
 	})
 }
 
@@ -64,18 +65,18 @@ func TestCheckTreeCloser(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
 
-	Convey("CheckTreeCloser", t, func() {
+	ftt.Run("CheckTreeCloser", t, func(t *ftt.Test) {
 		project := &config.Project{
 			Name: "chromium",
 		}
-		So(datastore.Put(c, project), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, project), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		builder := &config.Builder{
 			ProjectKey: datastore.KeyForObj(c, project),
 			ID:         "ci/Android ASAN",
 		}
-		So(datastore.Put(c, builder), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, builder), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		treeCloser := &config.TreeCloser{
@@ -85,14 +86,14 @@ func TestCheckTreeCloser(t *testing.T) {
 			},
 		}
 
-		So(datastore.Put(c, treeCloser), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, treeCloser), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		server := &TreeCloserServer{}
 		req := &pb.CheckTreeCloserRequest{}
 		_, err := server.CheckTreeCloser(c, req)
-		So(err, ShouldNotBeNil)
-		So(status.Convert(err).Code(), ShouldEqual, codes.InvalidArgument)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 
 		req = &pb.CheckTreeCloserRequest{
 			Project: "x",
@@ -101,8 +102,8 @@ func TestCheckTreeCloser(t *testing.T) {
 			Step:    "s",
 		}
 		res, err := server.CheckTreeCloser(c, req)
-		So(err, ShouldBeNil)
-		So(res.IsTreeCloser, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.IsTreeCloser, should.Equal(false))
 
 		req = &pb.CheckTreeCloserRequest{
 			Project: "chromium",
@@ -111,8 +112,8 @@ func TestCheckTreeCloser(t *testing.T) {
 			Step:    "s",
 		}
 		res, err = server.CheckTreeCloser(c, req)
-		So(err, ShouldBeNil)
-		So(res.IsTreeCloser, ShouldEqual, false)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.IsTreeCloser, should.Equal(false))
 
 		req = &pb.CheckTreeCloserRequest{
 			Project: "chromium",
@@ -121,7 +122,7 @@ func TestCheckTreeCloser(t *testing.T) {
 			Step:    "compile",
 		}
 		res, err = server.CheckTreeCloser(c, req)
-		So(err, ShouldBeNil)
-		So(res.IsTreeCloser, ShouldEqual, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.IsTreeCloser, should.Equal(true))
 	})
 }

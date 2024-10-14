@@ -25,9 +25,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testCoordinator is an implementation of Coordinator that can be used for
@@ -81,7 +82,7 @@ func (c *testCoordinator) incCalls() error {
 func TestStreamStateCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Using a test configuration`, t, func() {
+	ftt.Run(`Using a test configuration`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		tcc := testCoordinator{}
 
@@ -107,7 +108,7 @@ func TestStreamStateCache(t *testing.T) {
 		//
 		// If a LogStreamState has "remote" set to true, that implies that it was
 		// sent by the fake testing service rather than the local test.
-		Convey(`A streamStateCache`, func() {
+		t.Run(`A streamStateCache`, func(t *ftt.Test) {
 			ssc := NewCache(&tcc, 4, 1*time.Second)
 
 			resultC := make(chan *LogStreamState)
@@ -123,88 +124,88 @@ func TestStreamStateCache(t *testing.T) {
 				}
 			}
 
-			Convey(`Can register a stream`, func() {
+			t.Run(`Can register a stream`, func(t *ftt.Test) {
 				s, err := ssc.RegisterStream(c, &st, nil)
-				So(err, ShouldBeNil)
-				So(s.ProtoVersion, ShouldEqual, "remote")
-				So(tcc.calls, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+				assert.Loosely(t, tcc.calls, should.Equal(1))
 
-				Convey(`Will not re-register the same stream.`, func() {
+				t.Run(`Will not re-register the same stream.`, func(t *ftt.Test) {
 					st.ProtoVersion = ""
 
 					s, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldBeNil)
-					So(s.ProtoVersion, ShouldEqual, "remote")
-					So(tcc.calls, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+					assert.Loosely(t, tcc.calls, should.Equal(1))
 				})
 
-				Convey(`When the registration expires`, func() {
+				t.Run(`When the registration expires`, func(t *ftt.Test) {
 					st.ProtoVersion = ""
 					tc.Add(time.Second)
 
-					Convey(`Will re-register the stream.`, func() {
+					t.Run(`Will re-register the stream.`, func(t *ftt.Test) {
 						s, err := ssc.RegisterStream(c, &st, nil)
-						So(err, ShouldBeNil)
-						So(s.ProtoVersion, ShouldEqual, "remote")
-						So(tcc.calls, ShouldEqual, 2)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+						assert.Loosely(t, tcc.calls, should.Equal(2))
 					})
 				})
 
-				Convey(`Can terminate a registered stream`, func() {
-					So(ssc.TerminateStream(c, &tr), ShouldBeNil)
-					So(tcc.calls, ShouldEqual, 2) // +1 call
+				t.Run(`Can terminate a registered stream`, func(t *ftt.Test) {
+					assert.Loosely(t, ssc.TerminateStream(c, &tr), should.BeNil)
+					assert.Loosely(t, tcc.calls, should.Equal(2)) // +1 call
 
-					Convey(`Registering the stream will include the terminal index.`, func() {
+					t.Run(`Registering the stream will include the terminal index.`, func(t *ftt.Test) {
 						// Fill it in with junk to make sure we are getting cached.
 						st.TerminalIndex = 123
 						st.ProtoVersion = ""
 
 						s, err := ssc.RegisterStream(c, &st, nil)
-						So(err, ShouldBeNil)
-						So(s.ProtoVersion, ShouldEqual, "remote")
-						So(s.TerminalIndex, ShouldEqual, 1337)
-						So(tcc.calls, ShouldEqual, 2) // No additional calls.
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+						assert.Loosely(t, s.TerminalIndex, should.Equal(1337))
+						assert.Loosely(t, tcc.calls, should.Equal(2)) // No additional calls.
 					})
 				})
 			})
 
-			Convey(`Can register a stream with a terminal index`, func() {
+			t.Run(`Can register a stream with a terminal index`, func(t *ftt.Test) {
 				st.TerminalIndex = 1337
 
 				s, err := ssc.RegisterStream(c, &st, nil)
-				So(err, ShouldBeNil)
-				So(s.ProtoVersion, ShouldEqual, "remote")
-				So(tcc.calls, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+				assert.Loosely(t, tcc.calls, should.Equal(1))
 
-				Convey(`A subsequent call to TerminateStream will be ignored, since we have remote terminal confirmation.`, func() {
+				t.Run(`A subsequent call to TerminateStream will be ignored, since we have remote terminal confirmation.`, func(t *ftt.Test) {
 					tr.TerminalIndex = 12345
 
-					So(ssc.TerminateStream(c, &tr), ShouldBeNil)
-					So(tcc.calls, ShouldEqual, 1) // (No additional calls)
+					assert.Loosely(t, ssc.TerminateStream(c, &tr), should.BeNil)
+					assert.Loosely(t, tcc.calls, should.Equal(1)) // (No additional calls)
 
-					Convey(`A register stream call will return the confirmed terminal index.`, func() {
+					t.Run(`A register stream call will return the confirmed terminal index.`, func(t *ftt.Test) {
 						st.TerminalIndex = 0
 
 						s, err := ssc.RegisterStream(c, &st, nil)
-						So(err, ShouldBeNil)
-						So(s.ProtoVersion, ShouldEqual, "remote")
-						So(tcc.calls, ShouldEqual, 1) // (No additional calls)
-						So(s.TerminalIndex, ShouldEqual, 1337)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+						assert.Loosely(t, tcc.calls, should.Equal(1)) // (No additional calls)
+						assert.Loosely(t, s.TerminalIndex, should.Equal(1337))
 					})
 				})
 
-				Convey(`A subsqeuent register stream call will return the confirmed terminal index.`, func() {
+				t.Run(`A subsqeuent register stream call will return the confirmed terminal index.`, func(t *ftt.Test) {
 					st.TerminalIndex = 0
 
 					s, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldBeNil)
-					So(s.ProtoVersion, ShouldEqual, "remote")
-					So(tcc.calls, ShouldEqual, 1) // (No additional calls)
-					So(s.TerminalIndex, ShouldEqual, 1337)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.ProtoVersion, should.Equal("remote"))
+					assert.Loosely(t, tcc.calls, should.Equal(1)) // (No additional calls)
+					assert.Loosely(t, s.TerminalIndex, should.Equal(1337))
 				})
 			})
 
-			Convey(`When multiple goroutines register the same stream, it gets registered once.`, func() {
+			t.Run(`When multiple goroutines register the same stream, it gets registered once.`, func(t *ftt.Test) {
 				tcc.callC = make(chan struct{})
 				tcc.errC = make(chan error)
 
@@ -219,11 +220,11 @@ func TestStreamStateCache(t *testing.T) {
 					<-resultC
 				}
 
-				So(errors.SingleError(errs), ShouldBeNil)
-				So(tcc.calls, ShouldEqual, 1)
+				assert.Loosely(t, errors.SingleError(errs), should.BeNil)
+				assert.Loosely(t, tcc.calls, should.Equal(1))
 			})
 
-			Convey(`Multiple registrations for the same stream will result in two requests if the first expires.`, func() {
+			t.Run(`Multiple registrations for the same stream will result in two requests if the first expires.`, func(t *ftt.Test) {
 				tcc.callC = make(chan struct{})
 				tcc.errC = make(chan error)
 
@@ -246,119 +247,119 @@ func TestStreamStateCache(t *testing.T) {
 				r1 := <-resultC
 				r2 := <-resultC
 
-				So(r1.ProtoVersion, ShouldEqual, "remote")
-				So(r2.ProtoVersion, ShouldEqual, "remote")
-				So(tcc.calls, ShouldEqual, 2)
+				assert.Loosely(t, r1.ProtoVersion, should.Equal("remote"))
+				assert.Loosely(t, r2.ProtoVersion, should.Equal("remote"))
+				assert.Loosely(t, tcc.calls, should.Equal(2))
 			})
 
-			Convey(`RegisterStream`, func() {
-				Convey(`A transient registration error will result in a RegisterStream error.`, func() {
+			t.Run(`RegisterStream`, func(t *ftt.Test) {
+				t.Run(`A transient registration error will result in a RegisterStream error.`, func(t *ftt.Test) {
 					tcc.errC = make(chan error, 1)
 					tcc.errC <- errors.New("test error", transient.Tag)
 
 					_, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldNotBeNil)
-					So(tcc.calls, ShouldEqual, 1)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, tcc.calls, should.Equal(1))
 
-					Convey(`A second request will call through, try again, and succeed.`, func() {
+					t.Run(`A second request will call through, try again, and succeed.`, func(t *ftt.Test) {
 						tcc.errC = nil
 
 						_, err := ssc.RegisterStream(c, &st, nil)
-						So(err, ShouldBeNil)
-						So(tcc.calls, ShouldEqual, 2)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, tcc.calls, should.Equal(2))
 					})
 				})
 
-				Convey(`A non-transient registration error will result in a RegisterStream error.`, func() {
+				t.Run(`A non-transient registration error will result in a RegisterStream error.`, func(t *ftt.Test) {
 					tcc.errC = make(chan error, 1)
 					tcc.errC <- errors.New("test error")
 
 					_, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldNotBeNil)
-					So(tcc.calls, ShouldEqual, 1)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, tcc.calls, should.Equal(1))
 
-					Convey(`A second request will return the cached error.`, func() {
+					t.Run(`A second request will return the cached error.`, func(t *ftt.Test) {
 						tcc.errC = nil
 
 						_, err := ssc.RegisterStream(c, &st, nil)
-						So(err, ShouldNotBeNil)
-						So(tcc.calls, ShouldEqual, 1)
+						assert.Loosely(t, err, should.NotBeNil)
+						assert.Loosely(t, tcc.calls, should.Equal(1))
 					})
 				})
 			})
 
-			Convey(`TerminateStream`, func() {
+			t.Run(`TerminateStream`, func(t *ftt.Test) {
 				tr := TerminateRequest{
 					Project:       st.Project,
 					ID:            st.ID,
 					TerminalIndex: 1337,
 				}
 
-				Convey(`The termination endpoint returns a transient error, it will propagate.`, func() {
+				t.Run(`The termination endpoint returns a transient error, it will propagate.`, func(t *ftt.Test) {
 					tcc.errC = make(chan error, 1)
 					tcc.errC <- errors.New("test error", transient.Tag)
 
 					err := ssc.TerminateStream(c, &tr)
-					So(transient.Tag.In(err), ShouldBeTrue)
-					So(tcc.calls, ShouldEqual, 1)
+					assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+					assert.Loosely(t, tcc.calls, should.Equal(1))
 
-					Convey(`A second attempt will call through, try again, and succeed.`, func() {
+					t.Run(`A second attempt will call through, try again, and succeed.`, func(t *ftt.Test) {
 						tcc.errC = nil
 
 						err := ssc.TerminateStream(c, &tr)
-						So(err, ShouldBeNil)
-						So(tcc.calls, ShouldEqual, 2)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, tcc.calls, should.Equal(2))
 					})
 				})
 
-				Convey(`When the termination endpoint returns a non-transient error, it will propagate.`, func() {
+				t.Run(`When the termination endpoint returns a non-transient error, it will propagate.`, func(t *ftt.Test) {
 					tcc.errC = make(chan error, 1)
 					tcc.errC <- errors.New("test error")
 
 					err := ssc.TerminateStream(c, &tr)
-					So(err, ShouldNotBeNil)
-					So(tcc.calls, ShouldEqual, 1)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, tcc.calls, should.Equal(1))
 
-					Convey(`A second request will return the cached error.`, func() {
+					t.Run(`A second request will return the cached error.`, func(t *ftt.Test) {
 						tcc.errC = nil
 
 						err := ssc.TerminateStream(c, &tr)
-						So(err, ShouldNotBeNil)
-						So(tcc.calls, ShouldEqual, 1)
+						assert.Loosely(t, err, should.NotBeNil)
+						assert.Loosely(t, tcc.calls, should.Equal(1))
 					})
 				})
 			})
 
-			Convey(`Different projects with the same stream name will not conflict.`, func() {
+			t.Run(`Different projects with the same stream name will not conflict.`, func(t *ftt.Test) {
 				var projects = []string{"", "foo", "bar"}
 
 				for i, p := range projects {
 					st.Project = p
 					s, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
-					So(ssc.TerminateStream(c, &TerminateRequest{
+					assert.Loosely(t, ssc.TerminateStream(c, &TerminateRequest{
 						Project:       s.Project,
 						Path:          s.Path,
 						ID:            s.ID,
 						TerminalIndex: types.MessageIndex(i),
-					}), ShouldBeNil)
+					}), should.BeNil)
 				}
-				So(tcc.calls, ShouldEqual, len(projects)*2)
+				assert.Loosely(t, tcc.calls, should.Equal(len(projects)*2))
 
 				for i, p := range projects {
 					st.Project = p
 					st.TerminalIndex = -1
 
 					s, err := ssc.RegisterStream(c, &st, nil)
-					So(err, ShouldBeNil)
-					So(s.TerminalIndex, ShouldEqual, types.MessageIndex(i))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.TerminalIndex, should.Equal(types.MessageIndex(i)))
 				}
-				So(tcc.calls, ShouldEqual, len(projects)*2)
+				assert.Loosely(t, tcc.calls, should.Equal(len(projects)*2))
 			})
 		})
 
-		Convey(`A streamStateCache can register multiple streams at once.`, func() {
+		t.Run(`A streamStateCache can register multiple streams at once.`, func(t *ftt.Test) {
 			ssc := NewCache(&tcc, 0, 0)
 			tcc.callC = make(chan struct{})
 			tcc.errC = make(chan error)
@@ -392,7 +393,7 @@ func TestStreamStateCache(t *testing.T) {
 			wg.Wait()
 
 			// Confirm that all registered successfully.
-			So(errors.SingleError(errs), ShouldBeNil)
+			assert.Loosely(t, errors.SingleError(errs), should.BeNil)
 
 			remotes := 0
 			for i := 0; i < count; i++ {
@@ -400,7 +401,7 @@ func TestStreamStateCache(t *testing.T) {
 					remotes++
 				}
 			}
-			So(remotes, ShouldEqual, count)
+			assert.Loosely(t, remotes, should.Equal(count))
 		})
 	})
 }

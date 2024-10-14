@@ -21,83 +21,82 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Config", t, func() {
+	ftt.Run("Config", t, func(t *ftt.Test) {
 		srv := &Config{}
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("Delete", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("Delete", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					cfg, err := srv.Delete(c, nil)
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					cfg, err := srv.Delete(c, &config.DeleteRequest{})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 			})
 
-			Convey("valid", func() {
-				So(datastore.Put(c, &model.Config{
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.Config{
 					ID: "id",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				cfg, err := srv.Delete(c, &config.DeleteRequest{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &emptypb.Empty{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(&emptypb.Empty{}))
 				err = datastore.Get(c, &model.Config{
 					ID: "id",
 				})
-				So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 			})
 		})
 
-		Convey("Ensure", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("Ensure", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					cfg, err := srv.Ensure(c, nil)
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					cfg, err := srv.Ensure(c, &config.EnsureRequest{})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("ID", func() {
+				t.Run("ID", func(t *ftt.Test) {
 					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Config: &config.Config{},
 					})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("new", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("new", func(t *ftt.Test) {
 					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
 						Config: &config.Config{
@@ -120,8 +119,8 @@ func TestConfig(t *testing.T) {
 							Prefix: "prefix",
 						},
 					})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResembleProto, &config.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(&config.Config{
 						Attributes: &config.VM{
 							Disk: []*config.Disk{
 								{},
@@ -139,11 +138,11 @@ func TestConfig(t *testing.T) {
 							},
 						},
 						Prefix: "prefix",
-					})
+					}))
 				})
 
-				Convey("update doesn't erase currentAmount", func() {
-					So(datastore.Put(c, &model.Config{
+				t.Run("update doesn't erase currentAmount", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Amount: &config.Amount{
@@ -156,7 +155,7 @@ func TestConfig(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
@@ -184,8 +183,8 @@ func TestConfig(t *testing.T) {
 							Prefix: "prefix",
 						},
 					})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResembleProto, &config.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(&config.Config{
 						Amount: &config.Amount{
 							Max: 100,
 							Min: 50,
@@ -208,11 +207,11 @@ func TestConfig(t *testing.T) {
 							},
 						},
 						Prefix: "prefix",
-					})
+					}))
 				})
 
-				Convey("update doesn't erase DUTs", func() {
-					So(datastore.Put(c, &model.Config{
+				t.Run("update doesn't erase DUTs", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Duts: map[string]*emptypb.Empty{
@@ -224,7 +223,7 @@ func TestConfig(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
 					cfg, err := srv.Ensure(c, &config.EnsureRequest{
 						Id: "id",
@@ -252,8 +251,8 @@ func TestConfig(t *testing.T) {
 							Prefix: "prefix",
 						},
 					})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResembleProto, &config.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(&config.Config{
 						Amount: &config.Amount{
 							Max: 100,
 							Min: 50,
@@ -281,30 +280,30 @@ func TestConfig(t *testing.T) {
 							"dut-1": {},
 							"dut-2": {},
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("Get", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("Get", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					cfg, err := srv.Get(c, nil)
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					cfg, err := srv.Get(c, &config.GetRequest{})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("unauthorized owners", func() {
+				t.Run("unauthorized owners", func(t *ftt.Test) {
 					c = auth.WithState(c, &authtest.FakeState{
 						IdentityGroups: []string{"owners1"},
 					})
-					So(datastore.Put(c, &model.Config{
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Prefix: "prefix",
@@ -312,29 +311,29 @@ func TestConfig(t *testing.T) {
 								"owners2",
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					cfg, err := srv.Get(c, &config.GetRequest{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "no config found with ID \"id\" or unauthorized user")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("no config found with ID \"id\" or unauthorized user"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("not found", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("not found", func(t *ftt.Test) {
 					cfg, err := srv.Get(c, &config.GetRequest{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "no config found with ID \"id\" or unauthorized user")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("no config found with ID \"id\" or unauthorized user"))
+					assert.Loosely(t, cfg, should.BeNil)
 				})
 
-				Convey("found", func() {
+				t.Run("found", func(t *ftt.Test) {
 					c = auth.WithState(c, &authtest.FakeState{
 						IdentityGroups: []string{"owners"},
 					})
-					So(datastore.Put(c, &model.Config{
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Prefix: "prefix",
@@ -342,136 +341,136 @@ func TestConfig(t *testing.T) {
 								"owners",
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					cfg, err := srv.Get(c, &config.GetRequest{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(cfg, ShouldResembleProto, &config.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, cfg, should.Resemble(&config.Config{
 						Prefix: "prefix",
 						Owner: []string{
 							"owners",
 						},
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("List", func() {
-			Convey("invalid", func() {
-				Convey("page token", func() {
+		t.Run("List", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("page token", func(t *ftt.Test) {
 					req := &config.ListRequest{
 						PageToken: "token",
 					}
 					_, err := srv.List(c, req)
-					So(err, ShouldErrLike, "invalid page token")
+					assert.Loosely(t, err, should.ErrLike("invalid page token"))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("nil", func() {
-					Convey("none", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
 						rsp, err := srv.List(c, nil)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.BeEmpty)
 					})
 
-					Convey("one", func() {
-						So(datastore.Put(c, &model.Config{
+					t.Run("one", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &model.Config{
 							ID: "id",
-						}), ShouldBeNil)
+						}), should.BeNil)
 						rsp, err := srv.List(c, nil)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
 					})
 				})
 
-				Convey("empty", func() {
-					Convey("none", func() {
+				t.Run("empty", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
 						req := &config.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.BeEmpty)
 					})
 
-					Convey("one", func() {
-						So(datastore.Put(c, &model.Config{
+					t.Run("one", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &model.Config{
 							ID: "id",
-						}), ShouldBeNil)
+						}), should.BeNil)
 						req := &config.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
 					})
 				})
 
-				Convey("pages", func() {
-					So(datastore.Put(c, &model.Config{ID: "id1"}), ShouldBeNil)
-					So(datastore.Put(c, &model.Config{ID: "id2"}), ShouldBeNil)
-					So(datastore.Put(c, &model.Config{ID: "id3"}), ShouldBeNil)
+				t.Run("pages", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{ID: "id1"}), should.BeNil)
+					assert.Loosely(t, datastore.Put(c, &model.Config{ID: "id2"}), should.BeNil)
+					assert.Loosely(t, datastore.Put(c, &model.Config{ID: "id3"}), should.BeNil)
 
-					Convey("default", func() {
+					t.Run("default", func(t *ftt.Test) {
 						req := &config.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldNotBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.NotBeEmpty)
 					})
 
-					Convey("one", func() {
+					t.Run("one", func(t *ftt.Test) {
 						req := &config.ListRequest{
 							PageSize: 1,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 
-					Convey("two", func() {
+					t.Run("two", func(t *ftt.Test) {
 						req := &config.ListRequest{
 							PageSize: 2,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 2)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(2))
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 1)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(1))
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 
-					Convey("many", func() {
+					t.Run("many", func(t *ftt.Test) {
 						req := &config.ListRequest{
 							PageSize: 200,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Configs, ShouldHaveLength, 3)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Configs, should.HaveLength(3))
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 				})
 			})
 		})
 
-		Convey("Update", func() {
+		t.Run("Update", func(t *ftt.Test) {
 			c = auth.WithState(c, &authtest.FakeState{
 				IdentityGroups: []string{"owners"},
 			})
-			So(datastore.Put(c, &model.Config{
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "id",
 				Config: &config.Config{
 					Amount: &config.Amount{
@@ -485,34 +484,34 @@ func TestConfig(t *testing.T) {
 					Prefix: "prefix",
 					Duts:   map[string]*emptypb.Empty{"dut1": {}},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("invalid", func() {
-				Convey("nil", func() {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					cfg, err := srv.Update(c, nil)
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 					mdl := &model.Config{
 						ID: "id",
 					}
 					err = datastore.Get(c, mdl)
-					So(err, ShouldBeNil)
-					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					cfg, err := srv.Update(c, &config.UpdateRequest{})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 					mdl := &model.Config{
 						ID: "id",
 					}
 					err = datastore.Get(c, mdl)
-					So(err, ShouldBeNil)
-					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 				})
 
-				Convey("id", func() {
+				t.Run("id", func(t *ftt.Test) {
 					cfg, err := srv.Update(c, &config.UpdateRequest{
 						UpdateMask: &field_mask.FieldMask{
 							Paths: []string{
@@ -520,49 +519,49 @@ func TestConfig(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldErrLike, "ID is required")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, cfg, should.BeNil)
 					mdl := &model.Config{
 						ID: "id",
 					}
 					err = datastore.Get(c, mdl)
-					So(err, ShouldBeNil)
-					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 				})
 
-				Convey("update mask", func() {
-					Convey("missing", func() {
+				t.Run("update mask", func(t *ftt.Test) {
+					t.Run("missing", func(t *ftt.Test) {
 						cfg, err := srv.Update(c, &config.UpdateRequest{
 							Id: "id",
 						})
-						So(err, ShouldErrLike, "update mask is required")
-						So(cfg, ShouldBeNil)
+						assert.Loosely(t, err, should.ErrLike("update mask is required"))
+						assert.Loosely(t, cfg, should.BeNil)
 						mdl := &model.Config{
 							ID: "id",
 						}
 						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 					})
 
-					Convey("empty", func() {
+					t.Run("empty", func(t *ftt.Test) {
 						cfg, err := srv.Update(c, &config.UpdateRequest{
 							Id: "id",
 							UpdateMask: &field_mask.FieldMask{
 								Paths: []string{},
 							},
 						})
-						So(err, ShouldErrLike, "update mask is required")
-						So(cfg, ShouldBeNil)
+						assert.Loosely(t, err, should.ErrLike("update mask is required"))
+						assert.Loosely(t, cfg, should.BeNil)
 						mdl := &model.Config{
 							ID: "id",
 						}
 						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 					})
 
-					Convey("invalid mask", func() {
+					t.Run("invalid mask", func(t *ftt.Test) {
 						cfg, err := srv.Update(c, &config.UpdateRequest{
 							Id: "id",
 							UpdateMask: &field_mask.FieldMask{
@@ -571,17 +570,17 @@ func TestConfig(t *testing.T) {
 								},
 							},
 						})
-						So(err, ShouldErrLike, "invalid or immutable")
-						So(cfg, ShouldBeNil)
+						assert.Loosely(t, err, should.ErrLike("invalid or immutable"))
+						assert.Loosely(t, cfg, should.BeNil)
 						mdl := &model.Config{
 							ID: "id",
 						}
 						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 					})
 
-					Convey("immutable field", func() {
+					t.Run("immutable field", func(t *ftt.Test) {
 						cfg, err := srv.Update(c, &config.UpdateRequest{
 							Id: "id",
 							UpdateMask: &field_mask.FieldMask{
@@ -590,20 +589,20 @@ func TestConfig(t *testing.T) {
 								},
 							},
 						})
-						So(err, ShouldErrLike, "invalid or immutable")
-						So(cfg, ShouldBeNil)
+						assert.Loosely(t, err, should.ErrLike("invalid or immutable"))
+						assert.Loosely(t, cfg, should.BeNil)
 						mdl := &model.Config{
 							ID: "id",
 						}
 						err = datastore.Get(c, mdl)
-						So(err, ShouldBeNil)
-						So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 					})
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("unauthorized", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("unauthorized", func(t *ftt.Test) {
 					c = auth.WithState(c, &authtest.FakeState{})
 					cfg, err := srv.Update(c, &config.UpdateRequest{
 						Id: "id",
@@ -616,19 +615,19 @@ func TestConfig(t *testing.T) {
 							},
 						},
 					})
-					So(err, ShouldErrLike, "unauthorized user")
-					So(cfg, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("unauthorized user"))
+					assert.Loosely(t, cfg, should.BeNil)
 					mdl := &model.Config{
 						ID: "id",
 					}
 					err = datastore.Get(c, mdl)
-					So(err, ShouldBeNil)
-					So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 				})
 
-				Convey("authorized", func() {
-					Convey("CurrentAmount", func() {
-						Convey("min", func() {
+				t.Run("authorized", func(t *ftt.Test) {
+					t.Run("CurrentAmount", func(t *ftt.Test) {
+						t.Run("min", func(t *ftt.Test) {
 							cfg, err := srv.Update(c, &config.UpdateRequest{
 								Id: "id",
 								UpdateMask: &field_mask.FieldMask{
@@ -637,17 +636,17 @@ func TestConfig(t *testing.T) {
 									},
 								},
 							})
-							So(err, ShouldBeNil)
-							So(cfg.CurrentAmount, ShouldEqual, 1)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, cfg.CurrentAmount, should.Equal(1))
 							mdl := &model.Config{
 								ID: "id",
 							}
 							err = datastore.Get(c, mdl)
-							So(err, ShouldBeNil)
-							So(mdl.Config.CurrentAmount, ShouldEqual, 1)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(1))
 						})
 
-						Convey("max", func() {
+						t.Run("max", func(t *ftt.Test) {
 							cfg, err := srv.Update(c, &config.UpdateRequest{
 								Id: "id",
 								Config: &config.Config{
@@ -659,17 +658,17 @@ func TestConfig(t *testing.T) {
 									},
 								},
 							})
-							So(err, ShouldBeNil)
-							So(cfg.CurrentAmount, ShouldEqual, 3)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, cfg.CurrentAmount, should.Equal(3))
 							mdl := &model.Config{
 								ID: "id",
 							}
 							err = datastore.Get(c, mdl)
-							So(err, ShouldBeNil)
-							So(mdl.Config.CurrentAmount, ShouldEqual, 3)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(3))
 						})
 
-						Convey("updates", func() {
+						t.Run("updates", func(t *ftt.Test) {
 							cfg, err := srv.Update(c, &config.UpdateRequest{
 								Id: "id",
 								Config: &config.Config{
@@ -681,18 +680,18 @@ func TestConfig(t *testing.T) {
 									},
 								},
 							})
-							So(err, ShouldBeNil)
-							So(cfg.CurrentAmount, ShouldEqual, 2)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, cfg.CurrentAmount, should.Equal(2))
 							mdl := &model.Config{
 								ID: "id",
 							}
 							err = datastore.Get(c, mdl)
-							So(err, ShouldBeNil)
-							So(mdl.Config.CurrentAmount, ShouldEqual, 2)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(2))
 						})
 					})
-					Convey("duts", func() {
-						Convey("updates", func() {
+					t.Run("duts", func(t *ftt.Test) {
+						t.Run("updates", func(t *ftt.Test) {
 							cfg, err := srv.Update(c, &config.UpdateRequest{
 								Id: "id",
 								Config: &config.Config{
@@ -707,31 +706,31 @@ func TestConfig(t *testing.T) {
 									},
 								},
 							})
-							So(err, ShouldBeNil)
-							So(cfg.CurrentAmount, ShouldEqual, 2)
-							So(cfg.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, cfg.CurrentAmount, should.Equal(2))
+							assert.Loosely(t, cfg.Duts, should.Resemble(map[string]*emptypb.Empty{
 								"hello": {},
 								"world": {},
-							})
+							}))
 							mdl := &model.Config{
 								ID: "id",
 							}
 							err = datastore.Get(c, mdl)
-							So(err, ShouldBeNil)
-							So(mdl.Config.CurrentAmount, ShouldEqual, 2)
-							So(mdl.Config.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, mdl.Config.CurrentAmount, should.Equal(2))
+							assert.Loosely(t, mdl.Config.Duts, should.Resemble(map[string]*emptypb.Empty{
 								"hello": {},
 								"world": {},
-							})
+							}))
 						})
 					})
 				})
 			})
 		})
 	})
-	Convey("equalDuts", t, func() {
-		Convey("fail", func() {
-			Convey("different length", func() {
+	ftt.Run("equalDuts", t, func(t *ftt.Test) {
+		t.Run("fail", func(t *ftt.Test) {
+			t.Run("different length", func(t *ftt.Test) {
 				s1 := map[string]*emptypb.Empty{
 					"dut1": {},
 				}
@@ -740,9 +739,9 @@ func TestConfig(t *testing.T) {
 					"dut2": {},
 				}
 				isEqual := dutsEqual(s1, s2)
-				So(isEqual, ShouldBeFalse)
+				assert.Loosely(t, isEqual, should.BeFalse)
 			})
-			Convey("different keys", func() {
+			t.Run("different keys", func(t *ftt.Test) {
 				s1 := map[string]*emptypb.Empty{
 					"dut1": {},
 				}
@@ -750,11 +749,11 @@ func TestConfig(t *testing.T) {
 					"dut2": {},
 				}
 				isEqual := dutsEqual(s1, s2)
-				So(isEqual, ShouldBeFalse)
+				assert.Loosely(t, isEqual, should.BeFalse)
 			})
 		})
-		Convey("pass", func() {
-			Convey("same keys", func() {
+		t.Run("pass", func(t *ftt.Test) {
+			t.Run("same keys", func(t *ftt.Test) {
 				s1 := map[string]*emptypb.Empty{
 					"dut1": {},
 					"dut2": {},
@@ -764,13 +763,13 @@ func TestConfig(t *testing.T) {
 					"dut2": {},
 				}
 				isEqual := dutsEqual(s1, s2)
-				So(isEqual, ShouldBeTrue)
+				assert.Loosely(t, isEqual, should.BeTrue)
 			})
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				s1 := map[string]*emptypb.Empty{}
 				s2 := map[string]*emptypb.Empty{}
 				isEqual := dutsEqual(s1, s2)
-				So(isEqual, ShouldBeTrue)
+				assert.Loosely(t, isEqual, should.BeTrue)
 			})
 		})
 	})

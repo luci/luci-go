@@ -28,9 +28,11 @@ import (
 	mc "go.chromium.org/luci/gae/service/memcache"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/appengine/aetest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -56,19 +58,19 @@ type TestStruct struct {
 func TestBasicDatastore(t *testing.T) {
 	t.Parallel()
 
-	Convey("basic", t, func() {
+	ftt.Run("basic", t, func(t *ftt.Test) {
 		inst, err := aetest.NewInstance(&aetest.Options{
 			StronglyConsistentDatastore: true,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer inst.Close()
 
 		req, err := inst.NewRequest("GET", "/", nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx := Use(context.Background(), req)
 
-		Convey("logging allows you to tweak the level", func() {
+		t.Run("logging allows you to tweak the level", func(t *ftt.Test) {
 			// You have to visually confirm that this actually happens in the stdout
 			// of the test... yeah I know.
 			logging.Debugf(ctx, "SHOULD NOT SEE")
@@ -79,44 +81,44 @@ func TestBasicDatastore(t *testing.T) {
 			logging.Infof(ctx, "SHOULD SEE (2)")
 		})
 
-		Convey("Can probe/change Namespace", func() {
-			So(info.GetNamespace(ctx), ShouldEqual, "")
+		t.Run("Can probe/change Namespace", func(t *ftt.Test) {
+			assert.Loosely(t, info.GetNamespace(ctx), should.BeEmpty)
 
 			ctx, err = info.Namespace(ctx, "wat")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(info.GetNamespace(ctx), ShouldEqual, "wat")
-			So(ds.MakeKey(ctx, "Hello", "world").Namespace(), ShouldEqual, "wat")
+			assert.Loosely(t, info.GetNamespace(ctx), should.Equal("wat"))
+			assert.Loosely(t, ds.MakeKey(ctx, "Hello", "world").Namespace(), should.Equal("wat"))
 		})
 
-		Convey("Can get non-transactional context", func() {
+		t.Run("Can get non-transactional context", func(t *ftt.Test) {
 			ctx, err := info.Namespace(ctx, "foo")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(ds.CurrentTransaction(ctx), ShouldBeNil)
+			assert.Loosely(t, ds.CurrentTransaction(ctx), should.BeNil)
 
 			ds.RunInTransaction(ctx, func(ctx context.Context) error {
-				So(ds.CurrentTransaction(ctx), ShouldNotBeNil)
-				So(ds.MakeKey(ctx, "Foo", "bar").Namespace(), ShouldEqual, "foo")
+				assert.Loosely(t, ds.CurrentTransaction(ctx), should.NotBeNil)
+				assert.Loosely(t, ds.MakeKey(ctx, "Foo", "bar").Namespace(), should.Equal("foo"))
 
-				So(ds.Put(ctx, &TestStruct{ValueI: []int64{100}}), ShouldBeNil)
+				assert.Loosely(t, ds.Put(ctx, &TestStruct{ValueI: []int64{100}}), should.BeNil)
 
 				noTxnCtx := ds.WithoutTransaction(ctx)
-				So(ds.CurrentTransaction(noTxnCtx), ShouldBeNil)
+				assert.Loosely(t, ds.CurrentTransaction(noTxnCtx), should.BeNil)
 
 				err = ds.RunInTransaction(noTxnCtx, func(ctx context.Context) error {
-					So(ds.CurrentTransaction(ctx), ShouldNotBeNil)
-					So(ds.MakeKey(ctx, "Foo", "bar").Namespace(), ShouldEqual, "foo")
-					So(ds.Put(ctx, &TestStruct{ValueI: []int64{100}}), ShouldBeNil)
+					assert.Loosely(t, ds.CurrentTransaction(ctx), should.NotBeNil)
+					assert.Loosely(t, ds.MakeKey(ctx, "Foo", "bar").Namespace(), should.Equal("foo"))
+					assert.Loosely(t, ds.Put(ctx, &TestStruct{ValueI: []int64{100}}), should.BeNil)
 					return nil
 				}, nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				return nil
 			}, nil)
 		})
 
-		Convey("Can Put/Get", func() {
+		t.Run("Can Put/Get", func(t *ftt.Test) {
 			orig := TestStruct{
 				ValueI: []int64{1, 7, 946688461000000, 996688461000000},
 				ValueB: []bool{true, false},
@@ -141,49 +143,49 @@ func TestBasicDatastore(t *testing.T) {
 				ValueSingle:      "ohai",
 				ValueSingleSlice: []string{"kthxbye"},
 			}
-			So(ds.Put(ctx, &orig), ShouldBeNil)
+			assert.Loosely(t, ds.Put(ctx, &orig), should.BeNil)
 
 			ret := TestStruct{ID: orig.ID}
-			So(ds.Get(ctx, &ret), ShouldBeNil)
-			So(ret, ShouldResemble, orig)
+			assert.Loosely(t, ds.Get(ctx, &ret), should.BeNil)
+			assert.Loosely(t, ret, should.Resemble(orig))
 
 			// make sure single- and multi- properties are preserved.
 			pmap := ds.PropertyMap{
 				"$id":   mpNI(orig.ID),
 				"$kind": mpNI("TestStruct"),
 			}
-			So(ds.Get(ctx, pmap), ShouldBeNil)
-			So(pmap["ValueSingle"], ShouldHaveSameTypeAs, ds.Property{})
-			So(pmap["ValueSingleSlice"], ShouldHaveSameTypeAs, ds.PropertySlice(nil))
+			assert.Loosely(t, ds.Get(ctx, pmap), should.BeNil)
+			assert.Loosely(t, pmap["ValueSingle"], convey.Adapt(ShouldHaveSameTypeAs)(ds.Property{}))
+			assert.Loosely(t, pmap["ValueSingleSlice"], convey.Adapt(ShouldHaveSameTypeAs)(ds.PropertySlice(nil)))
 
 			// can't be sure the indexes have caught up... so sleep
 			time.Sleep(time.Second)
 
-			Convey("Can query", func() {
+			t.Run("Can query", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct")
 				ds.Run(ctx, q, func(ts *TestStruct) {
-					So(*ts, ShouldResemble, orig)
+					assert.Loosely(t, *ts, should.Resemble(orig))
 				})
 				count, err := ds.Count(ctx, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
 			})
 
-			Convey("Can query for bytes", func() {
+			t.Run("Can query for bytes", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct").Eq("ValueBS", []byte("allo"))
 				ds.Run(ctx, q, func(ts *TestStruct) {
-					So(*ts, ShouldResemble, orig)
+					assert.Loosely(t, *ts, should.Resemble(orig))
 				})
 				count, err := ds.Count(ctx, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
 			})
 
-			Convey("Can project", func() {
+			t.Run("Can project", func(t *ftt.Test) {
 				q := ds.NewQuery("TestStruct").Project("ValueS")
 				rslts := []ds.PropertyMap{}
-				So(ds.GetAll(ctx, q, &rslts), ShouldBeNil)
-				So(rslts, ShouldResemble, []ds.PropertyMap{
+				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueS": mp("hello"),
@@ -192,12 +194,12 @@ func TestBasicDatastore(t *testing.T) {
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueS": mp("world"),
 					},
-				})
+				}))
 
 				q = ds.NewQuery("TestStruct").Project("ValueBS")
 				rslts = []ds.PropertyMap{}
-				So(ds.GetAll(ctx, q, &rslts), ShouldBeNil)
-				So(rslts, ShouldResemble, []ds.PropertyMap{
+				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
 					{
 						"$key":    mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueBS": mp("allo"),
@@ -214,16 +216,16 @@ func TestBasicDatastore(t *testing.T) {
 						"$key":    mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueBS": mp("zurple"),
 					},
-				})
+				}))
 
 				count, err := ds.Count(ctx, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(4))
 
 				q = ds.NewQuery("TestStruct").Lte("ValueI", 7).Project("ValueS").Distinct(true)
 				rslts = []ds.PropertyMap{}
-				So(ds.GetAll(ctx, q, &rslts), ShouldBeNil)
-				So(rslts, ShouldResemble, []ds.PropertyMap{
+				assert.Loosely(t, ds.GetAll(ctx, q, &rslts), should.BeNil)
+				assert.Loosely(t, rslts, should.Resemble([]ds.PropertyMap{
 					{
 						"$key":   mpNI(ds.KeyForObj(ctx, &orig)),
 						"ValueI": mp(1),
@@ -244,15 +246,15 @@ func TestBasicDatastore(t *testing.T) {
 						"ValueI": mp(7),
 						"ValueS": mp("world"),
 					},
-				})
+				}))
 
 				count, err = ds.Count(ctx, q)
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(4))
 			})
 		})
 
-		Convey("Can Put/Get (time)", func() {
+		t.Run("Can Put/Get (time)", func(t *ftt.Test) {
 			// time comparisons in Go are wonky, so this is pulled out
 			pm := ds.PropertyMap{
 				"$key": mpNI(ds.NewKey(ctx, "Something", "value", 0, nil)),
@@ -261,37 +263,37 @@ func TestBasicDatastore(t *testing.T) {
 					mp(time.Time{}),
 				},
 			}
-			So(ds.Put(ctx, &pm), ShouldBeNil)
+			assert.Loosely(t, ds.Put(ctx, &pm), should.BeNil)
 
 			rslt := ds.PropertyMap{}
 			rslt.SetMeta("key", ds.KeyForObj(ctx, pm))
-			So(ds.Get(ctx, &rslt), ShouldBeNil)
+			assert.Loosely(t, ds.Get(ctx, &rslt), should.BeNil)
 
-			So(pm.Slice("Time")[0].Value(), ShouldResemble, rslt.Slice("Time")[0].Value())
+			assert.Loosely(t, pm.Slice("Time")[0].Value(), should.Resemble(rslt.Slice("Time")[0].Value()))
 
 			q := ds.NewQuery("Something").Project("Time")
 			all := []ds.PropertyMap{}
-			So(ds.GetAll(ctx, q, &all), ShouldBeNil)
-			So(len(all), ShouldEqual, 2)
+			assert.Loosely(t, ds.GetAll(ctx, q, &all), should.BeNil)
+			assert.Loosely(t, len(all), should.Equal(2))
 			prop := all[0].Slice("Time")[0]
-			So(prop.Type(), ShouldEqual, ds.PTInt)
+			assert.Loosely(t, prop.Type(), should.Equal(ds.PTInt))
 
 			tval, err := prop.Project(ds.PTTime)
-			So(err, ShouldBeNil)
-			So(tval, ShouldResemble, time.Time{}.UTC())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tval, should.Resemble(time.Time{}.UTC()))
 
 			tval, err = all[1].Slice("Time")[0].Project(ds.PTTime)
-			So(err, ShouldBeNil)
-			So(tval, ShouldResemble, pm.Slice("Time")[0].Value())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tval, should.Resemble(pm.Slice("Time")[0].Value()))
 
 			ent := ds.PropertyMap{
 				"$key": mpNI(ds.MakeKey(ctx, "Something", "value")),
 			}
-			So(ds.Get(ctx, &ent), ShouldBeNil)
-			So(ent["Time"], ShouldResemble, pm["Time"])
+			assert.Loosely(t, ds.Get(ctx, &ent), should.BeNil)
+			assert.Loosely(t, ent["Time"], should.Resemble(pm["Time"]))
 		})
 
-		Convey(`Can Get empty []byte slice as nil`, func() {
+		t.Run(`Can Get empty []byte slice as nil`, func(t *ftt.Test) {
 			put := ds.PropertyMap{
 				"$id":   mpNI("foo"),
 				"$kind": mpNI("FooType"),
@@ -305,17 +307,17 @@ func TestBasicDatastore(t *testing.T) {
 			exp := put.Clone()
 			exp["Nilly"] = mp([]byte(nil))
 
-			So(ds.Put(ctx, put), ShouldBeNil)
-			So(ds.Get(ctx, get), ShouldBeNil)
-			So(get, ShouldResemble, exp)
+			assert.Loosely(t, ds.Put(ctx, put), should.BeNil)
+			assert.Loosely(t, ds.Get(ctx, get), should.BeNil)
+			assert.Loosely(t, get, should.Resemble(exp))
 		})
 
-		Convey("memcache: Set (nil) is the same as Set ([]byte{})", func() {
-			So(mc.Set(ctx, mc.NewItem(ctx, "bob")), ShouldBeNil) // normally would panic because Value is nil
+		t.Run("memcache: Set (nil) is the same as Set ([]byte{})", func(t *ftt.Test) {
+			assert.Loosely(t, mc.Set(ctx, mc.NewItem(ctx, "bob")), should.BeNil) // normally would panic because Value is nil
 
 			bob, err := mc.GetKey(ctx, "bob")
-			So(err, ShouldBeNil)
-			So(bob.Value(), ShouldResemble, []byte{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bob.Value(), should.Resemble([]byte{}))
 		})
 	})
 }

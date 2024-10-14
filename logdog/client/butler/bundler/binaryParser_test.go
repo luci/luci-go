@@ -18,12 +18,15 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 func TestBinaryParser(t *testing.T) {
-	Convey(`A binaryParser with a threshold of 2.`, t, func() {
+	ftt.Run(`A binaryParser with a threshold of 2.`, t, func(t *ftt.Test) {
 		s := &parserTestStream{
 			now:         time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC),
 			prefixIndex: 1337,
@@ -36,78 +39,78 @@ func TestBinaryParser(t *testing.T) {
 			limit: 32,
 		}
 
-		Convey(`Loaded with data below the threshold`, func() {
+		t.Run(`Loaded with data below the threshold`, func(t *ftt.Test) {
 			p.Append(data(s.now, 1))
-			Convey(`Returns nil when reading data smaller than the threshold.`, func() {
+			t.Run(`Returns nil when reading data smaller than the threshold.`, func(t *ftt.Test) {
 				le, err := p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, should.BeNil)
 			})
 
-			Convey(`Returns a LogEntry when truncating.`, func() {
+			t.Run(`Returns a LogEntry when truncating.`, func(t *ftt.Test) {
 				c.allowSplit = true
 				le, err := p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Binary{
 					Data: []byte{1},
-				}))
+				})))
 
 				le, err = p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, should.BeNil)
 			})
 		})
 
-		Convey(`Loaded with 10 bytes of data`, func() {
+		t.Run(`Loaded with 10 bytes of data`, func(t *ftt.Test) {
 			p.Append(data(s.now, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
 
-			Convey(`Should yield all data with a limit of 32.`, func() {
+			t.Run(`Should yield all data with a limit of 32.`, func(t *ftt.Test) {
 				le, err := p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
-				}))
+				})))
 
 				le, err = p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, should.BeNil)
 			})
 
-			Convey(`Should yield [0..5], [6..9] with a limit of 6.`, func() {
+			t.Run(`Should yield [0..5], [6..9] with a limit of 6.`, func(t *ftt.Test) {
 				c.limit = 6
 				le, err := p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5},
-				}))
+				})))
 
 				le, err = p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(6, logpb.Binary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(6, logpb.Binary{
 					Data: []byte{6, 7, 8, 9},
-				}))
+				})))
 
 				le, err = p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, should.BeNil)
 			})
 		})
 
-		Convey(`Loaded with 8 bytes of data from different times.`, func() {
+		t.Run(`Loaded with 8 bytes of data from different times.`, func(t *ftt.Test) {
 			for i := 0; i < 8; i++ {
 				p.Append(data(s.now.Add(time.Duration(i)*time.Second), byte(i)))
 			}
 
-			Convey(`Ignores the time boundary and returns all 8 bytes.`, func() {
+			t.Run(`Ignores the time boundary and returns all 8 bytes.`, func(t *ftt.Test) {
 				le, err := p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, shouldMatchLogEntry, s.le(0, logpb.Binary{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Binary{
 					Data: []byte{0, 1, 2, 3, 4, 5, 6, 7},
-				}))
+				})))
 
 				le, err = p.nextEntry(c)
-				So(err, ShouldBeNil)
-				So(le, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, le, should.BeNil)
 			})
 		})
 	})

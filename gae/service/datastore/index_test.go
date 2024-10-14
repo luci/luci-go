@@ -21,9 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"gopkg.in/yaml.v2"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var indexDefinitionTests = []struct {
@@ -82,30 +83,30 @@ var indexDefinitionTests = []struct {
 func TestIndexDefinition(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test IndexDefinition", t, func() {
+	ftt.Run("Test IndexDefinition", t, func(t *ftt.Test) {
 		for _, tc := range indexDefinitionTests {
-			Convey(tc.str, func() {
-				So(tc.id.String(), ShouldEqual, tc.str)
-				So(tc.id.Builtin(), ShouldEqual, tc.builtin)
-				So(tc.id.Compound(), ShouldEqual, tc.compound)
+			t.Run(tc.str, func(t *ftt.Test) {
+				assert.Loosely(t, tc.id.String(), should.Equal(tc.str))
+				assert.Loosely(t, tc.id.Builtin(), should.Equal(tc.builtin))
+				assert.Loosely(t, tc.id.Compound(), should.Equal(tc.compound))
 				yaml, _ := tc.id.YAMLString()
-				So(yaml, ShouldEqual, strings.Join(tc.yaml, "\n"))
+				assert.Loosely(t, yaml, should.Equal(strings.Join(tc.yaml, "\n")))
 			})
 		}
 	})
 
-	Convey("Test MarshalYAML/UnmarshalYAML", t, func() {
+	ftt.Run("Test MarshalYAML/UnmarshalYAML", t, func(t *ftt.Test) {
 		for _, tc := range indexDefinitionTests {
-			Convey(fmt.Sprintf("marshallable index definition `%s` is marshalled and unmarshalled correctly", tc.str), func() {
+			t.Run(fmt.Sprintf("marshallable index definition `%s` is marshalled and unmarshalled correctly", tc.str), func(t *ftt.Test) {
 				if tc.yaml != nil {
 					// marshal
 					_, err := yaml.Marshal(tc.id)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// unmarshal
 					var ids []*IndexDefinition
 					yaml.Unmarshal([]byte(strings.Join(tc.yaml, "\n")), &ids)
-					So(ids[0], ShouldResemble, tc.id)
+					assert.Loosely(t, ids[0], should.Resemble(tc.id))
 				}
 			})
 		}

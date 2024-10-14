@@ -17,52 +17,54 @@ package datastore
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDroppedArgTracker(t *testing.T) {
 	t.Parallel()
 
-	Convey(`DroppedArgTracker`, t, func() {
-		Convey(`nil`, func() {
+	ftt.Run(`DroppedArgTracker`, t, func(t *ftt.Test) {
+		t.Run(`nil`, func(t *ftt.Test) {
 			var dat DroppedArgTracker
 			dal := dat.mustCompress(200, func() {}, func(i, j int) {})
 
-			So(dal.OriginalIndex(0), ShouldEqual, 0)
-			So(dal.OriginalIndex(100), ShouldEqual, 100)
+			assert.Loosely(t, dal.OriginalIndex(0), should.BeZero)
+			assert.Loosely(t, dal.OriginalIndex(100), should.Equal(100))
 
 			dat.MarkForRemoval(7, 10)
-			So(dat, ShouldHaveLength, 1)
+			assert.Loosely(t, dat, should.HaveLength(1))
 		})
 
-		Convey(`DroppedArgLookup`, func() {
+		t.Run(`DroppedArgLookup`, func(t *ftt.Test) {
 			dal := DroppedArgLookup{
 				{2, 3},
 				{4, 7},
 			}
 
-			So(dal.OriginalIndex(0), ShouldEqual, 0)
-			So(dal.OriginalIndex(1), ShouldEqual, 1)
-			So(dal.OriginalIndex(2), ShouldEqual, 3)
-			So(dal.OriginalIndex(3), ShouldEqual, 4)
-			So(dal.OriginalIndex(4), ShouldEqual, 7)
-			So(dal.OriginalIndex(10), ShouldEqual, 13)
+			assert.Loosely(t, dal.OriginalIndex(0), should.BeZero)
+			assert.Loosely(t, dal.OriginalIndex(1), should.Equal(1))
+			assert.Loosely(t, dal.OriginalIndex(2), should.Equal(3))
+			assert.Loosely(t, dal.OriginalIndex(3), should.Equal(4))
+			assert.Loosely(t, dal.OriginalIndex(4), should.Equal(7))
+			assert.Loosely(t, dal.OriginalIndex(10), should.Equal(13))
 		})
 
-		Convey(`compress`, func() {
+		t.Run(`compress`, func(t *ftt.Test) {
 			var dat DroppedArgTracker
 			dat.MarkForRemoval(2, 11)
 			dat.MarkForRemoval(5, 11)
 			dat.MarkForRemoval(6, 11)
 
 			dal := dat.mustCompress(11, func() {}, func(i, j int) {})
-			So(dal, ShouldResemble, DroppedArgLookup{
+			assert.Loosely(t, dal, should.Resemble(DroppedArgLookup{
 				{2, 3},
 				{4, 7},
-			})
+			}))
 		})
 
-		Convey(`callbacks`, func() {
+		t.Run(`callbacks`, func(t *ftt.Test) {
 			kc := MkKeyContext("app", "")
 			mkKey := func(id string) *Key {
 				return kc.MakeKey("kind", id)
@@ -81,40 +83,40 @@ func TestDroppedArgTracker(t *testing.T) {
 			}
 			var dat DroppedArgTracker
 
-			Convey(`empty means no copy`, func() {
+			t.Run(`empty means no copy`, func(t *ftt.Test) {
 				keys, _ := dat.DropKeys(input)
-				So(keys, ShouldHaveLength, len(input))
+				assert.Loosely(t, keys, should.HaveLength(len(input)))
 				// Make sure they're actually identical, and not a copy
-				So(&keys[0], ShouldEqual, &input[0])
+				assert.Loosely(t, &keys[0], should.Equal(&input[0]))
 			})
 
-			Convey(`can drop the last item`, func() {
+			t.Run(`can drop the last item`, func(t *ftt.Test) {
 				dat.MarkForRemoval(len(input), len(input))
 			})
 
-			Convey(`a couple dropped things`, func() {
+			t.Run(`a couple dropped things`, func(t *ftt.Test) {
 				// mark them out of order
 				dat.MarkForRemoval(7, len(input))
 				dat.MarkForRemoval(0, len(input))
 				dat.MarkForRemoval(4, len(input))
-				So(dat, ShouldHaveLength, 3)
+				assert.Loosely(t, dat, should.HaveLength(3))
 
 				// MarkForRemoval sorted them, woot.
-				So(dat, ShouldResemble, DroppedArgTracker{0, 4, 7})
+				assert.Loosely(t, dat, should.Resemble(DroppedArgTracker{0, 4, 7}))
 				reduced, dal := dat.DropKeys(input)
-				So(dal, ShouldResemble, DroppedArgLookup{
+				assert.Loosely(t, dal, should.Resemble(DroppedArgLookup{
 					{0, 1},
 					{3, 5},
 					{5, 8},
-				})
+				}))
 
-				So(reduced, ShouldResemble, []*Key{
+				assert.Loosely(t, reduced, should.Resemble([]*Key{
 					mkKey("whole"), mkKey("bunch"), mkKey("of"),
 					mkKey("which"), mkKey("may"), mkKey("removed"),
-				})
+				}))
 
 				for i, value := range reduced {
-					So(input[dal.OriginalIndex(i)], ShouldEqual, value)
+					assert.Loosely(t, input[dal.OriginalIndex(i)], should.Equal(value))
 				}
 			})
 		})

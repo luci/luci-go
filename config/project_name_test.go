@@ -18,25 +18,26 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateProjectName(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing valid project names`, t, func() {
+	ftt.Run(`Testing valid project names`, t, func(t *ftt.Test) {
 		for _, testCase := range []string{
 			"a",
 			"foo_bar-baz-059",
 		} {
-			Convey(fmt.Sprintf(`Project name %q is valid`, testCase), func() {
-				So(ValidateProjectName(testCase), ShouldBeNil)
+			t.Run(fmt.Sprintf(`Project name %q is valid`, testCase), func(t *ftt.Test) {
+				assert.Loosely(t, ValidateProjectName(testCase), should.BeNil)
 			})
 		}
 	})
 
-	Convey(`Testing invalid project names`, t, func() {
+	ftt.Run(`Testing invalid project names`, t, func(t *ftt.Test) {
 		for _, testCase := range []struct {
 			v          string
 			errorsLike string
@@ -46,8 +47,8 @@ func TestValidateProjectName(t *testing.T) {
 			{"_name", "must begin with a letter"},
 			{"1eet", "must begin with a letter"},
 		} {
-			Convey(fmt.Sprintf(`Project name %q fails with error %q`, testCase.v, testCase.errorsLike), func() {
-				So(ValidateProjectName(testCase.v), ShouldErrLike, testCase.errorsLike)
+			t.Run(fmt.Sprintf(`Project name %q fails with error %q`, testCase.v, testCase.errorsLike), func(t *ftt.Test) {
+				assert.Loosely(t, ValidateProjectName(testCase.v), should.ErrLike(testCase.errorsLike))
 			})
 		}
 	})

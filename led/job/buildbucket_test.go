@@ -20,50 +20,50 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/luciexe/exe"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBBEnsureBasics(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Buildbucket.EnsureBasics`, t, func() {
+	ftt.Run(`Buildbucket.EnsureBasics`, t, func(t *ftt.Test) {
 		jd := testBBJob(false)
-		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild(), ShouldBeNil)
+		assert.Loosely(t, jd.GetBuildbucket().GetBbagentArgs().GetBuild(), should.BeNil)
 
 		jd.GetBuildbucket().EnsureBasics()
 
-		So(jd.GetBuildbucket().BbagentArgs.Build.Infra, ShouldNotBeNil)
+		assert.Loosely(t, jd.GetBuildbucket().BbagentArgs.Build.Infra, should.NotBeNil)
 	})
 }
 
 func TestWriteProperties(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Buildbucket.WriteProperties`, t, func() {
+	ftt.Run(`Buildbucket.WriteProperties`, t, func(t *ftt.Test) {
 		jd := testBBJob(false)
-		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldBeNil)
+		assert.Loosely(t, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), should.BeNil)
 
 		jd.GetBuildbucket().WriteProperties(map[string]any{
 			"hello": "world",
 		})
-		So(jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, jd.GetBuildbucket().GetBbagentArgs().GetBuild().GetInput().GetProperties(), should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"hello": {Kind: &structpb.Value_StringValue{StringValue: "world"}},
 			},
-		})
+		}))
 	})
 }
 
 func TestUpdateBuildFromBbagentArgs(t *testing.T) {
 	t.Parallel()
 
-	Convey(`UpdateBuildFromBbagentArgs`, t, func() {
+	ftt.Run(`UpdateBuildFromBbagentArgs`, t, func(t *ftt.Test) {
 		bb := testBBJob(false).GetBuildbucket()
-		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent(), ShouldBeNil)
+		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket().GetAgent(), should.BeNil)
 
 		bb.BbagentArgs = &bbpb.BBAgentArgs{
 			PayloadPath:            "payload_path",
@@ -71,7 +71,7 @@ func TestUpdateBuildFromBbagentArgs(t *testing.T) {
 		}
 		bb.UpdateBuildFromBbagentArgs()
 
-		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), ShouldResembleProto,
+		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Resemble(
 			&bbpb.BuildInfra_Buildbucket{
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
@@ -79,14 +79,14 @@ func TestUpdateBuildFromBbagentArgs(t *testing.T) {
 					},
 				},
 				KnownPublicGerritHosts: []string{"host"},
-			})
+			}))
 	})
 }
 
 func TestUpdatePayloadPath(t *testing.T) {
 	t.Parallel()
 
-	Convey(`UpdatePayloadPath`, t, func() {
+	ftt.Run(`UpdatePayloadPath`, t, func(t *ftt.Test) {
 		bb := testBBJob(false).GetBuildbucket()
 
 		bb.BbagentArgs = &bbpb.BBAgentArgs{
@@ -95,25 +95,25 @@ func TestUpdatePayloadPath(t *testing.T) {
 		bb.UpdateBuildFromBbagentArgs()
 		bb.UpdatePayloadPath("new_path")
 
-		So(bb.GetBbagentArgs().GetPayloadPath(), ShouldEqual, "new_path")
-		So(bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), ShouldResembleProto,
+		assert.Loosely(t, bb.GetBbagentArgs().GetPayloadPath(), should.Equal("new_path"))
+		assert.Loosely(t, bb.GetBbagentArgs().GetBuild().GetInfra().GetBuildbucket(), should.Resemble(
 			&bbpb.BuildInfra_Buildbucket{
 				Agent: &bbpb.BuildInfra_Buildbucket_Agent{
 					Purposes: map[string]bbpb.BuildInfra_Buildbucket_Agent_Purpose{
 						"new_path": bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 					},
 				},
-			})
+			}))
 	})
 }
 
 func TestUpdateLedProperties(t *testing.T) {
 	t.Parallel()
 
-	Convey(`UpdateLedProperties`, t, func() {
+	ftt.Run(`UpdateLedProperties`, t, func(t *ftt.Test) {
 		bb := testBBJob(false).GetBuildbucket()
 		bb.EnsureBasics()
-		Convey(`cas input`, func() {
+		t.Run(`cas input`, func(t *ftt.Test) {
 			bld := bb.BbagentArgs.Build
 			bld.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
 				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
@@ -142,13 +142,13 @@ func TestUpdateLedProperties(t *testing.T) {
 			})
 
 			err := bb.UpdateLedProperties()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			newProps := ledProperties{}
 			err = exe.ParseProperties(bld.Input.Properties, map[string]any{
 				"$recipe_engine/led": &newProps,
 			})
-			So(err, ShouldBeNil)
-			So(newProps, ShouldResemble, ledProperties{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newProps, should.Resemble(ledProperties{
 				RbeCasInput: &swarmingpb.CASReference{
 					CasInstance: "projects/project/instances/instance",
 					Digest: &swarmingpb.Digest{
@@ -157,9 +157,9 @@ func TestUpdateLedProperties(t *testing.T) {
 					},
 				},
 				ShadowedBucket: "bucket",
-			})
+			}))
 		})
-		Convey(`cipd input`, func() {
+		t.Run(`cipd input`, func(t *ftt.Test) {
 			bld := bb.BbagentArgs.Build
 			bld.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
 				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
@@ -183,18 +183,18 @@ func TestUpdateLedProperties(t *testing.T) {
 			}
 
 			err := bb.UpdateLedProperties()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			newProps := ledProperties{}
 			err = exe.ParseProperties(bld.Input.Properties, map[string]any{
 				"$recipe_engine/led": &newProps,
 			})
-			So(err, ShouldBeNil)
-			So(newProps, ShouldResemble, ledProperties{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newProps, should.Resemble(ledProperties{
 				CIPDInput: &cipdInput{
 					Package: "package",
 					Version: "version",
 				},
-			})
+			}))
 		})
 	})
 }

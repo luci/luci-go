@@ -19,9 +19,10 @@ import (
 	"strconv"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeInfo struct{ info.RawInterface }
@@ -50,27 +51,27 @@ func (f fakeCursor) String() string {
 func TestServices(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test service interfaces", t, func() {
+	ftt.Run("Test service interfaces", t, func(t *ftt.Test) {
 		c := context.Background()
-		Convey("without adding anything", func() {
-			So(Raw(c), ShouldBeNil)
+		t.Run("without adding anything", func(t *ftt.Test) {
+			assert.Loosely(t, Raw(c), should.BeNil)
 		})
 
-		Convey("adding a basic implementation", func() {
+		t.Run("adding a basic implementation", func(t *ftt.Test) {
 			c = SetRaw(info.Set(c, fakeInfo{}), fakeService{})
 
-			Convey("and lets you add filters", func() {
+			t.Run("and lets you add filters", func(t *ftt.Test) {
 				c = AddRawFilters(c, func(ic context.Context, rds RawInterface) RawInterface {
 					return fakeFilt{rds}
 				})
 
 				curs, err := DecodeCursor(c, "123")
-				So(err, ShouldBeNil)
-				So(curs.String(), ShouldEqual, "123")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, curs.String(), should.Equal("123"))
 			})
 		})
-		Convey("adding zero filters does nothing", func() {
-			So(AddRawFilters(c), ShouldResemble, c)
+		t.Run("adding zero filters does nothing", func(t *ftt.Test) {
+			assert.Loosely(t, AddRawFilters(c), should.Resemble(c))
 		})
 	})
 }

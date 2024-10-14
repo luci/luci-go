@@ -21,11 +21,11 @@ import (
 	"errors"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func numRec(v types.MessageIndex) *rec {
@@ -48,7 +48,7 @@ func mustGetIndex(e *storage.Entry) types.MessageIndex {
 func TestBigTable(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A memory Storage instance.`, t, func() {
+	ftt.Run(`A memory Storage instance.`, t, func(t *ftt.Test) {
 		c := context.TODO()
 
 		st := Storage{}
@@ -57,7 +57,7 @@ func TestBigTable(t *testing.T) {
 		project := "test-project"
 		path := types.StreamPath("testing/+/foo/bar")
 
-		Convey(`Can Put() log stream records {0..5, 7, 8, 10}.`, func() {
+		t.Run(`Can Put() log stream records {0..5, 7, 8, 10}.`, func(t *ftt.Test) {
 			var indices []types.MessageIndex
 
 			putRange := func(start types.MessageIndex, count int) error {
@@ -74,9 +74,9 @@ func TestBigTable(t *testing.T) {
 				return st.Put(c, req)
 			}
 
-			So(putRange(0, 6), ShouldBeNil)
-			So(putRange(7, 2), ShouldBeNil)
-			So(putRange(10, 1), ShouldBeNil)
+			assert.Loosely(t, putRange(0, 6), should.BeNil)
+			assert.Loosely(t, putRange(7, 2), should.BeNil)
+			assert.Loosely(t, putRange(10, 1), should.BeNil)
 
 			// Forward-indexed records.
 			recs := make([]*rec, len(indices))
@@ -93,103 +93,103 @@ func TestBigTable(t *testing.T) {
 				return true
 			}
 
-			Convey(`Put()`, func() {
+			t.Run(`Put()`, func(t *ftt.Test) {
 				req := storage.PutRequest{
 					Project: project,
 					Path:    path,
 				}
 
-				Convey(`Will return ErrExists when putting an existing entry.`, func() {
+				t.Run(`Will return ErrExists when putting an existing entry.`, func(t *ftt.Test) {
 					req.Values = [][]byte{[]byte("ohai")}
 
-					So(st.Put(c, req), ShouldEqual, storage.ErrExists)
+					assert.Loosely(t, st.Put(c, req), should.Equal(storage.ErrExists))
 				})
 
-				Convey(`Will return an error if one is set.`, func() {
+				t.Run(`Will return an error if one is set.`, func(t *ftt.Test) {
 					st.SetErr(errors.New("test error"))
 
 					req.Index = 1337
-					So(st.Put(c, req), ShouldErrLike, "test error")
+					assert.Loosely(t, st.Put(c, req), should.ErrLike("test error"))
 				})
 			})
 
-			Convey(`Get()`, func() {
+			t.Run(`Get()`, func(t *ftt.Test) {
 				req := storage.GetRequest{
 					Project: project,
 					Path:    path,
 				}
 
-				Convey(`Can retrieve all of the records correctly.`, func() {
-					So(st.Get(c, req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResemble, recs)
+				t.Run(`Can retrieve all of the records correctly.`, func(t *ftt.Test) {
+					assert.Loosely(t, st.Get(c, req, getAllCB), should.BeNil)
+					assert.Loosely(t, getRecs, should.Resemble(recs))
 				})
 
-				Convey(`Will adhere to GetRequest limit.`, func() {
+				t.Run(`Will adhere to GetRequest limit.`, func(t *ftt.Test) {
 					req.Limit = 4
 
-					So(st.Get(c, req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResemble, recs[:4])
+					assert.Loosely(t, st.Get(c, req, getAllCB), should.BeNil)
+					assert.Loosely(t, getRecs, should.Resemble(recs[:4]))
 				})
 
-				Convey(`Will adhere to hard limit.`, func() {
+				t.Run(`Will adhere to hard limit.`, func(t *ftt.Test) {
 					st.MaxGetCount = 3
 					req.Limit = 4
 
-					So(st.Get(c, req, getAllCB), ShouldBeNil)
-					So(getRecs, ShouldResemble, recs[:3])
+					assert.Loosely(t, st.Get(c, req, getAllCB), should.BeNil)
+					assert.Loosely(t, getRecs, should.Resemble(recs[:3]))
 				})
 
-				Convey(`Will stop iterating if callback returns false.`, func() {
+				t.Run(`Will stop iterating if callback returns false.`, func(t *ftt.Test) {
 					count := 0
 					err := st.Get(c, req, func(*storage.Entry) bool {
 						count++
 						return false
 					})
-					So(err, ShouldBeNil)
-					So(count, ShouldEqual, 1)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, count, should.Equal(1))
 				})
 
-				Convey(`Will fail to retrieve records if the project doesn't exist.`, func() {
+				t.Run(`Will fail to retrieve records if the project doesn't exist.`, func(t *ftt.Test) {
 					req.Project = "project-does-not-exist"
 
-					So(st.Get(c, req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					assert.Loosely(t, st.Get(c, req, getAllCB), should.Equal(storage.ErrDoesNotExist))
 				})
 
-				Convey(`Will fail to retrieve records if the path doesn't exist.`, func() {
+				t.Run(`Will fail to retrieve records if the path doesn't exist.`, func(t *ftt.Test) {
 					req.Path = "testing/+/does/not/exist"
 
-					So(st.Get(c, req, getAllCB), ShouldEqual, storage.ErrDoesNotExist)
+					assert.Loosely(t, st.Get(c, req, getAllCB), should.Equal(storage.ErrDoesNotExist))
 				})
 
-				Convey(`Will return an error if one is set.`, func() {
+				t.Run(`Will return an error if one is set.`, func(t *ftt.Test) {
 					st.SetErr(errors.New("test error"))
 
-					So(st.Get(c, req, nil), ShouldErrLike, "test error")
+					assert.Loosely(t, st.Get(c, req, nil), should.ErrLike("test error"))
 				})
 			})
 
-			Convey(`Tail()`, func() {
-				Convey(`Can retrieve the tail record, 10.`, func() {
+			t.Run(`Tail()`, func(t *ftt.Test) {
+				t.Run(`Can retrieve the tail record, 10.`, func(t *ftt.Test) {
 					e, err := st.Tail(c, project, path)
-					So(err, ShouldBeNil)
-					So(e.D, ShouldResemble, numRec(10).data)
-					So(mustGetIndex(e), ShouldEqual, 10)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, e.D, should.Resemble(numRec(10).data))
+					assert.Loosely(t, mustGetIndex(e), should.Equal(10))
 				})
 
-				Convey(`Will fail to retrieve records if the project doesn't exist.`, func() {
+				t.Run(`Will fail to retrieve records if the project doesn't exist.`, func(t *ftt.Test) {
 					_, err := st.Tail(c, "project-does-not-exist", path)
-					So(err, ShouldEqual, storage.ErrDoesNotExist)
+					assert.Loosely(t, err, should.Equal(storage.ErrDoesNotExist))
 				})
 
-				Convey(`Will fail to retrieve records if the path doesn't exist.`, func() {
+				t.Run(`Will fail to retrieve records if the path doesn't exist.`, func(t *ftt.Test) {
 					_, err := st.Tail(c, project, "testing/+/does/not/exist")
-					So(err, ShouldEqual, storage.ErrDoesNotExist)
+					assert.Loosely(t, err, should.Equal(storage.ErrDoesNotExist))
 				})
 
-				Convey(`Will return an error if one is set.`, func() {
+				t.Run(`Will return an error if one is set.`, func(t *ftt.Test) {
 					st.SetErr(errors.New("test error"))
 					_, err := st.Tail(c, "", "")
-					So(err, ShouldErrLike, "test error")
+					assert.Loosely(t, err, should.ErrLike("test error"))
 				})
 			})
 
