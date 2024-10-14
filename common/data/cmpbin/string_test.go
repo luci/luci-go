@@ -21,57 +21,59 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBytes(t *testing.T) {
 	t.Parallel()
 
-	Convey("bytes", t, func() {
+	ftt.Run("bytes", t, func(t *ftt.Test) {
 		b := &bytes.Buffer{}
-		t := []byte("this is a test")
+		tc := []byte("this is a test")
 
-		Convey("good", func() {
-			_, err := WriteBytes(b, t)
-			So(err, ShouldBeNil)
+		t.Run("good", func(t *ftt.Test) {
+			_, err := WriteBytes(b, tc)
+			assert.Loosely(t, err, should.BeNil)
 			exn := b.Len()
 			r, n, err := ReadBytes(b)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, exn)
-			So(r, ShouldResemble, t)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(exn))
+			assert.Loosely(t, r, should.Resemble(tc))
 		})
 
-		Convey("bad (truncated buffer)", func() {
-			_, err := WriteBytes(b, t)
-			So(err, ShouldBeNil)
+		t.Run("bad (truncated buffer)", func(t *ftt.Test) {
+			_, err := WriteBytes(b, tc)
+			assert.Loosely(t, err, should.BeNil)
 			bs := b.Bytes()[:b.Len()-4]
 			_, n, err := ReadBytes(bytes.NewBuffer(bs))
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, len(bs))
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.Equal(len(bs)))
 		})
 
-		Convey("bad (bad varint)", func() {
+		t.Run("bad (bad varint)", func(t *ftt.Test) {
 			_, n, err := ReadBytes(bytes.NewBuffer([]byte{0b10001111}))
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 1)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.Equal(1))
 		})
 
-		Convey("bad (huge data)", func() {
+		t.Run("bad (huge data)", func(t *ftt.Test) {
 			n, err := WriteBytes(b, make([]byte, 2*1024*1024+1))
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, ReadByteLimit+2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(ReadByteLimit+2))
 			_, n, err = ReadBytes(b)
-			So(err.Error(), ShouldContainSubstring, "too big!")
-			So(n, ShouldEqual, ReadByteLimit)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("too big!"))
+			assert.Loosely(t, n, should.Equal(ReadByteLimit))
 		})
 
-		Convey("bad (write errors)", func() {
-			_, err := WriteBytes(&fakeWriter{1}, t)
-			So(err.Error(), ShouldContainSubstring, "nope")
+		t.Run("bad (write errors)", func(t *ftt.Test) {
+			_, err := WriteBytes(&fakeWriter{1}, tc)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("nope"))
 
 			// transition boundary
-			_, err = WriteBytes(&fakeWriter{7}, t)
-			So(err.Error(), ShouldContainSubstring, "nope")
+			_, err = WriteBytes(&fakeWriter{7}, tc)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("nope"))
 		})
 	})
 }
@@ -79,69 +81,69 @@ func TestBytes(t *testing.T) {
 func TestStrings(t *testing.T) {
 	t.Parallel()
 
-	Convey("strings", t, func() {
+	ftt.Run("strings", t, func(t *ftt.Test) {
 		b := &bytes.Buffer{}
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			n, err := WriteString(b, "")
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
-			So(b.Bytes(), ShouldResemble, []byte{0})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
+			assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0}))
 			r, n, err := ReadString(b)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 1)
-			So(r, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(1))
+			assert.Loosely(t, r, should.BeEmpty)
 		})
 
-		Convey("nulls", func() {
+		t.Run("nulls", func(t *ftt.Test) {
 			s := "\x00\x00\x00\x00\x00"
 			n, err := WriteString(b, s)
-			So(n, ShouldEqual, 6)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, n, should.Equal(6))
+			assert.Loosely(t, err, should.BeNil)
 			exn := b.Len()
 			r, n, err := ReadString(b)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, exn)
-			So(r, ShouldEqual, s)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(exn))
+			assert.Loosely(t, r, should.Equal(s))
 		})
 
-		Convey("bad (truncated buffer)", func() {
+		t.Run("bad (truncated buffer)", func(t *ftt.Test) {
 			s := "this is a test"
 			n, err := WriteString(b, s)
-			So(n, ShouldEqual, (len(s)*8)/7+1)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, n, should.Equal((len(s)*8)/7+1))
+			assert.Loosely(t, err, should.BeNil)
 			bs := b.Bytes()[:b.Len()-1]
 			_, n, err = ReadString(bytes.NewBuffer(bs))
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, len(bs))
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.Equal(len(bs)))
 		})
 
-		Convey("single", func() {
+		t.Run("single", func(t *ftt.Test) {
 			n, err := WriteString(b, "1")
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(b.Bytes(), ShouldResemble, []byte{0b00110001, 0b10000000})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, b.Bytes(), should.Resemble([]byte{0b00110001, 0b10000000}))
 			r, n, err := ReadString(b)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 2)
-			So(r, ShouldEqual, "1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(2))
+			assert.Loosely(t, r, should.Equal("1"))
 		})
 
-		Convey("good", func() {
+		t.Run("good", func(t *ftt.Test) {
 			s := "this is a test"
 			n, err := WriteString(b, s)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, (len(s)*8)/7+1)
-			So(b.Bytes()[:8], ShouldResemble, []byte{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal((len(s)*8)/7+1))
+			assert.Loosely(t, b.Bytes()[:8], should.Resemble([]byte{
 				0b01110101, 0b00110101, 0b00011011, 0b00101111, 0b00110011, 0b00000011,
 				0b10100101, 0b11100111,
-			})
+			}))
 			exn := b.Len()
 			r, n, err := ReadString(b)
-			So(err, ShouldBeNil)
-			So(len(r), ShouldEqual, len(s))
-			So(n, ShouldEqual, exn)
-			So(r, ShouldEqual, s)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(r), should.Equal(len(s)))
+			assert.Loosely(t, n, should.Equal(exn))
+			assert.Loosely(t, r, should.Equal(s))
 		})
 
 	})
@@ -152,7 +154,7 @@ func TestStrings(t *testing.T) {
 func TestStringSortability(t *testing.T) {
 	t.Parallel()
 
-	Convey("strings maintain sort order", t, func() {
+	ftt.Run("strings maintain sort order", t, func(t *ftt.Test) {
 		special := []string{
 			"",
 			"\x00",
@@ -184,7 +186,7 @@ func TestStringSortability(t *testing.T) {
 		for i := range enc {
 			b.Reset()
 			_, err := WriteString(b, orig[i])
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			enc[i] = b.String()
 		}
 
@@ -193,8 +195,8 @@ func TestStringSortability(t *testing.T) {
 
 		for i := range orig {
 			decoded, _, err := ReadString(bytes.NewBufferString(enc[i]))
-			So(err, ShouldBeNil)
-			So(decoded, ShouldResemble, orig[i])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, decoded, should.Resemble(orig[i]))
 		}
 	})
 }
@@ -222,7 +224,7 @@ func (s StringSliceSlice) Less(i, j int) bool {
 func TestConcatenatedStringSortability(t *testing.T) {
 	t.Parallel()
 
-	Convey("concatenated strings maintain sort order", t, func() {
+	ftt.Run("concatenated strings maintain sort order", t, func(t *ftt.Test) {
 		orig := make(StringSliceSlice, randomTestSize)
 
 		r := rand.New(rand.NewSource(*seed))
@@ -249,7 +251,7 @@ func TestConcatenatedStringSortability(t *testing.T) {
 			b.Reset()
 			for _, s := range slice {
 				_, err := WriteString(b, s)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			}
 			enc[i] = b.String()
 		}
@@ -267,7 +269,7 @@ func TestConcatenatedStringSortability(t *testing.T) {
 				}
 				decoded = append(decoded, dec)
 			}
-			So(decoded, ShouldResemble, orig[i])
+			assert.Loosely(t, decoded, should.Resemble(orig[i]))
 		}
 	})
 }

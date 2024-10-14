@@ -22,20 +22,23 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An locking LRU cache with size heuristic 3`, t, func() {
+	ftt.Run(`An locking LRU cache with size heuristic 3`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		cache := New[string, string](3)
 
-		Convey(`A Get() returns "no item".`, func() {
+		t.Run(`A Get() returns "no item".`, func(t *ftt.Test) {
 			_, has := cache.Get(ctx, "test")
-			So(has, ShouldBeFalse)
+			assert.Loosely(t, has, should.BeFalse)
 		})
 
 		// Adds values to the cache sequentially, blocking on the values being
@@ -44,7 +47,7 @@ func TestCache(t *testing.T) {
 			for _, v := range values {
 				_, isPresent := cache.Peek(ctx, v)
 				_, has := cache.Put(ctx, v, v+"v", 0)
-				So(has, ShouldEqual, isPresent)
+				assert.Loosely(t, has, should.Equal(isPresent))
 			}
 		}
 
@@ -53,80 +56,80 @@ func TestCache(t *testing.T) {
 			return
 		}
 
-		Convey(`With three values, {a, b, c}`, func() {
+		t.Run(`With three values, {a, b, c}`, func(t *ftt.Test) {
 			addCacheValues("a", "b", "c")
-			So(cache.Len(), ShouldEqual, 3)
+			assert.Loosely(t, cache.Len(), should.Equal(3))
 
-			Convey(`Prune does nothing.`, func() {
+			t.Run(`Prune does nothing.`, func(t *ftt.Test) {
 				cache.Prune(ctx)
-				So(cache.Len(), ShouldEqual, 3)
+				assert.Loosely(t, cache.Len(), should.Equal(3))
 			})
 
-			Convey(`Is empty after a reset.`, func() {
+			t.Run(`Is empty after a reset.`, func(t *ftt.Test) {
 				cache.Reset()
-				So(cache.Len(), ShouldEqual, 0)
+				assert.Loosely(t, cache.Len(), should.BeZero)
 			})
 
-			Convey(`Can retrieve each of those values.`, func() {
-				So(get("a"), ShouldEqual, "av")
-				So(get("b"), ShouldEqual, "bv")
-				So(get("c"), ShouldEqual, "cv")
+			t.Run(`Can retrieve each of those values.`, func(t *ftt.Test) {
+				assert.Loosely(t, get("a"), should.Equal("av"))
+				assert.Loosely(t, get("b"), should.Equal("bv"))
+				assert.Loosely(t, get("c"), should.Equal("cv"))
 			})
 
-			Convey(`Get()ting "a", then adding "d" will cause "b" to be evicted.`, func() {
-				So(get("a"), ShouldEqual, "av")
+			t.Run(`Get()ting "a", then adding "d" will cause "b" to be evicted.`, func(t *ftt.Test) {
+				assert.Loosely(t, get("a"), should.Equal("av"))
 				addCacheValues("d")
-				So(cache, shouldHaveValues, "a", "c", "d")
+				assert.That(t, cache, shouldHaveValues("a", "c", "d"))
 			})
 
-			Convey(`Peek()ing "a", then adding "d" will cause "a" to be evicted.`, func() {
+			t.Run(`Peek()ing "a", then adding "d" will cause "a" to be evicted.`, func(t *ftt.Test) {
 				v, has := cache.Peek(ctx, "a")
-				So(has, ShouldBeTrue)
-				So(v, ShouldEqual, "av")
+				assert.Loosely(t, has, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("av"))
 
 				v, has = cache.Peek(ctx, "nonexist")
-				So(has, ShouldBeFalse)
-				So(v, ShouldEqual, "")
+				assert.Loosely(t, has, should.BeFalse)
+				assert.Loosely(t, v, should.BeEmpty)
 
 				addCacheValues("d")
-				So(cache, shouldHaveValues, "b", "c", "d")
+				assert.That(t, cache, shouldHaveValues("b", "c", "d"))
 			})
 		})
 
-		Convey(`When adding {a, b, c, d}, "a" will be evicted.`, func() {
+		t.Run(`When adding {a, b, c, d}, "a" will be evicted.`, func(t *ftt.Test) {
 			addCacheValues("a", "b", "c", "d")
-			So(cache.Len(), ShouldEqual, 3)
+			assert.Loosely(t, cache.Len(), should.Equal(3))
 
-			So(cache, shouldHaveValues, "b", "c", "d")
+			assert.That(t, cache, shouldHaveValues("b", "c", "d"))
 
-			Convey(`Requests for "a" will be empty.`, func() {
-				So(get("a"), ShouldEqual, "")
+			t.Run(`Requests for "a" will be empty.`, func(t *ftt.Test) {
+				assert.Loosely(t, get("a"), should.BeEmpty)
 			})
 		})
 
-		Convey(`When adding {a, b, c, a, d}, "b" will be evicted.`, func() {
+		t.Run(`When adding {a, b, c, a, d}, "b" will be evicted.`, func(t *ftt.Test) {
 			addCacheValues("a", "b", "c", "a", "d")
-			So(cache.Len(), ShouldEqual, 3)
+			assert.Loosely(t, cache.Len(), should.Equal(3))
 
-			So(cache, shouldHaveValues, "a", "c", "d")
+			assert.That(t, cache, shouldHaveValues("a", "c", "d"))
 
-			Convey(`When removing "c", will contain {a, d}.`, func() {
+			t.Run(`When removing "c", will contain {a, d}.`, func(t *ftt.Test) {
 				v, had := cache.Remove("c")
-				So(had, ShouldBeTrue)
-				So(v, ShouldEqual, "cv")
-				So(cache, shouldHaveValues, "a", "d")
+				assert.Loosely(t, had, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("cv"))
+				assert.That(t, cache, shouldHaveValues("a", "d"))
 
-				Convey(`When adding {e, f}, "a" will be evicted.`, func() {
+				t.Run(`When adding {e, f}, "a" will be evicted.`, func(t *ftt.Test) {
 					addCacheValues("e", "f")
-					So(cache, shouldHaveValues, "d", "e", "f")
+					assert.That(t, cache, shouldHaveValues("d", "e", "f"))
 				})
 			})
 		})
 
-		Convey(`When removing a value that isn't there, returns "no item".`, func() {
+		t.Run(`When removing a value that isn't there, returns "no item".`, func(t *ftt.Test) {
 			v, has := cache.Remove("foo")
-			So(has, ShouldBeFalse)
-			So(v, ShouldEqual, "")
+			assert.Loosely(t, has, should.BeFalse)
+			assert.Loosely(t, v, should.BeEmpty)
 		})
 	})
 }
@@ -134,7 +137,7 @@ func TestCache(t *testing.T) {
 func TestCacheWithExpiry(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A cache of size 3 with a Clock`, t, func() {
+	ftt.Run(`A cache of size 3 with a Clock`, t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		cache := New[string, string](3)
 
@@ -142,67 +145,67 @@ func TestCacheWithExpiry(t *testing.T) {
 		cache.Put(ctx, "b", "bv", 2*time.Second)
 		cache.Put(ctx, "forever", "foreverv", 0)
 
-		Convey(`When "a" is expired`, func() {
+		t.Run(`When "a" is expired`, func(t *ftt.Test) {
 			tc.Add(time.Second)
 
-			Convey(`Get doesn't yield "a", but yields "b".`, func() {
+			t.Run(`Get doesn't yield "a", but yields "b".`, func(t *ftt.Test) {
 				_, has := cache.Get(ctx, "a")
-				So(has, ShouldBeFalse)
+				assert.Loosely(t, has, should.BeFalse)
 
 				_, has = cache.Get(ctx, "b")
-				So(has, ShouldBeTrue)
+				assert.Loosely(t, has, should.BeTrue)
 			})
 
-			Convey(`Mutate treats "a" as missing.`, func() {
+			t.Run(`Mutate treats "a" as missing.`, func(t *ftt.Test) {
 				v, ok := cache.Mutate(ctx, "a", func(it *Item[string]) *Item[string] {
-					So(it, ShouldBeNil)
+					assert.Loosely(t, it, should.BeNil)
 					return nil
 				})
-				So(ok, ShouldBeFalse)
-				So(v, ShouldEqual, "")
-				So(cache.Len(), ShouldEqual, 2)
+				assert.Loosely(t, ok, should.BeFalse)
+				assert.Loosely(t, v, should.BeEmpty)
+				assert.Loosely(t, cache.Len(), should.Equal(2))
 
 				_, has := cache.Get(ctx, "a")
-				So(has, ShouldBeFalse)
+				assert.Loosely(t, has, should.BeFalse)
 			})
 
-			Convey(`Mutate replaces "a" if a value is supplied.`, func() {
+			t.Run(`Mutate replaces "a" if a value is supplied.`, func(t *ftt.Test) {
 				v, ok := cache.Mutate(ctx, "a", func(it *Item[string]) *Item[string] {
-					So(it, ShouldBeNil)
+					assert.Loosely(t, it, should.BeNil)
 					return &Item[string]{"av", 0}
 				})
-				So(ok, ShouldBeTrue)
-				So(v, ShouldEqual, "av")
-				So(cache, shouldHaveValues, "a", "b", "forever")
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("av"))
+				assert.Loosely(t, cache, shouldHaveValues("a", "b", "forever"))
 
 				v, has := cache.Get(ctx, "a")
-				So(has, ShouldBeTrue)
-				So(v, ShouldEqual, "av")
+				assert.Loosely(t, has, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("av"))
 			})
 
-			Convey(`Mutateing "b" yields the remaining time.`, func() {
+			t.Run(`Mutateing "b" yields the remaining time.`, func(t *ftt.Test) {
 				v, ok := cache.Mutate(ctx, "b", func(it *Item[string]) *Item[string] {
-					So(it, ShouldResemble, &Item[string]{"bv", 1 * time.Second})
+					assert.Loosely(t, it, should.Resemble(&Item[string]{"bv", 1 * time.Second}))
 					return it
 				})
-				So(ok, ShouldBeTrue)
-				So(v, ShouldEqual, "bv")
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("bv"))
 
 				v, has := cache.Get(ctx, "b")
-				So(has, ShouldBeTrue)
-				So(v, ShouldEqual, "bv")
+				assert.Loosely(t, has, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("bv"))
 
 				tc.Add(time.Second)
 
 				_, has = cache.Get(ctx, "b")
-				So(has, ShouldBeFalse)
+				assert.Loosely(t, has, should.BeFalse)
 			})
 		})
 
-		Convey(`Prune prunes all expired entries.`, func() {
+		t.Run(`Prune prunes all expired entries.`, func(t *ftt.Test) {
 			tc.Add(1 * time.Hour)
 			cache.Prune(ctx)
-			So(cache, shouldHaveValues, "forever")
+			assert.Loosely(t, cache, shouldHaveValues("forever"))
 		})
 	})
 }
@@ -210,25 +213,25 @@ func TestCacheWithExpiry(t *testing.T) {
 func TestUnboundedCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An unbounded cache`, t, func() {
+	ftt.Run(`An unbounded cache`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		cache := New[int, string](0)
 
-		Convey(`Grows indefinitely`, func() {
+		t.Run(`Grows indefinitely`, func(t *ftt.Test) {
 			for i := 0; i < 1000; i++ {
 				cache.Put(ctx, i, "hey", 0)
 			}
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 		})
 
-		Convey(`Grows indefinitely even if elements have an (ignored) expiry`, func() {
+		t.Run(`Grows indefinitely even if elements have an (ignored) expiry`, func(t *ftt.Test) {
 			for i := 0; i < 1000; i++ {
 				cache.Put(ctx, i, "hey", time.Second)
 			}
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 
 			cache.Prune(ctx)
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 		})
 	})
 }
@@ -236,50 +239,50 @@ func TestUnboundedCache(t *testing.T) {
 func TestUnboundedCacheWithExpiry(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An unbounded cache with a clock`, t, func() {
+	ftt.Run(`An unbounded cache with a clock`, t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		cache := New[int, string](0)
 
-		Convey(`Grows indefinitely`, func() {
+		t.Run(`Grows indefinitely`, func(t *ftt.Test) {
 			for i := 0; i < 1000; i++ {
 				cache.Put(ctx, i, "hey", 0)
 			}
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 
 			cache.Prune(ctx)
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 		})
 
-		Convey(`Grows indefinitely even if elements have an (ignored) expiry`, func() {
+		t.Run(`Grows indefinitely even if elements have an (ignored) expiry`, func(t *ftt.Test) {
 			for i := 1; i <= 1000; i++ {
 				cache.Put(ctx, i, "hey", time.Duration(i)*time.Second)
 			}
-			So(cache.Len(), ShouldEqual, 1000)
+			assert.Loosely(t, cache.Len(), should.Equal(1000))
 
 			// Expire the first half of entries.
 			tc.Add(500 * time.Second)
 
-			Convey(`Get works`, func() {
+			t.Run(`Get works`, func(t *ftt.Test) {
 				v, has := cache.Get(ctx, 1)
-				So(has, ShouldBeFalse)
-				So(v, ShouldEqual, "")
+				assert.Loosely(t, has, should.BeFalse)
+				assert.Loosely(t, v, should.BeEmpty)
 
 				v, has = cache.Get(ctx, 500)
-				So(has, ShouldBeFalse)
-				So(v, ShouldEqual, "")
+				assert.Loosely(t, has, should.BeFalse)
+				assert.Loosely(t, v, should.BeEmpty)
 
 				v, has = cache.Get(ctx, 501)
-				So(has, ShouldBeTrue)
-				So(v, ShouldEqual, "hey")
+				assert.Loosely(t, has, should.BeTrue)
+				assert.Loosely(t, v, should.Equal("hey"))
 			})
 
-			Convey(`Len works`, func() {
+			t.Run(`Len works`, func(t *ftt.Test) {
 				// Without explicit pruning, Len includes expired elements.
-				So(cache.Len(), ShouldEqual, 1000)
+				assert.Loosely(t, cache.Len(), should.Equal(1000))
 
 				// After pruning, Len is accurate again.
 				cache.Prune(ctx)
-				So(cache.Len(), ShouldEqual, 500)
+				assert.Loosely(t, cache.Len(), should.Equal(500))
 			})
 		})
 	})
@@ -288,38 +291,38 @@ func TestUnboundedCacheWithExpiry(t *testing.T) {
 func TestGetOrCreate(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An unbounded cache`, t, func() {
+	ftt.Run(`An unbounded cache`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`Can create a new value, and will synchronize around that creation`, func() {
+		t.Run(`Can create a new value, and will synchronize around that creation`, func(t *ftt.Test) {
 			cache := New[string, string](0)
 
 			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "bar", 0, nil
 			})
-			So(err, ShouldBeNil)
-			So(v, ShouldEqual, "bar")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Equal("bar"))
 
 			v, ok := cache.Get(ctx, "foo")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "bar")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("bar"))
 		})
 
-		Convey(`Will not retain a value if an error is returned.`, func() {
+		t.Run(`Will not retain a value if an error is returned.`, func(t *ftt.Test) {
 			cache := New[string, string](0)
 
 			errWat := errors.New("wat")
 			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "", 0, errWat
 			})
-			So(err, ShouldEqual, errWat)
-			So(v, ShouldEqual, "")
+			assert.Loosely(t, err, should.Equal(errWat))
+			assert.Loosely(t, v, should.BeEmpty)
 
 			_, ok := cache.Get(ctx, "foo")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey(`Will call Maker in series, even with multiple callers, and lock individually.`, func(cc C) {
+		t.Run(`Will call Maker in series, even with multiple callers, and lock individually.`, func(t *ftt.Test) {
 			const count = 16
 			const contention = 16
 
@@ -331,29 +334,29 @@ func TestGetOrCreate(t *testing.T) {
 				for j := 0; j < contention; j++ {
 					i := i
 					wg.Add(1)
-					go func(cctx C) {
+					go func(t testing.TB) {
 						defer wg.Done()
 						v, err := cache.GetOrCreate(ctx, i, func() (int, time.Duration, error) {
 							val := vals[i]
 							vals[i]++
 							return val, 0, nil
 						})
-						cc.So(v, ShouldEqual, 0)
-						cc.So(err, ShouldBeNil)
-					}(cc)
+						assert.Loosely(t, v, should.BeZero)
+						assert.Loosely(t, err, should.BeNil)
+					}(t)
 				}
 			}
 
 			wg.Wait()
 			for i := 0; i < count; i++ {
 				v, ok := cache.Get(ctx, i)
-				So(ok, ShouldBeTrue)
-				So(v, ShouldEqual, 0)
-				So(vals[i], ShouldEqual, 1)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, v, should.BeZero)
+				assert.Loosely(t, vals[i], should.Equal(1))
 			}
 		})
 
-		Convey(`Can retrieve values while a Maker is in-progress.`, func() {
+		t.Run(`Can retrieve values while a Maker is in-progress.`, func(t *ftt.Test) {
 			cache := New[string, string](0)
 			cache.Put(ctx, "foo", "bar", 0)
 
@@ -361,8 +364,8 @@ func TestGetOrCreate(t *testing.T) {
 			v, err := cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "baz", 0, nil
 			})
-			So(err, ShouldBeNil)
-			So(v, ShouldEqual, "bar")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Equal("bar"))
 
 			// Create a new value.
 			changingC := make(chan struct{})
@@ -387,39 +390,38 @@ func TestGetOrCreate(t *testing.T) {
 			v, err = cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "never", 0, nil
 			})
-			So(err, ShouldBeNil)
-			So(v, ShouldEqual, "bar")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Equal("bar"))
 
 			// Our goroutine has finished setting. Validate its output.
 			close(waitC)
 			<-doneC
 
-			So(setErr, ShouldBeNil)
-			So(setV, ShouldEqual, "qux")
+			assert.Loosely(t, setErr, should.BeNil)
+			assert.Loosely(t, setV, should.Equal("qux"))
 
 			// Run GetOrCreate. The value should be present, and should hold the new
 			// value added by the goroutine.
 			v, err = cache.GetOrCreate(ctx, "foo", func() (string, time.Duration, error) {
 				return "never", 0, nil
 			})
-			So(err, ShouldBeNil)
-			So(v, ShouldEqual, "qux")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Equal("qux"))
 		})
 	})
 }
 
-func shouldHaveValues(actual any, expected ...any) string {
-	cache := actual.(*Cache[string, string])
-
-	actualSnapshot := map[string]string{}
-	for k, e := range cache.cache {
-		actualSnapshot[k] = e.v
-	}
-
+func shouldHaveValues(expected ...string) comparison.Func[*Cache[string, string]] {
 	expectedSnapshot := map[string]string{}
 	for _, k := range expected {
-		expectedSnapshot[k.(string)] = k.(string) + "v"
+		expectedSnapshot[k] = k + "v"
 	}
 
-	return ShouldResemble(actualSnapshot, expectedSnapshot)
+	return func(actual *Cache[string, string]) *failure.Summary {
+		actualSnapshot := map[string]string{}
+		for k, e := range actual.cache {
+			actualSnapshot[k] = e.v
+		}
+		return should.Match(expectedSnapshot)(actualSnapshot)
+	}
 }

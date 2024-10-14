@@ -23,7 +23,10 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testCase struct {
@@ -68,25 +71,25 @@ var cases = testCaseSlice{
 
 func TestWrite(t *testing.T) {
 	t.Parallel()
-	Convey("WriteFuncs", t, func() {
+	ftt.Run("WriteFuncs", t, func(t *ftt.Test) {
 		for _, c := range cases {
 			c := c
-			Convey(fmt.Sprintf("%d -> % x", c.val, c.expect), func() {
-				Convey("Write", func() {
+			t.Run(fmt.Sprintf("%d -> % x", c.val, c.expect), func(t *ftt.Test) {
+				t.Run("Write", func(t *ftt.Test) {
 					buf := &bytes.Buffer{}
 					n, err := WriteInt(buf, c.val)
-					So(err, ShouldBeNil)
-					So(n, ShouldEqual, len(c.expect))
-					So(buf.Bytes(), ShouldResemble, c.expect)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, n, should.Equal(len(c.expect)))
+					assert.Loosely(t, buf.Bytes(), should.Resemble(c.expect))
 				})
 
 				if c.val >= 0 {
-					Convey("WriteUint", func() {
+					t.Run("WriteUint", func(t *ftt.Test) {
 						buf := &bytes.Buffer{}
 						n, err := WriteUint(buf, uint64(c.val))
-						So(err, ShouldBeNil)
-						So(n, ShouldEqual, len(c.expect))
-						So(buf.Bytes(), ShouldResemble, c.expect)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, n, should.Equal(len(c.expect)))
+						assert.Loosely(t, buf.Bytes(), should.Resemble(c.expect))
 					})
 				}
 			})
@@ -95,22 +98,22 @@ func TestWrite(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	Convey("Read", t, func() {
+	ftt.Run("Read", t, func(t *ftt.Test) {
 		for _, c := range cases {
 			c := c
-			Convey(fmt.Sprintf("% x -> %d", c.expect, c.val), func() {
+			t.Run(fmt.Sprintf("% x -> %d", c.expect, c.val), func(t *ftt.Test) {
 				buf := bytes.NewBuffer(c.expect)
 				v, n, err := ReadInt(buf)
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, len(c.expect))
-				So(v, ShouldEqual, c.val)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(len(c.expect)))
+				assert.Loosely(t, v, should.Equal(c.val))
 
 				if c.val >= 0 {
 					buf := bytes.NewBuffer(c.expect)
 					v, n, err := ReadUint(buf)
-					So(err, ShouldBeNil)
-					So(n, ShouldEqual, len(c.expect))
-					So(v, ShouldEqual, uint64(c.val))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, n, should.Equal(len(c.expect)))
+					assert.Loosely(t, v, should.Equal(uint64(c.val)))
 				}
 			})
 		}
@@ -146,14 +149,14 @@ func TestSort(t *testing.T) {
 		return ""
 	}
 
-	Convey("TestSort", t, func() {
+	ftt.Run("TestSort", t, func(t *ftt.Test) {
 		prev := randomCases[0]
 		for _, c := range randomCases[1:] {
 			// Actually asserting with the So for every entry in the sorted array will
 			// produce 100 green checkmarks on a successful test, which is a bit
 			// much :).
 			if bytes.Compare(c.expect, prev.expect) < 0 {
-				So(c.expect, shouldBeLessThanOrEqual, prev.expect)
+				assert.Loosely(t, c.expect, convey.Adapt(shouldBeLessThanOrEqual)(prev.expect))
 				break
 			}
 			prev = c
@@ -162,7 +165,7 @@ func TestSort(t *testing.T) {
 		// This silly assertion is done so that this test has a green check next to
 		// it in the event that it passes. Otherwise convey thinks we skipped the
 		// test, which isn't correct.
-		So(true, ShouldBeTrue)
+		assert.Loosely(t, true, should.BeTrue)
 	})
 }
 
@@ -234,32 +237,32 @@ func TestErrors(t *testing.T) {
 		},
 	}
 
-	Convey("Error conditions", t, func() {
-		for _, t := range tests {
-			Convey(t.name, func() {
-				Convey("Read", func() {
-					v, _, err := ReadInt(bytes.NewBuffer(t.buf))
-					So(err, ShouldEqual, t.err)
-					if t.err == nil {
-						So(v, ShouldEqual, t.v)
+	ftt.Run("Error conditions", t, func(t *ftt.Test) {
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *ftt.Test) {
+				t.Run("Read", func(t *ftt.Test) {
+					v, _, err := ReadInt(bytes.NewBuffer(tc.buf))
+					assert.Loosely(t, err, should.Equal(tc.err))
+					if tc.err == nil {
+						assert.Loosely(t, v, should.Equal(tc.v))
 					}
 				})
-				Convey("ReadUint", func() {
-					uv, _, err := ReadUint(bytes.NewBuffer(t.buf))
-					So(err, ShouldEqual, t.uerr)
-					if t.uerr == nil {
-						So(uv, ShouldEqual, t.uv)
+				t.Run("ReadUint", func(t *ftt.Test) {
+					uv, _, err := ReadUint(bytes.NewBuffer(tc.buf))
+					assert.Loosely(t, err, should.Equal(tc.uerr))
+					if tc.uerr == nil {
+						assert.Loosely(t, uv, should.Equal(tc.uv))
 					}
 				})
 			})
 		}
-		Convey("Write Errors", func() {
+		t.Run("Write Errors", func(t *ftt.Test) {
 			// Test each error return location in writeSignMag
 			for count := 0; count < 3; count++ {
 				fw := &fakeWriter{count}
 				_, err := WriteInt(fw, -10000)
-				So(err.Error(), ShouldContainSubstring, "nope")
-				So(fw.count, ShouldEqual, 0)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("nope"))
+				assert.Loosely(t, fw.count, should.BeZero)
 			}
 		})
 	})
