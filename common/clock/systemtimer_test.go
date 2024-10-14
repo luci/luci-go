@@ -19,92 +19,94 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSystemTimer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A systemTimer instance`, t, func() {
+	ftt.Run(`A systemTimer instance`, t, func(t *ftt.Test) {
 		ctx, cancelFunc := context.WithCancel(context.Background())
-		t := GetSystemClock().NewTimer(ctx)
-		defer t.Stop()
+		timer := GetSystemClock().NewTimer(ctx)
+		defer timer.Stop()
 
-		Convey(`Should start with a non-nil channel.`, func() {
-			So(t.GetC(), ShouldNotBeNil)
+		t.Run(`Should start with a non-nil channel.`, func(t *ftt.Test) {
+			assert.Loosely(t, timer.GetC(), should.NotBeNil)
 		})
 
-		Convey(`When stopped, should return inactive.`, func() {
-			So(t.Stop(), ShouldBeFalse)
+		t.Run(`When stopped, should return inactive.`, func(t *ftt.Test) {
+			assert.Loosely(t, timer.Stop(), should.BeFalse)
 		})
 
-		Convey(`Will return immediately if the Context is canceled before Reset.`, func() {
+		t.Run(`Will return immediately if the Context is canceled before Reset.`, func(t *ftt.Test) {
 			cancelFunc()
 
-			t.Reset(veryLongTime)
-			So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+			timer.Reset(veryLongTime)
+			assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 		})
 
-		Convey(`Will return if the Context is canceled after Reset.`, func() {
-			t.Reset(veryLongTime)
+		t.Run(`Will return if the Context is canceled after Reset.`, func(t *ftt.Test) {
+			timer.Reset(veryLongTime)
 			cancelFunc()
 
-			So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+			assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 		})
 
-		Convey(`A timer will use the same channel when Reset.`, func() {
-			timerC := t.GetC()
+		t.Run(`A timer will use the same channel when Reset.`, func(t *ftt.Test) {
+			timerC := timer.GetC()
 
 			// Reset our timer to something more reasonable. It should trigger the
 			// timer channel, which should trigger our
-			t.Reset(timeBase)
-			So((<-timerC).Err, ShouldBeNil)
+			timer.Reset(timeBase)
+			assert.Loosely(t, (<-timerC).Err, should.BeNil)
 		})
 
-		Convey(`A timer will not signal if stopped.`, func() {
-			t.Reset(timeBase)
-			t.Stop()
+		t.Run(`A timer will not signal if stopped.`, func(t *ftt.Test) {
+			timer.Reset(timeBase)
+			timer.Stop()
 
 			// This isn't a perfect test, but it's a good boundary for flake.
 			time.Sleep(3 * timeBase)
 
 			triggered := false
 			select {
-			case <-t.GetC():
+			case <-timer.GetC():
 				triggered = true
 			default:
 				break
 			}
-			So(triggered, ShouldBeFalse)
+			assert.Loosely(t, triggered, should.BeFalse)
 		})
 
-		Convey(`When reset`, func() {
-			So(t.Reset(veryLongTime), ShouldBeFalse)
+		t.Run(`When reset`, func(t *ftt.Test) {
+			assert.Loosely(t, timer.Reset(veryLongTime), should.BeFalse)
 
-			Convey(`When reset again to a short duration, should return that it was active and trigger.`, func() {
+			t.Run(`When reset again to a short duration, should return that it was active and trigger.`, func(t *ftt.Test) {
 				// Upper bound of supported platform resolution. Windows is 15ms, so
 				// make sure we exceed that.
-				So(t.Reset(timeBase), ShouldBeTrue)
-				So((<-t.GetC()).IsZero(), ShouldBeFalse)
+				assert.Loosely(t, timer.Reset(timeBase), should.BeTrue)
+				assert.Loosely(t, (<-timer.GetC()).IsZero(), should.BeFalse)
 
 				// Again (reschedule).
-				So(t.Reset(timeBase), ShouldBeFalse)
-				So((<-t.GetC()).IsZero(), ShouldBeFalse)
+				assert.Loosely(t, timer.Reset(timeBase), should.BeFalse)
+				assert.Loosely(t, (<-timer.GetC()).IsZero(), should.BeFalse)
 			})
 
-			Convey(`When stopped, should return active and have a non-nil C.`, func() {
-				active := t.Stop()
-				So(active, ShouldBeTrue)
-				So(t.GetC(), ShouldNotBeNil)
+			t.Run(`When stopped, should return active and have a non-nil C.`, func(t *ftt.Test) {
+				active := timer.Stop()
+				assert.Loosely(t, active, should.BeTrue)
+				assert.Loosely(t, timer.GetC(), should.NotBeNil)
 			})
 
-			Convey(`When stopped, should return active.`, func() {
-				active := t.Stop()
-				So(active, ShouldBeTrue)
+			t.Run(`When stopped, should return active.`, func(t *ftt.Test) {
+				active := timer.Stop()
+				assert.Loosely(t, active, should.BeTrue)
 			})
 
-			Convey(`Should have a non-nil channel.`, func() {
-				So(t.GetC(), ShouldNotBeNil)
+			t.Run(`Should have a non-nil channel.`, func(t *ftt.Test) {
+				assert.Loosely(t, timer.GetC(), should.NotBeNil)
 			})
 		})
 	})

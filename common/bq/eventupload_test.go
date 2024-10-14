@@ -26,24 +26,26 @@ import (
 
 	"go.chromium.org/luci/common/bq/testdata"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMetric(t *testing.T) {
 	t.Parallel()
 	u := Uploader{}
 	u.UploadsMetricName = "fakeCounter"
-	Convey("Test metric creation", t, func() {
-		Convey("Expect uploads metric was created", func() {
+	ftt.Run("Test metric creation", t, func(t *ftt.Test) {
+		t.Run("Expect uploads metric was created", func(t *ftt.Test) {
 			_ = u.getCounter() // To actually create the metric
-			So(u.uploads.Info().Name, ShouldEqual, "fakeCounter")
+			assert.Loosely(t, u.uploads.Info().Name, should.Equal("fakeCounter"))
 		})
 	})
 }
 
 func TestSave(t *testing.T) {
-	Convey("filled", t, func() {
+	ftt.Run("filled", t, func(t *ftt.Test) {
 		recentTime := testclock.TestRecentTimeUTC
 		ts := timestamppb.New(recentTime)
 
@@ -93,9 +95,9 @@ func TestSave(t *testing.T) {
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "testid")
-		So(row, ShouldResemble, map[string]bigquery.Value{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal("testid"))
+		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 			"name":      "testname",
 			"timestamp": recentTime,
 			"nested":    map[string]bigquery.Value{"name": "nestedname"},
@@ -126,10 +128,10 @@ func TestSave(t *testing.T) {
 			"string_proto_map": []any{
 				map[string]bigquery.Value{"key": "p_map_key", "value": map[string]bigquery.Value{"name": "nestedname"}},
 			},
-		})
+		}))
 	})
 
-	Convey("known proto types", t, func() {
+	ftt.Run("known proto types", t, func(t *ftt.Test) {
 		recentTime := testclock.TestRecentTimeUTC
 		ts := timestamppb.New(recentTime)
 		inputStruct := &structpb.Struct{
@@ -149,77 +151,77 @@ func TestSave(t *testing.T) {
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "testid")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal("testid"))
 
-		So(row, ShouldContainKey, "name")
-		So(row, ShouldContainKey, "timestamp")
-		So(row, ShouldContainKey, "struct")
-		So(row, ShouldContainKey, "duration")
+		assert.Loosely(t, row, should.ContainKey("name"))
+		assert.Loosely(t, row, should.ContainKey("timestamp"))
+		assert.Loosely(t, row, should.ContainKey("struct"))
+		assert.Loosely(t, row, should.ContainKey("duration"))
 
-		So(row["name"], ShouldEqual, "testname")
-		So(row["timestamp"], ShouldEqual, recentTime)
-		So(row["duration"], ShouldEqual, 2.003)
+		assert.Loosely(t, row["name"], should.Equal("testname"))
+		assert.Loosely(t, row["timestamp"], should.Match(recentTime))
+		assert.Loosely(t, row["duration"], should.Equal(2.003))
 
 		outputStruct := &structpb.Struct{}
 		bytesString, ok := row["struct"].(string)
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, ok, should.BeTrue)
 		err = outputStruct.UnmarshalJSON([]byte(bytesString))
-		So(err, ShouldBeNil)
-		So(outputStruct, ShouldResemble, inputStruct)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, outputStruct, should.Resemble(inputStruct))
 	})
 
-	Convey("empty", t, func() {
+	ftt.Run("empty", t, func(t *ftt.Test) {
 		r := &Row{
 			Message:  &testdata.TestMessage{},
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "testid")
-		So(row, ShouldResemble, map[string]bigquery.Value{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal("testid"))
+		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 			// only scalar proto fields
 			// because for them, proto3 does not distinguish empty and unset
 			// values.
 			"bq_type_override": int64(0),
 			"foo":              "X", // enums are always set
 			"name":             "",  // in proto3, empty string and unset are indistinguishable
-		})
+		}))
 	})
 
-	Convey("empty optional enum", t, func() {
+	ftt.Run("empty optional enum", t, func(t *ftt.Test) {
 		r := &Row{
 			Message:  &testdata.TestOptionalEnumMessage{},
 			InsertID: "testid",
 		}
 		row, id, err := r.Save()
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, "testid")
-		So(row, ShouldResemble, map[string]bigquery.Value{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal("testid"))
+		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 			// only scalar proto fields
 			// because for them, proto3 does not distinguish empty and unset
 			// values.
 			"bar":  "Q", // enums are always set
 			"name": "",  // in proto3, empty string and unset are indistinguishable
-		})
+		}))
 	})
 
-	Convey("repeated fields", t, func() {
-		Convey("empty message", func() {
+	ftt.Run("repeated fields", t, func(t *ftt.Test) {
+		t.Run("empty message", func(t *ftt.Test) {
 			r := &Row{
 				Message:  &testdata.TestRepeatedFieldMessage{},
 				InsertID: "testid",
 			}
 			row, id, err := r.Save()
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, "testid")
-			So(row, ShouldResemble, map[string]bigquery.Value{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, id, should.Equal("testid"))
+			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 				// only scalar proto fields (ie. Name)
 				"name": "",
-			})
+			}))
 		})
 
-		Convey("arrays of empty values", func() {
+		t.Run("arrays of empty values", func(t *ftt.Test) {
 			r := &Row{
 				Message: &testdata.TestRepeatedFieldMessage{
 					Name:    "",
@@ -231,9 +233,9 @@ func TestSave(t *testing.T) {
 				InsertID: "testid",
 			}
 			row, id, err := r.Save()
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, "testid")
-			So(row, ShouldResemble, map[string]bigquery.Value{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, id, should.Equal("testid"))
+			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 				// only scalar proto fields (ie. strings)
 				"name":    "",
 				"strings": []any{"", ""},
@@ -241,10 +243,10 @@ func TestSave(t *testing.T) {
 					map[string]bigquery.Value{"name": ""},
 					map[string]bigquery.Value{"name": ""},
 				},
-			})
+			}))
 		})
 
-		Convey("arrays of filled values", func() {
+		t.Run("arrays of filled values", func(t *ftt.Test) {
 			r := &Row{
 				Message: &testdata.TestRepeatedFieldMessage{
 					Name:    "Repeated Fields",
@@ -262,9 +264,9 @@ func TestSave(t *testing.T) {
 				InsertID: "testid",
 			}
 			row, id, err := r.Save()
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, "testid")
-			So(row, ShouldResemble, map[string]bigquery.Value{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, id, should.Equal("testid"))
+			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
 				"name":    "Repeated Fields",
 				"strings": []any{"string1", "string2"},
 				"bar":     []any{"Q", "R"},
@@ -272,7 +274,7 @@ func TestSave(t *testing.T) {
 					map[string]bigquery.Value{"name": "nested1"},
 					map[string]bigquery.Value{"name": "nested2"},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -280,7 +282,7 @@ func TestSave(t *testing.T) {
 func TestBatch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test batch", t, func() {
+	ftt.Run("Test batch", t, func(t *ftt.Test) {
 		rowLimit := 2
 		rows := make([]*Row, 3)
 		for i := 0; i < 3; i++ {
@@ -292,6 +294,16 @@ func TestBatch(t *testing.T) {
 			{{}},
 		}
 		rowSets := batch(rows, rowLimit)
-		So(rowSets, ShouldResemble, want)
+		assert.Loosely(t, rowSets, should.HaveLength(len(want)))
+		for i, set := range rowSets {
+			targ := want[i]
+			assert.Loosely(t, set, should.HaveLength(len(targ)))
+			for j, itm := range set {
+				assert.Loosely(t, itm.Message, should.Match(targ[j].Message),
+					truth.Explain("want[%d][%d]", i, j))
+				assert.Loosely(t, itm.InsertID, should.Match(targ[j].InsertID),
+					truth.Explain("want[%d][%d]", i, j))
+			}
+		}
 	})
 }

@@ -16,16 +16,18 @@ package bq
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAddMissingFields(t *testing.T) {
-	Convey("Rename field", t, func() {
+	ftt.Run("Rename field", t, func(t *ftt.Test) {
 		from := bigquery.Schema{
 			{
 				Name: "a",
@@ -63,7 +65,7 @@ func TestAddMissingFields(t *testing.T) {
 			},
 		}
 		AddMissingFields(&to, from)
-		So(to, ShouldResemble, bigquery.Schema{
+		assert.Loosely(t, to, should.Resemble(bigquery.Schema{
 			{
 				Name: "e",
 				Type: bigquery.IntegerFieldType,
@@ -86,12 +88,12 @@ func TestAddMissingFields(t *testing.T) {
 				Name: "a",
 				Type: bigquery.IntegerFieldType,
 			},
-		})
+		}))
 	})
 }
 
 func TestDescription(t *testing.T) {
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		f := &descriptorpb.FileDescriptorProto{}
 		int64t := descriptorpb.FieldDescriptorProto_TYPE_INT64
 		field := &descriptorpb.FieldDescriptorProto{
@@ -108,10 +110,10 @@ func TestDescription(t *testing.T) {
 			},
 		}
 		resp := c.description(f, field)
-		So(lComment, ShouldEqualTrimSpace, resp)
+		assert.Loosely(t, strings.TrimSpace(lComment), should.Equal(resp))
 	})
 
-	Convey("Happy path with Enum", t, func() {
+	ftt.Run("Happy path with Enum", t, func(t *ftt.Test) {
 		pkgName := "bar"
 		typeName := "foo"
 		fullName := pkgName + "." + typeName
@@ -152,10 +154,10 @@ func TestDescription(t *testing.T) {
 		}
 		resp := c.description(f, field)
 		expect := lComment + validStates + longName + "."
-		So(expect, ShouldEqualTrimSpace, resp)
+		assert.Loosely(t, strings.TrimSpace(expect), should.Equal(resp))
 	})
 
-	Convey("Happy path with Enum truncated", t, func() {
+	ftt.Run("Happy path with Enum truncated", t, func(t *ftt.Test) {
 		pkgName := "bar"
 		typeName := "foo"
 		fullName := pkgName + "." + typeName
@@ -197,6 +199,6 @@ func TestDescription(t *testing.T) {
 		}
 		resp := c.description(f, field)
 		expect := lComment + "...(truncated)"
-		So(expect, ShouldEqualTrimSpace, resp)
+		assert.Loosely(t, strings.TrimSpace(expect), should.Equal(resp))
 	})
 }

@@ -20,18 +20,20 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 )
 
 func TestRefSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("RefSet", t, func() {
+	ftt.Run("RefSet", t, func(t *ftt.Test) {
 		wr := NewRefSet([]string{
 			`refs/heads/master`,
 			`regexp:refs/branch-heads/\d+\.\d+`,
@@ -39,35 +41,37 @@ func TestRefSet(t *testing.T) {
 			`refs/missing/exact`,
 		})
 
-		Convey("explicit refs", func() {
-			So(wr.Has("refs/heads/master"), ShouldBeTrue)
-			So(wr.Has("refs/heads/foo"), ShouldBeFalse)
+		t.Run("explicit refs", func(t *ftt.Test) {
+			assert.Loosely(t, wr.Has("refs/heads/master"), should.BeTrue)
+			assert.Loosely(t, wr.Has("refs/heads/foo"), should.BeFalse)
 		})
 
-		Convey("regexp refs", func() {
-			So(wr.Has("refs/branch-heads/1.12"), ShouldBeTrue)
-			So(wr.Has("refs/branch-heads/1.12.123"), ShouldBeFalse)
+		t.Run("regexp refs", func(t *ftt.Test) {
+			assert.Loosely(t, wr.Has("refs/branch-heads/1.12"), should.BeTrue)
+			assert.Loosely(t, wr.Has("refs/branch-heads/1.12.123"), should.BeFalse)
 		})
 
-		Convey("resolve ref tips", func() {
+		t.Run("resolve ref tips", func(t *ftt.Test) {
 			ctx := context.Background()
 			ctl := gomock.NewController(t)
-			defer ctl.Finish()
 			mockClient := mock_gitiles.NewMockGitilesClient(ctl)
 
-			mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
-				Project: "project", RefsPath: "refs/heads",
-			})).Return(
-				&gitiles.RefsResponse{Revisions: map[string]string{
-					"refs/heads/master": "01234567",
-					"refs/heads/foobar": "89abcdef",
-				}}, nil,
-			)
-			mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
-				Project: "project", RefsPath: "refs/missing",
-			})).Return(&gitiles.RefsResponse{}, nil)
+			commonExpect := func() {
+				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
+					Project: "project", RefsPath: "refs/heads",
+				})).Return(
+					&gitiles.RefsResponse{Revisions: map[string]string{
+						"refs/heads/master": "01234567",
+						"refs/heads/foobar": "89abcdef",
+					}}, nil,
+				)
+				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
+					Project: "project", RefsPath: "refs/missing",
+				})).Return(&gitiles.RefsResponse{}, nil)
+			}
 
-			Convey("normal", func() {
+			t.Run("normal", func(t *ftt.Test) {
+				commonExpect()
 				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
 				})).Return(
@@ -79,16 +83,17 @@ func TestRefSet(t *testing.T) {
 				)
 
 				refTips, missing, err := wr.Resolve(ctx, mockClient, "project")
-				So(err, ShouldBeNil)
-				So(refTips, ShouldResemble, map[string]string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, refTips, should.Resemble(map[string]string{
 					"refs/heads/master":      "01234567",
 					"refs/branch-heads/1.9":  "cafedead",
 					"refs/branch-heads/1.10": "deadcafe",
-				})
-				So(missing, ShouldResemble, []string{`refs/missing/exact`, `regexp:refs/missing/many.+`})
+				}))
+				assert.Loosely(t, missing, should.Resemble([]string{`refs/missing/exact`, `regexp:refs/missing/many.+`}))
 			})
 
-			Convey("failed RPCs", func() {
+			t.Run("failed RPCs", func(t *ftt.Test) {
+				commonExpect()
 				mockClient.EXPECT().Refs(gomock.Any(), proto.MatcherEqual(&gitiles.RefsRequest{
 					Project: "project", RefsPath: "refs/branch-heads",
 				})).Return(
@@ -96,76 +101,76 @@ func TestRefSet(t *testing.T) {
 				)
 
 				_, _, err := wr.Resolve(ctx, mockClient, "project")
-				So(err.Error(), ShouldContainSubstring, "foobar")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("foobar"))
 			})
 		})
 	})
 
-	Convey("ValidateRefSet", t, func() {
+	ftt.Run("ValidateRefSet", t, func(t *ftt.Test) {
 		ctx := &validation.Context{Context: context.Background()}
 
-		Convey("plain refs", func() {
-			Convey("too few slashes", func() {
+		t.Run("plain refs", func(t *ftt.Test) {
+			t.Run("too few slashes", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`refs/foo`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`fewer than 2 slashes in ref "refs/foo"`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(
+					`fewer than 2 slashes in ref "refs/foo"`))
 			})
-			Convey("does not start with refs/", func() {
+			t.Run("does not start with refs/", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`foo/bar/baz`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`ref must start with 'refs/' not "foo/bar/baz"`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(
+					`ref must start with 'refs/' not "foo/bar/baz"`))
 			})
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`refs/heads/master`})
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
 		})
 
-		Convey("regexp refs", func() {
-			Convey("starts with ^ or ends with $", func() {
+		t.Run("regexp refs", func(t *ftt.Test) {
+			t.Run("starts with ^ or ends with $", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:^refs/branch-heads/\d+\.\d+$`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`^ and $ qualifiers are added automatically, please remove them`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(
+					`^ and $ qualifiers are added automatically, please remove them`))
 			})
-			Convey("invalid regexp", func() {
+			t.Run("invalid regexp", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:([{`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring, `invalid regexp`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(`invalid regexp`))
 			})
-			Convey("matches single ref only is fine", func() {
+			t.Run("matches single ref only is fine", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:refs/h[e]ad(s)/m[a]ster`})
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
-			Convey("fewer than 2 slashes in literal prefix", func() {
+			t.Run("fewer than 2 slashes in literal prefix", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch[-_]heads/\d+\/\d+`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`fewer than 2 slashes in literal prefix "refs/branch"`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(
+					`fewer than 2 slashes in literal prefix "refs/branch"`))
 			})
-			Convey("does not start with refs/", func() {
+			t.Run("does not start with refs/", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:foo/branch-heads/\d+\/\d+`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`literal prefix "foo/branch-heads/" must start with "refs/"`)
+				assert.Loosely(t, ctx.Finalize().Error(), should.ContainSubstring(
+					`literal prefix "foo/branch-heads/" must start with "refs/"`))
 			})
-			Convey("non-trivial ref prefix is supported", func() {
+			t.Run("non-trivial ref prefix is supported", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:refs/foo\.bar/\d+`})
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
-			Convey("not-trivial literal prefix is supported", func() {
+			t.Run("not-trivial literal prefix is supported", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch-heads/(6\.8|6\.9)\.\d+`})
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch-heads/\d+\.\d+`})
-				So(ctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, ctx.Finalize(), should.BeNil)
 			})
 		})
 	})
 
-	Convey("smoke test of LiteralPrefix not working as expected", t, func() {
+	ftt.Run("smoke test of LiteralPrefix not working as expected", t, func(t *ftt.Test) {
 		r := "refs/heads/\\d+\\.\\d+.\\d"
 		l1, _ := regexp.MustCompile(r).LiteralPrefix()
 		l2, _ := regexp.MustCompile("^" + r + "$").LiteralPrefix()
-		So(l1, ShouldResemble, "refs/heads/")
-		So(l2, ShouldResemble, "") // See https://github.com/golang/go/issues/30425
+		assert.Loosely(t, l1, should.Match("refs/heads/"))
+		assert.Loosely(t, l2, should.BeBlank) // See https://github.com/golang/go/issues/30425
 		NewRefSet([]string{"regexp:" + r})
 	})
 }

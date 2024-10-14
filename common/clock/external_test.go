@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // testClock is a Clock implementation used for testing.
@@ -45,22 +47,22 @@ func TestExternal(t *testing.T) {
 	t.Parallel()
 
 	now := time.Date(2015, 01, 01, 0, 0, 0, 0, time.UTC)
-	Convey(`A Context with a testClock installed`, t, func() {
+	ftt.Run(`A Context with a testClock installed`, t, func(t *ftt.Test) {
 		tc := &testClock{}
 		c := Set(context.Background(), tc)
 
-		Convey(`Now() will use the testClock's Now().`, func() {
+		t.Run(`Now() will use the testClock's Now().`, func(t *ftt.Test) {
 			used := false
 			tc.nowCallback = func() time.Time {
 				used = true
 				return now
 			}
 
-			So(Now(c), ShouldResemble, now)
-			So(used, ShouldBeTrue)
+			assert.Loosely(t, Now(c), should.Resemble(now))
+			assert.Loosely(t, used, should.BeTrue)
 		})
 
-		Convey(`Sleep() will use testClock's Sleep().`, func() {
+		t.Run(`Sleep() will use testClock's Sleep().`, func(t *ftt.Test) {
 			used := false
 			tc.sleepCallback = func() TimerResult {
 				used = true
@@ -68,10 +70,10 @@ func TestExternal(t *testing.T) {
 			}
 
 			Sleep(c, time.Second)
-			So(used, ShouldBeTrue)
+			assert.Loosely(t, used, should.BeTrue)
 		})
 
-		Convey(`NewTimer() will use testClock's NewTimer().`, func() {
+		t.Run(`NewTimer() will use testClock's NewTimer().`, func(t *ftt.Test) {
 			used := false
 			tc.newTimerCallback = func() Timer {
 				used = true
@@ -79,15 +81,15 @@ func TestExternal(t *testing.T) {
 			}
 
 			NewTimer(c)
-			So(used, ShouldBeTrue)
+			assert.Loosely(t, used, should.BeTrue)
 		})
 	})
 
-	Convey(`An Context with no clock installed`, t, func() {
+	ftt.Run(`An Context with no clock installed`, t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey(`Will return a SystemClock instance.`, func() {
-			So(Get(c), ShouldHaveSameTypeAs, systemClock{})
+		t.Run(`Will return a SystemClock instance.`, func(t *ftt.Test) {
+			assert.Loosely(t, Get(c), should.HaveType[systemClock])
 		})
 	})
 }

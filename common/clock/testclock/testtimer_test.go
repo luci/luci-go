@@ -23,8 +23,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // trashTimer is a useless implementation of clock.Timer specifically designed
@@ -36,133 +37,133 @@ type trashTimer struct {
 func TestTestTimer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing clock instance`, t, func() {
+	ftt.Run(`A testing clock instance`, t, func(t *ftt.Test) {
 		ctx, cancelFunc := context.WithCancel(context.Background())
 		defer cancelFunc()
 
 		now := TestTimeLocal
 		clk := New(now)
 
-		Convey(`A timer instance`, func() {
-			t := clk.NewTimer(ctx)
+		t.Run(`A timer instance`, func(t *ftt.Test) {
+			timer := clk.NewTimer(ctx)
 
-			Convey(`Should have a non-nil C.`, func() {
-				So(t.GetC(), ShouldNotBeNil)
+			t.Run(`Should have a non-nil C.`, func(t *ftt.Test) {
+				assert.Loosely(t, timer.GetC(), should.NotBeNil)
 			})
 
-			Convey(`When activated`, func() {
-				So(t.Reset(1*time.Second), ShouldBeFalse)
+			t.Run(`When activated`, func(t *ftt.Test) {
+				assert.Loosely(t, timer.Reset(1*time.Second), should.BeFalse)
 
-				Convey(`When reset, should return active.`, func() {
-					So(t.Reset(1*time.Hour), ShouldBeTrue)
-					So(t.GetC(), ShouldNotBeNil)
+				t.Run(`When reset, should return active.`, func(t *ftt.Test) {
+					assert.Loosely(t, timer.Reset(1*time.Hour), should.BeTrue)
+					assert.Loosely(t, timer.GetC(), should.NotBeNil)
 				})
 
-				Convey(`When stopped, should return active.`, func() {
-					So(t.Stop(), ShouldBeTrue)
-					So(t.GetC(), ShouldNotBeNil)
+				t.Run(`When stopped, should return active.`, func(t *ftt.Test) {
+					assert.Loosely(t, timer.Stop(), should.BeTrue)
+					assert.Loosely(t, timer.GetC(), should.NotBeNil)
 
-					Convey(`And when stopped again, should return inactive.`, func() {
-						So(t.Stop(), ShouldBeFalse)
-						So(t.GetC(), ShouldNotBeNil)
+					t.Run(`And when stopped again, should return inactive.`, func(t *ftt.Test) {
+						assert.Loosely(t, timer.Stop(), should.BeFalse)
+						assert.Loosely(t, timer.GetC(), should.NotBeNil)
 					})
 				})
 
-				Convey(`When stopped after expiring, will return false.`, func() {
+				t.Run(`When stopped after expiring, will return false.`, func(t *ftt.Test) {
 					clk.Add(1 * time.Second)
-					So(t.Stop(), ShouldBeFalse)
+					assert.Loosely(t, timer.Stop(), should.BeFalse)
 
 					var signalled bool
 					select {
-					case <-t.GetC():
+					case <-timer.GetC():
 						signalled = true
 					default:
 						break
 					}
-					So(signalled, ShouldBeTrue)
+					assert.Loosely(t, signalled, should.BeTrue)
 				})
 			})
 
-			Convey(`Should successfully signal.`, func() {
-				So(t.Reset(1*time.Second), ShouldBeFalse)
+			t.Run(`Should successfully signal.`, func(t *ftt.Test) {
+				assert.Loosely(t, timer.Reset(1*time.Second), should.BeFalse)
 				clk.Add(1 * time.Second)
 
-				So(<-t.GetC(), ShouldResemble, clock.TimerResult{Time: now.Add(1 * time.Second)})
+				assert.Loosely(t, <-timer.GetC(), should.Resemble(clock.TimerResult{Time: now.Add(1 * time.Second)}))
 			})
 
-			Convey(`Should signal immediately if the timer is in the past.`, func() {
-				So(t.Reset(-1*time.Second), ShouldBeFalse)
-				So(<-t.GetC(), ShouldResemble, clock.TimerResult{Time: now})
+			t.Run(`Should signal immediately if the timer is in the past.`, func(t *ftt.Test) {
+				assert.Loosely(t, timer.Reset(-1*time.Second), should.BeFalse)
+				assert.Loosely(t, <-timer.GetC(), should.Resemble(clock.TimerResult{Time: now}))
 			})
 
-			Convey(`Will trigger immediately if the Context is canceled when reset.`, func() {
+			t.Run(`Will trigger immediately if the Context is canceled when reset.`, func(t *ftt.Test) {
 				cancelFunc()
 
 				// Works for the first timer?
-				So(t.Reset(time.Hour), ShouldBeFalse)
-				So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+				assert.Loosely(t, timer.Reset(time.Hour), should.BeFalse)
+				assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 
 				// Works for the second timer?
-				So(t.Reset(time.Hour), ShouldBeFalse)
-				So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+				assert.Loosely(t, timer.Reset(time.Hour), should.BeFalse)
+				assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 			})
 
-			Convey(`Will trigger when the Context is canceled.`, func() {
+			t.Run(`Will trigger when the Context is canceled.`, func(t *ftt.Test) {
 				clk.SetTimerCallback(func(time.Duration, clock.Timer) {
 					cancelFunc()
 				})
 
 				// Works for the first timer?
-				So(t.Reset(time.Hour), ShouldBeFalse)
-				So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+				assert.Loosely(t, timer.Reset(time.Hour), should.BeFalse)
+				assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 
 				// Works for the second timer?
-				So(t.Reset(time.Hour), ShouldBeFalse)
-				So((<-t.GetC()).Err, ShouldEqual, context.Canceled)
+				assert.Loosely(t, timer.Reset(time.Hour), should.BeFalse)
+				assert.Loosely(t, (<-timer.GetC()).Err, should.Equal(context.Canceled))
 			})
 
-			Convey(`Will use the same channel when reset.`, func() {
-				timerC := t.GetC()
-				t.Reset(time.Second)
+			t.Run(`Will use the same channel when reset.`, func(t *ftt.Test) {
+				timerC := timer.GetC()
+				timer.Reset(time.Second)
 				clk.Add(time.Second)
-				So(<-timerC, ShouldResemble, clock.TimerResult{Time: now.Add(1 * time.Second)})
+				assert.Loosely(t, <-timerC, should.Resemble(clock.TimerResult{Time: now.Add(1 * time.Second)}))
 			})
 
-			Convey(`Will not signal the timer channel if stopped.`, func() {
-				t.Reset(time.Second)
-				So(t.Stop(), ShouldBeTrue)
+			t.Run(`Will not signal the timer channel if stopped.`, func(t *ftt.Test) {
+				timer.Reset(time.Second)
+				assert.Loosely(t, timer.Stop(), should.BeTrue)
 				clk.Add(time.Second)
 
 				triggered := false
 				select {
-				case <-t.GetC():
+				case <-timer.GetC():
 					triggered = true
 				default:
 					break
 				}
-				So(triggered, ShouldBeFalse)
+				assert.Loosely(t, triggered, should.BeFalse)
 			})
 
-			Convey(`Will not trigger on previous time thresholds if reset.`, func() {
-				t.Reset(time.Second)
-				t.Reset(2 * time.Second)
+			t.Run(`Will not trigger on previous time thresholds if reset.`, func(t *ftt.Test) {
+				timer.Reset(time.Second)
+				timer.Reset(2 * time.Second)
 				clk.Add(time.Second)
 				clk.Add(time.Second)
-				So((<-t.GetC()).Time, ShouldResemble, clk.Now())
+				assert.Loosely(t, (<-timer.GetC()).Time, should.Resemble(clk.Now()))
 			})
 
-			Convey(`Can set and retrieve timer tags.`, func() {
+			t.Run(`Can set and retrieve timer tags.`, func(t *ftt.Test) {
 				var tagMu sync.Mutex
 				tagMap := map[string]struct{}{}
 
 				// On the last timer callback, advance time past the timer threshold.
 				timers := make([]clock.Timer, 10)
 				count := 0
-				clk.SetTimerCallback(func(_ time.Duration, t clock.Timer) {
+				clk.SetTimerCallback(func(_ time.Duration, timer clock.Timer) {
 					tagMu.Lock()
 					defer tagMu.Unlock()
 
-					tagMap[strings.Join(GetTags(t), "")] = struct{}{}
+					tagMap[strings.Join(GetTags(timer), "")] = struct{}{}
 					count++
 					if count == len(timers) {
 						clk.Add(time.Second)
@@ -170,30 +171,30 @@ func TestTestTimer(t *testing.T) {
 				})
 
 				for i := range timers {
-					t := clk.NewTimer(clock.Tag(ctx, fmt.Sprintf("%d", i)))
-					t.Reset(time.Second)
-					timers[i] = t
+					timer := clk.NewTimer(clock.Tag(ctx, fmt.Sprintf("%d", i)))
+					timer.Reset(time.Second)
+					timers[i] = timer
 				}
 
 				// Wait until all timers have expired.
-				for _, t := range timers {
-					<-t.GetC()
+				for _, timer := range timers {
+					<-timer.GetC()
 				}
 
 				// Did we see all of their tags?
 				for i := range timers {
 					_, ok := tagMap[fmt.Sprintf("%d", i)]
-					So(ok, ShouldBeTrue)
+					assert.Loosely(t, ok, should.BeTrue)
 				}
 			})
 
-			Convey(`A non-test timer has a nil tag.`, func() {
-				t := trashTimer{}
-				So(GetTags(t), ShouldBeNil)
+			t.Run(`A non-test timer has a nil tag.`, func(t *ftt.Test) {
+				tTimer := trashTimer{}
+				assert.Loosely(t, GetTags(tTimer), should.BeNil)
 			})
 		})
 
-		Convey(`Multiple goroutines using timers...`, func() {
+		t.Run(`Multiple goroutines using timers...`, func(t *ftt.Test) {
 			// Mark when timers are started, so we can ensure that our signalling
 			// happens after the timers have been instantiated.
 			timerStartedC := make(chan bool)
@@ -225,17 +226,17 @@ func TestTestTimer(t *testing.T) {
 			<-resultC
 			<-resultC
 			<-resultC
-			So(moreResults(), ShouldBeFalse)
+			assert.Loosely(t, moreResults(), should.BeFalse)
 
 			// Advance clock to +3s. One timer should signal.
 			clk.Set(now.Add(3 * time.Second))
 			<-resultC
-			So(moreResults(), ShouldBeFalse)
+			assert.Loosely(t, moreResults(), should.BeFalse)
 
 			// Advance clock to +10s. One final timer should signal.
 			clk.Set(now.Add(10 * time.Second))
 			<-resultC
-			So(moreResults(), ShouldBeFalse)
+			assert.Loosely(t, moreResults(), should.BeFalse)
 		})
 	})
 }
@@ -243,35 +244,35 @@ func TestTestTimer(t *testing.T) {
 func TestTimerTags(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A context with tags {"A", "B"}`, t, func() {
+	ftt.Run(`A context with tags {"A", "B"}`, t, func(t *ftt.Test) {
 		c := clock.Tag(clock.Tag(context.Background(), "A"), "B")
 
-		Convey(`Has tags, {"A", "B"}`, func() {
-			So(clock.Tags(c), ShouldResemble, []string{"A", "B"})
+		t.Run(`Has tags, {"A", "B"}`, func(t *ftt.Test) {
+			assert.Loosely(t, clock.Tags(c), should.Resemble([]string{"A", "B"}))
 		})
 
-		Convey(`Will be retained by a testclock.Timer.`, func() {
+		t.Run(`Will be retained by a testclock.Timer.`, func(t *ftt.Test) {
 			tc := New(TestTimeUTC)
-			t := tc.NewTimer(c)
+			timer := tc.NewTimer(c)
 
-			So(GetTags(t), ShouldResemble, []string{"A", "B"})
+			assert.Loosely(t, GetTags(timer), should.Resemble([]string{"A", "B"}))
 
-			Convey(`The timer tests positive for tags {"A", "B"}`, func() {
-				So(HasTags(t, "A", "B"), ShouldBeTrue)
+			t.Run(`The timer tests positive for tags {"A", "B"}`, func(t *ftt.Test) {
+				assert.Loosely(t, HasTags(timer, "A", "B"), should.BeTrue)
 			})
 
-			Convey(`The timer tests negative for tags {"A"}, {"B"}, and {"A", "C"}`, func() {
-				So(HasTags(t, "A"), ShouldBeFalse)
-				So(HasTags(t, "B"), ShouldBeFalse)
-				So(HasTags(t, "A", "C"), ShouldBeFalse)
+			t.Run(`The timer tests negative for tags {"A"}, {"B"}, and {"A", "C"}`, func(t *ftt.Test) {
+				assert.Loosely(t, HasTags(timer, "A"), should.BeFalse)
+				assert.Loosely(t, HasTags(timer, "B"), should.BeFalse)
+				assert.Loosely(t, HasTags(timer, "A", "C"), should.BeFalse)
 			})
 		})
 
-		Convey(`A non-test timer tests negative for {"A"} and {"A", "B"}.`, func() {
-			t := &trashTimer{}
+		t.Run(`A non-test timer tests negative for {"A"} and {"A", "B"}.`, func(t *ftt.Test) {
+			tTimer := &trashTimer{}
 
-			So(HasTags(t, "A"), ShouldBeFalse)
-			So(HasTags(t, "A", "B"), ShouldBeFalse)
+			assert.Loosely(t, HasTags(tTimer, "A"), should.BeFalse)
+			assert.Loosely(t, HasTags(tTimer, "A", "B"), should.BeFalse)
 		})
 	})
 }

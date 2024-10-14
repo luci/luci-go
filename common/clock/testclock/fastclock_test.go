@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func ExampleFastClock() {
@@ -45,56 +46,56 @@ func ExampleFastClock() {
 func TestFastClock(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A FastClock instance`, t, func() {
+	ftt.Run(`A FastClock instance`, t, func(t *ftt.Test) {
 		epoch := time.Date(2015, 01, 01, 00, 00, 00, 00, time.UTC)
-		Convey(`Tied to a wall clock but running 1000 times faster`, func() {
+		t.Run(`Tied to a wall clock but running 1000 times faster`, func(t *ftt.Test) {
 			fc := NewFastClock(epoch, 1000)
 			defer fc.Close()
 			ctx := clock.Set(context.Background(), fc)
 
-			Convey(`Returns the current time.`, func() {
+			t.Run(`Returns the current time.`, func(t *ftt.Test) {
 				wall0, fast0 := fc.now()
 				fast1 := fc.Now()
 				wall2, fast2 := fc.now()
 				// Check assumptions of the wall clock, which should be monotonically
 				// non-decreasing.
-				So(wall2, ShouldHappenOnOrAfter, wall0)
+				assert.Loosely(t, wall2, should.HappenOnOrAfter(wall0))
 				// Ditto for the FastClock.
-				So(fast0, ShouldHappenOnOrAfter, epoch)
-				So(fast1, ShouldHappenOnOrAfter, fast0)
-				So(fast2, ShouldHappenOnOrAfter, fast1)
+				assert.Loosely(t, fast0, should.HappenOnOrAfter(epoch))
+				assert.Loosely(t, fast1, should.HappenOnOrAfter(fast0))
+				assert.Loosely(t, fast2, should.HappenOnOrAfter(fast1))
 
-				Convey(`Runs faster than the wall clock.`, func() {
-					So(fast2.Sub(fast0), ShouldAlmostEqual, wall2.Sub(wall0)*1000)
+				t.Run(`Runs faster than the wall clock.`, func(t *ftt.Test) {
+					assert.Loosely(t, fast2.Sub(fast0), should.Equal(wall2.Sub(wall0)*1000))
 				})
 			})
 
-			Convey(`When sleeping with a time of zero, awakens quickly.`, func() {
+			t.Run(`When sleeping with a time of zero, awakens quickly.`, func(t *ftt.Test) {
 				wall0, _ := fc.now()
 				fc.Sleep(ctx, 0)
 				wall1, _ := fc.now()
 				// The smaller, the better, but allow for some CPU starvation.
-				So(wall1.Sub(wall0), ShouldBeLessThan, time.Minute)
+				assert.Loosely(t, wall1.Sub(wall0), should.BeLessThan(time.Minute))
 			})
 
-			Convey(`Will panic if going backwards in time via Add().`, func() {
-				So(func() { fc.Add(-1 * time.Second) }, ShouldPanic)
+			t.Run(`Will panic if going backwards in time via Add().`, func(t *ftt.Test) {
+				assert.Loosely(t, func() { fc.Add(-1 * time.Second) }, should.Panic)
 			})
-			Convey(`Will not panic if going backwards in time via Set().`, func() {
-				So(func() { fc.Set(fc.Now().Add(-1 * time.Second)) }, ShouldNotPanic)
+			t.Run(`Will not panic if going backwards in time via Set().`, func(t *ftt.Test) {
+				assert.Loosely(t, func() { fc.Set(fc.Now().Add(-1 * time.Second)) }, should.NotPanic)
 			})
 
-			Convey(`When sleeping, awakens if canceled.`, func() {
+			t.Run(`When sleeping, awakens if canceled.`, func(t *ftt.Test) {
 				ctx, cancelFunc := context.WithCancel(ctx)
 
 				fc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 					cancelFunc()
 				})
 
-				So(fc.Sleep(ctx, time.Hour).Incomplete(), ShouldBeTrue)
+				assert.Loosely(t, fc.Sleep(ctx, time.Hour).Incomplete(), should.BeTrue)
 			})
 
-			Convey(`Awakens after a period of time while manipulated.`, func() {
+			t.Run(`Awakens after a period of time while manipulated.`, func(t *ftt.Test) {
 				t0 := fc.Now()
 				afterC := clock.After(ctx, time.Second)
 				t1 := fc.Now()
@@ -103,13 +104,13 @@ func TestFastClock(t *testing.T) {
 				}
 				res := <-afterC
 				// The timer must not wake up earlier than necessary.
-				So(res.Time.Sub(t0), ShouldBeGreaterThanOrEqualTo, time.Second)
+				assert.Loosely(t, res.Time.Sub(t0), should.BeGreaterThanOrEqual(time.Second))
 				// The timer may wake a bit later than possible, especially if the
 				// process is starving of CPU, so give it 1 hour of (fake) grace time.
-				So(res.Time.Sub(t1), ShouldBeLessThan, time.Second+time.Hour)
+				assert.Loosely(t, res.Time.Sub(t1), should.BeLessThan(time.Second+time.Hour))
 			})
 
-			Convey(`Awakens quickly without being manipulated due to passage of wall clock time.`, func() {
+			t.Run(`Awakens quickly without being manipulated due to passage of wall clock time.`, func(t *ftt.Test) {
 				const wallDelay = time.Millisecond
 				const fastDelay = time.Second // 1000x faster
 
@@ -119,19 +120,19 @@ func TestFastClock(t *testing.T) {
 				wallAfter := time.After(wallDelay)
 				<-wallAfter
 				wall1, _ := fc.now()
-				So(wall1.Sub(wall0), ShouldBeGreaterThan, wallDelay)
+				assert.Loosely(t, wall1.Sub(wall0), should.BeGreaterThan(wallDelay))
 
 				fastAwoken := <-fastAfter
 				fastOverhead := (fastAwoken.Sub(fast0) - fastDelay)
 				wallOverhead := fastOverhead / 1000
-				_, _ = Println(" overhead:", "Wall", wallOverhead, "FastClock", fastOverhead)
-				So(wallOverhead, ShouldBeGreaterThan, time.Duration(0)) // check sanity
+				t.Log(" overhead:", "Wall", wallOverhead, "FastClock", fastOverhead)
+				assert.Loosely(t, wallOverhead, should.BeGreaterThan(time.Duration(0))) // check sanity
 				// The smaller, the better, but allow for some CPU starvation.
-				So(wallOverhead, ShouldBeLessThan, time.Minute)
+				assert.Loosely(t, wallOverhead, should.BeLessThan(time.Minute))
 			})
 		})
 
-		Convey(`Tied to a wall clock mock`, func() {
+		t.Run(`Tied to a wall clock mock`, func(t *ftt.Test) {
 			wallEpoch := time.Date(2020, 01, 01, 00, 00, 00, 00, time.UTC)
 			fc := &FastClock{
 				fastToSysRatio: 1000,
@@ -141,13 +142,13 @@ func TestFastClock(t *testing.T) {
 			}
 			ctx := clock.Set(context.Background(), fc)
 
-			Convey(`When sleeping with a time of zero, awakens immediately.`, func() {
+			t.Run(`When sleeping with a time of zero, awakens immediately.`, func(t *ftt.Test) {
 				before := fc.Now()
 				fc.Sleep(ctx, 0)
-				So(fc.Now(), ShouldEqual, before)
+				assert.Loosely(t, fc.Now(), should.Match(before))
 			})
 
-			Convey(`When sleeping for a period of time, awakens when signalled.`, func() {
+			t.Run(`When sleeping for a period of time, awakens when signalled.`, func(t *ftt.Test) {
 				sleepingC := make(chan struct{})
 				fc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 					close(sleepingC)
@@ -162,7 +163,7 @@ func TestFastClock(t *testing.T) {
 				<-sleepingC
 				fc.Set(epoch.Add(1 * time.Second))
 				fc.Set(epoch.Add(2 * time.Second))
-				So(<-awakeC, ShouldResemble, epoch.Add(2*time.Second))
+				assert.Loosely(t, <-awakeC, should.Resemble(epoch.Add(2*time.Second)))
 			})
 		})
 	})

@@ -25,17 +25,18 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/retry"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGerritURL(t *testing.T) {
 	t.Parallel()
-	Convey("Malformed", t, func() {
+	ftt.Run("Malformed", t, func(t *ftt.Test) {
 		f := func(arg string) {
-			So(ValidateGerritURL(arg), ShouldNotBeNil)
+			assert.Loosely(t, ValidateGerritURL(arg), should.NotBeNil)
 			_, err := NormalizeGerritURL(arg)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		}
 
 		f("what/\\is\this")
@@ -46,12 +47,12 @@ func TestGerritURL(t *testing.T) {
 		f("https://a-review.googlesource.com/any-path-actually")
 	})
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		f := func(arg, exp string) {
-			So(ValidateGerritURL(arg), ShouldBeNil)
+			assert.Loosely(t, ValidateGerritURL(arg), should.BeNil)
 			act, err := NormalizeGerritURL(arg)
-			So(err, ShouldBeNil)
-			So(act, ShouldEqual, exp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, act, should.Equal(exp))
 		}
 		f("https://a-review.googlesource.com", "https://a-review.googlesource.com/")
 		f("https://a-review.googlesource.com/", "https://a-review.googlesource.com/")
@@ -62,19 +63,19 @@ func TestGerritURL(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	t.Parallel()
-	Convey("Malformed", t, func() {
+	ftt.Run("Malformed", t, func(t *ftt.Test) {
 		f := func(arg string) {
 			_, err := NewClient(http.DefaultClient, arg)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		}
 		f("badurl")
 		f("http://a.googlesource.com")
 		f("https://a/")
 	})
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		f := func(arg string) {
 			_, err := NewClient(http.DefaultClient, arg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 		f("https://a-review.googlesource.com/")
 		f("https://a-review.googlesource.com")
@@ -85,7 +86,7 @@ func TestQuery(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ChangeQuery", t, func() {
+	ftt.Run("ChangeQuery", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -93,19 +94,19 @@ func TestQuery(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			cls, more, err := c.ChangeQuery(ctx,
 				ChangeQueryParams{
 					Query: "some_query",
 				})
-			So(err, ShouldBeNil)
-			So(len(cls), ShouldEqual, 1)
-			So(cls[0].Owner.AccountID, ShouldEqual, 1118104)
-			So(more, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cls), should.Equal(1))
+			assert.Loosely(t, cls[0].Owner.AccountID, should.Equal(1118104))
+			assert.Loosely(t, more, should.BeFalse)
 		})
 	})
 
-	Convey("ChangeQuery with more changes", t, func() {
+	ftt.Run("ChangeQuery with more changes", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -113,19 +114,19 @@ func TestQuery(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			cls, more, err := c.ChangeQuery(ctx,
 				ChangeQueryParams{
 					Query: "4efbec9a685b238fced35b81b7f3444dc60150b1",
 				})
-			So(err, ShouldBeNil)
-			So(len(cls), ShouldEqual, 1)
-			So(cls[0].Owner.AccountID, ShouldEqual, 1178184)
-			So(more, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cls), should.Equal(1))
+			assert.Loosely(t, cls[0].Owner.AccountID, should.Equal(1178184))
+			assert.Loosely(t, more, should.BeFalse)
 		})
 	})
 
-	Convey("ChangeQuery returns no changes", t, func() {
+	ftt.Run("ChangeQuery returns no changes", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -133,14 +134,14 @@ func TestQuery(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			cls, more, err := c.ChangeQuery(ctx,
 				ChangeQueryParams{
 					Query: "4efbec9a685b238fced35b81b7f3444dc60150b1",
 				})
-			So(err, ShouldBeNil)
-			So(cls, ShouldResemble, []*Change{})
-			So(more, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls, should.Resemble([]*Change{}))
+			assert.Loosely(t, more, should.BeFalse)
 		})
 	})
 }
@@ -149,7 +150,7 @@ func TestChangeDetails(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Details", t, func() {
+	ftt.Run("Details", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -157,17 +158,17 @@ func TestChangeDetails(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("WithOptions", func() {
+		t.Run("WithOptions", func(t *ftt.Test) {
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
 			cl, err := c.ChangeDetails(ctx, "629279", options)
-			So(err, ShouldBeNil)
-			So(cl.RevertOf, ShouldEqual, 629277)
-			So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cl.RevertOf, should.Equal(629277))
+			assert.Loosely(t, cl.CurrentRevision, should.Equal("1ee75012c0de"))
 		})
 
 	})
 
-	Convey("Retry", t, func() {
+	ftt.Run("Retry", t, func(t *ftt.Test) {
 		var attempts int
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			// First attempt fails, second succeeds.
@@ -185,10 +186,10 @@ func TestChangeDetails(t *testing.T) {
 		defer srv.Close()
 
 		cl, err := c.ChangeDetails(ctx, "629279", ChangeDetailsParams{})
-		So(err, ShouldBeNil)
-		So(cl.RevertOf, ShouldEqual, 629277)
-		So(cl.CurrentRevision, ShouldEqual, "1ee75012c0de")
-		So(attempts, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cl.RevertOf, should.Equal(629277))
+		assert.Loosely(t, cl.CurrentRevision, should.Equal("1ee75012c0de"))
+		assert.Loosely(t, attempts, should.Equal(2))
 	})
 }
 
@@ -196,7 +197,7 @@ func TestListChangeComments(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListComments", t, func() {
+	ftt.Run("ListComments", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -204,12 +205,12 @@ func TestListChangeComments(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("WithOptions", func() {
+		t.Run("WithOptions", func(t *ftt.Test) {
 			comments, err := c.ListChangeComments(ctx, "629279", "")
-			So(err, ShouldBeNil)
-			So(comments["foo"][0].Line, ShouldEqual, 3)
-			So(comments["foo"][0].Range.StartLine, ShouldEqual, 3)
-			So(comments["bar"][0].Line, ShouldEqual, 21)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, comments["foo"][0].Line, should.Equal(3))
+			assert.Loosely(t, comments["foo"][0].Range.StartLine, should.Equal(3))
+			assert.Loosely(t, comments["bar"][0].Line, should.Equal(21))
 		})
 
 	})
@@ -220,7 +221,7 @@ func TestListRobotComments(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListRobotComments", t, func() {
+	ftt.Run("ListRobotComments", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -228,14 +229,14 @@ func TestListRobotComments(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("WithOptions", func() {
+		t.Run("WithOptions", func(t *ftt.Test) {
 			comments, err := c.ListRobotComments(ctx, "629279", "deadbeef")
-			So(err, ShouldBeNil)
-			So(comments["foo"][0].Line, ShouldEqual, 3)
-			So(comments["foo"][0].Range.StartLine, ShouldEqual, 3)
-			So(comments["foo"][0].RobotID, ShouldEqual, "somerobot")
-			So(comments["foo"][0].RobotRunID, ShouldEqual, "run1")
-			So(comments["bar"][0].Line, ShouldEqual, 21)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, comments["foo"][0].Line, should.Equal(3))
+			assert.Loosely(t, comments["foo"][0].Range.StartLine, should.Equal(3))
+			assert.Loosely(t, comments["foo"][0].RobotID, should.Equal("somerobot"))
+			assert.Loosely(t, comments["foo"][0].RobotRunID, should.Equal("run1"))
+			assert.Loosely(t, comments["bar"][0].Line, should.Equal(21))
 		})
 	})
 }
@@ -244,7 +245,7 @@ func TestAccountQuery(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Account-Query", t, func(c C) {
+	ftt.Run("Account-Query", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -252,12 +253,12 @@ func TestAccountQuery(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("WithOptions", func() {
+		c.Run("WithOptions", func(c *ftt.Test) {
 			accounts, more, err := client.AccountQuery(ctx, AccountQueryParams{Query: "email:nobody@example.com"})
-			So(err, ShouldBeNil)
-			So(more, ShouldEqual, false)
-			So(accounts[0].Name, ShouldEqual, "John Doe")
-			So(accounts[1].Name, ShouldEqual, "Jane Doe")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, more, should.Equal(false))
+			assert.Loosely(c, accounts[0].Name, should.Equal("John Doe"))
+			assert.Loosely(c, accounts[1].Name, should.Equal("Jane Doe"))
 		})
 	})
 }
@@ -266,7 +267,7 @@ func TestChangesSubmittedTogether(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("SubmittedTogether", t, func() {
+	ftt.Run("SubmittedTogether", t, func(t *ftt.Test) {
 		var nonVisibleResp string
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -275,22 +276,22 @@ func TestChangesSubmittedTogether(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("WithCurrentRevisionOptions", func() {
+		t.Run("WithCurrentRevisionOptions", func(t *ftt.Test) {
 			nonVisibleResp = ""
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION"}}
 			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
-			So(err, ShouldBeNil)
-			So(cls.Changes[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
-			So(cls.Changes[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls.Changes[0].CurrentRevision, should.Equal("eb2388b592a9"))
+			assert.Loosely(t, cls.Changes[1].CurrentRevision, should.Equal("d6375c2ea5b0"))
 		})
-		Convey("WithNonVisibleChangesOptions", func() {
+		t.Run("WithNonVisibleChangesOptions", func(t *ftt.Test) {
 			nonVisibleResp = ",\"non_visible_changes\":1"
 			options := ChangeDetailsParams{Options: []string{"CURRENT_REVISION", "NON_VISIBLE_CHANGES"}}
 			cls, err := c.ChangesSubmittedTogether(ctx, "627036", options)
-			So(err, ShouldBeNil)
-			So(cls.Changes[0].CurrentRevision, ShouldEqual, "eb2388b592a9")
-			So(cls.Changes[1].CurrentRevision, ShouldEqual, "d6375c2ea5b0")
-			So(cls.NonVisibleChanges, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls.Changes[0].CurrentRevision, should.Equal("eb2388b592a9"))
+			assert.Loosely(t, cls.Changes[1].CurrentRevision, should.Equal("d6375c2ea5b0"))
+			assert.Loosely(t, cls.NonVisibleChanges, should.Equal(1))
 		})
 
 	})
@@ -300,7 +301,7 @@ func TestMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("GetMergeable", t, func() {
+	ftt.Run("GetMergeable", t, func(t *ftt.Test) {
 		var resp string
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
@@ -309,7 +310,7 @@ func TestMergeable(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("yes", func() {
+		t.Run("yes", func(t *ftt.Test) {
 			resp = `{
 				"submit_type": "REBASE_ALWAYS",
 				"strategy": "recursive",
@@ -318,11 +319,11 @@ func TestMergeable(t *testing.T) {
 				"content_merged": false
 			}`
 			cls, err := c.GetMergeable(ctx, "627036", "eb2388b592a9")
-			So(err, ShouldBeNil)
-			So(cls.Mergeable, ShouldEqual, true)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls.Mergeable, should.Equal(true))
 		})
 
-		Convey("no", func() {
+		t.Run("no", func(t *ftt.Test) {
 			resp = `{
 				"submit_type": "REBASE_ALWAYS",
 				"strategy": "recursive",
@@ -331,8 +332,8 @@ func TestMergeable(t *testing.T) {
 				"content_merged": false
 			}`
 			cls, err := c.GetMergeable(ctx, "646267", "d6375c2ea5b0")
-			So(err, ShouldBeNil)
-			So(cls.Mergeable, ShouldEqual, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cls.Mergeable, should.Equal(false))
 		})
 
 	})
@@ -342,7 +343,7 @@ func TestChangeLabels(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Labels", t, func() {
+	ftt.Run("Labels", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -350,17 +351,17 @@ func TestChangeLabels(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("All", func() {
+		t.Run("All", func(t *ftt.Test) {
 			options := ChangeDetailsParams{Options: []string{"DETAILED_LABELS"}}
 			cl, err := c.ChangeDetails(ctx, "629279", options)
-			So(err, ShouldBeNil)
-			So(len(cl.Labels["Code-Review"].All), ShouldEqual, 2)
-			So(cl.Labels["Code-Review"].All[0].Value, ShouldEqual, -1)
-			So(cl.Labels["Code-Review"].All[0].Username, ShouldEqual, "jdoe")
-			So(cl.Labels["Code-Review"].All[1].Value, ShouldEqual, 1)
-			So(cl.Labels["Code-Review"].All[1].Username, ShouldEqual, "jroe")
-			So(len(cl.Labels["Code-Review"].Values), ShouldEqual, 5)
-			So(len(cl.Labels["Verified"].Values), ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(cl.Labels["Code-Review"].All), should.Equal(2))
+			assert.Loosely(t, cl.Labels["Code-Review"].All[0].Value, should.Equal(-1))
+			assert.Loosely(t, cl.Labels["Code-Review"].All[0].Username, should.Equal("jdoe"))
+			assert.Loosely(t, cl.Labels["Code-Review"].All[1].Value, should.Equal(1))
+			assert.Loosely(t, cl.Labels["Code-Review"].All[1].Username, should.Equal("jroe"))
+			assert.Loosely(t, len(cl.Labels["Code-Review"].Values), should.Equal(5))
+			assert.Loosely(t, len(cl.Labels["Verified"].Values), should.Equal(3))
 		})
 
 	})
@@ -371,13 +372,13 @@ func TestCreateChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("CreateChange", t, func(c C) {
+	ftt.Run("CreateChange", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ci ChangeInput
 			err := json.NewDecoder(r.Body).Decode(&ci)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -393,12 +394,12 @@ func TestCreateChange(t *testing.T) {
 			}
 			var buffer bytes.Buffer
 			err = json.NewEncoder(&buffer).Encode(&change)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			ci := ChangeInput{
 				Project: "infra/luci-go",
 				Branch:  "master",
@@ -406,17 +407,17 @@ func TestCreateChange(t *testing.T) {
 				Topic:   "something-something",
 			}
 			change, err := client.CreateChange(ctx, &ci)
-			So(err, ShouldBeNil)
-			So(change.Project, ShouldResemble, ci.Project)
-			So(change.Branch, ShouldResemble, ci.Branch)
-			So(change.Subject, ShouldResemble, ci.Subject)
-			So(change.Topic, ShouldResemble, ci.Topic)
-			So(change.Status, ShouldResemble, "NEW")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Project, should.Resemble(ci.Project))
+			assert.Loosely(c, change.Branch, should.Resemble(ci.Branch))
+			assert.Loosely(c, change.Subject, should.Resemble(ci.Subject))
+			assert.Loosely(c, change.Topic, should.Resemble(ci.Topic))
+			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 
 	})
 
-	Convey("CreateChange but project non-existent", t, func() {
+	ftt.Run("CreateChange but project non-existent", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(404)
 			w.Header().Set("Content-Type", "text/plain")
@@ -424,7 +425,7 @@ func TestCreateChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			ci := ChangeInput{
 				Project: "blah",
 				Branch:  "master",
@@ -432,7 +433,7 @@ func TestCreateChange(t *testing.T) {
 				Topic:   "haha",
 			}
 			_, err := c.CreateChange(ctx, &ci)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 	})
@@ -442,13 +443,13 @@ func TestAbandonChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("AbandonChange", t, func(c C) {
+	ftt.Run("AbandonChange", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ai AbandonInput
 			err := json.NewDecoder(r.Body).Decode(&ai)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -456,23 +457,23 @@ func TestAbandonChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			change, err := client.AbandonChange(ctx, "629279", nil)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "ABANDONED")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("ABANDONED"))
 		})
 
-		Convey("Basic with message", func() {
+		c.Run("Basic with message", func(c *ftt.Test) {
 			ai := AbandonInput{
 				Message: "duplicate",
 			}
 			change, err := client.AbandonChange(ctx, "629279", &ai)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "ABANDONED")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("ABANDONED"))
 		})
 	})
 
-	Convey("AbandonChange but change non-existent", t, func() {
+	ftt.Run("AbandonChange but change non-existent", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(404)
 			w.Header().Set("Content-Type", "text/plain")
@@ -480,9 +481,9 @@ func TestAbandonChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			_, err := c.AbandonChange(ctx, "629279", nil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 	})
@@ -492,13 +493,13 @@ func TestRebase(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("RebaseChange", t, func(c C) {
+	ftt.Run("RebaseChange", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri RestoreInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -506,31 +507,31 @@ func TestRebase(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			change, err := client.RebaseChange(ctx, "627036", nil)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "NEW")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 
-		Convey("Basic with overridden base revision", func() {
+		c.Run("Basic with overridden base revision", func(c *ftt.Test) {
 			ri := RebaseInput{
 				Base:               "abc123",
 				OnBehalfOfUploader: true,
 				AllowConflicts:     false,
 			}
 			change, err := client.RebaseChange(ctx, "627036", &ri)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "NEW")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 	})
 
-	Convey("RebaseChange with nontrivial merge conflict", t, func(c C) {
+	ftt.Run("RebaseChange with nontrivial merge conflict", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri RebaseInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(409)
 			w.Header().Set("Content-Type", "text/plain")
@@ -538,9 +539,9 @@ func TestRebase(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			_, err := client.RebaseChange(ctx, "627036", nil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(c, err, should.NotBeNil)
 		})
 	})
 }
@@ -549,13 +550,13 @@ func TestRestoreChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("RestoreChange", t, func(c C) {
+	ftt.Run("RestoreChange", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri RestoreInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -563,29 +564,29 @@ func TestRestoreChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			change, err := client.RestoreChange(ctx, "627036", nil)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "NEW")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 
-		Convey("Basic with message", func() {
+		c.Run("Basic with message", func(c *ftt.Test) {
 			ri := RestoreInput{
 				Message: "restored",
 			}
 			change, err := client.RestoreChange(ctx, "627036", &ri)
-			So(err, ShouldBeNil)
-			So(change.Status, ShouldResemble, "NEW")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, change.Status, should.Match("NEW"))
 		})
 	})
 
-	Convey("RestoreChange but change not abandoned", t, func(c C) {
+	ftt.Run("RestoreChange but change not abandoned", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri RestoreInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(409)
 			w.Header().Set("Content-Type", "text/plain")
@@ -593,19 +594,19 @@ func TestRestoreChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			_, err := client.RestoreChange(ctx, "627036", nil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(c, err, should.NotBeNil)
 		})
 	})
 
-	Convey("RestoreChange but change non-existent", t, func(c C) {
+	ftt.Run("RestoreChange but change non-existent", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri RestoreInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(404)
 			w.Header().Set("Content-Type", "text/plain")
@@ -613,9 +614,9 @@ func TestRestoreChange(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			_, err := client.RestoreChange(ctx, "629279", nil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(c, err, should.NotBeNil)
 		})
 	})
 }
@@ -628,13 +629,13 @@ func TestCreateBranch(t *testing.T) {
 		Revision: "08a8326653eaa5f7aeea30348b63bf5e9595dc11",
 	}
 
-	Convey("CreateBranch", t, func(c C) {
+	ftt.Run("CreateBranch", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var bi BranchInput
 			err := json.NewDecoder(r.Body).Decode(&bi)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -644,25 +645,25 @@ func TestCreateBranch(t *testing.T) {
 			}
 			var buffer bytes.Buffer
 			err = json.NewEncoder(&buffer).Encode(&info)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
 		})
 		defer srv.Close()
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			info, err := client.CreateBranch(ctx, "project", &bi)
-			So(err, ShouldBeNil)
-			So(info.Ref, ShouldEqual, "branch")
-			So(info.Revision, ShouldEqual, "08a8326653eaa5f7aeea30348b63bf5e9595dc11")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, info.Ref, should.Equal("branch"))
+			assert.Loosely(c, info.Revision, should.Equal("08a8326653eaa5f7aeea30348b63bf5e9595dc11"))
 		})
 	})
 
-	Convey("Not authorized", t, func(c C) {
+	ftt.Run("Not authorized", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var bi BranchInput
 			err := json.NewDecoder(r.Body).Decode(&bi)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			w.WriteHeader(403)
 			w.Header().Set("Content-Type", "text/plain")
@@ -670,9 +671,9 @@ func TestCreateBranch(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		c.Run("Basic", func(c *ftt.Test) {
 			_, err := client.CreateBranch(ctx, "project", &bi)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(c, err, should.NotBeNil)
 		})
 	})
 }
@@ -681,8 +682,8 @@ func TestIsPureRevert(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("IsPureRevert", t, func() {
-		Convey("Bad change id", func() {
+	ftt.Run("IsPureRevert", t, func(t *ftt.Test) {
+		t.Run("Bad change id", func(t *ftt.Test) {
 			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(404)
 				w.Header().Set("Content-Type", "text/plain")
@@ -691,9 +692,9 @@ func TestIsPureRevert(t *testing.T) {
 			defer srv.Close()
 
 			_, err := c.IsChangePureRevert(ctx, "629277")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
-		Convey("Not revert", func() {
+		t.Run("Not revert", func(t *ftt.Test) {
 			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(400)
 				w.Header().Set("Content-Type", "text/plain")
@@ -702,10 +703,10 @@ func TestIsPureRevert(t *testing.T) {
 			defer srv.Close()
 
 			r, err := c.IsChangePureRevert(ctx, "629277")
-			So(err, ShouldBeNil)
-			So(r, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.BeFalse)
 		})
-		Convey("Not pure revert", func() {
+		t.Run("Not pure revert", func(t *ftt.Test) {
 			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(200)
 				w.Header().Set("Content-Type", "application/json")
@@ -714,10 +715,10 @@ func TestIsPureRevert(t *testing.T) {
 			defer srv.Close()
 
 			r, err := c.IsChangePureRevert(ctx, "629277")
-			So(err, ShouldBeNil)
-			So(r, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.BeFalse)
 		})
-		Convey("Pure revert", func() {
+		t.Run("Pure revert", func(t *ftt.Test) {
 			srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(200)
 				w.Header().Set("Content-Type", "application/json")
@@ -726,8 +727,8 @@ func TestIsPureRevert(t *testing.T) {
 			defer srv.Close()
 
 			r, err := c.IsChangePureRevert(ctx, "629277")
-			So(err, ShouldBeNil)
-			So(r, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.BeTrue)
 		})
 	})
 }
@@ -736,13 +737,13 @@ func TestDirectSetReview(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("SetReview", t, func(c C) {
+	ftt.Run("SetReview", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
 			var ri ReviewInput
 			err := json.NewDecoder(r.Body).Decode(&ri)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			var rr ReviewResult
 			rr.Labels = ri.Labels
@@ -766,24 +767,24 @@ func TestDirectSetReview(t *testing.T) {
 
 			var buffer bytes.Buffer
 			err = json.NewEncoder(&buffer).Encode(&rr)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
 		})
 		defer srv.Close()
 
-		Convey("Set review", func() {
+		c.Run("Set review", func(c *ftt.Test) {
 			_, err := client.SetReview(ctx, "629279", "current", &ReviewInput{})
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 		})
 
-		Convey("Set label", func() {
+		c.Run("Set label", func(c *ftt.Test) {
 			ri := ReviewInput{Labels: map[string]int{"Code-Review": 1}}
 			result, err := client.SetReview(ctx, "629279", "current", &ri)
-			So(err, ShouldBeNil)
-			So(result.Labels, ShouldResemble, ri.Labels)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, result.Labels, should.Resemble(ri.Labels))
 		})
 
-		Convey("Set reviewers", func() {
+		c.Run("Set reviewers", func(c *ftt.Test) {
 			ri := ReviewInput{
 				Reviewers: []ReviewerInput{
 					{
@@ -797,14 +798,14 @@ func TestDirectSetReview(t *testing.T) {
 				},
 			}
 			result, err := client.SetReview(ctx, "629279", "current", &ri)
-			So(err, ShouldBeNil)
-			So(len(result.Reviewers), ShouldEqual, 2)
-			So(len(result.Reviewers["test@example.com"].Reviewers), ShouldEqual, 1)
-			So(len(result.Reviewers["test2@example.com"].CCs), ShouldEqual, 1)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, len(result.Reviewers), should.Equal(2))
+			assert.Loosely(c, len(result.Reviewers["test@example.com"].Reviewers), should.Equal(1))
+			assert.Loosely(c, len(result.Reviewers["test2@example.com"].CCs), should.Equal(1))
 		})
 	})
 
-	Convey("SetReview but change non-existent", t, func() {
+	ftt.Run("SetReview but change non-existent", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(404)
 			w.Header().Set("Content-Type", "text/plain")
@@ -812,9 +813,9 @@ func TestDirectSetReview(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Basic", func() {
+		t.Run("Basic", func(t *ftt.Test) {
 			_, err := c.SetReview(ctx, "629279", "current", &ReviewInput{})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
 	})
@@ -824,25 +825,25 @@ func TestSubmit(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Submit", t, func(c C) {
+	ftt.Run("Submit", t, func(c *ftt.Test) {
 		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			var si SubmitInput
 			err := json.NewDecoder(r.Body).Decode(&si)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			var cr Change
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
 			var buffer bytes.Buffer
 			err = json.NewEncoder(&buffer).Encode(&cr)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			fmt.Fprintf(w, ")]}'\n%s\n", buffer.String())
 		})
 		defer srv.Close()
 
-		Convey("Submit", func() {
+		c.Run("Submit", func(c *ftt.Test) {
 			_, err := client.Submit(ctx, "629279", &SubmitInput{})
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 		})
 	})
 }

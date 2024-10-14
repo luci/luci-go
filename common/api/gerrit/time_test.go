@@ -18,18 +18,20 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGerritTime(t *testing.T) {
 	t.Parallel()
 
-	Convey("FormatTime / ParseTime work", t, func() {
+	ftt.Run("FormatTime / ParseTime work", t, func(t *ftt.Test) {
 		const s = `"2011-02-03 04:05:06.000000007"`
-		t := time.Date(2011, time.February, 3, 4, 5, 6, 7, time.UTC)
-		So(FormatTime(t), ShouldEqual, s)
+		ts := time.Date(2011, time.February, 3, 4, 5, 6, 7, time.UTC)
+		assert.Loosely(t, FormatTime(ts), should.Equal(s))
 		pt, err := ParseTime(s)
-		So(err, ShouldBeNil)
-		So(pt, ShouldEqual, t.UTC())
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pt, should.Match(ts.UTC()))
 	})
 }

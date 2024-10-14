@@ -23,9 +23,10 @@ import (
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
 )
 
@@ -66,13 +67,13 @@ var cache = RegisterSchemaApplyerCache(50)
 
 func TestBqTableCache(t *testing.T) {
 	t.Parallel()
-	Convey(`TestCheckBqTableCache`, t, func() {
+	ftt.Run(`TestCheckBqTableCache`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		referenceTime := time.Date(2030, time.February, 3, 4, 5, 6, 7, time.UTC)
 		ctx, tc := testclock.UseTime(ctx, referenceTime)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		t := &tableMock{
+		tm := &tableMock{
 			fullyQualifiedName: "project.dataset.table",
 			md:                 &bigquery.TableMetadata{},
 		}
@@ -98,15 +99,15 @@ func TestBqTableCache(t *testing.T) {
 			Schema: rowSchema,
 		}
 
-		Convey(`Table does not exist`, func() {
-			t.mdErr = &googleapi.Error{Code: http.StatusNotFound}
-			err := sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
-			So(t.createMD.Schema, ShouldResemble, rowSchema)
+		t.Run(`Table does not exist`, func(t *ftt.Test) {
+			tm.mdErr = &googleapi.Error{Code: http.StatusNotFound}
+			err := sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tm.createMD.Schema, should.Resemble(rowSchema))
 		})
 
-		Convey(`Table is missing fields`, func() {
-			t.md.Schema = bigquery.Schema{
+		t.Run(`Table is missing fields`, func(t *ftt.Test) {
+			tm.md.Schema = bigquery.Schema{
 				{
 					Name: "legacy",
 				},
@@ -115,33 +116,33 @@ func TestBqTableCache(t *testing.T) {
 					Schema: bigquery.Schema{{Name: "legacy"}},
 				},
 			}
-			err := sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
+			err := sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(t.updateMD, ShouldNotBeNil) // The table was updated.
-			So(len(t.updateMD.Schema), ShouldBeGreaterThan, 3)
-			So(t.updateMD.Schema[0].Name, ShouldEqual, "legacy")
-			So(t.updateMD.Schema[1].Name, ShouldEqual, "exported")
-			So(t.updateMD.Schema[1].Schema[0].Name, ShouldEqual, "legacy")
-			So(t.updateMD.Schema[1].Schema[1].Name, ShouldEqual, "id") // new field
-			So(t.updateMD.Schema[1].Schema[1].Required, ShouldBeFalse) // relaxed
+			assert.Loosely(t, tm.updateMD, should.NotBeNil) // The table was updated.
+			assert.Loosely(t, len(tm.updateMD.Schema), should.BeGreaterThan(3))
+			assert.Loosely(t, tm.updateMD.Schema[0].Name, should.Equal("legacy"))
+			assert.Loosely(t, tm.updateMD.Schema[1].Name, should.Equal("exported"))
+			assert.Loosely(t, tm.updateMD.Schema[1].Schema[0].Name, should.Equal("legacy"))
+			assert.Loosely(t, tm.updateMD.Schema[1].Schema[1].Name, should.Equal("id")) // new field
+			assert.Loosely(t, tm.updateMD.Schema[1].Schema[1].Required, should.BeFalse) // relaxed
 		})
 
-		Convey(`Table is up to date`, func() {
-			t.md.Schema = rowSchema
-			err := sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
-			So(t.updateMD, ShouldBeNil) // we did not try to update it
+		t.Run(`Table is up to date`, func(t *ftt.Test) {
+			tm.md.Schema = rowSchema
+			err := sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tm.updateMD, should.BeNil) // we did not try to update it
 		})
 
-		Convey(`Invalid attempt to convert regular table into view`, func() {
+		t.Run(`Invalid attempt to convert regular table into view`, func(t *ftt.Test) {
 			table.ViewQuery = "SELECT * FROM a"
-			err := sa.EnsureTable(ctx, t, table)
-			So(err, ShouldErrLike, "cannot change a regular table into a view table")
-			So(t.updateMD, ShouldBeNil)
+			err := sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.ErrLike("cannot change a regular table into a view table"))
+			assert.Loosely(t, tm.updateMD, should.BeNil)
 		})
 
-		Convey(`Views`, func() {
+		t.Run(`Views`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
@@ -151,7 +152,7 @@ func TestBqTableCache(t *testing.T) {
 			}
 			spec := &bigquery.TableMetadata{ViewQuery: "SELECT * FROM a"}
 
-			Convey("With UpdateMetadata option", func() {
+			t.Run("With UpdateMetadata option", func(t *ftt.Test) {
 				mockTable.md.Labels = map[string]string{
 					MetadataVersionKey: "9",
 				}
@@ -159,106 +160,106 @@ func TestBqTableCache(t *testing.T) {
 					MetadataVersionKey: "9",
 				}
 
-				Convey(`View is up to date`, func() {
+				t.Run(`View is up to date`, func(t *ftt.Test) {
 					err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-					So(err, ShouldBeNil)
-					So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 				})
 
-				Convey(`View requires update`, func() {
+				t.Run(`View requires update`, func(t *ftt.Test) {
 					spec.ViewQuery = "SELECT * FROM b"
 					spec.Labels[MetadataVersionKey] = "10"
 					err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedUpdate := &bigquery.TableMetadataToUpdate{
 						ViewQuery: "SELECT * FROM b",
 					}
 					expectedUpdate.SetLabel(MetadataVersionKey, "10")
-					So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
 
-				Convey(`View different but no new metadata version`, func() {
+				t.Run(`View different but no new metadata version`, func(t *ftt.Test) {
 					spec.ViewQuery = "SELECT * FROM b"
 					err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-					So(err, ShouldBeNil)
-					So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 				})
 
-				Convey(`View requires update but not enforced`, func() {
+				t.Run(`View requires update but not enforced`, func(t *ftt.Test) {
 					spec.ViewQuery = "SELECT * FROM b"
 					spec.Labels[MetadataVersionKey] = "10"
 					err := EnsureTable(ctx, mockTable, spec)
-					So(err, ShouldBeNil)
-					So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 				})
 
-				Convey(`View is up to date, new metadata version and RefreshViewInterval enabled`, func() {
+				t.Run(`View is up to date, new metadata version and RefreshViewInterval enabled`, func(t *ftt.Test) {
 					mockTable.md.ViewQuery = "-- Indirect schema version: 2030-02-03T03:55:50Z\nSELECT * FROM a"
 					spec.Labels[MetadataVersionKey] = "10"
 
 					err := EnsureTable(ctx, mockTable, spec, UpdateMetadata(), RefreshViewInterval(1*time.Hour))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// No update is applied except for the new metadata version.
 					expectedUpdate := &bigquery.TableMetadataToUpdate{}
 					expectedUpdate.SetLabel(MetadataVersionKey, "10")
-					So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
 
-				Convey(`View requires update and RefreshViewInterval enabled`, func() {
+				t.Run(`View requires update and RefreshViewInterval enabled`, func(t *ftt.Test) {
 					mockTable.md.ViewQuery = "-- Indirect schema version: 2030-02-03T03:55:50Z\nSELECT * FROM a"
 					spec.ViewQuery = "SELECT * FROM b"
 					spec.Labels[MetadataVersionKey] = "10"
 
 					err := EnsureTable(ctx, mockTable, spec, UpdateMetadata(), RefreshViewInterval(1*time.Hour))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedUpdate := &bigquery.TableMetadataToUpdate{
 						ViewQuery: "-- Indirect schema version: 2030-02-03T04:05:06Z\nSELECT * FROM b",
 					}
 					expectedUpdate.SetLabel(MetadataVersionKey, "10")
-					So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
 
 			})
-			Convey(`With RefreshViewInterval option`, func() {
+			t.Run(`With RefreshViewInterval option`, func(t *ftt.Test) {
 				spec.ViewQuery = "should be ignored as this option does not push spec.ViewQuery"
 
-				Convey(`View is not stale`, func() {
+				t.Run(`View is not stale`, func(t *ftt.Test) {
 					mockTable.md.ViewQuery = "-- Indirect schema version: 2030-02-03T03:55:50Z\nSELECT * FROM a"
 
 					err := EnsureTable(ctx, mockTable, spec, RefreshViewInterval(1*time.Hour))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
-					So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+					assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 				})
-				Convey(`View is stale`, func() {
+				t.Run(`View is stale`, func(t *ftt.Test) {
 					mockTable.md.ViewQuery = "-- Indirect schema version: 2030-02-03T03:04:00Z\nSELECT * FROM a"
 
 					err := EnsureTable(ctx, mockTable, spec, RefreshViewInterval(1*time.Hour))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedUpdate := &bigquery.TableMetadataToUpdate{
 						ViewQuery: "-- Indirect schema version: 2030-02-03T04:05:06Z\nSELECT * FROM a",
 					}
-					So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
-				Convey(`View has no header`, func() {
+				t.Run(`View has no header`, func(t *ftt.Test) {
 					mockTable.md.ViewQuery = "SELECT * FROM a"
 
 					err := EnsureTable(ctx, mockTable, spec, RefreshViewInterval(1*time.Hour))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					expectedUpdate := &bigquery.TableMetadataToUpdate{
 						ViewQuery: "-- Indirect schema version: 2030-02-03T04:05:06Z\nSELECT * FROM a",
 					}
-					So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+					assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 				})
 			})
 		})
 
-		Convey(`Description`, func() {
+		t.Run(`Description`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
@@ -278,42 +279,42 @@ func TestBqTableCache(t *testing.T) {
 				},
 			}
 
-			Convey(`Description is up to date`, func() {
+			t.Run(`Description is up to date`, func(t *ftt.Test) {
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Description requires update`, func() {
+			t.Run(`Description requires update`, func(t *ftt.Test) {
 				spec.Description = "Description B"
 				spec.Labels[MetadataVersionKey] = "2"
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedUpdate := &bigquery.TableMetadataToUpdate{
 					Description: "Description B",
 				}
 				expectedUpdate.SetLabel(MetadataVersionKey, "2")
-				So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+				assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 			})
 
-			Convey(`Description different but no new metadata version`, func() {
+			t.Run(`Description different but no new metadata version`, func(t *ftt.Test) {
 				spec.Description = "Description B"
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Description requires update but not enforced`, func() {
+			t.Run(`Description requires update but not enforced`, func(t *ftt.Test) {
 				spec.Description = "Description B"
 				spec.Labels[MetadataVersionKey] = "2"
 				err := EnsureTable(ctx, mockTable, spec)
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 		})
 
-		Convey(`Labels`, func() {
+		t.Run(`Labels`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
@@ -327,41 +328,41 @@ func TestBqTableCache(t *testing.T) {
 				Labels:    map[string]string{MetadataVersionKey: "1", "key-a": "value-a", "key-b": "value-b", "key-c": "value-c"},
 			}
 
-			Convey(`Labels are up to date`, func() {
+			t.Run(`Labels are up to date`, func(t *ftt.Test) {
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Labels require update`, func() {
+			t.Run(`Labels require update`, func(t *ftt.Test) {
 				spec.Labels = map[string]string{MetadataVersionKey: "2", "key-a": "value-a", "key-b": "new-value-b", "key-d": "value-d"}
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				update := &bigquery.TableMetadataToUpdate{}
 				update.DeleteLabel("key-c")
 				update.SetLabel(MetadataVersionKey, "2")
 				update.SetLabel("key-b", "new-value-b")
 				update.SetLabel("key-d", "value-d")
-				So(mockTable.updateMD, ShouldResemble, update)
+				assert.Loosely(t, mockTable.updateMD, should.Resemble(update))
 			})
 
-			Convey(`Labels require update but no new metadata version`, func() {
+			t.Run(`Labels require update but no new metadata version`, func(t *ftt.Test) {
 				spec.Labels = map[string]string{MetadataVersionKey: "1", "key-a": "value-a", "key-b": "new-value-b", "key-d": "value-d"}
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Labels require update but not enforced`, func() {
+			t.Run(`Labels require update but not enforced`, func(t *ftt.Test) {
 				spec.Labels = map[string]string{MetadataVersionKey: "2", "key-a": "value-a", "key-b": "new-value-b", "key-d": "value-d"}
 				err := EnsureTable(ctx, mockTable, spec)
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 		})
 
-		Convey(`Clustering`, func() {
+		t.Run(`Clustering`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md: &bigquery.TableMetadata{
@@ -378,86 +379,86 @@ func TestBqTableCache(t *testing.T) {
 				},
 			}
 
-			Convey(`Clustering is up to date`, func() {
+			t.Run(`Clustering is up to date`, func(t *ftt.Test) {
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Clustering requires update`, func() {
+			t.Run(`Clustering requires update`, func(t *ftt.Test) {
 				spec.Clustering = &bigquery.Clustering{Fields: []string{"field_c"}}
 				spec.Labels[MetadataVersionKey] = "2"
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedUpdate := &bigquery.TableMetadataToUpdate{
 					Clustering: &bigquery.Clustering{Fields: []string{"field_c"}},
 				}
 				expectedUpdate.SetLabel(MetadataVersionKey, "2")
-				So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+				assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 			})
 
-			Convey(`Clustering up to date but new metadata version`, func() {
+			t.Run(`Clustering up to date but new metadata version`, func(t *ftt.Test) {
 				spec.Labels[MetadataVersionKey] = "2"
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				expectedUpdate := &bigquery.TableMetadataToUpdate{}
 				expectedUpdate.SetLabel(MetadataVersionKey, "2")
-				So(mockTable.updateMD, ShouldResemble, expectedUpdate)
+				assert.Loosely(t, mockTable.updateMD, should.Resemble(expectedUpdate))
 			})
 
-			Convey(`Clustering different but no new metadata version`, func() {
+			t.Run(`Clustering different but no new metadata version`, func(t *ftt.Test) {
 				spec.Clustering = &bigquery.Clustering{Fields: []string{"field_c"}}
 				err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 
-			Convey(`Clustering requires update but not enforced`, func() {
+			t.Run(`Clustering requires update but not enforced`, func(t *ftt.Test) {
 				spec.Clustering = &bigquery.Clustering{Fields: []string{"field_c"}}
 				spec.Labels[MetadataVersionKey] = "2"
 				err := EnsureTable(ctx, mockTable, spec)
-				So(err, ShouldBeNil)
-				So(mockTable.updateMD, ShouldBeNil) // we did not try to update it
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, mockTable.updateMD, should.BeNil) // we did not try to update it
 			})
 		})
 
-		Convey(`RefreshViewInterval is used on a table that is not a view`, func() {
+		t.Run(`RefreshViewInterval is used on a table that is not a view`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md:                 nil,
 			}
 			spec := &bigquery.TableMetadata{}
 			err := EnsureTable(ctx, mockTable, spec, RefreshViewInterval(time.Hour))
-			So(err, ShouldEqual, errViewRefreshEnabledOnNonView)
+			assert.Loosely(t, err, should.Equal(errViewRefreshEnabledOnNonView))
 		})
 
-		Convey(`UpdateMetadata is used without spec having a metadata version`, func() {
+		t.Run(`UpdateMetadata is used without spec having a metadata version`, func(t *ftt.Test) {
 			mockTable := &tableMock{
 				fullyQualifiedName: "project.dataset.table",
 				md:                 nil,
 			}
 			spec := &bigquery.TableMetadata{}
 			err := EnsureTable(ctx, mockTable, spec, UpdateMetadata())
-			So(err, ShouldEqual, errMetadataVersionLabelMissing)
+			assert.Loosely(t, err, should.Equal(errMetadataVersionLabelMissing))
 		})
 
-		Convey(`Cache is working`, func() {
-			err := sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
-			calls := t.mdCalls
+		t.Run(`Cache is working`, func(t *ftt.Test) {
+			err := sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
+			calls := tm.mdCalls
 
 			// Confirms the cache is working.
-			err = sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
-			So(t.mdCalls, ShouldEqual, calls) // no more new calls were made.
+			err = sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tm.mdCalls, should.Equal(calls)) // no more new calls were made.
 
 			// Confirms the cache is expired as expected.
 			tc.Add(6 * time.Minute)
-			err = sa.EnsureTable(ctx, t, table)
-			So(err, ShouldBeNil)
-			So(t.mdCalls, ShouldBeGreaterThan, calls) // new calls were made.
+			err = sa.EnsureTable(ctx, tm, table)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tm.mdCalls, should.BeGreaterThan(calls)) // new calls were made.
 		})
 	})
 }
