@@ -18,11 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConds(t *testing.T) {
@@ -41,74 +41,74 @@ func TestConds(t *testing.T) {
 		}
 	}
 
-	Convey("AttributeRestriction empty", t, func() {
+	ftt.Run("AttributeRestriction empty", t, func(t *ftt.Test) {
 		builder := NewBuilder([]*protocol.Condition{
 			restrict("a", nil),
 		})
 
 		cond, err := builder.Condition([]uint32{0})
-		So(err, ShouldBeNil)
-		So(cond, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond, should.NotBeNil)
 
-		So(cond.Eval(ctx, realms.Attrs{"a": "b"}), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"a": ""}), ShouldBeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "b"}), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": ""}), should.BeFalse)
 	})
 
-	Convey("AttributeRestriction non-empty", t, func() {
+	ftt.Run("AttributeRestriction non-empty", t, func(t *ftt.Test) {
 		builder := NewBuilder([]*protocol.Condition{
 			restrict("a", []string{"val1", "val2"}),
 		})
 
 		cond, err := builder.Condition([]uint32{0})
-		So(err, ShouldBeNil)
-		So(cond, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond, should.NotBeNil)
 
-		So(cond.Eval(ctx, nil), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val1"}), ShouldBeTrue)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val2"}), ShouldBeTrue)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val3"}), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"b": "val1"}), ShouldBeFalse)
+		assert.Loosely(t, cond.Eval(ctx, nil), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val1"}), should.BeTrue)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val2"}), should.BeTrue)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val3"}), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"b": "val1"}), should.BeFalse)
 	})
 
-	Convey("Unrecognized elementary condition", t, func() {
+	ftt.Run("Unrecognized elementary condition", t, func(t *ftt.Test) {
 		builder := NewBuilder([]*protocol.Condition{
 			{},
 		})
 
 		cond, err := builder.Condition([]uint32{0})
-		So(err, ShouldBeNil)
-		So(cond, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond, should.NotBeNil)
 
-		So(cond.Eval(ctx, nil), ShouldBeFalse)
+		assert.Loosely(t, cond.Eval(ctx, nil), should.BeFalse)
 	})
 
-	Convey("Empty Condition", t, func() {
+	ftt.Run("Empty Condition", t, func(t *ftt.Test) {
 		builder := NewBuilder(nil)
 
 		cond, err := builder.Condition(nil)
-		So(err, ShouldBeNil)
-		So(cond, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond, should.BeNil)
 	})
 
-	Convey("Condition ANDs elementary conditions", t, func() {
+	ftt.Run("Condition ANDs elementary conditions", t, func(t *ftt.Test) {
 		builder := NewBuilder([]*protocol.Condition{
 			restrict("a", []string{"val1", "val2"}),
 			restrict("b", []string{"val1", "val2"}),
 		})
 
 		cond, err := builder.Condition([]uint32{0, 1})
-		So(err, ShouldBeNil)
-		So(cond, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond, should.NotBeNil)
 
-		So(cond.Eval(ctx, nil), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val1"}), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"b": "val1"}), ShouldBeFalse)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val1", "b": "val1"}), ShouldBeTrue)
-		So(cond.Eval(ctx, realms.Attrs{"a": "val2", "b": "val2"}), ShouldBeTrue)
-		So(cond.Eval(ctx, realms.Attrs{"a": "xxxx", "b": "val1"}), ShouldBeFalse)
+		assert.Loosely(t, cond.Eval(ctx, nil), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val1"}), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"b": "val1"}), should.BeFalse)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val1", "b": "val1"}), should.BeTrue)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "val2", "b": "val2"}), should.BeTrue)
+		assert.Loosely(t, cond.Eval(ctx, realms.Attrs{"a": "xxxx", "b": "val1"}), should.BeFalse)
 	})
 
-	Convey("Conditions are cached", t, func() {
+	ftt.Run("Conditions are cached", t, func(t *ftt.Test) {
 		builder := NewBuilder([]*protocol.Condition{
 			restrict("a", []string{"val1", "val2"}),
 			restrict("b", []string{"val1", "val2"}),
@@ -116,35 +116,35 @@ func TestConds(t *testing.T) {
 		})
 
 		cond1, err := builder.Condition([]uint32{0, 1})
-		So(err, ShouldBeNil)
-		So(cond1, ShouldNotBeNil)
-		So(cond1.Index(), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond1, should.NotBeNil)
+		assert.Loosely(t, cond1.Index(), should.BeZero)
 
 		cond2, err := builder.Condition([]uint32{0, 1})
-		So(err, ShouldBeNil)
-		So(cond2, ShouldEqual, cond1) // the exact same pointer
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond2, should.Equal(cond1)) // the exact same pointer
 
 		cond3, err := builder.Condition([]uint32{1, 0})
-		So(err, ShouldBeNil)
-		So(cond3, ShouldNotEqual, cond1) // different, the order matters
-		So(cond3.Index(), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond3, should.NotEqual(cond1)) // different, the order matters
+		assert.Loosely(t, cond3.Index(), should.Equal(1))
 
 		cond4, err := builder.Condition([]uint32{0})
-		So(err, ShouldBeNil)
-		So(cond4, ShouldNotEqual, cond1)
-		So(cond4.Index(), ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond4, should.NotEqual(cond1))
+		assert.Loosely(t, cond4.Index(), should.Equal(2))
 
 		cond5, err := builder.Condition([]uint32{0, 2})
-		So(err, ShouldBeNil)
-		So(cond5, ShouldNotEqual, cond1)
-		So(cond5.Index(), ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cond5, should.NotEqual(cond1))
+		assert.Loosely(t, cond5.Index(), should.Equal(3))
 	})
 
-	Convey("Out of bounds", t, func() {
+	ftt.Run("Out of bounds", t, func(t *ftt.Test) {
 		builder := NewBuilder(nil)
 
 		cond, err := builder.Condition([]uint32{0})
-		So(err, ShouldErrLike, "condition index is out of bounds: 0 >= 0")
-		So(cond, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("condition index is out of bounds: 0 >= 0"))
+		assert.Loosely(t, cond, should.BeNil)
 	})
 }

@@ -17,16 +17,18 @@ package analytics
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateMeasurementID(t *testing.T) {
-	Convey("Validate measurement ID", t, func() {
-		So(rGA4Allowed.MatchString("G-YP2P6PXQDT"), ShouldBeTrue)
-		So(rGA4Allowed.MatchString("UA-55762617-26"), ShouldBeFalse)
-		So(rGA4Allowed.MatchString(""), ShouldBeFalse)
-		So(rGA4Allowed.MatchString("G-"), ShouldBeFalse)
-		So(rGA4Allowed.MatchString("G-yp2p6pxqdt"), ShouldBeFalse)
-		So(rGA4Allowed.MatchString(" G-YP2P6PXQDT "), ShouldBeFalse)
+	ftt.Run("Validate measurement ID", t, func(t *ftt.Test) {
+		assert.Loosely(t, rGA4Allowed.MatchString("G-YP2P6PXQDT"), should.BeTrue)
+		assert.Loosely(t, rGA4Allowed.MatchString("UA-55762617-26"), should.BeFalse)
+		assert.Loosely(t, rGA4Allowed.MatchString(""), should.BeFalse)
+		assert.Loosely(t, rGA4Allowed.MatchString("G-"), should.BeFalse)
+		assert.Loosely(t, rGA4Allowed.MatchString("G-yp2p6pxqdt"), should.BeFalse)
+		assert.Loosely(t, rGA4Allowed.MatchString(" G-YP2P6PXQDT "), should.BeFalse)
 	})
 }

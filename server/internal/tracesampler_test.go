@@ -20,43 +20,43 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.opentelemetry.io/otel/sdk/trace"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSamplerParsing(t *testing.T) {
 	t.Parallel()
 
-	Convey("Percent", t, func() {
+	ftt.Run("Percent", t, func(t *ftt.Test) {
 		s, err := BaseSampler("0.1%")
-		So(err, ShouldBeNil)
-		So(s, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.NotBeNil)
 
 		_, err = BaseSampler("abc%")
-		So(err, ShouldErrLike, `not a float percent "abc%"`)
+		assert.Loosely(t, err, should.ErrLike(`not a float percent "abc%"`))
 	})
 
-	Convey("QPS", t, func() {
+	ftt.Run("QPS", t, func(t *ftt.Test) {
 		s, err := BaseSampler("0.1qps")
-		So(err, ShouldBeNil)
-		So(s, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.NotBeNil)
 
 		_, err = BaseSampler("abcqps")
-		So(err, ShouldErrLike, `not a float QPS "abcqps"`)
+		assert.Loosely(t, err, should.ErrLike(`not a float QPS "abcqps"`))
 	})
 
-	Convey("Unrecognized", t, func() {
+	ftt.Run("Unrecognized", t, func(t *ftt.Test) {
 		_, err := BaseSampler("huh")
-		So(err, ShouldErrLike, "unrecognized sampling spec string")
+		assert.Loosely(t, err, should.ErrLike("unrecognized sampling spec string"))
 	})
 }
 
 func TestQPSSampler(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		now := atomic.Value{}
 		now.Store(time.Now()) // the absolute value doesn't matter
 		tick := func(dt time.Duration) { now.Store(now.Load().(time.Time).Add(dt)) }
@@ -80,6 +80,6 @@ func TestQPSSampler(t *testing.T) {
 			}
 			tick(10 * time.Millisecond) // 100 QPS
 		}
-		So(sampled, ShouldEqual, 10000/100+1) // '+1' is due to randomization
+		assert.Loosely(t, sampled, should.Equal(10000/100+1)) // '+1' is due to randomization
 	})
 }

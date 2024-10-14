@@ -25,11 +25,12 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gomodule/redigo/redis"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testEntity struct {
@@ -43,12 +44,12 @@ func TestRedisCacheSmoke(t *testing.T) {
 	// TODO(crbug.com/1416970): This test is flaky.
 	t.Skip()
 
-	Convey("Smoke test", t, func(c C) {
+	ftt.Run("Smoke test", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		ctx = memory.Use(ctx)
 
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		defer func() {
 			t.Logf("Total connections: %d", s.TotalConnectionCount())
 			t.Logf("Current connections: %d", s.CurrentConnectionCount())
@@ -83,7 +84,7 @@ func TestRedisCacheSmoke(t *testing.T) {
 			}
 			return ents
 		}
-		So(datastore.Put(ctx, entities()), ShouldBeNil)
+		assert.Loosely(c, datastore.Put(ctx, entities()), should.BeNil)
 
 		type state struct {
 			last [entitiesCount]int

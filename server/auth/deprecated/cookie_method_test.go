@@ -26,6 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -36,15 +39,12 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
 	"go.chromium.org/luci/server/settings"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFullFlow(t *testing.T) {
 	t.Parallel()
 
-	Convey("with test context", t, func(c C) {
+	ftt.Run("with test context", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx = authtest.MockAuthConfig(ctx)
@@ -85,14 +85,14 @@ func TestFullFlow(t *testing.T) {
 				json.NewEncoder(w).Encode(jwks)
 
 			case "/token":
-				c.So(r.ParseForm(), ShouldBeNil)
-				c.So(r.Form, ShouldResemble, url.Values{
+				assert.Loosely(c, r.ParseForm(), should.BeNil)
+				assert.Loosely(c, r.Form, should.Resemble(url.Values{
 					"redirect_uri":  {"http://fake/redirect"},
 					"client_id":     {"client_id"},
 					"client_secret": {"client_secret"},
 					"code":          {"omg_auth_code"},
 					"grant_type":    {"authorization_code"},
-				})
+				}))
 				w.Write([]byte(fmt.Sprintf(`{"id_token": "%s"}`, idToken)))
 
 			default:
@@ -107,7 +107,7 @@ func TestFullFlow(t *testing.T) {
 			ClientSecret: "client_secret",
 			RedirectURI:  "http://fake/redirect",
 		}
-		So(settings.Set(ctx, SettingsKey, &cfg), ShouldBeNil)
+		assert.Loosely(c, settings.Set(ctx, SettingsKey, &cfg), should.BeNil)
 
 		method := CookieAuthMethod{
 			SessionStore:        &MemorySessionStore{},
@@ -115,17 +115,17 @@ func TestFullFlow(t *testing.T) {
 			IncompatibleCookies: []string{"wrong_cookie"},
 		}
 
-		Convey("Full flow", func() {
-			So(method.Warmup(ctx), ShouldBeNil)
+		c.Run("Full flow", func(c *ftt.Test) {
+			assert.Loosely(c, method.Warmup(ctx), should.BeNil)
 
 			// Generate login URL.
 			loginURL, err := method.LoginURL(ctx, "/destination")
-			So(err, ShouldBeNil)
-			So(loginURL, ShouldEqual, "/auth/openid/login?r=%2Fdestination")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, loginURL, should.Equal("/auth/openid/login?r=%2Fdestination"))
 
 			// "Visit" login URL.
 			req, err := http.NewRequestWithContext(ctx, "GET", "http://fake"+loginURL, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			rec := httptest.NewRecorder()
 			method.loginHandler(&router.Context{
 				Writer:  rec,
@@ -133,12 +133,12 @@ func TestFullFlow(t *testing.T) {
 			})
 
 			// It asks us to visit authorizarion endpoint.
-			So(rec.Code, ShouldEqual, http.StatusFound)
+			assert.Loosely(c, rec.Code, should.Equal(http.StatusFound))
 			parsed, err := url.Parse(rec.Header().Get("Location"))
-			So(err, ShouldBeNil)
-			So(parsed.Host, ShouldEqual, ts.URL[len("http://"):])
-			So(parsed.Path, ShouldEqual, "/authorization")
-			So(parsed.Query(), ShouldResemble, url.Values{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, parsed.Host, should.Equal(ts.URL[len("http://"):]))
+			assert.Loosely(c, parsed.Path, should.Equal("/authorization"))
+			assert.Loosely(c, parsed.Query(), should.Resemble(url.Values{
 				"client_id":     {"client_id"},
 				"redirect_uri":  {"http://fake/redirect"},
 				"response_type": {"code"},
@@ -149,7 +149,7 @@ func TestFullFlow(t *testing.T) {
 						"Job3N0X3VybCI6ImZha2UifUFtzG6wPbuvHG2mY_Wf6eQ_Eiu7n3_Tf6GmRcse1g" +
 						"YE",
 				},
-			})
+			}))
 
 			// Pretend we've done it. OpenID redirects user's browser to callback URI.
 			// `callbackHandler` will call /token and /jwks fake endpoints exposed
@@ -158,7 +158,7 @@ func TestFullFlow(t *testing.T) {
 			callbackParams.Set("code", "omg_auth_code")
 			callbackParams.Set("state", parsed.Query().Get("state"))
 			req, err = http.NewRequestWithContext(ctx, "GET", "http://fake/redirect?"+callbackParams.Encode(), nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			rec = httptest.NewRecorder()
 			method.callbackHandler(&router.Context{
 				Writer:  rec,
@@ -168,31 +168,31 @@ func TestFullFlow(t *testing.T) {
 			// We should be redirected to the login page, with session cookie set.
 			expectedCookie := "oid_session=AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwic2lkIjoi" +
 				"dXNlcl9pZF9zdWIvMSJ9PmRzaOv-mS0PMHkve897iiELNmpiLi_j3ICG1VKuNCs"
-			So(rec.Code, ShouldEqual, http.StatusFound)
-			So(rec.Header().Get("Location"), ShouldEqual, "/destination")
-			So(rec.Header().Get("Set-Cookie"), ShouldEqual,
-				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 GMT; Max-Age=2591100; HttpOnly")
+			assert.Loosely(c, rec.Code, should.Equal(http.StatusFound))
+			assert.Loosely(c, rec.Header().Get("Location"), should.Equal("/destination"))
+			assert.Loosely(c, rec.Header().Get("Set-Cookie"), should.Equal(
+				expectedCookie+"; Path=/; Expires=Sun, 18 Oct 2015 01:18:20 GMT; Max-Age=2591100; HttpOnly"))
 
 			// Use the cookie to authenticate some call.
 			req, err = http.NewRequest("GET", "http://fake/something", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			req.Header.Add("Cookie", expectedCookie)
 			user, session, err := method.Authenticate(ctx, auth.RequestMetadataForHTTP(req))
-			So(err, ShouldBeNil)
-			So(user, ShouldResemble, &auth.User{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, user, should.Resemble(&auth.User{
 				Identity: "user:user@example.com",
 				Email:    "user@example.com",
 				Name:     "Some Dude",
 				Picture:  "https://picture/url/s64/photo.jpg",
-			})
-			So(session, ShouldBeNil)
+			}))
+			assert.Loosely(c, session, should.BeNil)
 
 			// Now generate URL to and visit logout page.
 			logoutURL, err := method.LogoutURL(ctx, "/another_destination")
-			So(err, ShouldBeNil)
-			So(logoutURL, ShouldEqual, "/auth/openid/logout?r=%2Fanother_destination")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, logoutURL, should.Equal("/auth/openid/logout?r=%2Fanother_destination"))
 			req, err = http.NewRequestWithContext(ctx, "GET", "http://fake"+logoutURL, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			req.Header.Add("Cookie", expectedCookie)
 			rec = httptest.NewRecorder()
 			method.logoutHandler(&router.Context{
@@ -201,16 +201,16 @@ func TestFullFlow(t *testing.T) {
 			})
 
 			// Should be redirected to destination with the cookie killed.
-			So(rec.Code, ShouldEqual, http.StatusFound)
-			So(rec.Header().Get("Location"), ShouldEqual, "/another_destination")
-			So(rec.Header().Get("Set-Cookie"), ShouldEqual,
-				"oid_session=deleted; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0")
+			assert.Loosely(c, rec.Code, should.Equal(http.StatusFound))
+			assert.Loosely(c, rec.Header().Get("Location"), should.Equal("/another_destination"))
+			assert.Loosely(c, rec.Header().Get("Set-Cookie"), should.Equal(
+				"oid_session=deleted; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0"))
 		})
 	})
 }
 
 func TestCallbackHandleEdgeCases(t *testing.T) {
-	Convey("with test context", t, func(c C) {
+	ftt.Run("with test context", t, func(c *ftt.Test) {
 		ctx := context.Background()
 		ctx = settings.Use(ctx, settings.New(&settings.MemoryStorage{}))
 		ctx, _ = testclock.UseTime(ctx, time.Unix(1442540000, 0))
@@ -224,7 +224,7 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 				q.Add(k, v)
 			}
 			req, err := http.NewRequestWithContext(ctx, "GET", "/auth/openid/callback?"+q.Encode(), nil)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			req.Host = "fake.com"
 			rec := httptest.NewRecorder()
 			method.callbackHandler(&router.Context{
@@ -234,67 +234,67 @@ func TestCallbackHandleEdgeCases(t *testing.T) {
 			return rec
 		}
 
-		Convey("handles 'error'", func() {
+		c.Run("handles 'error'", func(c *ftt.Test) {
 			rec := call(map[string]string{"error": "Omg, error"})
-			So(rec.Code, ShouldEqual, 400)
-			So(rec.Body.String(), ShouldEqual, "OpenID login error: Omg, error\n")
+			assert.Loosely(c, rec.Code, should.Equal(400))
+			assert.Loosely(c, rec.Body.String(), should.Equal("OpenID login error: Omg, error\n"))
 		})
 
-		Convey("handles no 'code'", func() {
+		c.Run("handles no 'code'", func(c *ftt.Test) {
 			rec := call(map[string]string{})
-			So(rec.Code, ShouldEqual, 400)
-			So(rec.Body.String(), ShouldEqual, "Missing 'code' parameter\n")
+			assert.Loosely(c, rec.Code, should.Equal(400))
+			assert.Loosely(c, rec.Body.String(), should.Equal("Missing 'code' parameter\n"))
 		})
 
-		Convey("handles no 'state'", func() {
+		c.Run("handles no 'state'", func(c *ftt.Test) {
 			rec := call(map[string]string{"code": "123"})
-			So(rec.Code, ShouldEqual, 400)
-			So(rec.Body.String(), ShouldEqual, "Missing 'state' parameter\n")
+			assert.Loosely(c, rec.Code, should.Equal(400))
+			assert.Loosely(c, rec.Body.String(), should.Equal("Missing 'state' parameter\n"))
 		})
 
-		Convey("handles bad 'state'", func() {
+		c.Run("handles bad 'state'", func(c *ftt.Test) {
 			rec := call(map[string]string{"code": "123", "state": "garbage"})
-			So(rec.Code, ShouldEqual, 400)
-			So(rec.Body.String(), ShouldEqual, "Failed to validate 'state' token\n")
+			assert.Loosely(c, rec.Code, should.Equal(400))
+			assert.Loosely(c, rec.Body.String(), should.Equal("Failed to validate 'state' token\n"))
 		})
 
-		Convey("handles redirect to another host", func() {
+		c.Run("handles redirect to another host", func(c *ftt.Test) {
 			state := map[string]string{
 				"dest_url": "/",
 				"host_url": "non-default.fake.com",
 			}
 			stateTok, err := openIDStateToken.Generate(ctx, nil, state, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			rec := call(map[string]string{"code": "123", "state": stateTok})
-			So(rec.Code, ShouldEqual, 302)
-			So(rec.Header().Get("Location"), ShouldEqual,
+			assert.Loosely(c, rec.Code, should.Equal(302))
+			assert.Loosely(c, rec.Header().Get("Location"), should.Equal(
 				"https://non-default.fake.com/auth/openid/callback?"+
 					"code=123&state=AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwiZGVzdF91cmwiOiIvIiw"+
 					"iaG9zdF91cmwiOiJub24tZGVmYXVsdC5mYWtlLmNvbSJ92y0UJtCrN2qGYbcbCiZsV"+
-					"9OdFEa3zAauzz4lmwPJLwI")
+					"9OdFEa3zAauzz4lmwPJLwI"))
 		})
 	})
 }
 
 func TestNotConfigured(t *testing.T) {
-	Convey("Returns ErrNotConfigured is on SessionStore", t, func() {
+	ftt.Run("Returns ErrNotConfigured is on SessionStore", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		method := CookieAuthMethod{}
 
 		_, err := method.LoginURL(ctx, "/")
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 
 		_, err = method.LogoutURL(ctx, "/")
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 
 		_, _, err = method.Authenticate(ctx, authtest.NewFakeRequestMetadata())
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 	})
 }
 
 func TestNormalizeURL(t *testing.T) {
-	Convey("Normalizes good URLs", t, func(ctx C) {
+	ftt.Run("Normalizes good URLs", t, func(ctx *ftt.Test) {
 		cases := []struct {
 			in  string
 			out string
@@ -309,14 +309,14 @@ func TestNormalizeURL(t *testing.T) {
 		for _, c := range cases {
 			out, err := normalizeURL(c.in)
 			if err != nil {
-				ctx.Printf("Failed while checking %q\n", c.in)
-				So(err, ShouldBeNil)
+				ctx.Logf("Failed while checking %q\n", c.in)
+				assert.Loosely(ctx, err, should.BeNil)
 			}
-			So(out, ShouldEqual, c.out)
+			assert.Loosely(ctx, out, should.Equal(c.out))
 		}
 	})
 
-	Convey("Rejects bad URLs", t, func(ctx C) {
+	ftt.Run("Rejects bad URLs", t, func(ctx *ftt.Test) {
 		cases := []string{
 			"",
 			"//",
@@ -330,22 +330,22 @@ func TestNormalizeURL(t *testing.T) {
 		for _, c := range cases {
 			_, err := normalizeURL(c)
 			if err == nil {
-				ctx.Printf("Didn't fail while testing %q\n", c)
+				ctx.Logf("Didn't fail while testing %q\n", c)
 			}
-			So(err, ShouldNotBeNil)
+			assert.Loosely(ctx, err, should.NotBeNil)
 		}
 	})
 }
 
 func TestBadDestinationURLs(t *testing.T) {
-	Convey("Rejects bad destination URLs", t, func() {
+	ftt.Run("Rejects bad destination URLs", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		method := CookieAuthMethod{SessionStore: &MemorySessionStore{}}
 
 		_, err := method.LoginURL(ctx, "http://somesite")
-		So(err, ShouldErrLike, "openid: dest URL in LoginURL or LogoutURL must be relative")
+		assert.Loosely(t, err, should.ErrLike("openid: dest URL in LoginURL or LogoutURL must be relative"))
 
 		_, err = method.LogoutURL(ctx, "http://somesite")
-		So(err, ShouldErrLike, "openid: dest URL in LoginURL or LogoutURL must be relative")
+		assert.Loosely(t, err, should.ErrLike("openid: dest URL in LoginURL or LogoutURL must be relative"))
 	})
 }

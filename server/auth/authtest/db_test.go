@@ -22,12 +22,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -48,7 +48,7 @@ func TestFakeDB(t *testing.T) {
 	dataRoot := &protocol.RealmData{EnforceInService: []string{"A"}}
 	dataSome := &protocol.RealmData{EnforceInService: []string{"B"}}
 
-	Convey("With FakeDB", t, func() {
+	ftt.Run("With FakeDB", t, func(t *ftt.Test) {
 		db := NewFakeDB(
 			MockMembership("user:abc@def.com", "group-a"),
 			MockMembership("user:abc@def.com", "group-b"),
@@ -72,180 +72,180 @@ func TestFakeDB(t *testing.T) {
 			MockIPAllowlist("127.0.0.42", "allowlist"),
 		)
 
-		Convey("Membership checks work", func() {
+		t.Run("Membership checks work", func(t *ftt.Test) {
 			out, err := db.CheckMembership(ctx, "user:abc@def.com", []string{"group-a", "group-b", "group-c", "group-d"})
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []string{"group-a", "group-b", "group-c"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]string{"group-a", "group-b", "group-c"}))
 
 			resp, err := db.IsMember(ctx, "user:abc@def.com", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-b"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-c"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"group-d"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"another", "group-b"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.IsMember(ctx, "user:another@def.com", []string{"group-b"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.IsMember(ctx, "user:another@def.com", []string{"another", "group-b"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.IsMember(ctx, "user:abc@def.com", []string{"another"})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 		})
 
-		Convey("Permission checks work", func() {
+		t.Run("Permission checks work", func(t *ftt.Test) {
 			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:realm", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:realm", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm3, "proj:realm", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:unknown", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 		})
 
-		Convey("Conditional permission checks work", func() {
+		t.Run("Conditional permission checks work", func(t *ftt.Test) {
 			resp, err := db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
 				"attr1": "val1",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
 				"attr1": "val2",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
 				"attr1": "val3",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:cond", realms.Attrs{
 				"unknown": "val1",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:cond", realms.Attrs{
 				"attr1": "val1",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.HasPermission(ctx, "user:abc@def.com", testPerm2, "proj:cond", realms.Attrs{
 				"attr1": "val1",
 				"attr2": "val3",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 		})
 
-		Convey("QueryRealms works", func() {
+		t.Run("QueryRealms works", func(t *ftt.Test) {
 			res, err := db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			sort.Strings(res)
-			So(res, ShouldResemble, []string{"another:realm", "proj:realm"})
+			assert.Loosely(t, res, should.Resemble([]string{"another:realm", "proj:realm"}))
 
 			res, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "proj", nil)
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, []string{"proj:realm"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble([]string{"proj:realm"}))
 
 			res, err = db.QueryRealms(ctx, "user:zzz@def.com", testPerm1, "", nil)
-			So(err, ShouldBeNil)
-			So(res, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.BeEmpty)
 
 			// Conditional bindings.
 			res, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm1, "", realms.Attrs{
 				"attr1": "val1",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			sort.Strings(res)
-			So(res, ShouldResemble, []string{"another:realm", "proj:cond", "proj:realm"})
+			assert.Loosely(t, res, should.Resemble([]string{"another:realm", "proj:cond", "proj:realm"}))
 
 			// Unflagged permission.
 			_, err = db.QueryRealms(ctx, "user:abc@def.com", testPerm2, "", nil)
-			So(err, ShouldErrLike, "permission testing.tests.perm2 cannot be used in QueryRealms")
+			assert.Loosely(t, err, should.ErrLike("permission testing.tests.perm2 cannot be used in QueryRealms"))
 		})
 
-		Convey("FilterKnownGroups works", func() {
+		t.Run("FilterKnownGroups works", func(t *ftt.Test) {
 			known, err := db.FilterKnownGroups(ctx, []string{"missing", "group-b", "group-a", "group-c", "group-d", "group-a", "missing"})
-			So(err, ShouldBeNil)
-			So(known, ShouldResemble, []string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, known, should.Resemble([]string{
 				"group-b", "group-a", "group-c", "group-d", "group-a",
-			})
+			}))
 		})
 
-		Convey("GetRealmData works", func() {
+		t.Run("GetRealmData works", func(t *ftt.Test) {
 			data, err := db.GetRealmData(ctx, "proj:some")
-			So(err, ShouldBeNil)
-			So(data, ShouldEqual, dataSome)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Equal(dataSome))
 
 			// No automatic fallback to root happens, mock it yourself.
 			data, err = db.GetRealmData(ctx, "proj:zzz")
-			So(err, ShouldBeNil)
-			So(data, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.BeNil)
 		})
 
-		Convey("IP allowlist checks work", func() {
+		t.Run("IP allowlist checks work", func(t *ftt.Test) {
 			resp, err := db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "allowlist")
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeTrue)
 
 			resp, err = db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "another")
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 
 			resp, err = db.IsAllowedIP(ctx, net.ParseIP("192.0.0.1"), "allowlist")
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.BeFalse)
 		})
 
-		Convey("Error works", func() {
+		t.Run("Error works", func(t *ftt.Test) {
 			mockedErr := errors.New("boom")
 			db.AddMocks(MockError(mockedErr))
 
 			_, err := db.IsMember(ctx, "user:abc@def.com", []string{"group-a"})
-			So(err, ShouldEqual, mockedErr)
+			assert.Loosely(t, err, should.Equal(mockedErr))
 
 			_, err = db.HasPermission(ctx, "user:abc@def.com", testPerm1, "proj:realm", nil)
-			So(err, ShouldEqual, mockedErr)
+			assert.Loosely(t, err, should.Equal(mockedErr))
 
 			_, err = db.IsAllowedIP(ctx, net.ParseIP("127.0.0.42"), "allowlist")
-			So(err, ShouldEqual, mockedErr)
+			assert.Loosely(t, err, should.Equal(mockedErr))
 
 			_, err = db.FilterKnownGroups(ctx, []string{"a", "b"})
-			So(err, ShouldEqual, mockedErr)
+			assert.Loosely(t, err, should.Equal(mockedErr))
 		})
 	})
 }

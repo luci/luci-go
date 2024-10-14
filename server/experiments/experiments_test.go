@@ -18,7 +18,9 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -29,37 +31,37 @@ var (
 func TestExperiments(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		e1, ok := GetByName("exp1")
-		So(ok, ShouldBeTrue)
-		So(e1, ShouldResemble, exp1)
-		So(e1.Valid(), ShouldBeTrue)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, e1, should.Resemble(exp1))
+		assert.Loosely(t, e1.Valid(), should.BeTrue)
 
 		bad, ok := GetByName("bad")
-		So(ok, ShouldBeFalse)
-		So(bad.Valid(), ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
+		assert.Loosely(t, bad.Valid(), should.BeFalse)
 
 		ctx := context.Background()
-		So(exp1.Enabled(ctx), ShouldBeFalse)
-		So(exp2.Enabled(ctx), ShouldBeFalse)
+		assert.Loosely(t, exp1.Enabled(ctx), should.BeFalse)
+		assert.Loosely(t, exp2.Enabled(ctx), should.BeFalse)
 
 		ctx = Enable(ctx) // noop
-		So(exp1.Enabled(ctx), ShouldBeFalse)
-		So(exp2.Enabled(ctx), ShouldBeFalse)
+		assert.Loosely(t, exp1.Enabled(ctx), should.BeFalse)
+		assert.Loosely(t, exp2.Enabled(ctx), should.BeFalse)
 
 		ctx = Enable(ctx, exp1)
-		So(exp1.Enabled(ctx), ShouldBeTrue)
-		So(exp2.Enabled(ctx), ShouldBeFalse)
+		assert.Loosely(t, exp1.Enabled(ctx), should.BeTrue)
+		assert.Loosely(t, exp2.Enabled(ctx), should.BeFalse)
 
 		ctx = Enable(ctx, exp1) // noop
-		So(exp1.Enabled(ctx), ShouldBeTrue)
-		So(exp2.Enabled(ctx), ShouldBeFalse)
+		assert.Loosely(t, exp1.Enabled(ctx), should.BeTrue)
+		assert.Loosely(t, exp2.Enabled(ctx), should.BeFalse)
 
 		ctx2 := Enable(ctx, exp2)
-		So(exp1.Enabled(ctx2), ShouldBeTrue)
-		So(exp2.Enabled(ctx2), ShouldBeTrue)
+		assert.Loosely(t, exp1.Enabled(ctx2), should.BeTrue)
+		assert.Loosely(t, exp2.Enabled(ctx2), should.BeTrue)
 
 		// Hasn't touched the existing context.
-		So(exp2.Enabled(ctx), ShouldBeFalse)
+		assert.Loosely(t, exp2.Enabled(ctx), should.BeFalse)
 	})
 }

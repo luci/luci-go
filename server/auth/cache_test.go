@@ -22,12 +22,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 	"go.chromium.org/luci/server/caching/layered"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var testCache = newTokenCache(tokenCacheConfig{
@@ -38,7 +39,7 @@ var testCache = newTokenCache(tokenCacheConfig{
 func TestTokenCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("with in-process cache", t, func() {
+	ftt.Run("with in-process cache", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -64,71 +65,71 @@ func TestTokenCache(t *testing.T) {
 			})
 		}
 
-		Convey("Basic usage", func() {
+		t.Run("Basic usage", func(t *ftt.Test) {
 			// Generate initial token.
 			tok1 := makeTestToken(ctx, "token-1")
 			tok, err, label := call(tok1, nil, "")
-			So(err, ShouldBeNil)
-			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
-			So(tok, ShouldEqual, tok1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, label, should.Equal("SUCCESS_CACHE_MISS"))
+			assert.Loosely(t, tok, should.Equal(tok1))
 
 			// Some time later still cache hit.
 			tc.Add(49 * time.Minute)
 			tok, err, label = call(nil, errors.New("must not be called"), "")
-			So(err, ShouldBeNil)
-			So(label, ShouldEqual, "SUCCESS_CACHE_HIT")
-			So(tok, ShouldEqual, tok1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, label, should.Equal("SUCCESS_CACHE_HIT"))
+			assert.Loosely(t, tok, should.Equal(tok1))
 
 			// Lifetime of the existing token is not good enough => refreshed.
 			tc.Add(2 * time.Minute)
 			tok2 := makeTestToken(ctx, "token-1")
 			tok, err, label = call(tok2, nil, "")
-			So(err, ShouldBeNil)
-			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
-			So(tok, ShouldEqual, tok2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, label, should.Equal("SUCCESS_CACHE_MISS"))
+			assert.Loosely(t, tok, should.Equal(tok2))
 		})
 
-		Convey("Marshalling works", func() {
+		t.Run("Marshalling works", func(t *ftt.Test) {
 			// Generate initial token.
 			tok1 := makeTestToken(ctx, "token-1")
 			tok, err, label := call(tok1, nil, "")
-			So(err, ShouldBeNil)
-			So(label, ShouldEqual, "SUCCESS_CACHE_MISS")
-			So(tok, ShouldEqual, tok1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, label, should.Equal("SUCCESS_CACHE_MISS"))
+			assert.Loosely(t, tok, should.Equal(tok1))
 
 			// Kick it out of local cache by wiping it. It still in global cache.
 			ctx = caching.WithEmptyProcessCache(ctx)
 
 			// Cache hit through the global cache.
 			tok, err, label = call(nil, errors.New("must not be called"), "")
-			So(err, ShouldBeNil)
-			So(label, ShouldEqual, "SUCCESS_CACHE_HIT")
-			So(tok.Created.Equal(tok1.Created), ShouldBeTrue)
-			So(tok.Expiry.Equal(tok1.Expiry), ShouldBeTrue)
-			So(tok.OAuth2Token, ShouldEqual, tok1.OAuth2Token)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, label, should.Equal("SUCCESS_CACHE_HIT"))
+			assert.Loosely(t, tok.Created.Equal(tok1.Created), should.BeTrue)
+			assert.Loosely(t, tok.Expiry.Equal(tok1.Expiry), should.BeTrue)
+			assert.Loosely(t, tok.OAuth2Token, should.Equal(tok1.OAuth2Token))
 		})
 
-		Convey("Mint error", func() {
+		t.Run("Mint error", func(t *ftt.Test) {
 			err := errors.New("some error")
 			tok, err, label := call(nil, err, "SOME_LABEL")
-			So(tok, ShouldBeNil)
-			So(err, ShouldEqual, err)
-			So(label, ShouldEqual, "SOME_LABEL")
+			assert.Loosely(t, tok, should.BeNil)
+			assert.Loosely(t, err, should.Equal(err))
+			assert.Loosely(t, label, should.Equal("SOME_LABEL"))
 
 			tok, err, label = call(nil, err, "")
-			So(tok, ShouldBeNil)
-			So(err, ShouldEqual, err)
-			So(label, ShouldEqual, "ERROR_UNSPECIFIED")
+			assert.Loosely(t, tok, should.BeNil)
+			assert.Loosely(t, err, should.Equal(err))
+			assert.Loosely(t, label, should.Equal("ERROR_UNSPECIFIED"))
 		})
 
-		Convey("Small TTL", func() {
+		t.Run("Small TTL", func(t *ftt.Test) {
 			tok1 := makeTestToken(ctx, "token")
 			tok1.Expiry = tok1.Created.Add(time.Second)
 
 			tok, err, label := call(tok1, nil, "")
-			So(tok, ShouldBeNil)
-			So(err, ShouldEqual, layered.ErrCantSatisfyMinTTL)
-			So(label, ShouldEqual, "ERROR_INSUFFICIENT_MINTED_TTL")
+			assert.Loosely(t, tok, should.BeNil)
+			assert.Loosely(t, err, should.Equal(layered.ErrCantSatisfyMinTTL))
+			assert.Loosely(t, label, should.Equal("ERROR_INSUFFICIENT_MINTED_TTL"))
 		})
 	})
 }

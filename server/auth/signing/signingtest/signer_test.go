@@ -19,26 +19,28 @@ import (
 	"crypto/x509"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSigner(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		s := NewSigner(nil)
 		certs, err := s.Certificates(ctx)
-		So(err, ShouldBeNil)
-		So(certs.Certificates, ShouldHaveLength, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, certs.Certificates, should.HaveLength(1))
 
 		key, sig, err := s.SignBytes(ctx, []byte("some blob"))
-		So(err, ShouldBeNil)
-		So(key, ShouldEqual, certs.Certificates[0].KeyName)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, key, should.Equal(certs.Certificates[0].KeyName))
 
 		// The signature can be verified.
 		cert, err := certs.CertificateForKey(key)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = cert.CheckSignature(x509.SHA256WithRSA, []byte("some blob"), sig)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

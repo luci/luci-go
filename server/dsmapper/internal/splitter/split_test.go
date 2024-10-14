@@ -19,10 +19,11 @@ import (
 	"math/rand"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type RootEntity struct {
@@ -96,7 +97,7 @@ func countRanges(ctx context.Context, q *datastore.Query, ranges []Range) []int 
 }
 
 func TestSplitIntoRanges(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		rnd := rand.New(rand.NewSource(1))
 
@@ -107,7 +108,7 @@ func TestSplitIntoRanges(t *testing.T) {
 				Shards:  shards,
 				Samples: samples,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return extractRanges(ranges, max)
 		}
 
@@ -116,11 +117,11 @@ func TestSplitIntoRanges(t *testing.T) {
 				Shards:  shards,
 				Samples: samples,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return countRanges(ctx, q, ranges)
 		}
 
-		Convey("With mostly empty query", func() {
+		t.Run("With mostly empty query", func(t *ftt.Test) {
 			putIntEntities(ctx, nil, []int{1, 2, 3, 4, 5, 6})
 			maxID := 6
 			datastore.GetTestable(ctx).CatchupIndexes()
@@ -128,18 +129,18 @@ func TestSplitIntoRanges(t *testing.T) {
 			q := datastore.NewQuery("IntEntity")
 
 			// Special case for 1 shard.
-			So(getRanges(q, 1, 1.0, maxID), ShouldResemble, []intRange{
+			assert.Loosely(t, getRanges(q, 1, 1.0, maxID), should.Resemble([]intRange{
 				{-1, -1, 6},
-			})
+			}))
 
 			// Not enough split points for 4 shards. Got only 2.
-			So(getRanges(q, 4, 1.0, maxID), ShouldResemble, []intRange{
+			assert.Loosely(t, getRanges(q, 4, 1.0, maxID), should.Resemble([]intRange{
 				{-1, 4, 4},
 				{4, -1, 2},
-			})
+			}))
 		})
 
-		Convey("With evenly distributed int keys", func() {
+		t.Run("With evenly distributed int keys", func(t *ftt.Test) {
 			ints := []int{}
 			maxID := 1024
 			for i := 0; i < maxID; i++ {
@@ -152,39 +153,39 @@ func TestSplitIntoRanges(t *testing.T) {
 
 			// 2 shards. With oversampling we get better accuracy (the middle point is
 			// closer to 512).
-			So(getRanges(q, 2, 2, maxID), ShouldResemble, []intRange{
+			assert.Loosely(t, getRanges(q, 2, 2, maxID), should.Resemble([]intRange{
 				{-1, 399, 399},
 				{399, -1, 625},
-			})
-			So(getRanges(q, 2, 64, maxID), ShouldResemble, []intRange{
+			}))
+			assert.Loosely(t, getRanges(q, 2, 64, maxID), should.Resemble([]intRange{
 				{-1, 476, 476},
 				{476, -1, 548},
-			})
-			So(getRanges(q, 2, 256, maxID), ShouldResemble, []intRange{
+			}))
+			assert.Loosely(t, getRanges(q, 2, 256, maxID), should.Resemble([]intRange{
 				{-1, 489, 489},
 				{489, -1, 535},
-			})
+			}))
 
 			// 3 shards. With oversampling we get better accuracy (shard size is close
 			// to 340, shards are more even).
-			So(getRanges(q, 3, 3, maxID), ShouldResemble, []intRange{
+			assert.Loosely(t, getRanges(q, 3, 3, maxID), should.Resemble([]intRange{
 				{-1, 265, 265},
 				{265, 399, 134},
 				{399, -1, 625},
-			})
-			So(getRanges(q, 3, 96, maxID), ShouldResemble, []intRange{
+			}))
+			assert.Loosely(t, getRanges(q, 3, 96, maxID), should.Resemble([]intRange{
 				{-1, 285, 285},
 				{285, 696, 411},
 				{696, -1, 328},
-			})
-			So(getRanges(q, 3, 384, maxID), ShouldResemble, []intRange{
+			}))
+			assert.Loosely(t, getRanges(q, 3, 384, maxID), should.Resemble([]intRange{
 				{-1, 327, 327},
 				{327, 658, 331},
 				{658, -1, 366},
-			})
+			}))
 		})
 
-		Convey("With normally distributed int keys", func() {
+		t.Run("With normally distributed int keys", func(t *ftt.Test) {
 			ints := []int{}
 			seen := map[int]bool{}
 			for i := 0; i < 1000; i++ {
@@ -201,17 +202,17 @@ func TestSplitIntoRanges(t *testing.T) {
 
 			// Had fewer distinct points generated (due to rnd giving duplicates).
 			// All points are present in the single shard if not really sharding.
-			So(len(seen), ShouldEqual, 937)
-			So(getShardSizes(q, 1, 1), ShouldResemble, []int{len(seen)})
+			assert.Loosely(t, len(seen), should.Equal(937))
+			assert.Loosely(t, getShardSizes(q, 1, 1), should.Resemble([]int{len(seen)}))
 
 			// Shards have ~ even sizes (in terms of number of points there).
 			shards := getShardSizes(q, 10, 320)
-			So(shards, ShouldResemble, []int{
+			assert.Loosely(t, shards, should.Resemble([]int{
 				80, 97, 105, 80, 92, 95, 106, 103, 87, 92,
-			})
+			}))
 
 			// But key ranges are very different, reflecting distribution of points.
-			So(getRanges(q, 10, 320, 0), ShouldResemble, []intRange{
+			assert.Loosely(t, getRanges(q, 10, 320, 0), should.Resemble([]intRange{
 				{-1, 47124, 47124},
 				{47124, 48158, 1034},
 				{48158, 48925, 767},
@@ -222,17 +223,17 @@ func TestSplitIntoRanges(t *testing.T) {
 				{50973, 51677, 704},
 				{51677, 52573, 896},
 				{52573, -1, 0},
-			})
+			}))
 
 			// All points are counted.
 			total := 0
 			for _, s := range shards {
 				total += s
 			}
-			So(total, ShouldEqual, len(seen))
+			assert.Loosely(t, total, should.Equal(len(seen)))
 		})
 
-		Convey("Handles ancestor filter", func() {
+		t.Run("Handles ancestor filter", func(t *ftt.Test) {
 			root1 := datastore.KeyForObj(ctx, &RootEntity{ID: 1})
 			root2 := datastore.KeyForObj(ctx, &RootEntity{ID: 2})
 
@@ -243,39 +244,39 @@ func TestSplitIntoRanges(t *testing.T) {
 			q := datastore.NewQuery("IntEntity")
 
 			// Non-ancestor query discovers all 12 entities.
-			So(getShardSizes(q, 4, 128), ShouldResemble, []int{
+			assert.Loosely(t, getShardSizes(q, 4, 128), should.Resemble([]int{
 				2, 2, 4, 4,
-			})
+			}))
 
 			// With ancestor query, discovers only entities that match the query.
-			So(getShardSizes(q.Ancestor(root1), 4, 128), ShouldResemble, []int{
+			assert.Loosely(t, getShardSizes(q.Ancestor(root1), 4, 128), should.Resemble([]int{
 				1, 1, 2, 0, // 4 total
-			})
-			So(getShardSizes(q.Ancestor(root2), 4, 128), ShouldResemble, []int{
+			}))
+			assert.Loosely(t, getShardSizes(q.Ancestor(root2), 4, 128), should.Resemble([]int{
 				4, 1, 2, 1, // 8 total
-			})
+			}))
 		})
 
-		Convey("Handles arbitrary keys", func() {
+		t.Run("Handles arbitrary keys", func(t *ftt.Test) {
 			entities := make([]any, 1000)
 			for i := 0; i < len(entities); i++ {
 				blob := make([]byte, 10)
 				_, err := rnd.Read(blob)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				entities[i] = &StringEntity{
 					ID:     string(blob),
 					Parent: datastore.KeyForObj(ctx, &RootEntity{ID: rnd.Intn(10) + 1}),
 				}
 			}
-			So(datastore.Put(ctx, entities), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(ctx, entities), should.BeNil)
 			datastore.GetTestable(ctx).CatchupIndexes()
 
 			q := datastore.NewQuery("StringEntity")
 
 			// Discovers all 1000 entities, split ~ evenly between shards.
-			So(getShardSizes(q, 8, 256), ShouldResemble, []int{
+			assert.Loosely(t, getShardSizes(q, 8, 256), should.Resemble([]int{
 				115, 114, 113, 110, 133, 133, 148, 134,
-			})
+			}))
 		})
 	})
 }

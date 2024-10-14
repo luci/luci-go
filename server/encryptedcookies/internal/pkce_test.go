@@ -17,24 +17,26 @@ package internal
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPKCE(t *testing.T) {
 	t.Parallel()
 
-	Convey("GenerateCodeVerifier", t, func() {
+	ftt.Run("GenerateCodeVerifier", t, func(t *ftt.Test) {
 		verifier := GenerateCodeVerifier()
-		So(verifier, ShouldHaveLength, 50)
+		assert.Loosely(t, verifier, should.HaveLength(50))
 		for _, ch := range verifier {
-			So(ch >= 'a' && ch <= 'z' ||
+			assert.Loosely(t, ch >= 'a' && ch <= 'z' ||
 				ch >= 'A' && ch <= 'Z' ||
 				ch >= '0' && ch <= '9' ||
-				ch == '-' || ch == '.', ShouldBeTrue)
+				ch == '-' || ch == '.', should.BeTrue)
 		}
 	})
 
-	Convey("DeriveCodeChallenge", t, func() {
-		So(DeriveCodeChallenge("abc"), ShouldEqual, "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0")
+	ftt.Run("DeriveCodeChallenge", t, func(t *ftt.Test) {
+		assert.Loosely(t, DeriveCodeChallenge("abc"), should.Equal("ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0"))
 	})
 }

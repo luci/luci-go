@@ -21,12 +21,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func withSigner(s signing.Signer) router.MiddlewareChain {
@@ -62,27 +62,27 @@ func TestCertificatesHandler(t *testing.T) {
 		return signing.FetchCertificates(ctx, ts.URL+"/auth/api/v1/server/certificates")
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		certs, err := call(&phonySigner{})
-		So(err, ShouldBeNil)
-		So(len(certs.Certificates), ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(certs.Certificates), should.Equal(1))
 	})
 
-	Convey("No signer", t, func() {
+	ftt.Run("No signer", t, func(t *ftt.Test) {
 		_, err := call(nil)
-		So(err, ShouldErrLike, "HTTP code (404)")
+		assert.Loosely(t, err, should.ErrLike("HTTP code (404)"))
 	})
 
-	Convey("Error getting certs", t, func() {
+	ftt.Run("Error getting certs", t, func(t *ftt.Test) {
 		_, err := call(&phonySigner{errors.New("fail")})
-		So(err, ShouldErrLike, "HTTP code (500)")
+		assert.Loosely(t, err, should.ErrLike("HTTP code (500)"))
 	})
 }
 
 func TestServiceInfoHandler(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		r := router.New()
 		signer := &phonySigner{}
 		InstallHandlers(r, withSigner(signer))
@@ -90,27 +90,27 @@ func TestServiceInfoHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/info", nil)
 		r.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, 200)
-		So(w.Body.String(), ShouldResemble,
+		assert.Loosely(t, w.Code, should.Equal(200))
+		assert.Loosely(t, w.Body.String(), should.Resemble(
 			`{"app_id":"phony-app","app_runtime":"go",`+
 				`"app_runtime_version":"go1.5.1",`+
 				`"app_version":"1234-abcdef","service_account_name":`+
-				`"phony-app-account@example.com"}`+"\n")
+				`"phony-app-account@example.com"}`+"\n"))
 
 		signer.err = errors.New("fail")
 
 		w = httptest.NewRecorder()
 		req, _ = http.NewRequest("GET", "/auth/api/v1/server/info", nil)
 		r.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, 500)
-		So(w.Body.String(), ShouldResemble, "{\"error\":\"Can't grab service info - fail\"}\n")
+		assert.Loosely(t, w.Code, should.Equal(500))
+		assert.Loosely(t, w.Body.String(), should.Match("{\"error\":\"Can't grab service info - fail\"}\n"))
 	})
 }
 
 func TestClientIDHandler(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		var clientIDErr error
 		modConfig := router.NewMiddlewareChain(
 			func(c *router.Context, next router.Handler) {
@@ -130,16 +130,16 @@ func TestClientIDHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/auth/api/v1/server/client_id", nil)
 		r.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, 200)
-		So(w.Body.String(), ShouldResemble, `{"client_id":"fake-client-id"}`+"\n")
+		assert.Loosely(t, w.Code, should.Equal(200))
+		assert.Loosely(t, w.Body.String(), should.Resemble(`{"client_id":"fake-client-id"}`+"\n"))
 
 		clientIDErr = errors.New("fail")
 
 		w = httptest.NewRecorder()
 		req, _ = http.NewRequest("GET", "/auth/api/v1/server/client_id", nil)
 		r.ServeHTTP(w, req)
-		So(w.Code, ShouldEqual, 500)
-		So(w.Body.String(), ShouldResemble, "{\"error\":\"Can't grab the client ID - fail\"}\n")
+		assert.Loosely(t, w.Code, should.Equal(500))
+		assert.Loosely(t, w.Body.String(), should.Match("{\"error\":\"Can't grab the client ID - fail\"}\n"))
 	})
 }
 

@@ -27,14 +27,17 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAuthenticatingInterceptor(t *testing.T) {
 	t.Parallel()
 
-	Convey("With request", t, func() {
+	ftt.Run("With request", t, func(t *ftt.Test) {
 		ctx := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
@@ -54,31 +57,31 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 			},
 		})
 
-		Convey("Pass", func() {
+		t.Run("Pass", func(t *ftt.Test) {
 			intr := AuthenticatingInterceptor([]Method{
 				fakeAuthMethod{
 					clientID: "some_client_id",
 					email:    "someone@example.com",
 					observe: func(r RequestMetadata) {
-						So(r.Header("X-Boom"), ShouldEqual, "val1")
+						assert.Loosely(t, r.Header("X-Boom"), should.Equal("val1"))
 
 						cookie, err := r.Cookie("cookie_1")
-						So(err, ShouldBeNil)
-						So(cookie.Value, ShouldEqual, "value_1")
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, cookie.Value, should.Equal("value_1"))
 
 						cookie, err = r.Cookie("cookie_2")
-						So(err, ShouldBeNil)
-						So(cookie.Value, ShouldEqual, "value_2")
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, cookie.Value, should.Equal("value_2"))
 
 						cookie, err = r.Cookie("cookie_3")
-						So(err, ShouldBeNil)
-						So(cookie.Value, ShouldEqual, "value_3")
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, cookie.Value, should.Equal("value_3"))
 
 						_, err = r.Cookie("cookie_4")
-						So(err, ShouldEqual, http.ErrNoCookie)
+						assert.Loosely(t, err, should.Equal(http.ErrNoCookie))
 
-						So(r.RemoteAddr(), ShouldEqual, "1.2.3.4")
-						So(r.Host(), ShouldEqual, "some.example.com")
+						assert.Loosely(t, r.RemoteAddr(), should.Equal("1.2.3.4"))
+						assert.Loosely(t, r.Host(), should.Equal("some.example.com"))
 					},
 				},
 			})
@@ -88,14 +91,14 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 				innerCtx = ctx
 				return "response", nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The handler was actually called and with the correct state.
-			So(innerCtx, ShouldNotBeNil)
-			So(CurrentIdentity(innerCtx), ShouldEqual, identity.Identity("user:someone@example.com"))
+			assert.Loosely(t, innerCtx, should.NotBeNil)
+			assert.Loosely(t, CurrentIdentity(innerCtx), should.Equal(identity.Identity("user:someone@example.com")))
 		})
 
-		Convey("Blocked", func() {
+		t.Run("Blocked", func(t *ftt.Test) {
 			intr := AuthenticatingInterceptor([]Method{
 				fakeAuthMethod{
 					clientID: "another_client_id",
@@ -104,7 +107,7 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
 				panic("must not be called")
 			})
-			So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
 		})
 	})
 }

@@ -18,20 +18,20 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/server/cmd/statsd-to-tsmon/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		cfg, err := loadConfig(&config.Config{
 			Metrics: []*config.Metric{
 				{
@@ -59,7 +59,7 @@ func TestConfig(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		rule := func(m string) string {
 			chunks := strings.Split(m, ".")
@@ -73,28 +73,28 @@ func TestConfig(t *testing.T) {
 			return ""
 		}
 
-		So(rule("xxx.foo.val.xxx.bar.sfx1"), ShouldEqual, "*.foo.${var}.*.bar.sfx1")
-		So(rule("yyy.foo.val.yyy.bar.sfx1"), ShouldEqual, "*.foo.${var}.*.bar.sfx1")
-		So(rule("foo.bar.sfx2"), ShouldEqual, "foo.bar.sfx2")
+		assert.Loosely(t, rule("xxx.foo.val.xxx.bar.sfx1"), should.Equal("*.foo.${var}.*.bar.sfx1"))
+		assert.Loosely(t, rule("yyy.foo.val.yyy.bar.sfx1"), should.Equal("*.foo.${var}.*.bar.sfx1"))
+		assert.Loosely(t, rule("foo.bar.sfx2"), should.Equal("foo.bar.sfx2"))
 
 		// Wrong length.
-		So(rule("foo.val.xxx.bar.sfx1"), ShouldEqual, "")
+		assert.Loosely(t, rule("foo.val.xxx.bar.sfx1"), should.BeEmpty)
 		// Wrong static component.
-		So(rule("xxx.foo.val.xxx.baz.sfx1"), ShouldEqual, "")
+		assert.Loosely(t, rule("xxx.foo.val.xxx.baz.sfx1"), should.BeEmpty)
 		// Unknown suffix.
-		So(rule("foo.bar.sfx3"), ShouldEqual, "")
+		assert.Loosely(t, rule("foo.bar.sfx3"), should.BeEmpty)
 		// Empty.
-		So(rule(""), ShouldEqual, "")
+		assert.Loosely(t, rule(""), should.BeEmpty)
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		call := func(cfg *config.Config) error {
 			_, err := loadConfig(cfg)
 			return err
 		}
 
-		Convey("Bad pattern", func() {
-			So(call(&config.Config{
+		t.Run("Bad pattern", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m3",
@@ -104,11 +104,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `bad pattern`)
+			}), should.ErrLike(`bad pattern`))
 		})
 
-		Convey("Not enough fields", func() {
-			So(call(&config.Config{
+		t.Run("Not enough fields", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m4",
@@ -119,11 +119,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `value of field "f2" is not provided`)
+			}), should.ErrLike(`value of field "f2" is not provided`))
 		})
 
-		Convey("Extra field", func() {
-			So(call(&config.Config{
+		t.Run("Extra field", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m5",
@@ -133,11 +133,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `has too many fields`)
+			}), should.ErrLike(`has too many fields`))
 		})
 
-		Convey("Bad field value", func() {
-			So(call(&config.Config{
+		t.Run("Bad field value", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m6",
@@ -148,11 +148,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `field "f1" has bad value`)
+			}), should.ErrLike(`field "f1" has bad value`))
 		})
 
-		Convey("Unknown var ref", func() {
-			So(call(&config.Config{
+		t.Run("Unknown var ref", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m7",
@@ -163,11 +163,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `field "f1" references undefined var "bar"`)
+			}), should.ErrLike(`field "f1" references undefined var "bar"`))
 		})
 
-		Convey("Not a static suffix", func() {
-			So(call(&config.Config{
+		t.Run("Not a static suffix", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m8",
@@ -177,11 +177,11 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `must end with a static suffix`)
+			}), should.ErrLike(`must end with a static suffix`))
 		})
 
-		Convey("Dup suffix", func() {
-			So(call(&config.Config{
+		t.Run("Dup suffix", func(t *ftt.Test) {
+			assert.Loosely(t, call(&config.Config{
 				Metrics: []*config.Metric{
 					{
 						Metric: "m9",
@@ -198,7 +198,7 @@ func TestConfig(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldErrLike, `there's already another rule with this suffix`)
+			}), should.ErrLike(`there's already another rule with this suffix`))
 		})
 	})
 }
@@ -206,7 +206,7 @@ func TestConfig(t *testing.T) {
 func TestLoadMetrics(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		m, err := loadMetrics([]*config.Metric{
 			{
 				Metric: "gauge",
@@ -226,42 +226,42 @@ func TestLoadMetrics(t *testing.T) {
 				Fields: []string{"f5", "f6"},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(m, ShouldHaveLength, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, m, should.HaveLength(3))
 
 		g, ok := m["gauge"].(metric.Int)
-		So(ok, ShouldBeTrue)
-		So(g.Metadata().Units, ShouldEqual, types.Milliseconds)
-		So(g.Info().Fields, ShouldResemble, []field.Field{
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, g.Metadata().Units, should.Equal(types.Milliseconds))
+		assert.Loosely(t, g.Info().Fields, should.Resemble([]field.Field{
 			{Name: "f1", Type: field.StringType},
 			{Name: "f2", Type: field.StringType},
-		})
+		}))
 
 		c, ok := m["counter"].(metric.Counter)
-		So(ok, ShouldBeTrue)
-		So(c.Metadata().Units, ShouldEqual, types.Bytes)
-		So(c.Info().Fields, ShouldResemble, []field.Field{
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, c.Metadata().Units, should.Equal(types.Bytes))
+		assert.Loosely(t, c.Info().Fields, should.Resemble([]field.Field{
 			{Name: "f3", Type: field.StringType},
 			{Name: "f4", Type: field.StringType},
-		})
+		}))
 
 		d, ok := m["distribution"].(metric.CumulativeDistribution)
-		So(ok, ShouldBeTrue)
-		So(d.Metadata().Units, ShouldEqual, types.Milliseconds)
-		So(d.Info().Fields, ShouldResemble, []field.Field{
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, d.Metadata().Units, should.Equal(types.Milliseconds))
+		assert.Loosely(t, d.Info().Fields, should.Resemble([]field.Field{
 			{Name: "f5", Type: field.StringType},
 			{Name: "f6", Type: field.StringType},
-		})
+		}))
 	})
 }
 
 func TestPattern(t *testing.T) {
 	t.Parallel()
 
-	Convey("Parse success", t, func() {
+	ftt.Run("Parse success", t, func(t *ftt.Test) {
 		p, err := parsePattern("abc.${foo}.*.${bar}.zzz")
-		So(err, ShouldBeNil)
-		So(p, ShouldResemble, &pattern{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p, should.Resemble(&pattern{
 			str: "abc.${foo}.*.${bar}.zzz",
 			len: 5,
 			vars: map[string]int{
@@ -273,13 +273,13 @@ func TestPattern(t *testing.T) {
 				{4, "zzz"},
 			},
 			suffix: "zzz",
-		})
+		}))
 	})
 
-	Convey("All static", t, func() {
+	ftt.Run("All static", t, func(t *ftt.Test) {
 		p, err := parsePattern("abc.def")
-		So(err, ShouldBeNil)
-		So(p, ShouldResemble, &pattern{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p, should.Resemble(&pattern{
 			str: "abc.def",
 			len: 2,
 			static: []staticNameComponent{
@@ -287,34 +287,34 @@ func TestPattern(t *testing.T) {
 				{1, "def"},
 			},
 			suffix: "def",
-		})
+		}))
 	})
 
-	Convey("Empty component", t, func() {
+	ftt.Run("Empty component", t, func(t *ftt.Test) {
 		_, err := parsePattern("abc..zzz")
-		So(err, ShouldErrLike, "empty name component")
+		assert.Loosely(t, err, should.ErrLike("empty name component"))
 	})
 
-	Convey("Bad var", t, func() {
+	ftt.Run("Bad var", t, func(t *ftt.Test) {
 		_, err := parsePattern("${}")
-		So(err, ShouldErrLike, "var name is required")
+		assert.Loosely(t, err, should.ErrLike("var name is required"))
 
 		_, err = parsePattern("foo-${bar}")
-		So(err, ShouldErrLike, "is not allowed")
+		assert.Loosely(t, err, should.ErrLike("is not allowed"))
 	})
 
-	Convey("Dup var", t, func() {
+	ftt.Run("Dup var", t, func(t *ftt.Test) {
 		_, err := parsePattern("${abc}.${abc}")
-		So(err, ShouldErrLike, "duplicate var")
+		assert.Loosely(t, err, should.ErrLike("duplicate var"))
 	})
 
-	Convey("Var suffix", t, func() {
+	ftt.Run("Var suffix", t, func(t *ftt.Test) {
 		_, err := parsePattern("${abc}.${def}")
-		So(err, ShouldErrLike, "must end with a static suffix")
+		assert.Loosely(t, err, should.ErrLike("must end with a static suffix"))
 	})
 
-	Convey("Star suffix", t, func() {
+	ftt.Run("Star suffix", t, func(t *ftt.Test) {
 		_, err := parsePattern("abc.*")
-		So(err, ShouldErrLike, "must end with a static suffix")
+		assert.Loosely(t, err, should.ErrLike("must end with a static suffix"))
 	})
 }

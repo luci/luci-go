@@ -21,38 +21,39 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSession(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), time.Unix(1442540000, 0))
 		s := MemorySessionStore{}
 
 		ss, err := s.GetSession(ctx, "missing")
-		So(err, ShouldBeNil)
-		So(ss, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ss, should.BeNil)
 
 		sid, err := s.OpenSession(ctx, "uid", &auth.User{Name: "dude"}, clock.Now(ctx).Add(1*time.Hour))
-		So(err, ShouldBeNil)
-		So(sid, ShouldEqual, "uid/1")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sid, should.Equal("uid/1"))
 
 		ss, err = s.GetSession(ctx, "uid/1")
-		So(err, ShouldBeNil)
-		So(ss, ShouldResemble, &Session{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ss, should.Resemble(&Session{
 			SessionID: "uid/1",
 			UserID:    "uid",
 			User:      auth.User{Name: "dude"},
 			Exp:       clock.Now(ctx).Add(1 * time.Hour),
-		})
+		}))
 
-		So(s.CloseSession(ctx, "uid/1"), ShouldBeNil)
+		assert.Loosely(t, s.CloseSession(ctx, "uid/1"), should.BeNil)
 
 		ss, err = s.GetSession(ctx, "missing")
-		So(err, ShouldBeNil)
-		So(ss, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ss, should.BeNil)
 	})
 }

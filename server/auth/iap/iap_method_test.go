@@ -21,39 +21,40 @@ import (
 	"google.golang.org/api/idtoken"
 
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIAPAuthenticator(t *testing.T) {
 	t.Parallel()
-	Convey("iap", t, func() {
+	ftt.Run("iap", t, func(t *ftt.Test) {
 		c := context.Background()
 		c = gologger.StdConfig.Use(c)
 
-		Convey("missing iap jwt assertion header", func() {
+		t.Run("missing iap jwt assertion header", func(t *ftt.Test) {
 			a := &IAPAuthMethod{}
 			r := authtest.NewFakeRequestMetadata()
 			user, session, err := a.Authenticate(c, r)
-			So(user, ShouldBeNil)
-			So(session, ShouldBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, user, should.BeNil)
+			assert.Loosely(t, session, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("invalid jwt assertion header bytes", func() {
+		t.Run("invalid jwt assertion header bytes", func(t *ftt.Test) {
 			a := &IAPAuthMethod{}
 			r := authtest.NewFakeRequestMetadata()
 			r.FakeHeader.Set(iapJWTAssertionHeader, "some invalid header bytes")
 
 			user, session, err := a.Authenticate(c, r)
-			So(user, ShouldBeNil)
-			So(session, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, user, should.BeNil)
+			assert.Loosely(t, session, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("invalid no email claims", func() {
+		t.Run("invalid no email claims", func(t *ftt.Test) {
 			a := &IAPAuthMethod{
 				Aud: AudForGAE("1234", "some-app-id"),
 				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
@@ -68,12 +69,12 @@ func TestIAPAuthenticator(t *testing.T) {
 			r.FakeHeader.Set(iapJWTAssertionHeader, "just needs to be non-empty for testing")
 
 			user, session, err := a.Authenticate(c, r)
-			So(user, ShouldBeNil)
-			So(session, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, user, should.BeNil)
+			assert.Loosely(t, session, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("happy path", func() {
+		t.Run("happy path", func(t *ftt.Test) {
 			a := &IAPAuthMethod{
 				Aud: AudForGAE("1234", "some-app-id"),
 				validator: func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error) {
@@ -92,10 +93,10 @@ func TestIAPAuthenticator(t *testing.T) {
 			r.FakeHeader.Set(iapJWTAssertionHeader, "just needs to be non-empty for testing")
 
 			user, session, err := a.Authenticate(c, r)
-			So(err, ShouldBeNil)
-			So(user, ShouldNotBeNil)
-			So(user.Email, ShouldEqual, "someemail@somedomain.com")
-			So(session, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, user, should.NotBeNil)
+			assert.Loosely(t, user.Email, should.Equal("someemail@somedomain.com"))
+			assert.Loosely(t, session, should.BeNil)
 		})
 	})
 }

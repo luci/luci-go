@@ -23,10 +23,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInterceptor(t *testing.T) {
@@ -51,51 +52,51 @@ func TestInterceptor(t *testing.T) {
 		return status.Code(err)
 	}
 
-	Convey("Anonymous", t, func() {
+	ftt.Run("Anonymous", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{})
 
-		So(check(ctx, "all", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "authenticated", "method"), ShouldEqual, codes.Unauthenticated)
-		So(check(ctx, "authorized", "method"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown", "method"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "all", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "authenticated", "method"), should.Equal(codes.Unauthenticated))
+		assert.Loosely(t, check(ctx, "authorized", "method"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown", "method"), should.Equal(codes.PermissionDenied))
 
-		So(check(ctx, "mixed", "all"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "authenticated"), ShouldEqual, codes.Unauthenticated)
-		So(check(ctx, "mixed", "authorized"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "mixed", "unknown"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "mixed", "all"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "authenticated"), should.Equal(codes.Unauthenticated))
+		assert.Loosely(t, check(ctx, "mixed", "authorized"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "mixed", "unknown"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authenticated, but not authorized", t, func() {
+	ftt.Run("Authenticated, but not authorized", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"some-random-group"},
 		})
 
-		So(check(ctx, "all", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "authenticated", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "authorized", "method"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "unknown", "method"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "all", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "authenticated", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "authorized", "method"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "unknown", "method"), should.Equal(codes.PermissionDenied))
 
-		So(check(ctx, "mixed", "all"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "authenticated"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "authorized"), ShouldEqual, codes.PermissionDenied)
-		So(check(ctx, "mixed", "unknown"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "mixed", "all"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "authenticated"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "authorized"), should.Equal(codes.PermissionDenied))
+		assert.Loosely(t, check(ctx, "mixed", "unknown"), should.Equal(codes.PermissionDenied))
 	})
 
-	Convey("Authorized", t, func() {
+	ftt.Run("Authorized", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"some-group"},
 		})
 
-		So(check(ctx, "all", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "authenticated", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "authorized", "method"), ShouldEqual, codes.OK)
-		So(check(ctx, "unknown", "method"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "all", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "authenticated", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "authorized", "method"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "unknown", "method"), should.Equal(codes.PermissionDenied))
 
-		So(check(ctx, "mixed", "all"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "authenticated"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "authorized"), ShouldEqual, codes.OK)
-		So(check(ctx, "mixed", "unknown"), ShouldEqual, codes.PermissionDenied)
+		assert.Loosely(t, check(ctx, "mixed", "all"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "authenticated"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "authorized"), should.Equal(codes.OK))
+		assert.Loosely(t, check(ctx, "mixed", "unknown"), should.Equal(codes.PermissionDenied))
 	})
 }

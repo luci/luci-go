@@ -19,11 +19,12 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -56,7 +57,7 @@ func TestRealms(t *testing.T) {
 	registered := realms.RegisteredPermissions()
 	delete(registered, permIgnored)
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		r, err := Build(&protocol.Realms{
 			ApiVersion: ExpectedAPIVersion,
 			Permissions: []*protocol.Permission{
@@ -136,62 +137,62 @@ func TestRealms(t *testing.T) {
 				},
 			},
 		}, grp, registered)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(r.perms, ShouldResemble, map[string]PermissionIndex{
+		assert.Loosely(t, r.perms, should.Resemble(map[string]PermissionIndex{
 			"luci.dev.testing0": 0,
 			"luci.dev.testing1": 1,
 			"luci.dev.testing2": 2,
 			"luci.dev.ignored":  3,
-		})
-		So(r.names.ToSortedSlice(), ShouldResemble, []string{
+		}))
+		assert.Loosely(t, r.names.ToSortedSlice(), should.Resemble([]string{
 			"another:r1",
 			"proj:empty",
 			"proj:only-ignored",
 			"proj:r1",
 			"proj:r2",
-		})
+		}))
 
 		idx, ok := r.PermissionIndex(permTesting2)
-		So(ok, ShouldBeTrue)
-		So(idx, ShouldEqual, 2)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, idx, should.Equal(2))
 
 		_, ok = r.PermissionIndex(permUnknown)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 
-		So(r.HasRealm("proj:r1"), ShouldBeTrue)
-		So(r.HasRealm("proj:empty"), ShouldBeTrue)
-		So(r.HasRealm("proj:unknown"), ShouldBeFalse)
-		So(r.HasRealm("proj:only-ignored"), ShouldBeTrue)
+		assert.Loosely(t, r.HasRealm("proj:r1"), should.BeTrue)
+		assert.Loosely(t, r.HasRealm("proj:empty"), should.BeTrue)
+		assert.Loosely(t, r.HasRealm("proj:unknown"), should.BeFalse)
+		assert.Loosely(t, r.HasRealm("proj:only-ignored"), should.BeTrue)
 
-		So(r.Data("proj:r1").EnforceInService, ShouldResemble, []string{"a"})
-		So(r.Data("proj:empty"), ShouldBeNil)
-		So(r.Data("proj:unknown"), ShouldBeNil)
+		assert.Loosely(t, r.Data("proj:r1").EnforceInService, should.Resemble([]string{"a"}))
+		assert.Loosely(t, r.Data("proj:empty"), should.BeNil)
+		assert.Loosely(t, r.Data("proj:unknown"), should.BeNil)
 
 		bs := r.Bindings("proj:r1", 0)
-		So(bs, ShouldHaveLength, 1)
-		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1"))
-		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u1@example.com", "user:u2@example.com"})
+		assert.Loosely(t, bs, should.HaveLength(1))
+		assert.Loosely(t, bs[0].Groups, should.Resemble(indexes(grp, "g1")))
+		assert.Loosely(t, bs[0].Idents.ToSortedSlice(), should.Resemble([]string{"user:u1@example.com", "user:u2@example.com"}))
 
 		bs = r.Bindings("proj:r1", 1)
-		So(bs, ShouldHaveLength, 1)
-		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1"))
-		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
+		assert.Loosely(t, bs, should.HaveLength(1))
+		assert.Loosely(t, bs[0].Groups, should.Resemble(indexes(grp, "g1")))
+		assert.Loosely(t, bs[0].Idents.ToSortedSlice(), should.Resemble([]string{"user:u2@example.com"}))
 
 		bs = r.Bindings("proj:r1", 2)
-		So(bs, ShouldHaveLength, 1)
-		So(bs[0].Groups, ShouldResemble, indexes(grp, "g1", "g2"))
-		So(bs[0].Idents.ToSortedSlice(), ShouldResemble, []string{"user:u2@example.com"})
+		assert.Loosely(t, bs, should.HaveLength(1))
+		assert.Loosely(t, bs[0].Groups, should.Resemble(indexes(grp, "g1", "g2")))
+		assert.Loosely(t, bs[0].Idents.ToSortedSlice(), should.Resemble([]string{"user:u2@example.com"}))
 
-		So(r.Bindings("proj:empty", 0), ShouldBeEmpty)
-		So(r.Bindings("proj:unknown", 0), ShouldBeEmpty)
+		assert.Loosely(t, r.Bindings("proj:empty", 0), should.BeEmpty)
+		assert.Loosely(t, r.Bindings("proj:unknown", 0), should.BeEmpty)
 
 		// This isn't really happening in real programs since they are not usually
 		// registering permissions dynamically after building Realms set, but check
 		// that such "late" permissions are basically ignored.
 		idx, _ = r.PermissionIndex(permIgnored)
-		So(idx, ShouldEqual, 3)
-		So(r.Bindings("proj:r1", 3), ShouldBeEmpty)
+		assert.Loosely(t, idx, should.Equal(3))
+		assert.Loosely(t, r.Bindings("proj:r1", 3), should.BeEmpty)
 
 		// Check bindings from QueryBindings match what Bindings(...) returns and
 		// also convert the result into a map we can easily pass to ShouldResemble.
@@ -199,7 +200,7 @@ func TestRealms(t *testing.T) {
 			out := map[string][]string{}
 			for proj, realms := range m {
 				for _, realmAndBindings := range realms {
-					So(realmAndBindings.Bindings, ShouldResemble, r.Bindings(realmAndBindings.Realm, perm))
+					assert.Loosely(t, realmAndBindings.Bindings, should.Resemble(r.Bindings(realmAndBindings.Realm, perm)))
 					out[proj] = append(out[proj], realmAndBindings.Realm)
 				}
 				sort.Strings(out[proj])
@@ -208,25 +209,25 @@ func TestRealms(t *testing.T) {
 		}
 
 		bindings, ok := r.QueryBindings(0)
-		So(ok, ShouldBeTrue)
-		So(checkBindingsMap(bindings, 0), ShouldResemble, map[string][]string{
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, checkBindingsMap(bindings, 0), should.Resemble(map[string][]string{
 			"another": {"another:r1"},
 			"proj":    {"proj:r1", "proj:r2"},
-		})
+		}))
 
 		bindings, ok = r.QueryBindings(1)
-		So(ok, ShouldBeTrue)
-		So(checkBindingsMap(bindings, 1), ShouldResemble, map[string][]string{
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, checkBindingsMap(bindings, 1), should.Resemble(map[string][]string{
 			"another": {"another:r1"},
 			"proj":    {"proj:r1"},
-		})
+		}))
 
 		// The permission is not flagged with UsedInQueryRealms.
 		_, ok = r.QueryBindings(2)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 
-	Convey("Conditional bindings", t, func() {
+	ftt.Run("Conditional bindings", t, func(t *ftt.Test) {
 		r, err := Build(&protocol.Realms{
 			ApiVersion: ExpectedAPIVersion,
 			Permissions: []*protocol.Permission{
@@ -313,7 +314,7 @@ func TestRealms(t *testing.T) {
 				},
 			},
 		}, grp, registered)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		type pretty struct {
 			cond  int // index of the condition+1 or 0 if unconditional
@@ -336,45 +337,45 @@ func TestRealms(t *testing.T) {
 		}
 
 		bs0 := r.Bindings("proj:r1", 0)
-		So(prettify(bs0), ShouldResemble, []pretty{
+		assert.Loosely(t, prettify(bs0), should.Resemble([]pretty{
 			{cond: 0, users: []string{"user:01@example.com", "user:0@example.com"}},
 			{cond: 1, users: []string{"user:0-if-0@example.com", "user:01-if-0@example.com"}},
 			{cond: 2, users: []string{"user:0-if-1@example.com", "user:01-if-1@example.com"}},
 			{cond: 3, users: []string{"user:0-if-0&1@example.com"}},
-		})
+		}))
 
 		bs1 := r.Bindings("proj:r1", 1)
-		So(prettify(bs1), ShouldResemble, []pretty{
+		assert.Loosely(t, prettify(bs1), should.Resemble([]pretty{
 			{cond: 0, users: []string{"user:01@example.com", "user:1@example.com"}},
 			{cond: 1, users: []string{"user:01-if-0@example.com"}},
 			{cond: 2, users: []string{"user:01-if-1@example.com", "user:1-if-1@example.com"}},
 			{cond: 3, users: []string{"user:1-if-0&1@example.com"}},
-		})
+		}))
 
 		// The "non-active" permission is ignored.
-		So(r.Bindings("proj:r1", 2), ShouldBeEmpty)
+		assert.Loosely(t, r.Bindings("proj:r1", 2), should.BeEmpty)
 
 		// Now actually confirm mapping of `cond` indexes above to elementary
 		// conditions from Realms proto.
 
 		// 1 is elementary 0: attr.a==ok.
 		cond1 := bs0[1].Condition
-		So(cond1.Index(), ShouldEqual, 0)
-		So(cond1.Eval(ctx, realms.Attrs{"a": "ok"}), ShouldBeTrue)
-		So(cond1.Eval(ctx, realms.Attrs{"a": "??"}), ShouldBeFalse)
+		assert.Loosely(t, cond1.Index(), should.BeZero)
+		assert.Loosely(t, cond1.Eval(ctx, realms.Attrs{"a": "ok"}), should.BeTrue)
+		assert.Loosely(t, cond1.Eval(ctx, realms.Attrs{"a": "??"}), should.BeFalse)
 
 		// 2 is elementary 1: attr.b==ok.
 		cond2 := bs0[2].Condition
-		So(cond2.Index(), ShouldEqual, 1)
-		So(cond2.Eval(ctx, realms.Attrs{"b": "ok"}), ShouldBeTrue)
-		So(cond2.Eval(ctx, realms.Attrs{"b": "??"}), ShouldBeFalse)
+		assert.Loosely(t, cond2.Index(), should.Equal(1))
+		assert.Loosely(t, cond2.Eval(ctx, realms.Attrs{"b": "ok"}), should.BeTrue)
+		assert.Loosely(t, cond2.Eval(ctx, realms.Attrs{"b": "??"}), should.BeFalse)
 
 		// 3 is elementary 0&1: attr.a==ok && attr.b==ok.
 		cond3 := bs0[3].Condition
-		So(cond3.Index(), ShouldEqual, 2)
-		So(cond3.Eval(ctx, realms.Attrs{"a": "ok", "b": "ok"}), ShouldBeTrue)
-		So(cond3.Eval(ctx, realms.Attrs{"a": "??", "b": "ok"}), ShouldBeFalse)
-		So(cond3.Eval(ctx, realms.Attrs{"a": "ok", "b": "??"}), ShouldBeFalse)
+		assert.Loosely(t, cond3.Index(), should.Equal(2))
+		assert.Loosely(t, cond3.Eval(ctx, realms.Attrs{"a": "ok", "b": "ok"}), should.BeTrue)
+		assert.Loosely(t, cond3.Eval(ctx, realms.Attrs{"a": "??", "b": "ok"}), should.BeFalse)
+		assert.Loosely(t, cond3.Eval(ctx, realms.Attrs{"a": "ok", "b": "??"}), should.BeFalse)
 	})
 }
 

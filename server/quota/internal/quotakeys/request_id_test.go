@@ -18,29 +18,30 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/quota/quotapb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRequestDedupKey(t *testing.T) {
 	t.Parallel()
 
-	Convey(`RequestDedupKey`, t, func() {
+	ftt.Run(`RequestDedupKey`, t, func(t *ftt.Test) {
 		user, err := identity.MakeIdentity("user:charlie@example.com")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		requestID := "spam-in-a-can"
 
 		key := RequestDedupKey(&quotapb.RequestDedupKey{
 			Ident:     string(user),
 			RequestId: requestID,
 		})
-		So(key, ShouldResemble, `"a~r~user:charlie@example.com~spam-in-a-can`)
+		assert.Loosely(t, key, should.Match(`"a~r~user:charlie@example.com~spam-in-a-can`))
 
 		entry, err := ParseRequestDedupKey(key)
-		So(err, ShouldBeNil)
-		So(entry.Ident, ShouldResemble, string(user))
-		So(entry.RequestId, ShouldResemble, requestID)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, entry.Ident, should.Resemble(string(user)))
+		assert.Loosely(t, entry.RequestId, should.Resemble(requestID))
 	})
 }

@@ -35,8 +35,11 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -47,7 +50,7 @@ var (
 func TestAuthServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := authtest.MockAuthConfig(context.Background())
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.DBProvider = func(ctx context.Context) (authdb.DB, error) {
@@ -113,20 +116,20 @@ func TestAuthServer(t *testing.T) {
 			})
 		}
 
-		Convey("Anonymous", func() {
+		t.Run("Anonymous", func(t *ftt.Test) {
 			mockAuthUser(&auth.User{Identity: identity.AnonymousIdentity})
 			res, err := call()
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Anonymous_{
 					Anonymous: &sidecar.AuthenticateResponse_Anonymous{},
 				},
-			})
+			}))
 		})
 
-		Convey("User", func() {
+		t.Run("User", func(t *ftt.Test) {
 			mockAuthUser(&auth.User{
 				Identity: "user:someone@example.com",
 				Email:    "someone@example.com",
@@ -135,8 +138,8 @@ func TestAuthServer(t *testing.T) {
 				ClientID: "Client ID",
 			})
 			res, err := call()
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "user:someone@example.com",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_User_{
@@ -147,17 +150,17 @@ func TestAuthServer(t *testing.T) {
 						ClientId: "Client ID",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Project", func() {
+		t.Run("Project", func(t *ftt.Test) {
 			mockAuthUser(&auth.User{Identity: "user:service@example.com"})
 			res, err := call(&sidecar.AuthenticateRequest_Metadata{
 				Key:   auth.XLUCIProjectHeader,
 				Value: "something",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "project:something",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Project_{
@@ -166,14 +169,14 @@ func TestAuthServer(t *testing.T) {
 						Service: "user:service@example.com",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Unknown identity kind", func() {
+		t.Run("Unknown identity kind", func(t *ftt.Test) {
 			mockAuthUser(&auth.User{Identity: "bot:what"})
 			res, err := call()
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -182,14 +185,14 @@ func TestAuthServer(t *testing.T) {
 						Message: "request was authenticated as \"bot:what\" which is an identity kind not supported by the LUCI Sidecar server",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Fatal auth error", func() {
+		t.Run("Fatal auth error", func(t *ftt.Test) {
 			mockAuthError(fmt.Errorf("boom"))
 			res, err := call()
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -198,14 +201,14 @@ func TestAuthServer(t *testing.T) {
 						Message: "boom",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Fatal auth error with code", func() {
+		t.Run("Fatal auth error with code", func(t *ftt.Test) {
 			mockAuthError(status.Errorf(codes.PermissionDenied, "boom"))
 			res, err := call()
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "anonymous:anonymous",
 				ServerInfo: expectedInfo,
 				Outcome: &sidecar.AuthenticateResponse_Error{
@@ -214,17 +217,17 @@ func TestAuthServer(t *testing.T) {
 						Message: "boom",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			mockAuthError(errors.New("boom", transient.Tag))
 			_, err := call()
-			So(err, ShouldHaveGRPCStatus, codes.Internal)
-			So(err, ShouldErrLike, "boom")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
-		Convey("Group check", func() {
+		t.Run("Group check", func(t *ftt.Test) {
 			mockAuthUser(&auth.User{
 				Identity: "user:someone@example.com",
 				Email:    "someone@example.com",
@@ -233,8 +236,8 @@ func TestAuthServer(t *testing.T) {
 				Protocol: sidecar.AuthenticateRequest_HTTP1,
 				Groups:   []string{"user-group", "something-else"},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &sidecar.AuthenticateResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&sidecar.AuthenticateResponse{
 				Identity:   "user:someone@example.com",
 				ServerInfo: expectedInfo,
 				Groups:     []string{"user-group"},
@@ -243,7 +246,7 @@ func TestAuthServer(t *testing.T) {
 						Email: "someone@example.com",
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -251,7 +254,7 @@ func TestAuthServer(t *testing.T) {
 func TestIsMember(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:sidecar-user-unused@example.com",
 			FakeDB: authtest.NewFakeDB(
@@ -262,47 +265,47 @@ func TestIsMember(t *testing.T) {
 
 		srv := &authServerImpl{}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			res, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Identity: "user:enduser@example.com",
 				Groups:   []string{"group-1", "group-2"},
 			})
-			So(err, ShouldBeNil)
-			So(res.IsMember, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.IsMember, should.BeTrue)
 		})
 
-		Convey("Not a member", func() {
+		t.Run("Not a member", func(t *ftt.Test) {
 			res, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Identity: "user:enduser@example.com",
 				Groups:   []string{"group-2"},
 			})
-			So(err, ShouldBeNil)
-			So(res.IsMember, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.IsMember, should.BeFalse)
 		})
 
-		Convey("No ident", func() {
+		t.Run("No ident", func(t *ftt.Test) {
 			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Groups: []string{"group-2"},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "identity field is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("identity field is required"))
 		})
 
-		Convey("Bad ident", func() {
+		t.Run("Bad ident", func(t *ftt.Test) {
 			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Identity: "what",
 				Groups:   []string{"group-2"},
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad identity")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad identity"))
 		})
 
-		Convey("No groups", func() {
+		t.Run("No groups", func(t *ftt.Test) {
 			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Identity: "user:enduser@example.com",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "at least one group is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("at least one group is required"))
 		})
 	})
 }
@@ -310,7 +313,7 @@ func TestIsMember(t *testing.T) {
 func TestHasPermission(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:sidecar-user-unused@example.com",
 			FakeDB: authtest.NewFakeDB(
@@ -328,102 +331,102 @@ func TestHasPermission(t *testing.T) {
 			},
 		}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm0.Name(),
 				Realm:      "test:realm",
 			})
-			So(err, ShouldBeNil)
-			So(res.HasPermission, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.HasPermission, should.BeTrue)
 		})
 
-		Convey("OK with attrs", func() {
+		t.Run("OK with attrs", func(t *ftt.Test) {
 			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm1.Name(),
 				Realm:      "test:realm",
 				Attributes: map[string]string{"test.attr": "good-val"},
 			})
-			So(err, ShouldBeNil)
-			So(res.HasPermission, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.HasPermission, should.BeTrue)
 		})
 
-		Convey("No permission", func() {
+		t.Run("No permission", func(t *ftt.Test) {
 			res, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm1.Name(),
 				Realm:      "test:realm",
 			})
-			So(err, ShouldBeNil)
-			So(res.HasPermission, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.HasPermission, should.BeFalse)
 		})
 
-		Convey("No ident", func() {
+		t.Run("No ident", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Permission: testPerm0.Name(),
 				Realm:      "test:realm",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "identity field is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("identity field is required"))
 		})
 
-		Convey("Bad ident", func() {
+		t.Run("Bad ident", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "what",
 				Permission: testPerm0.Name(),
 				Realm:      "test:realm",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad identity")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad identity"))
 		})
 
-		Convey("No perm", func() {
+		t.Run("No perm", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity: "user:enduser@example.com",
 				Realm:    "test:realm",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "permission field is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("permission field is required"))
 		})
 
-		Convey("Bad perm", func() {
+		t.Run("Bad perm", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: "what",
 				Realm:      "test:realm",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad permission")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad permission"))
 		})
 
-		Convey("Unknown perm", func() {
+		t.Run("Unknown perm", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: "fake.permission.unknown",
 				Realm:      "test:realm",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "is not registered")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("is not registered"))
 		})
 
-		Convey("No realm", func() {
+		t.Run("No realm", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm0.Name(),
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "realm field is required")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("realm field is required"))
 		})
 
-		Convey("Bad realm", func() {
+		t.Run("Bad realm", func(t *ftt.Test) {
 			_, err := srv.HasPermission(ctx, &sidecar.HasPermissionRequest{
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm0.Name(),
 				Realm:      "bad",
 			})
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad global realm name")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad global realm name"))
 		})
 	})
 }
@@ -431,7 +434,7 @@ func TestHasPermission(t *testing.T) {
 func TestRequestMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("HTTP", t, func() {
+	ftt.Run("HTTP", t, func(t *ftt.Test) {
 		req, err := newRequestMetadata(&sidecar.AuthenticateRequest{
 			Protocol: sidecar.AuthenticateRequest_HTTP1,
 			Metadata: []*sidecar.AuthenticateRequest_Metadata{
@@ -443,18 +446,18 @@ func TestRequestMetadata(t *testing.T) {
 				{Key: "Cookie", Value: "cookie_3=value_3"},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(req.Host(), ShouldEqual, "host")
-		So(req.RemoteAddr(), ShouldEqual, "")
-		So(req.Header("HEADER"), ShouldEqual, "Val1")
-		So(req.Header("header-bin"), ShouldEqual, "val")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, req.Host(), should.Equal("host"))
+		assert.Loosely(t, req.RemoteAddr(), should.BeEmpty)
+		assert.Loosely(t, req.Header("HEADER"), should.Equal("Val1"))
+		assert.Loosely(t, req.Header("header-bin"), should.Equal("val"))
 
 		cookie, err := req.Cookie("cookie_3")
-		So(err, ShouldBeNil)
-		So(cookie.Value, ShouldEqual, "value_3")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cookie.Value, should.Equal("value_3"))
 	})
 
-	Convey("gRPC", t, func() {
+	ftt.Run("gRPC", t, func(t *ftt.Test) {
 		req, err := newRequestMetadata(&sidecar.AuthenticateRequest{
 			Protocol: sidecar.AuthenticateRequest_GRPC,
 			Metadata: []*sidecar.AuthenticateRequest_Metadata{
@@ -462,13 +465,13 @@ func TestRequestMetadata(t *testing.T) {
 				{Key: "Header-Bin", Value: base64.RawStdEncoding.EncodeToString([]byte("val"))},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(req.Host(), ShouldEqual, "host")
-		So(req.Header("header-bin"), ShouldEqual, "val")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, req.Host(), should.Equal("host"))
+		assert.Loosely(t, req.Header("header-bin"), should.Equal("val"))
 	})
 
-	Convey("Unknown protocol", t, func() {
+	ftt.Run("Unknown protocol", t, func(t *ftt.Test) {
 		_, err := newRequestMetadata(&sidecar.AuthenticateRequest{})
-		So(err, ShouldHaveGRPCStatus, codes.InvalidArgument)
+		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
 	})
 }

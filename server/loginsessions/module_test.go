@@ -41,8 +41,11 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const mockedAuthorizationEndpoint = "http://localhost/authorization"
@@ -50,7 +53,7 @@ const mockedAuthorizationEndpoint = "http://localhost/authorization"
 func TestModule(t *testing.T) {
 	t.Parallel()
 
-	Convey("With module", t, func() {
+	ftt.Run("With module", t, func(t *ftt.Test) {
 		var now = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 		timestampFromNow := func(d time.Duration) *timestamppb.Timestamp {
@@ -95,7 +98,7 @@ func TestModule(t *testing.T) {
 		opts.RootURL = srv.URL
 
 		jar, err := cookiejar.New(nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		web := &http.Client{Jar: jar}
 
 		// Union of all template args ever passed to templates.
@@ -110,12 +113,12 @@ func TestModule(t *testing.T) {
 		}
 
 		parseWebResponse := func(resp *http.Response, err error) templateArgs {
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer resp.Body.Close()
 			body, err := io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var args templateArgs
-			So(json.Unmarshal(body, &args), ShouldBeNil)
+			assert.Loosely(t, json.Unmarshal(body, &args), should.BeNil)
 			return args
 		}
 
@@ -137,10 +140,10 @@ func TestModule(t *testing.T) {
 			}
 		}
 
-		Convey("CreateLoginSession + GetLoginSession", func() {
+		t.Run("CreateLoginSession + GetLoginSession", func(t *ftt.Test) {
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-			So(err, ShouldBeNil)
-			So(session, ShouldResembleProto, &loginsessionspb.LoginSession{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, session, should.Resemble(&loginsessionspb.LoginSession{
 				Id:                      session.Id,
 				Password:                session.Password,
 				State:                   loginsessionspb.LoginSession_PENDING,
@@ -151,7 +154,7 @@ func TestModule(t *testing.T) {
 				ConfirmationCode:        session.ConfirmationCode,
 				ConfirmationCodeExpiry:  durationpb.New(confirmationCodeExpiryMax),
 				ConfirmationCodeRefresh: durationpb.New(confirmationCodeExpiryRefresh),
-			})
+			}))
 
 			pwd := session.Password
 			session.Password = nil
@@ -160,8 +163,8 @@ func TestModule(t *testing.T) {
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: pwd,
 			})
-			So(err, ShouldBeNil)
-			So(got, ShouldResembleProto, session)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Resemble(session))
 
 			// Later the confirmation code gets stale and a new one is generated.
 			tc.Set(now.Add(confirmationCodeExpiryRefresh + time.Second))
@@ -169,13 +172,13 @@ func TestModule(t *testing.T) {
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: pwd,
 			})
-			So(err, ShouldBeNil)
-			So(got1.ConfirmationCode, ShouldNotEqual, session.ConfirmationCode)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got1.ConfirmationCode, should.NotEqual(session.ConfirmationCode))
 
 			// Have two codes in the store right now.
 			stored, err := mod.srv.store.Get(ctx, session.Id)
-			So(err, ShouldBeNil)
-			So(stored.ConfirmationCodes, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, stored.ConfirmationCodes, should.HaveLength(2))
 
 			// Later the expired code is kicked out of the storage.
 			tc.Set(now.Add(confirmationCodeExpiryMax + time.Second))
@@ -183,13 +186,13 @@ func TestModule(t *testing.T) {
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: pwd,
 			})
-			So(err, ShouldBeNil)
-			So(got2.ConfirmationCode, ShouldEqual, got1.ConfirmationCode)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got2.ConfirmationCode, should.Equal(got1.ConfirmationCode))
 
 			// Have only one code now.
 			stored, err = mod.srv.store.Get(ctx, session.Id)
-			So(err, ShouldBeNil)
-			So(stored.ConfirmationCodes, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, stored.ConfirmationCodes, should.HaveLength(1))
 
 			// Later the session itself expires.
 			tc.Set(now.Add(sessionExpiry + time.Second))
@@ -197,15 +200,15 @@ func TestModule(t *testing.T) {
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: pwd,
 			})
-			So(err, ShouldBeNil)
-			So(exp, ShouldResembleProto, &loginsessionspb.LoginSession{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, exp, should.Resemble(&loginsessionspb.LoginSession{
 				Id:           session.Id,
 				State:        loginsessionspb.LoginSession_EXPIRED,
 				Created:      timestampFromNow(0),
 				Expiry:       timestampFromNow(sessionExpiry),
 				Completed:    timestampFromNow(sessionExpiry + time.Second),
 				LoginFlowUrl: fmt.Sprintf("%s/cli/login/%s", srv.URL, session.Id),
-			})
+			}))
 
 			// And this is the final stage.
 			tc.Set(now.Add(sessionExpiry + time.Hour))
@@ -213,95 +216,95 @@ func TestModule(t *testing.T) {
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: pwd,
 			})
-			So(err, ShouldBeNil)
-			So(exp2, ShouldResembleProto, exp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, exp2, should.Resemble(exp))
 		})
 
-		Convey("CreateLoginSession validation", func() {
-			Convey("Browser headers", func() {
+		t.Run("CreateLoginSession validation", func(t *ftt.Test) {
+			t.Run("Browser headers", func(t *ftt.Test) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs("sec-fetch-site", "none"))
 				_, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-				So(err, ShouldBeRPCPermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			})
-			Convey("Missing OAuth client ID", func() {
+			t.Run("Missing OAuth client ID", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthClientId = ""
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
-			Convey("Missing OAuth scopes", func() {
+			t.Run("Missing OAuth scopes", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthScopes = nil
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
-			Convey("Missing OAuth challenge", func() {
+			t.Run("Missing OAuth challenge", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthS256CodeChallenge = ""
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
-			Convey("Unknown OAuth client", func() {
+			t.Run("Unknown OAuth client", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthClientId = "unknown"
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			})
 		})
 
-		Convey("GetLoginSession validation", func() {
+		t.Run("GetLoginSession validation", func(t *ftt.Test) {
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Browser headers", func() {
+			t.Run("Browser headers", func(t *ftt.Test) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs("sec-fetch-site", "none"))
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       session.Id,
 					LoginSessionPassword: session.Password,
 				})
-				So(err, ShouldBeRPCPermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			})
-			Convey("Missing ID", func() {
+			t.Run("Missing ID", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionPassword: session.Password,
 				})
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
-			Convey("Missing password", func() {
+			t.Run("Missing password", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId: session.Id,
 				})
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
-			Convey("Missing session", func() {
+			t.Run("Missing session", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       "missing",
 					LoginSessionPassword: session.Password,
 				})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
-			Convey("Wrong password", func() {
+			t.Run("Wrong password", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       session.Id,
 					LoginSessionPassword: []byte("wrong"),
 				})
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 		})
 
-		Convey("Full successful flow", func() {
+		t.Run("Full successful flow", func(t *ftt.Test) {
 			// The CLI tool starts a new login session.
 			sessionReq := createSessionReq()
 			session, err := mod.srv.CreateLoginSession(ctx, sessionReq)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The user opens the web page with the session and gets the cookie and
 			// the authorization endpoint redirect parameters.
 			tmpl := webGET(session.LoginFlowUrl)
-			So(tmpl.Error, ShouldBeEmpty)
-			So(tmpl.Template, ShouldEqual, "pages/start.html")
-			So(tmpl.OAuthState, ShouldNotBeEmpty)
-			So(tmpl.OAuthRedirectParams, ShouldResemble, map[string]string{
+			assert.Loosely(t, tmpl.Error, should.BeEmpty)
+			assert.Loosely(t, tmpl.Template, should.Equal("pages/start.html"))
+			assert.Loosely(t, tmpl.OAuthState, should.NotBeEmpty)
+			assert.Loosely(t, tmpl.OAuthRedirectParams, should.Resemble(map[string]string{
 				"access_type":           "offline",
 				"client_id":             sessionReq.OauthClientId,
 				"code_challenge":        sessionReq.OauthS256CodeChallenge,
@@ -312,7 +315,7 @@ func TestModule(t *testing.T) {
 				"response_type":         "code",
 				"scope":                 strings.Join(sessionReq.OauthScopes, " "),
 				"state":                 tmpl.OAuthState,
-			})
+			}))
 
 			// The user goes through the login flow and ends up back with a code.
 			// This renders a page asking for the confirmation code.
@@ -321,24 +324,24 @@ func TestModule(t *testing.T) {
 				"state": {tmpl.OAuthState},
 			}).Encode()
 			tmpl = webGET(confirmURL)
-			So(tmpl.Error, ShouldBeEmpty)
-			So(tmpl.Template, ShouldEqual, "pages/confirm.html")
-			So(tmpl.OAuthState, ShouldNotBeEmpty)
+			assert.Loosely(t, tmpl.Error, should.BeEmpty)
+			assert.Loosely(t, tmpl.Template, should.Equal("pages/confirm.html"))
+			assert.Loosely(t, tmpl.OAuthState, should.NotBeEmpty)
 
 			// A correct confirmation code is entered and accepted.
 			tmpl = webPOST(confirmURL, url.Values{
 				"confirmation_code": {session.ConfirmationCode},
 			})
-			So(tmpl.Error, ShouldBeEmpty)
-			So(tmpl.Template, ShouldEqual, "pages/success.html")
+			assert.Loosely(t, tmpl.Error, should.BeEmpty)
+			assert.Loosely(t, tmpl.Template, should.Equal("pages/success.html"))
 
 			// The session is completed and the code is returned to the CLI.
 			session, err = mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: session.Password,
 			})
-			So(err, ShouldBeNil)
-			So(session, ShouldResembleProto, &loginsessionspb.LoginSession{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, session, should.Resemble(&loginsessionspb.LoginSession{
 				Id:                     session.Id,
 				State:                  loginsessionspb.LoginSession_SUCCEEDED,
 				Created:                timestampFromNow(0),
@@ -347,49 +350,49 @@ func TestModule(t *testing.T) {
 				LoginFlowUrl:           fmt.Sprintf("%s/cli/login/%s", srv.URL, session.Id),
 				OauthAuthorizationCode: "authorization-code",
 				OauthRedirectUrl:       srv.URL + "/cli/confirm",
-			})
+			}))
 
 			// Visiting the session page again shows it is gone.
 			tmpl = webGET(session.LoginFlowUrl)
-			So(tmpl.Error, ShouldContainSubstring, "No such login session")
+			assert.Loosely(t, tmpl.Error, should.ContainSubstring("No such login session"))
 		})
 
-		Convey("Session page errors", func() {
+		t.Run("Session page errors", func(t *ftt.Test) {
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Wrong session ID", func() {
+			t.Run("Wrong session ID", func(t *ftt.Test) {
 				// Opening a non-existent session page is an error.
 				tmpl := webGET(session.LoginFlowUrl + "extra")
-				So(tmpl.Error, ShouldContainSubstring, "No such login session")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("No such login session"))
 			})
 
-			Convey("Expired session", func() {
+			t.Run("Expired session", func(t *ftt.Test) {
 				// Opening an old session is an error.
 				tc.Add(sessionExpiry + time.Second)
 				tmpl := webGET(session.LoginFlowUrl)
-				So(tmpl.Error, ShouldContainSubstring, "No such login session")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("No such login session"))
 			})
 		})
 
-		Convey("Redirect page errors", func() {
+		t.Run("Redirect page errors", func(t *ftt.Test) {
 			// Create the session and get the session cookie.
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			tmpl := webGET(session.LoginFlowUrl)
-			So(tmpl.OAuthState, ShouldNotBeEmpty)
+			assert.Loosely(t, tmpl.OAuthState, should.NotBeEmpty)
 
 			checkSessionState := func(state loginsessionspb.LoginSession_State, msg string) {
 				session, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       session.Id,
 					LoginSessionPassword: session.Password,
 				})
-				So(err, ShouldBeNil)
-				So(session.State, ShouldEqual, state)
-				So(session.OauthError, ShouldEqual, msg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, session.State, should.Equal(state))
+				assert.Loosely(t, session.OauthError, should.Equal(msg))
 			}
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				// Just double check the test setup is correct.
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
@@ -401,71 +404,71 @@ func TestModule(t *testing.T) {
 				checkSessionState(loginsessionspb.LoginSession_SUCCEEDED, "")
 			})
 
-			Convey("No OAuth code or error", func() {
+			t.Run("No OAuth code or error", func(t *ftt.Test) {
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "The authorization provider returned error code: unknown")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("The authorization provider returned error code: unknown"))
 				checkSessionState(loginsessionspb.LoginSession_FAILED, "unknown")
 			})
 
-			Convey("OAuth error", func() {
+			t.Run("OAuth error", func(t *ftt.Test) {
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
 					"error": {"boom"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "The authorization provider returned error code: boom")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("The authorization provider returned error code: boom"))
 				checkSessionState(loginsessionspb.LoginSession_FAILED, "boom")
 			})
 
-			Convey("No state", func() {
+			t.Run("No state", func(t *ftt.Test) {
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"error": {"boom"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "The authorization provider returned error code: boom")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("The authorization provider returned error code: boom"))
 				checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 			})
 
-			Convey("Bad state", func() {
+			t.Run("Bad state", func(t *ftt.Test) {
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState[:20]},
 					"code":  {"authorization-code"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "Internal server error")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("Internal server error"))
 				checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 			})
 
-			Convey("Expired session", func() {
+			t.Run("Expired session", func(t *ftt.Test) {
 				tc.Add(sessionExpiry + time.Second)
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
 					"code":  {"authorization-code"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "finished or expired")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("finished or expired"))
 				checkSessionState(loginsessionspb.LoginSession_EXPIRED, "")
 			})
 
-			Convey("Missing login cookie", func() {
+			t.Run("Missing login cookie", func(t *ftt.Test) {
 				emptyJar, err := cookiejar.New(nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				web.Jar = emptyJar
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
 					"code":  {"authorization-code"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "finished or expired")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("finished or expired"))
 				checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 			})
 
-			Convey("Wrong login cookie", func() {
+			t.Run("Wrong login cookie", func(t *ftt.Test) {
 				u, err := url.Parse(srv.URL + "/cli/session")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				jar.SetCookies(u, []*http.Cookie{
 					{
 						Name:     mod.loginCookieName(session.Id),
@@ -480,33 +483,33 @@ func TestModule(t *testing.T) {
 					"code":  {"authorization-code"},
 				}).Encode()
 				tmpl = webGET(confirmURL)
-				So(tmpl.Error, ShouldContainSubstring, "finished or expired")
+				assert.Loosely(t, tmpl.Error, should.ContainSubstring("finished or expired"))
 				checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 			})
 
-			Convey("Wrong confirmation code", func() {
+			t.Run("Wrong confirmation code", func(t *ftt.Test) {
 				confirmURL := srv.URL + "/cli/confirm?" + (url.Values{
 					"state": {tmpl.OAuthState},
 					"code":  {"authorization-code"},
 				}).Encode()
 
-				Convey("Empty", func() {
+				t.Run("Empty", func(t *ftt.Test) {
 					tmpl = webPOST(confirmURL, url.Values{
 						"confirmation_code": {""},
 					})
-					So(tmpl.BadCode, ShouldBeTrue)
+					assert.Loosely(t, tmpl.BadCode, should.BeTrue)
 					checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 				})
 
-				Convey("Wrong", func() {
+				t.Run("Wrong", func(t *ftt.Test) {
 					tmpl = webPOST(confirmURL, url.Values{
 						"confirmation_code": {"wrong"},
 					})
-					So(tmpl.BadCode, ShouldBeTrue)
+					assert.Loosely(t, tmpl.BadCode, should.BeTrue)
 					checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 				})
 
-				Convey("Stale, but still valid", func() {
+				t.Run("Stale, but still valid", func(t *ftt.Test) {
 					tc.Add(confirmationCodeExpiryRefresh + time.Second)
 					webPOST(confirmURL, url.Values{
 						"confirmation_code": {session.ConfirmationCode},
@@ -514,37 +517,37 @@ func TestModule(t *testing.T) {
 					checkSessionState(loginsessionspb.LoginSession_SUCCEEDED, "")
 				})
 
-				Convey("Expired", func() {
+				t.Run("Expired", func(t *ftt.Test) {
 					tc.Add(confirmationCodeExpiryMax + time.Second)
 					tmpl = webPOST(confirmURL, url.Values{
 						"confirmation_code": {session.ConfirmationCode},
 					})
-					So(tmpl.BadCode, ShouldBeTrue)
+					assert.Loosely(t, tmpl.BadCode, should.BeTrue)
 					checkSessionState(loginsessionspb.LoginSession_PENDING, "")
 				})
 			})
 		})
 
-		Convey("Session cancellation", func() {
+		t.Run("Session cancellation", func(t *ftt.Test) {
 			// Create the session and get the session cookie.
 			session, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			tmpl := webGET(session.LoginFlowUrl)
-			So(tmpl.OAuthState, ShouldNotBeEmpty)
+			assert.Loosely(t, tmpl.OAuthState, should.NotBeEmpty)
 
 			// Cancel it.
 			tmpl = webPOST(srv.URL+"/cli/cancel", url.Values{
 				"state": {tmpl.OAuthState},
 			})
-			So(tmpl.Template, ShouldEqual, "pages/canceled.html")
+			assert.Loosely(t, tmpl.Template, should.Equal("pages/canceled.html"))
 
 			// Verify it is indeed canceled.
 			session, err = mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 				LoginSessionId:       session.Id,
 				LoginSessionPassword: session.Password,
 			})
-			So(err, ShouldBeNil)
-			So(session.State, ShouldEqual, loginsessionspb.LoginSession_CANCELED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, session.State, should.Equal(loginsessionspb.LoginSession_CANCELED))
 		})
 	})
 }

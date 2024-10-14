@@ -25,16 +25,17 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMintIDTokenForServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	Convey("MintIDTokenForServiceAccount works", t, func() {
+	ftt.Run("MintIDTokenForServiceAccount works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -73,11 +74,11 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			ServiceAccount: "abc@example.com",
 			Audience:       "aud",
 		})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, token1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(token1))
 
 		// Cached now.
-		So(actorIDTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
+		assert.Loosely(t, actorIDTokenCache.lc.CachedLocally(ctx), should.Equal(1))
 
 		// On subsequence request the cached token is used.
 		returnedToken = token2
@@ -85,8 +86,8 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			ServiceAccount: "abc@example.com",
 			Audience:       "aud",
 		})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, token1) // old one
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(token1)) // old one
 
 		// Unless it expires sooner than requested TTL.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
@@ -95,8 +96,8 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			Audience:       "aud",
 			MinTTL:         30 * time.Minute,
 		})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, token2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(token2))
 
 		// Using delegates results in a different cache key.
 		returnedToken = token3
@@ -106,10 +107,10 @@ func TestMintIDTokenForServiceAccount(t *testing.T) {
 			Delegates:      []string{"d2@example.com", "d1@example.com"},
 			MinTTL:         30 * time.Minute,
 		})
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, token3) // new one
-		So(lastRequest, ShouldEqual,
-			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"audience":"aud","includeEmail":true}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(token3)) // new one
+		assert.Loosely(t, lastRequest, should.Equal(
+			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"audience":"aud","includeEmail":true}`))
 	})
 }
 

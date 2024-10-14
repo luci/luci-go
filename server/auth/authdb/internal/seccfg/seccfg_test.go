@@ -19,19 +19,20 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSecurityConfig(t *testing.T) {
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		cfg, err := Parse(nil)
-		So(err, ShouldBeNil)
-		So(cfg.IsInternalService("something.example.com"), ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg.IsInternalService("something.example.com"), should.BeFalse)
 	})
 
-	Convey("IsInternalService works", t, func() {
+	ftt.Run("IsInternalService works", t, func(t *ftt.Test) {
 		blob, _ := proto.Marshal(&protocol.SecurityConfig{
 			InternalServiceRegexp: []string{
 				`(.*-dot-)?i1\.example\.com`,
@@ -39,13 +40,13 @@ func TestSecurityConfig(t *testing.T) {
 			},
 		})
 		cfg, err := Parse(blob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(cfg.IsInternalService("i1.example.com"), ShouldBeTrue)
-		So(cfg.IsInternalService("i2.example.com"), ShouldBeTrue)
-		So(cfg.IsInternalService("abc-dot-i1.example.com"), ShouldBeTrue)
-		So(cfg.IsInternalService("external.example.com"), ShouldBeFalse)
-		So(cfg.IsInternalService("something-i1.example.com"), ShouldBeFalse)
-		So(cfg.IsInternalService("i1.example.com-something"), ShouldBeFalse)
+		assert.Loosely(t, cfg.IsInternalService("i1.example.com"), should.BeTrue)
+		assert.Loosely(t, cfg.IsInternalService("i2.example.com"), should.BeTrue)
+		assert.Loosely(t, cfg.IsInternalService("abc-dot-i1.example.com"), should.BeTrue)
+		assert.Loosely(t, cfg.IsInternalService("external.example.com"), should.BeFalse)
+		assert.Loosely(t, cfg.IsInternalService("something-i1.example.com"), should.BeFalse)
+		assert.Loosely(t, cfg.IsInternalService("i1.example.com-something"), should.BeFalse)
 	})
 }

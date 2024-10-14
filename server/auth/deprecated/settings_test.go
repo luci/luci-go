@@ -18,18 +18,19 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/settings"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSettings(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := context.Background()
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{}))
 
 		cfg, err := FetchOpenIDSettings(c)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldResemble, &Settings{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.Resemble(&Settings{}))
 	})
 }

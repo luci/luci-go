@@ -20,8 +20,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -31,7 +32,7 @@ func init() {
 }
 
 func TestFetch(t *testing.T) {
-	Convey("with test context", t, func(c C) {
+	ftt.Run("with test context", t, func(c *ftt.Test) {
 		body := ""
 		status := http.StatusOK
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +43,7 @@ func TestFetch(t *testing.T) {
 
 		ctx := context.Background()
 
-		Convey("fetch works", func() {
+		c.Run("fetch works", func(c *ftt.Test) {
 			var val struct {
 				A string `json:"a"`
 			}
@@ -52,11 +53,11 @@ func TestFetch(t *testing.T) {
 				URL:    ts.URL,
 				Out:    &val,
 			}
-			So(req.Do(ctx), ShouldBeNil)
-			So(val.A, ShouldEqual, "hello")
+			assert.Loosely(c, req.Do(ctx), should.BeNil)
+			assert.Loosely(c, val.A, should.Equal("hello"))
 		})
 
-		Convey("handles bad status code", func() {
+		c.Run("handles bad status code", func(c *ftt.Test) {
 			var val struct{}
 			status = http.StatusNotFound
 			req := Request{
@@ -64,10 +65,10 @@ func TestFetch(t *testing.T) {
 				URL:    ts.URL,
 				Out:    &val,
 			}
-			So(req.Do(ctx), ShouldErrLike, "HTTP code (404)")
+			assert.Loosely(c, req.Do(ctx), should.ErrLike("HTTP code (404)"))
 		})
 
-		Convey("handles bad body", func() {
+		c.Run("handles bad body", func(c *ftt.Test) {
 			var val struct{}
 			body = "not json"
 			req := Request{
@@ -75,17 +76,17 @@ func TestFetch(t *testing.T) {
 				URL:    ts.URL,
 				Out:    &val,
 			}
-			So(req.Do(ctx), ShouldErrLike, "can't deserialize JSON")
+			assert.Loosely(c, req.Do(ctx), should.ErrLike("can't deserialize JSON"))
 		})
 
-		Convey("handles connection error", func() {
+		c.Run("handles connection error", func(c *ftt.Test) {
 			var val struct{}
 			req := Request{
 				Method: "GET",
 				URL:    "http://localhost:12345678",
 				Out:    &val,
 			}
-			So(req.Do(ctx), ShouldErrLike, "dial tcp")
+			assert.Loosely(c, req.Do(ctx), should.ErrLike("dial tcp"))
 		})
 	})
 }

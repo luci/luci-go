@@ -24,23 +24,23 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQuotaAdmin(t *testing.T) {
 	t.Parallel()
 
-	Convey("quotaAdmin", t, func() {
+	ftt.Run("quotaAdmin", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 		now := strconv.FormatInt(tc.Now().Unix(), 10)
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		ctx = redisconn.UsePool(ctx, &redis.Pool{
 			Dial: func() (redis.Conn, error) {
@@ -48,11 +48,11 @@ func TestQuotaAdmin(t *testing.T) {
 			},
 		})
 		conn, err := redisconn.Get(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = conn.Do("HINCRBY", "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources", 3)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = conn.Do("HINCRBY", "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated", tc.Now().Unix())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		m, err := quotaconfig.NewMemory(ctx, []*pb.Policy{
 			{
 				Name:          "quota",
@@ -65,87 +65,87 @@ func TestQuotaAdmin(t *testing.T) {
 				Replenishment: 1,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = Use(ctx, m)
 		srv := &quotaAdmin{}
 
-		Convey("Get", func() {
-			Convey("nil", func() {
+		t.Run("Get", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				rsp, err := srv.Get(ctx, nil)
-				So(err, ShouldErrLike, "policy is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("policy is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.GetRequest{}
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldErrLike, "policy is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("policy is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("not found", func() {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.GetRequest{
 					Policy: "quota/user",
 				}
 
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("user unspecified", func() {
+			t.Run("user unspecified", func(t *ftt.Test) {
 				req := &pb.GetRequest{
 					Policy: "quota/${user}",
 				}
 
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldErrLike, "user not specified")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("user not specified"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("new", func() {
+			t.Run("new", func(t *ftt.Test) {
 				req := &pb.GetRequest{
 					Policy: "quota",
 				}
 
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
-				})
+				}))
 
 				// Ensure an entry for "quota" was not written to the database.
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "3")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("existing", func() {
+			t.Run("existing", func(t *ftt.Test) {
 				req := &pb.GetRequest{
 					Policy: "quota/${user}",
 					User:   "user@example.com",
 				}
 
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 3,
-				})
+				}))
 
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "3")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("replenish", func() {
+			t.Run("replenish", func(t *ftt.Test) {
 				ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Second))
 				req := &pb.GetRequest{
 					Policy: "quota/${user}",
@@ -153,89 +153,89 @@ func TestQuotaAdmin(t *testing.T) {
 				}
 
 				rsp, err := srv.Get(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 4,
-				})
+				}))
 
 				// Ensure replenishment was not written to the database.
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "3")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("3"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 		})
 
-		Convey("Set", func() {
-			Convey("nil", func() {
+		t.Run("Set", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				rsp, err := srv.Set(ctx, nil)
-				So(err, ShouldErrLike, "policy is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("policy is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				req := &pb.SetRequest{}
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldErrLike, "policy is required")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("policy is required"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("negative", func() {
+			t.Run("negative", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy:    "quota",
 					Resources: -1,
 				}
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldErrLike, "resources must not be negative")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("resources must not be negative"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("not found", func() {
+			t.Run("not found", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy: "quota/user",
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldErrLike, "not found")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("not found"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("user unspecified", func() {
+			t.Run("user unspecified", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy: "quota/${user}",
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldErrLike, "user not specified")
-				So(rsp, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike("user not specified"))
+				assert.Loosely(t, rsp, should.BeNil)
 			})
 
-			Convey("new", func() {
+			t.Run("new", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy:    "quota",
 					Resources: 2,
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
-				})
+				}))
 
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 
-			Convey("existing", func() {
+			t.Run("existing", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy:    "quota/${user}",
 					User:      "user@example.com",
@@ -243,61 +243,61 @@ func TestQuotaAdmin(t *testing.T) {
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota/user@example.com",
 					DbName:    "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
 					Resources: 2,
-				})
+				}))
 
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("zero", func() {
+			t.Run("zero", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy: "quota/${user}",
 					User:   "user@example.com",
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:   "quota/user@example.com",
 					DbName: "entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
+				}))
 
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("excessive", func() {
+			t.Run("excessive", func(t *ftt.Test) {
 				req := &pb.SetRequest{
 					Policy:    "quota",
 					Resources: 10,
 				}
 
 				rsp, err := srv.Set(ctx, req)
-				So(err, ShouldBeNil)
-				So(rsp, ShouldResemble, &pb.QuotaEntry{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp, should.Resemble(&pb.QuotaEntry{
 					Name:      "quota",
 					DbName:    "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					Resources: 2,
-				})
+				}))
 
 				// Ensure resources were capped in the database.
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 		})
 	})

@@ -34,14 +34,15 @@ import (
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSecretManagerSource(t *testing.T) {
 	t.Parallel()
 
-	Convey("With SecretManagerStore", t, func() {
+	ftt.Run("With SecretManagerStore", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx = logging.SetLevel(ctx, logging.Debug)
@@ -69,27 +70,27 @@ func TestSecretManagerSource(t *testing.T) {
 		// Handle reports from MaintenanceLoop.
 		events := make(chan string)
 		expectChecked := func(secret string) {
-			So(<-events, ShouldEqual, "checking")
-			So(<-events, ShouldEqual, "checked "+secret)
+			assert.Loosely(t, <-events, should.Equal("checking"))
+			assert.Loosely(t, <-events, should.Equal("checked "+secret))
 		}
 		expectReloaded := func(secret string) {
-			So(<-events, ShouldEqual, "checking")
-			So(<-events, ShouldEqual, "reloaded "+secret)
+			assert.Loosely(t, <-events, should.Equal("checking"))
+			assert.Loosely(t, <-events, should.Equal("reloaded "+secret))
 		}
 		expectSleeping := func() {
-			So(<-events, ShouldEqual, "sleeping")
+			assert.Loosely(t, <-events, should.Equal("sleeping"))
 		}
 		expectFullSleep := func(dur string) {
 			expectSleeping()
 			ticks <- true // advance clock in the timer
-			So(<-events, ShouldEqual, "slept "+dur)
+			assert.Loosely(t, <-events, should.Equal("slept "+dur))
 		}
 		expectWoken := func(afterSleep bool) {
-			So(<-events, ShouldEqual, "woken")
+			assert.Loosely(t, <-events, should.Equal("woken"))
 			if afterSleep {
 				ticks <- false // the timer was aborted, don't advance clock in it
 			}
-			So(<-events, ShouldEqual, "checking")
+			assert.Loosely(t, <-events, should.Equal("checking"))
 		}
 
 		gsm := secretManagerMock{}
@@ -100,50 +101,50 @@ func TestSecretManagerSource(t *testing.T) {
 			testingEvents:       events,
 		}
 		go sm.MaintenanceLoop(ctx)
-		So(<-events, ShouldEqual, "checking") // wait until it blocks
+		assert.Loosely(t, <-events, should.Equal("checking")) // wait until it blocks
 
-		Convey("normalizeName sm://<secret>", func() {
+		t.Run("normalizeName sm://<secret>", func(t *ftt.Test) {
 			name, err := sm.normalizeName("sm://secret")
-			So(err, ShouldBeNil)
-			So(name, ShouldEqual, "sm://fake-project/secret")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, name, should.Equal("sm://fake-project/secret"))
 		})
 
-		Convey("readSecret devsecret", func() {
+		t.Run("readSecret devsecret", func(t *ftt.Test) {
 			s, err := sm.readSecret(ctx, "devsecret://YWJj")
-			So(err, ShouldBeNil)
-			So(s, ShouldResemble, &trackedSecret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Resemble(&trackedSecret{
 				name: "devsecret://YWJj",
 				value: Secret{
 					Active: []byte("abc"),
 				},
-			})
+			}))
 		})
 
-		Convey("readSecret devsecret-text", func() {
+		t.Run("readSecret devsecret-text", func(t *ftt.Test) {
 			s, err := sm.readSecret(ctx, "devsecret-text://abc")
-			So(err, ShouldBeNil)
-			So(s, ShouldResemble, &trackedSecret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Resemble(&trackedSecret{
 				name: "devsecret-text://abc",
 				value: Secret{
 					Active: []byte("abc"),
 				},
-			})
+			}))
 		})
 
-		Convey("readSecret sm://<project>/<secret>", func() {
+		t.Run("readSecret sm://<project>/<secret>", func(t *ftt.Test) {
 			gsm.createVersion("project", "secret", "zzz")
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.name, ShouldEqual, "sm://project/secret")
-			So(s.value, ShouldResemble, Secret{Active: []byte("zzz")})
-			So(s.versionCurrent, ShouldEqual, 1)
-			So(s.versionPrevious, ShouldEqual, 0)
-			So(s.versionNext, ShouldEqual, 0)
-			So(s.nextReload.IsZero(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.name, should.Equal("sm://project/secret"))
+			assert.Loosely(t, s.value, should.Resemble(Secret{Active: []byte("zzz")}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(1))
+			assert.Loosely(t, s.versionPrevious, should.BeZero)
+			assert.Loosely(t, s.versionNext, should.BeZero)
+			assert.Loosely(t, s.nextReload.IsZero(), should.BeFalse)
 		})
 
-		Convey("readSecret with all aliases", func() {
+		t.Run("readSecret with all aliases", func(t *ftt.Test) {
 			prev := gsm.createVersion("project", "secret", "prev")
 			gsm.createVersion("project", "secret", "unreferenced 1")
 			cur := gsm.createVersion("project", "secret", "cur")
@@ -155,20 +156,20 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.setAlias("next", next)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("cur"),
 				Passive: [][]byte{
 					[]byte("prev"),
 					[]byte("next"),
 				},
-			})
-			So(s.versionCurrent, ShouldEqual, 3)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 5)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(3))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.Equal(5))
 		})
 
-		Convey("readSecret without next", func() {
+		t.Run("readSecret without next", func(t *ftt.Test) {
 			prev := gsm.createVersion("project", "secret", "prev")
 			gsm.createVersion("project", "secret", "unreferenced 1")
 			cur := gsm.createVersion("project", "secret", "cur")
@@ -178,19 +179,19 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.setAlias("previous", prev)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("cur"),
 				Passive: [][]byte{
 					[]byte("prev"),
 				},
-			})
-			So(s.versionCurrent, ShouldEqual, 3)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 0)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(3))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.BeZero)
 		})
 
-		Convey("readSecret with next disabled", func() {
+		t.Run("readSecret with next disabled", func(t *ftt.Test) {
 			prev := gsm.createVersion("project", "secret", "prev")
 			gsm.createVersion("project", "secret", "unreferenced 1")
 			cur := gsm.createVersion("project", "secret", "cur")
@@ -204,19 +205,19 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.disableVersion(next)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("cur"),
 				Passive: [][]byte{
 					[]byte("prev"),
 				},
-			})
-			So(s.versionCurrent, ShouldEqual, 3)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 0)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(3))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.BeZero)
 		})
 
-		Convey("readSecret with next set to current", func() {
+		t.Run("readSecret with next set to current", func(t *ftt.Test) {
 			prev := gsm.createVersion("project", "secret", "prev")
 			gsm.createVersion("project", "secret", "unreferenced 1")
 			cur := gsm.createVersion("project", "secret", "cur")
@@ -227,19 +228,19 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.setAlias("next", cur)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("cur"),
 				Passive: [][]byte{
 					[]byte("prev"),
 				},
-			})
-			So(s.versionCurrent, ShouldEqual, 3)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 3)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(3))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.Equal(3))
 		})
 
-		Convey("readSecret with all aliases set to the same version", func() {
+		t.Run("readSecret with all aliases set to the same version", func(t *ftt.Test) {
 			cur := gsm.createVersion("project", "secret", "cur")
 
 			gsm.setAlias("current", cur)
@@ -247,59 +248,59 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.setAlias("next", cur)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("cur"),
-			})
-			So(s.versionCurrent, ShouldEqual, 1)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 1)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(1))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.Equal(1))
 		})
 
-		Convey("readSecret with prev version, legacy scheme", func() {
+		t.Run("readSecret with prev version, legacy scheme", func(t *ftt.Test) {
 			gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{
 				Active: []byte("new"),
 				Passive: [][]byte{
 					[]byte("old"),
 				},
-			})
-			So(s.versionCurrent, ShouldEqual, 2)
-			So(s.versionPrevious, ShouldEqual, 1)
-			So(s.versionNext, ShouldEqual, 0)
+			}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(2))
+			assert.Loosely(t, s.versionPrevious, should.Equal(1))
+			assert.Loosely(t, s.versionNext, should.BeZero)
 		})
 
-		Convey("readSecret with prev version disabled, legacy scheme", func() {
+		t.Run("readSecret with prev version disabled, legacy scheme", func(t *ftt.Test) {
 			ref := gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 			gsm.disableVersion(ref)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
-			So(s.versionCurrent, ShouldEqual, 2)
-			So(s.versionPrevious, ShouldEqual, 0)
-			So(s.versionNext, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{Active: []byte("new")}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(2))
+			assert.Loosely(t, s.versionPrevious, should.BeZero)
+			assert.Loosely(t, s.versionNext, should.BeZero)
 		})
 
-		Convey("readSecret with prev version deleted, legacy scheme", func() {
+		t.Run("readSecret with prev version deleted, legacy scheme", func(t *ftt.Test) {
 			ref := gsm.createVersion("project", "secret", "old")
 			gsm.createVersion("project", "secret", "new")
 			gsm.deleteVersion(ref)
 
 			s, err := sm.readSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s.value, ShouldResemble, Secret{Active: []byte("new")})
-			So(s.versionCurrent, ShouldEqual, 2)
-			So(s.versionPrevious, ShouldEqual, 0)
-			So(s.versionNext, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.value, should.Resemble(Secret{Active: []byte("new")}))
+			assert.Loosely(t, s.versionCurrent, should.Equal(2))
+			assert.Loosely(t, s.versionPrevious, should.BeZero)
+			assert.Loosely(t, s.versionNext, should.BeZero)
 		})
 
-		Convey("Derived secrets work", func() {
+		t.Run("Derived secrets work", func(t *ftt.Test) {
 			var (
 				ver1 = []byte{56, 113, 147, 97, 153, 240, 138, 213, 51, 101, 163, 53, 195, 45, 143, 253}
 				ver2 = []byte{246, 39, 65, 71, 93, 43, 95, 59, 139, 134, 84, 40, 226, 44, 2, 47}
@@ -308,12 +309,12 @@ func TestSecretManagerSource(t *testing.T) {
 			gsm.createVersion("project", "secret", "zzz")
 
 			expectSleeping()
-			So(sm.LoadRootSecret(ctx, "sm://project/secret"), ShouldBeNil)
+			assert.Loosely(t, sm.LoadRootSecret(ctx, "sm://project/secret"), should.BeNil)
 			expectWoken(false)
 
 			s1, err := sm.RandomSecret(ctx, "name")
-			So(err, ShouldBeNil)
-			So(s1, ShouldResemble, Secret{Active: ver1})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s1, should.Resemble(Secret{Active: ver1}))
 
 			rotated := make(chan struct{})
 			sm.AddRotationHandler(ctx, "sm://project/secret", func(_ context.Context, s Secret) {
@@ -328,14 +329,14 @@ func TestSecretManagerSource(t *testing.T) {
 
 			// Random secrets are rotated too.
 			s2, err := sm.RandomSecret(ctx, "name")
-			So(err, ShouldBeNil)
-			So(s2, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s2, should.Resemble(Secret{
 				Active:  ver2,
 				Passive: [][]byte{ver1},
-			})
+			}))
 		})
 
-		Convey("Stored secrets OK", func() {
+		t.Run("Stored secrets OK", func(t *ftt.Test) {
 			gsm.createVersion("project", "secret", "v1")
 
 			rotated := make(chan struct{})
@@ -345,8 +346,8 @@ func TestSecretManagerSource(t *testing.T) {
 
 			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Active: []byte("v1")})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Resemble(Secret{Active: []byte("v1")}))
 			expectWoken(false)
 
 			// Rotate the secret and make sure the change is picked up when expected.
@@ -355,24 +356,24 @@ func TestSecretManagerSource(t *testing.T) {
 			expectReloaded("sm://project/secret")
 
 			s, err = sm.StoredSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Resemble(Secret{
 				Active: []byte("v2"),
 				Passive: [][]byte{
 					[]byte("v1"),
 				},
-			})
+			}))
 
 			<-rotated // doesn't hang
 		})
 
-		Convey("Stored secrets exponential back-off", func() {
+		t.Run("Stored secrets exponential back-off", func(t *ftt.Test) {
 			gsm.createVersion("project", "secret", "v1")
 
 			expectSleeping()
 			s, err := sm.StoredSecret(ctx, "sm://project/secret")
-			So(err, ShouldBeNil)
-			So(s, ShouldResemble, Secret{Active: []byte("v1")})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.Resemble(Secret{Active: []byte("v1")}))
 			expectWoken(false)
 
 			// Rotate the secret and "break" the backend.
@@ -399,7 +400,7 @@ func TestSecretManagerSource(t *testing.T) {
 			expectChecked("sm://project/secret")
 		})
 
-		Convey("Stored secrets priority queue", func() {
+		t.Run("Stored secrets priority queue", func(t *ftt.Test) {
 			gsm.createVersion("project", "secret1", "v1")
 			gsm.createVersion("project", "secret2", "v1")
 

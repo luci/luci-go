@@ -22,8 +22,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type exampleSettings struct {
@@ -33,7 +34,7 @@ type exampleSettings struct {
 type anotherSettings struct{}
 
 func TestSettings(t *testing.T) {
-	Convey("with in-memory settings", t, func() {
+	ftt.Run("with in-memory settings", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), time.Unix(1444945245, 0))
 		ctx = memlogger.Use(ctx)
 		log := logging.Get(ctx).(*memlogger.MemLogger)
@@ -41,67 +42,67 @@ func TestSettings(t *testing.T) {
 		settings := New(&MemoryStorage{Expiration: time.Second})
 		s := exampleSettings{}
 
-		Convey("settings API works", func() {
+		t.Run("settings API works", func(t *ftt.Test) {
 			// Nothing is set yet.
-			So(settings.Get(ctx, "key", &s), ShouldEqual, ErrNoSettings)
+			assert.Loosely(t, settings.Get(ctx, "key", &s), should.Equal(ErrNoSettings))
 
 			// Set something.
-			So(settings.Set(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
+			assert.Loosely(t, settings.Set(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
 
 			// Old value (the lack of there of) is still cached.
-			So(settings.Get(ctx, "key", &s), ShouldEqual, ErrNoSettings)
+			assert.Loosely(t, settings.Get(ctx, "key", &s), should.Equal(ErrNoSettings))
 
 			// Non-caching version works.
-			So(settings.GetUncached(ctx, "key", &s), ShouldBeNil)
-			So(s, ShouldResemble, exampleSettings{"hi"})
+			assert.Loosely(t, settings.GetUncached(ctx, "key", &s), should.BeNil)
+			assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
 
 			// Advance time to make old value expired.
 			tc.Add(2 * time.Second)
-			So(settings.Get(ctx, "key", &s), ShouldBeNil)
-			So(s, ShouldResemble, exampleSettings{"hi"})
+			assert.Loosely(t, settings.Get(ctx, "key", &s), should.BeNil)
+			assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
 
 			// Not a pointer.
-			So(settings.Get(ctx, "key", s), ShouldEqual, ErrBadType)
+			assert.Loosely(t, settings.Get(ctx, "key", s), should.Equal(ErrBadType))
 
 			// Not *exampleSettings.
-			So(settings.Get(ctx, "key", &anotherSettings{}), ShouldEqual, ErrBadType)
+			assert.Loosely(t, settings.Get(ctx, "key", &anotherSettings{}), should.Equal(ErrBadType))
 		})
 
-		Convey("SetIfChanged works", func() {
+		t.Run("SetIfChanged works", func(t *ftt.Test) {
 			// Initial value. New change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
-			So(len(log.Messages()), ShouldEqual, 1)
+			assert.Loosely(t, settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
+			assert.Loosely(t, len(log.Messages()), should.Equal(1))
 			log.Reset()
 
 			// Noop change. No change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
-			So(len(log.Messages()), ShouldEqual, 0)
+			assert.Loosely(t, settings.SetIfChanged(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
+			assert.Loosely(t, len(log.Messages()), should.BeZero)
 
 			// Some real change. New change notification.
-			So(settings.SetIfChanged(ctx, "key", &exampleSettings{"boo"}), ShouldBeNil)
-			So(len(log.Messages()), ShouldEqual, 1)
+			assert.Loosely(t, settings.SetIfChanged(ctx, "key", &exampleSettings{"boo"}), should.BeNil)
+			assert.Loosely(t, len(log.Messages()), should.Equal(1))
 		})
 	})
 }
 
 func TestContext(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		s := exampleSettings{}
 
-		So(Get(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
-		So(GetUncached(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
-		So(Set(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
-		So(SetIfChanged(ctx, "key", &exampleSettings{}), ShouldEqual, ErrNoSettings)
+		assert.Loosely(t, Get(ctx, "key", &exampleSettings{}), should.Equal(ErrNoSettings))
+		assert.Loosely(t, GetUncached(ctx, "key", &exampleSettings{}), should.Equal(ErrNoSettings))
+		assert.Loosely(t, Set(ctx, "key", &exampleSettings{}), should.Equal(ErrNoSettings))
+		assert.Loosely(t, SetIfChanged(ctx, "key", &exampleSettings{}), should.Equal(ErrNoSettings))
 
 		ctx = Use(ctx, New(&MemoryStorage{}))
-		So(Set(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
-		So(SetIfChanged(ctx, "key", &exampleSettings{"hi"}), ShouldBeNil)
+		assert.Loosely(t, Set(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
+		assert.Loosely(t, SetIfChanged(ctx, "key", &exampleSettings{"hi"}), should.BeNil)
 
-		So(Get(ctx, "key", &s), ShouldBeNil)
-		So(s, ShouldResemble, exampleSettings{"hi"})
+		assert.Loosely(t, Get(ctx, "key", &s), should.BeNil)
+		assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
 
-		So(GetUncached(ctx, "key", &s), ShouldBeNil)
-		So(s, ShouldResemble, exampleSettings{"hi"})
+		assert.Loosely(t, GetUncached(ctx, "key", &s), should.BeNil)
+		assert.Loosely(t, s, should.Resemble(exampleSettings{"hi"}))
 	})
 }

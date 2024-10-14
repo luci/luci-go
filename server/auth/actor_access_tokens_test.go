@@ -24,16 +24,17 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMintAccessTokenForServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	Convey("MintAccessTokenForServiceAccount works", t, func() {
+	ftt.Run("MintAccessTokenForServiceAccount works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -71,18 +72,18 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			ServiceAccount: "abc@example.com",
 			Scopes:         []string{"scope_b", "scope_a"},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expectedExpireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(tok, ShouldResemble, &Token{
+		assert.Loosely(t, tok, should.Resemble(&Token{
 			Token:  "token1",
 			Expiry: expectedExpireTime,
-		})
+		}))
 
 		// Cached now.
-		So(actorAccessTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
+		assert.Loosely(t, actorAccessTokenCache.lc.CachedLocally(ctx), should.Equal(1))
 
 		// On subsequence request the cached token is used.
 		returnedToken = "token2"
@@ -90,8 +91,8 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			ServiceAccount: "abc@example.com",
 			Scopes:         []string{"scope_b", "scope_a"},
 		})
-		So(err, ShouldBeNil)
-		So(tok.Token, ShouldEqual, "token1") // old one
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.Token, should.Equal("token1")) // old one
 
 		// Unless it expires sooner than requested TTL.
 		clock.Get(ctx).(testclock.TestClock).Add(40 * time.Minute)
@@ -100,8 +101,8 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			Scopes:         []string{"scope_b", "scope_a"},
 			MinTTL:         30 * time.Minute,
 		})
-		So(err, ShouldBeNil)
-		So(tok.Token, ShouldResemble, "token2") // new one
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.Token, should.Match("token2")) // new one
 
 		// Using delegates results in a different cache key.
 		returnedToken = "token3"
@@ -111,9 +112,9 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			Delegates:      []string{"d2@example.com", "d1@example.com"},
 			MinTTL:         30 * time.Minute,
 		})
-		So(err, ShouldBeNil)
-		So(tok.Token, ShouldResemble, "token3") // new one
-		So(lastRequest, ShouldEqual,
-			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"scope":["scope_a","scope_b"]}`)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok.Token, should.Match("token3")) // new one
+		assert.Loosely(t, lastRequest, should.Equal(
+			`{"delegates":["projects/-/serviceAccounts/d2@example.com","projects/-/serviceAccounts/d1@example.com"],"scope":["scope_a","scope_b"]}`))
 	})
 }

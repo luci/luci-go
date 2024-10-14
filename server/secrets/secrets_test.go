@@ -17,13 +17,15 @@ package secrets
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSecret(t *testing.T) {
 	t.Parallel()
 
-	Convey("Blobs works", t, func() {
+	ftt.Run("Blobs works", t, func(t *ftt.Test) {
 		s := Secret{
 			Active: []byte("s1"),
 			Passive: [][]byte{
@@ -31,14 +33,14 @@ func TestSecret(t *testing.T) {
 				[]byte("s3"),
 			},
 		}
-		So(s.Blobs(), ShouldResemble, [][]byte{
+		assert.Loosely(t, s.Blobs(), should.Resemble([][]byte{
 			[]byte("s1"),
 			[]byte("s2"),
 			[]byte("s3"),
-		})
+		}))
 	})
 
-	Convey("Equal works", t, func() {
+	ftt.Run("Equal works", t, func(t *ftt.Test) {
 		s1 := Secret{
 			Active: []byte("1"),
 			Passive: [][]byte{
@@ -66,9 +68,9 @@ func TestSecret(t *testing.T) {
 				[]byte("zzz"),
 			},
 		}
-		So(s1.Equal(s1), ShouldBeTrue)
-		So(s1.Equal(s2), ShouldBeFalse)
-		So(s1.Equal(s3), ShouldBeFalse)
-		So(s1.Equal(s4), ShouldBeFalse)
+		assert.Loosely(t, s1.Equal(s1), should.BeTrue)
+		assert.Loosely(t, s1.Equal(s2), should.BeFalse)
+		assert.Loosely(t, s1.Equal(s3), should.BeFalse)
+		assert.Loosely(t, s1.Equal(s4), should.BeFalse)
 	})
 }

@@ -18,29 +18,29 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 	"go.chromium.org/luci/server/secrets"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRandom(t *testing.T) {
 	t.Parallel()
 
-	Convey("RandomBlob", t, func() {
-		So(RandomBlob(40), ShouldHaveLength, 40)
+	ftt.Run("RandomBlob", t, func(t *ftt.Test) {
+		assert.Loosely(t, RandomBlob(40), should.HaveLength(40))
 	})
 
-	Convey("RandomAlphaNum", t, func() {
-		So(RandomAlphaNum(40), ShouldHaveLength, 40)
+	ftt.Run("RandomAlphaNum", t, func(t *ftt.Test) {
+		assert.Loosely(t, RandomAlphaNum(40), should.HaveLength(40))
 	})
 }
 
 func TestState(t *testing.T) {
 	t.Parallel()
 
-	Convey("Round trip", t, func() {
+	ftt.Run("Round trip", t, func(t *ftt.Test) {
 		ctx := secrets.GeneratePrimaryTinkAEADForTest(context.Background())
 
 		original := &statepb.OpenIDState{
@@ -49,12 +49,12 @@ func TestState(t *testing.T) {
 		}
 
 		blob, err := EncryptState(ctx, original)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		decrypted, err := DecryptState(ctx, blob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(decrypted, ShouldResembleProto, original)
+		assert.Loosely(t, decrypted, should.Resemble(original))
 	})
 
 }

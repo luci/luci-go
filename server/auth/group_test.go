@@ -17,15 +17,17 @@ package auth
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestIsValidGroupName(t *testing.T) {
 	t.Parallel()
 
-	Convey("IsValidGroupName", t, func() {
-		So(IsValidGroupName("foo^"), ShouldBeFalse)
-		So(IsValidGroupName("mdb/foo"), ShouldBeTrue)
-		So(IsValidGroupName("foo-bar"), ShouldBeTrue)
+	ftt.Run("IsValidGroupName", t, func(t *ftt.Test) {
+		assert.Loosely(t, IsValidGroupName("foo^"), should.BeFalse)
+		assert.Loosely(t, IsValidGroupName("mdb/foo"), should.BeTrue)
+		assert.Loosely(t, IsValidGroupName("foo-bar"), should.BeTrue)
 	})
 }

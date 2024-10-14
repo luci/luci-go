@@ -20,33 +20,34 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestState(t *testing.T) {
 	t.Parallel()
 
-	Convey("Check empty ctx", t, func() {
+	ftt.Run("Check empty ctx", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		So(GetState(ctx), ShouldBeNil)
-		So(CurrentUser(ctx).Identity, ShouldEqual, identity.AnonymousIdentity)
-		So(CurrentIdentity(ctx), ShouldEqual, identity.AnonymousIdentity)
+		assert.Loosely(t, GetState(ctx), should.BeNil)
+		assert.Loosely(t, CurrentUser(ctx).Identity, should.Equal(identity.AnonymousIdentity))
+		assert.Loosely(t, CurrentIdentity(ctx), should.Equal(identity.AnonymousIdentity))
 
 		res, err := IsMember(ctx, "group")
-		So(res, ShouldBeFalse)
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, res, should.BeFalse)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 
 		res, err = IsAllowedIP(ctx, "bots")
-		So(res, ShouldBeFalse)
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, res, should.BeFalse)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 	})
 
-	Convey("Check non-empty ctx", t, func() {
+	ftt.Run("Check non-empty ctx", t, func(t *ftt.Test) {
 		s := state{
 			db: &fakeDB{
 				groups: map[string][]identity.Identity{
@@ -58,32 +59,32 @@ func TestState(t *testing.T) {
 			peerIP:    net.IP{1, 2, 3, 4},
 		}
 		ctx := context.WithValue(context.Background(), stateContextKey(0), &s)
-		So(GetState(ctx), ShouldNotBeNil)
-		So(GetState(ctx).Method(), ShouldBeNil)
-		So(GetState(ctx).PeerIdentity(), ShouldEqual, identity.Identity("user:abc@example.com"))
-		So(GetState(ctx).PeerIP().String(), ShouldEqual, "1.2.3.4")
-		So(CurrentUser(ctx).Identity, ShouldEqual, identity.Identity("user:abc@example.com"))
-		So(CurrentIdentity(ctx), ShouldEqual, identity.Identity("user:abc@example.com"))
+		assert.Loosely(t, GetState(ctx), should.NotBeNil)
+		assert.Loosely(t, GetState(ctx).Method(), should.BeNil)
+		assert.Loosely(t, GetState(ctx).PeerIdentity(), should.Equal(identity.Identity("user:abc@example.com")))
+		assert.Loosely(t, GetState(ctx).PeerIP().String(), should.Equal("1.2.3.4"))
+		assert.Loosely(t, CurrentUser(ctx).Identity, should.Equal(identity.Identity("user:abc@example.com")))
+		assert.Loosely(t, CurrentIdentity(ctx), should.Equal(identity.Identity("user:abc@example.com")))
 
 		res, err := IsMember(ctx, "group")
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue)
 
 		res, err = IsAllowedIP(ctx, "bots")
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue) // fakeDB contains the list "bots" with member "1.2.3.4"
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue) // fakeDB contains the list "bots" with member "1.2.3.4"
 	})
 
-	Convey("Check background ctx", t, func() {
+	ftt.Run("Check background ctx", t, func(t *ftt.Test) {
 		ctx := injectTestDB(context.Background(), &fakeDB{
 			authServiceURL: "https://example.com/auth_service",
 		})
 		url, err := GetState(ctx).DB().GetAuthServiceURL(ctx)
-		So(err, ShouldBeNil)
-		So(url, ShouldEqual, "https://example.com/auth_service")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, url, should.Equal("https://example.com/auth_service"))
 	})
 
-	Convey("ShouldEnforceRealmACL", t, func() {
+	ftt.Run("ShouldEnforceRealmACL", t, func(t *ftt.Test) {
 		ctx := ModifyConfig(context.Background(), func(cfg Config) Config {
 			cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
 				AppID: "my-app-id",
@@ -103,22 +104,22 @@ func TestState(t *testing.T) {
 
 		// No data.
 		yes, err := ShouldEnforceRealmACL(ctx, "proj:unknown")
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeFalse)
 
 		// Empty data.
 		yes, err = ShouldEnforceRealmACL(ctx, "proj:empty")
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeFalse)
 
 		// In the set.
 		yes, err = ShouldEnforceRealmACL(ctx, "proj:yes")
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeTrue)
 
 		// Not in the set.
 		yes, err = ShouldEnforceRealmACL(ctx, "proj:no")
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeFalse)
 	})
 }

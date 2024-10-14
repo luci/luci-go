@@ -22,23 +22,24 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCookie(t *testing.T) {
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		c := context.Background()
 		c, _ = testclock.UseTime(c, time.Unix(1442540000, 0))
 		c = secrets.Use(c, &testsecrets.Store{})
 
-		Convey("Encode and decode works", func() {
+		t.Run("Encode and decode works", func(t *ftt.Test) {
 			cookie, err := makeSessionCookie(c, "sid", true)
-			So(err, ShouldBeNil)
-			So(cookie, ShouldResemble, &http.Cookie{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cookie, should.Resemble(&http.Cookie{
 				Name: "oid_session",
 				Value: "AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwic2lkIjoic2lkIn1NXPzKTFXWhzt" +
 					"tmqW2uODV4f1Nvt1zLxAnWTtjqkhGEQ",
@@ -47,20 +48,20 @@ func TestCookie(t *testing.T) {
 				MaxAge:   2591100,
 				Secure:   true,
 				HttpOnly: true,
-			})
+			}))
 
 			r, err := http.NewRequest("GET", "http://example.com", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			r.AddCookie(cookie)
 
 			sid, err := decodeSessionCookie(c, r)
-			So(err, ShouldBeNil)
-			So(sid, ShouldEqual, "sid")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sid, should.Equal("sid"))
 		})
 
-		Convey("Bad cookie is ignored", func() {
+		t.Run("Bad cookie is ignored", func(t *ftt.Test) {
 			r, err := http.NewRequest("GET", "http://example.com", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			r.AddCookie(&http.Cookie{
 				Name:     "oid_session",
 				Value:    "garbage",
@@ -71,13 +72,13 @@ func TestCookie(t *testing.T) {
 				HttpOnly: true,
 			})
 			sid, err := decodeSessionCookie(c, r)
-			So(err, ShouldBeNil)
-			So(sid, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sid, should.BeEmpty)
 		})
 
-		Convey("Expired session token is ignored", func() {
+		t.Run("Expired session token is ignored", func(t *ftt.Test) {
 			r, err := http.NewRequest("GET", "http://example.com", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			r.AddCookie(&http.Cookie{
 				Name: "oid_session",
 				Value: "AXsiX2kiOiIxNDQyNTQwMDAwMDAwIiwic2lkIjoic2lkIn1NXPzKTFXWhzt" +
@@ -91,14 +92,14 @@ func TestCookie(t *testing.T) {
 
 			// Works now.
 			sid, err := decodeSessionCookie(c, r)
-			So(err, ShouldBeNil)
-			So(sid, ShouldEqual, "sid")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sid, should.Equal("sid"))
 
 			// Doesn't work after expiration.
 			clock.Get(c).(testclock.TestClock).Add(2600000 * time.Second)
 			sid, err = decodeSessionCookie(c, r)
-			So(err, ShouldBeNil)
-			So(sid, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sid, should.BeEmpty)
 		})
 	})
 }

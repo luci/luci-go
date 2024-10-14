@@ -30,17 +30,17 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPubSubWorkflow(t *testing.T) {
-	Convey("PubSub pull workflow works", t, func(c C) {
+	ftt.Run("PubSub pull workflow works", t, func(c *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
 		fakeSigner := signingtest.NewSigner(nil)
@@ -155,11 +155,11 @@ func TestPubSubWorkflow(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if counter >= len(calls) {
-				c.So(fmt.Sprintf("%s %s is unexpected", r.Method, r.URL.Path), ShouldBeNil)
+				assert.Loosely(c, fmt.Sprintf("%s %s is unexpected", r.Method, r.URL.Path), should.BeNil)
 			}
 			call := &calls[counter]
-			c.So(r.Method, ShouldEqual, call.Method)
-			c.So(r.URL.Path, ShouldEqual, call.URL)
+			assert.Loosely(c, r.Method, should.Equal(call.Method))
+			assert.Loosely(c, r.URL.Path, should.Equal(call.URL))
 			w.WriteHeader(call.Code)
 			if call.Response != "" {
 				w.Write([]byte(call.Response))
@@ -173,44 +173,44 @@ func TestPubSubWorkflow(t *testing.T) {
 			URL:           ts.URL,
 			pubSubURLRoot: ts.URL + "/pubsub/",
 		}
-		So(srv.EnsureSubscription(ctx, "projects/p1/subscriptions/sub", "http://blah"), ShouldBeNil)
+		assert.Loosely(c, srv.EnsureSubscription(ctx, "projects/p1/subscriptions/sub", "http://blah"), should.BeNil)
 
 		// Reregister with no push url. For code coverage.
-		So(srv.EnsureSubscription(ctx, "projects/p1/subscriptions/sub", ""), ShouldBeNil)
+		assert.Loosely(c, srv.EnsureSubscription(ctx, "projects/p1/subscriptions/sub", ""), should.BeNil)
 
 		// First pull. No valid messages.
 		notify, err := srv.PullPubSub(ctx, "projects/p1/subscriptions/sub")
-		So(err, ShouldBeNil)
-		So(notify, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, notify, should.BeNil)
 
 		// Second pull. Have something.
 		notify, err = srv.PullPubSub(ctx, "projects/p1/subscriptions/sub")
-		So(err, ShouldBeNil)
-		So(notify, ShouldNotBeNil)
-		So(notify.Revision, ShouldEqual, 123)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, notify, should.NotBeNil)
+		assert.Loosely(c, notify.Revision, should.Equal(123))
 
 		// Ack.
-		So(notify.Acknowledge(ctx), ShouldBeNil)
+		assert.Loosely(c, notify.Acknowledge(ctx), should.BeNil)
 
 		// Code coverage.
 		notify, err = srv.ProcessPubSubPush(ctx, []byte(fakePubSubMessage(ctx, "", 456, fakeSigner)))
-		So(err, ShouldBeNil)
-		So(notify, ShouldNotBeNil)
-		So(notify.Revision, ShouldEqual, 456)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, notify, should.NotBeNil)
+		assert.Loosely(c, notify.Revision, should.Equal(456))
 
 		// Killing existing subscription.
-		So(srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), ShouldBeNil)
+		assert.Loosely(c, srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), should.BeNil)
 		// Killing already removed subscription.
-		So(srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), ShouldBeNil)
+		assert.Loosely(c, srv.DeleteSubscription(ctx, "projects/p1/subscriptions/sub"), should.BeNil)
 	})
 }
 
 func TestGetSnapshot(t *testing.T) {
-	Convey("GetSnapshot works", t, func(c C) {
+	ftt.Run("GetSnapshot works", t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c.So(r.URL.Path, ShouldEqual, "/auth_service/api/v1/authdb/revisions/123")
+			assert.Loosely(c, r.URL.Path, should.Equal("/auth_service/api/v1/authdb/revisions/123"))
 			body, digest := generateSnapshot(123)
 			w.Write([]byte(fmt.Sprintf(`{"snapshot": {
 				"auth_db_rev": 123,
@@ -225,28 +225,28 @@ func TestGetSnapshot(t *testing.T) {
 			URL: ts.URL,
 		}
 		snap, err := srv.GetSnapshot(ctx, 123)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 
-		So(snap, ShouldResemble, &Snapshot{
+		assert.Loosely(c, snap, should.Resemble(&Snapshot{
 			AuthDB:         &protocol.AuthDB{},
 			AuthServiceURL: ts.URL,
 			Rev:            123,
 			Created:        time.Unix(0, 1446599918304238000),
-		})
+		}))
 	})
 }
 
 func TestDeflateInflate(t *testing.T) {
-	Convey("Deflate then Inflate works", t, func() {
+	ftt.Run("Deflate then Inflate works", t, func(t *ftt.Test) {
 		initial := &protocol.AuthDB{
 			OauthClientId:     "abc",
 			OauthClientSecret: "def",
 		}
 		blob, err := DeflateAuthDB(initial)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		inflated, err := InflateAuthDB(blob)
-		So(err, ShouldBeNil)
-		So(inflated, ShouldResembleProto, initial)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, inflated, should.Resemble(initial))
 	})
 }
 

@@ -22,11 +22,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestVerifyIDToken(t *testing.T) {
@@ -62,68 +62,68 @@ func TestVerifyIDToken(t *testing.T) {
 		return VerifyIDToken(ctx, token, jwks, issuer)
 	}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		original := newToken()
 		parsed, err := verifyToken(signToken(original))
-		So(err, ShouldBeNil)
-		So(parsed, ShouldResemble, original)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, parsed, should.Resemble(original))
 
 		// Alternative issuer form.
 		original.Iss = strings.TrimPrefix(issuer, "https://")
 		parsed, err = verifyToken(signToken(original))
-		So(err, ShouldBeNil)
-		So(parsed, ShouldResemble, original)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, parsed, should.Resemble(original))
 	})
 
-	Convey("Bad JWT", t, func() {
+	ftt.Run("Bad JWT", t, func(t *ftt.Test) {
 		_, err := verifyToken("IMANOTAJWT")
-		So(err, ShouldErrLike, "bad JWT")
+		assert.Loosely(t, err, should.ErrLike("bad JWT"))
 	})
 
-	Convey("Bad body (not JSON)", t, func() {
+	ftt.Run("Bad body (not JSON)", t, func(t *ftt.Test) {
 		_, err := verifyToken(jwtForTest(ctx, []byte("IAMNOTJSON"), signingKeyID, signer))
-		So(err, ShouldErrLike, "can't deserialize JSON")
+		assert.Loosely(t, err, should.ErrLike("can't deserialize JSON"))
 	})
 
-	Convey("Bad issuer", t, func() {
+	ftt.Run("Bad issuer", t, func(t *ftt.Test) {
 		tok := newToken()
 		tok.Iss = "something else"
 		_, err := verifyToken(signToken(tok))
-		So(err, ShouldErrLike, "expecting issuer")
+		assert.Loosely(t, err, should.ErrLike("expecting issuer"))
 	})
 
-	Convey("Unverified email", t, func() {
+	ftt.Run("Unverified email", t, func(t *ftt.Test) {
 		tok := newToken()
 		tok.EmailVerified = false
 		_, err := verifyToken(signToken(tok))
-		So(err, ShouldErrLike, "is not verified")
+		assert.Loosely(t, err, should.ErrLike("is not verified"))
 	})
 
-	Convey("No audience", t, func() {
+	ftt.Run("No audience", t, func(t *ftt.Test) {
 		tok := newToken()
 		tok.Aud = ""
 		_, err := verifyToken(signToken(tok))
-		So(err, ShouldErrLike, "the audience is missing")
+		assert.Loosely(t, err, should.ErrLike("the audience is missing"))
 	})
 
-	Convey("No subject", t, func() {
+	ftt.Run("No subject", t, func(t *ftt.Test) {
 		tok := newToken()
 		tok.Sub = ""
 		_, err := verifyToken(signToken(tok))
-		So(err, ShouldErrLike, "the subject is missing")
+		assert.Loosely(t, err, should.ErrLike("the subject is missing"))
 	})
 
-	Convey("Expired", t, func() {
+	ftt.Run("Expired", t, func(t *ftt.Test) {
 		tok := signToken(newToken())
 
 		// Still good enough after 1h due to clock skew protection.
 		tc.Add(time.Hour)
 		_, err := verifyToken(tok)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Some moments later is considered expired for real.
 		tc.Add(allowedClockSkew + time.Second)
 		_, err = verifyToken(tok)
-		So(err, ShouldErrLike, "expired")
+		assert.Loosely(t, err, should.ErrLike("expired"))
 	})
 }

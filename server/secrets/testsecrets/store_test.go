@@ -18,33 +18,34 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/secrets"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStore(t *testing.T) {
 	ctx := context.Background()
 
-	Convey("RandomSecret", t, func() {
+	ftt.Run("RandomSecret", t, func(t *ftt.Test) {
 		store := Store{}
 
 		// Autogenerate one.
 		s1, err := store.RandomSecret(ctx, "key1")
-		So(err, ShouldBeNil)
-		So(s1, ShouldResemble, secrets.Secret{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s1, should.Resemble(secrets.Secret{
 			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
-		})
+		}))
 
 		// Getting same one back.
 		s2, err := store.RandomSecret(ctx, "key1")
-		So(err, ShouldBeNil)
-		So(s2, ShouldResemble, secrets.Secret{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s2, should.Resemble(secrets.Secret{
 			Active: []byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf, 0x85},
-		})
+		}))
 	})
 
-	Convey("StoredSecret", t, func() {
+	ftt.Run("StoredSecret", t, func(t *ftt.Test) {
 		store := Store{
 			Secrets: map[string]secrets.Secret{
 				"key1": {Active: []byte("blah")},
@@ -52,10 +53,10 @@ func TestStore(t *testing.T) {
 		}
 
 		s, err := store.StoredSecret(ctx, "key1")
-		So(err, ShouldBeNil)
-		So(s, ShouldResemble, secrets.Secret{Active: []byte("blah")})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.Resemble(secrets.Secret{Active: []byte("blah")}))
 
 		_, err = store.StoredSecret(ctx, "key2")
-		So(err, ShouldEqual, secrets.ErrNoSuchSecret)
+		assert.Loosely(t, err, should.Equal(secrets.ErrNoSuchSecret))
 	})
 }

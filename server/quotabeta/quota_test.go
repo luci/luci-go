@@ -24,39 +24,39 @@ import (
 	"github.com/gomodule/redigo/redis"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQuota(t *testing.T) {
 	t.Parallel()
 
-	Convey("getInterface", t, func() {
+	ftt.Run("getInterface", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey("panic", func() {
+		t.Run("panic", func(t *ftt.Test) {
 			shouldPanic := func() {
 				getInterface(ctx)
 			}
-			So(shouldPanic, ShouldPanicLike, "quotaconfig.Interface implementation not found")
+			assert.Loosely(t, shouldPanic, should.PanicLike("quotaconfig.Interface implementation not found"))
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			m, err := quotaconfig.NewMemory(ctx, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = Use(ctx, m)
-			So(getInterface(ctx), ShouldNotBeNil)
+			assert.Loosely(t, getInterface(ctx), should.NotBeNil)
 		})
 	})
 
-	Convey("UpdateQuota", t, func() {
+	ftt.Run("UpdateQuota", t, func(t *ftt.Test) {
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 		ctx := redisconn.UsePool(context.Background(), &redis.Pool{
 			Dial: func() (redis.Conn, error) {
@@ -74,30 +74,30 @@ func TestQuota(t *testing.T) {
 				Resources: 2,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx, tc := testclock.UseTime(Use(ctx, m), testclock.TestRecentTimeLocal)
 		now := strconv.FormatInt(tc.Now().Unix(), 10)
 
-		Convey("empty database", func() {
-			Convey("policy not found", func() {
+		t.Run("empty database", func(t *ftt.Test) {
+			t.Run("policy not found", func(t *ftt.Test) {
 				up := map[string]int64{
 					"fake": 0,
 				}
 
-				So(UpdateQuota(ctx, up, nil), ShouldErrLike, "not found")
-				So(s.Keys(), ShouldBeEmpty)
+				assert.Loosely(t, UpdateQuota(ctx, up, nil), should.ErrLike("not found"))
+				assert.Loosely(t, s.Keys(), should.BeEmpty)
 			})
 
-			Convey("user not specified", func() {
+			t.Run("user not specified", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": 0,
 				}
 
-				So(UpdateQuota(ctx, up, nil), ShouldErrLike, "user unspecified")
-				So(s.Keys(), ShouldBeEmpty)
+				assert.Loosely(t, UpdateQuota(ctx, up, nil), should.ErrLike("user unspecified"))
+				assert.Loosely(t, s.Keys(), should.BeEmpty)
 			})
 
-			Convey("capped", func() {
+			t.Run("capped", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": 1,
 				}
@@ -105,15 +105,15 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("zero", func() {
+			t.Run("zero", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": 0,
 				}
@@ -121,15 +121,15 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("debit one", func() {
+			t.Run("debit one", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": -1,
 				}
@@ -137,15 +137,15 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("debit all", func() {
+			t.Run("debit all", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": -2,
 				}
@@ -153,15 +153,15 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("debit excessive", func() {
+			t.Run("debit excessive", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": -3,
 				}
@@ -169,12 +169,12 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
 
-				So(s.Keys(), ShouldBeEmpty)
+				assert.Loosely(t, s.Keys(), should.BeEmpty)
 			})
 
-			Convey("debit multiple", func() {
+			t.Run("debit multiple", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota/${user}": -1,
 				}
@@ -182,18 +182,18 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-				})
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
-				So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
+				assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 			})
 
-			Convey("atomicity", func() {
-				Convey("policy not found", func() {
+			t.Run("atomicity", func(t *ftt.Test) {
+				t.Run("policy not found", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         0,
 						"quota/${user}": 0,
@@ -203,22 +203,22 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "not found")
-					So(s.Keys(), ShouldBeEmpty)
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("not found"))
+					assert.Loosely(t, s.Keys(), should.BeEmpty)
 				})
 
-				Convey("user not specified", func() {
+				t.Run("user not specified", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         0,
 						"quota/${user}": 0,
 					}
 					opts := &Options{}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
-					So(s.Keys(), ShouldBeEmpty)
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("user unspecified"))
+					assert.Loosely(t, s.Keys(), should.BeEmpty)
 				})
 
-				Convey("debit one", func() {
+				t.Run("debit one", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         -1,
 						"quota/${user}": -1,
@@ -227,18 +227,18 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("4"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 				})
 
-				Convey("debit excessive", func() {
+				t.Run("debit excessive", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         -1,
 						"quota/${user}": -3,
@@ -247,13 +247,13 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
-					So(s.Keys(), ShouldBeEmpty)
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
+					assert.Loosely(t, s.Keys(), should.BeEmpty)
 				})
 			})
 
-			Convey("idempotence", func() {
-				Convey("deduplication", func() {
+			t.Run("idempotence", func(t *ftt.Test) {
+				t.Run("deduplication", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota/${user}": -1,
 					}
@@ -262,28 +262,28 @@ func TestQuota(t *testing.T) {
 						User:      "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10)))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 
 					// Ensure update succeeds without modifying the database again.
 					ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(30*time.Minute))
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10)))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 				})
 
-				Convey("expired", func() {
+				t.Run("expired", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota/${user}": -1,
 					}
@@ -292,28 +292,28 @@ func TestQuota(t *testing.T) {
 						User:      "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10)))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 
 					// Ensure update modifies the database after the deduplication deadline.
 					ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(2*time.Hour))
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(tc.Now().Add(time.Hour).Unix(), 10))
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "0")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, strconv.FormatInt(tc.Now().Unix(), 10))
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal(strconv.FormatInt(tc.Now().Add(time.Hour).Unix(), 10)))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("0"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(strconv.FormatInt(tc.Now().Unix(), 10)))
 				})
 
-				Convey("error", func() {
+				t.Run("error", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota/${user}": -10,
 					}
@@ -322,37 +322,37 @@ func TestQuota(t *testing.T) {
 						User:      "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "insufficient quota")
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("insufficient quota"))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, "0")
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal("0"))
 
 					up = map[string]int64{
 						"quota/${user}": -1,
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"deduplicationKeys",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("deduplicationKeys", "request-id"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10))
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("deduplicationKeys", "request-id"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Add(time.Hour).Unix(), 10)))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 				})
 			})
 		})
 
-		Convey("existing database", func() {
+		t.Run("existing database", func(t *ftt.Test) {
 			conn, err := redisconn.Get(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = conn.Do("HINCRBY", "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources", 2)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = conn.Do("HINCRBY", "entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated", tc.Now().Unix())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("capped", func() {
+			t.Run("capped", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota": 10,
 				}
@@ -360,15 +360,15 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "5")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("5"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 
-			Convey("credit one", func() {
+			t.Run("credit one", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota": 1,
 				}
@@ -376,44 +376,44 @@ func TestQuota(t *testing.T) {
 					User: "user@example.com",
 				}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "3")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("3"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 
-			Convey("debit one", func() {
+			t.Run("debit one", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota": -1,
 				}
 				opts := &Options{}
 
-				So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "1")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("1"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 
-			Convey("debit excessive", func() {
+			t.Run("debit excessive", func(t *ftt.Test) {
 				up := map[string]int64{
 					"quota": -3,
 				}
 				opts := &Options{}
 
-				So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
-				So(s.Keys(), ShouldResemble, []string{
+				assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{
 					"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-				})
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-				So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+				}))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+				assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 			})
 
-			Convey("atomicity", func() {
-				Convey("policy not found", func() {
+			t.Run("atomicity", func(t *ftt.Test) {
+				t.Run("policy not found", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         0,
 						"quota/${user}": 0,
@@ -423,30 +423,30 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "not found")
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("not found"))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("user not specified", func() {
+				t.Run("user not specified", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         0,
 						"quota/${user}": 0,
 					}
 					opts := &Options{}
 
-					So(UpdateQuota(ctx, up, opts), ShouldErrLike, "user unspecified")
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("user unspecified"))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("debit one", func() {
+				t.Run("debit one", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         -1,
 						"quota/${user}": -1,
@@ -455,18 +455,18 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 						"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-					So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+					assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 				})
 
-				Convey("debit excessive", func() {
+				t.Run("debit excessive", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota":         -1,
 						"quota/${user}": -3,
@@ -475,128 +475,128 @@ func TestQuota(t *testing.T) {
 						User: "user@example.com",
 					}
 
-					So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 			})
 
-			Convey("replenishment", func() {
+			t.Run("replenishment", func(t *ftt.Test) {
 				ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(time.Second))
 				now := strconv.FormatInt(tc.Now().Unix(), 10)
 
-				Convey("future update", func() {
+				t.Run("future update", func(t *ftt.Test) {
 					ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(-1*time.Second))
 					up := map[string]int64{
 						"quota": 1,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldErrLike, "last updated in the future")
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.ErrLike("last updated in the future"))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10)))
 				})
 
-				Convey("distant past update", func() {
+				t.Run("distant past update", func(t *ftt.Test) {
 					ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(60*time.Second))
 					now := strconv.FormatInt(tc.Now().Unix(), 10)
 					up := map[string]int64{
 						"quota": -1,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("4"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("cap", func() {
+				t.Run("cap", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": 10,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "5")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("5"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("credit one", func() {
+				t.Run("credit one", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": 1,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "4")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("4"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("zero", func() {
+				t.Run("zero", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": 0,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "3")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("3"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("debit one", func() {
+				t.Run("debit one", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": -1,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("debit all", func() {
+				t.Run("debit all", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": -3,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldBeNil)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.BeNil)
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "0")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("0"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
 				})
 
-				Convey("debit excessive", func() {
+				t.Run("debit excessive", func(t *ftt.Test) {
 					up := map[string]int64{
 						"quota": -4,
 					}
 
-					So(UpdateQuota(ctx, up, nil), ShouldEqual, ErrInsufficientQuota)
-					So(s.Keys(), ShouldResemble, []string{
+					assert.Loosely(t, UpdateQuota(ctx, up, nil), should.Equal(ErrInsufficientQuota))
+					assert.Loosely(t, s.Keys(), should.Resemble([]string{
 						"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-					})
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-					So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+					}))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+					assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10)))
 				})
 
-				Convey("atomicity", func() {
-					Convey("future update", func() {
+				t.Run("atomicity", func(t *ftt.Test) {
+					t.Run("future update", func(t *ftt.Test) {
 						ctx, _ := testclock.UseTime(ctx, testclock.TestRecentTimeLocal.Add(-1*time.Second))
 						up := map[string]int64{
 							"quota":         -1,
@@ -606,15 +606,15 @@ func TestQuota(t *testing.T) {
 							User: "user@example.com",
 						}
 
-						So(UpdateQuota(ctx, up, opts), ShouldErrLike, "last updated in the future")
-						So(s.Keys(), ShouldResemble, []string{
+						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.ErrLike("last updated in the future"))
+						assert.Loosely(t, s.Keys(), should.Resemble([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-						})
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+						}))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10)))
 					})
 
-					Convey("debit one", func() {
+					t.Run("debit one", func(t *ftt.Test) {
 						up := map[string]int64{
 							"quota":         -1,
 							"quota/${user}": -1,
@@ -623,18 +623,18 @@ func TestQuota(t *testing.T) {
 							User: "user@example.com",
 						}
 
-						So(UpdateQuota(ctx, up, opts), ShouldBeNil)
-						So(s.Keys(), ShouldResemble, []string{
+						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.BeNil)
+						assert.Loosely(t, s.Keys(), should.Resemble([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
 							"entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d",
-						})
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, now)
-						So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), ShouldEqual, "1")
-						So(s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), ShouldEqual, now)
+						}))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(now))
+						assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "resources"), should.Equal("1"))
+						assert.Loosely(t, s.HGet("entry:f20c860d2ea007ea2360c6ebe2d943acc8a531412c18ff3bd47ab1449988aa6d", "updated"), should.Equal(now))
 					})
 
-					Convey("debit excessive", func() {
+					t.Run("debit excessive", func(t *ftt.Test) {
 						up := map[string]int64{
 							"quota":         -1,
 							"quota/${user}": -3,
@@ -643,12 +643,12 @@ func TestQuota(t *testing.T) {
 							User: "user@example.com",
 						}
 
-						So(UpdateQuota(ctx, up, opts), ShouldEqual, ErrInsufficientQuota)
-						So(s.Keys(), ShouldResemble, []string{
+						assert.Loosely(t, UpdateQuota(ctx, up, opts), should.Equal(ErrInsufficientQuota))
+						assert.Loosely(t, s.Keys(), should.Resemble([]string{
 							"entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7",
-						})
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), ShouldEqual, "2")
-						So(s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), ShouldEqual, strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10))
+						}))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "resources"), should.Equal("2"))
+						assert.Loosely(t, s.HGet("entry:b878a6801d9a9e68b30ed63430bb5e0bddcd984a37a3ee385abc27ff031c7fe7", "updated"), should.Equal(strconv.FormatInt(testclock.TestRecentTimeLocal.Unix(), 10)))
 					})
 				})
 			})

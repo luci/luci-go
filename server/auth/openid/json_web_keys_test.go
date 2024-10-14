@@ -19,16 +19,16 @@ import (
 	"crypto/rsa"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestParseJSONWebKeySet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		keys, err := NewJSONWebKeySet(&JSONWebKeySetStruct{
 			Keys: []JSONWebKeyStruct{
 				{
@@ -44,12 +44,12 @@ func TestParseJSONWebKeySet(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(len(keys.keys), ShouldEqual, 1)
-		So(keys.keys["key-1"].E, ShouldEqual, 65537)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(keys.keys), should.Equal(1))
+		assert.Loosely(t, keys.keys["key-1"].E, should.Equal(65537))
 	})
 
-	Convey("No key ID", t, func() {
+	ftt.Run("No key ID", t, func(t *ftt.Test) {
 		_, err := NewJSONWebKeySet(&JSONWebKeySetStruct{
 			Keys: []JSONWebKeyStruct{
 				{
@@ -61,10 +61,10 @@ func TestParseJSONWebKeySet(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "missing 'kid' field")
+		assert.Loosely(t, err, should.ErrLike("missing 'kid' field"))
 	})
 
-	Convey("Bad e", t, func() {
+	ftt.Run("Bad e", t, func(t *ftt.Test) {
 		_, err := NewJSONWebKeySet(&JSONWebKeySetStruct{
 			Keys: []JSONWebKeyStruct{
 				{
@@ -77,10 +77,10 @@ func TestParseJSONWebKeySet(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "bad exponent encoding")
+		assert.Loosely(t, err, should.ErrLike("bad exponent encoding"))
 	})
 
-	Convey("Bad n", t, func() {
+	ftt.Run("Bad n", t, func(t *ftt.Test) {
 		_, err := NewJSONWebKeySet(&JSONWebKeySetStruct{
 			Keys: []JSONWebKeyStruct{
 				{
@@ -93,10 +93,10 @@ func TestParseJSONWebKeySet(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "bad modulus encoding")
+		assert.Loosely(t, err, should.ErrLike("bad modulus encoding"))
 	})
 
-	Convey("No signing keys", t, func() {
+	ftt.Run("No signing keys", t, func(t *ftt.Test) {
 		_, err := NewJSONWebKeySet(&JSONWebKeySetStruct{
 			Keys: []JSONWebKeyStruct{
 				{
@@ -109,14 +109,14 @@ func TestParseJSONWebKeySet(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldErrLike, "didn't have any signing keys")
+		assert.Loosely(t, err, should.ErrLike("didn't have any signing keys"))
 	})
 }
 
 func TestCheckSignature(t *testing.T) {
 	t.Parallel()
 
-	Convey("With signed blob", t, func() {
+	ftt.Run("With signed blob", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		signer := signingtest.NewSigner(nil)
 		keys := JSONWebKeySet{
@@ -127,18 +127,18 @@ func TestCheckSignature(t *testing.T) {
 
 		var blob = []byte("blah blah")
 		_, sig, err := signer.SignBytes(ctx, blob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Good signature", func() {
-			So(keys.CheckSignature("key-1", blob, sig), ShouldBeNil)
+		t.Run("Good signature", func(t *ftt.Test) {
+			assert.Loosely(t, keys.CheckSignature("key-1", blob, sig), should.BeNil)
 		})
 
-		Convey("Bad signature", func() {
-			So(keys.CheckSignature("key-1", []byte("something else"), sig), ShouldErrLike, "bad signature")
+		t.Run("Bad signature", func(t *ftt.Test) {
+			assert.Loosely(t, keys.CheckSignature("key-1", []byte("something else"), sig), should.ErrLike("bad signature"))
 		})
 
-		Convey("Unknown key", func() {
-			So(keys.CheckSignature("unknown", blob, sig), ShouldErrLike, "unknown signing key")
+		t.Run("Unknown key", func(t *ftt.Test) {
+			assert.Loosely(t, keys.CheckSignature("unknown", blob, sig), should.ErrLike("unknown signing key"))
 		})
 	})
 }

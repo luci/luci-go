@@ -26,12 +26,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testScope = "https://example.com/scopes/user.email"
@@ -48,7 +48,7 @@ type tokenInfo struct {
 func TestGoogleOAuth2Method(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mock backend", t, func(c C) {
+	ftt.Run("with mock backend", t, func(c *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			oauthValidationCache.Parameters().GlobalNamespace: cachingtest.NewBlobCache(),
@@ -79,7 +79,7 @@ func TestGoogleOAuth2Method(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			checks++
 			w.WriteHeader(status)
-			c.So(json.NewEncoder(w).Encode(&info), ShouldBeNil)
+			assert.Loosely(c, json.NewEncoder(w).Encode(&info), should.BeNil)
 		}))
 		defer ts.Close()
 
@@ -101,42 +101,42 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			return u, err
 		}
 
-		Convey("Works with end users", func() {
+		c.Run("Works with end users", func(c *ftt.Test) {
 			u, err := call("Bearer access_token")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, goodUser)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, u, should.Resemble(goodUser))
 		})
 
-		Convey("Works with service accounts", func() {
+		c.Run("Works with service accounts", func(c *ftt.Test) {
 			info.Email = "something@example.gserviceaccount.com"
 			info.Audience = "ignored"
 			u, err := call("Bearer access_token")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, &User{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, u, should.Resemble(&User{
 				Identity: "user:something@example.gserviceaccount.com",
 				Email:    "something@example.gserviceaccount.com",
-			})
+			}))
 		})
 
-		Convey("Valid tokens are cached", func() {
+		c.Run("Valid tokens are cached", func(c *ftt.Test) {
 			u, err := call("Bearer access_token")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, goodUser)
-			So(checks, ShouldEqual, 1)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, u, should.Resemble(goodUser))
+			assert.Loosely(c, checks, should.Equal(1))
 
 			// Hit the process cache.
 			u, err = call("Bearer access_token")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, goodUser)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, u, should.Resemble(goodUser))
 
 			// Hit the global cache by clearing the local one.
 			ctx = caching.WithEmptyProcessCache(ctx)
 			u, err = call("Bearer access_token")
-			So(err, ShouldBeNil)
-			So(u, ShouldResemble, goodUser)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, u, should.Resemble(goodUser))
 
 			// No new calls to the token endpoints.
-			So(checks, ShouldEqual, 1)
+			assert.Loosely(c, checks, should.Equal(1))
 
 			// Advance time until the token expires, but the validation outcome is
 			// still cached.
@@ -145,111 +145,111 @@ func TestGoogleOAuth2Method(t *testing.T) {
 
 			// Correctly identified as expired, no new calls to the token endpoint.
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
-			So(checks, ShouldEqual, 1)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
+			assert.Loosely(c, checks, should.Equal(1))
 
 			// Advance time a bit more until the token is evicted from the cache.
 			tc.Add(15 * time.Minute)
 
 			// Correctly identified as expired, via a call to the token endpoint.
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
-			So(checks, ShouldEqual, 2)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
+			assert.Loosely(c, checks, should.Equal(2))
 		})
 
-		Convey("Bad tokens are cached", func() {
+		c.Run("Bad tokens are cached", func(c *ftt.Test) {
 			status = http.StatusBadRequest
 
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
-			So(checks, ShouldEqual, 1)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
+			assert.Loosely(c, checks, should.Equal(1))
 
 			// Hit the process cache.
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 
 			// Hit the global cache by clearing the local one.
 			ctx = caching.WithEmptyProcessCache(ctx)
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 
 			// Advance time a little bit, the outcome is still cached.
 			tc.Add(5 * time.Minute)
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
-			So(checks, ShouldEqual, 1)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
+			assert.Loosely(c, checks, should.Equal(1))
 
 			// Advance time until the cache entry expire, the token is rechecked.
 			tc.Add(15 * time.Minute)
 			_, err = call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
-			So(checks, ShouldEqual, 2)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
+			assert.Loosely(c, checks, should.Equal(2))
 		})
 
-		Convey("Bad header", func() {
+		c.Run("Bad header", func(c *ftt.Test) {
 			_, err := call("broken")
-			So(err, ShouldErrLike, "oauth: bad Authorization header")
+			assert.Loosely(c, err, should.ErrLike("oauth: bad Authorization header"))
 		})
 
-		Convey("HTTP 500", func() {
+		c.Run("HTTP 500", func(c *ftt.Test) {
 			status = http.StatusInternalServerError
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "transient error")
+			assert.Loosely(c, err, should.ErrLike("transient error"))
 		})
 
-		Convey("Error response", func() {
+		c.Run("Error response", func(c *ftt.Test) {
 			status = http.StatusBadRequest
 			info.Error = "OMG, error"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("No email", func() {
+		c.Run("No email", func(c *ftt.Test) {
 			info.Email = ""
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("Email not verified", func() {
+		c.Run("Email not verified", func(c *ftt.Test) {
 			info.EmailVerified = "false"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("Bad expires_in", func() {
+		c.Run("Bad expires_in", func(c *ftt.Test) {
 			info.ExpiresIn = "not a number"
 			_, err := call("Bearer access_token")
-			So(err, ShouldErrLike, "transient error") // see the comment in GetTokenInfo
+			assert.Loosely(c, err, should.ErrLike("transient error")) // see the comment in GetTokenInfo
 		})
 
-		Convey("Zero expires_in", func() {
+		c.Run("Zero expires_in", func(c *ftt.Test) {
 			info.ExpiresIn = "0"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("No audience", func() {
+		c.Run("No audience", func(c *ftt.Test) {
 			info.Audience = ""
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("No scope", func() {
+		c.Run("No scope", func(c *ftt.Test) {
 			info.Scope = ""
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("Bad email", func() {
+		c.Run("Bad email", func(c *ftt.Test) {
 			info.Email = "@@@@"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 
-		Convey("Missing required scope", func() {
+		c.Run("Missing required scope", func(c *ftt.Test) {
 			info.Scope = "some other scopes"
 			_, err := call("Bearer access_token")
-			So(err, ShouldEqual, ErrBadOAuthToken)
+			assert.Loosely(c, err, should.Equal(ErrBadOAuthToken))
 		})
 	})
 }
@@ -266,30 +266,30 @@ func TestGetUserCredentials(t *testing.T) {
 		return m.GetUserCredentials(ctx, req)
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		tok, err := call("Bearer abc.def")
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "abc.def",
 			TokenType:   "Bearer",
-		})
+		}))
 	})
 
-	Convey("Normalizes header", t, func() {
+	ftt.Run("Normalizes header", t, func(t *ftt.Test) {
 		tok, err := call("  bearer    abc.def")
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
 			AccessToken: "abc.def",
 			TokenType:   "Bearer",
-		})
+		}))
 	})
 
-	Convey("Bad headers", t, func() {
+	ftt.Run("Bad headers", t, func(t *ftt.Test) {
 		_, err := call("")
-		So(err, ShouldEqual, ErrBadAuthorizationHeader)
+		assert.Loosely(t, err, should.Equal(ErrBadAuthorizationHeader))
 		_, err = call("abc.def")
-		So(err, ShouldEqual, ErrBadAuthorizationHeader)
+		assert.Loosely(t, err, should.Equal(ErrBadAuthorizationHeader))
 		_, err = call("Basic abc.def")
-		So(err, ShouldEqual, ErrBadAuthorizationHeader)
+		assert.Loosely(t, err, should.Equal(ErrBadAuthorizationHeader))
 	})
 }

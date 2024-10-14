@@ -17,66 +17,68 @@ package globset
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGlobSet(t *testing.T) {
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		gs, err := NewBuilder().Build()
-		So(err, ShouldBeNil)
-		So(gs, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, gs, should.BeNil)
 	})
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		b := NewBuilder()
-		So(b.Add("user:*@example.com"), ShouldBeNil)
-		So(b.Add("user:*@other.example.com"), ShouldBeNil)
-		So(b.Add("service:*"), ShouldBeNil)
+		assert.Loosely(t, b.Add("user:*@example.com"), should.BeNil)
+		assert.Loosely(t, b.Add("user:*@other.example.com"), should.BeNil)
+		assert.Loosely(t, b.Add("service:*"), should.BeNil)
 
 		gs, err := b.Build()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(gs, ShouldHaveLength, 2)
-		So(gs["user"].String(), ShouldEqual, `^((.*@example\.com)|(.*@other\.example\.com))$`)
-		So(gs["service"].String(), ShouldEqual, `^.*$`)
+		assert.Loosely(t, gs, should.HaveLength(2))
+		assert.Loosely(t, gs["user"].String(), should.Equal(`^((.*@example\.com)|(.*@other\.example\.com))$`))
+		assert.Loosely(t, gs["service"].String(), should.Equal(`^.*$`))
 
-		So(gs.Has("user:a@example.com"), ShouldBeTrue)
-		So(gs.Has("user:a@other.example.com"), ShouldBeTrue)
-		So(gs.Has("user:a@not-example.com"), ShouldBeFalse)
-		So(gs.Has("service:zzz"), ShouldBeTrue)
-		So(gs.Has("anonymous:anonymous"), ShouldBeFalse)
+		assert.Loosely(t, gs.Has("user:a@example.com"), should.BeTrue)
+		assert.Loosely(t, gs.Has("user:a@other.example.com"), should.BeTrue)
+		assert.Loosely(t, gs.Has("user:a@not-example.com"), should.BeFalse)
+		assert.Loosely(t, gs.Has("service:zzz"), should.BeTrue)
+		assert.Loosely(t, gs.Has("anonymous:anonymous"), should.BeFalse)
 	})
 
-	Convey("Caches regexps", t, func() {
+	ftt.Run("Caches regexps", t, func(t *ftt.Test) {
 		b := NewBuilder()
 
-		So(b.Add("user:*@example.com"), ShouldBeNil)
-		So(b.Add("user:*@other.example.com"), ShouldBeNil)
+		assert.Loosely(t, b.Add("user:*@example.com"), should.BeNil)
+		assert.Loosely(t, b.Add("user:*@other.example.com"), should.BeNil)
 
 		gs1, err := b.Build()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b.Reset()
-		So(b.Add("user:*@other.example.com"), ShouldBeNil)
-		So(b.Add("user:*@example.com"), ShouldBeNil)
+		assert.Loosely(t, b.Add("user:*@other.example.com"), should.BeNil)
+		assert.Loosely(t, b.Add("user:*@example.com"), should.BeNil)
 
 		gs2, err := b.Build()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// The exact same regexp object.
-		So(gs1["user"], ShouldEqual, gs2["user"])
+		assert.Loosely(t, gs1["user"], should.Equal(gs2["user"]))
 	})
 
-	Convey("Edge cases in Has", t, func() {
+	ftt.Run("Edge cases in Has", t, func(t *ftt.Test) {
 		b := NewBuilder()
 		b.Add("user:a*@example.com")
 		b.Add("user:*@other.example.com")
 		gs, _ := b.Build()
 
-		So(gs.Has("abc@example.com"), ShouldBeFalse)                // no "user:" prefix
-		So(gs.Has("service:abc@example.com"), ShouldBeFalse)        // wrong prefix
-		So(gs.Has("user:abc@example.com\nsneaky"), ShouldBeFalse)   // sneaky '/n'
-		So(gs.Has("user:bbc@example.com"), ShouldBeFalse)           // '^' is checked
-		So(gs.Has("user:abc@example.com-and-stuff"), ShouldBeFalse) // '$' is checked
+		assert.Loosely(t, gs.Has("abc@example.com"), should.BeFalse)                // no "user:" prefix
+		assert.Loosely(t, gs.Has("service:abc@example.com"), should.BeFalse)        // wrong prefix
+		assert.Loosely(t, gs.Has("user:abc@example.com\nsneaky"), should.BeFalse)   // sneaky '/n'
+		assert.Loosely(t, gs.Has("user:bbc@example.com"), should.BeFalse)           // '^' is checked
+		assert.Loosely(t, gs.Has("user:abc@example.com-and-stuff"), should.BeFalse) // '$' is checked
 	})
 }

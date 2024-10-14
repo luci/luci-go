@@ -27,21 +27,21 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAuthenticate(t *testing.T) {
 	t.Parallel()
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
@@ -51,31 +51,31 @@ func TestAuthenticate(t *testing.T) {
 		req := makeRequest()
 		req.FakeRemoteAddr = "1.2.3.4"
 		c, err := auth.Authenticate(c, req)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(CurrentUser(c), ShouldResemble, &User{
+		assert.Loosely(t, CurrentUser(c), should.Resemble(&User{
 			Identity: "user:abc@example.com",
 			Email:    "abc@example.com",
 			ClientID: "some_client_id",
-		})
+		}))
 
-		So(GetState(c).PeerIP().String(), ShouldEqual, "1.2.3.4")
+		assert.Loosely(t, GetState(c).PeerIP().String(), should.Equal("1.2.3.4"))
 
 		url, err := LoginURL(c, "login")
-		So(err, ShouldBeNil)
-		So(url, ShouldEqual, "http://fake.login.url/login")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, url, should.Equal("http://fake.login.url/login"))
 
 		url, err = LogoutURL(c, "logout")
-		So(err, ShouldBeNil)
-		So(url, ShouldEqual, "http://fake.logout.url/logout")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, url, should.Equal("http://fake.logout.url/logout"))
 
 		tok, extra, err := GetState(c).UserCredentials()
-		So(err, ShouldBeNil)
-		So(tok, ShouldResemble, &oauth2.Token{AccessToken: "token-abc@example.com"})
-		So(extra, ShouldHaveLength, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{AccessToken: "token-abc@example.com"}))
+		assert.Loosely(t, extra, should.HaveLength(0))
 	})
 
-	Convey("Custom EndUserIP implementation", t, func() {
+	ftt.Run("Custom EndUserIP implementation", t, func(t *ftt.Test) {
 		req := makeRequest()
 		req.FakeHeader.Add("X-Custom-IP", "4.5.6.7")
 
@@ -89,29 +89,29 @@ func TestAuthenticate(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{email: "zzz@example.com"}},
 		}
 		c, err := auth.Authenticate(c, req)
-		So(err, ShouldBeNil)
-		So(GetState(c).PeerIP().String(), ShouldEqual, "4.5.6.7")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, GetState(c).PeerIP().String(), should.Equal("4.5.6.7"))
 	})
 
-	Convey("No methods given", t, func() {
+	ftt.Run("No methods given", t, func(t *ftt.Test) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
 		auth := Authenticator{}
 		_, err := auth.Authenticate(c, makeRequest())
-		So(err, ShouldEqual, ErrNotConfigured)
+		assert.Loosely(t, err, should.Equal(ErrNotConfigured))
 	})
 
-	Convey("IsAllowedOAuthClientID on default DB", t, func() {
+	ftt.Run("IsAllowedOAuthClientID on default DB", t, func(t *ftt.Test) {
 		c := context.Background()
 		auth := Authenticator{
 			Methods: []Method{fakeAuthMethod{clientID: "some_client_id"}},
 		}
 		_, err := auth.Authenticate(c, makeRequest())
-		So(err, ShouldErrLike, "the library is not properly configured")
+		assert.Loosely(t, err, should.ErrLike("the library is not properly configured"))
 	})
 
-	Convey("IsAllowedOAuthClientID with invalid client_id", t, func() {
+	ftt.Run("IsAllowedOAuthClientID with invalid client_id", t, func(t *ftt.Test) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
@@ -120,10 +120,10 @@ func TestAuthenticate(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{clientID: "another_client_id"}},
 		}
 		_, err := auth.Authenticate(c, makeRequest())
-		So(err, ShouldEqual, ErrBadClientID)
+		assert.Loosely(t, err, should.Equal(ErrBadClientID))
 	})
 
-	Convey("IsAllowedOAuthClientID with frontend client_id", t, func() {
+	ftt.Run("IsAllowedOAuthClientID with frontend client_id", t, func(t *ftt.Test) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			allowedClientID: "some_client_id",
 		})
@@ -132,10 +132,10 @@ func TestAuthenticate(t *testing.T) {
 			Methods: []Method{fakeAuthMethod{clientID: "frontend_client_id"}},
 		}
 		_, err := auth.Authenticate(c, makeRequest())
-		So(err, ShouldBeNil) // success!
+		assert.Loosely(t, err, should.BeNil) // success!
 	})
 
-	Convey("IP allowlist restriction works", t, func() {
+	ftt.Run("IP allowlist restriction works", t, func(t *ftt.Test) {
 		db, err := authdb.NewSnapshotDB(&protocol.AuthDB{
 			IpWhitelistAssignments: []*protocol.AuthIPWhitelistAssignment{
 				{
@@ -152,84 +152,84 @@ func TestAuthenticate(t *testing.T) {
 				},
 			},
 		}, "http://auth-service", 1234, false)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		c := injectTestDB(context.Background(), db)
 
-		Convey("User is using IP allowlist and IP is in the allowlist.", func() {
+		t.Run("User is using IP allowlist and IP is in the allowlist.", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeRemoteAddr = "1.2.3.4"
 			c, err := auth.Authenticate(c, req)
-			So(err, ShouldBeNil)
-			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:abc@example.com"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, CurrentIdentity(c), should.Equal(identity.Identity("user:abc@example.com")))
 		})
 
-		Convey("User is using IP allowlist and IP is NOT in the allowlist.", func() {
+		t.Run("User is using IP allowlist and IP is NOT in the allowlist.", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "abc@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeRemoteAddr = "1.2.3.5"
 			_, err := auth.Authenticate(c, req)
-			So(err, ShouldEqual, ErrForbiddenIP)
+			assert.Loosely(t, err, should.Equal(ErrForbiddenIP))
 		})
 
-		Convey("User is not using IP allowlist.", func() {
+		t.Run("User is not using IP allowlist.", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "def@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeRemoteAddr = "1.2.3.5"
 			c, err := auth.Authenticate(c, req)
-			So(err, ShouldBeNil)
-			So(CurrentIdentity(c), ShouldEqual, identity.Identity("user:def@example.com"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, CurrentIdentity(c), should.Equal(identity.Identity("user:def@example.com")))
 		})
 	})
 
-	Convey("X-Luci-Project works", t, func() {
+	ftt.Run("X-Luci-Project works", t, func(t *ftt.Test) {
 		c := injectTestDB(context.Background(), &fakeDB{
 			groups: map[string][]identity.Identity{
 				InternalServicesGroup: {"user:allowed@example.com"},
 			},
 		})
 
-		Convey("Allowed", func() {
+		t.Run("Allowed", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeHeader.Set(XLUCIProjectHeader, "test-proj")
 			c, err := auth.Authenticate(c, req)
-			So(err, ShouldBeNil)
-			So(CurrentIdentity(c), ShouldEqual, identity.Identity("project:test-proj"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, CurrentIdentity(c), should.Equal(identity.Identity("project:test-proj")))
 
 			tok, extra, err := GetState(c).UserCredentials()
-			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &oauth2.Token{AccessToken: "token-allowed@example.com"})
-			So(extra, ShouldResemble, map[string]string{XLUCIProjectHeader: "test-proj"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.Resemble(&oauth2.Token{AccessToken: "token-allowed@example.com"}))
+			assert.Loosely(t, extra, should.Resemble(map[string]string{XLUCIProjectHeader: "test-proj"}))
 		})
 
-		Convey("Forbidden", func() {
+		t.Run("Forbidden", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "unknown@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeHeader.Set(XLUCIProjectHeader, "test-proj")
 			_, err := auth.Authenticate(c, req)
-			So(err, ShouldEqual, ErrProjectHeaderForbidden)
+			assert.Loosely(t, err, should.Equal(ErrProjectHeaderForbidden))
 		})
 
-		Convey("Bad project ID", func() {
+		t.Run("Bad project ID", func(t *ftt.Test) {
 			auth := Authenticator{
 				Methods: []Method{fakeAuthMethod{email: "allowed@example.com"}},
 			}
 			req := makeRequest()
 			req.FakeHeader.Set(XLUCIProjectHeader, "?????")
 			_, err := auth.Authenticate(c, req)
-			So(err, ShouldErrLike, "bad value")
+			assert.Loosely(t, err, should.ErrLike("bad value"))
 		})
 	})
 }
@@ -243,7 +243,7 @@ func TestMiddleware(t *testing.T) {
 
 	call := func(a *Authenticator) *httptest.ResponseRecorder {
 		req, err := http.NewRequest("GET", "http://example.com/foo", nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		w := httptest.NewRecorder()
 		router.RunMiddleware(&router.Context{
 			Writer: w,
@@ -254,28 +254,28 @@ func TestMiddleware(t *testing.T) {
 		return w
 	}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		rr := call(&Authenticator{
 			Methods: []Method{fakeAuthMethod{clientID: "some_client_id"}},
 		})
-		So(rr.Code, ShouldEqual, 200)
-		So(rr.Body.String(), ShouldEqual, "user:abc@example.com")
+		assert.Loosely(t, rr.Code, should.Equal(200))
+		assert.Loosely(t, rr.Body.String(), should.Equal("user:abc@example.com"))
 	})
 
-	Convey("Fatal error", t, func() {
+	ftt.Run("Fatal error", t, func(t *ftt.Test) {
 		rr := call(&Authenticator{
 			Methods: []Method{fakeAuthMethod{clientID: "another_client_id"}},
 		})
-		So(rr.Code, ShouldEqual, 403)
-		So(rr.Body.String(), ShouldEqual, ErrBadClientID.Error()+"\n")
+		assert.Loosely(t, rr.Code, should.Equal(403))
+		assert.Loosely(t, rr.Body.String(), should.Equal(ErrBadClientID.Error()+"\n"))
 	})
 
-	Convey("Transient error", t, func() {
+	ftt.Run("Transient error", t, func(t *ftt.Test) {
 		rr := call(&Authenticator{
 			Methods: []Method{fakeAuthMethod{err: errors.New("boo", transient.Tag)}},
 		})
-		So(rr.Code, ShouldEqual, 500)
-		So(rr.Body.String(), ShouldEqual, "Internal Server Error\n")
+		assert.Loosely(t, rr.Code, should.Equal(500))
+		assert.Loosely(t, rr.Body.String(), should.Equal("Internal Server Error\n"))
 	})
 }
 

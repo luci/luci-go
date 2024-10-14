@@ -17,11 +17,11 @@ package authdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
@@ -32,51 +32,51 @@ func TestValidation(t *testing.T) {
 		return err
 	}
 
-	Convey("Works", t, func() {
-		So(validate(&protocol.AuthDB{}), ShouldBeNil)
-		So(validate(&protocol.AuthDB{
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.AuthDB{}), should.BeNil)
+		assert.Loosely(t, validate(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{Name: "group"},
 			},
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{Name: "IP allowlist"},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 	})
 
-	Convey("Bad group", t, func() {
-		So(validate(&protocol.AuthDB{
+	ftt.Run("Bad group", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
 					Name:    "group",
 					Members: []string{"bad identity"},
 				},
 			},
-		}), ShouldErrLike, "invalid identity")
+		}), should.ErrLike("invalid identity"))
 	})
 
-	Convey("Bad IP allowlist", t, func() {
-		So(validate(&protocol.AuthDB{
+	ftt.Run("Bad IP allowlist", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.AuthDB{
 			IpWhitelists: []*protocol.AuthIPWhitelist{
 				{
 					Name:    "IP allowlist",
 					Subnets: []string{"not a subnet"},
 				},
 			},
-		}), ShouldErrLike, "bad IP allowlist")
+		}), should.ErrLike("bad IP allowlist"))
 	})
 
-	Convey("Bad SecurityConfig", t, func() {
-		So(validate(&protocol.AuthDB{
+	ftt.Run("Bad SecurityConfig", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.AuthDB{
 			SecurityConfig: []byte("not a serialized proto"),
-		}), ShouldErrLike, "failed to deserialize SecurityConfig")
+		}), should.ErrLike("failed to deserialize SecurityConfig"))
 	})
 }
 
 func TestValidateAuthGroup(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateAuthGroup works", t, func() {
+	ftt.Run("validateAuthGroup works", t, func(t *ftt.Test) {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
 				Name:    "group1",
@@ -88,47 +88,47 @@ func TestValidateAuthGroup(t *testing.T) {
 				Name: "group2",
 			},
 		}
-		So(validateAuthGroup("group1", groups), ShouldBeNil)
+		assert.Loosely(t, validateAuthGroup("group1", groups), should.BeNil)
 	})
 
-	Convey("validateAuthGroup bad identity", t, func() {
+	ftt.Run("validateAuthGroup bad identity", t, func(t *ftt.Test) {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
 				Name:    "group1",
 				Members: []string{"blah"},
 			},
 		}
-		So(validateAuthGroup("group1", groups), ShouldErrLike, "invalid identity")
+		assert.Loosely(t, validateAuthGroup("group1", groups), should.ErrLike("invalid identity"))
 	})
 
-	Convey("validateAuthGroup bad glob", t, func() {
+	ftt.Run("validateAuthGroup bad glob", t, func(t *ftt.Test) {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
 				Name:  "group1",
 				Globs: []string{"blah"},
 			},
 		}
-		So(validateAuthGroup("group1", groups), ShouldErrLike, "invalid glob")
+		assert.Loosely(t, validateAuthGroup("group1", groups), should.ErrLike("invalid glob"))
 	})
 
-	Convey("validateAuthGroup missing nested group", t, func() {
+	ftt.Run("validateAuthGroup missing nested group", t, func(t *ftt.Test) {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
 				Name:   "group1",
 				Nested: []string{"missing"},
 			},
 		}
-		So(validateAuthGroup("group1", groups), ShouldErrLike, "unknown nested group")
+		assert.Loosely(t, validateAuthGroup("group1", groups), should.ErrLike("unknown nested group"))
 	})
 
-	Convey("validateAuthGroup dependency cycle", t, func() {
+	ftt.Run("validateAuthGroup dependency cycle", t, func(t *ftt.Test) {
 		groups := map[string]*protocol.AuthGroup{
 			"group1": {
 				Name:   "group1",
 				Nested: []string{"group1"},
 			},
 		}
-		So(validateAuthGroup("group1", groups), ShouldErrLike, "dependency cycle found")
+		assert.Loosely(t, validateAuthGroup("group1", groups), should.ErrLike("dependency cycle found"))
 	})
 }
 
@@ -148,56 +148,56 @@ func TestFindGroupCycle(t *testing.T) {
 		return findGroupCycle("start", asProto)
 	}
 
-	Convey("Empty", t, func() {
-		So(call(groupGraph{"start": nil}), ShouldBeEmpty)
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{"start": nil}), should.BeEmpty)
 	})
 
-	Convey("No cycles", t, func() {
-		So(call(groupGraph{
+	ftt.Run("No cycles", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A"},
 			"A":     []string{"B"},
 			"B":     []string{"C"},
-		}), ShouldBeEmpty)
+		}), should.BeEmpty)
 	})
 
-	Convey("Self reference", t, func() {
-		So(call(groupGraph{
+	ftt.Run("Self reference", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"start"},
-		}), ShouldResemble, []string{"start"})
+		}), should.Resemble([]string{"start"}))
 	})
 
-	Convey("Simple cycle", t, func() {
-		So(call(groupGraph{
+	ftt.Run("Simple cycle", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A"},
 			"A":     []string{"start"},
-		}), ShouldResemble, []string{"start", "A"})
+		}), should.Resemble([]string{"start", "A"}))
 	})
 
-	Convey("Long cycle", t, func() {
-		So(call(groupGraph{
+	ftt.Run("Long cycle", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A"},
 			"A":     []string{"B"},
 			"B":     []string{"C"},
 			"C":     []string{"start"},
-		}), ShouldResemble, []string{"start", "A", "B", "C"})
+		}), should.Resemble([]string{"start", "A", "B", "C"}))
 	})
 
-	Convey("Diamond no cycles", t, func() {
-		So(call(groupGraph{
+	ftt.Run("Diamond no cycles", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A1", "A2"},
 			"A1":    []string{"B"},
 			"A2":    []string{"B"},
 			"B":     nil,
-		}), ShouldBeEmpty)
+		}), should.BeEmpty)
 	})
 
-	Convey("Diamond with cycles", t, func() {
-		So(call(groupGraph{
+	ftt.Run("Diamond with cycles", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(groupGraph{
 			"start": []string{"A1", "A2"},
 			"A1":    []string{"B"},
 			"A2":    []string{"B"},
 			"B":     []string{"start"},
-		}), ShouldResemble, []string{"start", "A1", "B"})
+		}), should.Resemble([]string{"start", "A1", "B"}))
 	})
 }
 
@@ -212,8 +212,8 @@ func TestValidateRealms(t *testing.T) {
 	perm := &protocol.Permission{}
 	cond := &protocol.Condition{}
 
-	Convey("Works", t, func() {
-		So(validate(&protocol.Realms{
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.Realms{
 			ApiVersion:  realmset.ExpectedAPIVersion,
 			Conditions:  []*protocol.Condition{cond, cond},
 			Permissions: []*protocol.Permission{perm, perm},
@@ -226,11 +226,11 @@ func TestValidateRealms(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 	})
 
-	Convey("Out of bounds permission", t, func() {
-		So(validate(&protocol.Realms{
+	ftt.Run("Out of bounds permission", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.Realms{
 			ApiVersion:  realmset.ExpectedAPIVersion,
 			Conditions:  []*protocol.Condition{cond, cond},
 			Permissions: []*protocol.Permission{perm, perm},
@@ -241,11 +241,11 @@ func TestValidateRealms(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldErrLike, "referencing out-of-bounds permission")
+		}), should.ErrLike("referencing out-of-bounds permission"))
 	})
 
-	Convey("Out of bounds condition", t, func() {
-		So(validate(&protocol.Realms{
+	ftt.Run("Out of bounds condition", t, func(t *ftt.Test) {
+		assert.Loosely(t, validate(&protocol.Realms{
 			ApiVersion:  realmset.ExpectedAPIVersion,
 			Conditions:  []*protocol.Condition{cond, cond},
 			Permissions: []*protocol.Permission{perm, perm},
@@ -256,6 +256,6 @@ func TestValidateRealms(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldErrLike, "referencing out-of-bounds condition")
+		}), should.ErrLike("referencing out-of-bounds condition"))
 	})
 }

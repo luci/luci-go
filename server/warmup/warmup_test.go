@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestWorks(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		var called []string
 
 		Register("1", func(context.Context) error {
@@ -42,7 +44,7 @@ func TestWorks(t *testing.T) {
 		})
 
 		err := Warmup(context.Background())
-		So(err.Error(), ShouldEqual, "OMG 1 (and 1 other error)")
-		So(called, ShouldResemble, []string{"1", "2", "3"})
+		assert.Loosely(t, err.Error(), should.Equal("OMG 1 (and 1 other error)"))
+		assert.Loosely(t, called, should.Resemble([]string{"1", "2", "3"}))
 	})
 }

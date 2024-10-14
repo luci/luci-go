@@ -19,36 +19,38 @@ import (
 	"net/url"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPagination(t *testing.T) {
 	t.Parallel()
 
-	Convey("URLSafeEncrypt/Decrypt", t, func() {
+	ftt.Run("URLSafeEncrypt/Decrypt", t, func(t *ftt.Test) {
 		ctx := GeneratePrimaryTinkAEADForTest(context.Background())
 
-		Convey("The encrypted string should be URL safe", func() {
+		t.Run("The encrypted string should be URL safe", func(t *ftt.Test) {
 			encrypted, err := URLSafeEncrypt(ctx, []byte("sensitive data %=?/&"), []byte("additional data"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			urlEncoded := url.QueryEscape(encrypted)
-			So(urlEncoded, ShouldEqual, encrypted)
+			assert.Loosely(t, urlEncoded, should.Equal(encrypted))
 		})
 
-		Convey("Should be able to recover plaintext with the same additional data", func() {
+		t.Run("Should be able to recover plaintext with the same additional data", func(t *ftt.Test) {
 			encrypted, err := URLSafeEncrypt(ctx, []byte("sensitive data"), []byte("additional data"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			decrypted, err := URLSafeDecrypt(ctx, encrypted, []byte("additional data"))
-			So(err, ShouldBeNil)
-			So(decrypted, ShouldResemble, []byte("sensitive data"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, decrypted, should.Resemble([]byte("sensitive data")))
 		})
 
-		Convey("Should not be able to recover plaintext with the different additional data", func() {
+		t.Run("Should not be able to recover plaintext with the different additional data", func(t *ftt.Test) {
 			encrypted, err := URLSafeEncrypt(ctx, []byte("sensitive data"), []byte("additional data"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			decrypted, err := URLSafeDecrypt(ctx, encrypted, []byte("additional data 2"))
-			So(err, ShouldNotBeNil)
-			So(decrypted, ShouldBeEmpty)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, decrypted, should.BeEmpty)
 		})
 	})
 }

@@ -23,17 +23,18 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestWorks(t *testing.T) {
-	Convey("GetCertificates works", t, func(c C) {
+	ftt.Run("GetCertificates works", t, func(c *ftt.Test) {
 		tokenService := signingtest.NewSigner(&signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
@@ -63,25 +64,25 @@ func TestWorks(t *testing.T) {
 		bundle := Bundle{ServiceURL: "http://token-server"}
 
 		id, certs, err := bundle.GetCerts(ctx)
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
-		So(certs, ShouldNotBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, id, should.Equal(identity.Identity("user:token-server-account@example.com")))
+		assert.Loosely(c, certs, should.NotBeNil)
+		assert.Loosely(c, calls, should.Equal(1))
 
 		// Reuses stuff from cache.
 		id, certs, err = bundle.GetCerts(ctx)
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
-		So(certs, ShouldNotBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, id, should.Equal(identity.Identity("user:token-server-account@example.com")))
+		assert.Loosely(c, certs, should.NotBeNil)
+		assert.Loosely(c, calls, should.Equal(1))
 
 		tc.Add(time.Hour + 5*time.Minute)
 
 		// Until it expires.
 		id, certs, err = bundle.GetCerts(ctx)
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, identity.Identity("user:token-server-account@example.com"))
-		So(certs, ShouldNotBeNil)
-		So(calls, ShouldEqual, 2)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, id, should.Equal(identity.Identity("user:token-server-account@example.com")))
+		assert.Loosely(c, certs, should.NotBeNil)
+		assert.Loosely(c, calls, should.Equal(2))
 	})
 }

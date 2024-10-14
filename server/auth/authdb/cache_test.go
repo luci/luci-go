@@ -20,12 +20,13 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDBCache(t *testing.T) {
-	Convey("DBCache works", t, func() {
+	ftt.Run("DBCache works", t, func(t *ftt.Test) {
 		c := context.Background()
 		c, tc := testclock.UseTime(c, time.Unix(1442540000, 0))
 
@@ -40,20 +41,20 @@ func TestDBCache(t *testing.T) {
 
 		// Initial fetch.
 		db, err := factory(c)
-		So(err, ShouldBeNil)
-		So(db.(*SnapshotDB).Rev, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, db.(*SnapshotDB).Rev, should.Equal(1))
 
 		// Refetch, using cached copy.
 		db, err = factory(c)
-		So(err, ShouldBeNil)
-		So(db.(*SnapshotDB).Rev, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, db.(*SnapshotDB).Rev, should.Equal(1))
 
 		// Advance time to expire cache.
 		tc.Add(11 * time.Second)
 
 		// Returns new copy now.
 		db, err = factory(c)
-		So(err, ShouldBeNil)
-		So(db.(*SnapshotDB).Rev, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, db.(*SnapshotDB).Rev, should.Equal(2))
 	})
 }

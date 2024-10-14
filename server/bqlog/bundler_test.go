@@ -27,12 +27,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func init() {
@@ -44,7 +45,7 @@ func init() {
 func TestBundler(t *testing.T) {
 	t.Parallel()
 
-	Convey("With bundler", t, func() {
+	ftt.Run("With bundler", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _, _ = tsmon.WithFakes(ctx)
 		tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
@@ -79,13 +80,13 @@ func TestBundler(t *testing.T) {
 			Table:     "timestamps",
 		})
 
-		Convey("Start+drain empty", func() {
+		t.Run("Start+drain empty", func(t *ftt.Test) {
 			b.Start(ctx, writer)
 			b.Shutdown(ctx)
-			So(wrote, ShouldHaveLength, 0)
+			assert.Loosely(t, wrote, should.HaveLength(0))
 		})
 
-		Convey("Start+send+drain OK", func() {
+		t.Run("Start+send+drain OK", func(t *ftt.Test) {
 			b.Start(ctx, writer)
 			b.Log(ctx, &durationpb.Duration{Seconds: 1})
 			b.Log(ctx, &durationpb.Duration{Seconds: 2})
@@ -94,16 +95,16 @@ func TestBundler(t *testing.T) {
 			b.Log(ctx, &timestamppb.Timestamp{Seconds: 3})
 			b.Shutdown(ctx)
 
-			So(wrote, ShouldResemble, map[string]int{
+			assert.Loosely(t, wrote, should.Resemble(map[string]int{
 				"projects/project/datasets/dataset/tables/durations/_default":  2,
 				"projects/project/datasets/dataset/tables/timestamps/_default": 3,
-			})
+			}))
 
-			So(counter(metricSentCounter, "project.dataset.durations"), ShouldEqual, 2)
-			So(counter(metricSentCounter, "project.dataset.timestamps"), ShouldEqual, 3)
+			assert.Loosely(t, counter(metricSentCounter, "project.dataset.durations"), should.Equal(2))
+			assert.Loosely(t, counter(metricSentCounter, "project.dataset.timestamps"), should.Equal(3))
 		})
 
-		Convey("Drops rows on fatal errors", func() {
+		t.Run("Drops rows on fatal errors", func(t *ftt.Test) {
 			writer.Recv = func() (*storagepb.AppendRowsResponse, error) {
 				return nil, status.Errorf(codes.InvalidArgument, "Bad")
 			}
@@ -113,15 +114,15 @@ func TestBundler(t *testing.T) {
 			b.Log(ctx, &timestamppb.Timestamp{Seconds: 1})
 			b.Shutdown(ctx)
 
-			So(counter(metricSentCounter, "project.dataset.durations"), ShouldEqual, 0)
-			So(counter(metricSentCounter, "project.dataset.timestamps"), ShouldEqual, 0)
-			So(counter(metricDroppedCounter, "project.dataset.durations", "DISPATCHER"), ShouldEqual, 1)
-			So(counter(metricDroppedCounter, "project.dataset.timestamps", "DISPATCHER"), ShouldEqual, 1)
-			So(counter(metricErrorsCounter, "project.dataset.durations", "INVALID_ARGUMENT"), ShouldEqual, 1)
-			So(counter(metricErrorsCounter, "project.dataset.timestamps", "INVALID_ARGUMENT"), ShouldEqual, 1)
+			assert.Loosely(t, counter(metricSentCounter, "project.dataset.durations"), should.BeZero)
+			assert.Loosely(t, counter(metricSentCounter, "project.dataset.timestamps"), should.BeZero)
+			assert.Loosely(t, counter(metricDroppedCounter, "project.dataset.durations", "DISPATCHER"), should.Equal(1))
+			assert.Loosely(t, counter(metricDroppedCounter, "project.dataset.timestamps", "DISPATCHER"), should.Equal(1))
+			assert.Loosely(t, counter(metricErrorsCounter, "project.dataset.durations", "INVALID_ARGUMENT"), should.Equal(1))
+			assert.Loosely(t, counter(metricErrorsCounter, "project.dataset.timestamps", "INVALID_ARGUMENT"), should.Equal(1))
 		})
 
-		Convey("Batching and dropping excesses", func() {
+		t.Run("Batching and dropping excesses", func(t *ftt.Test) {
 			countdown := int64(2)
 			batchLen := make(chan int)
 
@@ -139,16 +140,16 @@ func TestBundler(t *testing.T) {
 			}
 
 			// Make sure we get small batches.
-			So(<-batchLen, ShouldEqual, 25)
-			So(<-batchLen, ShouldEqual, 16)
+			assert.Loosely(t, <-batchLen, should.Equal(25))
+			assert.Loosely(t, <-batchLen, should.Equal(16))
 
 			// Quickly drop the rest by shutting down without waiting.
 			ctx, cancel := context.WithCancel(ctx)
 			cancel()
 			b.Shutdown(ctx)
 
-			So(counter(metricSentCounter, "project.dataset.durations"), ShouldEqual, 25+16)
-			So(counter(metricDroppedCounter, "project.dataset.durations", "DISPATCHER"), ShouldBeGreaterThan, 0)
+			assert.Loosely(t, counter(metricSentCounter, "project.dataset.durations"), should.Equal(25+16))
+			assert.Loosely(t, counter(metricDroppedCounter, "project.dataset.durations", "DISPATCHER"), should.BeGreaterThan(0))
 		})
 	})
 }

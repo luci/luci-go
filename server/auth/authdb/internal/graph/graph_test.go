@@ -21,11 +21,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/globset"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func mkGraph(adj map[string][]string) *Graph {
@@ -74,23 +75,23 @@ func ancestors(g *Graph, node string) []string {
 func TestGraph(t *testing.T) {
 	t.Parallel()
 
-	Convey("Linear", t, func() {
+	ftt.Run("Linear", t, func(t *ftt.Test) {
 		g := mkGraph(map[string][]string{
 			"1": {"2"},
 			"2": {"3"},
 			"3": nil,
 		})
 
-		So(descendants(g, "1"), ShouldResemble, []string{"1", "2", "3"})
-		So(descendants(g, "2"), ShouldResemble, []string{"2", "3"})
-		So(descendants(g, "3"), ShouldResemble, []string{"3"})
+		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1", "2", "3"}))
+		assert.Loosely(t, descendants(g, "2"), should.Resemble([]string{"2", "3"}))
+		assert.Loosely(t, descendants(g, "3"), should.Resemble([]string{"3"}))
 
-		So(ancestors(g, "1"), ShouldResemble, []string{"1"})
-		So(ancestors(g, "2"), ShouldResemble, []string{"1", "2"})
-		So(ancestors(g, "3"), ShouldResemble, []string{"1", "2", "3"})
+		assert.Loosely(t, ancestors(g, "1"), should.Resemble([]string{"1"}))
+		assert.Loosely(t, ancestors(g, "2"), should.Resemble([]string{"1", "2"}))
+		assert.Loosely(t, ancestors(g, "3"), should.Resemble([]string{"1", "2", "3"}))
 	})
 
-	Convey("Tree", t, func() {
+	ftt.Run("Tree", t, func(t *ftt.Test) {
 		g := mkGraph(map[string][]string{
 			"root": {"l1", "r1"},
 			"l1":   {"l2", "r2"},
@@ -98,23 +99,23 @@ func TestGraph(t *testing.T) {
 			"l2":   nil,
 			"r2":   nil,
 		})
-		So(descendants(g, "root"), ShouldResemble, []string{"l1", "l2", "r1", "r2", "root"})
-		So(descendants(g, "l1"), ShouldResemble, []string{"l1", "l2", "r2"})
-		So(ancestors(g, "r2"), ShouldResemble, []string{"l1", "r2", "root"})
+		assert.Loosely(t, descendants(g, "root"), should.Resemble([]string{"l1", "l2", "r1", "r2", "root"}))
+		assert.Loosely(t, descendants(g, "l1"), should.Resemble([]string{"l1", "l2", "r2"}))
+		assert.Loosely(t, ancestors(g, "r2"), should.Resemble([]string{"l1", "r2", "root"}))
 	})
 
-	Convey("Diamond", t, func() {
+	ftt.Run("Diamond", t, func(t *ftt.Test) {
 		g := mkGraph(map[string][]string{
 			"root": {"l", "r"},
 			"l":    {"leaf"},
 			"r":    {"leaf"},
 			"leaf": nil,
 		})
-		So(descendants(g, "root"), ShouldResemble, []string{"l", "leaf", "r", "root"})
-		So(ancestors(g, "leaf"), ShouldResemble, []string{"l", "leaf", "r", "root"})
+		assert.Loosely(t, descendants(g, "root"), should.Resemble([]string{"l", "leaf", "r", "root"}))
+		assert.Loosely(t, ancestors(g, "leaf"), should.Resemble([]string{"l", "leaf", "r", "root"}))
 	})
 
-	Convey("Cycle", t, func() {
+	ftt.Run("Cycle", t, func(t *ftt.Test) {
 		// Cycles aren't allowed in AuthDB, but we make sure if they happen for
 		// whatever reason, Graph doesn't get stuck in an endless loop.
 		g := mkGraph(map[string][]string{
@@ -123,22 +124,22 @@ func TestGraph(t *testing.T) {
 		})
 		// Note: in presence of cycles the results of calls below generally depend
 		// on order they were called.
-		So(descendants(g, "1"), ShouldResemble, []string{"1", "2"})
-		So(descendants(g, "2"), ShouldResemble, []string{"2"})
-		So(ancestors(g, "1"), ShouldResemble, []string{"1", "2"})
-		So(ancestors(g, "2"), ShouldResemble, []string{"2"})
+		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1", "2"}))
+		assert.Loosely(t, descendants(g, "2"), should.Resemble([]string{"2"}))
+		assert.Loosely(t, ancestors(g, "1"), should.Resemble([]string{"1", "2"}))
+		assert.Loosely(t, ancestors(g, "2"), should.Resemble([]string{"2"}))
 	})
 
-	Convey("Bad nested group reference", t, func() {
+	ftt.Run("Bad nested group reference", t, func(t *ftt.Test) {
 		g := mkGraph(map[string][]string{"1": {"missing"}})
-		So(descendants(g, "1"), ShouldResemble, []string{"1"})
+		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1"}))
 	})
 }
 
 func TestNodeSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ns1 := make(NodeSet, 0)
 		ns1.Add(5)
 		ns1.Add(3)
@@ -152,33 +153,33 @@ func TestNodeSet(t *testing.T) {
 		ns3.Update(ns2)
 
 		sorted := ns3.Sort()
-		So(sorted, ShouldResemble, SortedNodeSet{3, 5, 10})
+		assert.Loosely(t, sorted, should.Resemble(SortedNodeSet{3, 5, 10}))
 
-		So(sorted.Has(1), ShouldBeFalse)
-		So(sorted.Has(3), ShouldBeTrue)
-		So(sorted.Has(5), ShouldBeTrue)
-		So(sorted.Has(10), ShouldBeTrue)
-		So(sorted.Has(11), ShouldBeFalse)
+		assert.Loosely(t, sorted.Has(1), should.BeFalse)
+		assert.Loosely(t, sorted.Has(3), should.BeTrue)
+		assert.Loosely(t, sorted.Has(5), should.BeTrue)
+		assert.Loosely(t, sorted.Has(10), should.BeTrue)
+		assert.Loosely(t, sorted.Has(11), should.BeFalse)
 
-		So(sorted.Intersects(SortedNodeSet{}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{1}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{1, 2}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{1, 2, 4}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{1, 2, 4, 11}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{11}), ShouldBeFalse)
-		So(sorted.Intersects(SortedNodeSet{3}), ShouldBeTrue)
-		So(sorted.Intersects(SortedNodeSet{1, 2, 3}), ShouldBeTrue)
-		So(sorted.Intersects(SortedNodeSet{10, 11}), ShouldBeTrue)
-		So(sorted.Intersects(SortedNodeSet{5}), ShouldBeTrue)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{1}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{1, 2}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{1, 2, 4}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{1, 2, 4, 11}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{11}), should.BeFalse)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{3}), should.BeTrue)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{1, 2, 3}), should.BeTrue)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{10, 11}), should.BeTrue)
+		assert.Loosely(t, sorted.Intersects(SortedNodeSet{5}), should.BeTrue)
 
-		So(sorted.MapKey(), ShouldResemble, "\x03\x00\x05\x00\x0a\x00")
+		assert.Loosely(t, sorted.MapKey(), should.Match("\x03\x00\x05\x00\x0a\x00"))
 	})
 }
 
 func TestQueryable(t *testing.T) {
 	t.Parallel()
 
-	Convey("Globs map", t, func() {
+	ftt.Run("Globs map", t, func(t *ftt.Test) {
 		q, err := BuildQueryable([]*protocol.AuthGroup{
 			{
 				Name:   "root",
@@ -202,30 +203,30 @@ func TestQueryable(t *testing.T) {
 				Globs: []string{"user:*@3.example.com", "user:*@2.example.com"},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(stringifyGlobMap(q.globs), ShouldResemble, map[NodeIndex]string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, stringifyGlobMap(q.globs), should.Resemble(map[NodeIndex]string{
 			0: "user:^((.*@1\\.example\\.com)|(.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
 			1: "user:^((.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
 			2: "user:^.*@3\\.example\\.com$",
 			4: "user:^((.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
-		})
+		}))
 
 		// Identical GlobSet's are shared by reference.
 		a := q.globs[1]["user"]
 		b := q.globs[4]["user"]
-		So(a == b, ShouldBeTrue)
+		assert.Loosely(t, a == b, should.BeTrue)
 
-		So(q.IsMember("user:a@3.example.com", "root"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:a@3.example.com", "child1"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:a@3.example.com", "child2"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:a@3.example.com", "no globs"), ShouldEqual, IdentIsNotMember)
+		assert.Loosely(t, q.IsMember("user:a@3.example.com", "root"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:a@3.example.com", "child1"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:a@3.example.com", "child2"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:a@3.example.com", "no globs"), should.Equal(IdentIsNotMember))
 
-		So(q.IsMember("user:a@1.example.com", "root"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:a@1.example.com", "child1"), ShouldEqual, IdentIsNotMember)
-		So(q.IsMember("user:a@1.example.com", "child2"), ShouldEqual, IdentIsNotMember)
+		assert.Loosely(t, q.IsMember("user:a@1.example.com", "root"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:a@1.example.com", "child1"), should.Equal(IdentIsNotMember))
+		assert.Loosely(t, q.IsMember("user:a@1.example.com", "child2"), should.Equal(IdentIsNotMember))
 	})
 
-	Convey("Memberships map", t, func() {
+	ftt.Run("Memberships map", t, func(t *ftt.Test) {
 		q, err := BuildQueryable([]*protocol.AuthGroup{
 			{
 				Name:    "root", // 0
@@ -251,28 +252,28 @@ func TestQueryable(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(q.memberships, ShouldResemble, map[identity.Identity]SortedNodeSet{
+		assert.Loosely(t, q.memberships, should.Resemble(map[identity.Identity]SortedNodeSet{
 			"user:1@example.com": {0, 1, 3},
 			"user:2@example.com": {0, 1, 3},
 			"user:3@example.com": {0, 1, 2, 3},
 			"user:4@example.com": {3},
-		})
+		}))
 
 		// Identical SortedNodeSet's are shared by reference.
 		a := q.memberships["user:1@example.com"]
 		b := q.memberships["user:2@example.com"]
-		So(&a[0] == &b[0], ShouldBeTrue)
+		assert.Loosely(t, &a[0] == &b[0], should.BeTrue)
 
-		So(q.IsMember("user:1@example.com", "root"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:1@example.com", "child1"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:1@example.com", "child2"), ShouldEqual, IdentIsNotMember)
-		So(q.IsMember("user:1@example.com", "standalone"), ShouldEqual, IdentIsMember)
-		So(q.IsMember("user:1@example.com", "unknown"), ShouldEqual, GroupIsUnknown)
+		assert.Loosely(t, q.IsMember("user:1@example.com", "root"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:1@example.com", "child1"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:1@example.com", "child2"), should.Equal(IdentIsNotMember))
+		assert.Loosely(t, q.IsMember("user:1@example.com", "standalone"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:1@example.com", "unknown"), should.Equal(GroupIsUnknown))
 	})
 
-	Convey("IsMemberOfAny", t, func() {
+	ftt.Run("IsMemberOfAny", t, func(t *ftt.Test) {
 		q, err := BuildQueryable([]*protocol.AuthGroup{
 			{
 				Name:    "root",
@@ -293,20 +294,20 @@ func TestQueryable(t *testing.T) {
 				Members: []string{"user:z@example.com"},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		root, _ := q.GroupIndex("root")
 		standalone, _ := q.GroupIndex("standalone")
 
 		q1 := q.MembershipsQueryCache("user:1@example.com")
-		So(q1.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
+		assert.Loosely(t, q1.IsMemberOfAny([]NodeIndex{root, standalone}), should.BeTrue)
 
 		q2 := q.MembershipsQueryCache("user:3@example.com")
-		So(q2.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
-		So(q2.IsMemberOfAny([]NodeIndex{standalone}), ShouldBeFalse)
+		assert.Loosely(t, q2.IsMemberOfAny([]NodeIndex{root, standalone}), should.BeTrue)
+		assert.Loosely(t, q2.IsMemberOfAny([]NodeIndex{standalone}), should.BeFalse)
 
 		q3 := q.MembershipsQueryCache("user:glob@example.com")
-		So(q3.IsMemberOfAny([]NodeIndex{root, standalone}), ShouldBeTrue)
+		assert.Loosely(t, q3.IsMemberOfAny([]NodeIndex{root, standalone}), should.BeTrue)
 	})
 }
 

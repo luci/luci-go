@@ -19,14 +19,15 @@ import (
 	"net"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseRemoteIP(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test suites`, t, func() {
+	ftt.Run(`Test suites`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			v   string
 			exp string
@@ -46,15 +47,15 @@ func TestParseRemoteIP(t *testing.T) {
 			{"1:3:5:9:1337", "", "don't know how to parse"},
 		} {
 			if tc.err == "" {
-				Convey(fmt.Sprintf(`Successfully parses %q into %q.`, tc.v, tc.exp), func() {
+				t.Run(fmt.Sprintf(`Successfully parses %q into %q.`, tc.v, tc.exp), func(t *ftt.Test) {
 					ip, err := parseRemoteIP(tc.v)
-					So(err, ShouldBeNil)
-					So(ip, ShouldResemble, net.ParseIP(tc.exp))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ip, should.Resemble(net.ParseIP(tc.exp)))
 				})
 			} else {
-				Convey(fmt.Sprintf(`Fails to parse %q with %q.`, tc.v, tc.err), func() {
+				t.Run(fmt.Sprintf(`Fails to parse %q with %q.`, tc.v, tc.err), func(t *ftt.Test) {
 					_, err := parseRemoteIP(tc.v)
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				})
 			}
 		}

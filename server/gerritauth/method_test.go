@@ -23,19 +23,19 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAuthMethod(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const expectedHeader = "X-Gerrit-Auth"
 		const expectedAudience = "good-audience"
 
@@ -66,13 +66,13 @@ func TestAuthMethod(t *testing.T) {
 
 		prepareJWT := func(tok gerritJWT) string {
 			bodyBlob, err := json.Marshal(&tok)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			b64hdr := base64.RawURLEncoding.EncodeToString([]byte(
 				fmt.Sprintf(`{"alg": "RS256","kid": "%s"}`, goodKeyID),
 			))
 			b64bdy := base64.RawURLEncoding.EncodeToString(bodyBlob)
 			_, sig, err := signer.SignBytes(ctx, []byte(b64hdr+"."+b64bdy))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return b64hdr + "." + b64bdy + "." + base64.RawURLEncoding.EncodeToString(sig)
 		}
 
@@ -83,7 +83,7 @@ func TestAuthMethod(t *testing.T) {
 			return user, err
 		}
 
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			user, err := call(prepareJWT(gerritJWT{
 				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
@@ -91,18 +91,18 @@ func TestAuthMethod(t *testing.T) {
 				AssertedUser:   assertedUser,
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldBeNil)
-			So(user, ShouldResemble, &auth.User{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, user, should.Resemble(&auth.User{
 				Identity: "user:abc@example.com",
 				Email:    "abc@example.com",
 				Extra: &AssertedInfo{
 					User:   assertedUser,
 					Change: assertedChange,
 				},
-			})
+			}))
 		})
 
-		Convey("Success, but no preferred email", func() {
+		t.Run("Success, but no preferred email", func(t *ftt.Test) {
 			user, err := call(prepareJWT(gerritJWT{
 				Iss: "trusted-issuer",
 				Aud: expectedAudience,
@@ -112,8 +112,8 @@ func TestAuthMethod(t *testing.T) {
 				},
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldBeNil)
-			So(user, ShouldResemble, &auth.User{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, user, should.Resemble(&auth.User{
 				Identity: "user:xyz@example.com",
 				Email:    "xyz@example.com",
 				Extra: &AssertedInfo{
@@ -122,29 +122,29 @@ func TestAuthMethod(t *testing.T) {
 					},
 					Change: assertedChange,
 				},
-			})
+			}))
 		})
 
-		Convey("Unconfigured", func() {
+		t.Run("Unconfigured", func(t *ftt.Test) {
 			method.SignerAccounts = nil
 			user, err := call("ignored")
-			So(err, ShouldBeNil)
-			So(user, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, user, should.BeNil)
 		})
 
-		Convey("Missing header", func() {
+		t.Run("Missing header", func(t *ftt.Test) {
 			method.Header = "Something-Else"
 			user, err := call("ignored")
-			So(err, ShouldBeNil)
-			So(user, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, user, should.BeNil)
 		})
 
-		Convey("Bad token", func() {
+		t.Run("Bad token", func(t *ftt.Test) {
 			_, err := call("blah.blah.blah")
-			So(err, ShouldErrLike, "bad Gerrit JWT")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT"))
 		})
 
-		Convey("Unrecognized issuer", func() {
+		t.Run("Unrecognized issuer", func(t *ftt.Test) {
 			_, err := call(prepareJWT(gerritJWT{
 				Iss:            "unknown-issuer",
 				Aud:            expectedAudience,
@@ -152,10 +152,10 @@ func TestAuthMethod(t *testing.T) {
 				AssertedUser:   assertedUser,
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT"))
 		})
 
-		Convey("Bad audience", func() {
+		t.Run("Bad audience", func(t *ftt.Test) {
 			_, err := call(prepareJWT(gerritJWT{
 				Iss:            "trusted-issuer",
 				Aud:            "wrong-audience",
@@ -163,10 +163,10 @@ func TestAuthMethod(t *testing.T) {
 				AssertedUser:   assertedUser,
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT: wrong audience")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT: wrong audience"))
 		})
 
-		Convey("Expired token", func() {
+		t.Run("Expired token", func(t *ftt.Test) {
 			_, err := call(prepareJWT(gerritJWT{
 				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
@@ -174,20 +174,20 @@ func TestAuthMethod(t *testing.T) {
 				AssertedUser:   assertedUser,
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT: expired")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT: expired"))
 		})
 
-		Convey("No emails", func() {
+		t.Run("No emails", func(t *ftt.Test) {
 			_, err := call(prepareJWT(gerritJWT{
 				Iss:            "trusted-issuer",
 				Aud:            expectedAudience,
 				Exp:            now.Add(5 * time.Minute).Unix(),
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT: asserted_user.preferred_email and asserted_user.emails are empty"))
 		})
 
-		Convey("Invalid email", func() {
+		t.Run("Invalid email", func(t *ftt.Test) {
 			_, err := call(prepareJWT(gerritJWT{
 				Iss: "trusted-issuer",
 				Aud: expectedAudience,
@@ -200,7 +200,7 @@ func TestAuthMethod(t *testing.T) {
 				},
 				AssertedChange: assertedChange,
 			}))
-			So(err, ShouldErrLike, "bad Gerrit JWT: unrecognized email format")
+			assert.Loosely(t, err, should.ErrLike("bad Gerrit JWT: unrecognized email format"))
 		})
 	})
 }

@@ -26,6 +26,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/quota"
@@ -34,9 +37,6 @@ import (
 	"go.chromium.org/luci/server/redisconn"
 
 	_ "go.chromium.org/luci/server/quota/quotatestmonkeypatch"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var integrationTestApp = quota.Register("ita", &quota.ApplicationOptions{
@@ -47,11 +47,11 @@ var integrationTestApp = quota.Register("ita", &quota.ApplicationOptions{
 })
 
 func TestFullFlow(t *testing.T) {
-	Convey(`FullFlow`, t, func() {
+	ftt.Run(`FullFlow`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		s, err := miniredis.Run()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer s.Close()
 
 		tc := testclock.New(testclock.TestRecentTimeUTC.Round(time.Microsecond))
@@ -80,33 +80,33 @@ func TestFullFlow(t *testing.T) {
 				},
 			},
 		}
-		Convey(`policy`, func() {
-			Convey(`valid`, func() {
+		t.Run(`policy`, func(t *ftt.Test) {
+			t.Run(`valid`, func(t *ftt.Test) {
 				policyConfigID, err := integrationTestApp.LoadPoliciesAuto(ctx, "@internal:integrationTestApp", policy)
-				So(err, ShouldBeNil)
-				So(policyConfigID, ShouldResembleProto, &quotapb.PolicyConfigID{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, policyConfigID, should.Resemble(&quotapb.PolicyConfigID{
 					AppId:         "ita",
 					Realm:         "@internal:integrationTestApp",
 					VersionScheme: 1,
 					Version:       "W`-@.nn^o,_kP)j_BSM_.:jhMfP]d`mj]J/kKTpa",
-				})
+				}))
 
 				cfgKey := quotakeys.PolicyConfigID(policyConfigID)
-				So(s.Keys(), ShouldResemble, []string{cfgKey})
+				assert.Loosely(t, s.Keys(), should.Resemble([]string{cfgKey}))
 				hkeys, err := s.HKeys(cfgKey)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				polKey := &quotapb.PolicyKey{
 					Namespace:    "ns1",
 					Name:         "cool people",
 					ResourceType: "qps",
 				}
 				polKeyStr := quotakeys.PolicyKey(polKey)
-				So(hkeys, ShouldResemble, []string{polKeyStr, "~loaded_time"})
-				So(s.HGet(cfgKey, polKeyStr), ShouldEqual, string([]byte{
+				assert.Loosely(t, hkeys, should.Resemble([]string{polKeyStr, "~loaded_time"}))
+				assert.Loosely(t, s.HGet(cfgKey, polKeyStr), should.Equal(string([]byte{
 					147, 123, 205, 20, 36, 146, 1, 3,
-				}))
+				})))
 
-				Convey(`account`, func() {
+				t.Run(`account`, func(t *ftt.Test) {
 					requestId := "somereq"
 					rsp, err := quota.ApplyOps(ctx, requestId, durationpb.New(time.Hour), []*quotapb.Op{
 						{
@@ -115,28 +115,28 @@ func TestFullFlow(t *testing.T) {
 							RelativeTo: quotapb.Op_CURRENT_BALANCE, Delta: 5,
 						},
 					})
-					So(err, ShouldBeNil)
-					So(rsp, ShouldResembleProto, &quotapb.ApplyOpsResponse{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rsp, should.Resemble(&quotapb.ApplyOpsResponse{
 						Results: []*quotapb.OpResult{
 							{NewBalance: 128, AccountStatus: quotapb.OpResult_CREATED},
 						},
 						OriginallySet: timestamppb.New(clock.Now(ctx)),
-					})
-					So(s.TTL(quotakeys.RequestDedupKey(&quotapb.RequestDedupKey{
+					}))
+					assert.Loosely(t, s.TTL(quotakeys.RequestDedupKey(&quotapb.RequestDedupKey{
 						Ident:     string(auth.CurrentIdentity(ctx)),
 						RequestId: requestId,
-					})), ShouldEqual, time.Hour)
+					})), should.Equal(time.Hour))
 				})
 			})
 
-			Convey(`bad resource`, func() {
+			t.Run(`bad resource`, func(t *ftt.Test) {
 				policy.Policies[0].Key.ResourceType = "fakey fake"
 				_, err := integrationTestApp.LoadPoliciesAuto(ctx, "@internal:integrationTestApp", policy)
-				So(err, ShouldErrLike, "unknown resource type")
+				assert.Loosely(t, err, should.ErrLike("unknown resource type"))
 			})
 		})
 
-		Convey(`GetAccounts`, func() {
+		t.Run(`GetAccounts`, func(t *ftt.Test) {
 			existingAccountID := &quotapb.AccountID{
 				AppId:        "foo",
 				Realm:        "bar",
@@ -162,11 +162,11 @@ func TestFullFlow(t *testing.T) {
 					Options:    uint32(quotapb.Op_IGNORE_POLICY_BOUNDS),
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res, err := quota.GetAccounts(ctx, []*quotapb.AccountID{existingAccountID, nonExistingAccountID})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &quotapb.GetAccountsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&quotapb.GetAccountsResponse{
 				Accounts: []*quotapb.GetAccountsResponse_AccountState{
 					{
 						Id: existingAccountID,
@@ -179,7 +179,7 @@ func TestFullFlow(t *testing.T) {
 						Id: nonExistingAccountID,
 					},
 				},
-			})
+			}))
 		})
 
 	})

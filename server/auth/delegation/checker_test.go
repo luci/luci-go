@@ -29,12 +29,13 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCheckToken(t *testing.T) {
@@ -48,7 +49,7 @@ func TestCheckToken(t *testing.T) {
 		}
 	}()
 
-	Convey("Basic use case", t, func() {
+	ftt.Run("Basic use case", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		ident, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
@@ -57,11 +58,11 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldBeNil)
-		So(ident, ShouldEqual, identity.Identity("user:from@example.com"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ident, should.Equal(identity.Identity("user:from@example.com")))
 	})
 
-	Convey("Basic use case with group check", t, func() {
+	ftt.Run("Basic use case with group check", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "group:token-users"))
 
 		groups := &fakeGroups{
@@ -78,8 +79,8 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        groups,
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldBeNil)
-		So(ident, ShouldEqual, identity.Identity("user:from@example.com"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ident, should.Equal(identity.Identity("user:from@example.com")))
 
 		// Fail.
 		_, err = CheckToken(c, CheckTokenParams{
@@ -89,10 +90,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        groups,
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrForbiddenDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
 	})
 
-	Convey("Not base64", t, func() {
+	ftt.Run("Not base64", t, func(t *ftt.Test) {
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                "(^*#%^&#%",
 			PeerID:               "user:to@example.com",
@@ -100,10 +101,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrMalformedDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrMalformedDelegationToken))
 	})
 
-	Convey("Huge token is skipped", t, func() {
+	ftt.Run("Huge token is skipped", t, func(t *ftt.Test) {
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                strings.Repeat("aaaa", 10000),
 			PeerID:               "user:to@example.com",
@@ -111,10 +112,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrMalformedDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrMalformedDelegationToken))
 	})
 
-	Convey("Untrusted signer", t, func() {
+	ftt.Run("Untrusted signer", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		minter.signerID = "service:nah-i-renamed-myself"
 		_, err := CheckToken(c, CheckTokenParams{
@@ -124,15 +125,15 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrUnsignedDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrUnsignedDelegationToken))
 	})
 
-	Convey("Bad signature", t, func() {
+	ftt.Run("Bad signature", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		// An offset in serialized token that points to Subtoken field. Replace one
 		// byte there to "break" the signature.
 		sigOffset := len(tok) - 10
-		So(tok[sigOffset], ShouldNotEqual, 'A')
+		assert.Loosely(t, tok[sigOffset], should.NotEqual('A'))
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                tok[:sigOffset] + "A" + tok[sigOffset+1:],
 			PeerID:               "user:to@example.com",
@@ -140,10 +141,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrUnsignedDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrUnsignedDelegationToken))
 	})
 
-	Convey("Expired token", t, func() {
+	ftt.Run("Expired token", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 
 		clock.Get(c).(testclock.TestClock).Add(2 * time.Hour)
@@ -155,10 +156,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrForbiddenDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
 	})
 
-	Convey("Wrong target service", t, func() {
+	ftt.Run("Wrong target service", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
@@ -167,10 +168,10 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:NOT-a-service-id",
 		})
-		So(err, ShouldEqual, ErrForbiddenDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
 	})
 
-	Convey("Wrong audience", t, func() {
+	ftt.Run("Wrong audience", t, func(t *ftt.Test) {
 		tok := minter.mintToken(c, subtoken(c, "user:from@example.com", "user:to@example.com"))
 		_, err := CheckToken(c, CheckTokenParams{
 			Token:                tok,
@@ -179,7 +180,7 @@ func TestCheckToken(t *testing.T) {
 			GroupsChecker:        &fakeGroups{},
 			OwnServiceIdentity:   "service:service-id",
 		})
-		So(err, ShouldEqual, ErrForbiddenDelegationToken)
+		assert.Loosely(t, err, should.Equal(ErrForbiddenDelegationToken))
 	})
 
 }

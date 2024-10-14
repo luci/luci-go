@@ -24,19 +24,19 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/openid"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTokenEndpoint(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fake endpoint", t, func() {
+	ftt.Run("With fake endpoint", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
 		ctx = authtest.MockAuthConfig(ctx)
@@ -85,7 +85,7 @@ func TestTokenEndpoint(t *testing.T) {
 			})
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			mockResponse(200, map[string]any{
 				"access_token":  "access_token",
 				"refresh_token": "refresh_token",
@@ -93,29 +93,29 @@ func TestTokenEndpoint(t *testing.T) {
 				"expires_in":    3600,
 			})
 			priv, exp, err := call()
-			So(err, ShouldBeNil)
-			So(priv, ShouldResembleProto, &sessionpb.Private{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, priv, should.Resemble(&sessionpb.Private{
 				AccessToken:  "access_token",
 				RefreshToken: "refresh_token",
 				IdToken:      "id_token",
-			})
-			So(exp.Equal(testclock.TestTimeUTC.Add(time.Hour)), ShouldBeTrue)
+			}))
+			assert.Loosely(t, exp.Equal(testclock.TestTimeUTC.Add(time.Hour)), should.BeTrue)
 		})
 
-		Convey("Fatal err", func() {
+		t.Run("Fatal err", func(t *ftt.Test) {
 			mockResponse(400, "Boom")
 			_, _, err := call()
-			So(err, ShouldErrLike, `got HTTP 400`)
-			So(err, ShouldErrLike, `with body "Boom"`)
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike(`got HTTP 400`))
+			assert.Loosely(t, err, should.ErrLike(`with body "Boom"`))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("Transient err", func() {
+		t.Run("Transient err", func(t *ftt.Test) {
 			mockResponse(500, "Boom")
 			_, _, err := call()
-			So(err, ShouldErrLike, `got HTTP 500`)
-			So(err, ShouldErrLike, `with body "Boom"`)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike(`got HTTP 500`))
+			assert.Loosely(t, err, should.ErrLike(`with body "Boom"`))
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 	})
 }

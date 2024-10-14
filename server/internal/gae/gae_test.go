@@ -24,11 +24,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	gaebasepb "go.chromium.org/luci/server/internal/gae/base"
 	remotepb "go.chromium.org/luci/server/internal/gae/remote_api"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCall(t *testing.T) {
@@ -73,45 +73,45 @@ func TestCall(t *testing.T) {
 	req := &gaebasepb.StringProto{Value: proto.String("req")}
 	res := &gaebasepb.StringProto{}
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		var body []byte
 		var headers http.Header
 
-		So(call(req, res, func(rw http.ResponseWriter, req *http.Request) {
+		assert.Loosely(t, call(req, res, func(rw http.ResponseWriter, req *http.Request) {
 			body, _ = io.ReadAll(req.Body)
 			headers = req.Header.Clone()
 			respond(rw, &remotepb.Response{
 				Response: marshal(&gaebasepb.StringProto{Value: proto.String("res")}),
 			})
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		So(res, ShouldResembleProto, &gaebasepb.StringProto{
+		assert.Loosely(t, res, should.Resemble(&gaebasepb.StringProto{
 			Value: proto.String("res"),
-		})
+		}))
 
-		So(unmarshal(body, &remotepb.Request{}), ShouldResembleProto, &remotepb.Request{
+		assert.Loosely(t, unmarshal(body, &remotepb.Request{}), should.Resemble(&remotepb.Request{
 			ServiceName: proto.String("service"),
 			Method:      proto.String("SomeMethod"),
 			Request:     marshal(req),
 			RequestId:   proto.String("api-ticket"),
-		})
+		}))
 
-		So(headers.Get("X-Google-Rpc-Service-Endpoint"), ShouldEqual, "app-engine-apis")
-		So(headers.Get("X-Google-Rpc-Service-Method"), ShouldEqual, "/VMRemoteAPI.CallRemoteAPI")
-		So(headers.Get("X-Google-Rpc-Service-Deadline"), ShouldNotBeEmpty)
-		So(headers.Get("Content-Type"), ShouldEqual, "application/octet-stream")
-		So(headers.Get("X-Google-Dappertraceinfo"), ShouldEqual, "dapper-ticket")
-		So(headers.Get("X-Cloud-Trace-Context"), ShouldEqual, "cloud-ticket")
+		assert.Loosely(t, headers.Get("X-Google-Rpc-Service-Endpoint"), should.Equal("app-engine-apis"))
+		assert.Loosely(t, headers.Get("X-Google-Rpc-Service-Method"), should.Equal("/VMRemoteAPI.CallRemoteAPI"))
+		assert.Loosely(t, headers.Get("X-Google-Rpc-Service-Deadline"), should.NotBeEmpty)
+		assert.Loosely(t, headers.Get("Content-Type"), should.Equal("application/octet-stream"))
+		assert.Loosely(t, headers.Get("X-Google-Dappertraceinfo"), should.Equal("dapper-ticket"))
+		assert.Loosely(t, headers.Get("X-Cloud-Trace-Context"), should.Equal("cloud-ticket"))
 	})
 
-	Convey("Bad HTTP status code", t, func() {
+	ftt.Run("Bad HTTP status code", t, func(t *ftt.Test) {
 		err := call(req, res, func(rw http.ResponseWriter, req *http.Request) {
 			rw.WriteHeader(404)
 		})
-		So(err, ShouldErrLike, "unexpected HTTP 404")
+		assert.Loosely(t, err, should.ErrLike("unexpected HTTP 404"))
 	})
 
-	Convey("RPC error", t, func() {
+	ftt.Run("RPC error", t, func(t *ftt.Test) {
 		err := call(req, res, func(rw http.ResponseWriter, req *http.Request) {
 			respond(rw, &remotepb.Response{
 				RpcError: &remotepb.RpcError{
@@ -120,10 +120,10 @@ func TestCall(t *testing.T) {
 				},
 			})
 		})
-		So(err, ShouldErrLike, "RPC error CALL_NOT_FOUND calling service.SomeMethod: boo")
+		assert.Loosely(t, err, should.ErrLike("RPC error CALL_NOT_FOUND calling service.SomeMethod: boo"))
 	})
 
-	Convey("Application error", t, func() {
+	ftt.Run("Application error", t, func(t *ftt.Test) {
 		err := call(req, res, func(rw http.ResponseWriter, req *http.Request) {
 			respond(rw, &remotepb.Response{
 				ApplicationError: &remotepb.ApplicationError{
@@ -132,15 +132,15 @@ func TestCall(t *testing.T) {
 				},
 			})
 		})
-		So(err, ShouldErrLike, "API error 123 calling service.SomeMethod: boo")
+		assert.Loosely(t, err, should.ErrLike("API error 123 calling service.SomeMethod: boo"))
 	})
 
-	Convey("Exception error", t, func() {
+	ftt.Run("Exception error", t, func(t *ftt.Test) {
 		err := call(req, res, func(rw http.ResponseWriter, req *http.Request) {
 			respond(rw, &remotepb.Response{
 				Exception: []byte{1},
 			})
 		})
-		So(err, ShouldErrLike, "service bridge returned unexpected exception from service.SomeMethod")
+		assert.Loosely(t, err, should.ErrLike("service bridge returned unexpected exception from service.SomeMethod"))
 	})
 }

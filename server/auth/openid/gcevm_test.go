@@ -21,13 +21,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGoogleComputeAuthMethod(t *testing.T) {
@@ -59,13 +59,13 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 		return u, err
 	}
 
-	Convey("Skipped if no header", t, func() {
+	ftt.Run("Skipped if no header", t, func(t *ftt.Test) {
 		user, err := call("")
-		So(err, ShouldBeNil)
-		So(user, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, user, should.BeNil)
 	})
 
-	Convey("Valid token", t, func() {
+	ftt.Run("Valid token", t, func(t *ftt.Test) {
 		tok := IDToken{
 			Iss:           "https://accounts.google.com",
 			Sub:           "example@example.gserviceaccount.com",
@@ -80,8 +80,8 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 		tok.Google.ComputeEngine.InstanceName = "instance-id"
 
 		user, err := call(mintVMToken(tok))
-		So(err, ShouldBeNil)
-		So(user, ShouldResemble, &auth.User{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, user, should.Resemble(&auth.User{
 			Identity: "bot:instance-id@gce.project-id.example.com",
 			Extra: &GoogleComputeTokenInfo{
 				Audience:       "https://" + fakeHost,
@@ -90,10 +90,10 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 				Zone:           "zone-id",
 				Project:        "example.com:project-id",
 			},
-		})
+		}))
 	})
 
-	Convey("No GCE info", t, func() {
+	ftt.Run("No GCE info", t, func(t *ftt.Test) {
 		tok := IDToken{
 			Iss:           "https://accounts.google.com",
 			Sub:           "example@example.gserviceaccount.com",
@@ -105,10 +105,10 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 		}
 
 		_, err := call(mintVMToken(tok))
-		So(err, ShouldErrLike, "no google.compute_engine in the GCE VM token")
+		assert.Loosely(t, err, should.ErrLike("no google.compute_engine in the GCE VM token"))
 	})
 
-	Convey("Bad audience info", t, func() {
+	ftt.Run("Bad audience info", t, func(t *ftt.Test) {
 		tok := IDToken{
 			Iss:           "https://accounts.google.com",
 			Sub:           "example@example.gserviceaccount.com",
@@ -123,6 +123,6 @@ func TestGoogleComputeAuthMethod(t *testing.T) {
 		tok.Google.ComputeEngine.InstanceName = "instance-id"
 
 		_, err := call(mintVMToken(tok))
-		So(err, ShouldEqual, auth.ErrBadAudience)
+		assert.Loosely(t, err, should.Equal(auth.ErrBadAudience))
 	})
 }

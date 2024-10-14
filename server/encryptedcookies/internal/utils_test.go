@@ -17,13 +17,15 @@ package internal
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNormalizeURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("Normalizes good URLs", t, func(ctx C) {
+	ftt.Run("Normalizes good URLs", t, func(ctx *ftt.Test) {
 		cases := []struct {
 			in  string
 			out string
@@ -39,14 +41,14 @@ func TestNormalizeURL(t *testing.T) {
 		for _, c := range cases {
 			out, err := NormalizeURL(c.in)
 			if err != nil {
-				ctx.Printf("Failed while checking %q\n", c.in)
-				So(err, ShouldBeNil)
+				ctx.Logf("Failed while checking %q\n", c.in)
+				assert.Loosely(ctx, err, should.BeNil)
 			}
-			So(out, ShouldEqual, c.out)
+			assert.Loosely(ctx, out, should.Equal(c.out))
 		}
 	})
 
-	Convey("Rejects bad URLs", t, func(ctx C) {
+	ftt.Run("Rejects bad URLs", t, func(ctx *ftt.Test) {
 		cases := []string{
 			"//",
 			"///",
@@ -59,9 +61,9 @@ func TestNormalizeURL(t *testing.T) {
 		for _, c := range cases {
 			_, err := NormalizeURL(c)
 			if err == nil {
-				ctx.Printf("Didn't fail while testing %q\n", c)
+				ctx.Logf("Didn't fail while testing %q\n", c)
 			}
-			So(err, ShouldNotBeNil)
+			assert.Loosely(ctx, err, should.NotBeNil)
 		}
 	})
 }

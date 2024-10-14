@@ -19,30 +19,31 @@ import (
 	"errors"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestWorks(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := context.Background()
 		b := NewBlobCache()
 
 		res, err := b.Get(c, "key")
-		So(res, ShouldBeNil)
-		So(err, ShouldEqual, caching.ErrCacheMiss)
+		assert.Loosely(t, res, should.BeNil)
+		assert.Loosely(t, err, should.Equal(caching.ErrCacheMiss))
 
-		So(b.Set(c, "key", []byte("blah"), 0), ShouldBeNil)
+		assert.Loosely(t, b.Set(c, "key", []byte("blah"), 0), should.BeNil)
 
 		res, err = b.Get(c, "key")
-		So(res, ShouldResemble, []byte("blah"))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, res, should.Resemble([]byte("blah")))
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Errors", t, func() {
+	ftt.Run("Errors", t, func(t *ftt.Test) {
 		fail := errors.New("fail")
 
 		c := context.Background()
@@ -50,8 +51,8 @@ func TestWorks(t *testing.T) {
 		b.Err = fail
 
 		_, err := b.Get(c, "key")
-		So(err, ShouldEqual, fail)
+		assert.Loosely(t, err, should.Equal(fail))
 
-		So(b.Set(c, "key", nil, 0), ShouldEqual, fail)
+		assert.Loosely(t, b.Set(c, "key", nil, 0), should.Equal(fail))
 	})
 }

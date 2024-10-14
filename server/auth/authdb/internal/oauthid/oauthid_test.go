@@ -17,11 +17,13 @@ package oauthid
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAllowlist(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		l := NewAllowlist("primary-client-id", []string{
 			"", // ignored
 			"additional-client-id-1",
@@ -29,10 +31,10 @@ func TestAllowlist(t *testing.T) {
 		})
 		call := l.IsAllowedOAuthClientID
 
-		So(call("dude@example.com", ""), ShouldBeFalse)
-		So(call("dude@example.com", GoogleAPIExplorerClientID), ShouldBeTrue)
-		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)
-		So(call("dude@example.com", "additional-client-id-2"), ShouldBeTrue)
-		So(call("dude@example.com", "unknown-client-id"), ShouldBeFalse)
+		assert.Loosely(t, call("dude@example.com", ""), should.BeFalse)
+		assert.Loosely(t, call("dude@example.com", GoogleAPIExplorerClientID), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "primary-client-id"), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "additional-client-id-2"), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "unknown-client-id"), should.BeFalse)
 	})
 }

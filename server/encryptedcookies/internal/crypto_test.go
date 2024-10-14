@@ -21,62 +21,62 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/keyset"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/encryptedcookies/internal/encryptedcookiespb"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGenerateNonce(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		nonce1 := GenerateNonce()
 		nonce2 := GenerateNonce()
-		So(nonce1, ShouldHaveLength, 16)
-		So(bytes.Equal(nonce1, nonce2), ShouldBeFalse)
+		assert.Loosely(t, nonce1, should.HaveLength(16))
+		assert.Loosely(t, bytes.Equal(nonce1, nonce2), should.BeFalse)
 	})
 }
 
 func TestCrypto(t *testing.T) {
 	t.Parallel()
 
-	Convey("With keyset", t, func() {
+	ftt.Run("With keyset", t, func(t *ftt.Test) {
 		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ae, err := aead.New(kh)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("State enc/dec", func() {
+		t.Run("State enc/dec", func(t *ftt.Test) {
 			state := &encryptedcookiespb.OpenIDState{DestHost: "blah"}
 
 			enc, err := EncryptStateB64(ae, state)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			dec, err := DecryptStateB64(ae, enc)
-			So(err, ShouldBeNil)
-			So(dec, ShouldResembleProto, state)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dec, should.Resemble(state))
 
 			_, err = DecryptStateB64(ae, "aaaaaaaa"+enc[8:])
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Private enc/dec", func() {
+		t.Run("Private enc/dec", func(t *ftt.Test) {
 			priv := &sessionpb.Private{AccessToken: "blah"}
 
 			enc, err := EncryptPrivate(ae, priv)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			dec, err := DecryptPrivate(ae, enc)
-			So(err, ShouldBeNil)
-			So(dec, ShouldResembleProto, priv)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, dec, should.Resemble(priv))
 
 			for i := 0; i < 8; i++ {
 				enc[i] = 0
 			}
 			_, err = DecryptPrivate(ae, enc)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }

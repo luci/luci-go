@@ -24,14 +24,16 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExternalStorage(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())
 		log := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -39,50 +41,50 @@ func TestExternalStorage(t *testing.T) {
 
 		// Initially empty.
 		b, _, err := s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(b.Values, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.Values, should.BeNil)
 
 		// Added some.
-		So(s.Load(ctx, strings.NewReader(`{"k1":"a", "k2": "b", "k3": "c"}`)), ShouldBeNil)
-		So(lastLogJSON(log), assertions.ShouldEqualJSON, `{
+		assert.Loosely(t, s.Load(ctx, strings.NewReader(`{"k1":"a", "k2": "b", "k3": "c"}`)), should.BeNil)
+		assert.Loosely(t, lastLogJSON(log), convey.Adapt(assertions.ShouldEqualJSON)(`{
 			"added": {"k1":"a", "k2": "b", "k3": "c"},
 			"changed": {},
 			"removed": {}
-		}`)
+		}`))
 		log.Reset()
 
 		b, _, err = s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(b.Values, ShouldResemble, map[string]*json.RawMessage{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
 			"k1": {34, 97, 34}, // "a"
 			"k2": {34, 98, 34}, // "b"
 			"k3": {34, 99, 34}, // "c"
-		})
+		}))
 
 		// Removed some and mutated some.
-		So(s.Load(ctx, strings.NewReader(`{"k1":"d", "k3": "c"}`)), ShouldBeNil)
-		So(lastLogJSON(log), assertions.ShouldEqualJSON, `{
+		assert.Loosely(t, s.Load(ctx, strings.NewReader(`{"k1":"d", "k3": "c"}`)), should.BeNil)
+		assert.Loosely(t, lastLogJSON(log), convey.Adapt(assertions.ShouldEqualJSON)(`{
 			"added": {},
 			"changed": {"k1": {"old": "a", "new": "d"}},
 			"removed": {"k2": "b"}
-		}`)
+		}`))
 		log.Reset()
 
 		b, _, err = s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(b.Values, ShouldResemble, map[string]*json.RawMessage{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
 			"k1": {34, 100, 34}, // "d"
 			"k3": {34, 99, 34},  // "c"
-		})
+		}))
 
 		// Errors do not change settings.
-		So(s.Load(ctx, strings.NewReader("???")), ShouldNotBeNil)
+		assert.Loosely(t, s.Load(ctx, strings.NewReader("???")), should.NotBeNil)
 		b, _, err = s.FetchAllSettings(ctx)
-		So(err, ShouldBeNil)
-		So(b.Values, ShouldResemble, map[string]*json.RawMessage{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b.Values, should.Resemble(map[string]*json.RawMessage{
 			"k1": {34, 100, 34}, // "d"
 			"k3": {34, 99, 34},  // "c"
-		})
+		}))
 	})
 }
 

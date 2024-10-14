@@ -17,16 +17,16 @@ package quotakeys
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/quota/quotapb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAccountKey(t *testing.T) {
 	t.Parallel()
 
-	Convey(`AccountKey`, t, func() {
+	ftt.Run(`AccountKey`, t, func(t *ftt.Test) {
 		id := &quotapb.AccountID{
 			AppId:        "app",
 			Realm:        "proj:@project",
@@ -36,10 +36,10 @@ func TestAccountKey(t *testing.T) {
 			ResourceType: "things",
 		}
 		key := AccountKey(id)
-		So(key, ShouldResemble, `"a~a~app~proj:@project~user:joe@example.com~namespace~name~things`)
+		assert.Loosely(t, key, should.Match(`"a~a~app~proj:@project~user:joe@example.com~namespace~name~things`))
 
 		newID, err := ParseAccountKey(key)
-		So(err, ShouldBeNil)
-		So(newID, ShouldResembleProto, id)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, newID, should.Resemble(id))
 	})
 }

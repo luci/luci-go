@@ -21,11 +21,11 @@ import (
 	"net/http"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var certBlob = `-----BEGIN CERTIFICATE-----
@@ -43,12 +43,12 @@ func TestFetchCertificates(t *testing.T) {
 
 	const testURL = "https://test.example.com"
 
-	Convey("With empty cache", t, func() {
+	ftt.Run("With empty cache", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
-				So(r.URL.String(), ShouldEqual, testURL)
+				assert.Loosely(t, r.URL.String(), should.Equal(testURL))
 				return 200, fmt.Sprintf(`{
 				"service_account_name": "blah@blah.com",
 				"certificates": [{
@@ -60,21 +60,21 @@ func TestFetchCertificates(t *testing.T) {
 			})
 
 			certs, err := FetchCertificates(ctx, testURL)
-			So(err, ShouldBeNil)
-			So(certs.ServiceAccountName, ShouldEqual, "blah@blah.com")
-			So(len(certs.Certificates), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, certs.ServiceAccountName, should.Equal("blah@blah.com"))
+			assert.Loosely(t, len(certs.Certificates), should.Equal(1))
 		})
 
-		Convey("Errors", func() {
+		t.Run("Errors", func(t *ftt.Test) {
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 				return 401, "fail"
 			})
 
 			_, err := FetchCertificates(ctx, testURL)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Bad JSON", func() {
+		t.Run("Bad JSON", func(t *ftt.Test) {
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 				return 200, fmt.Sprintf(`{
 				"certificates": [{
@@ -86,7 +86,7 @@ func TestFetchCertificates(t *testing.T) {
 			})
 
 			_, err := FetchCertificates(ctx, testURL)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
@@ -94,10 +94,10 @@ func TestFetchCertificates(t *testing.T) {
 func TestFetchCertificatesForServiceAccount(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
-			So(r.URL.String(), ShouldEqual, "https://www.googleapis.com/robot/v1/metadata/x509/robot%40robots.gserviceaccount.com")
+			assert.Loosely(t, r.URL.String(), should.Equal("https://www.googleapis.com/robot/v1/metadata/x509/robot%40robots.gserviceaccount.com"))
 			return 200, `{
 				"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
 				"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
@@ -105,9 +105,9 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 		})
 
 		certs, err := FetchCertificatesForServiceAccount(ctx, "robot@robots.gserviceaccount.com")
-		So(err, ShouldBeNil)
-		So(certs.ServiceAccountName, ShouldEqual, "robot@robots.gserviceaccount.com")
-		So(certs.Certificates, ShouldResemble, []Certificate{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, certs.ServiceAccountName, should.Equal("robot@robots.gserviceaccount.com"))
+		assert.Loosely(t, certs.Certificates, should.Resemble([]Certificate{
 			{
 				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
@@ -116,17 +116,17 @@ func TestFetchCertificatesForServiceAccount(t *testing.T) {
 				KeyName:            "f5db308971078d1496c262cc06b6e7f87652af55",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n",
 			},
-		})
+		}))
 	})
 }
 
 func TestFetchGoogleOAuth2Certificates(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
-			So(r.URL.String(), ShouldEqual, "https://www.googleapis.com/oauth2/v1/certs")
+			assert.Loosely(t, r.URL.String(), should.Equal("https://www.googleapis.com/oauth2/v1/certs"))
 			return 200, `{
 				"0392f9886770640357cbb29e57d3698291b1e805": "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
 				"f5db308971078d1496c262cc06b6e7f87652af55": "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n"
@@ -134,8 +134,8 @@ func TestFetchGoogleOAuth2Certificates(t *testing.T) {
 		})
 
 		certs, err := FetchGoogleOAuth2Certificates(ctx)
-		So(err, ShouldBeNil)
-		So(certs.Certificates, ShouldResemble, []Certificate{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, certs.Certificates, should.Resemble([]Certificate{
 			{
 				KeyName:            "0392f9886770640357cbb29e57d3698291b1e805",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 1\n-----END CERTIFICATE-----\n",
@@ -144,14 +144,14 @@ func TestFetchGoogleOAuth2Certificates(t *testing.T) {
 				KeyName:            "f5db308971078d1496c262cc06b6e7f87652af55",
 				X509CertificatePEM: "-----BEGIN CERTIFICATE-----\nblah 2\n-----END CERTIFICATE-----\n",
 			},
-		})
+		}))
 	})
 }
 
 func TestCertificateForKey(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		certs := PublicCertificates{
 			Certificates: []Certificate{
 				{
@@ -161,16 +161,16 @@ func TestCertificateForKey(t *testing.T) {
 			},
 		}
 		cert, err := certs.CertificateForKey("abc")
-		So(err, ShouldBeNil)
-		So(cert, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cert, should.NotBeNil)
 
 		// Code coverage for cache hit.
 		cert, err = certs.CertificateForKey("abc")
-		So(err, ShouldBeNil)
-		So(cert, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cert, should.NotBeNil)
 	})
 
-	Convey("Bad PEM", t, func() {
+	ftt.Run("Bad PEM", t, func(t *ftt.Test) {
 		certs := PublicCertificates{
 			Certificates: []Certificate{
 				{
@@ -180,11 +180,11 @@ func TestCertificateForKey(t *testing.T) {
 			},
 		}
 		cert, err := certs.CertificateForKey("abc")
-		So(err, ShouldErrLike, "not PEM")
-		So(cert, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("not PEM"))
+		assert.Loosely(t, cert, should.BeNil)
 	})
 
-	Convey("Bad cert", t, func() {
+	ftt.Run("Bad cert", t, func(t *ftt.Test) {
 		certs := PublicCertificates{
 			Certificates: []Certificate{
 				{
@@ -197,15 +197,15 @@ func TestCertificateForKey(t *testing.T) {
 			},
 		}
 		cert, err := certs.CertificateForKey("abc")
-		So(err, ShouldNotBeNil)
-		So(cert, ShouldBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, cert, should.BeNil)
 	})
 
-	Convey("Missing key", t, func() {
+	ftt.Run("Missing key", t, func(t *ftt.Test) {
 		certs := PublicCertificates{}
 		cert, err := certs.CertificateForKey("abc")
-		So(err, ShouldErrLike, "no such certificate")
-		So(cert, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("no such certificate"))
+		assert.Loosely(t, cert, should.BeNil)
 	})
 }
 
@@ -216,7 +216,7 @@ func TestCheckSignature(t *testing.T) {
 
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		certs := PublicCertificates{
 			Certificates: []Certificate{
 				{
@@ -238,12 +238,12 @@ func TestCheckSignature(t *testing.T) {
 		}
 
 		err := certs.CheckSignature("abc", blob, signature)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = certs.CheckSignature("abc", blob, []byte{1, 2, 3})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		err = certs.CheckSignature("no key", blob, signature)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

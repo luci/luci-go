@@ -22,64 +22,65 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestWorks(t *testing.T) {
 	t.Parallel()
 
-	Convey("With DS", t, func() {
+	ftt.Run("With DS", t, func(t *ftt.Test) {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, _ := testclock.UseTime(context.Background(), testTime)
 		ctx = memory.Use(ctx)
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			store := Store{}
 			id := session.GenerateID()
 
 			s, err := store.FetchSession(ctx, id)
-			So(err, ShouldBeNil)
-			So(s, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.BeNil)
 
 			err = store.UpdateSession(ctx, id, func(s *sessionpb.Session) error {
-				So(s.State, ShouldEqual, sessionpb.State_STATE_UNDEFINED)
+				assert.Loosely(t, s.State, should.Equal(sessionpb.State_STATE_UNDEFINED))
 				s.State = sessionpb.State_STATE_OPEN
 				s.Email = "abc@example.com"
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			s, err = store.FetchSession(ctx, id)
-			So(err, ShouldBeNil)
-			So(s.State, ShouldEqual, sessionpb.State_STATE_OPEN)
-			So(s.Email, ShouldEqual, "abc@example.com")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.State, should.Equal(sessionpb.State_STATE_OPEN))
+			assert.Loosely(t, s.Email, should.Equal("abc@example.com"))
 
 			ent, err := fetchRawEntity(ctx, id)
-			So(err, ShouldBeNil)
-			So(ent.ExpireAt.Equal(testTime.Add(InactiveSessionExpiration)), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ent.ExpireAt.Equal(testTime.Add(InactiveSessionExpiration)), should.BeTrue)
 
 			err = store.UpdateSession(ctx, id, func(s *sessionpb.Session) error {
-				So(s.State, ShouldEqual, sessionpb.State_STATE_OPEN)
-				So(s.Email, ShouldEqual, "abc@example.com")
+				assert.Loosely(t, s.State, should.Equal(sessionpb.State_STATE_OPEN))
+				assert.Loosely(t, s.Email, should.Equal("abc@example.com"))
 				s.State = sessionpb.State_STATE_CLOSED
 				s.LastRefresh = timestamppb.New(testTime.Add(5 * time.Hour))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			s, err = store.FetchSession(ctx, id)
-			So(err, ShouldBeNil)
-			So(s.State, ShouldEqual, sessionpb.State_STATE_CLOSED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.State, should.Equal(sessionpb.State_STATE_CLOSED))
 
 			ent, err = fetchRawEntity(ctx, id)
-			So(err, ShouldBeNil)
-			So(ent.ExpireAt.Equal(testTime.Add(5*time.Hour+InactiveSessionExpiration)), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ent.ExpireAt.Equal(testTime.Add(5*time.Hour+InactiveSessionExpiration)), should.BeTrue)
 		})
 	})
 }

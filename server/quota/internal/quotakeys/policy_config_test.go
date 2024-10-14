@@ -17,17 +17,17 @@ package quotakeys
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/quota/quotapb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPolicyConfigID(t *testing.T) {
 	t.Parallel()
 
-	Convey(`PolicyConfigID`, t, func() {
-		Convey(`content addressed`, func() {
+	ftt.Run(`PolicyConfigID`, t, func(t *ftt.Test) {
+		t.Run(`content addressed`, func(t *ftt.Test) {
 			id := &quotapb.PolicyConfigID{
 				AppId:         "app",
 				Realm:         "proj:@project",
@@ -35,25 +35,25 @@ func TestPolicyConfigID(t *testing.T) {
 				Version:       "deadbeef",
 			}
 			key := PolicyConfigID(id)
-			So(key, ShouldResemble, `"a~p~app~proj:@project~1~deadbeef`)
+			assert.Loosely(t, key, should.Match(`"a~p~app~proj:@project~1~deadbeef`))
 
 			newID, err := ParsePolicyConfigID(key)
-			So(err, ShouldBeNil)
-			So(newID, ShouldResembleProto, id)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID, should.Resemble(id))
 		})
 
-		Convey(`manually versioned`, func() {
+		t.Run(`manually versioned`, func(t *ftt.Test) {
 			id := &quotapb.PolicyConfigID{
 				AppId:   "app",
 				Realm:   "proj:@project",
 				Version: "deadbeef",
 			}
 			key := PolicyConfigID(id)
-			So(key, ShouldResemble, `"a~p~app~proj:@project~0~deadbeef`)
+			assert.Loosely(t, key, should.Match(`"a~p~app~proj:@project~0~deadbeef`))
 
 			newID, err := ParsePolicyConfigID(key)
-			So(err, ShouldBeNil)
-			So(newID, ShouldResembleProto, id)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID, should.Resemble(id))
 		})
 	})
 }
@@ -61,25 +61,25 @@ func TestPolicyConfigID(t *testing.T) {
 func TestPolicyKey(t *testing.T) {
 	t.Parallel()
 
-	Convey(`PolicyKey`, t, func() {
+	ftt.Run(`PolicyKey`, t, func(t *ftt.Test) {
 		key := &quotapb.PolicyKey{
 			Namespace:    "ns",
 			Name:         "name",
 			ResourceType: "resource",
 		}
 		keyStr := PolicyKey(key)
-		So(keyStr, ShouldResemble, `ns~name~resource`)
+		assert.Loosely(t, keyStr, should.Match(`ns~name~resource`))
 
 		newKey, err := ParsePolicyKey(keyStr)
-		So(err, ShouldBeNil)
-		So(newKey, ShouldResembleProto, key)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, newKey, should.Resemble(key))
 	})
 }
 
 func TestPolicyID(t *testing.T) {
 	t.Parallel()
 
-	Convey(`PolicyID`, t, func() {
+	ftt.Run(`PolicyID`, t, func(t *ftt.Test) {
 		id := &quotapb.PolicyID{
 			Config: &quotapb.PolicyConfigID{
 				AppId:         "app",
@@ -94,13 +94,13 @@ func TestPolicyID(t *testing.T) {
 			},
 		}
 		ref := PolicyRef(id)
-		So(ref, ShouldResembleProto, &quotapb.PolicyRef{
+		assert.Loosely(t, ref, should.Resemble(&quotapb.PolicyRef{
 			Config: `"a~p~app~proj:@project~1~deadbeef`,
 			Key:    `ns~name~resource`,
-		})
+		}))
 
 		newID, err := ParsePolicyRef(ref)
-		So(err, ShouldBeNil)
-		So(newID, ShouldResembleProto, id)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, newID, should.Resemble(id))
 	})
 }

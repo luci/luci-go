@@ -20,6 +20,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -28,116 +31,113 @@ import (
 	"go.chromium.org/luci/server/caching/cachingtest"
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigService(t *testing.T) {
 	t.Parallel()
 
-	Convey("ConfigService", t, func() {
+	ftt.Run("ConfigService", t, func(t *ftt.Test) {
 		ctx := cachingtest.WithGlobalCache(context.Background(), map[string]caching.BlobCache{
 			"quota.configservice": cachingtest.NewBlobCache(),
 		})
 
-		Convey("New", func() {
-			Convey("no cache", func() {
+		t.Run("New", func(t *ftt.Test) {
+			t.Run("no cache", func(t *ftt.Test) {
 				shouldPanic := func() {
 					New(context.Background(), "services/test", "policies.cfg")
 				}
-				So(shouldPanic, ShouldPanicLike, "no global cache available")
+				assert.Loosely(t, shouldPanic, should.PanicLike("no global cache available"))
 			})
 
-			Convey("ok", func() {
-				So(New(ctx, "services/test", "policies.cfg"), ShouldNotBeNil)
+			t.Run("ok", func(t *ftt.Test) {
+				assert.Loosely(t, New(ctx, "services/test", "policies.cfg"), should.NotBeNil)
 			})
 		})
 
-		Convey("Get", func() {
+		t.Run("Get", func(t *ftt.Test) {
 			c := &configService{
 				cache:  caching.GlobalCache(ctx, "quota.configservice"),
 				cfgSet: "services/test",
 				path:   "policies.cfg",
 			}
-			So(c.cache, ShouldNotBeNil)
+			assert.Loosely(t, c.cache, should.NotBeNil)
 			bytes, err := proto.Marshal(&pb.Policy{
 				Name:          "name",
 				Resources:     1,
 				Replenishment: 1,
 			})
-			So(err, ShouldBeNil)
-			So(c.cache.Set(ctx, "name", bytes, 0), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c.cache.Set(ctx, "name", bytes, 0), should.BeNil)
 
-			Convey("policy not found", func() {
+			t.Run("policy not found", func(t *ftt.Test) {
 				p, err := c.Get(ctx, "missing")
-				So(err, ShouldEqual, quotaconfig.ErrNotFound)
-				So(p, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal(quotaconfig.ErrNotFound))
+				assert.Loosely(t, p, should.BeNil)
 			})
 
-			Convey("found", func() {
+			t.Run("found", func(t *ftt.Test) {
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
-				})
+				}))
 			})
 
-			Convey("immutable", func() {
+			t.Run("immutable", func(t *ftt.Test) {
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
-				})
+				}))
 
 				p.Resources++
 
 				p, err = c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
-				})
+				}))
 			})
 		})
 
-		Convey("Refresh", func() {
+		t.Run("Refresh", func(t *ftt.Test) {
 			c := &configService{
 				cache:  caching.GlobalCache(ctx, "quota.configservice"),
 				cfgSet: "services/test",
 				path:   "policies.cfg",
 			}
-			So(c.cache, ShouldNotBeNil)
+			assert.Loosely(t, c.cache, should.NotBeNil)
 
-			Convey("not found", func() {
+			t.Run("not found", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{}))
-				So(c.Refresh(ctx), ShouldErrLike, "no such config")
+				assert.Loosely(t, c.Refresh(ctx), should.ErrLike("no such config"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
 						"policies.cfg": "",
 					},
 				}))
-				So(c.Refresh(ctx), ShouldBeNil)
+				assert.Loosely(t, c.Refresh(ctx), should.BeNil)
 			})
 
-			Convey("invalid config", func() {
+			t.Run("invalid config", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
 						"policies.cfg": "invalid",
 					},
 				}))
-				So(c.Refresh(ctx), ShouldErrLike, "unknown field name")
+				assert.Loosely(t, c.Refresh(ctx), should.ErrLike("unknown field name"))
 			})
 
-			Convey("invalid policy", func() {
+			t.Run("invalid policy", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
 						"policies.cfg": `
@@ -148,14 +148,14 @@ func TestConfigService(t *testing.T) {
 						`,
 					},
 				}))
-				So(c.Refresh(ctx), ShouldErrLike, "did not pass validation")
+				assert.Loosely(t, c.Refresh(ctx), should.ErrLike("did not pass validation"))
 
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldEqual, quotaconfig.ErrNotFound)
-				So(p, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal(quotaconfig.ErrNotFound))
+				assert.Loosely(t, p, should.BeNil)
 			})
 
-			Convey("one", func() {
+			t.Run("one", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
 						"policies.cfg": `
@@ -167,18 +167,18 @@ func TestConfigService(t *testing.T) {
 						`,
 					},
 				}))
-				So(c.Refresh(ctx), ShouldBeNil)
+				assert.Loosely(t, c.Refresh(ctx), should.BeNil)
 
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 1,
-				})
+				}))
 			})
 
-			Convey("many", func() {
+			t.Run("many", func(t *ftt.Test) {
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
 						"policies.cfg": `
@@ -196,45 +196,45 @@ func TestConfigService(t *testing.T) {
 						`,
 					},
 				}))
-				So(c.Refresh(ctx), ShouldBeNil)
+				assert.Loosely(t, c.Refresh(ctx), should.BeNil)
 
 				p, err := c.Get(ctx, "policy1")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:      "policy1",
 					Resources: 1,
-				})
+				}))
 
 				p, err = c.Get(ctx, "policy2")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name: "policy2",
-				})
+				}))
 
 				p, err = c.Get(ctx, "policy3")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "policy3",
 					Replenishment: 1,
-				})
+				}))
 			})
 
-			Convey("update", func() {
+			t.Run("update", func(t *ftt.Test) {
 				bytes, err := proto.Marshal(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
 				})
-				So(err, ShouldBeNil)
-				So(c.cache.Set(ctx, "name", bytes, 0), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, c.cache.Set(ctx, "name", bytes, 0), should.BeNil)
 
 				p, err := c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     1,
 					Replenishment: 1,
-				})
+				}))
 
 				ctx := cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
@@ -247,15 +247,15 @@ func TestConfigService(t *testing.T) {
 						`,
 					},
 				}))
-				So(c.Refresh(ctx), ShouldBeNil)
+				assert.Loosely(t, c.Refresh(ctx), should.BeNil)
 
 				p, err = c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 1,
-				})
+				}))
 
 				ctx = cfgclient.Use(ctx, memory.New(map[config.Set]memory.Files{
 					"services/test": map[string]string{
@@ -268,15 +268,15 @@ func TestConfigService(t *testing.T) {
 						`,
 					},
 				}))
-				So(c.Refresh(ctx), ShouldBeNil)
+				assert.Loosely(t, c.Refresh(ctx), should.BeNil)
 
 				p, err = c.Get(ctx, "name")
-				So(err, ShouldBeNil)
-				So(p, ShouldResembleProto, &pb.Policy{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, p, should.Resemble(&pb.Policy{
 					Name:          "name",
 					Resources:     2,
 					Replenishment: 2,
-				})
+				}))
 			})
 		})
 	})

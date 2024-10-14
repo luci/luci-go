@@ -26,6 +26,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
@@ -33,8 +36,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -45,7 +46,7 @@ const (
 func TestInterceptor(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := makeContext()
 		ctx = authtest.MockAuthConfig(ctx)
 
@@ -90,25 +91,25 @@ func TestInterceptor(t *testing.T) {
 		goodToken, err := Token(auth.WithState(ctx, &authtest.FakeState{
 			Identity: fakeIdentity,
 		}))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		badToken, err := Token(auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:someone-else@example.com",
 		}))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// A token is checked, and only when using method "1".
-		So(call(authKey, "1", XSRFTokenMetadataKey, goodToken), ShouldEqual, codes.OK)
-		So(call(authKey, "1", XSRFTokenMetadataKey, "", XSRFTokenMetadataKey, goodToken), ShouldEqual, codes.OK)
-		So(call(authKey, "1", XSRFTokenMetadataKey, badToken), ShouldEqual, codes.Unauthenticated)
-		So(call(authKey, "1", XSRFTokenMetadataKey, ""), ShouldEqual, codes.Unauthenticated)
-		So(call(authKey, "1"), ShouldEqual, codes.Unauthenticated)
+		assert.Loosely(t, call(authKey, "1", XSRFTokenMetadataKey, goodToken), should.Equal(codes.OK))
+		assert.Loosely(t, call(authKey, "1", XSRFTokenMetadataKey, "", XSRFTokenMetadataKey, goodToken), should.Equal(codes.OK))
+		assert.Loosely(t, call(authKey, "1", XSRFTokenMetadataKey, badToken), should.Equal(codes.Unauthenticated))
+		assert.Loosely(t, call(authKey, "1", XSRFTokenMetadataKey, ""), should.Equal(codes.Unauthenticated))
+		assert.Loosely(t, call(authKey, "1"), should.Equal(codes.Unauthenticated))
 
 		// When using method "2" the token is ignored.
-		So(call(authKey, "2", XSRFTokenMetadataKey, goodToken), ShouldEqual, codes.OK)
-		So(call(authKey, "2", XSRFTokenMetadataKey, badToken), ShouldEqual, codes.OK)
-		So(call(authKey, "2", XSRFTokenMetadataKey, ""), ShouldEqual, codes.OK)
-		So(call(authKey, "2"), ShouldEqual, codes.OK)
+		assert.Loosely(t, call(authKey, "2", XSRFTokenMetadataKey, goodToken), should.Equal(codes.OK))
+		assert.Loosely(t, call(authKey, "2", XSRFTokenMetadataKey, badToken), should.Equal(codes.OK))
+		assert.Loosely(t, call(authKey, "2", XSRFTokenMetadataKey, ""), should.Equal(codes.OK))
+		assert.Loosely(t, call(authKey, "2"), should.Equal(codes.OK))
 	})
 }
 

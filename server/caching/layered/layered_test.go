@@ -25,12 +25,12 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var testingCache = RegisterCache(Parameters[[]byte]{
@@ -57,24 +57,24 @@ var testingCacheWithFallback = RegisterCache(Parameters[[]byte]{
 func TestCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("Without process cache", t, func() {
+	ftt.Run("Without process cache", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		_, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 			panic("should not be called")
 		})
-		So(err, ShouldEqual, caching.ErrNoProcessCache)
+		assert.Loosely(t, err, should.Equal(caching.ErrNoProcessCache))
 
 		calls := 0
 		_, err = testingCacheWithFallback.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 			calls += 1
 			return nil, 0, nil
 		})
-		So(err, ShouldBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, calls, should.Equal(1))
 	})
 
-	Convey("With fake time", t, func() {
+	ftt.Run("With fake time", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(12345)))
 		ctx, tc := testclock.UseTime(ctx, time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC))
@@ -89,64 +89,64 @@ func TestCache(t *testing.T) {
 			return value, time.Hour, nil
 		}
 
-		Convey("Without global cache", func() {
+		t.Run("Without global cache", func(t *ftt.Test) {
 			item, err := testingCache.GetOrCreate(ctx, "item", getter)
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
-			So(calls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, calls, should.Equal(1))
 
 			tc.Add(59 * time.Minute)
 
 			item, err = testingCache.GetOrCreate(ctx, "item", getter)
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
-			So(calls, ShouldEqual, 1) // no new calls
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, calls, should.Equal(1)) // no new calls
 
 			tc.Add(2 * time.Minute) // cached item expires
 
 			item, err = testingCache.GetOrCreate(ctx, "item", getter)
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
-			So(calls, ShouldEqual, 2) // new call!
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
+			assert.Loosely(t, calls, should.Equal(2)) // new call!
 		})
 
-		Convey("With global cache", func() {
+		t.Run("With global cache", func(t *ftt.Test) {
 			global := cachingtest.NewBlobCache()
 			ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 				"namespace": global,
 			})
 
-			Convey("Getting from the global cache", func() {
+			t.Run("Getting from the global cache", func(t *ftt.Test) {
 				// The global cache is empty.
-				So(global.LRU.Len(), ShouldEqual, 0)
+				assert.Loosely(t, global.LRU.Len(), should.BeZero)
 
 				// Create an item.
 				item, err := testingCache.GetOrCreate(ctx, "item", getter)
-				So(err, ShouldBeNil)
-				So(item, ShouldResemble, value)
-				So(calls, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, calls, should.Equal(1))
 
 				// It is in the global cache now.
-				So(global.LRU.Len(), ShouldEqual, 1)
+				assert.Loosely(t, global.LRU.Len(), should.Equal(1))
 
 				// Clear the local cache.
 				ctx = caching.WithEmptyProcessCache(ctx)
 
 				// Grab the item again. Will be fetched from the global cache.
 				item, err = testingCache.GetOrCreate(ctx, "item", getter)
-				So(err, ShouldBeNil)
-				So(item, ShouldResemble, value)
-				So(calls, ShouldEqual, 1) // no new calls
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, calls, should.Equal(1)) // no new calls
 			})
 
-			Convey("Broken global cache is ignored", func() {
+			t.Run("Broken global cache is ignored", func(t *ftt.Test) {
 				global.Err = errors.New("broken")
 
 				// Create an item.
 				item, err := testingCache.GetOrCreate(ctx, "item", getter)
-				So(err, ShouldBeNil)
-				So(item, ShouldResemble, value)
-				So(calls, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, calls, should.Equal(1))
 
 				// Clear the local cache.
 				ctx = caching.WithEmptyProcessCache(ctx)
@@ -154,34 +154,34 @@ func TestCache(t *testing.T) {
 				// Grab the item again. Will be recreated again, since the global cache
 				// is broken.
 				item, err = testingCache.GetOrCreate(ctx, "item", getter)
-				So(err, ShouldBeNil)
-				So(item, ShouldResemble, value)
-				So(calls, ShouldEqual, 2) // new call!
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, item, should.Resemble(value))
+				assert.Loosely(t, calls, should.Equal(2)) // new call!
 			})
 		})
 
-		Convey("Never expiring item", func() {
+		t.Run("Never expiring item", func(t *ftt.Test) {
 			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, 0, nil
 			})
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
 
 			tc.Add(100 * time.Hour)
 
 			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return nil, 0, errors.New("must not be called")
 			})
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
 		})
 
-		Convey("WithMinTTL works", func() {
+		t.Run("WithMinTTL works", func(t *ftt.Test) {
 			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Hour, nil
 			})
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
 
 			tc.Add(50 * time.Minute)
 
@@ -189,22 +189,22 @@ func TestCache(t *testing.T) {
 			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return nil, 0, errors.New("must not be called")
 			}, WithMinTTL(9*time.Minute))
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
 
 			// But 10 min is not and the item is refreshed.
 			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return anotherValue, time.Hour, nil
 			}, WithMinTTL(10*time.Minute))
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, anotherValue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(anotherValue))
 		})
 
-		Convey("ErrCantSatisfyMinTTL", func() {
+		t.Run("ErrCantSatisfyMinTTL", func(t *ftt.Test) {
 			_, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Minute, nil
 			}, WithMinTTL(2*time.Minute))
-			So(err, ShouldEqual, ErrCantSatisfyMinTTL)
+			assert.Loosely(t, err, should.Equal(ErrCantSatisfyMinTTL))
 		})
 
 		oneRandomizedTrial := func(now, threshold time.Duration) (cacheHit bool) {
@@ -216,8 +216,8 @@ func TestCache(t *testing.T) {
 			item, err := testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return value, time.Hour, nil
 			})
-			So(err, ShouldBeNil)
-			So(item, ShouldResemble, value)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item, should.Resemble(value))
 
 			tc.Add(now)
 
@@ -225,7 +225,7 @@ func TestCache(t *testing.T) {
 			item, err = testingCache.GetOrCreate(ctx, "item", func() ([]byte, time.Duration, error) {
 				return anotherValue, time.Hour, nil
 			}, WithRandomizedExpiration(threshold))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return bytes.Equal(item, value)
 		}
 
@@ -244,14 +244,14 @@ func TestCache(t *testing.T) {
 			threshold := testCases[i].threshold
 			expectedHitRate := testCases[i].expectedHitRate
 
-			Convey(fmt.Sprintf("WithRandomizedExpiration (now = %s)", now), func() {
+			t.Run(fmt.Sprintf("WithRandomizedExpiration (now = %s)", now), func(t *ftt.Test) {
 				cacheHits := 0
 				for i := 0; i < 100; i++ {
 					if oneRandomizedTrial(now, threshold) {
 						cacheHits++
 					}
 				}
-				So(cacheHits, ShouldEqual, expectedHitRate)
+				assert.Loosely(t, cacheHits, should.Equal(expectedHitRate))
 			})
 		}
 	})
@@ -260,7 +260,7 @@ func TestCache(t *testing.T) {
 func TestSerialization(t *testing.T) {
 	t.Parallel()
 
-	Convey("With cache", t, func() {
+	ftt.Run("With cache", t, func(t *ftt.Test) {
 		now := time.Date(2017, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 		c := Cache[[]byte]{
@@ -274,60 +274,60 @@ func TestSerialization(t *testing.T) {
 			},
 		}
 
-		Convey("Happy path with deadline", func() {
+		t.Run("Happy path with deadline", func(t *ftt.Test) {
 			originalItem := itemWithExp[[]byte]{[]byte("blah-blah"), now}
 
 			blob, err := c.serializeItem(&originalItem)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			item, err := c.deserializeItem(blob)
-			So(err, ShouldBeNil)
-			So(item.exp.Equal(now), ShouldBeTrue)
-			So(item.val, ShouldResemble, originalItem.val)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item.exp.Equal(now), should.BeTrue)
+			assert.Loosely(t, item.val, should.Resemble(originalItem.val))
 		})
 
-		Convey("Happy path without deadline", func() {
+		t.Run("Happy path without deadline", func(t *ftt.Test) {
 			originalItem := itemWithExp[[]byte]{[]byte("blah-blah"), time.Time{}}
 
 			blob, err := c.serializeItem(&originalItem)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			item, err := c.deserializeItem(blob)
-			So(err, ShouldBeNil)
-			So(item.exp.IsZero(), ShouldBeTrue)
-			So(item.val, ShouldResemble, originalItem.val)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, item.exp.IsZero(), should.BeTrue)
+			assert.Loosely(t, item.val, should.Resemble(originalItem.val))
 		})
 
-		Convey("Marshal error", func() {
+		t.Run("Marshal error", func(t *ftt.Test) {
 			fail := errors.New("failure")
 			c.params.Marshal = func(item []byte) ([]byte, error) {
 				return nil, fail
 			}
 			_, err := c.serializeItem(&itemWithExp[[]byte]{})
-			So(err, ShouldEqual, fail)
+			assert.Loosely(t, err, should.Equal(fail))
 		})
 
-		Convey("Small buffer in Unmarshal", func() {
+		t.Run("Small buffer in Unmarshal", func(t *ftt.Test) {
 			_, err := c.deserializeItem([]byte{formatVersionByte, 0})
-			So(err, ShouldErrLike, "buffer is too small")
+			assert.Loosely(t, err, should.ErrLike("buffer is too small"))
 		})
 
-		Convey("Bad version in Unmarshal", func() {
+		t.Run("Bad version in Unmarshal", func(t *ftt.Test) {
 			_, err := c.deserializeItem([]byte{formatVersionByte + 1, 0, 0, 0, 0, 0, 0, 0, 0})
-			So(err, ShouldErrLike, "bad format version")
+			assert.Loosely(t, err, should.ErrLike("bad format version"))
 		})
 
-		Convey("Unmarshal error", func() {
+		t.Run("Unmarshal error", func(t *ftt.Test) {
 			fail := errors.New("failure")
 			c.params.Unmarshal = func(blob []byte) ([]byte, error) {
 				return nil, fail
 			}
 
 			blob, err := c.serializeItem(&itemWithExp[[]byte]{[]byte("blah-blah"), now})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = c.deserializeItem(blob)
-			So(err, ShouldEqual, fail)
+			assert.Loosely(t, err, should.Equal(fail))
 		})
 	})
 }

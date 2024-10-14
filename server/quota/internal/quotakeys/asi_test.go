@@ -17,8 +17,10 @@ package quotakeys
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestASI(t *testing.T) {
@@ -28,8 +30,8 @@ func TestASI(t *testing.T) {
 		return strs
 	}
 
-	Convey(`ASI`, t, func() {
-		Convey(`happy path`, func() {
+	ftt.Run(`ASI`, t, func(t *ftt.Test) {
+		t.Run(`happy path`, func(t *ftt.Test) {
 			tests := []struct {
 				name string
 				in   []string
@@ -44,17 +46,17 @@ func TestASI(t *testing.T) {
 
 			for _, tc := range tests {
 				tc := tc
-				Convey(tc.name, func() {
-					SoMsg("encode", AssembleASI(tc.in...), ShouldResemble, tc.out)
+				t.Run(tc.name, func(t *ftt.Test) {
+					assert.Loosely(t, AssembleASI(tc.in...), should.Resemble(tc.out), truth.Explain("encode"))
 					dec, err := DecodeASI(tc.out)
-					So(err, ShouldBeNil)
-					SoMsg("decode", dec, ShouldResemble, tc.in)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dec, should.Resemble(tc.in), truth.Explain("decode"))
 				})
 			}
 		})
-		Convey(`error`, func() {
+		t.Run(`error`, func(t *ftt.Test) {
 			_, err := DecodeASI("{notre~lascii85")
-			So(err, ShouldErrLike, "DecodeASI: section[0]: illegal ascii85 data at input byte 5")
+			assert.Loosely(t, err, should.ErrLike("DecodeASI: section[0]: illegal ascii85 data at input byte 5"))
 		})
 	})
 }

@@ -17,83 +17,84 @@ package realms
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateProjectName(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
-		So(ValidateProjectName("something-blah"), ShouldBeNil)
-		So(ValidateProjectName("@internal"), ShouldBeNil)
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateProjectName("something-blah"), should.BeNil)
+		assert.Loosely(t, ValidateProjectName("@internal"), should.BeNil)
 
-		So(ValidateProjectName("something-BLAH"), ShouldNotBeNil)
-		So(ValidateProjectName(""), ShouldNotBeNil)
-		So(ValidateProjectName(":"), ShouldNotBeNil)
-		So(ValidateProjectName("@blah"), ShouldNotBeNil)
+		assert.Loosely(t, ValidateProjectName("something-BLAH"), should.NotBeNil)
+		assert.Loosely(t, ValidateProjectName(""), should.NotBeNil)
+		assert.Loosely(t, ValidateProjectName(":"), should.NotBeNil)
+		assert.Loosely(t, ValidateProjectName("@blah"), should.NotBeNil)
 	})
 }
 
 func TestValidateRealmName(t *testing.T) {
 	t.Parallel()
 
-	Convey("GlobalScope", t, func() {
+	ftt.Run("GlobalScope", t, func(t *ftt.Test) {
 		call := func(r string) error {
 			return ValidateRealmName(r, GlobalScope)
 		}
 
-		So(call("something-blah:realm"), ShouldBeNil)
-		So(call("something-blah:a/b/c"), ShouldBeNil)
-		So(call("something-blah:@root"), ShouldBeNil)
-		So(call("something-blah:@legacy"), ShouldBeNil)
-		So(call("something-blah:@project"), ShouldBeNil)
+		assert.Loosely(t, call("something-blah:realm"), should.BeNil)
+		assert.Loosely(t, call("something-blah:a/b/c"), should.BeNil)
+		assert.Loosely(t, call("something-blah:@root"), should.BeNil)
+		assert.Loosely(t, call("something-blah:@legacy"), should.BeNil)
+		assert.Loosely(t, call("something-blah:@project"), should.BeNil)
 
-		So(call("@internal:realm"), ShouldBeNil)
-		So(call("@internal:a/b/c"), ShouldBeNil)
-		So(call("@internal:@root"), ShouldBeNil)
-		So(call("@internal:@legacy"), ShouldBeNil)
-		So(call("@internal:@project"), ShouldBeNil)
+		assert.Loosely(t, call("@internal:realm"), should.BeNil)
+		assert.Loosely(t, call("@internal:a/b/c"), should.BeNil)
+		assert.Loosely(t, call("@internal:@root"), should.BeNil)
+		assert.Loosely(t, call("@internal:@legacy"), should.BeNil)
+		assert.Loosely(t, call("@internal:@project"), should.BeNil)
 
-		So(call("realm"), ShouldErrLike, "should be <project>:<realm>")
-		So(call("BLAH:realm"), ShouldErrLike, "bad project name")
-		So(call("@blah:zzz"), ShouldErrLike, "bad project name")
-		So(call("blah:"), ShouldErrLike, "the realm name should match")
-		So(call("blah:@zzz"), ShouldErrLike, "the realm name should match")
+		assert.Loosely(t, call("realm"), should.ErrLike("should be <project>:<realm>"))
+		assert.Loosely(t, call("BLAH:realm"), should.ErrLike("bad project name"))
+		assert.Loosely(t, call("@blah:zzz"), should.ErrLike("bad project name"))
+		assert.Loosely(t, call("blah:"), should.ErrLike("the realm name should match"))
+		assert.Loosely(t, call("blah:@zzz"), should.ErrLike("the realm name should match"))
 	})
 
-	Convey("ProjectScope", t, func() {
+	ftt.Run("ProjectScope", t, func(t *ftt.Test) {
 		call := func(r string) error {
 			return ValidateRealmName(r, ProjectScope)
 		}
 
-		So(call("realm"), ShouldBeNil)
-		So(call("a/b/c"), ShouldBeNil)
-		So(call("@root"), ShouldBeNil)
-		So(call("@legacy"), ShouldBeNil)
-		So(call("@project"), ShouldBeNil)
+		assert.Loosely(t, call("realm"), should.BeNil)
+		assert.Loosely(t, call("a/b/c"), should.BeNil)
+		assert.Loosely(t, call("@root"), should.BeNil)
+		assert.Loosely(t, call("@legacy"), should.BeNil)
+		assert.Loosely(t, call("@project"), should.BeNil)
 
-		So(call("blah:realm"), ShouldNotBeNil)
-		So(call(":realm"), ShouldNotBeNil)
-		So(call("realm:"), ShouldNotBeNil)
-		So(call("@zzz"), ShouldNotBeNil)
+		assert.Loosely(t, call("blah:realm"), should.NotBeNil)
+		assert.Loosely(t, call(":realm"), should.NotBeNil)
+		assert.Loosely(t, call("realm:"), should.NotBeNil)
+		assert.Loosely(t, call("@zzz"), should.NotBeNil)
 	})
 }
 
 func TestRealmSplitJoin(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		a, b := Split("a:b")
-		So(a, ShouldEqual, "a")
-		So(b, ShouldEqual, "b")
+		assert.Loosely(t, a, should.Equal("a"))
+		assert.Loosely(t, b, should.Equal("b"))
 
 		a, b = Split(":")
-		So(a, ShouldEqual, "")
-		So(b, ShouldEqual, "")
+		assert.Loosely(t, a, should.BeEmpty)
+		assert.Loosely(t, b, should.BeEmpty)
 
-		So(func() { Split("ab") }, ShouldPanic)
+		assert.Loosely(t, func() { Split("ab") }, should.Panic)
 
-		So(Join("a", "b"), ShouldEqual, "a:b")
+		assert.Loosely(t, Join("a", "b"), should.Equal("a:b"))
 	})
 }

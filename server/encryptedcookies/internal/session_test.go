@@ -21,42 +21,43 @@ import (
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/keyset"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/encryptedcookies/session"
 	"go.chromium.org/luci/server/encryptedcookies/session/sessionpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSession(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		primaryAEAD, err := aead.New(kh)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cookie, sessionAEAD := NewSessionCookie(session.GenerateID())
 		httpCookie, err := EncryptSessionCookie(primaryAEAD, cookie)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		enc, err := EncryptPrivate(sessionAEAD, &sessionpb.Private{RefreshToken: "blah"})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		req, _ := http.NewRequest("GET", "http://example.com", nil)
 		req.Header.Add("Cookie", httpCookie.String())
 
 		httpCookieFromReq, _ := req.Cookie(SessionCookieName)
-		So(httpCookieFromReq, ShouldNotBeNil)
+		assert.Loosely(t, httpCookieFromReq, should.NotBeNil)
 
 		cookieFromReq, err := DecryptSessionCookie(primaryAEAD, httpCookieFromReq)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		priv, _, err := UnsealPrivate(cookieFromReq, &sessionpb.Session{
 			EncryptedPrivate: enc,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(priv.RefreshToken, ShouldEqual, "blah")
+		assert.Loosely(t, priv.RefreshToken, should.Equal("blah"))
 	})
 }
