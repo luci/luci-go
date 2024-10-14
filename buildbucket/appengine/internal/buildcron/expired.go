@@ -157,58 +157,6 @@ func TimeoutExpiredBuilds(ctx context.Context) error {
 	})
 }
 
-func resetLeases(ctx context.Context, bs []*model.Build, mr parallel.MultiRunner) error {
-	nOrig := len(bs)
-	if nOrig == 0 {
-		return nil
-	}
-
-	toReset := make([]*model.Build, 0, len(bs))
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		if err := datastore.Get(ctx, bs); err != nil {
-			return err
-		}
-
-		now := clock.Now(ctx)
-		for _, b := range bs {
-			if !b.IsLeased || b.LeaseExpirationDate.After(now) {
-				continue
-			}
-			// A terminated build cannot be leased.
-			// It must be that the data is corrupted or there is a bug.
-			if protoutil.IsEnded(b.Proto.Status) {
-				logging.Errorf(ctx, "Build %d is leased and terminated", b.ID)
-			} else {
-				protoutil.SetStatus(now, b.Proto, pb.Status_SCHEDULED)
-			}
-			b.ClearLease()
-			toReset = append(toReset, b)
-		}
-		if len(toReset) == 0 {
-			return nil
-		}
-		return mr.RunMulti(func(workC chan<- func() error) {
-			for _, b := range toReset {
-				b := b
-				workC <- func() error { return tasks.NotifyPubSub(ctx, b) }
-			}
-			workC <- func() error { return datastore.Put(ctx, toReset) }
-			workC <- func() error {
-				return updateBuildStatuses(ctx, toReset, pb.Status_SCHEDULED)
-			}
-		})
-	}, nil)
-
-	if err == nil {
-		logging.Infof(ctx, "Reset %d/%d expired leases.", len(toReset), nOrig)
-		for _, b := range toReset {
-			logging.Infof(ctx, "Build %d: expired lease was reset", b.ID)
-			metrics.ExpiredLeaseReset(ctx, b)
-		}
-	}
-	return err
-}
-
 func updateBuildStatuses(ctx context.Context, builds []*model.Build, status pb.Status) error {
 	buildStatuses := make([]*model.BuildStatus, 0, len(builds))
 	for _, b := range builds {
