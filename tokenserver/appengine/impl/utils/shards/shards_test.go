@@ -18,11 +18,13 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestShards(t *testing.T) {
-	Convey("Build shards, serialize and deserialize", t, func() {
+	ftt.Run("Build shards, serialize and deserialize", t, func(t *ftt.Test) {
 		// Build sharded set of 500 strings.
 		set := make(Set, 10)
 		for i := 0; i < 500; i++ {
@@ -37,27 +39,27 @@ func TestShards(t *testing.T) {
 		// Make sure shards are balanced, and all data is there.
 		totalLen := 0
 		for _, shard := range set {
-			So(len(shard), ShouldBeGreaterThan, 45)
-			So(len(shard), ShouldBeLessThan, 55)
+			assert.Loosely(t, len(shard), should.BeGreaterThan(45))
+			assert.Loosely(t, len(shard), should.BeLessThan(55))
 			totalLen += len(shard)
 		}
-		So(totalLen, ShouldEqual, 500)
+		assert.Loosely(t, totalLen, should.Equal(500))
 
 		// Serialize and deserialize first shard, should be left unchanged.
 		shard, err := ParseShard(set[0].Serialize())
-		So(err, ShouldBeNil)
-		So(shard, ShouldResemble, set[0])
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, shard, should.Resemble(set[0]))
 	})
 
-	Convey("Empty shards serialization", t, func() {
+	ftt.Run("Empty shards serialization", t, func(t *ftt.Test) {
 		var shard Shard
 		deserialized, err := ParseShard(shard.Serialize())
-		So(err, ShouldBeNil)
-		So(len(deserialized), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(deserialized), should.BeZero)
 	})
 
-	Convey("Deserialize garbage", t, func() {
+	ftt.Run("Deserialize garbage", t, func(t *ftt.Test) {
 		_, err := ParseShard([]byte("blah"))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

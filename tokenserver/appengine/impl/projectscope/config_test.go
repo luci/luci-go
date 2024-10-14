@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	configset "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -26,8 +29,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const fakeConfig = `
@@ -61,10 +62,10 @@ func TestRules(t *testing.T) {
 	})
 	storage := projectidentity.ProjectIdentities(ctx)
 
-	Convey("Loads", t, func() {
+	ftt.Run("Loads", t, func(t *ftt.Test) {
 		ctx = prepareCfg(ctx, fakeConfig)
 		_, err := ImportConfigs(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := map[string]string{
 			"id1": "foo@bar.com",
@@ -73,11 +74,11 @@ func TestRules(t *testing.T) {
 
 		for project, email := range expected {
 			identity, err := storage.LookupByProject(ctx, project)
-			So(err, ShouldBeNil)
-			So(identity, ShouldResemble, &projectidentity.ProjectIdentity{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, identity, should.Resemble(&projectidentity.ProjectIdentity{
 				Project: project,
 				Email:   email,
-			})
+			}))
 		}
 
 	})

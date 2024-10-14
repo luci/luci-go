@@ -22,39 +22,40 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestListCAs(t *testing.T) {
-	Convey("ListCAs works", t, func() {
+	ftt.Run("ListCAs works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 
 		// Empty.
 		cas, err := ListCAs(ctx)
-		So(err, ShouldBeNil)
-		So(len(cas), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(cas), should.BeZero)
 
 		// Add some.
 		err = ds.Put(ctx, &CA{CN: "abc", Removed: true}, &CA{CN: "def"})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ds.GetTestable(ctx).CatchupIndexes()
 
 		cas, err = ListCAs(ctx)
-		So(err, ShouldBeNil)
-		So(cas, ShouldResemble, []string{"def"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cas, should.Resemble([]string{"def"}))
 	})
 }
 
 func TestCAUniqueIDToCNMapLoadStore(t *testing.T) {
-	Convey("CAUniqueIDToCNMap Load and Store works", t, func() {
+	ftt.Run("CAUniqueIDToCNMap Load and Store works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 
 		// Empty.
 		mapping, err := LoadCAUniqueIDToCNMap(ctx)
-		So(err, ShouldEqual, nil)
-		So(len(mapping), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(mapping), should.BeZero)
 
 		// Store some.
 		toStore := map[int64]string{
@@ -62,42 +63,42 @@ func TestCAUniqueIDToCNMapLoadStore(t *testing.T) {
 			2: "def",
 		}
 		err = StoreCAUniqueIDToCNMap(ctx, toStore)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Not empty now.
 		mapping, err = LoadCAUniqueIDToCNMap(ctx)
-		So(err, ShouldEqual, nil)
-		So(mapping, ShouldResemble, toStore)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, mapping, should.Resemble(toStore))
 	})
 }
 
 func TestGetCAByUniqueID(t *testing.T) {
-	Convey("GetCAByUniqueID works", t, func() {
+	ftt.Run("GetCAByUniqueID works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = caching.WithEmptyProcessCache(ctx)
 		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
 		// Empty now.
 		val, err := GetCAByUniqueID(ctx, 1)
-		So(err, ShouldBeNil)
-		So(val, ShouldEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.BeEmpty)
 
 		// Add some.
 		err = StoreCAUniqueIDToCNMap(ctx, map[int64]string{
 			1: "abc",
 			2: "def",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Still empty (cached old value).
 		val, err = GetCAByUniqueID(ctx, 1)
-		So(err, ShouldBeNil)
-		So(val, ShouldEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.BeEmpty)
 
 		// Updated after cache expires.
 		clk.Add(2 * time.Minute)
 		val, err = GetCAByUniqueID(ctx, 1)
-		So(err, ShouldBeNil)
-		So(val, ShouldEqual, "abc")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, val, should.Equal("abc"))
 	})
 }

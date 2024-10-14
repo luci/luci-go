@@ -23,29 +23,29 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectMachineTokenRPC(t *testing.T) {
-	Convey("with mocked context", t, func() {
+	ftt.Run("with mocked context", t, func(t *ftt.Test) {
 		ctx := testingContext(testingCA)
 		signer := testingSigner()
 		impl := InspectMachineTokenRPC{Signer: signer}
 		tok := testingMachineToken(ctx, signer)
 
-		Convey("Good token", func() {
+		t.Run("Good token", func(t *ftt.Test) {
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{
 				TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
-			So(err, ShouldBeNil)
-			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
 				Valid:        true,
 				Signed:       true,
 				NonExpired:   true,
@@ -62,16 +62,16 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Broken signature", func() {
+		t.Run("Broken signature", func(t *ftt.Test) {
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{
 				TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok[:len(tok)-16] + strings.Repeat("0", 16),
 			})
-			So(err, ShouldBeNil)
-			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "bad signature - crypto/rsa: verification error",
 				Signed:           false,
@@ -89,17 +89,17 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Expired", func() {
+		t.Run("Expired", func(t *ftt.Test) {
 			clock.Get(ctx).(testclock.TestClock).Add(time.Hour + 11*time.Minute)
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{
 				TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
-			So(err, ShouldBeNil)
-			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired",
 				Signed:           true,
@@ -117,10 +117,10 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Revoked cert", func() {
+		t.Run("Revoked cert", func(t *ftt.Test) {
 			// "Revoke" the certificate.
 			certconfig.UpdateCRLSet(ctx, "Fake CA: fake.ca", certconfig.CRLShardCount,
 				&pkix.CertificateList{
@@ -136,8 +136,8 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 				Token:     tok,
 			})
-			So(err, ShouldBeNil)
-			So(reply, ShouldResembleProto, &admin.InspectMachineTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply, should.Resemble(&admin.InspectMachineTokenResponse{
 				Valid:            false,
 				InvalidityReason: "expired", // "expired" 'beats' revocation
 				Signed:           true,
@@ -155,7 +155,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 						CertSn:      big.NewInt(4096).Bytes(),
 					},
 				},
-			})
+			}))
 		})
 	})
 }

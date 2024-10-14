@@ -35,8 +35,11 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var testingRequestID = trace.TraceID{1, 2, 3, 4, 5}
@@ -85,95 +88,95 @@ func TestBuildRulesQuery(t *testing.T) {
 
 	ctx := testingContext()
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		q, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "user:delegated@example.com",
 			Audience:          []string{"group:A", "group:B", "user:c@example.com"},
 			Services:          []string{"service:A", "*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldBeNil)
-		So(q, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q, should.NotBeNil)
 
-		So(q.Requestor, ShouldEqual, identity.Identity("user:requestor@example.com"))
-		So(q.Delegator, ShouldEqual, identity.Identity("user:delegated@example.com"))
-		So(q.Audience.ToStrings(), ShouldResemble, []string{"group:A", "group:B", "user:c@example.com"})
-		So(q.Services.ToStrings(), ShouldResemble, []string{"*"})
+		assert.Loosely(t, q.Requestor, should.Equal(identity.Identity("user:requestor@example.com")))
+		assert.Loosely(t, q.Delegator, should.Equal(identity.Identity("user:delegated@example.com")))
+		assert.Loosely(t, q.Audience.ToStrings(), should.Resemble([]string{"group:A", "group:B", "user:c@example.com"}))
+		assert.Loosely(t, q.Services.ToStrings(), should.Resemble([]string{"*"}))
 	})
 
-	Convey("REQUESTOR usage works", t, func() {
+	ftt.Run("REQUESTOR usage works", t, func(t *ftt.Test) {
 		q, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"group:A", "group:B", "REQUESTOR"},
 			Services:          []string{"*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldBeNil)
-		So(q, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q, should.NotBeNil)
 
-		So(q.Requestor, ShouldEqual, identity.Identity("user:requestor@example.com"))
-		So(q.Delegator, ShouldEqual, identity.Identity("user:requestor@example.com"))
-		So(q.Audience.ToStrings(), ShouldResemble, []string{"group:A", "group:B", "user:requestor@example.com"})
+		assert.Loosely(t, q.Requestor, should.Equal(identity.Identity("user:requestor@example.com")))
+		assert.Loosely(t, q.Delegator, should.Equal(identity.Identity("user:requestor@example.com")))
+		assert.Loosely(t, q.Audience.ToStrings(), should.Resemble([]string{"group:A", "group:B", "user:requestor@example.com"}))
 	})
 
-	Convey("bad 'delegated_identity'", t, func() {
+	ftt.Run("bad 'delegated_identity'", t, func(t *ftt.Test) {
 		_, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			Audience: []string{"REQUESTOR"},
 			Services: []string{"*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `'delegated_identity' is required`)
+		assert.Loosely(t, err, should.ErrLike(`'delegated_identity' is required`))
 
 		_, err = buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "junk",
 			Audience:          []string{"REQUESTOR"},
 			Services:          []string{"*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `bad 'delegated_identity' - auth: bad identity string "junk"`)
+		assert.Loosely(t, err, should.ErrLike(`bad 'delegated_identity' - auth: bad identity string "junk"`))
 	})
 
-	Convey("bad 'audience'", t, func() {
+	ftt.Run("bad 'audience'", t, func(t *ftt.Test) {
 		_, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Services:          []string{"*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `'audience' is required`)
+		assert.Loosely(t, err, should.ErrLike(`'audience' is required`))
 
 		_, err = buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"REQUESTOR", "junk"},
 			Services:          []string{"*"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `bad 'audience' - auth: bad identity string "junk"`)
+		assert.Loosely(t, err, should.ErrLike(`bad 'audience' - auth: bad identity string "junk"`))
 	})
 
-	Convey("bad 'services'", t, func() {
+	ftt.Run("bad 'services'", t, func(t *ftt.Test) {
 		_, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"REQUESTOR"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `'services' is required`)
+		assert.Loosely(t, err, should.ErrLike(`'services' is required`))
 
 		_, err = buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"REQUESTOR"},
 			Services:          []string{"junk"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `bad 'services' - auth: bad identity string "junk"`)
+		assert.Loosely(t, err, should.ErrLike(`bad 'services' - auth: bad identity string "junk"`))
 
 		_, err = buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"REQUESTOR"},
 			Services:          []string{"user:abc@example.com"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `bad 'services' - "user:abc@example.com" is not a service ID`)
+		assert.Loosely(t, err, should.ErrLike(`bad 'services' - "user:abc@example.com" is not a service ID`))
 
 		_, err = buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "REQUESTOR",
 			Audience:          []string{"REQUESTOR"},
 			Services:          []string{"group:abc"},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `bad 'services' - can't specify groups`)
+		assert.Loosely(t, err, should.ErrLike(`bad 'services' - can't specify groups`))
 	})
 
-	Convey("resolves https:// service refs", t, func() {
+	ftt.Run("resolves https:// service refs", t, func(t *ftt.Test) {
 		q, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "user:delegated@example.com",
 			Audience:          []string{"*"},
@@ -185,17 +188,17 @@ func TestBuildRulesQuery(t *testing.T) {
 				"https://A",
 			},
 		}, "user:requestor@example.com")
-		So(err, ShouldBeNil)
-		So(q, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q, should.NotBeNil)
 
-		So(q.Services.ToStrings(), ShouldResemble, []string{
+		assert.Loosely(t, q.Services.ToStrings(), should.Resemble([]string{
 			"service:A",
 			"service:B",
 			"service:C",
-		})
+		}))
 	})
 
-	Convey("handles errors when resolving https:// service refs", t, func() {
+	ftt.Run("handles errors when resolving https:// service refs", t, func(t *ftt.Test) {
 		_, err := buildRulesQuery(ctx, &minter.MintDelegationTokenRequest{
 			DelegatedIdentity: "user:delegated@example.com",
 			Audience:          []string{"*"},
@@ -205,7 +208,7 @@ func TestBuildRulesQuery(t *testing.T) {
 				"https://crash",
 			},
 		}, "user:requestor@example.com")
-		So(err, ShouldErrLike, `could not resolve "https://crash" to service ID - boom`)
+		assert.Loosely(t, err, should.ErrLike(`could not resolve "https://crash" to service ID - boom`))
 	})
 }
 
@@ -214,7 +217,7 @@ func TestMintDelegationToken(t *testing.T) {
 
 	ctx := testingContext()
 
-	Convey("with mocked config and state", t, func() {
+	ftt.Run("with mocked config and state", t, func(t *ftt.Test) {
 		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "requstor for itself"
@@ -225,7 +228,7 @@ func TestMintDelegationToken(t *testing.T) {
 				max_validity_duration: 3600
 			}
 		`)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		mintMock := func(c context.Context, p *mintParams) (*minter.MintDelegationTokenResponse, error) {
 			return &minter.MintDelegationTokenResponse{Token: "valid_token", ServiceVersion: p.serviceVer}, nil
@@ -242,7 +245,7 @@ func TestMintDelegationToken(t *testing.T) {
 			mintMock: mintMock,
 		}
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			req := &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
@@ -250,28 +253,28 @@ func TestMintDelegationToken(t *testing.T) {
 				Tags:              []string{"k:v"},
 			}
 			resp, err := rpc.MintDelegationToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp.Token, ShouldEqual, "valid_token")
-			So(resp.ServiceVersion, ShouldEqual, "unit-tests/mocked-ver")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Token, should.Equal("valid_token"))
+			assert.Loosely(t, resp.ServiceVersion, should.Equal("unit-tests/mocked-ver"))
 
 			// LogToken called.
-			So(loggedInfo.Request, ShouldResembleProto, req)
-			So(loggedInfo.Response, ShouldResembleProto, resp)
-			So(loggedInfo.ConfigRev, ShouldEqual, cfg.ConfigRevision())
-			So(loggedInfo.Rule, ShouldResembleProto, &admin.DelegationRule{
+			assert.Loosely(t, loggedInfo.Request, should.Resemble(req))
+			assert.Loosely(t, loggedInfo.Response, should.Resemble(resp))
+			assert.Loosely(t, loggedInfo.ConfigRev, should.Equal(cfg.ConfigRevision()))
+			assert.Loosely(t, loggedInfo.Rule, should.Resemble(&admin.DelegationRule{
 				Name:                 "requstor for itself",
 				Requestor:            []string{"user:requestor@example.com"},
 				AllowedToImpersonate: []string{"REQUESTOR"},
 				AllowedAudience:      []string{"REQUESTOR"},
 				TargetService:        []string{"*"},
 				MaxValidityDuration:  3600,
-			})
-			So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
-			So(loggedInfo.RequestID, ShouldEqual, testingRequestID.String())
-			So(loggedInfo.AuthDBRev, ShouldEqual, 1234)
+			}))
+			assert.Loosely(t, loggedInfo.PeerIP, should.Resemble(net.ParseIP("127.10.10.10")))
+			assert.Loosely(t, loggedInfo.RequestID, should.Equal(testingRequestID.String()))
+			assert.Loosely(t, loggedInfo.AuthDBRev, should.Equal(1234))
 		})
 
-		Convey("Using delegated identity for auth is forbidden", func() {
+		t.Run("Using delegated identity for auth is forbidden", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:             "user:requestor@example.com",
 				PeerIdentityOverride: "user:impersonator@example.com",
@@ -281,10 +284,10 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldBeRPCPermissionDenied, "delegation is forbidden for this API call")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("delegation is forbidden for this API call"))
 		})
 
-		Convey("Anonymous calls are forbidden", func() {
+		t.Run("Anonymous calls are forbidden", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "anonymous:anonymous",
 			})
@@ -293,10 +296,10 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldBeRPCUnauthenticated, "authentication required")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)("authentication required"))
 		})
 
-		Convey("Unauthorized requestor", func() {
+		t.Run("Unauthorized requestor", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:unknown@example.com",
 			})
@@ -305,55 +308,55 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldBeRPCPermissionDenied, "not authorized")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not authorized"))
 		})
 
-		Convey("Negative validity duration", func() {
+		t.Run("Negative validity duration", func(t *ftt.Test) {
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 				ValidityDuration:  -1,
 			})
-			So(err, ShouldBeRPCInvalidArgument, "bad request - invalid 'validity_duration' (-1)")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request - invalid 'validity_duration' (-1)"))
 		})
 
-		Convey("Bad tags", func() {
+		t.Run("Bad tags", func(t *ftt.Test) {
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 				Tags:              []string{"not key value"},
 			})
-			So(err, ShouldBeRPCInvalidArgument, "bad request - invalid 'tags': tag #1: not in <key>:<value> form")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request - invalid 'tags': tag #1: not in <key>:<value> form"))
 		})
 
-		Convey("Malformed request", func() {
+		t.Run("Malformed request", func(t *ftt.Test) {
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"junk"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldBeRPCInvalidArgument, `bad request - bad 'audience' - auth: bad identity string "junk"`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request - bad 'audience' - auth: bad identity string "junk"`))
 		})
 
-		Convey("No matching rules", func() {
+		t.Run("No matching rules", func(t *ftt.Test) {
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"user:someone-else@example.com"},
 				Services:          []string{"*"},
 			})
-			So(err, ShouldBeRPCPermissionDenied, "forbidden - no matching delegation rules in the config")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("forbidden - no matching delegation rules in the config"))
 		})
 
-		Convey("Forbidden validity duration", func() {
+		t.Run("Forbidden validity duration", func(t *ftt.Test) {
 			_, err := rpc.MintDelegationToken(ctx, &minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "REQUESTOR",
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 				ValidityDuration:  3601,
 			})
-			So(err, ShouldBeRPCPermissionDenied, "forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)"))
 		})
 
 	})

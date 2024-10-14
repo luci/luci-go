@@ -19,6 +19,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -26,15 +29,12 @@ import (
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestImportCAConfigsRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mock context", t, func() {
+	ftt.Run("with mock context", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 
 		callImport := func(cfg string) (*admin.ImportedConfigs, error) {
@@ -62,14 +62,14 @@ func TestImportCAConfigsRPC(t *testing.T) {
 			return resp.Cn
 		}
 
-		Convey("dry run", func() {
+		t.Run("dry run", func(t *ftt.Test) {
 			_, err := callImport("")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("import one CA, update it", func() {
+		t.Run("import one CA, update it", func(t *ftt.Test) {
 			// Nothing there.
-			So(getCA("Puppet CA: fake.ca").Config, ShouldBeNil)
+			assert.Loosely(t, getCA("Puppet CA: fake.ca").Config, should.BeNil)
 
 			// Import.
 			out, err := callImport(`
@@ -78,15 +78,15 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					cert_path: "certs/fake.ca.crt"
 				}
 			`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			firstRev := out.Revision
 
 			// Appears.
 			resp := getCA("Puppet CA: fake.ca")
-			So(resp.Config, ShouldNotBeNil)
-			So(resp.Cert, ShouldEqual, fakeCACrt)
-			So(resp.AddedRev, ShouldEqual, firstRev)
-			So(resp.UpdatedRev, ShouldEqual, firstRev)
+			assert.Loosely(t, resp.Config, should.NotBeNil)
+			assert.Loosely(t, resp.Cert, should.Equal(fakeCACrt))
+			assert.Loosely(t, resp.AddedRev, should.Equal(firstRev))
+			assert.Loosely(t, resp.UpdatedRev, should.Equal(firstRev))
 
 			// Noop import.
 			out, err = callImport(`
@@ -96,12 +96,12 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					cert_path: "certs/fake.ca.crt"
 				 }
 			`)
-			So(err, ShouldBeNil)
-			So(out.Revision, ShouldNotEqual, firstRev)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.Revision, should.NotEqual(firstRev))
 
 			// UpdateRev stays as it was, no significant changes made.
 			resp = getCA("Puppet CA: fake.ca")
-			So(resp.UpdatedRev, ShouldEqual, firstRev)
+			assert.Loosely(t, resp.UpdatedRev, should.Equal(firstRev))
 
 			// Change config for real now.
 			out, err = callImport(`
@@ -111,18 +111,18 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					crl_url: "https://blah"
 				 }
 			`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			secondRev := out.Revision
 
 			// Assert it is updated.
 			resp = getCA("Puppet CA: fake.ca")
-			So(resp.UpdatedRev, ShouldEqual, secondRev)
-			So(resp.Config.CrlUrl, ShouldEqual, "https://blah")
+			assert.Loosely(t, resp.UpdatedRev, should.Equal(secondRev))
+			assert.Loosely(t, resp.Config.CrlUrl, should.Equal("https://blah"))
 		})
 
-		Convey("add one, replace with another", func() {
+		t.Run("add one, replace with another", func(t *ftt.Test) {
 			// Nothing there.
-			So(listCAs(), ShouldBeEmpty)
+			assert.Loosely(t, listCAs(), should.BeEmpty)
 
 			// Import fake.ca first.
 			_, err := callImport(`
@@ -132,12 +132,12 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					cert_path: "certs/fake.ca.crt"
 				}
 			`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ds.GetTestable(ctx).CatchupIndexes()
 
 			// Appears.
-			So(listCAs(), ShouldResemble, []string{"Puppet CA: fake.ca"})
+			assert.Loosely(t, listCAs(), should.Resemble([]string{"Puppet CA: fake.ca"}))
 
 			// Replace it with another-fake.ca.
 			out, err := callImport(`
@@ -147,25 +147,25 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					cert_path: "certs/another-fake.ca.crt"
 				}
 			`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			rev := out.Revision
 
 			ds.GetTestable(ctx).CatchupIndexes()
 
 			// fake.ca is removed.
 			resp := getCA("Puppet CA: fake.ca")
-			So(resp.Removed, ShouldBeTrue)
-			So(resp.RemovedRev, ShouldEqual, rev)
+			assert.Loosely(t, resp.Removed, should.BeTrue)
+			assert.Loosely(t, resp.RemovedRev, should.Equal(rev))
 
 			// another-fake.ca is added.
 			resp = getCA("Puppet CA: another-fake.ca")
-			So(resp.AddedRev, ShouldEqual, rev)
+			assert.Loosely(t, resp.AddedRev, should.Equal(rev))
 
 			// Listing shows only active CAs.
-			So(listCAs(), ShouldResemble, []string{"Puppet CA: another-fake.ca"})
+			assert.Loosely(t, listCAs(), should.Resemble([]string{"Puppet CA: another-fake.ca"}))
 		})
 
-		Convey("rejects duplicates", func() {
+		t.Run("rejects duplicates", func(t *ftt.Test) {
 			_, err := callImport(`
 				certificate_authority {
 					cn: "Puppet CA: fake.ca"
@@ -177,20 +177,20 @@ func TestImportCAConfigsRPC(t *testing.T) {
 					crl_url: "http://blah"
 				}
 			`)
-			So(err, ShouldErrLike, "duplicate entries in the config")
+			assert.Loosely(t, err, should.ErrLike("duplicate entries in the config"))
 		})
 
-		Convey("rejects wrong CN", func() {
+		t.Run("rejects wrong CN", func(t *ftt.Test) {
 			_, err := callImport(`
 				certificate_authority {
 					cn: "Puppet CA: fake.ca"
 					cert_path: "certs/another-fake.ca.crt"
 				}
 			`)
-			So(err, ShouldErrLike, "bad CN in the certificate")
+			assert.Loosely(t, err, should.ErrLike("bad CN in the certificate"))
 		})
 
-		Convey("validation rules", func() {
+		t.Run("validation rules", func(t *ftt.Test) {
 			rules := validation.NewRuleSet()
 			rules.Vars.Register("appid", func(context.Context) (string, error) {
 				return "appid", nil
@@ -204,13 +204,13 @@ func TestImportCAConfigsRPC(t *testing.T) {
 				return rules.ValidateConfig(&vctx, "services/appid", "tokenserver.cfg", []byte(body))
 			}
 
-			Convey("malformed config", func() {
+			t.Run("malformed config", func(t *ftt.Test) {
 				err := validateCfg(`bad_proto{}`)
-				So(err, ShouldBeNil)
-				So(vctx.Finalize(), ShouldErrLike, "not a valid TokenServerConfig proto message")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.ErrLike("not a valid TokenServerConfig proto message"))
 			})
 
-			Convey("good config", func() {
+			t.Run("good config", func(t *ftt.Test) {
 				// Pretend we have already imported CA with ID 0.
 				StoreCAUniqueIDToCNMap(ctx, map[int64]string{0: "Some CA: abc.example.com"})
 				err := validateCfg(`
@@ -223,11 +223,11 @@ func TestImportCAConfigsRPC(t *testing.T) {
 						cn: "Another CA: abc.example.com"
 					}
 				`)
-				So(err, ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("bad config (unique ID reuse)", func() {
+			t.Run("bad config (unique ID reuse)", func(t *ftt.Test) {
 				StoreCAUniqueIDToCNMap(ctx, map[int64]string{10: "known CA"})
 				err := validateCfg(`
 					certificate_authority {
@@ -235,20 +235,20 @@ func TestImportCAConfigsRPC(t *testing.T) {
 						cn: "Some CA: abc.example.com"
 					}
 				`)
-				So(err, ShouldBeNil)
-				So(vctx.Finalize(), ShouldErrLike, "unique_id 10 has already been used")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.ErrLike("unique_id 10 has already been used"))
 			})
 
-			Convey("good cert", func() {
+			t.Run("good cert", func(t *ftt.Test) {
 				err := rules.ValidateConfig(&vctx, "services/appid", "certs/fake.ca.pem", []byte(fakeCACrt))
-				So(err, ShouldBeNil)
-				So(vctx.Finalize(), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.BeNil)
 			})
 
-			Convey("bad cert", func() {
+			t.Run("bad cert", func(t *ftt.Test) {
 				err := rules.ValidateConfig(&vctx, "services/appid", "certs/fake.ca.pem", []byte("?????"))
-				So(err, ShouldBeNil)
-				So(vctx.Finalize(), ShouldErrLike, "bad CA certificate file - bad PEM")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, vctx.Finalize(), should.ErrLike("bad CA certificate file - bad PEM"))
 			})
 		})
 	})

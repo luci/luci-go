@@ -18,35 +18,36 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateTags(t *testing.T) {
-	Convey("ValidateTags ok", t, func() {
-		So(ValidateTags(nil), ShouldBeNil)
-		So(ValidateTags([]string{"k1:v1", "k2:v2"}), ShouldBeNil)
-		So(ValidateTags([]string{"k1:v1:more:stuff"}), ShouldBeNil)
+	ftt.Run("ValidateTags ok", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidateTags(nil), should.BeNil)
+		assert.Loosely(t, ValidateTags([]string{"k1:v1", "k2:v2"}), should.BeNil)
+		assert.Loosely(t, ValidateTags([]string{"k1:v1:more:stuff"}), should.BeNil)
 	})
 
-	Convey("ValidateTags errors", t, func() {
+	ftt.Run("ValidateTags errors", t, func(t *ftt.Test) {
 		var many []string
 		for i := 0; i < maxTagCount+1; i++ {
 			many = append(many, "k:v")
 		}
-		So(ValidateTags(many), ShouldErrLike, "too many tags given")
+		assert.Loosely(t, ValidateTags(many), should.ErrLike("too many tags given"))
 
-		So(
+		assert.Loosely(t,
 			ValidateTags([]string{"k:v", "not-kv"}),
-			ShouldErrLike,
-			"tag #2: not in <key>:<value> form")
-		So(
+			should.ErrLike(
+				"tag #2: not in <key>:<value> form"))
+		assert.Loosely(t,
 			ValidateTags([]string{strings.Repeat("k", maxTagKeySize+1) + ":v"}),
-			ShouldErrLike,
-			"tag #1: the key length must not exceed 128")
-		So(
+			should.ErrLike(
+				"tag #1: the key length must not exceed 128"))
+		assert.Loosely(t,
 			ValidateTags([]string{"k:" + strings.Repeat("v", maxTagValueSize+1)}),
-			ShouldErrLike,
-			"tag #1: the value length must not exceed 1024")
+			should.ErrLike(
+				"tag #1: the value length must not exceed 1024"))
 	})
 }

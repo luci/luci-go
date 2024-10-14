@@ -20,13 +20,13 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
@@ -164,25 +164,25 @@ func TestValidation(t *testing.T) {
 		},
 	}
 
-	Convey("Validation works", t, func(c C) {
+	ftt.Run("Validation works", t, func(c *ftt.Test) {
 		for idx, cs := range cases {
-			c.Printf("Case #%d\n", idx)
+			c.Logf("Case #%d\n", idx)
 
 			cfg := &admin.ServiceAccountsProjectMapping{}
 			err := prototext.Unmarshal([]byte(cs.Cfg), cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
 			ctx := &validation.Context{Context: context.Background()}
 			validateConfigBundle(ctx, policy.ConfigBundle{configFileName: cfg})
 			verr := ctx.Finalize()
 
 			if len(cs.Errors) == 0 {
-				So(verr, ShouldBeNil)
+				assert.Loosely(c, verr, should.BeNil)
 			} else {
 				verr := verr.(*validation.Error)
-				So(verr.Errors, ShouldHaveLength, len(cs.Errors))
+				assert.Loosely(c, verr.Errors, should.HaveLength(len(cs.Errors)))
 				for i, err := range verr.Errors {
-					So(err, ShouldErrLike, cs.Errors[i])
+					assert.Loosely(c, err, should.ErrLike(cs.Errors[i]))
 				}
 			}
 		}

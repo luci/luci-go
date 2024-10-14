@@ -21,20 +21,20 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestImportDelegationConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
@@ -52,44 +52,44 @@ func TestImportDelegationConfigs(t *testing.T) {
 
 		// No config.
 		r, err := rules.Rules(ctx)
-		So(err, ShouldEqual, policy.ErrNoPolicy)
+		assert.Loosely(t, err, should.Equal(policy.ErrNoPolicy))
 
 		resp, err := rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.ImportedConfigs{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&admin.ImportedConfigs{
 			Revision: "669865709d488bd6fbcec4fd87d6d1070253f42f",
-		})
+		}))
 
 		// Have config now.
 		r, err = rules.Rules(ctx)
-		So(err, ShouldBeNil)
-		So(r.rules[0].rule.Name, ShouldEqual, "rule 1")
-		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r.rules[0].rule.Name, should.Equal("rule 1"))
+		assert.Loosely(t, r.revision, should.Equal("669865709d488bd6fbcec4fd87d6d1070253f42f"))
 
 		// Noop import.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldBeNil)
-		So(resp.Revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.Revision, should.Equal("669865709d488bd6fbcec4fd87d6d1070253f42f"))
 
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)
 		_, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldErrLike, `line 1.0: unknown field name`)
+		assert.Loosely(t, err, should.ErrLike(`line 1.0: unknown field name`))
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
+		assert.Loosely(t, r.revision, should.Equal("669865709d488bd6fbcec4fd87d6d1070253f42f"))
 
 		// Try to import a config that doesn't pass validation.
 		ctx = prepareCfg(ctx, `rules {
 			name: "rule 1"
 		}`)
 		_, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldErrLike, `"requestor" is required (and 4 other errors)`)
+		assert.Loosely(t, err, should.ErrLike(`"requestor" is required (and 4 other errors)`))
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
+		assert.Loosely(t, r.revision, should.Equal("669865709d488bd6fbcec4fd87d6d1070253f42f"))
 
 		// Roll time to expire local rules cache.
 		clk.Add(10 * time.Minute)
@@ -106,16 +106,16 @@ func TestImportDelegationConfigs(t *testing.T) {
 
 		// Import it.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
-		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.ImportedConfigs{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&admin.ImportedConfigs{
 			Revision: "7826cf5f5d3922ff363a2df0c363df088a81f261",
-		})
+		}))
 
 		// It is now active.
 		r, err = rules.Rules(ctx)
-		So(err, ShouldBeNil)
-		So(r.rules[0].rule.Name, ShouldEqual, "rule 2")
-		So(r.revision, ShouldEqual, "7826cf5f5d3922ff363a2df0c363df088a81f261")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, r.rules[0].rule.Name, should.Equal("rule 2"))
+		assert.Loosely(t, r.revision, should.Equal("7826cf5f5d3922ff363a2df0c363df088a81f261"))
 	})
 }
 

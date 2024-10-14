@@ -18,13 +18,14 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestScopedServiceAccountStorage(t *testing.T) {
 
-	Convey("Test successful creation of several identities", t, func() {
+	ftt.Run("Test successful creation of several identities", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		var err error
 		var actual *ProjectIdentity
@@ -38,8 +39,8 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 		}
 
 		actual, err = storage.Create(ctx, expected)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 
 		expected = &ProjectIdentity{
 			Email:   "sa1@project2.iamserviceaccounts.com",
@@ -47,8 +48,8 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 		}
 
 		actual, err = storage.Create(ctx, expected)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 
 		expected = &ProjectIdentity{
 			Email:   "sa3@project3.iamserviceaccounts.com",
@@ -56,62 +57,62 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 		}
 
 		actual, err = storage.Create(ctx, expected)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 
-		Convey("Test error raised upon duplicate", func() {
+		t.Run("Test error raised upon duplicate", func(t *ftt.Test) {
 			actual, err = storage.Create(ctx, expected)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey("Test reading by identities by project and email", func() {
+		t.Run("Test reading by identities by project and email", func(t *ftt.Test) {
 			actual, err = storage.lookup(ctx, expected)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 
 			actual, err = storage.LookupByProject(ctx, expected.Project)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey("Test deleting identity", func() {
+		t.Run("Test deleting identity", func(t *ftt.Test) {
 			actual, err = storage.lookup(ctx, expected)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 
 			err = storage.Delete(ctx, expected)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = storage.lookup(ctx, expected)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 
 		})
 
-		Convey("Test update identity", func() {
+		t.Run("Test update identity", func(t *ftt.Test) {
 			// Make sure we successfully read the expected entry
 			actual, err := storage.LookupByProject(ctx, expected.Project)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 
 			// Create an updated entry
 			updated := &ProjectIdentity{
 				Project: expected.Project,
 				Email:   "foo@bar.com",
 			}
-			So(updated, ShouldNotResemble, expected)
+			assert.Loosely(t, updated, should.NotResemble(expected))
 
 			// Update the entry in the datastore
 			actual, err = storage.Update(ctx, updated)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, updated)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(updated))
 
 			// Read from datastore, verify its changed
 			actual, err = storage.lookup(ctx, expected)
-			So(err, ShouldBeNil)
-			So(updated, ShouldNotResemble, expected)
-			So(actual, ShouldNotResemble, expected)
-			So(actual, ShouldResemble, updated)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, updated, should.NotResemble(expected))
+			assert.Loosely(t, actual, should.NotResemble(expected))
+			assert.Loosely(t, actual, should.Resemble(updated))
 
 			// Create a new entry via update
 			expected = &ProjectIdentity{
@@ -119,8 +120,8 @@ func TestScopedServiceAccountStorage(t *testing.T) {
 				Email:   "foo@example.com",
 			}
 			actual, err = storage.Update(ctx, expected)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 
 		})
 	})

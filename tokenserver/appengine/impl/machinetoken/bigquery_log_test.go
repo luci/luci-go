@@ -23,18 +23,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
-	Convey("produces correct row map", t, func() {
+	ftt.Run("produces correct row map", t, func(t *ftt.Test) {
 		ctx := testingContext(testingCA)
 
 		info := MintedTokenInfo{
@@ -61,7 +60,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			RequestID: "gae-request-id",
 		}
 
-		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.MachineToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.MachineToken{
 			CaCommonName:       "Fake CA: fake.ca",
 			CaConfigRev:        "cfg-updated-rev",
 			CertSerialNumber:   "4096",
@@ -74,6 +73,6 @@ func TestMintedTokenInfo(t *testing.T) {
 			ServiceVersion:     "unit-tests/mocked-ver",
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
-		})
+		}))
 	})
 }

@@ -20,10 +20,11 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const fakeMappingConfig = `
@@ -50,31 +51,31 @@ use_project_scoped_account: "proj6"
 func TestMapping(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		mapping, err := loadMapping(ctx, fakeMappingConfig)
-		So(err, ShouldBeNil)
-		So(mapping, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, mapping, should.NotBeNil)
 
-		So(mapping.CanProjectUseAccount("proj1", "sa1@example.com"), ShouldBeTrue)
-		So(mapping.CanProjectUseAccount("proj2", "sa1@example.com"), ShouldBeTrue)
-		So(mapping.CanProjectUseAccount("proj3", "sa1@example.com"), ShouldBeFalse)
-		So(mapping.CanProjectUseAccount("proj4", "sa1@example.com"), ShouldBeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj1", "sa1@example.com"), should.BeTrue)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj2", "sa1@example.com"), should.BeTrue)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj3", "sa1@example.com"), should.BeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj4", "sa1@example.com"), should.BeFalse)
 
-		So(mapping.CanProjectUseAccount("proj1", "sa2@example.com"), ShouldBeTrue)
-		So(mapping.CanProjectUseAccount("proj2", "sa2@example.com"), ShouldBeTrue)
-		So(mapping.CanProjectUseAccount("proj3", "sa2@example.com"), ShouldBeFalse)
-		So(mapping.CanProjectUseAccount("proj4", "sa2@example.com"), ShouldBeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj1", "sa2@example.com"), should.BeTrue)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj2", "sa2@example.com"), should.BeTrue)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj3", "sa2@example.com"), should.BeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj4", "sa2@example.com"), should.BeFalse)
 
-		So(mapping.CanProjectUseAccount("proj1", "sa3@example.com"), ShouldBeFalse)
-		So(mapping.CanProjectUseAccount("proj2", "sa3@example.com"), ShouldBeFalse)
-		So(mapping.CanProjectUseAccount("proj3", "sa3@example.com"), ShouldBeTrue)
-		So(mapping.CanProjectUseAccount("proj4", "sa3@example.com"), ShouldBeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj1", "sa3@example.com"), should.BeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj2", "sa3@example.com"), should.BeFalse)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj3", "sa3@example.com"), should.BeTrue)
+		assert.Loosely(t, mapping.CanProjectUseAccount("proj4", "sa3@example.com"), should.BeFalse)
 
-		So(mapping.UseProjectScopedAccount("proj1"), ShouldBeFalse)
-		So(mapping.UseProjectScopedAccount("proj5"), ShouldBeTrue)
-		So(mapping.UseProjectScopedAccount("proj6"), ShouldBeTrue)
+		assert.Loosely(t, mapping.UseProjectScopedAccount("proj1"), should.BeFalse)
+		assert.Loosely(t, mapping.UseProjectScopedAccount("proj5"), should.BeTrue)
+		assert.Loosely(t, mapping.UseProjectScopedAccount("proj6"), should.BeTrue)
 	})
 }
 

@@ -25,11 +25,11 @@ import (
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/filter/count"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // queryableForm implements Queryable.
@@ -45,7 +45,7 @@ func (q *queryableForm) ConfigRevision() string {
 func TestImportConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		base := gaetesting.TestingContext()
 		c := prepareServiceConfig(base, map[string]string{
 			"config_1.cfg": "seconds: 12345",
@@ -60,8 +60,8 @@ func TestImportConfigs(t *testing.T) {
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
 				fetchCalls++
 				var ts1, ts2 timestamppb.Timestamp
-				So(f.FetchTextProto(c, "config_1.cfg", &ts1), ShouldBeNil)
-				So(f.FetchTextProto(c, "config_2.cfg", &ts2), ShouldBeNil)
+				assert.Loosely(t, f.FetchTextProto(c, "config_1.cfg", &ts1), should.BeNil)
+				assert.Loosely(t, f.FetchTextProto(c, "config_2.cfg", &ts2), should.BeNil)
 				return ConfigBundle{"config_1.cfg": &ts1, "config_2.cfg": &ts2}, nil
 			},
 			Prepare: func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error) {
@@ -72,17 +72,17 @@ func TestImportConfigs(t *testing.T) {
 
 		// Fetched for the first time.
 		rev, err := p.ImportConfigs(c)
-		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "dc17888617ce2d87e0e33c1ad12034d51127fda3")
-		So(fetchCalls, ShouldEqual, 1)
-		So(prepareCalls, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, rev, should.Equal("dc17888617ce2d87e0e33c1ad12034d51127fda3"))
+		assert.Loosely(t, fetchCalls, should.Equal(1))
+		assert.Loosely(t, prepareCalls, should.Equal(1))
 
 		// No change in configs -> early exit.
 		rev, err = p.ImportConfigs(c)
-		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "dc17888617ce2d87e0e33c1ad12034d51127fda3")
-		So(fetchCalls, ShouldEqual, 2)
-		So(prepareCalls, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, rev, should.Equal("dc17888617ce2d87e0e33c1ad12034d51127fda3"))
+		assert.Loosely(t, fetchCalls, should.Equal(2))
+		assert.Loosely(t, prepareCalls, should.Equal(1))
 
 		// New configs appear.
 		c = prepareServiceConfig(base, map[string]string{
@@ -90,13 +90,13 @@ func TestImportConfigs(t *testing.T) {
 			"config_2.cfg": "seconds: 22222",
 		})
 		rev, err = p.ImportConfigs(c)
-		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "6bc6fb514320d908db4955ff8769f59e2cd0ae09")
-		So(fetchCalls, ShouldEqual, 3)
-		So(prepareCalls, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, rev, should.Equal("6bc6fb514320d908db4955ff8769f59e2cd0ae09"))
+		assert.Loosely(t, fetchCalls, should.Equal(3))
+		assert.Loosely(t, prepareCalls, should.Equal(2))
 	})
 
-	Convey("Validation errors", t, func() {
+	ftt.Run("Validation errors", t, func(t *ftt.Test) {
 		base := gaetesting.TestingContext()
 		c := prepareServiceConfig(base, map[string]string{
 			"config.cfg": "seconds: 12345",
@@ -106,11 +106,11 @@ func TestImportConfigs(t *testing.T) {
 			Name: "testing",
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
 				var ts timestamppb.Timestamp
-				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
+				assert.Loosely(t, f.FetchTextProto(c, "config.cfg", &ts), should.BeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
 			Validate: func(v *validation.Context, cfg ConfigBundle) {
-				So(cfg["config.cfg"], ShouldNotBeNil)
+				assert.Loosely(t, cfg["config.cfg"], should.NotBeNil)
 				v.SetFile("config.cfg")
 				v.Errorf("validation error")
 			},
@@ -120,14 +120,14 @@ func TestImportConfigs(t *testing.T) {
 		}
 
 		_, err := p.ImportConfigs(c)
-		So(err, ShouldErrLike, `in "config.cfg": validation error`)
+		assert.Loosely(t, err, should.ErrLike(`in "config.cfg": validation error`))
 	})
 }
 
 func TestQueryable(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		base, tc := testclock.UseTime(gaetesting.TestingContext(), testclock.TestTimeUTC)
 		base = mathrand.Set(base, rand.New(rand.NewSource(2)))
 		base, counter := count.FilterRDS(base)
@@ -136,7 +136,7 @@ func TestQueryable(t *testing.T) {
 			Name: "testing",
 			Fetch: func(c context.Context, f ConfigFetcher) (ConfigBundle, error) {
 				var ts timestamppb.Timestamp
-				So(f.FetchTextProto(c, "config.cfg", &ts), ShouldBeNil)
+				assert.Loosely(t, f.FetchTextProto(c, "config.cfg", &ts), should.BeNil)
 				return ConfigBundle{"config.cfg": &ts}, nil
 			},
 			Prepare: func(c context.Context, cfg ConfigBundle, revision string) (Queryable, error) {
@@ -146,57 +146,57 @@ func TestQueryable(t *testing.T) {
 
 		// No imported configs yet.
 		q, err := p.Queryable(base)
-		So(err, ShouldEqual, ErrNoPolicy)
-		So(q, ShouldEqual, nil)
+		assert.Loosely(t, err, should.Equal(ErrNoPolicy))
+		assert.Loosely(t, q, should.BeNil)
 
 		c1 := prepareServiceConfig(base, map[string]string{
 			"config.cfg": "seconds: 12345",
 		})
 		rev1, err := p.ImportConfigs(c1)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		q, err = p.Queryable(base)
-		So(err, ShouldBeNil)
-		So(q.ConfigRevision(), ShouldEqual, rev1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q.ConfigRevision(), should.Equal(rev1))
 		qf := q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamppb.Timestamp{Seconds: 12345})
+		assert.Loosely(t, qf.bundle["config.cfg"], should.Resemble(&timestamppb.Timestamp{Seconds: 12345}))
 
-		So(counter.GetMulti.Total(), ShouldEqual, 4)
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(4))
 
 		// 3 min later using exact same config, no datastore calls.
 		tc.Add(3 * time.Minute)
 		q, err = p.Queryable(base)
-		So(err, ShouldBeNil)
-		So(q.(*queryableForm), ShouldEqual, qf)
-		So(counter.GetMulti.Total(), ShouldEqual, 4)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q.(*queryableForm), should.Equal(qf))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(4))
 
 		// 2 min after that, the datastore is rechecked, since the local cache has
 		// expired. No new configs there, exact same 'q' is returned.
 		tc.Add(2 * time.Minute)
 		q, err = p.Queryable(base)
-		So(err, ShouldBeNil)
-		So(q.(*queryableForm), ShouldEqual, qf)
-		So(counter.GetMulti.Total(), ShouldEqual, 5) // datastore call!
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q.(*queryableForm), should.Equal(qf))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(5)) // datastore call!
 
 		// Config has been updated.
 		c2 := prepareServiceConfig(base, map[string]string{
 			"config.cfg": "seconds: 6789",
 		})
 		rev2, err := p.ImportConfigs(c2)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Currently cached config is still fresh though, so it is still used.
 		q, err = p.Queryable(base)
-		So(err, ShouldBeNil)
-		So(q.ConfigRevision(), ShouldEqual, rev1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q.ConfigRevision(), should.Equal(rev1))
 
 		// 5 minutes later the cached copy expires and new one is fetched from
 		// the datastore.
 		tc.Add(5 * time.Minute)
 		q, err = p.Queryable(base)
-		So(err, ShouldBeNil)
-		So(q.ConfigRevision(), ShouldEqual, rev2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, q.ConfigRevision(), should.Equal(rev2))
 		qf = q.(*queryableForm)
-		So(qf.bundle["config.cfg"], ShouldResembleProto, &timestamppb.Timestamp{Seconds: 6789})
+		assert.Loosely(t, qf.bundle["config.cfg"], should.Resemble(&timestamppb.Timestamp{Seconds: 6789}))
 	})
 }

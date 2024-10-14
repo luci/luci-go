@@ -24,14 +24,14 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectDelegationToken(t *testing.T) {
@@ -56,15 +56,15 @@ func TestInspectDelegationToken(t *testing.T) {
 
 	tok, _ := SignToken(ctx, rpc.Signer, original)
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		resp, err := rpc.InspectDelegationToken(ctx, &admin.InspectDelegationTokenRequest{
 			Token: tok,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
 			Valid:      true,
 			Signed:     true,
 			NonExpired: true,
@@ -73,28 +73,28 @@ func TestInspectDelegationToken(t *testing.T) {
 				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
-		})
+		}))
 	})
 
-	Convey("Not base64", t, func() {
+	ftt.Run("Not base64", t, func(t *ftt.Test) {
 		resp, err := rpc.InspectDelegationToken(ctx, &admin.InspectDelegationTokenRequest{
 			Token: "@@@@@@@@@@@@@",
 		})
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
-		})
+		}))
 	})
 
-	Convey("Not valid envelope proto", t, func() {
+	ftt.Run("Not valid envelope proto", t, func(t *ftt.Test) {
 		resp, err := rpc.InspectDelegationToken(ctx, &admin.InspectDelegationTokenRequest{
 			Token: "zzzz",
 		})
-		So(err, ShouldBeNil)
-		So(resp.InvalidityReason, ShouldStartWith, "can't unmarshal the envelope - proto")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.InvalidityReason, should.HavePrefix("can't unmarshal the envelope - proto"))
 	})
 
-	Convey("Bad signature", t, func() {
+	ftt.Run("Bad signature", t, func(t *ftt.Test) {
 		env, _, _ := deserializeForTest(ctx, tok, rpc.Signer)
 		env.Pkcs1Sha256Sig = []byte("lalala")
 		blob, _ := proto.Marshal(env)
@@ -103,11 +103,11 @@ func TestInspectDelegationToken(t *testing.T) {
 		resp, err := rpc.InspectDelegationToken(ctx, &admin.InspectDelegationTokenRequest{
 			Token: tok,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "bad signature - crypto/rsa: verification error",
 			Signed:           false,
@@ -117,20 +117,20 @@ func TestInspectDelegationToken(t *testing.T) {
 				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
-		})
+		}))
 	})
 
-	Convey("Expired", t, func() {
+	ftt.Run("Expired", t, func(t *ftt.Test) {
 		tc.Add(2 * time.Hour)
 
 		resp, err := rpc.InspectDelegationToken(ctx, &admin.InspectDelegationTokenRequest{
 			Token: tok,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
+		assert.Loosely(t, resp, should.Resemble(&admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "expired",
 			Signed:           true,
@@ -140,6 +140,6 @@ func TestInspectDelegationToken(t *testing.T) {
 				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
-		})
+		}))
 	})
 }

@@ -20,19 +20,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey("produces correct row map", t, func() {
+	ftt.Run("produces correct row map", t, func(t *ftt.Test) {
 		info := MintedTokenInfo{
 			Request: &minter.MintDelegationTokenRequest{
 				ValidityDuration: 3600,
@@ -63,7 +63,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.DelegationToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.DelegationToken{
 			AuthDbRev:         123,
 			ConfigRev:         "config-rev",
 			ConfigRule:        "rule-name",
@@ -82,6 +82,6 @@ func TestMintedTokenInfo(t *testing.T) {
 			TargetServices:    []string{"*"},
 			TokenId:           "1234",
 			TokenKind:         messages.Subtoken_BEARER_DELEGATION_TOKEN,
-		})
+		}))
 	})
 }

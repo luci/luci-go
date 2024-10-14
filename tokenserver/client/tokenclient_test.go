@@ -26,17 +26,16 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTokenClient(t *testing.T) {
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
@@ -58,23 +57,23 @@ func TestTokenClient(t *testing.T) {
 		resp, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
 			TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
-		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, expectedResp)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(expectedResp))
 
 		rpc := c.Client.(*fakeRPCClient).In
-		So(rpc.Signature, ShouldResemble, []byte("fake signature"))
+		assert.Loosely(t, rpc.Signature, should.Resemble([]byte("fake signature")))
 
 		tokReq := &minter.MachineTokenRequest{}
-		So(proto.Unmarshal(rpc.SerializedTokenRequest, tokReq), ShouldBeNil)
-		So(tokReq, ShouldResembleProto, &minter.MachineTokenRequest{
+		assert.Loosely(t, proto.Unmarshal(rpc.SerializedTokenRequest, tokReq), should.BeNil)
+		assert.Loosely(t, tokReq, should.Resemble(&minter.MachineTokenRequest{
 			Certificate:        []byte("fake certificate"),
 			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
 			IssuedAt:           timestamppb.New(clock.Now(ctx)),
 			TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
-		})
+		}))
 	})
 
-	Convey("handles error", t, func() {
+	ftt.Run("handles error", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		c := Client{
@@ -90,7 +89,7 @@ func TestTokenClient(t *testing.T) {
 		_, err := c.MintMachineToken(ctx, &minter.MachineTokenRequest{
 			TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
-		So(err.Error(), ShouldEqual, "token server error 1234 - blah")
+		assert.Loosely(t, err.Error(), should.Equal("token server error 1234 - blah"))
 	})
 }
 

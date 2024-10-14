@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/signing"
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMachineFQDN(t *testing.T) {
@@ -37,28 +37,28 @@ func TestMachineFQDN(t *testing.T) {
 
 	// Test parsing of the real certs.
 
-	Convey("MachineFQDN works for cert without SAN", t, func() {
+	ftt.Run("MachineFQDN works for cert without SAN", t, func(t *ftt.Test) {
 		params := MintParams{Cert: getTestCert(certWithCN)}
 		fqdn, err := params.MachineFQDN()
-		So(err, ShouldBeNil)
-		So(fqdn, ShouldEqual, "luci-token-server-test-1.fake.domain")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fqdn, should.Equal("luci-token-server-test-1.fake.domain"))
 	})
 
-	Convey("MachineFQDN works for cert with SAN", t, func() {
+	ftt.Run("MachineFQDN works for cert with SAN", t, func(t *ftt.Test) {
 		params := MintParams{Cert: getTestCert(certWithSAN)}
 		fqdn, err := params.MachineFQDN()
-		So(err, ShouldBeNil)
-		So(fqdn, ShouldEqual, "fuchsia-debian-dev-141242e1-us-central1-f-0psd.c.fuchsia-infra.internal")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fqdn, should.Equal("fuchsia-debian-dev-141242e1-us-central1-f-0psd.c.fuchsia-infra.internal"))
 	})
 
-	Convey("MachineFQDN works for cert where CN == SAN", t, func() {
+	ftt.Run("MachineFQDN works for cert where CN == SAN", t, func(t *ftt.Test) {
 		params := MintParams{Cert: getTestCert(certWithCNEqualSAN)}
 		fqdn, err := params.MachineFQDN()
-		So(err, ShouldBeNil)
-		So(fqdn, ShouldEqual, "proto-chrome-focal.c.chromecompute.google.com.internal")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fqdn, should.Equal("proto-chrome-focal.c.chromecompute.google.com.internal"))
 	})
 
-	Convey("MachineFQDN with more than one SAN", t, func() {
+	ftt.Run("MachineFQDN with more than one SAN", t, func(t *ftt.Test) {
 		params := MintParams{
 			Cert: &x509.Certificate{
 				Subject:  pkix.Name{CommonName: "name1"},
@@ -66,25 +66,25 @@ func TestMachineFQDN(t *testing.T) {
 			},
 		}
 		fqdn, err := params.MachineFQDN()
-		So(fqdn, ShouldEqual, "name1.example.com")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, fqdn, should.Equal("name1.example.com"))
+		assert.Loosely(t, err, should.BeNil)
 	})
 
 	// Test some synthetic cases.
 
-	Convey("MachineFQDN with empty CN", t, func() {
+	ftt.Run("MachineFQDN with empty CN", t, func(t *ftt.Test) {
 		params := MintParams{
 			Cert: &x509.Certificate{
 				DNSNames: []string{"name1.example.com"},
 			},
 		}
 		_, err := params.MachineFQDN()
-		So(err, ShouldErrLike, "unsupported cert, Subject CN field is required")
+		assert.Loosely(t, err, should.ErrLike("unsupported cert, Subject CN field is required"))
 	})
 }
 
 func TestMintParamsValidation(t *testing.T) {
-	Convey("with token params", t, func() {
+	ftt.Run("with token params", t, func(t *ftt.Test) {
 		params := MintParams{
 			Cert: &x509.Certificate{
 				Subject:      pkix.Name{CommonName: "host.domain"},
@@ -100,57 +100,57 @@ func TestMintParamsValidation(t *testing.T) {
 			},
 		}
 
-		Convey("good params", func() {
-			So(params.Validate(), ShouldBeNil)
+		t.Run("good params", func(t *ftt.Test) {
+			assert.Loosely(t, params.Validate(), should.BeNil)
 			fqdn, err := params.MachineFQDN()
-			So(err, ShouldBeNil)
-			So(fqdn, ShouldEqual, "host.domain")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fqdn, should.Equal("host.domain"))
 		})
 
-		Convey("good params with subdomain", func() {
+		t.Run("good params with subdomain", func(t *ftt.Test) {
 			params.Cert.Subject.CommonName = "host.subdomain.domain"
-			So(params.Validate(), ShouldBeNil)
+			assert.Loosely(t, params.Validate(), should.BeNil)
 			fqdn, err := params.MachineFQDN()
-			So(err, ShouldBeNil)
-			So(fqdn, ShouldEqual, "host.subdomain.domain")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fqdn, should.Equal("host.subdomain.domain"))
 		})
 
-		Convey("bad FQDN case is converted to lowercase", func() {
+		t.Run("bad FQDN case is converted to lowercase", func(t *ftt.Test) {
 			params.Cert.Subject.CommonName = "HOST.domain"
-			So(params.Validate(), ShouldBeNil)
+			assert.Loosely(t, params.Validate(), should.BeNil)
 			fqdn, err := params.MachineFQDN()
-			So(err, ShouldBeNil)
-			So(fqdn, ShouldEqual, "host.domain")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fqdn, should.Equal("host.domain"))
 		})
 
-		Convey("bad FQDN", func() {
+		t.Run("bad FQDN", func(t *ftt.Test) {
 			params.Cert.Subject.CommonName = "host"
-			So(params.Validate(), ShouldErrLike, "not a valid FQDN")
+			assert.Loosely(t, params.Validate(), should.ErrLike("not a valid FQDN"))
 		})
 
-		Convey("not listed", func() {
+		t.Run("not listed", func(t *ftt.Test) {
 			params.Cert.Subject.CommonName = "host.blah"
-			So(params.Validate(), ShouldErrLike, "not listed in the config")
+			assert.Loosely(t, params.Validate(), should.ErrLike("not listed in the config"))
 		})
 
-		Convey("tokens are not allowed", func() {
+		t.Run("tokens are not allowed", func(t *ftt.Test) {
 			params.Config.KnownDomains[0].MachineTokenLifetime = 0
-			So(params.Validate(), ShouldErrLike, "are not allowed")
+			assert.Loosely(t, params.Validate(), should.ErrLike("are not allowed"))
 		})
 
-		Convey("bad SN", func() {
+		t.Run("bad SN", func(t *ftt.Test) {
 			params.Cert.SerialNumber = big.NewInt(-1)
-			So(params.Validate(), ShouldErrLike, "invalid certificate serial number")
+			assert.Loosely(t, params.Validate(), should.ErrLike("invalid certificate serial number"))
 		})
 	})
 }
 
 func TestMint(t *testing.T) {
-	Convey("with mock context", t, func() {
+	ftt.Run("with mock context", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, time.Date(2015, time.February, 3, 4, 5, 6, 7, time.UTC))
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			params := MintParams{
 				Cert: &x509.Certificate{
 					Subject:      pkix.Name{CommonName: "host.domain"},
@@ -167,17 +167,17 @@ func TestMint(t *testing.T) {
 				Signer: fakeSigner{},
 			}
 			body, token, err := Mint(ctx, &params)
-			So(err, ShouldBeNil)
-			So(body, ShouldResembleProto, &tokenserver.MachineTokenBody{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, body, should.Resemble(&tokenserver.MachineTokenBody{
 				MachineFqdn: "host.domain",
 				IssuedBy:    "token-server@example.com",
 				IssuedAt:    1422936306,
 				Lifetime:    3600,
 				CaId:        0,
 				CertSn:      big.NewInt(12345).Bytes(),
-			})
-			So(token, ShouldEqual, "CjQKC2hvc3QuZG9tYWluEhh0b2tlbi1zZXJ2ZXJAZXhhbXB"+
-				"sZS5jb20Y8pHBpgUgkBw6AjA5EgZrZXlfaWQaCXNpZ25hdHVyZQ")
+			}))
+			assert.Loosely(t, token, should.Equal("CjQKC2hvc3QuZG9tYWluEhh0b2tlbi1zZXJ2ZXJAZXhhbXB"+
+				"sZS5jb20Y8pHBpgUgkBw6AjA5EgZrZXlfaWQaCXNpZ25hdHVyZQ"))
 		})
 	})
 }

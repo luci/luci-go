@@ -18,21 +18,22 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerateTokenID(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
 		id, err := GenerateTokenID(ctx, "zzz")
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, 1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal(1))
 
 		id, err = GenerateTokenID(ctx, "zzz")
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, 2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal(2))
 	})
 }

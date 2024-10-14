@@ -21,14 +21,14 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/policy"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestIsAuthorizedRequestor(t *testing.T) {
@@ -38,7 +38,7 @@ func TestIsAuthorizedRequestor(t *testing.T) {
 		Identity: "user:some-user@example.com",
 	})
 
-	Convey("IsAuthorizedRequestor works", t, func() {
+	ftt.Run("IsAuthorizedRequestor works", t, func(t *ftt.Test) {
 		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "rule 1"
@@ -61,34 +61,34 @@ func TestIsAuthorizedRequestor(t *testing.T) {
 				max_validity_duration: 86400
 			}
 		`)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.NotBeNil)
 
 		res, err := cfg.IsAuthorizedRequestor(ctx, identity.Identity("user:some-user@example.com"))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue)
 
 		ctx = auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:some-another-user@example.com",
 		})
 		res, err = cfg.IsAuthorizedRequestor(ctx, identity.Identity("user:some-another-user@example.com"))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue)
 
 		ctx = auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:unknown-user@example.com",
 		})
 		res, err = cfg.IsAuthorizedRequestor(ctx, identity.Identity("user:unknown-user@example.com"))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeFalse)
 
 		ctx = auth.WithState(context.Background(), &authtest.FakeState{
 			Identity:       "user:via-group@example.com",
 			IdentityGroups: []string{"some-group"},
 		})
 		res, err = cfg.IsAuthorizedRequestor(ctx, identity.Identity("user:via-group@example.com"))
-		So(err, ShouldBeNil)
-		So(res, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.BeTrue)
 	})
 }
 
@@ -105,7 +105,7 @@ func TestFindMatchingRule(t *testing.T) {
 		),
 	})
 
-	Convey("with example config", t, func() {
+	ftt.Run("with example config", t, func(t *ftt.Test) {
 		cfg, err := loadConfig(ctx, `
 			rules {
 				name: "rule 1"
@@ -153,10 +153,10 @@ func TestFindMatchingRule(t *testing.T) {
 				max_validity_duration: 86400
 			}
 		`)
-		So(err, ShouldBeNil)
-		So(cfg, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfg, should.NotBeNil)
 
-		Convey("Direct matches and misses", func() {
+		t.Run("Direct matches and misses", func(t *ftt.Test) {
 			// Match.
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor@example.com",
@@ -164,9 +164,9 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.Name, ShouldEqual, "rule 1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Name, should.Equal("rule 1"))
 
 			// Unknown requestor.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
@@ -175,8 +175,8 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldErrLike, "no matching delegation rules in the config")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("no matching delegation rules in the config"))
+			assert.Loosely(t, res, should.BeNil)
 
 			// Unknown delegator.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
@@ -185,8 +185,8 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldErrLike, "no matching delegation rules in the config")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("no matching delegation rules in the config"))
+			assert.Loosely(t, res, should.BeNil)
 
 			// Unknown audience.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
@@ -195,8 +195,8 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:unknown-allowed-audience@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldErrLike, "no matching delegation rules in the config")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("no matching delegation rules in the config"))
+			assert.Loosely(t, res, should.BeNil)
 
 			// Unknown target service.
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
@@ -205,20 +205,20 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:allowed-audience@example.com"),
 				Services:  makeSet("service:unknown-some-service"),
 			})
-			So(err, ShouldErrLike, "no matching delegation rules in the config")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("no matching delegation rules in the config"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("Matches via groups", func() {
+		t.Run("Matches via groups", func(t *ftt.Test) {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor-group-member@example.com",
 				Delegator: "user:delegators-group-member@example.com",
 				Audience:  makeSet("group:audience-group"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.Name, ShouldEqual, "rule 2")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Name, should.Equal("rule 2"))
 
 			// Doesn't do group lookup when checking audience!
 			res, err = cfg.FindMatchingRule(ctx, &RulesQuery{
@@ -227,55 +227,55 @@ func TestFindMatchingRule(t *testing.T) {
 				Audience:  makeSet("user:audience-group-member@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldErrLike, "no matching delegation rules in the config")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("no matching delegation rules in the config"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("REQUESTOR rules work", func() {
+		t.Run("REQUESTOR rules work", func(t *ftt.Test) {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:requestor-group-member@example.com",
 				Delegator: "user:requestor-group-member@example.com",
 				Audience:  makeSet("user:requestor-group-member@example.com"),
 				Services:  makeSet("service:some-service"),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.Name, ShouldEqual, "rule 3")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Name, should.Equal("rule 3"))
 		})
 
-		Convey("'*' rules work", func() {
+		t.Run("'*' rules work", func(t *ftt.Test) {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:some-requestor@example.com",
 				Delegator: "user:some-requestor@example.com",
 				Audience:  makeSet("group:abc", "user:def@example.com"),
 				Services:  makeSet("service:unknown"),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.Name, ShouldEqual, "rule 4")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Name, should.Equal("rule 4"))
 		})
 
-		Convey("a conflict is handled", func() {
+		t.Run("a conflict is handled", func(t *ftt.Test) {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:conflicts-with-rule-5@example.com",
 				Delegator: "user:conflicts-with-rule-5@example.com",
 				Audience:  makeSet("group:abc", "user:def@example.com"),
 				Services:  makeSet("service:unknown"),
 			})
-			So(err, ShouldErrLike, `ambiguous request, multiple delegation rules match ("rule 4", "rule 5")`)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike(`ambiguous request, multiple delegation rules match ("rule 4", "rule 5")`))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("implicit project:* rule works", func() {
+		t.Run("implicit project:* rule works", func(t *ftt.Test) {
 			res, err := cfg.FindMatchingRule(ctx, &RulesQuery{
 				Requestor: "user:luci-service@example.com",
 				Delegator: "project:some-project",
 				Audience:  makeSet("user:luci-service@example.com"),
 				Services:  makeSet("service:some-target-service"),
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.Name, ShouldEqual, "allow-project-identities")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.Name, should.Equal("allow-project-identities"))
 		})
 	})
 }

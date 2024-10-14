@@ -23,17 +23,18 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFetchCRLRPC(t *testing.T) {
-	Convey("with mock context", t, func() {
+	ftt.Run("with mock context", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 			cfg.AnonymousTransport = func(context.Context) http.RoundTripper {
@@ -59,7 +60,7 @@ func TestFetchCRLRPC(t *testing.T) {
 			return err
 		}
 
-		Convey("FetchCRL not configured", func() {
+		t.Run("FetchCRL not configured", func(t *ftt.Test) {
 			// Prepare config (with empty crl_url).
 			importConfig(`
 				certificate_authority {
@@ -69,10 +70,10 @@ func TestFetchCRLRPC(t *testing.T) {
 			`)
 			// Use it, must succeed without doing anything.
 			err := callFetchCRL("Puppet CA: fake.ca", false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("FetchCRL works (der, no etags)", func() {
+		t.Run("FetchCRL works (der, no etags)", func(t *ftt.Test) {
 			ts := serveCRL()
 			defer ts.Close()
 
@@ -88,18 +89,18 @@ func TestFetchCRLRPC(t *testing.T) {
 			// Import works.
 			ts.CRL = fakeCACrl
 			err := callFetchCRL("Puppet CA: fake.ca", true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// CRL is there.
 			crl := CRL{
 				Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 			}
 			err = ds.Get(ctx, &crl)
-			So(err, ShouldBeNil)
-			So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, crl.RevokedCertsCount, should.Equal(1)) // fakeCACrl has only 1 SN
 		})
 
-		Convey("FetchCRL works (pem, no etags)", func() {
+		t.Run("FetchCRL works (pem, no etags)", func(t *ftt.Test) {
 			ts := serveCRL()
 			defer ts.Close()
 
@@ -116,18 +117,18 @@ func TestFetchCRLRPC(t *testing.T) {
 			ts.CRL = fakeCACrl
 			ts.ServePEM = true
 			err := callFetchCRL("Puppet CA: fake.ca", true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// CRL is there.
 			crl := CRL{
 				Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 			}
 			err = ds.Get(ctx, &crl)
-			So(err, ShouldBeNil)
-			So(crl.RevokedCertsCount, ShouldEqual, 1) // fakeCACrl has only 1 SN
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, crl.RevokedCertsCount, should.Equal(1)) // fakeCACrl has only 1 SN
 		})
 
-		Convey("FetchCRL works (der, with etags)", func() {
+		t.Run("FetchCRL works (der, with etags)", func(t *ftt.Test) {
 			ts := serveCRL()
 			defer ts.Close()
 
@@ -143,35 +144,35 @@ func TestFetchCRLRPC(t *testing.T) {
 			// Initial import works.
 			ts.CRL = fakeCACrl
 			ts.Etag = `"etag1"`
-			So(callFetchCRL("Puppet CA: fake.ca", false), ShouldBeNil)
+			assert.Loosely(t, callFetchCRL("Puppet CA: fake.ca", false), should.BeNil)
 
 			// CRL is there.
 			crl := CRL{
 				Parent: ds.NewKey(ctx, "CA", "Puppet CA: fake.ca", 0, nil),
 			}
 			err := ds.Get(ctx, &crl)
-			So(err, ShouldBeNil)
-			So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
-			So(crl.EntityVersion, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, crl.LastFetchETag, should.Equal(`"etag1"`))
+			assert.Loosely(t, crl.EntityVersion, should.Equal(1))
 
 			// Refetch. No etag change.
-			So(callFetchCRL("Puppet CA: fake.ca", false), ShouldBeNil)
+			assert.Loosely(t, callFetchCRL("Puppet CA: fake.ca", false), should.BeNil)
 
 			// Entity isn't touched.
 			err = ds.Get(ctx, &crl)
-			So(err, ShouldBeNil)
-			So(crl.LastFetchETag, ShouldEqual, `"etag1"`)
-			So(crl.EntityVersion, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, crl.LastFetchETag, should.Equal(`"etag1"`))
+			assert.Loosely(t, crl.EntityVersion, should.Equal(1))
 
 			// Refetch. Etag changes.
 			ts.Etag = `"etag2"`
-			So(callFetchCRL("Puppet CA: fake.ca", false), ShouldBeNil)
+			assert.Loosely(t, callFetchCRL("Puppet CA: fake.ca", false), should.BeNil)
 
 			// Entity is updated.
 			err = ds.Get(ctx, &crl)
-			So(err, ShouldBeNil)
-			So(crl.LastFetchETag, ShouldEqual, `"etag2"`)
-			So(crl.EntityVersion, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, crl.LastFetchETag, should.Equal(`"etag2"`))
+			assert.Loosely(t, crl.EntityVersion, should.Equal(2))
 		})
 	})
 }

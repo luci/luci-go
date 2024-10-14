@@ -18,42 +18,43 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEntitiesWork(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := gaetesting.TestingContext()
 
 		hdr, err := getImportedPolicyHeader(c, "policy name")
-		So(err, ShouldBeNil)
-		So(hdr, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hdr, should.BeNil)
 
 		body, err := getImportedPolicyBody(c, "policy name")
-		So(err, ShouldBeNil)
-		So(body, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, body, should.BeNil)
 
-		So(updateImportedPolicy(c, "policy name", "rev", "sha256", []byte("body")), ShouldBeNil)
+		assert.Loosely(t, updateImportedPolicy(c, "policy name", "rev", "sha256", []byte("body")), should.BeNil)
 
 		hdr, err = getImportedPolicyHeader(c, "policy name")
-		So(err, ShouldBeNil)
-		So(hdr, ShouldResemble, &importedPolicyHeader{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, hdr, should.Resemble(&importedPolicyHeader{
 			Name:     "policy name",
 			Revision: "rev",
 			SHA256:   "sha256",
-		})
+		}))
 
 		body, err = getImportedPolicyBody(c, "policy name")
-		So(err, ShouldBeNil)
-		So(body, ShouldResemble, &importedPolicyBody{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, body, should.Resemble(&importedPolicyBody{
 			Parent:   datastore.KeyForObj(c, hdr),
 			Revision: "rev",
 			SHA256:   "sha256",
 			Data:     []byte("body"),
-		})
+		}))
 	})
 }

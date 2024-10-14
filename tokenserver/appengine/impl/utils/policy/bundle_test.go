@@ -19,26 +19,26 @@ import (
 	"encoding/gob"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigBundle(t *testing.T) {
-	Convey("Empty map", t, func() {
+	ftt.Run("Empty map", t, func(t *ftt.Test) {
 		var b ConfigBundle
 		blob, err := serializeBundle(b)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b, unknown, err := deserializeBundle(blob)
-		So(err, ShouldBeNil)
-		So(unknown, ShouldBeNil)
-		So(len(b), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unknown, should.BeNil)
+		assert.Loosely(t, len(b), should.BeZero)
 	})
 
-	Convey("Non-empty map", t, func() {
+	ftt.Run("Non-empty map", t, func(t *ftt.Test) {
 		// We use well-known proto types in this test to avoid depending on some
 		// other random proto messages. It doesn't matter what proto messages are
 		// used here.
@@ -47,32 +47,32 @@ func TestConfigBundle(t *testing.T) {
 			"b": &durationpb.Duration{Seconds: 2},
 		}
 		blob, err := serializeBundle(b1)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		b2, unknown, err := deserializeBundle(blob)
-		So(err, ShouldBeNil)
-		So(unknown, ShouldBeNil)
-		So(b2, ShouldHaveLength, len(b1))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unknown, should.BeNil)
+		assert.Loosely(t, b2, should.HaveLength(len(b1)))
 		for k := range b2 {
-			So(b2[k], ShouldResembleProto, b1[k])
+			assert.Loosely(t, b2[k], should.Resemble(b1[k]))
 		}
 	})
 
-	Convey("Unknown proto", t, func() {
+	ftt.Run("Unknown proto", t, func(t *ftt.Test) {
 		items := []blobWithType{
 			{"abc", "unknown.type", []byte("zzz")},
 		}
 		out := bytes.Buffer{}
-		So(gob.NewEncoder(&out).Encode(items), ShouldBeNil)
+		assert.Loosely(t, gob.NewEncoder(&out).Encode(items), should.BeNil)
 
 		b, unknown, err := deserializeBundle(out.Bytes())
-		So(err, ShouldBeNil)
-		So(unknown, ShouldResemble, items)
-		So(len(b), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unknown, should.Resemble(items))
+		assert.Loosely(t, len(b), should.BeZero)
 	})
 
-	Convey("Rejects nil", t, func() {
+	ftt.Run("Rejects nil", t, func(t *ftt.Test) {
 		_, err := serializeBundle(ConfigBundle{"abc": nil})
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

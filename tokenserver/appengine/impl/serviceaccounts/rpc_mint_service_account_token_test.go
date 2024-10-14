@@ -31,6 +31,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -39,10 +42,6 @@ import (
 
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const (
@@ -138,8 +137,8 @@ func TestMintServiceAccountToken(t *testing.T) {
 		},
 	}
 
-	Convey("Happy path", t, func() {
-		Convey("Access token", func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
+		t.Run("Access token", func(t *ftt.Test) {
 			req := &minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
@@ -148,34 +147,34 @@ func TestMintServiceAccountToken(t *testing.T) {
 				AuditTags:      []string{"k:v1", "k:v2"},
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
 				Token:          "access-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
-			})
+			}))
 
-			So(lastAccessTokenCall, ShouldResemble, auth.MintAccessTokenParams{
+			assert.Loosely(t, lastAccessTokenCall, should.Resemble(auth.MintAccessTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Scopes:         []string{"scope-a", "scope-z"},
 				MinTTL:         5 * time.Minute,
-			})
+			}))
 
 			// We can't use ShouldResemble here because it contains proto messages.
 			// Compare field-by-field instead.
-			So(loggedTok.Request, ShouldEqual, req)
-			So(loggedTok.Response, ShouldEqual, resp)
-			So(loggedTok.RequestedAt, ShouldResemble, clock.Now(ctx))
-			So(loggedTok.OAuthScopes, ShouldResemble, []string{"scope-a", "scope-z"})
-			So(loggedTok.RequestIdentity, ShouldEqual, testCaller)
-			So(loggedTok.PeerIdentity, ShouldEqual, testPeer)
-			So(loggedTok.ConfigRev, ShouldEqual, "fake-revision")
-			So(loggedTok.PeerIP.String(), ShouldEqual, testPeerIP)
-			So(loggedTok.RequestID, ShouldEqual, testRequestID.String())
-			So(loggedTok.AuthDBRev, ShouldEqual, 0) // FakeDB is always 0
+			assert.Loosely(t, loggedTok.Request, should.Equal(req))
+			assert.Loosely(t, loggedTok.Response, should.Equal(resp))
+			assert.Loosely(t, loggedTok.RequestedAt, should.Resemble(clock.Now(ctx)))
+			assert.Loosely(t, loggedTok.OAuthScopes, should.Resemble([]string{"scope-a", "scope-z"}))
+			assert.Loosely(t, loggedTok.RequestIdentity, should.Equal(testCaller))
+			assert.Loosely(t, loggedTok.PeerIdentity, should.Equal(testPeer))
+			assert.Loosely(t, loggedTok.ConfigRev, should.Equal("fake-revision"))
+			assert.Loosely(t, loggedTok.PeerIP.String(), should.Equal(testPeerIP))
+			assert.Loosely(t, loggedTok.RequestID, should.Equal(testRequestID.String()))
+			assert.Loosely(t, loggedTok.AuthDBRev, should.BeZero) // FakeDB is always 0
 		})
 
-		Convey("ID token", func() {
+		t.Run("ID token", func(t *ftt.Test) {
 			req := &minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
 				ServiceAccount:  testAccount.Email(),
@@ -184,21 +183,21 @@ func TestMintServiceAccountToken(t *testing.T) {
 				AuditTags:       []string{"k:v1", "k:v2"},
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
-			})
+			}))
 
-			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				MinTTL:         5 * time.Minute,
-			})
+			}))
 		})
 
-		Convey("Delegation through project-scoped account", func() {
+		t.Run("Delegation through project-scoped account", func(t *ftt.Test) {
 			req := &minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
 				ServiceAccount:  testAccount.Email(),
@@ -207,22 +206,22 @@ func TestMintServiceAccountToken(t *testing.T) {
 				AuditTags:       []string{"k:v1", "k:v2"},
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
-			})
+			}))
 
-			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				Delegates:      []string{"scoped@example.com"},
 				MinTTL:         5 * time.Minute,
-			})
+			}))
 		})
 
-		Convey("Delegation through project-scoped account in @internal", func() {
+		t.Run("Delegation through project-scoped account in @internal", func(t *ftt.Test) {
 			req := &minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
 				ServiceAccount:  testAccount.Email(),
@@ -231,145 +230,145 @@ func TestMintServiceAccountToken(t *testing.T) {
 				AuditTags:       []string{"k:v1", "k:v2"},
 			}
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, &minter.MintServiceAccountTokenResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&minter.MintServiceAccountTokenResponse{
 				Token:          "id-token-for-" + testAccount.Email(),
 				Expiry:         timestamppb.New(testclock.TestRecentTimeUTC.Add(time.Hour).Truncate(time.Second)),
 				ServiceVersion: testServiceVer,
-			})
+			}))
 
-			So(lastIDTokenCall, ShouldResemble, auth.MintIDTokenParams{
+			assert.Loosely(t, lastIDTokenCall, should.Resemble(auth.MintIDTokenParams{
 				ServiceAccount: testAccount.Email(),
 				Audience:       "test-audience",
 				MinTTL:         5 * time.Minute,
-			})
+			}))
 		})
 	})
 
-	Convey("Request validation", t, func() {
+	ftt.Run("Request validation", t, func(t *ftt.Test) {
 		call := func(req *minter.MintServiceAccountTokenRequest) error {
 			resp, err := rpc.MintServiceAccountToken(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(resp, ShouldBeNil)
-			So(status.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, resp, should.BeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			return err
 		}
 
-		Convey("Bad token kind", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad token kind", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind: 0,
-			}), ShouldErrLike, "token_kind is required")
+			}), should.ErrLike("token_kind is required"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind: 1234,
-			}), ShouldErrLike, "unrecognized token_kind")
+			}), should.ErrLike("unrecognized token_kind"))
 		})
 
-		Convey("Bad service account", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad service account", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind: minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
-			}), ShouldErrLike, "service_account is required")
+			}), should.ErrLike("service_account is required"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: "bad email",
-			}), ShouldErrLike, "bad service_account")
+			}), should.ErrLike("bad service_account"))
 		})
 
-		Convey("Bad realm", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad realm", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
-			}), ShouldErrLike, "realm is required")
+			}), should.ErrLike("realm is required"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          "not-global",
-			}), ShouldErrLike, "bad realm")
+			}), should.ErrLike("bad realm"))
 		})
 
-		Convey("Bad access token request", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad access token request", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          testRealm,
-			}), ShouldErrLike, "oauth_scope is required")
+			}), should.ErrLike("oauth_scope is required"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          testRealm,
 				OauthScope:     []string{"zzz", ""},
-			}), ShouldErrLike, "bad oauth_scope: got an empty string")
+			}), should.ErrLike("bad oauth_scope: got an empty string"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount:  testAccount.Email(),
 				Realm:           testRealm,
 				OauthScope:      []string{"zzz"},
 				IdTokenAudience: "aud",
-			}), ShouldErrLike, "id_token_audience must not be used")
+			}), should.ErrLike("id_token_audience must not be used"))
 		})
 
-		Convey("Bad ID token request", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad ID token request", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          testRealm,
-			}), ShouldErrLike, "id_token_audience is required")
+			}), should.ErrLike("id_token_audience is required"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
 				ServiceAccount:  testAccount.Email(),
 				Realm:           testRealm,
 				OauthScope:      []string{"zzz"},
 				IdTokenAudience: "aud",
-			}), ShouldErrLike, "oauth_scope must not be used")
+			}), should.ErrLike("oauth_scope must not be used"))
 		})
 
-		Convey("Bad min_validity_duration", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad min_validity_duration", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:           minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount:      testAccount.Email(),
 				Realm:               testRealm,
 				OauthScope:          []string{"zzz"},
 				MinValidityDuration: -1,
-			}), ShouldErrLike, "must be positive")
+			}), should.ErrLike("must be positive"))
 
-			So(call(&minter.MintServiceAccountTokenRequest{
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:           minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount:      testAccount.Email(),
 				Realm:               testRealm,
 				OauthScope:          []string{"zzz"},
 				MinValidityDuration: 3601,
-			}), ShouldErrLike, "must be not greater than 3600")
+			}), should.ErrLike("must be not greater than 3600"))
 		})
 
-		Convey("Bad audit_tags", func() {
-			So(call(&minter.MintServiceAccountTokenRequest{
+		t.Run("Bad audit_tags", func(t *ftt.Test) {
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          testRealm,
 				OauthScope:     []string{"zzz"},
 				AuditTags:      []string{"not kv"},
-			}), ShouldErrLike, "bad audit_tags")
+			}), should.ErrLike("bad audit_tags"))
 		})
 
-		Convey("Missing project-scoped identity", func() {
-			So(projectidentity.ProjectIdentities(ctx).Delete(ctx, &projectidentity.ProjectIdentity{
+		t.Run("Missing project-scoped identity", func(t *ftt.Test) {
+			assert.Loosely(t, projectidentity.ProjectIdentities(ctx).Delete(ctx, &projectidentity.ProjectIdentity{
 				Project: testProjectScoped,
-			}), ShouldBeNil)
-			So(call(&minter.MintServiceAccountTokenRequest{
+			}), should.BeNil)
+			assert.Loosely(t, call(&minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 				ServiceAccount: testAccount.Email(),
 				Realm:          testRealmScoped,
 				OauthScope:     []string{"zzz"},
-			}), ShouldErrLike, "project-scoped account for project test-proj-scoped is not configured")
+			}), should.ErrLike("project-scoped account for project test-proj-scoped is not configured"))
 		})
 	})
 
-	Convey("ACL checks", t, func() {
+	ftt.Run("ACL checks", t, func(t *ftt.Test) {
 		call := func(ctx context.Context) error {
 			resp, err := rpc.MintServiceAccountToken(ctx, &minter.MintServiceAccountTokenRequest{
 				TokenKind:      minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
@@ -377,13 +376,13 @@ func TestMintServiceAccountToken(t *testing.T) {
 				Realm:          testRealm,
 				OauthScope:     []string{"scope"},
 			})
-			So(err, ShouldNotBeNil)
-			So(resp, ShouldBeNil)
-			So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, resp, should.BeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			return err
 		}
 
-		Convey("No mint permission", func() {
+		t.Run("No mint permission", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: testCaller,
 				FakeDB: authtest.NewFakeDB(
@@ -391,10 +390,10 @@ func TestMintServiceAccountToken(t *testing.T) {
 					authtest.MockPermission(testAccount, testRealm, permExistInRealm),
 				),
 			})
-			So(call(ctx), ShouldErrLike, "unknown realm or no permission to use service accounts there")
+			assert.Loosely(t, call(ctx), should.ErrLike("unknown realm or no permission to use service accounts there"))
 		})
 
-		Convey("No existInRealm permission", func() {
+		t.Run("No existInRealm permission", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: testCaller,
 				FakeDB: authtest.NewFakeDB(
@@ -402,12 +401,12 @@ func TestMintServiceAccountToken(t *testing.T) {
 					// Note: no perm permExistInRealm here.
 				),
 			})
-			So(call(ctx), ShouldErrLike, "is not in the realm")
+			assert.Loosely(t, call(ctx), should.ErrLike("is not in the realm"))
 		})
 
-		Convey("Not in the mapping", func() {
+		t.Run("Not in the mapping", func(t *ftt.Test) {
 			mapping, _ = loadMapping(ctx, fmt.Sprintf(`mapping {}`))
-			So(call(ctx), ShouldErrLike, "is not allowed to be used")
+			assert.Loosely(t, call(ctx), should.ErrLike("is not allowed to be used"))
 		})
 	})
 }

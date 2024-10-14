@@ -22,14 +22,15 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/shards"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCRL(t *testing.T) {
-	Convey("CRL storage works", t, func() {
+	ftt.Run("CRL storage works", t, func(t *ftt.Test) {
 		caName := "CA"
 		shardCount := 4
 		cachingTime := 10 * time.Second
@@ -46,14 +47,14 @@ func TestCRL(t *testing.T) {
 		}
 
 		// Upload it.
-		So(UpdateCRLSet(ctx, caName, shardCount, crl), ShouldBeNil)
+		assert.Loosely(t, UpdateCRLSet(ctx, caName, shardCount, crl), should.BeNil)
 
 		// Use it.
 		checker := NewCRLChecker(caName, shardCount, cachingTime)
 		for i := 1; i < 300; i++ {
 			revoked, err := checker.IsRevokedSN(ctx, big.NewInt(int64(i)))
-			So(err, ShouldBeNil)
-			So(revoked, ShouldEqual, (i%3) == 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, revoked, should.Equal((i%3) == 0))
 		}
 
 		// Cert #1 is revoked now too. It will invalidate one cache shard.
@@ -62,26 +63,26 @@ func TestCRL(t *testing.T) {
 		})
 
 		// Upload it.
-		So(UpdateCRLSet(ctx, caName, shardCount, crl), ShouldBeNil)
+		assert.Loosely(t, UpdateCRLSet(ctx, caName, shardCount, crl), should.BeNil)
 
 		// Old cache is still used.
 		revoked, err := checker.IsRevokedSN(ctx, big.NewInt(1))
-		So(err, ShouldBeNil)
-		So(revoked, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeFalse)
 
 		// Roll time to invalidate the cache.
 		clk.Add(cachingTime * 2)
 
 		// New shard version is fetched.
 		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(1))
-		So(err, ShouldBeNil)
-		So(revoked, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.BeTrue)
 
 		// Hit a code path for refetching of an unchanged shard. Pick a SN that
 		// doesn't belong to shard where '1' is.
 		shardIdx := func(sn int64) int {
 			blob, err := utils.SerializeSN(big.NewInt(sn))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return shards.ShardIndex(blob, shardCount)
 		}
 		forbiddenIdx := shardIdx(1)
@@ -92,7 +93,7 @@ func TestCRL(t *testing.T) {
 
 		// Hit this shard.
 		revoked, err = checker.IsRevokedSN(ctx, big.NewInt(sn))
-		So(err, ShouldBeNil)
-		So(revoked, ShouldEqual, (sn%3) == 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, revoked, should.Equal((sn%3) == 0))
 	})
 }

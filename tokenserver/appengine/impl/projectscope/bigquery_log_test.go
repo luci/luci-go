@@ -20,17 +20,17 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey("produces correct row map", t, func() {
+	ftt.Run("produces correct row map", t, func(t *ftt.Test) {
 		info := MintedTokenInfo{
 			Request: &minter.MintProjectTokenRequest{
 				MinValidityDuration: 3600,
@@ -49,7 +49,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev:   123,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.ProjectToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.ProjectToken{
 			Fingerprint:    "8b7df143d91c716ecfa5fc1730022f6b",
 			ServiceAccount: "foo@bar.com",
 			LuciProject:    "someproject",
@@ -60,6 +60,6 @@ func TestMintedTokenInfo(t *testing.T) {
 			ServiceVersion: "unit-tests/mocked-ver",
 			GaeRequestId:   "gae-request-id",
 			AuthDbRev:      123,
-		})
+		}))
 	})
 }

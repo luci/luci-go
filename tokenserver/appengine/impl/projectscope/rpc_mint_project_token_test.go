@@ -25,14 +25,14 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/projectidentity"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -76,22 +76,22 @@ func TestMintProjectToken(t *testing.T) {
 	ctx := testingContext("service@example.com")
 	member, err := auth.IsMember(ctx, projectActorsGroup)
 
-	Convey("initialize rpc handler", t, func() {
+	ftt.Run("initialize rpc handler", t, func(t *ftt.Test) {
 		rpc := newTestMintProjectTokenRPC()
 
-		Convey("validateRequest works", func() {
+		t.Run("validateRequest works", func(t *ftt.Test) {
 
-			Convey("empty fields", func() {
+			t.Run("empty fields", func(t *ftt.Test) {
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "",
 					OauthScope:          []string{},
 					MinValidityDuration: 7200,
 				}
 				_, err := rpc.MintProjectToken(ctx, req)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey("empty project", func() {
+			t.Run("empty project", func(t *ftt.Test) {
 
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "",
@@ -99,10 +99,10 @@ func TestMintProjectToken(t *testing.T) {
 					MinValidityDuration: 1800,
 				}
 				_, err := rpc.MintProjectToken(ctx, req)
-				So(err, assertions.ShouldErrLike, `luci_project is empty`)
+				assert.Loosely(t, err, should.ErrLike(`luci_project is empty`))
 			})
 
-			Convey("empty scopes", func() {
+			t.Run("empty scopes", func(t *ftt.Test) {
 
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "foo-project",
@@ -111,37 +111,37 @@ func TestMintProjectToken(t *testing.T) {
 				}
 
 				_, err := rpc.MintProjectToken(ctx, req)
-				So(err, assertions.ShouldErrLike, `oauth_scope is required`)
+				assert.Loosely(t, err, should.ErrLike(`oauth_scope is required`))
 			})
 
-			Convey("returns nil for valid request", func() {
+			t.Run("returns nil for valid request", func(t *ftt.Test) {
 				req := &minter.MintProjectTokenRequest{
 					LuciProject:         "test-project",
 					OauthScope:          []string{"https://www.googleapis.com/auth/cloud-platform"},
 					MinValidityDuration: 3600,
 				}
 				_, err := rpc.MintProjectToken(ctx, req)
-				So(err, assertions.ShouldErrLike, "min_validity_duration must not exceed 1800")
+				assert.Loosely(t, err, should.ErrLike("min_validity_duration must not exceed 1800"))
 			})
 		})
 
-		Convey("MintProjectToken does not return errors with valid input", func() {
-			So(err, ShouldBeNil)
-			So(member, ShouldBeTrue)
+		t.Run("MintProjectToken does not return errors with valid input", func(t *ftt.Test) {
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, member, should.BeTrue)
 
 			identity, err := rpc.ProjectIdentities(ctx).Create(
 				ctx,
 				&projectidentity.ProjectIdentity{Project: "service-project", Email: "foo@bar.com"})
-			So(err, ShouldBeNil)
-			So(identity, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, identity, should.NotBeNil)
 
 			req := &minter.MintProjectTokenRequest{
 				LuciProject: "service-project",
 				OauthScope:  []string{"https://www.googleapis.com/auth/cloud-platform"},
 			}
 			resp, err := rpc.MintProjectToken(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.NotBeNil)
 
 		})
 

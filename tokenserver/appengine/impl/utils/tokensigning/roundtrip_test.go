@@ -18,12 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRoundtrip(t *testing.T) {
@@ -42,44 +42,44 @@ func TestRoundtrip(t *testing.T) {
 		ServiceAccountName: "service@example.com",
 	})
 
-	Convey("Sign/Inspect works (no signing context)", t, func() {
+	ftt.Run("Sign/Inspect works (no signing context)", t, func(t *ftt.Test) {
 		tokSigner := signerForTest(signer, "")
 		tokInspector := inspectorForTest(signer, "")
 
 		tok, err := tokSigner.SignToken(ctx, original)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		insp, err := tokInspector.InspectToken(ctx, tok)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(insp.Signed, ShouldBeTrue)
-		So(insp.Body, ShouldResembleProto, original)
+		assert.Loosely(t, insp.Signed, should.BeTrue)
+		assert.Loosely(t, insp.Body, should.Resemble(original))
 	})
 
-	Convey("Sign/Inspect works (with context)", t, func() {
+	ftt.Run("Sign/Inspect works (with context)", t, func(t *ftt.Test) {
 		tokSigner := signerForTest(signer, "Some context")
 		tokInspector := inspectorForTest(signer, "Some context")
 
 		tok, err := tokSigner.SignToken(ctx, original)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		insp, err := tokInspector.InspectToken(ctx, tok)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(insp.Signed, ShouldBeTrue)
-		So(insp.Body, ShouldResembleProto, original)
+		assert.Loosely(t, insp.Signed, should.BeTrue)
+		assert.Loosely(t, insp.Body, should.Resemble(original))
 	})
 
-	Convey("Sign/Inspect works (wrong context)", t, func() {
+	ftt.Run("Sign/Inspect works (wrong context)", t, func(t *ftt.Test) {
 		tokSigner := signerForTest(signer, "Some context")
 		tokInspector := inspectorForTest(signer, "Another context")
 
 		tok, err := tokSigner.SignToken(ctx, original)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		insp, err := tokInspector.InspectToken(ctx, tok)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(insp.Signed, ShouldBeFalse)
+		assert.Loosely(t, insp.Signed, should.BeFalse)
 	})
 }

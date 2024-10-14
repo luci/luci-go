@@ -17,25 +17,27 @@ package utils
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPem(t *testing.T) {
-	Convey("DumpPEM/ParsePEM roundtrip", t, func() {
+	ftt.Run("DumpPEM/ParsePEM roundtrip", t, func(t *ftt.Test) {
 		data := []byte("blah-blah")
 		back, err := ParsePEM(DumpPEM(data, "DATA"), "DATA")
-		So(err, ShouldBeNil)
-		So(back, ShouldResemble, data)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, back, should.Resemble(data))
 	})
 
-	Convey("ParsePEM wrong header", t, func() {
+	ftt.Run("ParsePEM wrong header", t, func(t *ftt.Test) {
 		data := []byte("blah-blah")
 		_, err := ParsePEM(DumpPEM(data, "DATA"), "NOT DATA")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("ParsePEM not a PEM", t, func() {
+	ftt.Run("ParsePEM not a PEM", t, func(t *ftt.Test) {
 		_, err := ParsePEM("blah-blah", "NOT DATA")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

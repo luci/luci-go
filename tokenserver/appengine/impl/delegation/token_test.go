@@ -21,16 +21,16 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSignToken(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		signer := signingtest.NewSigner(&signing.ServiceInfo{
 			ServiceAccountName: "service@example.com",
@@ -46,19 +46,19 @@ func TestSignToken(t *testing.T) {
 		}
 
 		tok, err := SignToken(ctx, signer, original)
-		So(err, ShouldBeNil)
-		So(tok, ShouldHaveLength, 276)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tok, should.HaveLength(276))
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
-		So(err, ShouldBeNil)
-		So(back, ShouldResembleProto, original)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, back, should.Resemble(original))
 
 		envelope.Pkcs1Sha256Sig = nil
 		envelope.SerializedSubtoken = nil
-		So(envelope, ShouldResembleProto, &messages.DelegationToken{
+		assert.Loosely(t, envelope, should.Resemble(&messages.DelegationToken{
 			SignerId:     "user:service@example.com",
 			SigningKeyId: signer.KeyNameForTest(),
-		})
+		}))
 	})
 }
 

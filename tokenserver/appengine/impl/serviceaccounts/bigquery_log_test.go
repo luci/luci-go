@@ -21,17 +21,17 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintedTokenInfo(t *testing.T) {
 	t.Parallel()
 
-	Convey("Conversion to row", t, func() {
+	ftt.Run("Conversion to row", t, func(t *ftt.Test) {
 		info := MintedTokenInfo{
 			Request: &minter.MintServiceAccountTokenRequest{
 				TokenKind:       minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
@@ -56,7 +56,7 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev:       111,
 		}
 
-		So(info.toBigQueryMessage(), ShouldResembleProto, &bqpb.ServiceAccountToken{
+		assert.Loosely(t, info.toBigQueryMessage(), should.Resemble(&bqpb.ServiceAccountToken{
 			Fingerprint:     "308eda9daf26b7446b284449a5895ab9",
 			Kind:            minter.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
 			ServiceAccount:  "acc@example.com",
@@ -73,6 +73,6 @@ func TestMintedTokenInfo(t *testing.T) {
 			ServiceVersion:  "unit-tests/mocked-ver",
 			GaeRequestId:    "request-id",
 			AuthDbRev:       111,
-		})
+		}))
 	})
 }

@@ -19,31 +19,31 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFromStrings(t *testing.T) {
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		s, err := FromStrings(nil, nil)
-		So(err, ShouldBeNil)
-		So(s, ShouldResemble, &Set{})
-		So(s.IsEmpty(), ShouldBeTrue)
-		So(s.ToStrings(), ShouldBeEmpty)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.Resemble(&Set{}))
+		assert.Loosely(t, s.IsEmpty(), should.BeTrue)
+		assert.Loosely(t, s.ToStrings(), should.BeEmpty)
 	})
 
-	Convey("Universal", t, func() {
+	ftt.Run("Universal", t, func(t *ftt.Test) {
 		s, err := FromStrings([]string{"*", "user:abc@example.com"}, nil)
-		So(err, ShouldBeNil)
-		So(s, ShouldResemble, &Set{All: true})
-		So(s.IsEmpty(), ShouldBeFalse)
-		So(s.ToStrings(), ShouldResemble, []string{"*"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.Resemble(&Set{All: true}))
+		assert.Loosely(t, s.IsEmpty(), should.BeFalse)
+		assert.Loosely(t, s.ToStrings(), should.Resemble([]string{"*"}))
 	})
 
-	Convey("Normal", t, func() {
+	ftt.Run("Normal", t, func(t *ftt.Test) {
 		s, err := FromStrings([]string{
 			"user:abc@example.com",
 			"user:def@example.com",
@@ -53,8 +53,8 @@ func TestFromStrings(t *testing.T) {
 			"group:def",
 			"group:abc",
 		}, func(s string) bool { return s == "skipped" })
-		So(err, ShouldBeNil)
-		So(s, ShouldResemble, &Set{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.Resemble(&Set{
 			IDs: identSet{
 				"user:abc@example.com": struct{}{},
 				"user:def@example.com": struct{}{},
@@ -63,26 +63,26 @@ func TestFromStrings(t *testing.T) {
 				"abc": struct{}{},
 				"def": struct{}{},
 			},
-		})
-		So(s.IsEmpty(), ShouldBeFalse)
-		So(s.ToStrings(), ShouldResemble, []string{
+		}))
+		assert.Loosely(t, s.IsEmpty(), should.BeFalse)
+		assert.Loosely(t, s.ToStrings(), should.Resemble([]string{
 			"group:abc",
 			"group:def",
 			"user:abc@example.com",
 			"user:def@example.com",
-		})
+		}))
 	})
 
-	Convey("Bad group entry", t, func() {
+	ftt.Run("Bad group entry", t, func(t *ftt.Test) {
 		s, err := FromStrings([]string{"group:"}, nil)
-		So(err, ShouldErrLike, "invalid entry")
-		So(s, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("invalid entry"))
+		assert.Loosely(t, s, should.BeNil)
 	})
 
-	Convey("Bad ID entry", t, func() {
+	ftt.Run("Bad ID entry", t, func(t *ftt.Test) {
 		s, err := FromStrings([]string{"shrug"}, nil)
-		So(err, ShouldErrLike, "bad identity string")
-		So(s, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("bad identity string"))
+		assert.Loosely(t, s, should.BeNil)
 	})
 }
 
@@ -93,42 +93,42 @@ func TestIsMember(t *testing.T) {
 		IdentityGroups: []string{"abc"},
 	})
 
-	Convey("nil", t, func() {
+	ftt.Run("nil", t, func(t *ftt.Test) {
 		var s *Set
 		ok, err := s.IsMember(c, identity.AnonymousIdentity)
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 
-	Convey("All", t, func() {
+	ftt.Run("All", t, func(t *ftt.Test) {
 		s := Set{All: true}
 		ok, err := s.IsMember(c, identity.AnonymousIdentity)
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeTrue)
 	})
 
-	Convey("Direct hit", t, func() {
+	ftt.Run("Direct hit", t, func(t *ftt.Test) {
 		s, _ := FromStrings([]string{"user:abc@example.com"}, nil)
 
 		ok, err := s.IsMember(c, identity.Identity("user:abc@example.com"))
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeTrue)
 
 		ok, err = s.IsMember(c, identity.AnonymousIdentity)
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 
-	Convey("Groups hit", t, func() {
+	ftt.Run("Groups hit", t, func(t *ftt.Test) {
 		s, _ := FromStrings([]string{"group:abc"}, nil)
 
 		ok, err := s.IsMember(c, identity.Identity("user:abc@example.com"))
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeTrue)
 
 		ok, err = s.IsMember(c, identity.AnonymousIdentity)
-		So(err, ShouldBeNil)
-		So(ok, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 }
 
@@ -160,39 +160,39 @@ func TestIsSubset(t *testing.T) {
 		"group:yyy",
 	}, nil)
 
-	Convey("empty", t, func() {
-		So(empty.IsSubset(empty), ShouldBeTrue)
-		So(empty.IsSubset(all), ShouldBeTrue)
-		So(empty.IsSubset(some), ShouldBeTrue)
+	ftt.Run("empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, empty.IsSubset(empty), should.BeTrue)
+		assert.Loosely(t, empty.IsSubset(all), should.BeTrue)
+		assert.Loosely(t, empty.IsSubset(some), should.BeTrue)
 
-		So(empty.IsSuperset(empty), ShouldBeTrue) // for code coverage
+		assert.Loosely(t, empty.IsSuperset(empty), should.BeTrue) // for code coverage
 	})
 
-	Convey("all", t, func() {
-		So(all.IsSubset(empty), ShouldBeFalse)
-		So(all.IsSubset(all), ShouldBeTrue)
-		So(all.IsSubset(some), ShouldBeFalse)
+	ftt.Run("all", t, func(t *ftt.Test) {
+		assert.Loosely(t, all.IsSubset(empty), should.BeFalse)
+		assert.Loosely(t, all.IsSubset(all), should.BeTrue)
+		assert.Loosely(t, all.IsSubset(some), should.BeFalse)
 	})
 
-	Convey("some", t, func() {
-		So(some.IsSubset(empty), ShouldBeFalse)
-		So(some.IsSubset(all), ShouldBeTrue)
-		So(some.IsSubset(some), ShouldBeTrue)
+	ftt.Run("some", t, func(t *ftt.Test) {
+		assert.Loosely(t, some.IsSubset(empty), should.BeFalse)
+		assert.Loosely(t, some.IsSubset(all), should.BeTrue)
+		assert.Loosely(t, some.IsSubset(some), should.BeTrue)
 
-		So(some1.IsSubset(some), ShouldBeTrue)
-		So(some2.IsSubset(some), ShouldBeTrue)
-		So(some3.IsSubset(some), ShouldBeTrue)
+		assert.Loosely(t, some1.IsSubset(some), should.BeTrue)
+		assert.Loosely(t, some2.IsSubset(some), should.BeTrue)
+		assert.Loosely(t, some3.IsSubset(some), should.BeTrue)
 
-		So(some1.IsSubset(some2), ShouldBeFalse)
-		So(some1.IsSubset(some3), ShouldBeFalse)
-		So(some2.IsSubset(some1), ShouldBeFalse)
-		So(some3.IsSubset(some1), ShouldBeFalse)
+		assert.Loosely(t, some1.IsSubset(some2), should.BeFalse)
+		assert.Loosely(t, some1.IsSubset(some3), should.BeFalse)
+		assert.Loosely(t, some2.IsSubset(some1), should.BeFalse)
+		assert.Loosely(t, some3.IsSubset(some1), should.BeFalse)
 
-		So(some1.IsSubset(some3), ShouldBeFalse)
-		So(some1.IsSubset(some4), ShouldBeFalse)
+		assert.Loosely(t, some1.IsSubset(some3), should.BeFalse)
+		assert.Loosely(t, some1.IsSubset(some4), should.BeFalse)
 
-		So(some2.IsSubset(some3), ShouldBeFalse)
-		So(some2.IsSubset(some4), ShouldBeFalse)
+		assert.Loosely(t, some2.IsSubset(some3), should.BeFalse)
+		assert.Loosely(t, some2.IsSubset(some4), should.BeFalse)
 	})
 }
 
@@ -218,58 +218,58 @@ func TestUnion(t *testing.T) {
 		"group:abc",
 	}, nil)
 
-	Convey("empty", t, func() {
-		So(Union(), ShouldResemble, empty)
-		So(Union(empty, nil), ShouldResemble, empty)
+	ftt.Run("empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, Union(), should.Resemble(empty))
+		assert.Loosely(t, Union(empty, nil), should.Resemble(empty))
 	})
 
-	Convey("one", t, func() {
-		So(Union(some), ShouldResemble, some)
-		So(Union(some, empty), ShouldResemble, some)
+	ftt.Run("one", t, func(t *ftt.Test) {
+		assert.Loosely(t, Union(some), should.Resemble(some))
+		assert.Loosely(t, Union(some, empty), should.Resemble(some))
 	})
 
-	Convey("many", t, func() {
-		So(Union(some1, some2, some3, empty), ShouldResemble, some)
+	ftt.Run("many", t, func(t *ftt.Test) {
+		assert.Loosely(t, Union(some1, some2, some3, empty), should.Resemble(some))
 	})
 
-	Convey("all", t, func() {
-		So(Union(all), ShouldResemble, all)
-		So(Union(all, empty), ShouldResemble, all)
-		So(Union(all, some1), ShouldResemble, all)
+	ftt.Run("all", t, func(t *ftt.Test) {
+		assert.Loosely(t, Union(all), should.Resemble(all))
+		assert.Loosely(t, Union(all, empty), should.Resemble(all))
+		assert.Loosely(t, Union(all, some1), should.Resemble(all))
 	})
 }
 
 func TestExtend(t *testing.T) {
-	Convey("Empty", t, func() {
-		So(Extend(nil, "user:abc@example.com"), ShouldResemble, &Set{
+	ftt.Run("Empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, Extend(nil, "user:abc@example.com"), should.Resemble(&Set{
 			IDs: identSet{"user:abc@example.com": struct{}{}},
-		})
+		}))
 	})
 
-	Convey("All", t, func() {
+	ftt.Run("All", t, func(t *ftt.Test) {
 		all := &Set{All: true}
-		So(Extend(all, "user:abc@example.com"), ShouldResemble, all)
+		assert.Loosely(t, Extend(all, "user:abc@example.com"), should.Resemble(all))
 	})
 
-	Convey("Already there", t, func() {
+	ftt.Run("Already there", t, func(t *ftt.Test) {
 		set, _ := FromStrings([]string{
 			"user:abc@example.com",
 			"group:abc",
 		}, nil)
-		So(Extend(set, "user:abc@example.com"), ShouldResemble, set)
+		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Resemble(set))
 	})
 
-	Convey("Extends", t, func() {
+	ftt.Run("Extends", t, func(t *ftt.Test) {
 		set, _ := FromStrings([]string{
 			"user:def@example.com",
 			"group:abc",
 		}, nil)
-		So(Extend(set, "user:abc@example.com"), ShouldResemble, &Set{
+		assert.Loosely(t, Extend(set, "user:abc@example.com"), should.Resemble(&Set{
 			IDs: identSet{
 				"user:abc@example.com": struct{}{},
 				"user:def@example.com": struct{}{},
 			},
 			Groups: groupSet{"abc": struct{}{}},
-		})
+		}))
 	})
 }

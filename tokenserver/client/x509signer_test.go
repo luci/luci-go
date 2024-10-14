@@ -19,7 +19,9 @@ import (
 	"crypto/x509"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const pkey = `-----BEGIN RSA PRIVATE KEY-----
@@ -77,7 +79,7 @@ uwi+mmV6pbwEPKYNHpxHXSbEFnWwnZm1OtM28sP9O0D94XzRq2OfWiiD
 -----END CERTIFICATE-----`
 
 func TestX509Signer(t *testing.T) {
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		signer := X509Signer{
@@ -86,16 +88,16 @@ func TestX509Signer(t *testing.T) {
 		}
 
 		algo, err := signer.Algo(ctx)
-		So(err, ShouldBeNil)
-		So(algo, ShouldEqual, x509.SHA256WithRSA)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, algo, should.Equal(x509.SHA256WithRSA))
 
 		der, err := signer.Certificate(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = x509.ParseCertificate(der) // valid cert
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		blob, err := signer.Sign(ctx, []byte("blah"))
-		So(err, ShouldBeNil)
-		So(len(blob), ShouldEqual, 256)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(blob), should.Equal(256))
 	})
 }

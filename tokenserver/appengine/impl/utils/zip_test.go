@@ -17,27 +17,29 @@ package utils
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestZip(t *testing.T) {
-	Convey("ZlibCompress/ZlibDecompress roundtrip", t, func() {
+	ftt.Run("ZlibCompress/ZlibDecompress roundtrip", t, func(t *ftt.Test) {
 		data := "blah-blah"
 		for i := 0; i < 10; i++ {
 			data += data
 		}
 
 		blob, err := ZlibCompress([]byte(data))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		back, err := ZlibDecompress(blob)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(back, ShouldResemble, []byte(data))
+		assert.Loosely(t, back, should.Resemble([]byte(data)))
 	})
 
-	Convey("ZlibDecompress garbage", t, func() {
+	ftt.Run("ZlibDecompress garbage", t, func(t *ftt.Test) {
 		_, err := ZlibDecompress([]byte("garbage"))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

@@ -25,6 +25,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -32,16 +35,12 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintMachineTokenRPC(t *testing.T) {
 	t.Parallel()
 
-	Convey("Successful RPC", t, func() {
+	ftt.Run("Successful RPC", t, func(t *ftt.Test) {
 		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
 			PeerIPOverride: net.ParseIP("127.10.10.10"),
 		})
@@ -60,8 +59,8 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		}
 
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &minter.MintMachineTokenResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			TokenResponse: &minter.MachineTokenResponse{
 				ServiceVersion: "unit-tests/mocked-ver",
@@ -72,24 +71,24 @@ func TestMintMachineTokenRPC(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
-		So(loggedInfo.TokenBody, ShouldResembleProto, &tokenserver.MachineTokenBody{
+		assert.Loosely(t, loggedInfo.TokenBody, should.Resemble(&tokenserver.MachineTokenBody{
 			MachineFqdn: "luci-token-server-test-1.fake.domain",
 			IssuedBy:    "signer@testing.host",
 			IssuedAt:    1422936306,
 			Lifetime:    3600,
 			CaId:        123,
 			CertSn:      big.NewInt(4096).Bytes(),
-		})
-		So(loggedInfo.Request, ShouldResembleProto, testingRawRequest(ctx))
-		So(loggedInfo.Response, ShouldResembleProto, resp.TokenResponse)
-		So(loggedInfo.CA, ShouldEqual, &testingCA)
-		So(loggedInfo.PeerIP, ShouldResemble, net.ParseIP("127.10.10.10"))
-		So(loggedInfo.RequestID, ShouldEqual, testingRequestID.String())
+		}))
+		assert.Loosely(t, loggedInfo.Request, should.Resemble(testingRawRequest(ctx)))
+		assert.Loosely(t, loggedInfo.Response, should.Resemble(resp.TokenResponse))
+		assert.Loosely(t, loggedInfo.CA, should.Equal(&testingCA))
+		assert.Loosely(t, loggedInfo.PeerIP, should.Resemble(net.ParseIP("127.10.10.10")))
+		assert.Loosely(t, loggedInfo.RequestID, should.Equal(testingRequestID.String()))
 	})
 
-	Convey("Unsuccessful RPC", t, func() {
+	ftt.Run("Unsuccessful RPC", t, func(t *ftt.Test) {
 		// Modify testing CA to have no domains listed.
 		testingCA2 := certconfig.CA{
 			CN: "Fake CA: fake.ca",
@@ -114,11 +113,11 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		// This request is structurally valid, but forbidden by CA config. It
 		// generates MintMachineTokenResponse with non-zero error code.
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
-		So(err, ShouldBeNil)
-		So(resp, ShouldResembleProto, &minter.MintMachineTokenResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp, should.Resemble(&minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			ErrorCode:      minter.ErrorCode_BAD_TOKEN_ARGUMENTS,
 			ErrorMessage:   `the domain "fake.domain" is not listed in the config`,
-		})
+		}))
 	})
 }
