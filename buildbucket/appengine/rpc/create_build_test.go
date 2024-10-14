@@ -899,7 +899,7 @@ func TestCreateBuild(t *testing.T) {
 				b, err := srv.CreateBuild(ctx, req)
 				assert.Loosely(t, b, should.NotBeNil)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 				assert.Loosely(t, protoutil.StringPairMap(b.Tags).Format(), should.Resemble([]string{"parent_task_id:544239051"}))
 				assert.Loosely(t, b.AncestorIds, should.Resemble([]int64{97654321}))
 			})
@@ -922,7 +922,7 @@ func TestCreateBuild(t *testing.T) {
 			b, err := srv.CreateBuild(ctx, req)
 			assert.Loosely(t, b, should.NotBeNil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 			// Check datastore.
 			bld := &model.Build{ID: b.Id}
@@ -958,7 +958,7 @@ func TestCreateBuild(t *testing.T) {
 			b, err := srv.CreateBuild(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, b, should.NotBeNil)
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 			// Check datastore.
 			bld := &model.Build{ID: b.Id}

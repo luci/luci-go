@@ -544,7 +544,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}))
 
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			stp, err := steps.ToProto(ctx)
@@ -597,7 +597,7 @@ func TestUpdateTaskEntity(t *testing.T) {
 				},
 			}))
 
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, buildModel.Proto.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, buildModel.Proto.StatusDetails, should.Resemble(statusDetails))

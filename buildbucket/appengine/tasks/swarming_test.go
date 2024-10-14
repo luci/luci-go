@@ -511,7 +511,7 @@ func TestSyncBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, failedBuild, bldStatus), should.BeNil)
 				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
 				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("failed to create a swarming task: rpc error: code = PermissionDenied desc = PermissionDenied"))
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 				assert.Loosely(t, bldStatus.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			})
 
@@ -534,7 +534,7 @@ func TestSyncBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Get(ctx, failedBuild), should.BeNil)
 				assert.Loosely(t, failedBuild.Status, should.Equal(pb.Status_INFRA_FAILURE))
 				assert.Loosely(t, failedBuild.Proto.SummaryMarkdown, should.ContainSubstring("failed to create a swarming task: rpc error: code = Internal desc = Server error"))
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 			})
 
 			t.Run("swarming task creation success but update build fail", func(t *ftt.Test) {
@@ -996,15 +996,15 @@ func TestSyncBuild(t *testing.T) {
 						assert.Loosely(t, syncedInfra.Proto.Swarming.BotDimensions, should.Resemble(tCase.expected.botDimensions))
 					}
 					if protoutil.IsEnded(syncedBuild.Status) {
-						// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds and a continuation sync task.
-						assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
+						// FinalizeResultDB, ExportBigQuery, NotifyPubSubGoProxy, PopPendingBuilds and a continuation sync task.
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 
 						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
 						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), should.Equal(1))
 
 					} else if syncedBuild.Status == pb.Status_STARTED {
-						// NotifyPubSub, NotifyPubSubGoProxy and a continuation sync task.
-						assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+						// NotifyPubSubGoProxy and a continuation sync task.
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
 					}
 					syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
@@ -1339,7 +1339,7 @@ func TestSubNotify(t *testing.T) {
 			assert.Loosely(t, cached, should.Resemble([]byte{1}))
 
 			// ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 			// BuildCompleted metric should be set to 1 with SUCCESS.
 			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}

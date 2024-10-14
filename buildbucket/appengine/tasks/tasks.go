@@ -17,7 +17,6 @@ package tasks
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -35,16 +34,6 @@ import (
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
-
-// rejectionHandler returns a tq.Handler which rejects the given task.
-// Used by tasks which are handled in Python.
-// TODO(crbug/1042991): Remove once all handlers are implemented in Go.
-func rejectionHandler(tq string) tq.Handler {
-	return func(ctx context.Context, payload proto.Message) error {
-		logging.Errorf(ctx, "tried to handle %s: %q", tq, payload)
-		return errors.Reason("handler called").Err()
-	}
-}
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
@@ -78,33 +67,6 @@ func init() {
 			t := payload.(*taskdefs.FinalizeResultDBGo)
 			return resultdb.FinalizeInvocation(ctx, t.BuildId)
 		},
-	})
-
-	tq.RegisterTaskClass(tq.TaskClass{
-		ID: "notify-pubsub",
-		Custom: func(ctx context.Context, m proto.Message) (*tq.CustomPayload, error) {
-			task := m.(*taskdefs.NotifyPubSub)
-			mode := "global"
-			if task.Callback {
-				mode = "callback"
-			}
-			body, err := json.Marshal(map[string]any{
-				"id":   task.BuildId,
-				"mode": mode,
-			})
-			if err != nil {
-				return nil, errors.Annotate(err, "error marshaling payload").Err()
-			}
-			return &tq.CustomPayload{
-				Body:        body,
-				Method:      "POST",
-				RelativeURI: fmt.Sprintf("/internal/task/buildbucket/notify/%d", task.BuildId),
-			}, nil
-		},
-		Handler:   rejectionHandler("notify-pubsub"),
-		Kind:      tq.Transactional,
-		Prototype: (*taskdefs.NotifyPubSub)(nil),
-		Queue:     "backend-default",
 	})
 
 	tq.RegisterTaskClass(tq.TaskClass{

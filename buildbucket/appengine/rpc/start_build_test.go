@@ -212,7 +212,7 @@ func TestStartBuild(t *testing.T) {
 
 					// TQ tasks for pubsub-notification.
 					tasks := sch.Tasks()
-					assert.Loosely(t, tasks, should.HaveLength(2))
+					assert.Loosely(t, tasks, should.HaveLength(1))
 
 					// metrics
 					assert.Loosely(t, tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
@@ -242,7 +242,7 @@ func TestStartBuild(t *testing.T) {
 
 					// TQ tasks for pubsub-notification.
 					tasks := sch.Tasks()
-					assert.Loosely(t, tasks, should.HaveLength(2))
+					assert.Loosely(t, tasks, should.HaveLength(1))
 				})
 
 				t.Run("after RegisterBuildTask", func(t *ftt.Test) {
@@ -432,7 +432,7 @@ func TestStartBuild(t *testing.T) {
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						assert.Loosely(t, tasks, should.HaveLength(2))
+						assert.Loosely(t, tasks, should.HaveLength(1))
 					})
 
 					t.Run("first handshake with no task id in datastore", func(t *ftt.Test) {
@@ -451,7 +451,7 @@ func TestStartBuild(t *testing.T) {
 
 						// TQ tasks for pubsub-notification.
 						tasks := sch.Tasks()
-						assert.Loosely(t, tasks, should.HaveLength(2))
+						assert.Loosely(t, tasks, should.HaveLength(1))
 					})
 
 					t.Run("duplicated task", func(t *ftt.Test) {

@@ -314,10 +314,11 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 
 			err := sync(bks)
 			assert.Loosely(t, err, should.BeNil)
-			// TQ tasks for pubsub-notification *2, and bq-export per build.
+			// TQ tasks for pubsub-notification, bq-export and pop-pending-builds
+			// per build.
 			// Resultdb invocation finalization is noop since the builds don't have
 			// resultdb invocations.
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(8))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(now))
@@ -437,7 +438,7 @@ func TestSyncBuildsWithBackendTasks(t *testing.T) {
 			bIDs = append(bIDs, 106)
 			err = SyncBuildsWithBackendTasks(ctx, "swarming", "project")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4)) // 106 completed
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3)) // 106 completed
 			blds := getEntities(bIDs)
 			for _, b := range blds {
 				assert.Loosely(t, b.Proto.UpdateTime.AsTime(), should.Match(now))

@@ -36,26 +36,8 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
-// notifyPubSub enqueues tasks to Python side.
-func notifyPubSub(ctx context.Context, task *taskdefs.NotifyPubSub) error {
-	if task.GetBuildId() == 0 {
-		return errors.Reason("build_id is required").Err()
-	}
-	return tq.AddTask(ctx, &tq.Task{
-		Payload: task,
-	})
-}
-
 // NotifyPubSub enqueues tasks to notify Pub/Sub about the given build.
 func NotifyPubSub(ctx context.Context, b *model.Build) error {
-	// TODO(crbug.com/1406393#c5): Stop pushing into Python side `builds` topic
-	// once all subscribers moved away.
-	if err := notifyPubSub(ctx, &taskdefs.NotifyPubSub{
-		BuildId: b.ID,
-	}); err != nil {
-		return errors.Annotate(err, "failed to enqueue global pubsub notification task: %d", b.ID).Err()
-	}
-
 	if err := tq.AddTask(ctx, &tq.Task{
 		Payload: &taskdefs.NotifyPubSubGoProxy{
 			BuildId: b.ID,

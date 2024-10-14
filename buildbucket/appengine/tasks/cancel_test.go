@@ -103,10 +103,9 @@ func TestCancelBuild(t *testing.T) {
 			}))
 			// export-bigquery
 			// finalize-resultdb-go
-			// notify-pubsub
 			// notify-pubsub-go-proxy
 			// pop-pending-builds
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 			bs = &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -190,10 +189,9 @@ func TestCancelBuild(t *testing.T) {
 			}))
 			// cancel-swarming-task-go
 			// export-bigquery
-			// notify-pubsub
 			// notify-pubsub-go-proxy
 			// pop-pending-builds
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -253,10 +251,9 @@ func TestCancelBuild(t *testing.T) {
 			}))
 			// cancel-backend-task
 			// export-bigquery
-			// notify-pubsub
 			// notify-pubsub-go-proxy
 			// pop-pending-builds
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}
@@ -308,7 +305,7 @@ func TestCancelBuild(t *testing.T) {
 				EndTime:    timestamppb.New(now),
 				Status:     pb.Status_CANCELED,
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 			bs := &model.BuildStatus{
 				Build: datastore.MakeKey(ctx, "Build", 1),
 			}

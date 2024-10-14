@@ -1062,10 +1062,9 @@ func TestUpdateBuild(t *testing.T) {
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
 				sortTasksByClassName(tasks)
-				assert.Loosely(t, tasks, should.HaveLength(2))
-				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(build.ID))
-				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
-				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
 				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
@@ -1110,10 +1109,9 @@ func TestUpdateBuild(t *testing.T) {
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
 				sortTasksByClassName(tasks)
-				assert.Loosely(t, tasks, should.HaveLength(2))
-				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(build.ID))
-				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
-				assert.Loosely(t, tasks[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(2))
+				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
 				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
@@ -1165,13 +1163,10 @@ func TestUpdateBuild(t *testing.T) {
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				assert.Loosely(t, tasks, should.HaveLength(5))
+				assert.Loosely(t, tasks, should.HaveLength(4))
 				sum := 0
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
-					case *taskdefs.NotifyPubSub:
-						sum++
-						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 					case *taskdefs.ExportBigQueryGo:
 						sum += 2
 						assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
@@ -1188,7 +1183,7 @@ func TestUpdateBuild(t *testing.T) {
 						panic("invalid task payload")
 					}
 				}
-				assert.Loosely(t, sum, should.Equal(31))
+				assert.Loosely(t, sum, should.Equal(30))
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
@@ -1266,7 +1261,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				assert.Loosely(t, tasks, should.HaveLength(4))
+				assert.Loosely(t, tasks, should.HaveLength(3))
 			})
 			t.Run("led build - Status_SUCCESSS w/ status change", func(t *ftt.Test) {
 				tk, ctx := updateContextForNewBuildToken(ctx, 2)
@@ -1312,7 +1307,7 @@ func TestUpdateBuild(t *testing.T) {
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
 				// led builds not supported by max_concurrent_builds.
-				assert.Loosely(t, tasks, should.HaveLength(4))
+				assert.Loosely(t, tasks, should.HaveLength(3))
 			})
 		})
 
@@ -1432,13 +1427,10 @@ func TestUpdateBuild(t *testing.T) {
 					assert.Loosely(t, build.CancelTime, should.BeNil)
 
 					tasks := sch.Tasks()
-					assert.Loosely(t, tasks, should.HaveLength(5))
+					assert.Loosely(t, tasks, should.HaveLength(4))
 					sum := 0
 					for _, task := range tasks {
 						switch v := task.Payload.(type) {
-						case *taskdefs.NotifyPubSub:
-							sum++
-							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
 						case *taskdefs.ExportBigQueryGo:
 							sum += 2
 							assert.Loosely(t, v.GetBuildId(), should.Equal(req.Build.Id))
@@ -1455,7 +1447,7 @@ func TestUpdateBuild(t *testing.T) {
 							panic("invalid task payload")
 						}
 					}
-					assert.Loosely(t, sum, should.Equal(31))
+					assert.Loosely(t, sum, should.Equal(30))
 
 					// BuildCompleted metric should be set to 1 with SUCCESS.
 					fvs := fv(model.Success.String(), "", "", false)
@@ -1498,7 +1490,7 @@ func TestUpdateBuild(t *testing.T) {
 					// One pubsub notification for the status update in the request,
 					// one CancelBuildTask for the requested build,
 					// one CancelBuildTask for the child build.
-					assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 					// BuildStatus is updated.
 					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 11)}
@@ -1545,7 +1537,7 @@ func TestUpdateBuild(t *testing.T) {
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
 					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
 					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 3000000 is missing"))
-					assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 					// BuildStatus is updated.
 					updatedStatus := &model.BuildStatus{Build: datastore.MakeKey(ctx, "Build", 15)}

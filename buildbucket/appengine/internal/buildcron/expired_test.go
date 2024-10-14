@@ -230,7 +230,6 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 			t.Run("adds TQ tasks", func(t *ftt.Test) {
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
-				notifyIDs := []int64{}
 				bqIDs := []int64{}
 				rdbIDs := []int64{}
 				expected := []int64{b1.ID, b2.ID}
@@ -239,8 +238,6 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 
 				for _, task := range tasks {
 					switch v := task.Payload.(type) {
-					case *taskdefs.NotifyPubSub:
-						notifyIDs = append(notifyIDs, v.GetBuildId())
 					case *taskdefs.ExportBigQueryGo:
 						bqIDs = append(bqIDs, v.GetBuildId())
 					case *taskdefs.FinalizeResultDBGo:
@@ -258,15 +255,12 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 				sortIDs := func(ids []int64) {
 					sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 				}
-				sortIDs(notifyIDs)
 				sortIDs(bqIDs)
 				sortIDs(rdbIDs)
 				sortIDs(expected)
 				sortIDs(notifyGoIDs)
 				sortIDs(popPendingIDs)
 
-				assert.Loosely(t, notifyIDs, should.HaveLength(2))
-				assert.Loosely(t, notifyIDs, should.Resemble(expected))
 				assert.Loosely(t, bqIDs, should.HaveLength(2))
 				assert.Loosely(t, bqIDs, should.Resemble(expected))
 				assert.Loosely(t, rdbIDs, should.HaveLength(2))

@@ -118,8 +118,8 @@ func TestCheckLiveness(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, bld, bs), should.BeNil)
 			assert.Loosely(t, bld.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
-			// FinalizeResultDB, ExportBigQuery, NotifyPubSub, NotifyPubSubGoProxy, PopPendingBuilds tasks.
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			// FinalizeResultDB, ExportBigQuery, NotifyPubSubGoProxy, PopPendingBuilds tasks.
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 		})
 
 		t.Run("exceeds heartbeat timeout", func(t *ftt.Test) {
@@ -151,7 +151,7 @@ func TestCheckLiveness(t *testing.T) {
 					EndTime: timestamppb.New(now),
 				},
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 		})
 
 		t.Run("exceeds execution timeout", func(t *ftt.Test) {
@@ -170,7 +170,7 @@ func TestCheckLiveness(t *testing.T) {
 			assert.Loosely(t, datastore.Get(ctx, bld, bs), should.BeNil)
 			assert.Loosely(t, bld.Status, should.Equal(pb.Status_INFRA_FAILURE))
 			assert.Loosely(t, bs.Status, should.Equal(pb.Status_INFRA_FAILURE))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
 		})
 
 		t.Run("not exceed scheduling timeout", func(t *ftt.Test) {

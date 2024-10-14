@@ -118,40 +118,6 @@ func TestTasks(t *testing.T) {
 			})
 		})
 
-		t.Run("NotifyPubSub", func(t *ftt.Test) {
-			t.Run("invalid", func(t *ftt.Test) {
-				t.Run("nil", func(t *ftt.Test) {
-					assert.Loosely(t, notifyPubSub(ctx, nil), should.ErrLike("build_id is required"))
-					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-				})
-
-				t.Run("empty", func(t *ftt.Test) {
-					task := &taskdef.NotifyPubSub{}
-					assert.Loosely(t, notifyPubSub(ctx, task), should.ErrLike("build_id is required"))
-					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-				})
-
-				t.Run("zero", func(t *ftt.Test) {
-					task := &taskdef.NotifyPubSub{
-						BuildId: 0,
-					}
-					assert.Loosely(t, notifyPubSub(ctx, task), should.ErrLike("build_id is required"))
-					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-				})
-			})
-
-			t.Run("valid", func(t *ftt.Test) {
-				task := &taskdef.NotifyPubSub{
-					BuildId:  1,
-					Callback: true,
-				}
-				assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-					return notifyPubSub(ctx, task)
-				}, nil), should.BeNil)
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
-			})
-		})
-
 		t.Run("CreateSwarmingBuildTask", func(t *ftt.Test) {
 			t.Run("invalid", func(t *ftt.Test) {
 				t.Run("nil", func(t *ftt.Test) {

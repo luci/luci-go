@@ -784,17 +784,13 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}))
 			tasks := sch.Tasks()
-			assert.Loosely(t, tasks, should.HaveLength(4))
+			assert.Loosely(t, tasks, should.HaveLength(3))
 			sortTasksByClassName(tasks)
 			assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
 				BuildId: 9021868963221667745,
 			}))
-			// for `builds` topic.
-			assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
-				BuildId: 9021868963221667745,
-			}))
 			// for topic in build.PubSubCallback.topic field.
-			assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGo{
+			assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSubGo{
 				BuildId: 9021868963221667745,
 				Topic: &pb.BuildbucketCfg_Topic{
 					Name: "topic",
@@ -802,7 +798,7 @@ func TestScheduleBuild(t *testing.T) {
 				Callback: true,
 			}))
 			// for `bulids_v2` topic
-			assert.Loosely(t, tasks.Payloads()[3], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
+			assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 				BuildId: 9021868963221667745,
 				Project: "project",
 			}))
@@ -1130,7 +1126,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 			}))
 
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(9))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
 			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		})
 
@@ -1303,7 +1299,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				nil,
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			assert.Loosely(t, datastore.Get(ctx, blds[0]), should.BeNil)
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
@@ -1502,7 +1498,7 @@ func TestScheduleBuild(t *testing.T) {
 					ParentID:    1,
 				},
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(4))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 			assert.Loosely(t, datastore.Get(ctx, blds), should.BeNil)
 		})
 
@@ -5966,15 +5962,12 @@ func TestScheduleBuild(t *testing.T) {
 					}))
 
 					tasks := sch.Tasks()
-					assert.Loosely(t, tasks, should.HaveLength(3))
+					assert.Loosely(t, tasks, should.HaveLength(2))
 					sortTasksByClassName(tasks)
 					backendTask, ok := tasks.Payloads()[0].(*taskdefs.CreateBackendBuildTask)
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, backendTask.BuildId, should.Equal(9021868963221667745))
-					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
-						BuildId: 9021868963221667745,
-					}))
-					assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
+					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 						BuildId: 9021868963221667745,
 						Project: "project",
 					}))
@@ -6089,15 +6082,12 @@ func TestScheduleBuild(t *testing.T) {
 					assert.Loosely(t, bs.Status, should.Equal(pb.Status_SCHEDULED))
 
 					tasks := sch.Tasks()
-					assert.Loosely(t, tasks, should.HaveLength(3))
+					assert.Loosely(t, tasks, should.HaveLength(2))
 					sortTasksByClassName(tasks)
 					assert.Loosely(t, tasks.Payloads()[0], should.Resemble(&taskdefs.CreateSwarmingBuildTask{
 						BuildId: 9021868963221667745,
 					}))
-					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSub{
-						BuildId: 9021868963221667745,
-					}))
-					assert.Loosely(t, tasks.Payloads()[2], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
+					assert.Loosely(t, tasks.Payloads()[1], should.Resemble(&taskdefs.NotifyPubSubGoProxy{
 						BuildId: 9021868963221667745,
 						Project: "project",
 					}))
@@ -6241,7 +6231,7 @@ func TestScheduleBuild(t *testing.T) {
 							Input:      &pb.Build_Input{},
 							Status:     pb.Status_SCHEDULED,
 						}))
-						assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+						assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 						r := &model.RequestID{
 							ID: "6d03f5c780125e74ac6cb0f25c5e0b6467ff96c96d98bfb41ba382863ba7707a",
@@ -6417,7 +6407,7 @@ func TestScheduleBuild(t *testing.T) {
 						Number:     1,
 						Status:     pb.Status_SCHEDULED,
 					}))
-					assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+					assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 				})
 			})
 		})
@@ -6533,7 +6523,7 @@ func TestScheduleBuild(t *testing.T) {
 				Number:     1,
 				Status:     pb.Status_SCHEDULED,
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 			assert.Loosely(t, err, should.BeNil)
@@ -6574,10 +6564,9 @@ func TestScheduleBuild(t *testing.T) {
 				Input:      &pb.Build_Input{},
 				Status:     pb.Status_SCHEDULED,
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
-			assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.NotifyPubSub).GetBuildId(), should.Equal(9021868963221667745))
-			assert.Loosely(t, sch.Tasks()[1].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(9021868963221667745))
-			assert.Loosely(t, sch.Tasks()[2].Payload.(*taskdefs.PushPendingBuildTask).GetBuildId(), should.Equal(9021868963221667745))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
+			assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetBuildId(), should.Equal(9021868963221667745))
+			assert.Loosely(t, sch.Tasks()[1].Payload.(*taskdefs.PushPendingBuildTask).GetBuildId(), should.Equal(9021868963221667745))
 		})
 
 		t.Run("one with custom metrics", func(t *ftt.Test) {
@@ -6682,7 +6671,7 @@ func TestScheduleBuild(t *testing.T) {
 				Number:     1,
 				Status:     pb.Status_SCHEDULED,
 			}))
-			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
+			assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
 
 			ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 			assert.Loosely(t, err, should.BeNil)
@@ -7138,12 +7127,10 @@ func TestScheduleBuild(t *testing.T) {
 					Number:     1,
 					Status:     pb.Status_SCHEDULED,
 				}))
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(9))
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(6))
 				sum := 0
 				for _, task := range sch.Tasks() {
 					switch task.Payload.(type) {
-					case *taskdefs.NotifyPubSub:
-						sum++
 					case *taskdefs.NotifyPubSubGoProxy:
 						sum += 2
 					case *taskdefs.PushPendingBuildTask:
@@ -7154,7 +7141,7 @@ func TestScheduleBuild(t *testing.T) {
 						panic("invalid task payload")
 					}
 				}
-				assert.Loosely(t, sum, should.Equal(29))
+				assert.Loosely(t, sum, should.Equal(26))
 
 				ind, err := model.SearchTagIndex(ctx, "buildset", "buildset")
 				assert.Loosely(t, err, should.BeNil)

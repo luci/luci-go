@@ -63,14 +63,6 @@ message FinalizeResultDBGo {
   int64 build_id = 1;
 }
 
-// A task to send a build notification on `builds` Pub/Sub.
-message NotifyPubSub {
-  // ID of a build in the datastore. See model.Build.
-  int64 build_id = 1;
-  // Whether to use the global or build-specific callback Pub/Sub topic.
-  bool callback = 2;
-}
-
 // A task to send a build notification when a build status changes.
 message NotifyPubSubGo {
   // ID of a build in the datastore. See model.Build.
