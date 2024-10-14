@@ -18,13 +18,15 @@ import (
 	"sync/atomic"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBuffer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A task Buffer`, t, func() {
+	ftt.Run(`A task Buffer`, t, func(t *ftt.Test) {
 		b := &Buffer{}
 		defer func() {
 			if b != nil {
@@ -32,7 +34,7 @@ func TestBuffer(t *testing.T) {
 			}
 		}()
 
-		Convey(`With 10 maximum goroutines, will execute at most 10 simultaneous tasks.`, func() {
+		t.Run(`With 10 maximum goroutines, will execute at most 10 simultaneous tasks.`, func(t *ftt.Test) {
 			const iters = 1000
 			b.Maximum = 10
 
@@ -44,11 +46,11 @@ func TestBuffer(t *testing.T) {
 				}}
 			})
 
-			So(max, ShouldEqual, 10)
-			So(called, ShouldEqual, iters)
+			assert.Loosely(t, max, should.Equal(10))
+			assert.Loosely(t, called, should.Equal(iters))
 		})
 
-		Convey(`Will buffer tasks indefinitely.`, func() {
+		t.Run(`Will buffer tasks indefinitely.`, func(t *ftt.Test) {
 			const iters = 1000
 			b.Maximum = 10
 
@@ -78,10 +80,10 @@ func TestBuffer(t *testing.T) {
 					tc++
 				}
 			}
-			So(tc, ShouldEqual, iters)
+			assert.Loosely(t, tc, should.Equal(iters))
 		})
 
-		Convey(`Can buffer tasks faster than they are reaped via Run.`, func() {
+		t.Run(`Can buffer tasks faster than they are reaped via Run.`, func(t *ftt.Test) {
 			const iters = 1000
 			b.Maximum = 10
 
@@ -101,10 +103,10 @@ func TestBuffer(t *testing.T) {
 			for err := range errC {
 				seen[int(err.(numberError))] = struct{}{}
 			}
-			So(len(seen), ShouldEqual, iters)
+			assert.Loosely(t, len(seen), should.Equal(iters))
 		})
 
-		Convey(`Has proper task dispatch order`, func() {
+		t.Run(`Has proper task dispatch order`, func(t *ftt.Test) {
 			const iters = 10
 
 			// We use a Maximum of 1 to control task execution order. There should be
@@ -157,17 +159,17 @@ func TestBuffer(t *testing.T) {
 				return order
 			}
 
-			Convey(`Is FIFO by default.`, func() {
-				So(account(b.Run(gen)), ShouldResemble, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+			t.Run(`Is FIFO by default.`, func(t *ftt.Test) {
+				assert.Loosely(t, account(b.Run(gen)), should.Resemble([]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
 			})
 
-			Convey(`Will be LIFO if LIFO is set.`, func() {
+			t.Run(`Will be LIFO if LIFO is set.`, func(t *ftt.Test) {
 				b.SetFIFO(false)
-				So(account(b.Run(gen)), ShouldResemble, []int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0})
+				assert.Loosely(t, account(b.Run(gen)), should.Resemble([]int{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}))
 			})
 		})
 
-		Convey(`Will finish tasks if closed while some are pending.`, func() {
+		t.Run(`Will finish tasks if closed while some are pending.`, func(t *ftt.Test) {
 			const iters = 1000
 			b.Maximum = 10
 
@@ -207,7 +209,7 @@ func TestBuffer(t *testing.T) {
 			b.Close()
 			b = nil // So our test doesn't double-close.
 
-			So(workCount, ShouldEqual, iters)
+			assert.Loosely(t, workCount, should.Equal(iters))
 		})
 	})
 }

@@ -21,8 +21,9 @@ import (
 
 	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const fakeLogTreeDiffData = ")]}'\n" + `{
@@ -156,7 +157,7 @@ func TestLogWithTreeDiff(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Log with TreeDiff", t, func() {
+	ftt.Run("Log with TreeDiff", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -171,9 +172,9 @@ func TestLogWithTreeDiff(t *testing.T) {
 			PageSize:           10,
 			TreeDiff:           true,
 		})
-		So(err, ShouldBeNil)
-		So(len(res.Log), ShouldEqual, 2)
-		So(res.Log[1].TreeDiff[0], ShouldResemble, &git.Commit_TreeDiff{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Log), should.Equal(2))
+		assert.Loosely(t, res.Log[1].TreeDiff[0], should.Resemble(&git.Commit_TreeDiff{
 			Type:    git.Commit_TreeDiff_MODIFY,
 			OldId:   "5e99bfe849b1272c4f93998c1a4e474d50f71d07",
 			OldMode: 33188,
@@ -181,7 +182,7 @@ func TestLogWithTreeDiff(t *testing.T) {
 			NewId:   "19db9511283f35ab878071b68c212cbf10ff0d08",
 			NewMode: 33188,
 			NewPath: "appengine/findit/model/flake/master_flake_analysis.py",
-		})
+		}))
 
 	})
 }

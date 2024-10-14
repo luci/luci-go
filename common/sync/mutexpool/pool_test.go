@@ -18,16 +18,18 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPool(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A mutex pool`, t, func() {
+	ftt.Run(`A mutex pool`, t, func(t *ftt.Test) {
 		var pool P
 
-		Convey(`Can handle multiple concurrent Mutex accesses, and will clean up when finished.`, func() {
+		t.Run(`Can handle multiple concurrent Mutex accesses, and will clean up when finished.`, func(t *ftt.Test) {
 			const total = 1000
 			var value int
 			var wg sync.WaitGroup
@@ -43,23 +45,23 @@ func TestPool(t *testing.T) {
 			}
 
 			wg.Wait()
-			So(value, ShouldEqual, total)
-			So(pool.mutexes, ShouldHaveLength, 0)
+			assert.Loosely(t, value, should.Equal(total))
+			assert.Loosely(t, pool.mutexes, should.HaveLength(0))
 		})
 
-		Convey(`Can handle multiple keys.`, func() {
+		t.Run(`Can handle multiple keys.`, func(t *ftt.Test) {
 			const total = 100
 			var recLock func(int)
 			recLock = func(v int) {
 				if v < total {
 					pool.WithMutex(v, func() {
-						So(pool.mutexes, ShouldHaveLength, v+1)
+						assert.Loosely(t, pool.mutexes, should.HaveLength(v+1))
 						recLock(v + 1)
 					})
 				}
 			}
 			recLock(0)
-			So(pool.mutexes, ShouldHaveLength, 0)
+			assert.Loosely(t, pool.mutexes, should.HaveLength(0))
 		})
 	})
 }

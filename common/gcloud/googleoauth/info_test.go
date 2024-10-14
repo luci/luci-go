@@ -20,11 +20,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetTokenInfo(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		goodToken := true
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "GET" {
@@ -49,19 +51,19 @@ func TestGetTokenInfo(t *testing.T) {
 			AccessToken: "zzz===token",
 			Endpoint:    ts.URL,
 		})
-		So(err, ShouldBeNil)
-		So(info, ShouldResemble, &TokenInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, info, should.Resemble(&TokenInfo{
 			Aud:           "blah",
 			ExpiresIn:     12345,
 			EmailVerified: true,
-		})
+		}))
 
 		goodToken = false
 		info, err = GetTokenInfo(context.Background(), TokenInfoParams{
 			AccessToken: "zzz===token",
 			Endpoint:    ts.URL,
 		})
-		So(info, ShouldBeNil)
-		So(err, ShouldEqual, ErrBadToken)
+		assert.Loosely(t, info, should.BeNil)
+		assert.Loosely(t, err, should.Equal(ErrBadToken))
 	})
 }

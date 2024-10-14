@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func ExampleParse_hierarchical() {
@@ -38,10 +40,10 @@ func ExampleParse_hierarchical() {
 func TestPairs(t *testing.T) {
 	t.Parallel()
 
-	Convey("ParseMap invalid", t, func() {
+	ftt.Run("ParseMap invalid", t, func(t *ftt.Test) {
 		k, v := Parse("foo")
-		So(k, ShouldEqual, "foo")
-		So(v, ShouldEqual, "")
+		assert.Loosely(t, k, should.Equal("foo"))
+		assert.Loosely(t, v, should.BeEmpty)
 	})
 
 	m := Map{
@@ -49,41 +51,41 @@ func TestPairs(t *testing.T) {
 		"a": []string{"2"},
 	}
 
-	Convey("Map", t, func() {
-		Convey("Format", func() {
-			So(m.Format(), ShouldResemble, []string{
+	ftt.Run("Map", t, func(t *ftt.Test) {
+		t.Run("Format", func(t *ftt.Test) {
+			assert.Loosely(t, m.Format(), should.Resemble([]string{
 				"a:2",
 				"b:1",
-			})
+			}))
 		})
-		Convey("Get non-existent", func() {
-			So(m.Get("c"), ShouldEqual, "")
+		t.Run("Get non-existent", func(t *ftt.Test) {
+			assert.Loosely(t, m.Get("c"), should.BeEmpty)
 		})
-		Convey("Get with empty", func() {
+		t.Run("Get with empty", func(t *ftt.Test) {
 			m2 := m.Copy()
 			m2["c"] = nil
-			So(m2.Get("c"), ShouldEqual, "")
+			assert.Loosely(t, m2.Get("c"), should.BeEmpty)
 		})
-		Convey("Contains", func() {
-			So(m.Contains("a", "2"), ShouldBeTrue)
-			So(m.Contains("a", "1"), ShouldBeFalse)
-			So(m.Contains("b", "1"), ShouldBeTrue)
-			So(m.Contains("c", "1"), ShouldBeFalse)
+		t.Run("Contains", func(t *ftt.Test) {
+			assert.Loosely(t, m.Contains("a", "2"), should.BeTrue)
+			assert.Loosely(t, m.Contains("a", "1"), should.BeFalse)
+			assert.Loosely(t, m.Contains("b", "1"), should.BeTrue)
+			assert.Loosely(t, m.Contains("c", "1"), should.BeFalse)
 		})
-		Convey("Set", func() {
+		t.Run("Set", func(t *ftt.Test) {
 			m2 := m.Copy()
 			m2.Set("c", "3")
-			So(m2, ShouldResemble, Map{
+			assert.Loosely(t, m2, should.Resemble(Map{
 				"b": []string{"1"},
 				"a": []string{"2"},
 				"c": []string{"3"},
-			})
+			}))
 		})
-		Convey("Del", func() {
+		t.Run("Del", func(t *ftt.Test) {
 			m.Del("a")
-			So(m, ShouldResemble, Map{
+			assert.Loosely(t, m, should.Resemble(Map{
 				"b": []string{"1"},
-			})
+			}))
 		})
 	})
 }

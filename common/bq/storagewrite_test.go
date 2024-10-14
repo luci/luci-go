@@ -21,46 +21,46 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	_ "go.chromium.org/luci/server/tq/txn/spanner"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestToBatches(t *testing.T) {
-	Convey(`ToBatches`, t, func() {
-		Convey(`Non-empty`, func() {
+	ftt.Run(`ToBatches`, t, func(t *ftt.Test) {
+		t.Run(`Non-empty`, func(t *ftt.Test) {
 			var rows []proto.Message
 			for i := 0; i < 10; i++ {
 				// Rows of ~1 MB each.
 				row := &bqpb.TestVerdictRow{
 					TestId: strings.Repeat("a", 999950),
 				}
-				So(proto.Size(row), ShouldEqual, 999954)
+				assert.Loosely(t, proto.Size(row), should.Equal(999954))
 				rows = append(rows, row)
 			}
 
 			result, err := toBatches(rows)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// ~9 MB in the first batch.
-			So(result[0], ShouldHaveLength, 9)
+			assert.Loosely(t, result[0], should.HaveLength(9))
 			// The rest of the rows in the remaining batch.
-			So(result[1], ShouldHaveLength, 1)
+			assert.Loosely(t, result[1], should.HaveLength(1))
 		})
-		Convey(`Empty`, func() {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			result, err := toBatches(nil)
-			So(err, ShouldBeNil)
-			So(result, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.HaveLength(0))
 		})
-		Convey(`Single row too large`, func() {
+		t.Run(`Single row too large`, func(t *ftt.Test) {
 			// 10 MB row.
 			row := &bqpb.TestVerdictRow{
 				TestId: strings.Repeat("a", 10*1000*1000),
 			}
 			rows := []proto.Message{row}
 			_, err := toBatches(rows)
-			So(err, ShouldErrLike, "a single row exceeds the maximum BigQuery AppendRows request size of 9000000 bytes")
+			assert.Loosely(t, err, should.ErrLike("a single row exceeds the maximum BigQuery AppendRows request size of 9000000 bytes"))
 		})
 	})
 }

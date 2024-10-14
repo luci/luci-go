@@ -22,8 +22,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // testIterator is an Iterator implementation used for testing.
@@ -46,7 +47,7 @@ func TestRetry(t *testing.T) {
 	// Generic test failure.
 	failure := errors.New("retry: test error")
 
-	Convey(`A testing function`, t, func() {
+	ftt.Run(`A testing function`, t, func(t *ftt.Test) {
 		ctx, c := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 
 		// Every time we sleep, update time by one second and count.
@@ -56,12 +57,12 @@ func TestRetry(t *testing.T) {
 			sleeps++
 		})
 
-		Convey(`A test Iterator with three retries`, func() {
+		t.Run(`A test Iterator with three retries`, func(t *ftt.Test) {
 			g := func() Iterator {
 				return &testIterator{total: 3}
 			}
 
-			Convey(`Executes a successful function once.`, func() {
+			t.Run(`Executes a successful function once.`, func(t *ftt.Test) {
 				var count, callbacks int
 				err := Retry(ctx, g, func() error {
 					count++
@@ -69,13 +70,13 @@ func TestRetry(t *testing.T) {
 				}, func(error, time.Duration) {
 					callbacks++
 				})
-				So(err, ShouldBeNil)
-				So(count, ShouldEqual, 1)
-				So(callbacks, ShouldEqual, 0)
-				So(sleeps, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(1))
+				assert.Loosely(t, callbacks, should.BeZero)
+				assert.Loosely(t, sleeps, should.BeZero)
 			})
 
-			Convey(`Executes a failing function three times.`, func() {
+			t.Run(`Executes a failing function three times.`, func(t *ftt.Test) {
 				var count, callbacks int
 				err := Retry(ctx, g, func() error {
 					count++
@@ -83,13 +84,13 @@ func TestRetry(t *testing.T) {
 				}, func(error, time.Duration) {
 					callbacks++
 				})
-				So(err, ShouldEqual, failure)
-				So(count, ShouldEqual, 4)
-				So(callbacks, ShouldEqual, 3)
-				So(sleeps, ShouldEqual, 3)
+				assert.Loosely(t, err, should.Equal(failure))
+				assert.Loosely(t, count, should.Equal(4))
+				assert.Loosely(t, callbacks, should.Equal(3))
+				assert.Loosely(t, sleeps, should.Equal(3))
 			})
 
-			Convey(`Executes a function that fails once, then succeeds once.`, func() {
+			t.Run(`Executes a function that fails once, then succeeds once.`, func(t *ftt.Test) {
 				var count, callbacks int
 				err := Retry(ctx, g, func() error {
 					defer func() { count++ }()
@@ -100,13 +101,13 @@ func TestRetry(t *testing.T) {
 				}, func(error, time.Duration) {
 					callbacks++
 				})
-				So(err, ShouldEqual, nil)
-				So(count, ShouldEqual, 2)
-				So(callbacks, ShouldEqual, 1)
-				So(sleeps, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, count, should.Equal(2))
+				assert.Loosely(t, callbacks, should.Equal(1))
+				assert.Loosely(t, sleeps, should.Equal(1))
 			})
 
-			Convey(`Does not retry if context is done.`, func() {
+			t.Run(`Does not retry if context is done.`, func(t *ftt.Test) {
 				ctx, cancel := context.WithCancel(ctx)
 				var count, callbacks int
 				err := Retry(ctx, g, func() error {
@@ -116,18 +117,18 @@ func TestRetry(t *testing.T) {
 				}, func(error, time.Duration) {
 					callbacks++
 				})
-				So(err, ShouldEqual, failure)
-				So(count, ShouldEqual, 1)
-				So(callbacks, ShouldEqual, 0)
-				So(sleeps, ShouldEqual, 0)
+				assert.Loosely(t, err, should.Equal(failure))
+				assert.Loosely(t, count, should.Equal(1))
+				assert.Loosely(t, callbacks, should.BeZero)
+				assert.Loosely(t, sleeps, should.BeZero)
 			})
 		})
 
-		Convey(`Does not retry if callback is not set.`, func() {
-			So(Retry(ctx, nil, func() error {
+		t.Run(`Does not retry if callback is not set.`, func(t *ftt.Test) {
+			assert.Loosely(t, Retry(ctx, nil, func() error {
 				return failure
-			}, nil), ShouldEqual, failure)
-			So(sleeps, ShouldEqual, 0)
+			}, nil), should.Equal(failure))
+			assert.Loosely(t, sleeps, should.BeZero)
 		})
 	})
 }

@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // timeBase is the amount of time where short-response goroutine events "should
@@ -40,18 +42,18 @@ const veryLongTime = 1000 * timeBase
 func TestSystemClock(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A cancelable Context`, t, func() {
+	ftt.Run(`A cancelable Context`, t, func(t *ftt.Test) {
 		c, cancelFunc := context.WithCancel(context.Background())
 		sc := GetSystemClock()
 
-		Convey(`Will perform a full sleep if the Context isn't canceled.`, func() {
-			So(sc.Sleep(c, timeBase).Incomplete(), ShouldBeFalse)
+		t.Run(`Will perform a full sleep if the Context isn't canceled.`, func(t *ftt.Test) {
+			assert.Loosely(t, sc.Sleep(c, timeBase).Incomplete(), should.BeFalse)
 		})
 
-		Convey(`Will terminate the Sleep prematurely if the Context is canceled.`, func() {
+		t.Run(`Will terminate the Sleep prematurely if the Context is canceled.`, func(t *ftt.Test) {
 			cancelFunc()
-			So(sc.Sleep(c, veryLongTime).Incomplete(), ShouldBeTrue)
-			So(sc.Sleep(c, veryLongTime).Err, ShouldEqual, context.Canceled)
+			assert.Loosely(t, sc.Sleep(c, veryLongTime).Incomplete(), should.BeTrue)
+			assert.Loosely(t, sc.Sleep(c, veryLongTime).Err, should.Equal(context.Canceled))
 		})
 	})
 }

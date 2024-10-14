@@ -18,13 +18,15 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMap(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Works`, t, func() {
+	ftt.Run(`Works`, t, func(t *ftt.Test) {
 		c := context.Background()
 		m := Map[int, string]{}
 
@@ -34,10 +36,10 @@ func TestMap(t *testing.T) {
 		p2 := m.Get(c, 1, func(context.Context) (string, error) {
 			panic("must not be called")
 		})
-		So(p1, ShouldEqual, p2)
+		assert.Loosely(t, p1, should.Equal(p2))
 
 		res, err := p1.Get(c)
-		So(err, ShouldBeNil)
-		So(res, ShouldEqual, "hello")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.Equal("hello"))
 	})
 }

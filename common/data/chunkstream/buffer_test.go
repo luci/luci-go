@@ -18,35 +18,37 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBuffer(t *testing.T) {
-	Convey(`An empty Buffer instance`, t, func() {
+	ftt.Run(`An empty Buffer instance`, t, func(t *ftt.Test) {
 		b := Buffer{}
 
-		Convey(`Has a length of zero.`, func() {
-			So(b.Len(), ShouldEqual, 0)
+		t.Run(`Has a length of zero.`, func(t *ftt.Test) {
+			assert.Loosely(t, b.Len(), should.BeZero)
 		})
 
-		Convey(`Has a FirstChunk of nil.`, func() {
-			So(b.FirstChunk(), ShouldEqual, nil)
+		t.Run(`Has a FirstChunk of nil.`, func(t *ftt.Test) {
+			assert.Loosely(t, b.FirstChunk(), should.BeNil)
 		})
 
-		Convey(`Will panic if more than zero bytes are consumed.`, func() {
-			So(func() { b.Consume(1) }, ShouldPanic)
+		t.Run(`Will panic if more than zero bytes are consumed.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { b.Consume(1) }, should.Panic)
 		})
 
-		Convey(`When Appending an empty chunk`, func() {
+		t.Run(`When Appending an empty chunk`, func(t *ftt.Test) {
 			c := tc()
 			b.Append(c)
 
-			Convey(`Has a FirstChunk of nil.`, func() {
-				So(b.FirstChunk(), ShouldEqual, nil)
+			t.Run(`Has a FirstChunk of nil.`, func(t *ftt.Test) {
+				assert.Loosely(t, b.FirstChunk(), should.BeNil)
 			})
 
-			Convey(`The Chunk is released.`, func() {
-				So(c.released, ShouldBeTrue)
+			t.Run(`The Chunk is released.`, func(t *ftt.Test) {
+				assert.Loosely(t, c.released, should.BeTrue)
 			})
 		})
 
@@ -55,77 +57,77 @@ func TestBuffer(t *testing.T) {
 			{tc()},
 			{tc(0, 1, 2), tc(), tc(3, 4, 5)},
 		} {
-			Convey(fmt.Sprintf(`With chunks %v, can append.`, chunks), func() {
+			t.Run(fmt.Sprintf(`With chunks %v, can append.`, chunks), func(t *ftt.Test) {
 				size := int64(0)
 				coalesced := []byte(nil)
 				for _, c := range chunks {
 					b.Append(c)
 					coalesced = append(coalesced, c.Bytes()...)
 					size += int64(c.Len())
-					So(b.Len(), ShouldEqual, size)
+					assert.Loosely(t, b.Len(), should.Equal(size))
 				}
-				So(b.Bytes(), ShouldResemble, coalesced)
+				assert.Loosely(t, b.Bytes(), should.Resemble(coalesced))
 
-				Convey(`Can consume chunk-at-a-time.`, func() {
+				t.Run(`Can consume chunk-at-a-time.`, func(t *ftt.Test) {
 					for i, c := range chunks {
 						if c.Len() > 0 {
-							So(b.FirstChunk(), ShouldEqual, chunks[i])
+							assert.Loosely(t, b.FirstChunk(), should.Equal(chunks[i]))
 						}
-						So(b.Len(), ShouldEqual, size)
+						assert.Loosely(t, b.Len(), should.Equal(size))
 						b.Consume(int64(c.Len()))
 						size -= int64(c.Len())
 					}
-					So(b.Len(), ShouldEqual, 0)
+					assert.Loosely(t, b.Len(), should.BeZero)
 
-					Convey(`All chunks are released.`, func() {
+					t.Run(`All chunks are released.`, func(t *ftt.Test) {
 						for _, c := range chunks {
-							So(c.released, ShouldBeTrue)
+							assert.Loosely(t, c.released, should.BeTrue)
 						}
 					})
 				})
 
-				Convey(`Can consume byte-at-a-time.`, func() {
+				t.Run(`Can consume byte-at-a-time.`, func(t *ftt.Test) {
 					for i := int64(0); i < size; i++ {
-						So(b.Len(), ShouldEqual, (size - i))
-						So(b.Bytes(), ShouldResemble, coalesced[i:])
+						assert.Loosely(t, b.Len(), should.Equal((size - i)))
+						assert.Loosely(t, b.Bytes(), should.Resemble(coalesced[i:]))
 						b.Consume(1)
 					}
-					So(b.Len(), ShouldEqual, 0)
+					assert.Loosely(t, b.Len(), should.BeZero)
 
-					Convey(`All chunks are released.`, func() {
+					t.Run(`All chunks are released.`, func(t *ftt.Test) {
 						for _, c := range chunks {
-							So(c.released, ShouldBeTrue)
+							assert.Loosely(t, c.released, should.BeTrue)
 						}
 					})
 				})
 
-				Convey(`Can consume two bytes at a time.`, func() {
+				t.Run(`Can consume two bytes at a time.`, func(t *ftt.Test) {
 					for i := int64(0); i < size; i += 2 {
 						// Final byte(s), make sure we don't over-consume.
 						if b.Len() < 2 {
 							i = b.Len()
 						}
 
-						So(b.Len(), ShouldEqual, (size - i))
-						So(b.Bytes(), ShouldResemble, coalesced[i:])
+						assert.Loosely(t, b.Len(), should.Equal((size - i)))
+						assert.Loosely(t, b.Bytes(), should.Resemble(coalesced[i:]))
 						b.Consume(2)
 					}
-					So(b.Len(), ShouldEqual, 0)
+					assert.Loosely(t, b.Len(), should.BeZero)
 
-					Convey(`All chunks are released.`, func() {
+					t.Run(`All chunks are released.`, func(t *ftt.Test) {
 						for _, c := range chunks {
-							So(c.released, ShouldBeTrue)
+							assert.Loosely(t, c.released, should.BeTrue)
 						}
 					})
 				})
 
-				Convey(`Can consume all at once.`, func() {
+				t.Run(`Can consume all at once.`, func(t *ftt.Test) {
 					b.Consume(size)
-					So(b.Len(), ShouldEqual, 0)
+					assert.Loosely(t, b.Len(), should.BeZero)
 
-					Convey(`All chunks are released.`, func() {
+					t.Run(`All chunks are released.`, func(t *ftt.Test) {
 						for _, c := range chunks {
-							So(c.released, ShouldBeTrue)
+							assert.Loosely(t, c.released, should.BeTrue)
 						}
 					})
 				})

@@ -21,42 +21,44 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("basic", t, func() {
+	ftt.Run("basic", t, func(t *ftt.Test) {
 		path := filepath.Join(t.TempDir(), "db")
 		k, err := New(context.Background(), path)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(k.Set("key1", []byte("value1")), ShouldBeNil)
+		assert.Loosely(t, k.Set("key1", []byte("value1")), should.BeNil)
 
-		So(k.SetMulti(func(set func(key string, value []byte) error) error {
-			So(set("key2", []byte("value2")), ShouldBeNil)
-			So(set("key3", []byte("value3")), ShouldBeNil)
+		assert.Loosely(t, k.SetMulti(func(set func(key string, value []byte) error) error {
+			assert.Loosely(t, set("key2", []byte("value2")), should.BeNil)
+			assert.Loosely(t, set("key3", []byte("value3")), should.BeNil)
 			return nil
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		var mu sync.Mutex
 		var keys []string
 		var values []string
 
-		So(k.GetMulti(context.Background(), []string{"key1", "key2", "key4"}, func(key string, value []byte) error {
+		assert.Loosely(t, k.GetMulti(context.Background(), []string{"key1", "key2", "key4"}, func(key string, value []byte) error {
 			mu.Lock()
 			keys = append(keys, key)
 			values = append(values, string(value))
 			mu.Unlock()
 			return nil
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		sort.Strings(keys)
 		sort.Strings(values)
 
-		So(keys, ShouldResemble, []string{"key1", "key2"})
-		So(values, ShouldResemble, []string{"value1", "value2"})
+		assert.Loosely(t, keys, should.Resemble([]string{"key1", "key2"}))
+		assert.Loosely(t, values, should.Resemble([]string{"value1", "value2"}))
 
 		keys = nil
 		values = nil
@@ -66,9 +68,9 @@ func TestCache(t *testing.T) {
 			return nil
 		})
 
-		So(keys, ShouldResemble, []string{"key1", "key2", "key3"})
-		So(values, ShouldResemble, []string{"value1", "value2", "value3"})
+		assert.Loosely(t, keys, should.Resemble([]string{"key1", "key2", "key3"}))
+		assert.Loosely(t, values, should.Resemble([]string{"value1", "value2", "value3"}))
 
-		So(k.Close(), ShouldBeNil)
+		assert.Loosely(t, k.Close(), should.BeNil)
 	})
 }

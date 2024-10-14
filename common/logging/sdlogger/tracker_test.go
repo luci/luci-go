@@ -17,30 +17,32 @@ package sdlogger
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSeverityTracker(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		st := SeverityTracker{Out: nullOut{}}
-		So(st.MaxSeverity(), ShouldEqual, UnknownSeverity)
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(UnknownSeverity))
 
 		st.Write(&LogEntry{Severity: DebugSeverity})
-		So(st.MaxSeverity(), ShouldEqual, DebugSeverity)
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(DebugSeverity))
 
 		st.Write(&LogEntry{Severity: InfoSeverity})
-		So(st.MaxSeverity(), ShouldEqual, InfoSeverity)
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(InfoSeverity))
 
 		st.Write(&LogEntry{Severity: WarningSeverity})
-		So(st.MaxSeverity(), ShouldEqual, WarningSeverity)
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(WarningSeverity))
 
 		st.Write(&LogEntry{Severity: ErrorSeverity})
-		So(st.MaxSeverity(), ShouldEqual, ErrorSeverity)
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(ErrorSeverity))
 
 		st.Write(&LogEntry{Severity: WarningSeverity})
-		So(st.MaxSeverity(), ShouldEqual, ErrorSeverity) // still error
+		assert.Loosely(t, st.MaxSeverity(), should.Equal(ErrorSeverity)) // still error
 	})
 }
 

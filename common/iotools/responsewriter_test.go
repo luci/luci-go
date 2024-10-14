@@ -19,17 +19,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestResponseWriter(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		rec := httptest.NewRecorder()
 		rw := NewResponseWriter(rec)
 
-		So(rw.Status(), ShouldEqual, http.StatusOK)
+		assert.Loosely(t, rw.Status(), should.Equal(http.StatusOK))
 
 		rw.Header().Set("Foo", "bar")
 		rw.WriteHeader(http.StatusNotFound)
@@ -37,11 +39,11 @@ func TestResponseWriter(t *testing.T) {
 		rw.Write([]byte("5678"))
 		rw.Flush()
 
-		So(rw.ResponseSize(), ShouldEqual, 8)
-		So(rw.Status(), ShouldEqual, http.StatusNotFound)
+		assert.Loosely(t, rw.ResponseSize(), should.Equal(8))
+		assert.Loosely(t, rw.Status(), should.Equal(http.StatusNotFound))
 
-		So(rec.Body.Len(), ShouldEqual, 8)
-		So(rec.Code, ShouldEqual, http.StatusNotFound)
-		So(rec.Flushed, ShouldBeTrue)
+		assert.Loosely(t, rec.Body.Len(), should.Equal(8))
+		assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
+		assert.Loosely(t, rec.Flushed, should.BeTrue)
 	})
 }

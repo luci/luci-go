@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testValue string
@@ -92,83 +94,83 @@ func (tv testStruct) MarshalJSON() ([]byte, error) {
 }
 
 func TestEnum(t *testing.T) {
-	Convey(`A testing enumeration`, t, func() {
+	ftt.Run(`A testing enumeration`, t, func(t *ftt.Test) {
 
-		Convey(`String for "testFoo" is "foo".`, func() {
-			So(testEnum.GetKey(testFoo), ShouldEqual, "foo")
+		t.Run(`String for "testFoo" is "foo".`, func(t *ftt.Test) {
+			assert.Loosely(t, testEnum.GetKey(testFoo), should.Equal("foo"))
 		})
 
-		Convey(`String for "testQuoted" is ['"].`, func() {
-			So(testEnum.GetKey(testQuoted), ShouldEqual, `'"`)
+		t.Run(`String for "testQuoted" is ['"].`, func(t *ftt.Test) {
+			assert.Loosely(t, testEnum.GetKey(testQuoted), should.Equal(`'"`))
 		})
 
-		Convey(`String for unregistered type is "".`, func() {
-			So(testEnum.GetKey(0x10), ShouldEqual, "")
+		t.Run(`String for unregistered type is "".`, func(t *ftt.Test) {
+			assert.Loosely(t, testEnum.GetKey(0x10), should.BeEmpty)
 		})
 
-		Convey(`Lists choices as: "", '", bar, failboat, foo.`, func() {
-			So(testEnum.Choices(), ShouldEqual, `"", '", bar, failboat, foo`)
+		t.Run(`Lists choices as: "", '", bar, failboat, foo.`, func(t *ftt.Test) {
+			assert.Loosely(t, testEnum.Choices(), should.Equal(`"", '", bar, failboat, foo`))
 		})
 	})
 }
 
 func TestStringEnum(t *testing.T) {
-	Convey(`A testing enumeration for a string type`, t, func() {
-		Convey(`Panics when deserialized from an incompatible type.`, func() {
+	ftt.Run(`A testing enumeration for a string type`, t, func(t *ftt.Test) {
+		t.Run(`Panics when deserialized from an incompatible type.`, func(t *ftt.Test) {
 			var value testValue
-			So(func() { testEnum.setValue(&value, "failboat") }, ShouldPanic)
+			assert.Loosely(t, func() { testEnum.setValue(&value, "failboat") }, should.Panic)
 		})
 
-		Convey(`Panics when attempting to set an unsettable value.`, func() {
-			So(func() { testEnum.setValue(123, "foo") }, ShouldPanic)
+		t.Run(`Panics when attempting to set an unsettable value.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { testEnum.setValue(123, "foo") }, should.Panic)
 		})
 
-		Convey(`Binds to an flag field.`, func() {
+		t.Run(`Binds to an flag field.`, func(t *ftt.Test) {
 			var value testValue
 
-			Convey(`When used as a flag`, func() {
+			t.Run(`When used as a flag`, func(t *ftt.Test) {
 				fs := flag.NewFlagSet("test", flag.ContinueOnError)
 				fs.Var(&value, "test", "Test flag.")
 
-				Convey(`Sets "value" when set.`, func() {
+				t.Run(`Sets "value" when set.`, func(t *ftt.Test) {
 					err := fs.Parse([]string{"-test", "bar"})
-					So(err, ShouldBeNil)
-					So(value, ShouldEqual, testBar)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, value, should.Equal(testBar))
 				})
 
-				Convey(`Rejects an invalid enum mapping.`, func() {
+				t.Run(`Rejects an invalid enum mapping.`, func(t *ftt.Test) {
 					err := fs.Parse([]string{"-test", "baz"})
-					So(err, ShouldNotBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
 				})
 			})
 
-			Convey(`When marshalling to JSON`, func() {
+			t.Run(`When marshalling to JSON`, func(t *ftt.Test) {
 				var s struct {
 					Value testValue `json:"value"`
 				}
 
-				Convey(`Marshals to JSON as its enumeration value.`, func() {
+				t.Run(`Marshals to JSON as its enumeration value.`, func(t *ftt.Test) {
 					s.Value = testFoo
 					data, err := json.Marshal(&s)
-					So(err, ShouldBeNil)
-					So(string(data), ShouldEqual, `{"value":"foo"}`)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, string(data), should.Equal(`{"value":"foo"}`))
 
-					Convey(`And unmarshals to its Value.`, func() {
+					t.Run(`And unmarshals to its Value.`, func(t *ftt.Test) {
 						err := json.Unmarshal(data, &s)
-						So(err, ShouldBeNil)
-						So(s.Value, ShouldEqual, testFoo)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, s.Value, should.Equal(testFoo))
 					})
 				})
 
-				Convey(`Unmarshals {"value":"bar"} to "testBar".`, func() {
+				t.Run(`Unmarshals {"value":"bar"} to "testBar".`, func(t *ftt.Test) {
 					err := json.Unmarshal([]byte(`{"value":"bar"}`), &s)
-					So(err, ShouldBeNil)
-					So(s.Value, ShouldEqual, testBar)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.Value, should.Equal(testBar))
 				})
 
-				Convey(`Fails to Unmarshal invalid JSON.`, func() {
+				t.Run(`Fails to Unmarshal invalid JSON.`, func(t *ftt.Test) {
 					err := json.Unmarshal([]byte(`{"value":123}`), &s)
-					So(err, ShouldNotBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
 				})
 			})
 		})
@@ -176,13 +178,13 @@ func TestStringEnum(t *testing.T) {
 }
 
 func TestStructEnum(t *testing.T) {
-	Convey(`A testing enumeration for a struct type`, t, func() {
+	ftt.Run(`A testing enumeration for a struct type`, t, func(t *ftt.Test) {
 
-		Convey(`Panics when attempting to set an unsettable value.`, func() {
-			So(func() { testStructEnum.setValue(123, "foo") }, ShouldPanic)
+		t.Run(`Panics when attempting to set an unsettable value.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { testStructEnum.setValue(123, "foo") }, should.Panic)
 		})
 
-		Convey(`Binds to an flag field.`, func() {
+		t.Run(`Binds to an flag field.`, func(t *ftt.Test) {
 			var value testStruct
 
 			testCases := []struct {
@@ -194,56 +196,56 @@ func TestStructEnum(t *testing.T) {
 				{`'"`, testStructQuotes},
 			}
 
-			Convey(`When used as a flag`, func() {
+			t.Run(`When used as a flag`, func(t *ftt.Test) {
 				fs := flag.NewFlagSet("test", flag.ContinueOnError)
 				fs.Var(&value, "test", "Test flag.")
 
 				for _, tc := range testCases {
-					Convey(fmt.Sprintf(`Sets "value" to %s when set to [%s].`, tc.S.Name, tc.V), func() {
+					t.Run(fmt.Sprintf(`Sets "value" to %s when set to [%s].`, tc.S.Name, tc.V), func(t *ftt.Test) {
 						err := fs.Parse([]string{"-test", tc.V})
-						So(err, ShouldBeNil)
-						So(value, ShouldResemble, tc.S)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, value, should.Resemble(tc.S))
 					})
 				}
 
-				Convey(`Rejects an invalid enum mapping.`, func() {
+				t.Run(`Rejects an invalid enum mapping.`, func(t *ftt.Test) {
 					err := fs.Parse([]string{"-test", "baz"})
-					So(err, ShouldNotBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
 				})
 			})
 
-			Convey(`When marshalling to JSON`, func() {
+			t.Run(`When marshalling to JSON`, func(t *ftt.Test) {
 				var s struct {
 					Value testStruct `json:"value"`
 				}
 
 				for _, tc := range testCases {
-					Convey(fmt.Sprintf(`Marshals %s to JSON as its enumeration value, [%s].`,
-						tc.S.Name, tc.V), func() {
+					t.Run(fmt.Sprintf(`Marshals %s to JSON as its enumeration value, [%s].`,
+						tc.S.Name, tc.V), func(t *ftt.Test) {
 						s.Value = tc.S
 						data, err := json.Marshal(&s)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						mkey, _ := json.Marshal(&tc.V)
-						So(string(data), ShouldEqual, fmt.Sprintf(`{"value":%s}`, string(mkey)))
+						assert.Loosely(t, string(data), should.Equal(fmt.Sprintf(`{"value":%s}`, string(mkey))))
 
-						Convey(`And unmarshals to its Value.`, func() {
+						t.Run(`And unmarshals to its Value.`, func(t *ftt.Test) {
 							err := json.Unmarshal(data, &s)
-							So(err, ShouldBeNil)
-							So(s.Value, ShouldResemble, tc.S)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, s.Value, should.Resemble(tc.S))
 						})
 					})
 				}
 
-				Convey(`Unmarshals {"value":"bar"} to "testStructBar".`, func() {
+				t.Run(`Unmarshals {"value":"bar"} to "testStructBar".`, func(t *ftt.Test) {
 					err := json.Unmarshal([]byte(`{"value":"bar"}`), &s)
-					So(err, ShouldBeNil)
-					So(s.Value, ShouldResemble, testStructBar)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.Value, should.Resemble(testStructBar))
 				})
 
-				Convey(`Fails to Unmarshal invalid JSON.`, func() {
+				t.Run(`Fails to Unmarshal invalid JSON.`, func(t *ftt.Test) {
 					err := json.Unmarshal([]byte(`{"value":123}`), &s)
-					So(err, ShouldNotBeNil)
+					assert.Loosely(t, err, should.NotBeNil)
 				})
 			})
 		})

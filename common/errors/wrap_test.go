@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testWrapped struct {
@@ -43,32 +45,32 @@ func testWrap(err error) error {
 func TestWrapped(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test Wrapped`, t, func() {
-		Convey(`A nil error`, func() {
+	ftt.Run(`Test Wrapped`, t, func(t *ftt.Test) {
+		t.Run(`A nil error`, func(t *ftt.Test) {
 			var err error
 
-			Convey(`Unwraps to nil.`, func() {
-				So(Unwrap(err), ShouldBeNil)
+			t.Run(`Unwraps to nil.`, func(t *ftt.Test) {
+				assert.Loosely(t, Unwrap(err), should.BeNil)
 			})
 
-			Convey(`When wrapped, does not unwrap to nil.`, func() {
-				So(Unwrap(testWrap(err)), ShouldNotBeNil)
+			t.Run(`When wrapped, does not unwrap to nil.`, func(t *ftt.Test) {
+				assert.Loosely(t, Unwrap(testWrap(err)), should.NotBeNil)
 			})
 		})
 
-		Convey(`A non-wrapped error.`, func() {
+		t.Run(`A non-wrapped error.`, func(t *ftt.Test) {
 			err := New("test error")
 
-			Convey(`Unwraps to itself.`, func() {
-				So(Unwrap(err), ShouldEqual, err)
+			t.Run(`Unwraps to itself.`, func(t *ftt.Test) {
+				assert.Loosely(t, Unwrap(err), should.Equal(err))
 			})
 
-			Convey(`When wrapped, unwraps to itself.`, func() {
-				So(Unwrap(testWrap(err)), ShouldEqual, err)
+			t.Run(`When wrapped, unwraps to itself.`, func(t *ftt.Test) {
+				assert.Loosely(t, Unwrap(testWrap(err)), should.Equal(err))
 			})
 
-			Convey(`When double-wrapped, unwraps to itself.`, func() {
-				So(Unwrap(testWrap(testWrap(err))), ShouldEqual, err)
+			t.Run(`When double-wrapped, unwraps to itself.`, func(t *ftt.Test) {
+				assert.Loosely(t, Unwrap(testWrap(testWrap(err))), should.Equal(err))
 			})
 		})
 	})

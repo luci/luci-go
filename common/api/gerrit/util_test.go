@@ -18,39 +18,41 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFuzzyParseURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("FuzzyParseURL works", t, func() {
+	ftt.Run("FuzzyParseURL works", t, func(t *ftt.Test) {
 		h, c, err := FuzzyParseURL("https://crrev.com/i/12/34")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chrome-internal-review.googlesource.com/12")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chrome-internal-review.googlesource.com/12"))
 
 		h, c, err = FuzzyParseURL("https://crrev.com/c/12")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chromium-review.googlesource.com/12")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chromium-review.googlesource.com/12"))
 
 		h, c, err = FuzzyParseURL("https://chromium-review.googlesource.com/1541677")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chromium-review.googlesource.com/1541677")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chromium-review.googlesource.com/1541677"))
 
 		h, c, err = FuzzyParseURL("https://pdfium-review.googlesource.com/c/33")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "pdfium-review.googlesource.com/33")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("pdfium-review.googlesource.com/33"))
 
 		h, c, err = FuzzyParseURL("https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1541677/7")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chromium-review.googlesource.com/1541677")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chromium-review.googlesource.com/1541677"))
 
 		h, c, err = FuzzyParseURL("https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/2652967")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chromium-review.googlesource.com/2652967")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chromium-review.googlesource.com/2652967"))
 
 		h, c, err = FuzzyParseURL("chromium-review.googlesource.com/2652967")
-		So(err, ShouldBeNil)
-		So(fmt.Sprintf("%s/%d", h, c), ShouldEqual, "chromium-review.googlesource.com/2652967")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fmt.Sprintf("%s/%d", h, c), should.Equal("chromium-review.googlesource.com/2652967"))
 	})
 }

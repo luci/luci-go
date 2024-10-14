@@ -19,8 +19,9 @@ import (
 	"testing"
 
 	multierror "go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type customError struct{}
@@ -39,73 +40,73 @@ func TestShouldErrLike(t *testing.T) {
 		ce,
 	}
 
-	Convey("Test ShouldContainErr", t, func() {
-		Convey("too many params", func() {
-			So(ShouldContainErr(nil, nil, nil), ShouldContainSubstring, "requires 0 or 1")
+	ftt.Run("Test ShouldContainErr", t, func(t *ftt.Test) {
+		t.Run("too many params", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(nil, nil, nil), should.ContainSubstring("requires 0 or 1"))
 		})
-		Convey("no expectation", func() {
-			So(ShouldContainErr(multierror.MultiError(nil)), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
-			So(ShouldContainErr(me), ShouldEqual, "")
+		t.Run("no expectation", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(multierror.MultiError(nil)), should.ContainSubstring("Expected '<nil>' to NOT be nil"))
+			assert.Loosely(t, ShouldContainErr(me), should.BeEmpty)
 		})
-		Convey("nil expectation", func() {
-			So(ShouldContainErr(multierror.MultiError(nil), nil), ShouldContainSubstring, "expected MultiError to contain")
-			So(ShouldContainErr(me, nil), ShouldEqual, "")
+		t.Run("nil expectation", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(multierror.MultiError(nil), nil), should.ContainSubstring("expected MultiError to contain"))
+			assert.Loosely(t, ShouldContainErr(me, nil), should.BeEmpty)
 		})
-		Convey("nil actual", func() {
-			So(ShouldContainErr(nil, nil), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
-			So(ShouldContainErr(nil, "wut"), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+		t.Run("nil actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(nil, nil), should.ContainSubstring("Expected '<nil>' to NOT be nil"))
+			assert.Loosely(t, ShouldContainErr(nil, "wut"), should.ContainSubstring("Expected '<nil>' to NOT be nil"))
 		})
-		Convey("not a multierror", func() {
-			So(ShouldContainErr(100, "wut"), ShouldContainSubstring, "Expected '100' to be: 'errors.MultiError'")
+		t.Run("not a multierror", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(100, "wut"), should.ContainSubstring("Expected '100' to be: 'errors.MultiError'"))
 		})
-		Convey("string actual", func() {
-			So(ShouldContainErr(me, "is for error"), ShouldEqual, "")
-			So(ShouldContainErr(me, "customError"), ShouldEqual, "")
-			So(ShouldContainErr(me, "is not for error"), ShouldContainSubstring, "expected MultiError to contain")
+		t.Run("string actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(me, "is for error"), should.BeEmpty)
+			assert.Loosely(t, ShouldContainErr(me, "customError"), should.BeEmpty)
+			assert.Loosely(t, ShouldContainErr(me, "is not for error"), should.ContainSubstring("expected MultiError to contain"))
 		})
-		Convey("error actual", func() {
-			So(ShouldContainErr(me, e), ShouldEqual, "")
-			So(ShouldContainErr(me, ce), ShouldEqual, "")
-			So(ShouldContainErr(me, f), ShouldContainSubstring, "expected MultiError to contain")
+		t.Run("error actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(me, e), should.BeEmpty)
+			assert.Loosely(t, ShouldContainErr(me, ce), should.BeEmpty)
+			assert.Loosely(t, ShouldContainErr(me, f), should.ContainSubstring("expected MultiError to contain"))
 		})
-		Convey("bad expected type", func() {
-			So(ShouldContainErr(me, 20), ShouldContainSubstring, "unexpected argument type int")
+		t.Run("bad expected type", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldContainErr(me, 20), should.ContainSubstring("unexpected argument type int"))
 		})
 	})
 
-	Convey("Test ShouldErrLike", t, func() {
-		Convey("too many params", func() {
-			So(ShouldErrLike(nil, nil, nil), ShouldContainSubstring, "only accepts `nil` on the right hand side")
+	ftt.Run("Test ShouldErrLike", t, func(t *ftt.Test) {
+		t.Run("too many params", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(nil, nil, nil), should.ContainSubstring("only accepts `nil` on the right hand side"))
 		})
-		Convey("no expectation", func() {
-			So(ShouldErrLike(nil), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
-			So(ShouldErrLike(e), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
-			So(ShouldErrLike(ce), ShouldEqual, "ShouldErrLike requires 1 or more expected values, got 0")
+		t.Run("no expectation", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(nil), should.Equal("ShouldErrLike requires 1 or more expected values, got 0"))
+			assert.Loosely(t, ShouldErrLike(e), should.Equal("ShouldErrLike requires 1 or more expected values, got 0"))
+			assert.Loosely(t, ShouldErrLike(ce), should.Equal("ShouldErrLike requires 1 or more expected values, got 0"))
 		})
-		Convey("nil expectation", func() {
-			So(ShouldErrLike(nil, nil), ShouldEqual, "")
-			So(ShouldErrLike(e, nil), ShouldContainSubstring, "Expected: nil")
-			So(ShouldErrLike(ce, nil), ShouldContainSubstring, "Expected: nil")
+		t.Run("nil expectation", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(nil, nil), should.BeEmpty)
+			assert.Loosely(t, ShouldErrLike(e, nil), should.ContainSubstring("Expected: nil"))
+			assert.Loosely(t, ShouldErrLike(ce, nil), should.ContainSubstring("Expected: nil"))
 		})
-		Convey("nil actual", func() {
-			So(ShouldErrLike(nil, "wut"), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
-			So(ShouldErrLike(nil, ""), ShouldContainSubstring, "Expected '<nil>' to NOT be nil")
+		t.Run("nil actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(nil, "wut"), should.ContainSubstring("Expected '<nil>' to NOT be nil"))
+			assert.Loosely(t, ShouldErrLike(nil, ""), should.ContainSubstring("Expected '<nil>' to NOT be nil"))
 		})
-		Convey("not an err", func() {
-			So(ShouldErrLike(100, "wut"), ShouldContainSubstring, "Expected: 'error interface support'")
+		t.Run("not an err", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(100, "wut"), should.ContainSubstring("Expected: 'error interface support'"))
 		})
-		Convey("string actual", func() {
-			So(ShouldErrLike(e, "is for error"), ShouldEqual, "")
-			So(ShouldErrLike(ce, "customError"), ShouldEqual, "")
-			So(ShouldErrLike(e, ""), ShouldEqual, "")
-			So(ShouldErrLike(ce, ""), ShouldEqual, "")
+		t.Run("string actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(e, "is for error"), should.BeEmpty)
+			assert.Loosely(t, ShouldErrLike(ce, "customError"), should.BeEmpty)
+			assert.Loosely(t, ShouldErrLike(e, ""), should.BeEmpty)
+			assert.Loosely(t, ShouldErrLike(ce, ""), should.BeEmpty)
 		})
-		Convey("error actual", func() {
-			So(ShouldErrLike(e, e), ShouldEqual, "")
-			So(ShouldErrLike(ce, ce), ShouldEqual, "")
+		t.Run("error actual", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(e, e), should.BeEmpty)
+			assert.Loosely(t, ShouldErrLike(ce, ce), should.BeEmpty)
 		})
-		Convey("bad expected type", func() {
-			So(ShouldErrLike(e, 20), ShouldContainSubstring, "unexpected argument type int")
+		t.Run("bad expected type", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldErrLike(e, 20), should.ContainSubstring("unexpected argument type int"))
 		})
 	})
 }

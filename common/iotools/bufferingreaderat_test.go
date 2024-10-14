@@ -20,7 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBlocksLRU(t *testing.T) {
@@ -30,7 +32,7 @@ func TestBlocksLRU(t *testing.T) {
 		return block{int64(offset), []byte(fmt.Sprintf("%d", offset)), false}
 	}
 
-	Convey("With LRU", t, func() {
+	ftt.Run("With LRU", t, func(t *ftt.Test) {
 		evicted := []block{}
 
 		lru := blocksLRU{
@@ -38,33 +40,33 @@ func TestBlocksLRU(t *testing.T) {
 		}
 		lru.init(3)
 
-		Convey("Basic add/get works", func() {
+		t.Run("Basic add/get works", func(t *ftt.Test) {
 			b, ok := lru.get(0)
-			So(ok, ShouldBeFalse)
-			So(b, ShouldResemble, block{})
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, b, should.Resemble(block{}))
 
 			lru.add(makeBlock(0))
 
 			b, ok = lru.get(0)
-			So(ok, ShouldBeTrue)
-			So(b, ShouldResemble, makeBlock(0))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, b, should.Resemble(makeBlock(0)))
 		})
 
-		Convey("Basic eviction works", func() {
+		t.Run("Basic eviction works", func(t *ftt.Test) {
 			for i := 0; i < 5; i++ {
 				lru.add(makeBlock(i))
 			}
 			// Evicted two oldest ones.
-			So(evicted, ShouldResemble, []block{makeBlock(0), makeBlock(1)})
+			assert.Loosely(t, evicted, should.Resemble([]block{makeBlock(0), makeBlock(1)}))
 			// The rest are still there.
 			for i := 2; i < 5; i++ {
 				b, ok := lru.get(int64(i))
-				So(ok, ShouldBeTrue)
-				So(b, ShouldResemble, makeBlock(i))
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, b, should.Resemble(makeBlock(i)))
 			}
 		})
 
-		Convey("LRU logic works", func() {
+		t.Run("LRU logic works", func(t *ftt.Test) {
 			lru.add(makeBlock(0))
 			lru.add(makeBlock(1))
 			lru.add(makeBlock(2))
@@ -74,7 +76,7 @@ func TestBlocksLRU(t *testing.T) {
 			// This call now evicts 1 as the oldest.
 			lru.add(makeBlock(3))
 			// Yep.
-			So(evicted, ShouldResemble, []block{makeBlock(1)})
+			assert.Loosely(t, evicted, should.Resemble([]block{makeBlock(1)}))
 		})
 	})
 }
@@ -111,103 +113,103 @@ func (r *trackingReaderAt) ReadAt(p []byte, offset int64) (int, error) {
 func TestBufferingReaderAt(t *testing.T) {
 	t.Parallel()
 
-	Convey("One byte block size", t, func() {
+	ftt.Run("One byte block size", t, func(t *ftt.Test) {
 		data := &trackingReaderAt{r: strings.NewReader("0123456789")}
 		r := NewBufferingReaderAt(data, 1, 4)
 
 		buf := make([]byte, 4)
 		n, err := r.ReadAt(buf, 0)
-		So(n, ShouldEqual, 4)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "0123")
+		assert.Loosely(t, n, should.Equal(4))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("0123"))
 
 		// Fetched the data block-by-block sequentially.
-		So(data.calls, ShouldResemble, []readAtCall{
+		assert.Loosely(t, data.calls, should.Resemble([]readAtCall{
 			{0, 1},
 			{1, 1},
 			{2, 1},
 			{3, 1},
-		})
+		}))
 		data.calls = nil
 
 		// Read from the middle of already read range, should make no new calls.
 		buf = make([]byte, 2)
 		n, err = r.ReadAt(buf, 1)
-		So(n, ShouldEqual, 2)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "12")
-		So(data.calls, ShouldHaveLength, 0)
+		assert.Loosely(t, n, should.Equal(2))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("12"))
+		assert.Loosely(t, data.calls, should.HaveLength(0))
 
 		// Read few bytes more, it should reading new data.
 		buf = make([]byte, 5)
 		n, err = r.ReadAt(buf, 1)
-		So(n, ShouldEqual, 5)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "12345")
-		So(data.calls, ShouldResemble, []readAtCall{
+		assert.Loosely(t, n, should.Equal(5))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("12345"))
+		assert.Loosely(t, data.calls, should.Resemble([]readAtCall{
 			{4, 1},
 			{5, 1},
-		})
+		}))
 		data.calls = nil
 
 		// Hit EOF.
 		buf = make([]byte, 11)
 		n, err = r.ReadAt(buf, 0)
-		So(n, ShouldEqual, 10)
-		So(err, ShouldEqual, io.EOF)
-		So(string(buf[:10]), ShouldEqual, "0123456789")
+		assert.Loosely(t, n, should.Equal(10))
+		assert.Loosely(t, err, should.Equal(io.EOF))
+		assert.Loosely(t, string(buf[:10]), should.Equal("0123456789"))
 
 		// Try to read past EOF.
 		n, err = r.ReadAt(buf, 10)
-		So(n, ShouldEqual, 0)
-		So(err, ShouldEqual, io.EOF)
+		assert.Loosely(t, n, should.BeZero)
+		assert.Loosely(t, err, should.Equal(io.EOF))
 
 		// 0 buffer read just "probes" for EOF.
 		n, err = r.ReadAt(nil, 0)
-		So(n, ShouldEqual, 0)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, n, should.BeZero)
+		assert.Loosely(t, err, should.BeNil)
 		n, err = r.ReadAt(nil, 10)
-		So(n, ShouldEqual, 0)
-		So(err, ShouldEqual, io.EOF)
+		assert.Loosely(t, n, should.BeZero)
+		assert.Loosely(t, err, should.Equal(io.EOF))
 	})
 
-	Convey("Big block size", t, func() {
+	ftt.Run("Big block size", t, func(t *ftt.Test) {
 		data := &trackingReaderAt{r: strings.NewReader("0123456789")}
 		r := NewBufferingReaderAt(data, 6, 2)
 
 		// Read a small chunk of the first block from the middle.
 		buf := make([]byte, 2)
 		n, err := r.ReadAt(buf, 2)
-		So(n, ShouldEqual, 2)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "23")
+		assert.Loosely(t, n, should.Equal(2))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("23"))
 
-		So(data.calls, ShouldResemble, []readAtCall{{0, 6}})
+		assert.Loosely(t, data.calls, should.Resemble([]readAtCall{{0, 6}}))
 		data.calls = nil
 
 		// Read a large chunk of the first block and a bit of the second.
 		buf = make([]byte, 7)
 		n, err = r.ReadAt(buf, 2)
-		So(n, ShouldEqual, 7)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "2345678")
+		assert.Loosely(t, n, should.Equal(7))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("2345678"))
 
-		So(data.calls, ShouldResemble, []readAtCall{{6, 6}})
+		assert.Loosely(t, data.calls, should.Resemble([]readAtCall{{6, 6}}))
 		data.calls = nil
 
 		// Partially read the last chunk.
 		n, err = r.ReadAt(buf, 8)
-		So(n, ShouldEqual, 2)
-		So(err, ShouldEqual, io.EOF)
-		So(string(buf[:2]), ShouldEqual, "89")
+		assert.Loosely(t, n, should.Equal(2))
+		assert.Loosely(t, err, should.Equal(io.EOF))
+		assert.Loosely(t, string(buf[:2]), should.Equal("89"))
 
 		// Try to partially read a block past EOF.
 		n, err = r.ReadAt(buf, 23)
-		So(n, ShouldEqual, 0)
-		So(err, ShouldEqual, io.EOF)
+		assert.Loosely(t, n, should.BeZero)
+		assert.Loosely(t, err, should.Equal(io.EOF))
 	})
 
-	Convey("Handle unexpected errors", t, func() {
+	ftt.Run("Handle unexpected errors", t, func(t *ftt.Test) {
 		data := &trackingReaderAt{r: strings.NewReader("0123456789")}
 		r := NewBufferingReaderAt(data, 5, 2)
 
@@ -218,15 +220,15 @@ func TestBufferingReaderAt(t *testing.T) {
 		// But read only 3 bytes. It should succeed, we don't care about 4th byte.
 		buf := make([]byte, 3)
 		n, err := r.ReadAt(buf, 0)
-		So(n, ShouldEqual, 3)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldEqual, "012")
+		assert.Loosely(t, n, should.Equal(3))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Equal("012"))
 
 		// But when reading the full page, it actually returns the error.
 		buf = make([]byte, 5)
 		n, err = r.ReadAt(buf, 0)
-		So(n, ShouldEqual, 4)
-		So(err, ShouldEqual, data.err)
-		So(string(buf[:4]), ShouldEqual, "0123")
+		assert.Loosely(t, n, should.Equal(4))
+		assert.Loosely(t, err, should.Equal(data.err))
+		assert.Loosely(t, string(buf[:4]), should.Equal("0123"))
 	})
 }

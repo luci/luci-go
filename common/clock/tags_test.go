@@ -18,29 +18,31 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTags(t *testing.T) {
-	Convey(`An empty Context`, t, func() {
+	ftt.Run(`An empty Context`, t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey(`Should have nil tags.`, func() {
-			So(Tags(c), ShouldBeNil)
+		t.Run(`Should have nil tags.`, func(t *ftt.Test) {
+			assert.Loosely(t, Tags(c), should.BeNil)
 		})
 
-		Convey(`With tag, "A"`, func() {
+		t.Run(`With tag, "A"`, func(t *ftt.Test) {
 			c = Tag(c, "A")
 
-			Convey(`Should have tags {"A"}.`, func() {
-				So(Tags(c), ShouldResemble, []string{"A"})
+			t.Run(`Should have tags {"A"}.`, func(t *ftt.Test) {
+				assert.Loosely(t, Tags(c), should.Resemble([]string{"A"}))
 			})
 
-			Convey(`And another tag, "B"`, func() {
+			t.Run(`And another tag, "B"`, func(t *ftt.Test) {
 				c = Tag(c, "B")
 
-				Convey(`Should have tags {"A", "B"}.`, func() {
-					So(Tags(c), ShouldResemble, []string{"A", "B"})
+				t.Run(`Should have tags {"A", "B"}.`, func(t *ftt.Test) {
+					assert.Loosely(t, Tags(c), should.Resemble([]string{"A", "B"}))
 				})
 			})
 		})

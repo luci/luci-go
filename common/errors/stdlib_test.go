@@ -18,21 +18,23 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // TestErrorIs makes a new fake value implementing the Error interface and wraps it using Annotate().
 // Along the way, we test whether Is returns what's expected.
 func TestErrorIs(t *testing.T) {
 	t.Parallel()
-	Convey("test is", t, func() {
+	ftt.Run("test is", t, func(t *ftt.Test) {
 		newFakeError := &fakeError{}
 		wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6").Err()
-		So(newFakeError.Error(), ShouldEqual, "f9bd822e-6568-46ab-ba7d-419ef5f64b3b")
-		So(errors.Is(newFakeError, &fakeError{}), ShouldBeTrue)
-		So(Is(newFakeError, &fakeError{}), ShouldBeTrue)
-		So(errors.Is(wrappedError, &fakeError{}), ShouldBeTrue)
-		So(Is(wrappedError, &fakeError{}), ShouldBeTrue)
+		assert.Loosely(t, newFakeError.Error(), should.Equal("f9bd822e-6568-46ab-ba7d-419ef5f64b3b"))
+		assert.Loosely(t, errors.Is(newFakeError, &fakeError{}), should.BeTrue)
+		assert.Loosely(t, Is(newFakeError, &fakeError{}), should.BeTrue)
+		assert.Loosely(t, errors.Is(wrappedError, &fakeError{}), should.BeTrue)
+		assert.Loosely(t, Is(wrappedError, &fakeError{}), should.BeTrue)
 	})
 }
 
@@ -40,19 +42,19 @@ func TestErrorIs(t *testing.T) {
 // Along the way, we test whether As succeeds for the raw error and the annotated error.
 func TestErrorAs(t *testing.T) {
 	t.Parallel()
-	Convey("test as", t, func() {
-		Convey("raw error", func() {
+	ftt.Run("test as", t, func(t *ftt.Test) {
+		t.Run("raw error", func(t *ftt.Test) {
 			var dst *fakeError
 			newFakeError := &fakeError{}
-			So(As(newFakeError, &dst), ShouldBeTrue)
-			So(newFakeError == dst, ShouldBeTrue)
+			assert.Loosely(t, As(newFakeError, &dst), should.BeTrue)
+			assert.Loosely(t, newFakeError == dst, should.BeTrue)
 		})
-		Convey("wrapped error", func() {
+		t.Run("wrapped error", func(t *ftt.Test) {
 			var dst *fakeError
 			newFakeError := &fakeError{}
 			wrappedError := Annotate(newFakeError, "8ed2d02c-a8c0-4b8e-b734-bf30cb88d0c6").Err()
-			So(As(wrappedError, &dst), ShouldBeTrue)
-			So(newFakeError == dst, ShouldBeTrue)
+			assert.Loosely(t, As(wrappedError, &dst), should.BeTrue)
+			assert.Loosely(t, newFakeError == dst, should.BeTrue)
 		})
 	})
 }
@@ -60,12 +62,12 @@ func TestErrorAs(t *testing.T) {
 // TestErrorJoin tests using the builtin error.Join.
 func TestErrorJoin(t *testing.T) {
 	t.Parallel()
-	Convey("test join", t, func() {
+	ftt.Run("test join", t, func(t *ftt.Test) {
 		errorA := errors.New("a")
 		errorB := errors.New("b")
 		combined := Join(errorA, errorB)
-		So(combined.Error(), ShouldEqual, `a
-b`)
+		assert.Loosely(t, combined.Error(), should.Equal(`a
+b`))
 	})
 }
 

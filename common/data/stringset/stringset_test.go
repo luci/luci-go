@@ -19,164 +19,166 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Thread Unsafe Set", t, func() {
+	ftt.Run("Test Thread Unsafe Set", t, func(t *ftt.Test) {
 		s := New(10)
 
-		Convey("Can add elements", func() {
-			So(s.Add("hello"), ShouldBeTrue)
-			So(s.Add("hello"), ShouldBeFalse)
-			So(s.Add("world"), ShouldBeTrue)
-			So(s.Len(), ShouldEqual, 2)
+		t.Run("Can add elements", func(t *ftt.Test) {
+			assert.Loosely(t, s.Add("hello"), should.BeTrue)
+			assert.Loosely(t, s.Add("hello"), should.BeFalse)
+			assert.Loosely(t, s.Add("world"), should.BeTrue)
+			assert.Loosely(t, s.Len(), should.Equal(2))
 			sl := s.ToSlice()
 			sort.Strings(sl)
-			So(sl, ShouldResemble, []string{"hello", "world"})
+			assert.Loosely(t, sl, should.Resemble([]string{"hello", "world"}))
 
-			Convey("Can remove stuff", func() {
-				So(s.Del("foo"), ShouldBeFalse)
-				So(s.Del("world"), ShouldBeTrue)
-				So(s.Del("world"), ShouldBeFalse)
-				So(s.ToSlice(), ShouldResemble, []string{"hello"})
+			t.Run("Can remove stuff", func(t *ftt.Test) {
+				assert.Loosely(t, s.Del("foo"), should.BeFalse)
+				assert.Loosely(t, s.Del("world"), should.BeTrue)
+				assert.Loosely(t, s.Del("world"), should.BeFalse)
+				assert.Loosely(t, s.ToSlice(), should.Resemble([]string{"hello"}))
 			})
 
-			Convey("Can peek them", func() {
+			t.Run("Can peek them", func(t *ftt.Test) {
 				str, found := s.Peek()
-				So(found, ShouldBeTrue)
-				So(sl, ShouldContain, str)
+				assert.Loosely(t, found, should.BeTrue)
+				assert.Loosely(t, sl, should.Contain(str))
 
 				_, found = New(10).Peek()
-				So(found, ShouldBeFalse)
+				assert.Loosely(t, found, should.BeFalse)
 			})
 
-			Convey("Can pop them", func() {
+			t.Run("Can pop them", func(t *ftt.Test) {
 				var newList []string
 				str, found := s.Pop()
-				So(found, ShouldBeTrue)
+				assert.Loosely(t, found, should.BeTrue)
 				newList = append(newList, str)
 
 				str, found = s.Pop()
-				So(found, ShouldBeTrue)
+				assert.Loosely(t, found, should.BeTrue)
 				newList = append(newList, str)
 
 				_, found = s.Pop()
-				So(found, ShouldBeFalse)
-				So(s.Len(), ShouldEqual, 0)
+				assert.Loosely(t, found, should.BeFalse)
+				assert.Loosely(t, s.Len(), should.BeZero)
 
 				sort.Strings(newList)
 
-				So(newList, ShouldResemble, sl)
+				assert.Loosely(t, newList, should.Resemble(sl))
 			})
 
-			Convey("Can iterate", func() {
+			t.Run("Can iterate", func(t *ftt.Test) {
 				s.Iter(func(val string) bool {
-					So(sl, ShouldContain, val)
+					assert.Loosely(t, sl, should.Contain(val))
 					return true
 				})
 			})
 
-			Convey("Can stop iteration early", func() {
+			t.Run("Can stop iteration early", func(t *ftt.Test) {
 				foundOne := false
 				s.Iter(func(val string) bool {
-					So(foundOne, ShouldBeFalse)
+					assert.Loosely(t, foundOne, should.BeFalse)
 					foundOne = true
-					So(sl, ShouldContain, val)
+					assert.Loosely(t, sl, should.Contain(val))
 					return false
 				})
 			})
 
-			Convey("Can dup them", func() {
+			t.Run("Can dup them", func(t *ftt.Test) {
 				dup := s.Dup()
-				So(dup, ShouldResemble, s)
-				So(reflect.ValueOf(dup).Pointer(), ShouldNotEqual, reflect.ValueOf(s).Pointer())
+				assert.Loosely(t, dup, should.Resemble(s))
+				assert.Loosely(t, reflect.ValueOf(dup).Pointer(), should.NotEqual(reflect.ValueOf(s).Pointer()))
 				dup.Add("panwaffles") // the best of both!
-				So(dup, ShouldNotResemble, s)
+				assert.Loosely(t, dup, should.NotResemble(s))
 			})
 		})
 	})
 
-	Convey("Can create with pre-set values", t, func() {
+	ftt.Run("Can create with pre-set values", t, func(t *ftt.Test) {
 		s := NewFromSlice("hi", "there", "person", "hi")
-		So(s.Len(), ShouldEqual, 3)
-		So(s.Has("hi"), ShouldBeTrue)
-		So(s.HasAll("hi", "person"), ShouldBeTrue)
-		So(s.HasAll("hi", "bye"), ShouldBeFalse)
+		assert.Loosely(t, s.Len(), should.Equal(3))
+		assert.Loosely(t, s.Has("hi"), should.BeTrue)
+		assert.Loosely(t, s.HasAll("hi", "person"), should.BeTrue)
+		assert.Loosely(t, s.HasAll("hi", "bye"), should.BeFalse)
 		sl := s.ToSlice()
 		sort.Strings(sl)
-		So(sl, ShouldResemble, []string{"hi", "person", "there"})
+		assert.Loosely(t, sl, should.Resemble([]string{"hi", "person", "there"}))
 	})
 
-	Convey("Can do set operations", t, func() {
+	ftt.Run("Can do set operations", t, func(t *ftt.Test) {
 		s := NewFromSlice("a", "b", "c", "d", "e", "f", "z")
 
-		Convey("Union", func() {
+		t.Run("Union", func(t *ftt.Test) {
 			sl := s.Union(NewFromSlice("b", "k", "g")).ToSlice()
 			sort.Strings(sl)
-			So(sl, ShouldResemble, []string{
-				"a", "b", "c", "d", "e", "f", "g", "k", "z"})
+			assert.Loosely(t, sl, should.Resemble([]string{
+				"a", "b", "c", "d", "e", "f", "g", "k", "z"}))
 		})
 
-		Convey("Intersect", func() {
-			Convey("empty", func() {
+		t.Run("Intersect", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				sl := s.Intersect(New(0)).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldBeEmpty)
+				assert.Loosely(t, sl, should.BeEmpty)
 			})
 
-			Convey("no overlap", func() {
+			t.Run("no overlap", func(t *ftt.Test) {
 				sl := s.Intersect(NewFromSlice("beef")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldBeEmpty)
+				assert.Loosely(t, sl, should.BeEmpty)
 			})
 
-			Convey("some overlap", func() {
+			t.Run("some overlap", func(t *ftt.Test) {
 				sl := s.Intersect(NewFromSlice("c", "k", "z", "g")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{"c", "z"})
+				assert.Loosely(t, sl, should.Resemble([]string{"c", "z"}))
 			})
 
-			Convey("total overlap", func() {
+			t.Run("total overlap", func(t *ftt.Test) {
 				sl := s.Intersect(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 		})
 
-		Convey("Difference", func() {
-			Convey("empty", func() {
+		t.Run("Difference", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				sl := s.Difference(New(0)).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 
-			Convey("no overlap", func() {
+			t.Run("no overlap", func(t *ftt.Test) {
 				sl := s.Difference(NewFromSlice("beef")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{"a", "b", "c", "d", "e", "f", "z"})
+				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "c", "d", "e", "f", "z"}))
 			})
 
-			Convey("some overlap", func() {
+			t.Run("some overlap", func(t *ftt.Test) {
 				sl := s.Difference(NewFromSlice("c", "k", "z", "g")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldResemble, []string{"a", "b", "d", "e", "f"})
+				assert.Loosely(t, sl, should.Resemble([]string{"a", "b", "d", "e", "f"}))
 			})
 
-			Convey("total overlap", func() {
+			t.Run("total overlap", func(t *ftt.Test) {
 				sl := s.Difference(NewFromSlice("a", "b", "c", "d", "e", "f", "z")).ToSlice()
 				sort.Strings(sl)
-				So(sl, ShouldBeEmpty)
+				assert.Loosely(t, sl, should.BeEmpty)
 			})
 		})
 
-		Convey("Contains", func() {
+		t.Run("Contains", func(t *ftt.Test) {
 			s1 := NewFromSlice("a", "b", "c")
 			s2 := NewFromSlice("a", "b")
-			So(s1.Contains(s2), ShouldBeTrue)
-			So(s2.Contains(s1), ShouldBeFalse)
+			assert.Loosely(t, s1.Contains(s2), should.BeTrue)
+			assert.Loosely(t, s2.Contains(s1), should.BeFalse)
 		})
 	})
 }

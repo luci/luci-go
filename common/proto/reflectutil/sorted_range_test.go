@@ -19,15 +19,17 @@ import (
 	"strconv"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func TestMapRangeSorted(t *testing.T) {
 	t.Parallel()
 
-	Convey(`MapRangeSorted`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`MapRangeSorted`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			msg := &TestMapMessage{}
 			refl := msg.ProtoReflect()
 			getField := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("string_map")).Map() }
@@ -36,7 +38,7 @@ func TestMapRangeSorted(t *testing.T) {
 			})
 		})
 
-		Convey(`bool`, func() {
+		t.Run(`bool`, func(t *ftt.Test) {
 			type item struct {
 				k bool
 				v string
@@ -45,36 +47,36 @@ func TestMapRangeSorted(t *testing.T) {
 			refl := msg.ProtoReflect()
 			getField := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("bool_map")).Map() }
 
-			Convey(`true`, func() {
+			t.Run(`true`, func(t *ftt.Test) {
 				msg.BoolMap = map[bool]string{true: "hey"}
 				results := []item{}
 				MapRangeSorted(getField(), protoreflect.BoolKind, func(k protoreflect.MapKey, v protoreflect.Value) bool {
 					results = append(results, item{k.Bool(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, []item{{true, "hey"}})
+				assert.Loosely(t, results, should.Resemble([]item{{true, "hey"}}))
 			})
-			Convey(`false`, func() {
+			t.Run(`false`, func(t *ftt.Test) {
 				msg.BoolMap = map[bool]string{false: "hey"}
 				results := []item{}
 				MapRangeSorted(getField(), protoreflect.BoolKind, func(k protoreflect.MapKey, v protoreflect.Value) bool {
 					results = append(results, item{k.Bool(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, []item{{false, "hey"}})
+				assert.Loosely(t, results, should.Resemble([]item{{false, "hey"}}))
 			})
-			Convey(`both`, func() {
+			t.Run(`both`, func(t *ftt.Test) {
 				msg.BoolMap = map[bool]string{false: "hey", true: "norp"}
 				results := []item{}
 				MapRangeSorted(getField(), protoreflect.BoolKind, func(k protoreflect.MapKey, v protoreflect.Value) bool {
 					results = append(results, item{k.Bool(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, []item{{false, "hey"}, {true, "norp"}})
+				assert.Loosely(t, results, should.Resemble([]item{{false, "hey"}, {true, "norp"}}))
 			})
 		})
 
-		Convey(`int`, func() {
+		t.Run(`int`, func(t *ftt.Test) {
 			type item struct {
 				k int64
 				v string
@@ -84,7 +86,7 @@ func TestMapRangeSorted(t *testing.T) {
 			get32Field := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("int32_map")).Map() }
 			get64Field := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("int64_map")).Map() }
 
-			Convey(`int32`, func() {
+			t.Run(`int32`, func(t *ftt.Test) {
 				msg.Int32Map = map[int32]string{}
 				expect := []item{}
 				for i := int64(0); i < 100; i++ {
@@ -97,10 +99,10 @@ func TestMapRangeSorted(t *testing.T) {
 					results = append(results, item{k.Int(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, expect)
+				assert.Loosely(t, results, should.Resemble(expect))
 			})
 
-			Convey(`int64`, func() {
+			t.Run(`int64`, func(t *ftt.Test) {
 				msg.Int64Map = map[int64]string{}
 				expect := []item{}
 				for i := int64(0); i < 100; i++ {
@@ -113,12 +115,12 @@ func TestMapRangeSorted(t *testing.T) {
 					results = append(results, item{k.Int(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, expect)
+				assert.Loosely(t, results, should.Resemble(expect))
 			})
 
 		})
 
-		Convey(`uint`, func() {
+		t.Run(`uint`, func(t *ftt.Test) {
 			type item struct {
 				k uint64
 				v string
@@ -128,7 +130,7 @@ func TestMapRangeSorted(t *testing.T) {
 			get32Field := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("uint32_map")).Map() }
 			get64Field := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("uint64_map")).Map() }
 
-			Convey(`uint32`, func() {
+			t.Run(`uint32`, func(t *ftt.Test) {
 				msg.Uint32Map = map[uint32]string{}
 				expect := []item{}
 				for i := uint64(0); i < 100; i++ {
@@ -141,10 +143,10 @@ func TestMapRangeSorted(t *testing.T) {
 					results = append(results, item{k.Uint(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, expect)
+				assert.Loosely(t, results, should.Resemble(expect))
 			})
 
-			Convey(`uint64`, func() {
+			t.Run(`uint64`, func(t *ftt.Test) {
 				msg.Uint64Map = map[uint64]string{}
 				expect := []item{}
 				for i := uint64(0); i < 100; i++ {
@@ -157,11 +159,11 @@ func TestMapRangeSorted(t *testing.T) {
 					results = append(results, item{k.Uint(), v.String()})
 					return true
 				})
-				So(results, ShouldResemble, expect)
+				assert.Loosely(t, results, should.Resemble(expect))
 			})
 		})
 
-		Convey(`string`, func() {
+		t.Run(`string`, func(t *ftt.Test) {
 			msg := &TestMapMessage{}
 			refl := msg.ProtoReflect()
 			getField := func() protoreflect.Map { return refl.Get(refl.Descriptor().Fields().ByName("string_map")).Map() }
@@ -184,7 +186,7 @@ func TestMapRangeSorted(t *testing.T) {
 				results = append(results, v.String())
 				return true
 			})
-			So(results, ShouldResemble, expect)
+			assert.Loosely(t, results, should.Resemble(expect))
 		})
 	})
 }

@@ -18,13 +18,13 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/textpb/internal"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFormat(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		leaf := &internal.Leaf{
 			Str:  "{\n\"not a json really\":\n\"zzz\"\n}",
 			Json: "{\n\"this is json 1\":\n\"zzz\"\n}",
@@ -41,8 +41,8 @@ func TestFormat(t *testing.T) {
 		}
 
 		out, err := Marshal(&msg)
-		So(err, ShouldBeNil)
-		So(string(out), ShouldEqual, `leaf {
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(out), should.Equal(`leaf {
   str: "{\n\"not a json really\":\n\"zzz\"\n}"
   json:
     '{'
@@ -105,14 +105,14 @@ mapping {
       '}'
   }
 }
-`)
+`))
 	})
 
-	Convey("Malformed JSON", t, func() {
+	ftt.Run("Malformed JSON", t, func(t *ftt.Test) {
 		_, err := Format([]byte(`
 			str: "nah don't care about that one"
 			json: "not a json, boom"
 		`), (&internal.Leaf{}).ProtoReflect().Descriptor())
-		So(err, ShouldErrLike, "value for 'json' must be valid JSON, got value 'not a json, boom'")
+		assert.Loosely(t, err, should.ErrLike("value for 'json' must be valid JSON, got value 'not a json, boom'"))
 	})
 }

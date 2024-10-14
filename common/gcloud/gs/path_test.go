@@ -19,13 +19,15 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPath(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Path manipulation tests`, t, func() {
+	ftt.Run(`Path manipulation tests`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			prefix   string
 			filename string
@@ -37,21 +39,21 @@ func TestPath(t *testing.T) {
 			{"", "foo/bar", "foo/bar"},
 			{"", "/foo/bar///", "/foo/bar///"},
 		} {
-			Convey(fmt.Sprintf(`Test path: prefix=%q, filename=%q, path=%q`, tc.prefix, tc.filename, tc.path), func() {
-				Convey(`The prefix and filenames compose into the path.`, func() {
-					So(MakePath(tc.prefix, tc.filename), ShouldEqual, tc.path)
+			t.Run(fmt.Sprintf(`Test path: prefix=%q, filename=%q, path=%q`, tc.prefix, tc.filename, tc.path), func(t *ftt.Test) {
+				t.Run(`The prefix and filenames compose into the path.`, func(t *ftt.Test) {
+					assert.Loosely(t, MakePath(tc.prefix, tc.filename), should.Equal(tc.path))
 				})
 
-				Convey(`The path splits into prefix and filename.`, func() {
+				t.Run(`The path splits into prefix and filename.`, func(t *ftt.Test) {
 					p, f := tc.path.Split()
-					So(p, ShouldEqual, strings.TrimSuffix(tc.prefix, "/"))
-					So(f, ShouldEqual, tc.filename)
+					assert.Loosely(t, p, should.Equal(strings.TrimSuffix(tc.prefix, "/")))
+					assert.Loosely(t, f, should.Equal(tc.filename))
 				})
 			})
 		}
 	})
 
-	Convey(`Concat tests`, t, func() {
+	ftt.Run(`Concat tests`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			orig   Path
 			concat []string
@@ -65,8 +67,8 @@ func TestPath(t *testing.T) {
 			{"gs://bucket/foo/", []string{"baz"}, "gs://bucket/foo/baz"},
 			{"gs://bucket/foo/", []string{"bar//", "baz"}, "gs://bucket/foo/bar/baz"},
 		} {
-			Convey(fmt.Sprintf(`Concat: %q to %q yields %q`, tc.orig, tc.concat, tc.final), func() {
-				So(tc.orig.Concat(tc.concat[0], tc.concat[1:]...), ShouldEqual, tc.final)
+			t.Run(fmt.Sprintf(`Concat: %q to %q yields %q`, tc.orig, tc.concat, tc.final), func(t *ftt.Test) {
+				assert.Loosely(t, tc.orig.Concat(tc.concat[0], tc.concat[1:]...), should.Equal(tc.final))
 			})
 		}
 	})

@@ -33,9 +33,9 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func dummySendFn[T any](*buffer.Batch[T]) error { return nil }
@@ -56,41 +56,41 @@ func dbgIfVerbose(ctx context.Context) (context.Context, func(string, ...any)) {
 }
 
 func TestChannelConstruction(t *testing.T) {
-	Convey(`Channel`, t, func() {
+	ftt.Run(`Channel`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx, dbg := dbgIfVerbose(ctx)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		Convey(`construction`, func() {
+		t.Run(`construction`, func(t *ftt.Test) {
 
-			Convey(`success`, func() {
+			t.Run(`success`, func(t *ftt.Test) {
 				ch, err := NewChannel(ctx, &Options[string]{testingDbg: dbg}, dummySendFn)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ch.Close()
 				<-ch.DrainC
 			})
 
-			Convey(`failure`, func() {
-				Convey(`bad SendFn`, func() {
+			t.Run(`failure`, func(t *ftt.Test) {
+				t.Run(`bad SendFn`, func(t *ftt.Test) {
 					_, err := NewChannel[string](ctx, nil, nil)
-					So(err, ShouldErrLike, "send is required")
+					assert.Loosely(t, err, should.ErrLike("send is required"))
 				})
 
-				Convey(`bad Options`, func() {
+				t.Run(`bad Options`, func(t *ftt.Test) {
 					_, err := NewChannel(ctx, &Options[string]{
 						QPSLimit: rate.NewLimiter(100, 0),
 					}, dummySendFn)
-					So(err, ShouldErrLike, "normalizing dispatcher.Options")
+					assert.Loosely(t, err, should.ErrLike("normalizing dispatcher.Options"))
 				})
 
-				Convey(`bad Options.Buffer`, func() {
+				t.Run(`bad Options.Buffer`, func(t *ftt.Test) {
 					_, err := NewChannel(ctx, &Options[string]{
 						Buffer: buffer.Options{
 							BatchItemsMax: -3,
 						},
 					}, dummySendFn)
-					So(err, ShouldErrLike, "allocating Buffer")
+					assert.Loosely(t, err, should.ErrLike("allocating Buffer"))
 				})
 			})
 
@@ -101,7 +101,7 @@ func TestChannelConstruction(t *testing.T) {
 }
 
 func TestSerialSenderWithoutDrops(t *testing.T) {
-	Convey(`serial world-state sender without drops`, t, func(cvctx C) {
+	ftt.Run(`serial world-state sender without drops`, t, func(cvctx *ftt.Test) {
 		ctx, tclock := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx, dbg := dbgIfVerbose(ctx)
 
@@ -118,7 +118,7 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			},
 			testingDbg: dbg,
 		}, func(batch *buffer.Batch[string]) (err error) {
-			cvctx.So(batch.Data, ShouldHaveLength, 1)
+			assert.Loosely(cvctx, batch.Data, should.HaveLength(1))
 			str := batch.Data[0].Item
 			if enableThisError && str == "This" {
 				enableThisError = false
@@ -131,10 +131,10 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			}
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(cvctx, err, should.BeNil)
 		defer ch.CloseAndDrain(ctx)
 
-		Convey(`no errors`, func() {
+		cvctx.Run(`no errors`, func(cvctx *ftt.Test) {
 			ch.C <- "Hello"
 			ch.C <- "World!"
 			ch.C <- "This"
@@ -143,13 +143,13 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			ch.C <- "test."
 			ch.CloseAndDrain(ctx)
 
-			So(sentBatches, ShouldResemble, []string{
+			assert.Loosely(cvctx, sentBatches, should.Resemble([]string{
 				"Hello", "World!",
 				"This", "is", "a", "test.",
-			})
+			}))
 		})
 
-		Convey(`error and retry`, func() {
+		cvctx.Run(`error and retry`, func(cvctx *ftt.Test) {
 			enableThisError = true
 
 			ch.C <- "Hello"
@@ -160,17 +160,17 @@ func TestSerialSenderWithoutDrops(t *testing.T) {
 			ch.C <- "test."
 			ch.CloseAndDrain(ctx)
 
-			So(sentBatches, ShouldResemble, []string{
+			assert.Loosely(cvctx, sentBatches, should.Resemble([]string{
 				"Hello", "World!",
 				"is", "a", "test.", "This",
-			})
+			}))
 		})
 
 	})
 }
 
 func TestContextShutdown(t *testing.T) {
-	Convey(`context cancelation ends channel`, t, func(cvctx C) {
+	ftt.Run(`context cancelation ends channel`, t, func(cvctx *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx, dbg := dbgIfVerbose(ctx)
 		cctx, cancel := context.WithCancel(ctx)
@@ -197,7 +197,7 @@ func TestContextShutdown(t *testing.T) {
 			<-cctx.Done()
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(cvctx, err, should.BeNil)
 
 		ch.C <- "hey"
 		ch.C <- "buffered"
@@ -213,14 +213,14 @@ func TestContextShutdown(t *testing.T) {
 
 		ch.CloseAndDrain(ctx)
 
-		So(sentBatches, ShouldContain, "hey")
-		So(droppedBatches, ShouldContain, "buffered")
-		So(droppedBatches, ShouldContain, "IGNORE ME")
+		assert.Loosely(cvctx, sentBatches, should.Contain("hey"))
+		assert.Loosely(cvctx, droppedBatches, should.Contain("buffered"))
+		assert.Loosely(cvctx, droppedBatches, should.Contain("IGNORE ME"))
 	})
 }
 
 func TestQPSLimit(t *testing.T) {
-	Convey(`QPS limited send`, t, func() {
+	ftt.Run(`QPS limited send`, t, func(t *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 
@@ -239,7 +239,7 @@ func TestQPSLimit(t *testing.T) {
 			sentBatches = append(sentBatches, batch.Data[0].Item)
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := []int{}
 
@@ -251,16 +251,16 @@ func TestQPSLimit(t *testing.T) {
 		ch.CloseAndDrain(ctx)
 		end := time.Now()
 
-		So(sentBatches, ShouldResemble, expected)
+		assert.Loosely(t, sentBatches, should.Resemble(expected))
 
 		// 20 batches, minus a batch because the QPSLimiter starts with full tokens.
 		minThreshold := 19 * 10 * time.Millisecond
-		So(end, ShouldHappenAfter, start.Add(minThreshold))
+		assert.Loosely(t, end, should.HappenAfter(start.Add(minThreshold)))
 	})
 }
 
 func TestQPSLimitParallel(t *testing.T) {
-	Convey(`QPS limited send (parallel)`, t, func() {
+	ftt.Run(`QPS limited send (parallel)`, t, func(t *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 
@@ -282,7 +282,7 @@ func TestQPSLimitParallel(t *testing.T) {
 			lock.Unlock()
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		start := time.Now()
 		for i := 0; i < 20; i++ {
@@ -292,17 +292,17 @@ func TestQPSLimitParallel(t *testing.T) {
 		end := time.Now()
 
 		// We know it should have 20 things, but the order will be pseudo-random
-		So(sentBatches, ShouldHaveLength, 20)
+		assert.Loosely(t, sentBatches, should.HaveLength(20))
 
 		// 20 batches across 4 workers, minus half a batch for sampling error.
 		minThreshold := 5*10*time.Millisecond - 5*time.Millisecond
 
-		So(end, ShouldHappenAfter, start.Add(minThreshold))
+		assert.Loosely(t, end, should.HappenAfter(start.Add(minThreshold)))
 	})
 }
 
 func TestExplicitDrops(t *testing.T) {
-	Convey(`explict drops with ErrorFn`, t, func() {
+	ftt.Run(`explict drops with ErrorFn`, t, func(t *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 
@@ -335,20 +335,20 @@ func TestExplicitDrops(t *testing.T) {
 			}
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		for i := 0; i < 20; i++ {
 			ch.C <- i
 		}
 		ch.CloseAndDrain(ctx)
 
-		So(sentBatches, ShouldResemble, []int{1, 3, 5, 7, 9, 11, 13, 15, 17, 19})
-		So(droppedBatches, ShouldResemble, []int{0, 2, 4, 6, 8, 10, 12, 14, 16, 18})
+		assert.Loosely(t, sentBatches, should.Resemble([]int{1, 3, 5, 7, 9, 11, 13, 15, 17, 19}))
+		assert.Loosely(t, droppedBatches, should.Resemble([]int{0, 2, 4, 6, 8, 10, 12, 14, 16, 18}))
 	})
 }
 
 func TestImplicitDrops(t *testing.T) {
-	Convey(`implicit drops with DropOldestBatch`, t, func(cvctx C) {
+	ftt.Run(`implicit drops with DropOldestBatch`, t, func(cvctx *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 
@@ -369,7 +369,7 @@ func TestImplicitDrops(t *testing.T) {
 			<-sendBlocker
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(cvctx, err, should.BeNil)
 		// Grab the first token; channel can't send until it recharges.
 		limiter.Reserve()
 
@@ -387,12 +387,12 @@ func TestImplicitDrops(t *testing.T) {
 		<-ch.DrainC
 
 		// We should only have seen one batch actually sent.
-		So(sentBatches, ShouldHaveLength, 1)
+		assert.Loosely(cvctx, sentBatches, should.HaveLength(1))
 	})
 }
 
 func TestContextCancel(t *testing.T) {
-	Convey(`can use context cancelation for termination`, t, func() {
+	ftt.Run(`can use context cancelation for termination`, t, func(t *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 		ctx, cancel := context.WithCancel(ctx)
@@ -410,7 +410,7 @@ func TestContextCancel(t *testing.T) {
 			// doesn't matter :)
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		writerDone := make(chan struct{})
 		go func() {
@@ -435,7 +435,7 @@ func TestContextCancel(t *testing.T) {
 }
 
 func TestDrainedFn(t *testing.T) {
-	Convey(`can set DrainedFn to do exactly-once termination tasks`, t, func() {
+	ftt.Run(`can set DrainedFn to do exactly-once termination tasks`, t, func(t *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 		ctx, cancel := context.WithCancel(ctx)
@@ -450,11 +450,11 @@ func TestDrainedFn(t *testing.T) {
 			// doesn't matter :)
 			return
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ch.Close()
 		<-ch.DrainC
-		So(amDrained, ShouldBeTrue)
+		assert.Loosely(t, amDrained, should.BeTrue)
 	})
 }
 
@@ -469,7 +469,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 	//
 	// This code should never hang if the coordinator code is correct.
 	for i := 0; i < 10; i++ {
-		Convey(fmt.Sprintf(`ensure that the channel can shutdown cleanly (%d)`, i), t, func() {
+		ftt.Run(fmt.Sprintf(`ensure that the channel can shutdown cleanly (%d)`, i), t, func(t *ftt.Test) {
 			ctx := context.Background() // uses real time!
 			ctx, dbg := dbgIfVerbose(ctx)
 			ctx, cancel := context.WithCancel(ctx)
@@ -493,7 +493,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 				<-holdSendFn
 				return
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ch.C <- nil
 			// Now ensure we're in the send function
@@ -518,7 +518,7 @@ func TestCloseDeadlockRegression(t *testing.T) {
 func TestCorrectTimerUsage(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Correct use of Timer.Reset`, t, func(cvctx C) {
+	ftt.Run(`Correct use of Timer.Reset`, t, func(cvctx *ftt.Test) {
 		ctx, tclock := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ctx, dbg := dbgIfVerbose(ctx)
 		tclock.SetTimerCallback(func(d time.Duration, t clock.Timer) {
@@ -554,7 +554,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 			mu.Unlock()
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(cvctx, err, should.BeNil)
 
 		const N = 100
 		for i := 1; i <= N; i++ {
@@ -568,10 +568,10 @@ func TestCorrectTimerUsage(t *testing.T) {
 		// examine the stack traces or bump the timeout and observe if it increases
 		// the number of iterations before failure.
 		ch.CloseAndDrain(ctx)
-		So(sent, ShouldHaveLength, N)
+		assert.Loosely(cvctx, sent, should.HaveLength(N))
 		sort.Ints(sent)
 		for i := 1; i <= N; i++ {
-			So(sent[i-1], ShouldEqual, i)
+			assert.Loosely(cvctx, sent[i-1], should.Equal(i))
 		}
 	})
 }
@@ -579,7 +579,7 @@ func TestCorrectTimerUsage(t *testing.T) {
 func TestSizeBasedChannel(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Size based channel`, t, func(cvctx C) {
+	ftt.Run(`Size based channel`, t, func(cvctx *ftt.Test) {
 		ctx := context.Background() // uses real time!
 		ctx, dbg := dbgIfVerbose(ctx)
 		ctx, cancel := context.WithCancel(ctx)
@@ -623,7 +623,7 @@ func TestSizeBasedChannel(t *testing.T) {
 			}
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(cvctx, err, should.BeNil)
 
 		bigString := strings.Repeat("something.", 5) // 50 bytes
 
@@ -636,7 +636,7 @@ func TestSizeBasedChannel(t *testing.T) {
 
 		select {
 		case ch.C <- "extra string":
-			So(true, ShouldBeFalse) // shouldn't be able to push more
+			assert.Loosely(cvctx, true, should.BeFalse) // shouldn't be able to push more
 		case <-clock.After(ctx, 250*time.Millisecond):
 		}
 
@@ -646,7 +646,7 @@ func TestSizeBasedChannel(t *testing.T) {
 		select {
 		case ch.C <- "extra string": // no problem now
 		case <-clock.After(ctx, 250*time.Millisecond):
-			So(true, ShouldBeFalse)
+			assert.Loosely(cvctx, true, should.BeFalse)
 		}
 
 		// pushing a giant object in will end up going to ErrorFn
@@ -657,25 +657,25 @@ func TestSizeBasedChannel(t *testing.T) {
 
 		ch.CloseAndDrain(ctx)
 
-		So(fails, ShouldHaveLength, 2)
-		So(fails[0].Data, ShouldHaveLength, 1)
-		So(fails[0].Data[0].Item, ShouldHaveLength, 500)
-		So(fails[0].Data[0].Size, ShouldEqual, 500)
-		So(fails[1].Data, ShouldHaveLength, 1)
-		So(fails[1].Data[0].Item, ShouldHaveLength, 0)
-		So(fails[1].Data[0].Size, ShouldEqual, 0)
-		So(errs[0], ShouldErrLike, buffer.ErrItemTooLarge)
-		So(errs[1], ShouldErrLike, buffer.ErrItemTooSmall)
+		assert.Loosely(cvctx, fails, should.HaveLength(2))
+		assert.Loosely(cvctx, fails[0].Data, should.HaveLength(1))
+		assert.Loosely(cvctx, fails[0].Data[0].Item, should.HaveLength(500))
+		assert.Loosely(cvctx, fails[0].Data[0].Size, should.Equal(500))
+		assert.Loosely(cvctx, fails[1].Data, should.HaveLength(1))
+		assert.Loosely(cvctx, fails[1].Data[0].Item, should.HaveLength(0))
+		assert.Loosely(cvctx, fails[1].Data[0].Size, should.BeZero)
+		assert.Loosely(cvctx, errs[0], should.ErrLike(buffer.ErrItemTooLarge))
+		assert.Loosely(cvctx, errs[1], should.ErrLike(buffer.ErrItemTooSmall))
 
-		So(out, ShouldHaveLength, 11)
-		So(out[len(out)-1], ShouldResemble, "extra string")
+		assert.Loosely(cvctx, out, should.HaveLength(11))
+		assert.Loosely(cvctx, out[len(out)-1], should.Match("extra string"))
 	})
 }
 
 func TestMinQPS(t *testing.T) {
 	t.Parallel()
-	Convey(`TestMinQPS`, t, func() {
-		Convey(`send w/ minimal frequency`, func() {
+	ftt.Run(`TestMinQPS`, t, func(t *ftt.Test) {
+		t.Run(`send w/ minimal frequency`, func(t *ftt.Test) {
 			ctx := context.Background() // uses real time!
 			ctx, dbg := dbgIfVerbose(ctx)
 
@@ -696,7 +696,7 @@ func TestMinQPS(t *testing.T) {
 				}
 				return
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			for i := 0; i < 20; i++ {
 				switch i {
@@ -706,10 +706,10 @@ func TestMinQPS(t *testing.T) {
 				ch.C <- i
 			}
 			ch.CloseAndDrain(ctx)
-			So(numSyntheticBatches, ShouldBeGreaterThan, 0)
+			assert.Loosely(t, numSyntheticBatches, should.BeGreaterThan(0))
 		})
 
-		Convey(`send w/ minimal frequency non block`, func() {
+		t.Run(`send w/ minimal frequency non block`, func(t *ftt.Test) {
 			ctx := context.Background() // uses real time!
 			ctx, dbg := dbgIfVerbose(ctx)
 
@@ -734,17 +734,17 @@ func TestMinQPS(t *testing.T) {
 				time.Sleep(200 * time.Millisecond)
 				return
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			for i := 0; i < 20; i++ {
 				ch.C <- i
 			}
 			ch.CloseAndDrain(ctx)
 
-			So(numSyntheticBatches, ShouldEqual, 0)
+			assert.Loosely(t, numSyntheticBatches, should.BeZero)
 		})
 
-		Convey(`regression: ensure clean shutdown`, func() {
+		t.Run(`regression: ensure clean shutdown`, func(t *ftt.Test) {
 			// In go.dev/issue/69276 we saw that the following could occur:
 			//   * A Channel configured with MinQPS was getting MinQPS pings
 			//   * Program closed resultCh after sending the final message
@@ -765,7 +765,7 @@ func TestMinQPS(t *testing.T) {
 					time.Sleep(time.Duration(rand.N(50)) * time.Nanosecond)
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				time.Sleep(5 * time.Millisecond)
 				ch.CloseAndDrain(ctx)
 			}

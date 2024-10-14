@@ -25,8 +25,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/retry"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func httpReqGen(method, url string, body []byte) RequestGen {
@@ -40,7 +41,7 @@ func httpReqGen(method, url string, body []byte) RequestGen {
 }
 
 func TestNewRequestGET(t *testing.T) {
-	Convey(`HTTP GET requests should be handled correctly.`, t, func(c C) {
+	ftt.Run(`HTTP GET requests should be handled correctly.`, t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		// First call returns HTTP 500, second succeeds.
@@ -48,8 +49,8 @@ func TestNewRequestGET(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serverCalls++
 			content, err := io.ReadAll(r.Body)
-			c.So(err, ShouldBeNil)
-			c.So(content, ShouldResemble, []byte{})
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, content, should.Resemble([]byte{}))
 			if serverCalls == 1 {
 				w.WriteHeader(500)
 			} else {
@@ -64,22 +65,22 @@ func TestNewRequestGET(t *testing.T) {
 		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 			clientCalls++
 			content, err := io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
-			So(string(content), ShouldResemble, "Hello, client\n")
-			So(resp.Body.Close(), ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, string(content), should.Match("Hello, client\n"))
+			assert.Loosely(c, resp.Body.Close(), should.BeNil)
 			return nil
 		}, nil)
 
 		status, err := clientReq()
-		So(err, ShouldBeNil)
-		So(status, ShouldResemble, 200)
-		So(serverCalls, ShouldResemble, 2)
-		So(clientCalls, ShouldResemble, 1)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, status, should.Match(200))
+		assert.Loosely(c, serverCalls, should.Match(2))
+		assert.Loosely(c, clientCalls, should.Match(1))
 	})
 }
 
 func TestNewRequestPOST(t *testing.T) {
-	Convey(`HTTP POST requests should be handled correctly.`, t, func(c C) {
+	ftt.Run(`HTTP POST requests should be handled correctly.`, t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		// First call returns HTTP 500, second succeeds.
@@ -87,9 +88,9 @@ func TestNewRequestPOST(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serverCalls++
 			content, err := io.ReadAll(r.Body)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			// The same data is sent twice.
-			c.So(string(content), ShouldResemble, "foo bar")
+			assert.Loosely(c, string(content), should.Match("foo bar"))
 			if serverCalls == 1 {
 				w.WriteHeader(500)
 			} else {
@@ -104,22 +105,22 @@ func TestNewRequestPOST(t *testing.T) {
 		clientReq := NewRequest(ctx, http.DefaultClient, fast, httpReq, func(resp *http.Response) error {
 			clientCalls++
 			content, err := io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
-			So(string(content), ShouldResemble, "Hello, client\n")
-			So(resp.Body.Close(), ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, string(content), should.Match("Hello, client\n"))
+			assert.Loosely(c, resp.Body.Close(), should.BeNil)
 			return nil
 		}, nil)
 
 		status, err := clientReq()
-		So(err, ShouldBeNil)
-		So(status, ShouldResemble, 200)
-		So(serverCalls, ShouldResemble, 2)
-		So(clientCalls, ShouldResemble, 1)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, status, should.Match(200))
+		assert.Loosely(c, serverCalls, should.Match(2))
+		assert.Loosely(c, clientCalls, should.Match(1))
 	})
 }
 
 func TestNewRequestGETFail(t *testing.T) {
-	Convey(`HTTP GET requests should handle failure successfully.`, t, func() {
+	ftt.Run(`HTTP GET requests should handle failure successfully.`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		serverCalls := 0
@@ -137,8 +138,8 @@ func TestNewRequestGETFail(t *testing.T) {
 		}, nil)
 
 		status, err := clientReq()
-		So(err.Error(), ShouldResemble, "gave up after 4 attempts: http request failed: Internal Server Error (HTTP 500)")
-		So(status, ShouldResemble, 500)
+		assert.Loosely(t, err.Error(), should.Match("gave up after 4 attempts: http request failed: Internal Server Error (HTTP 500)"))
+		assert.Loosely(t, status, should.Match(500))
 	})
 }
 

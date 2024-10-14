@@ -21,8 +21,10 @@ import (
 	"regexp"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -38,7 +40,7 @@ func normalizeLog(s string) string {
 }
 
 func TestGoLogger(t *testing.T) {
-	Convey(`A new Go Logger instance`, t, func() {
+	ftt.Run(`A new Go Logger instance`, t, func(t *ftt.Test) {
 		// Regex to pull log information from "formatString".
 
 		buf := bytes.Buffer{}
@@ -55,19 +57,19 @@ func TestGoLogger(t *testing.T) {
 			{logging.Warning, l.Warningf, "W"},
 			{logging.Error, l.Errorf, "E"},
 		} {
-			Convey(fmt.Sprintf("Can log to: %s", entry.L), func() {
+			t.Run(fmt.Sprintf("Can log to: %s", entry.L), func(t *ftt.Test) {
 				entry.F("Test logging %s", entry.L)
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
-				So(len(matches), ShouldEqual, 1)
-				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, entry.T)
-				So(matches[0][2], ShouldEqual, "gologger_test.go")
-				So(matches[0][3], ShouldEqual, fmt.Sprintf("Test logging %s", entry.L))
+				assert.Loosely(t, len(matches), should.Equal(1))
+				assert.Loosely(t, len(matches[0]), should.Equal(4))
+				assert.Loosely(t, matches[0][1], should.Equal(entry.T))
+				assert.Loosely(t, matches[0][2], should.Equal("gologger_test.go"))
+				assert.Loosely(t, matches[0][3], should.Equal(fmt.Sprintf("Test logging %s", entry.L)))
 			})
 		}
 	})
 
-	Convey(`A Go Logger instance installed in a Context at Info.`, t, func() {
+	ftt.Run(`A Go Logger instance installed in a Context at Info.`, t, func(t *ftt.Test) {
 		buf := bytes.Buffer{}
 		lc := &LoggerConfig{
 			Format: StdConfig.Format,
@@ -75,7 +77,7 @@ func TestGoLogger(t *testing.T) {
 		}
 		c := logging.SetLevel(lc.Use(context.Background()), logging.Info)
 
-		Convey(`Should log through top-level Context methods.`, func() {
+		t.Run(`Should log through top-level Context methods.`, func(t *ftt.Test) {
 			for _, entry := range []struct {
 				L logging.Level
 				F func(context.Context, string, ...any)
@@ -85,65 +87,65 @@ func TestGoLogger(t *testing.T) {
 				{logging.Warning, logging.Warningf, "W"},
 				{logging.Error, logging.Errorf, "E"},
 			} {
-				Convey(fmt.Sprintf("Can log to: %s", entry.L), func() {
+				t.Run(fmt.Sprintf("Can log to: %s", entry.L), func(t *ftt.Test) {
 					entry.F(c, "Test logging %s", entry.L)
 					matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
-					So(len(matches), ShouldEqual, 1)
-					So(len(matches[0]), ShouldEqual, 4)
-					So(matches[0][1], ShouldEqual, entry.T)
-					So(matches[0][2], ShouldEqual, "gologger_test.go")
-					So(matches[0][3], ShouldEqual, fmt.Sprintf("Test logging %s", entry.L))
+					assert.Loosely(t, len(matches), should.Equal(1))
+					assert.Loosely(t, len(matches[0]), should.Equal(4))
+					assert.Loosely(t, matches[0][1], should.Equal(entry.T))
+					assert.Loosely(t, matches[0][2], should.Equal("gologger_test.go"))
+					assert.Loosely(t, matches[0][3], should.Equal(fmt.Sprintf("Test logging %s", entry.L)))
 				})
 			}
 		})
 
-		Convey(`With Fields installed in the Context`, func() {
+		t.Run(`With Fields installed in the Context`, func(t *ftt.Test) {
 			c = logging.SetFields(c, logging.Fields{
 				logging.ErrorKey: "An error!",
 				"reason":         "test",
 			})
 
-			Convey(`Should log Fields.`, func() {
+			t.Run(`Should log Fields.`, func(t *ftt.Test) {
 				logging.Infof(c, "Here is a %s", "log")
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
-				So(len(matches), ShouldEqual, 1)
-				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "I")
-				So(matches[0][2], ShouldEqual, "gologger_test.go")
-				So(matches[0][3], ShouldEqual,
-					`Here is a log                               {"error":"An error!", "reason":"test"}`)
+				assert.Loosely(t, len(matches), should.Equal(1))
+				assert.Loosely(t, len(matches[0]), should.Equal(4))
+				assert.Loosely(t, matches[0][1], should.Equal("I"))
+				assert.Loosely(t, matches[0][2], should.Equal("gologger_test.go"))
+				assert.Loosely(t, matches[0][3], should.Equal(
+					`Here is a log                               {"error":"An error!", "reason":"test"}`))
 			})
 
-			Convey(`Should log fields installed immediately`, func() {
+			t.Run(`Should log fields installed immediately`, func(t *ftt.Test) {
 				logging.Fields{
 					"foo":    "bar",
 					"reason": "override",
 				}.Infof(c, "Here is another %s", "log")
 
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
-				So(len(matches), ShouldEqual, 1)
-				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "I")
-				So(matches[0][2], ShouldEqual, "gologger_test.go")
-				So(matches[0][3], ShouldEqual,
-					`Here is another log                         {"error":"An error!", "foo":"bar", "reason":"override"}`)
+				assert.Loosely(t, len(matches), should.Equal(1))
+				assert.Loosely(t, len(matches[0]), should.Equal(4))
+				assert.Loosely(t, matches[0][1], should.Equal("I"))
+				assert.Loosely(t, matches[0][2], should.Equal("gologger_test.go"))
+				assert.Loosely(t, matches[0][3], should.Equal(
+					`Here is another log                         {"error":"An error!", "foo":"bar", "reason":"override"}`))
 			})
 
-			Convey(`Will not treat format args as format.`, func() {
+			t.Run(`Will not treat format args as format.`, func(t *ftt.Test) {
 				logging.Infof(c, "%s", "Here is an %s")
 				matches := lre.FindAllStringSubmatch(normalizeLog(buf.String()), -1)
-				So(len(matches), ShouldEqual, 1)
-				So(len(matches[0]), ShouldEqual, 4)
-				So(matches[0][1], ShouldEqual, "I")
-				So(matches[0][2], ShouldEqual, "gologger_test.go")
-				So(matches[0][3], ShouldEqual,
-					`Here is an %s                               {"error":"An error!", "reason":"test"}`)
+				assert.Loosely(t, len(matches), should.Equal(1))
+				assert.Loosely(t, len(matches[0]), should.Equal(4))
+				assert.Loosely(t, matches[0][1], should.Equal("I"))
+				assert.Loosely(t, matches[0][2], should.Equal("gologger_test.go"))
+				assert.Loosely(t, matches[0][3], should.Equal(
+					`Here is an %s                               {"error":"An error!", "reason":"test"}`))
 			})
 		})
 
-		Convey(`Will not log to Debug, as it's below level.`, func() {
+		t.Run(`Will not log to Debug, as it's below level.`, func(t *ftt.Test) {
 			logging.Debugf(c, "Hello!")
-			So(buf.Len(), ShouldEqual, 0)
+			assert.Loosely(t, buf.Len(), should.BeZero)
 		})
 	})
 }

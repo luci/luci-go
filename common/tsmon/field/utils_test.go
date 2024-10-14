@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func makeInterfaceSlice(v ...any) []any {
@@ -114,26 +116,26 @@ func TestCanonicalize(t *testing.T) {
 	}
 
 	for i, d := range data {
-		Convey(fmt.Sprintf("%d. Canonicalize(%v, %v)", i, d.fields, d.values), t, func() {
+		ftt.Run(fmt.Sprintf("%d. Canonicalize(%v, %v)", i, d.fields, d.values), t, func(t *ftt.Test) {
 			ret, err := Canonicalize(d.fields, d.values)
 
 			if d.want == nil {
-				So(ret, ShouldBeNil)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, ret, should.BeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			} else {
-				So(ret, ShouldResemble, d.want)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, ret, should.Resemble(d.want))
+				assert.Loosely(t, err, should.BeNil)
 			}
 		})
 	}
 }
 
 func TestHash(t *testing.T) {
-	Convey("Empty slice hashes to 0", t, func() {
-		So(Hash([]any{}), ShouldEqual, 0)
+	ftt.Run("Empty slice hashes to 0", t, func(t *ftt.Test) {
+		assert.Loosely(t, Hash([]any{}), should.BeZero)
 	})
 
-	Convey("Different things have different hashes", t, func() {
+	ftt.Run("Different things have different hashes", t, func(t *ftt.Test) {
 		hashes := map[uint64]struct{}{}
 		values := [][]any{
 			makeInterfaceSlice(int64(123)),
@@ -152,7 +154,7 @@ func TestHash(t *testing.T) {
 		for _, v := range values {
 			h := Hash(v)
 			_, ok := hashes[h]
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 			hashes[h] = struct{}{}
 		}
 	})

@@ -21,30 +21,32 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFloats(t *testing.T) {
 	t.Parallel()
 
-	Convey("floats", t, func() {
+	ftt.Run("floats", t, func(t *ftt.Test) {
 		b := &bytes.Buffer{}
 
-		Convey("good", func() {
+		t.Run("good", func(t *ftt.Test) {
 			f1 := float64(1.234)
 			n, err := WriteFloat64(b, f1)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 8)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(8))
 			f, n, err := ReadFloat64(b)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 8)
-			So(f, ShouldEqual, f1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(8))
+			assert.Loosely(t, f, should.Equal(f1))
 		})
 
-		Convey("bad", func() {
+		t.Run("bad", func(t *ftt.Test) {
 			_, n, err := ReadFloat64(b)
-			So(err, ShouldEqual, io.EOF)
-			So(n, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, n, should.BeZero)
 		})
 	})
 }
@@ -52,7 +54,7 @@ func TestFloats(t *testing.T) {
 func TestFloatSortability(t *testing.T) {
 	t.Parallel()
 
-	Convey("floats maintain sort order", t, func() {
+	ftt.Run("floats maintain sort order", t, func(t *ftt.Test) {
 		vec := make(sort.Float64Slice, randomTestSize)
 		r := rand.New(rand.NewSource(*seed))
 		for i := range vec {
@@ -64,8 +66,8 @@ func TestFloatSortability(t *testing.T) {
 		for i := range bin {
 			b.Reset()
 			n, err := WriteFloat64(b, vec[i])
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, 8)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(8))
 			bin[i] = b.String()
 		}
 
@@ -74,8 +76,8 @@ func TestFloatSortability(t *testing.T) {
 
 		for i := range vec {
 			r, _, err := ReadFloat64(bytes.NewBufferString(bin[i]))
-			So(err, ShouldBeNil)
-			So(vec[i], ShouldEqual, r)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, vec[i], should.Equal(r))
 		}
 	})
 }

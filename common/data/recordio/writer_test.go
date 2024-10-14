@@ -20,7 +20,9 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testWriter struct {
@@ -43,37 +45,37 @@ func (w *testWriter) Write(data []byte) (int, error) {
 func TestWriteFrame(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Using a buffered test writer`, t, func() {
+	ftt.Run(`Using a buffered test writer`, t, func(t *ftt.Test) {
 		tw := &testWriter{}
 
-		Convey(`WriteFrame will successfully encode a zero-byte frame.`, func() {
+		t.Run(`WriteFrame will successfully encode a zero-byte frame.`, func(t *ftt.Test) {
 			count, err := WriteFrame(tw, []byte{})
-			So(count, ShouldEqual, 1)
-			So(err, ShouldEqual, nil)
-			So(tw.buf.Bytes(), ShouldResemble, []byte{0x00})
+			assert.Loosely(t, count, should.Equal(1))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tw.buf.Bytes(), should.Resemble([]byte{0x00}))
 		})
 
-		Convey(`WriteFrame will successfully encode a 129-byte frame.`, func() {
+		t.Run(`WriteFrame will successfully encode a 129-byte frame.`, func(t *ftt.Test) {
 			data := bytes.Repeat([]byte{0x5A}, 129)
 
 			count, err := WriteFrame(tw, data)
-			So(count, ShouldEqual, 131)
-			So(err, ShouldEqual, nil)
-			So(tw.buf.Bytes(), ShouldResemble, append([]byte{0x81, 0x01}, data...))
+			assert.Loosely(t, count, should.Equal(131))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(append([]byte{0x81, 0x01}, data...)))
 		})
 
-		Convey(`Will return an error when failing to write the size header.`, func() {
+		t.Run(`Will return an error when failing to write the size header.`, func(t *ftt.Test) {
 			failErr := errors.New("test: test-induced size error")
 			tw.errQ = []error{
 				failErr,
 			}
 
 			count, err := WriteFrame(tw, []byte{0xd0, 0x65})
-			So(count, ShouldEqual, 0)
-			So(err, ShouldEqual, failErr)
+			assert.Loosely(t, count, should.BeZero)
+			assert.Loosely(t, err, should.Equal(failErr))
 		})
 
-		Convey(`Will return an error when failing to write the frame data.`, func() {
+		t.Run(`Will return an error when failing to write the frame data.`, func(t *ftt.Test) {
 			failErr := errors.New("test: test-induced size error")
 			tw.errQ = []error{
 				nil,
@@ -81,8 +83,8 @@ func TestWriteFrame(t *testing.T) {
 			}
 
 			count, err := WriteFrame(tw, []byte{0xd0, 0x65})
-			So(count, ShouldEqual, 1)
-			So(err, ShouldEqual, failErr)
+			assert.Loosely(t, count, should.Equal(1))
+			assert.Loosely(t, err, should.Equal(failErr))
 		})
 	})
 }
@@ -90,11 +92,11 @@ func TestWriteFrame(t *testing.T) {
 func TestWriter(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Writer, configured to write to a buffer`, t, func() {
+	ftt.Run(`A Writer, configured to write to a buffer`, t, func(t *ftt.Test) {
 		tw := &testWriter{}
 		w := NewWriter(tw)
 
-		Convey(`Can write consecutive frames in 3-byte chunks.`, func() {
+		t.Run(`Can write consecutive frames in 3-byte chunks.`, func(t *ftt.Test) {
 			expected := []byte{}
 			var sizeBuf [binary.MaxVarintLen64]byte
 			for _, size := range []int{
@@ -115,30 +117,30 @@ func TestWriter(t *testing.T) {
 					}
 
 					c, err := w.Write(b[:count])
-					So(err, ShouldBeNil)
-					So(c, ShouldEqual, count)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, c, should.Equal(count))
 
 					b = b[count:]
 				}
-				So(w.Flush(), ShouldBeNil)
+				assert.Loosely(t, w.Flush(), should.BeNil)
 			}
 
-			So(tw.buf.Bytes(), ShouldResemble, expected)
+			assert.Loosely(t, tw.buf.Bytes(), should.Resemble(expected))
 		})
 
-		Convey(`Will write empty frames if Flush()ed.`, func() {
-			So(w.Flush(), ShouldBeNil)
-			So(w.Flush(), ShouldBeNil)
-			So(w.Flush(), ShouldBeNil)
-			So(tw.buf.Bytes(), ShouldResemble, []byte{0x00, 0x00, 0x00})
+		t.Run(`Will write empty frames if Flush()ed.`, func(t *ftt.Test) {
+			assert.Loosely(t, w.Flush(), should.BeNil)
+			assert.Loosely(t, w.Flush(), should.BeNil)
+			assert.Loosely(t, w.Flush(), should.BeNil)
+			assert.Loosely(t, tw.buf.Bytes(), should.Resemble([]byte{0x00, 0x00, 0x00}))
 		})
 
-		Convey(`Will fail to Flush() if the Write fails.`, func() {
+		t.Run(`Will fail to Flush() if the Write fails.`, func(t *ftt.Test) {
 			failErr := errors.New("test: test-induced size error")
 			tw.errQ = []error{
 				failErr,
 			}
-			So(w.Flush(), ShouldEqual, failErr)
+			assert.Loosely(t, w.Flush(), should.Equal(failErr))
 		})
 	})
 }

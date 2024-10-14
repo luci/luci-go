@@ -17,38 +17,39 @@ package buffer
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMovingAverage(t *testing.T) {
-	Convey(`movingAverage`, t, func() {
+	ftt.Run(`movingAverage`, t, func(t *ftt.Test) {
 
-		Convey(`construction`, func() {
-			Convey(`panics on bad window`, func() {
-				So(func() {
+		t.Run(`construction`, func(t *ftt.Test) {
+			t.Run(`panics on bad window`, func(t *ftt.Test) {
+				assert.Loosely(t, func() {
 					newMovingAverage(0, 100)
-				}, ShouldPanicLike, "window must be")
+				}, should.PanicLike("window must be"))
 			})
 		})
 
-		Convey(`usage`, func() {
+		t.Run(`usage`, func(t *ftt.Test) {
 			ma := newMovingAverage(10, 17)
 
-			Convey(`avg matches seed`, func() {
-				So(ma.get(), ShouldEqual, 17.0)
+			t.Run(`avg matches seed`, func(t *ftt.Test) {
+				assert.Loosely(t, ma.get(), should.Equal(17.0))
 			})
 
-			Convey(`adding new data changes the average`, func() {
+			t.Run(`adding new data changes the average`, func(t *ftt.Test) {
 				ma.record(100)
-				So(ma.get(), ShouldEqual, 25.3)
+				assert.Loosely(t, ma.get(), should.Equal(25.3))
 			})
 
-			Convey(`adding a lot of data is fine`, func() {
+			t.Run(`adding a lot of data is fine`, func(t *ftt.Test) {
 				for i := 0; i < 100; i++ {
 					ma.record(100)
 				}
-				So(ma.get(), ShouldEqual, 100.0)
+				assert.Loosely(t, ma.get(), should.Equal(100.0))
 			})
 		})
 

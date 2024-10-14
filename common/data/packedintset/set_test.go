@@ -19,44 +19,46 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPack(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Simple test for pack.`, t, func() {
-		Convey(`1m 1`, func() {
+	ftt.Run(`Simple test for pack.`, t, func(t *ftt.Test) {
+		t.Run(`1m 1`, func(t *ftt.Test) {
 			var array []int64
 			for i := 0; i < 1000000; i++ {
 				array = append(array, int64(i))
 			}
 
 			data, err := Pack(array)
-			So(err, ShouldBeNil)
-			So(1500, ShouldBeGreaterThanOrEqualTo, len(data))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, 1500, should.BeGreaterThanOrEqual(len(data)))
 
 			unpackedArray, err := Unpack(data)
-			So(err, ShouldBeNil)
-			So(array, ShouldResemble, unpackedArray)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, array, should.Resemble(unpackedArray))
 		})
 
-		Convey(`1m 1000`, func() {
+		t.Run(`1m 1000`, func(t *ftt.Test) {
 			var array []int64
 			for i := 0; i < 1000000; i++ {
 				array = append(array, int64(i*1000))
 			}
 
 			data, err := Pack(array)
-			So(err, ShouldBeNil)
-			So(len(data), ShouldBeGreaterThan, 1000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(data), should.BeGreaterThan(1000))
 
 			unpackedArray, err := Unpack(data)
-			So(err, ShouldBeNil)
-			So(array, ShouldResemble, unpackedArray)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, array, should.Resemble(unpackedArray))
 		})
 
-		Convey(`1m pseudo`, func() {
+		t.Run(`1m pseudo`, func(t *ftt.Test) {
 			var array []int64
 			r := rand.New(rand.NewSource(0))
 			for i := 0; i < 1000000; i++ {
@@ -67,22 +69,22 @@ func TestPack(t *testing.T) {
 			})
 
 			data, err := Pack(array)
-			So(err, ShouldBeNil)
-			So(len(data), ShouldBeGreaterThan, 2000)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(data), should.BeGreaterThan(2000))
 
 			unpackedArray, err := Unpack(data)
-			So(err, ShouldBeNil)
-			So(array, ShouldResemble, unpackedArray)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, array, should.Resemble(unpackedArray))
 		})
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			data, err := Pack([]int64{})
-			So(err, ShouldBeNil)
-			So(data, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.BeEmpty)
 
 			unpackedArray, err := Unpack([]byte{})
-			So(err, ShouldBeNil)
-			So(unpackedArray, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, unpackedArray, should.BeEmpty)
 		})
 	})
 }

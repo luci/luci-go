@@ -17,16 +17,17 @@ package reflectutil
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/reflect/protoreflect"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPath(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Path`, t, func() {
-		Convey(`can be constructed from fields`, func() {
+	ftt.Run(`Path`, t, func(t *ftt.Test) {
+		t.Run(`can be constructed from fields`, func(t *ftt.Test) {
 			desc := (&TestPathMessage{}).ProtoReflect().Descriptor()
 			fieldA := desc.Fields().ByName("single_inner")
 			fieldB := fieldA.Message().Fields().ByName("str")
@@ -36,13 +37,13 @@ func TestPath(t *testing.T) {
 				PathField{fieldB},
 			}
 
-			So(pth.String(), ShouldResemble, ".single_inner.str")
+			assert.Loosely(t, pth.String(), should.Match(".single_inner.str"))
 
 			msg := &TestPathMessage{SingleInner: &TestPathMessage_Inner{Str: "sup"}}
-			So(pth.Retrieve(msg), ShouldResemble, protoreflect.ValueOf("sup"))
+			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
 		})
 
-		Convey(`supports string map fields`, func() {
+		t.Run(`supports string map fields`, func(t *ftt.Test) {
 			desc := (&TestPathMessage{}).ProtoReflect().Descriptor()
 			fieldA := desc.Fields().ByName("map_inner")
 			fieldB := fieldA.MapValue().Message().Fields().ByName("str")
@@ -53,15 +54,15 @@ func TestPath(t *testing.T) {
 				PathField{fieldB},
 			}
 
-			So(pth.String(), ShouldResemble, ".map_inner[\"neat\"].str")
+			assert.Loosely(t, pth.String(), should.Match(".map_inner[\"neat\"].str"))
 
 			msg := &TestPathMessage{MapInner: map[string]*TestPathMessage_Inner{
 				"neat": {Str: "sup"}},
 			}
-			So(pth.Retrieve(msg), ShouldResemble, protoreflect.ValueOf("sup"))
+			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
 		})
 
-		Convey(`supports integer map fields`, func() {
+		t.Run(`supports integer map fields`, func(t *ftt.Test) {
 			desc := (&TestPathMessage{}).ProtoReflect().Descriptor()
 			fieldA := desc.Fields().ByName("int_map_inner")
 			fieldB := fieldA.MapValue().Message().Fields().ByName("str")
@@ -72,15 +73,15 @@ func TestPath(t *testing.T) {
 				PathField{fieldB},
 			}
 
-			So(pth.String(), ShouldResemble, ".int_map_inner[100].str")
+			assert.Loosely(t, pth.String(), should.Match(".int_map_inner[100].str"))
 
 			msg := &TestPathMessage{IntMapInner: map[int32]*TestPathMessage_Inner{
 				100: {Str: "sup"}},
 			}
-			So(pth.Retrieve(msg), ShouldResemble, protoreflect.ValueOf("sup"))
+			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
 		})
 
-		Convey(`supports repeated fields`, func() {
+		t.Run(`supports repeated fields`, func(t *ftt.Test) {
 			desc := (&TestPathMessage{}).ProtoReflect().Descriptor()
 			fieldA := desc.Fields().ByName("multi_inner")
 			fieldB := fieldA.Message().Fields().ByName("str")
@@ -91,14 +92,14 @@ func TestPath(t *testing.T) {
 				PathField{fieldB},
 			}
 
-			So(pth.String(), ShouldResemble, ".multi_inner[2].str")
+			assert.Loosely(t, pth.String(), should.Match(".multi_inner[2].str"))
 
 			msg := &TestPathMessage{MultiInner: []*TestPathMessage_Inner{
 				{Str: "nope"},
 				{Str: "nope"},
 				{Str: "sup"},
 			}}
-			So(pth.Retrieve(msg), ShouldResemble, protoreflect.ValueOf("sup"))
+			assert.Loosely(t, pth.Retrieve(msg), should.Resemble(protoreflect.ValueOf("sup")))
 		})
 	})
 }

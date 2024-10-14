@@ -18,15 +18,17 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
 
-	Convey(`test Diff`, t, func() {
+	ftt.Run(`test Diff`, t, func(t *ftt.Test) {
 
-		Convey(`git checkouts`, func() {
+		t.Run(`git checkouts`, func(t *ftt.Test) {
 			a := &Manifest{
 				Directories: map[string]*Manifest_Directory{
 					"foo": {
@@ -39,17 +41,17 @@ func TestDiff(t *testing.T) {
 			}
 			b := proto.Clone(a).(*Manifest)
 
-			Convey(`equal`, func() {
+			t.Run(`equal`, func(t *ftt.Test) {
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_EQUAL)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_EQUAL))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {GitCheckout: &ManifestDiff_GitCheckout{
 						RepoUrl: "https://example.com",
 					}},
-				})
+				}))
 			})
 
-			Convey(`directory add`, func() {
+			t.Run(`directory add`, func(t *ftt.Test) {
 				b.Directories["bar"] = &Manifest_Directory{
 					GitCheckout: &Manifest_GitCheckout{
 						RepoUrl:  "https://other.example.com",
@@ -57,16 +59,16 @@ func TestDiff(t *testing.T) {
 					},
 				}
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_MODIFIED)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {GitCheckout: &ManifestDiff_GitCheckout{
 						RepoUrl: "https://example.com",
 					}},
 					"bar": {Overall: ManifestDiff_ADDED},
-				})
+				}))
 			})
 
-			Convey(`directory mv`, func() {
+			t.Run(`directory mv`, func(t *ftt.Test) {
 				b.Directories["bar"] = &Manifest_Directory{
 					GitCheckout: &Manifest_GitCheckout{
 						RepoUrl:  "https://other.example.com",
@@ -75,13 +77,13 @@ func TestDiff(t *testing.T) {
 				}
 				delete(b.Directories, "foo")
 				d := a.Diff(b)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {Overall: ManifestDiff_REMOVED},
 					"bar": {Overall: ManifestDiff_ADDED},
-				})
+				}))
 			})
 
-			Convey(`directory mod`, func() {
+			t.Run(`directory mod`, func(t *ftt.Test) {
 				b.Directories["foo"] = &Manifest_Directory{
 					GitCheckout: &Manifest_GitCheckout{
 						RepoUrl:  "https://other.example.com",
@@ -89,20 +91,20 @@ func TestDiff(t *testing.T) {
 					},
 				}
 				d := a.Diff(b)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
 							Overall: ManifestDiff_MODIFIED,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`diffable change`, func() {
+			t.Run(`diffable change`, func(t *ftt.Test) {
 				b.Directories["foo"].GitCheckout.Revision = "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc"
 				d := a.Diff(b)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -111,10 +113,10 @@ func TestDiff(t *testing.T) {
 							RepoUrl:  "https://example.com",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`patch diffable change`, func() {
+			t.Run(`patch diffable change`, func(t *ftt.Test) {
 				a.Directories["foo"].GitCheckout.PatchFetchRef = "refs/changes/12/12345612/2"
 				a.Directories["foo"].GitCheckout.PatchRevision = "badc0ffeebadc0ffeebadc0ffeebadc0ffeebadc"
 
@@ -122,7 +124,7 @@ func TestDiff(t *testing.T) {
 				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 
 				d := a.Diff(b)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -131,15 +133,15 @@ func TestDiff(t *testing.T) {
 							RepoUrl:       "https://example.com",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`added patch`, func() {
+			t.Run(`added patch`, func(t *ftt.Test) {
 				b.Directories["foo"].GitCheckout.PatchFetchRef = "refs/changes/12/12345612/5"
 				b.Directories["foo"].GitCheckout.PatchRevision = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 
 				d := a.Diff(b)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						GitCheckout: &ManifestDiff_GitCheckout{
@@ -148,12 +150,12 @@ func TestDiff(t *testing.T) {
 							RepoUrl:       "https://example.com",
 						},
 					},
-				})
+				}))
 			})
 
 		})
 
-		Convey(`cipd packages`, func() {
+		t.Run(`cipd packages`, func(t *ftt.Test) {
 			a := &Manifest{
 				Directories: map[string]*Manifest_Directory{
 					"foo": {
@@ -170,37 +172,37 @@ func TestDiff(t *testing.T) {
 			}
 			b := proto.Clone(a).(*Manifest)
 
-			Convey(`equal`, func() {
+			t.Run(`equal`, func(t *ftt.Test) {
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_EQUAL)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_EQUAL))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						CipdPackage: map[string]ManifestDiff_Stat{
 							"some/pattern/resolved": ManifestDiff_EQUAL,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`url diff`, func() {
+			t.Run(`url diff`, func(t *ftt.Test) {
 				b.Directories["foo"].CipdServerHost = "nope@nope.example.com/nope.nope"
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_MODIFIED)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall:        ManifestDiff_MODIFIED,
 						CipdServerHost: ManifestDiff_MODIFIED,
 					},
-				})
+				}))
 			})
 
-			Convey(`add pkg`, func() {
+			t.Run(`add pkg`, func(t *ftt.Test) {
 				b.Directories["foo"].CipdPackage["other/thing"] = &Manifest_CIPDPackage{
 					InstanceId: "f00df00df00df00df00df00df00df00df00df00d",
 				}
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_MODIFIED)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						CipdPackage: map[string]ManifestDiff_Stat{
@@ -208,23 +210,23 @@ func TestDiff(t *testing.T) {
 							"other/thing":           ManifestDiff_ADDED,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`pkg mod`, func() {
+			t.Run(`pkg mod`, func(t *ftt.Test) {
 				b.Directories["foo"].CipdPackage["some/pattern/resolved"] = &Manifest_CIPDPackage{
 					InstanceId: "f00df00df00df00df00df00df00df00df00df00d",
 				}
 				d := a.Diff(b)
-				So(d.Overall, ShouldEqual, ManifestDiff_MODIFIED)
-				So(d.Directories, ShouldResemble, map[string]*ManifestDiff_Directory{
+				assert.Loosely(t, d.Overall, should.Equal(ManifestDiff_MODIFIED))
+				assert.Loosely(t, d.Directories, should.Resemble(map[string]*ManifestDiff_Directory{
 					"foo": {
 						Overall: ManifestDiff_MODIFIED,
 						CipdPackage: map[string]ManifestDiff_Stat{
 							"some/pattern/resolved": ManifestDiff_MODIFIED,
 						},
 					},
-				})
+				}))
 			})
 
 		})

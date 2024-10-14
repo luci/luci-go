@@ -17,16 +17,18 @@ package gitiles
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRepoURL(t *testing.T) {
 	t.Parallel()
-	Convey("Malformed", t, func() {
+	ftt.Run("Malformed", t, func(t *ftt.Test) {
 		f := func(arg string) {
-			So(ValidateRepoURL(arg), ShouldNotBeNil)
+			assert.Loosely(t, ValidateRepoURL(arg), should.NotBeNil)
 			_, err := NormalizeRepoURL(arg, true)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		}
 
 		f("wtf/\\is\this")
@@ -38,12 +40,12 @@ func TestRepoURL(t *testing.T) {
 		f("https://a.googlesource.com/no-protocol#fragment")
 	})
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		f := func(arg, exp string) {
-			So(ValidateRepoURL(arg), ShouldBeNil)
+			assert.Loosely(t, ValidateRepoURL(arg), should.BeNil)
 			act, err := NormalizeRepoURL(arg, true)
-			So(err, ShouldBeNil)
-			So(act.String(), ShouldEqual, exp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, act.String(), should.Equal(exp))
 		}
 
 		f("https://chromium.googlesource.com/repo.git",

@@ -18,85 +18,87 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestByteSliceReader(t *testing.T) {
-	Convey(`A ByteSliceReader for {0x60, 0x0d, 0xd0, 0x65}`, t, func() {
+	ftt.Run(`A ByteSliceReader for {0x60, 0x0d, 0xd0, 0x65}`, t, func(t *ftt.Test) {
 		data := []byte{0x60, 0x0d, 0xd0, 0x65}
 		bsd := ByteSliceReader(data)
 
-		Convey(`Can read byte-by-byte.`, func() {
+		t.Run(`Can read byte-by-byte.`, func(t *ftt.Test) {
 			b, err := bsd.ReadByte()
-			So(b, ShouldEqual, 0x60)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x60))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = bsd.ReadByte()
-			So(b, ShouldEqual, 0x0d)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x0d))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = bsd.ReadByte()
-			So(b, ShouldEqual, 0xd0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0xd0))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = bsd.ReadByte()
-			So(b, ShouldEqual, 0x65)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x65))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = bsd.ReadByte()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`Can read the full array.`, func() {
+		t.Run(`Can read the full array.`, func(t *ftt.Test) {
 			buf := make([]byte, 4)
 			count, err := bsd.Read(buf)
-			So(count, ShouldEqual, 4)
-			So(err, ShouldBeNil)
-			So(buf, ShouldResemble, data)
+			assert.Loosely(t, count, should.Equal(4))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf, should.Resemble(data))
 		})
 
-		Convey(`When read into an oversized buf, returns io.EOF and setting the slice to nil.`, func() {
+		t.Run(`When read into an oversized buf, returns io.EOF and setting the slice to nil.`, func(t *ftt.Test) {
 			buf := make([]byte, 16)
 			count, err := bsd.Read(buf)
-			So(count, ShouldEqual, 4)
-			So(err, ShouldEqual, io.EOF)
-			So(buf[:count], ShouldResemble, data)
-			So([]byte(bsd), ShouldBeNil)
+			assert.Loosely(t, count, should.Equal(4))
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, buf[:count], should.Resemble(data))
+			assert.Loosely(t, []byte(bsd), should.BeNil)
 		})
 
-		Convey(`When read in two 3-byte parts, the latter returns io.EOF and sets the slice to nil.`, func() {
+		t.Run(`When read in two 3-byte parts, the latter returns io.EOF and sets the slice to nil.`, func(t *ftt.Test) {
 			buf := make([]byte, 3)
 
 			count, err := bsd.Read(buf)
-			So(count, ShouldEqual, 3)
-			So(err, ShouldBeNil)
-			So(buf, ShouldResemble, data[:3])
-			So([]byte(bsd), ShouldResemble, data[3:])
+			assert.Loosely(t, count, should.Equal(3))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buf, should.Resemble(data[:3]))
+			assert.Loosely(t, []byte(bsd), should.Resemble(data[3:]))
 
 			count, err = bsd.Read(buf)
-			So(count, ShouldEqual, 1)
-			So(err, ShouldEqual, io.EOF)
-			So(buf[:count], ShouldResemble, data[3:])
-			So([]byte(bsd), ShouldBeNil)
+			assert.Loosely(t, count, should.Equal(1))
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, buf[:count], should.Resemble(data[3:]))
+			assert.Loosely(t, []byte(bsd), should.BeNil)
 		})
 	})
 
-	Convey(`A ByteSliceReader for nil`, t, func() {
+	ftt.Run(`A ByteSliceReader for nil`, t, func(t *ftt.Test) {
 		bsd := ByteSliceReader(nil)
 
-		Convey(`A byte read will return io.EOF.`, func() {
+		t.Run(`A byte read will return io.EOF.`, func(t *ftt.Test) {
 			_, err := bsd.ReadByte()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 	})
 
-	Convey(`A ByteSliceReader for an empty byte array`, t, func() {
+	ftt.Run(`A ByteSliceReader for an empty byte array`, t, func(t *ftt.Test) {
 		bsd := ByteSliceReader([]byte{})
 
-		Convey(`A byte read will return io.EOF and set the array to nil.`, func() {
+		t.Run(`A byte read will return io.EOF and set the array to nil.`, func(t *ftt.Test) {
 			_, err := bsd.ReadByte()
-			So(err, ShouldEqual, io.EOF)
-			So([]byte(bsd), ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, []byte(bsd), should.BeNil)
 		})
 	})
 }

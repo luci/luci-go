@@ -19,13 +19,15 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTeeLogger(t *testing.T) {
-	Convey(`A new TeeLogger instance`, t, func() {
+	ftt.Run(`A new TeeLogger instance`, t, func(t *ftt.Test) {
 		l1 := logging.Get(
 			memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		l2 := logging.Get(
@@ -37,7 +39,7 @@ func TestTeeLogger(t *testing.T) {
 			func(_ context.Context) logging.Logger { return l2 },
 			func(_ context.Context) logging.Logger { return l3 },
 		}
-		Convey("Set level Debug", func() {
+		t.Run("Set level Debug", func(t *ftt.Test) {
 			ctx := Use(context.Background(), factories...)
 			ctx = logging.SetLevel(ctx, logging.Debug)
 			teeLog := logging.Get(ctx)
@@ -51,18 +53,18 @@ func TestTeeLogger(t *testing.T) {
 				{logging.Warning, teeLog.Warningf, "WARN"},
 				{logging.Error, teeLog.Errorf, "ERRO"},
 			} {
-				Convey(fmt.Sprintf("Can log to %s", entry.L), func() {
+				t.Run(fmt.Sprintf("Can log to %s", entry.L), func(t *ftt.Test) {
 					entry.F("%s", entry.T)
 					for _, logger := range []*memlogger.MemLogger{l1, l2, l3} {
-						So(len(logger.Messages()), ShouldEqual, 1)
+						assert.Loosely(t, len(logger.Messages()), should.Equal(1))
 						msg := logger.Get(entry.L, entry.T, map[string]any(nil))
-						So(msg, ShouldNotBeNil)
-						So(msg.CallDepth, ShouldEqual, 3)
+						assert.Loosely(t, msg, should.NotBeNil)
+						assert.Loosely(t, msg.CallDepth, should.Equal(3))
 					}
 				})
 			}
 		})
-		Convey("Set level as Warning", func() {
+		t.Run("Set level as Warning", func(t *ftt.Test) {
 			ctx := Use(context.Background(), factories...)
 			ctx = logging.SetLevel(ctx, logging.Warning)
 			teeLog := logging.Get(ctx)
@@ -77,22 +79,22 @@ func TestTeeLogger(t *testing.T) {
 				{logging.Warning, teeLog.Warningf, "WARN", true},
 				{logging.Error, teeLog.Errorf, "ERRO", true},
 			} {
-				Convey(fmt.Sprintf("Can log to %s", entry.L), func() {
+				t.Run(fmt.Sprintf("Can log to %s", entry.L), func(t *ftt.Test) {
 					entry.F("%s", entry.T)
 					for _, logger := range []*memlogger.MemLogger{l1, l2, l3} {
 						if entry.E {
-							So(len(logger.Messages()), ShouldEqual, 1)
+							assert.Loosely(t, len(logger.Messages()), should.Equal(1))
 							msg := logger.Get(entry.L, entry.T, map[string]any(nil))
-							So(msg, ShouldNotBeNil)
-							So(msg.CallDepth, ShouldEqual, 3)
+							assert.Loosely(t, msg, should.NotBeNil)
+							assert.Loosely(t, msg.CallDepth, should.Equal(3))
 						} else {
-							So(len(logger.Messages()), ShouldEqual, 0)
+							assert.Loosely(t, len(logger.Messages()), should.BeZero)
 						}
 					}
 				})
 			}
 		})
-		Convey("Uses context logger", func() {
+		t.Run("Uses context logger", func(t *ftt.Test) {
 			ctx := memlogger.Use(context.Background())
 			logger := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -101,16 +103,16 @@ func TestTeeLogger(t *testing.T) {
 			messages := logger.Messages()
 
 			// Make sure context logger doesn't get called
-			So(len(messages), ShouldEqual, 1)
+			assert.Loosely(t, len(messages), should.Equal(1))
 			msg := messages[0]
-			So(msg.CallDepth, ShouldEqual, 3)
-			So(msg.Msg, ShouldEqual, "Testing 1 2")
+			assert.Loosely(t, msg.CallDepth, should.Equal(3))
+			assert.Loosely(t, msg.Msg, should.Equal("Testing 1 2"))
 		})
 	})
 }
 
 func TestTeeFilteredLogger(t *testing.T) {
-	Convey(`A new TeeLogger instance`, t, func() {
+	ftt.Run(`A new TeeLogger instance`, t, func(t *ftt.Test) {
 		lD := logging.Get(memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		lI := logging.Get(memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		lW := logging.Get(memlogger.Use(context.Background())).(*memlogger.MemLogger)
@@ -151,37 +153,37 @@ func TestTeeFilteredLogger(t *testing.T) {
 				[]*memlogger.MemLogger{lD, lI, lW, lE},
 				[]*memlogger.MemLogger{}},
 		} {
-			Convey(fmt.Sprintf("Can log to %s", entry.L), func() {
+			t.Run(fmt.Sprintf("Can log to %s", entry.L), func(t *ftt.Test) {
 				entry.F("%s", entry.T)
 				for _, l := range entry.GoodLogger {
-					So(len(l.Messages()), ShouldEqual, 1)
+					assert.Loosely(t, len(l.Messages()), should.Equal(1))
 					msg := l.Get(entry.L, entry.T, map[string]any(nil))
-					So(msg, ShouldNotBeNil)
-					So(msg.CallDepth, ShouldEqual, 3)
+					assert.Loosely(t, msg, should.NotBeNil)
+					assert.Loosely(t, msg.CallDepth, should.Equal(3))
 				}
 				for _, l := range entry.BadLogger {
-					So(len(l.Messages()), ShouldEqual, 0)
+					assert.Loosely(t, len(l.Messages()), should.BeZero)
 				}
 			})
 		}
-		Convey("Use context logger with context level Debug", func() {
+		t.Run("Use context logger with context level Debug", func(t *ftt.Test) {
 			ctx := memlogger.Use(context.Background())
 			logger := logging.Get(ctx).(*memlogger.MemLogger)
 
 			teeCtx := UseFiltered(ctx)
 			teeCtx = logging.SetLevel(teeCtx, logging.Debug)
 			l := logging.Get(teeCtx)
-			So(l, ShouldNotBeNil)
+			assert.Loosely(t, l, should.NotBeNil)
 			l.Infof("Info testing 1 2")
 			messages := logger.Messages()
 
 			// Make sure context logger doesn't get called
-			So(len(messages), ShouldEqual, 1)
+			assert.Loosely(t, len(messages), should.Equal(1))
 			msg := messages[0]
-			So(msg.CallDepth, ShouldEqual, 3)
-			So(msg.Msg, ShouldEqual, "Info testing 1 2")
+			assert.Loosely(t, msg.CallDepth, should.Equal(3))
+			assert.Loosely(t, msg.Msg, should.Equal("Info testing 1 2"))
 		})
-		Convey("Use context logger with context level Warning", func() {
+		t.Run("Use context logger with context level Warning", func(t *ftt.Test) {
 			ctx := memlogger.Use(context.Background())
 			logger := logging.Get(ctx).(*memlogger.MemLogger)
 
@@ -191,7 +193,7 @@ func TestTeeFilteredLogger(t *testing.T) {
 			messages := logger.Messages()
 
 			// Make sure context logger doesn't have messages
-			So(len(messages), ShouldEqual, 0)
+			assert.Loosely(t, len(messages), should.BeZero)
 		})
 	})
 }

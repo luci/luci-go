@@ -19,13 +19,15 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestWalk(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing the Walk function`, t, func() {
+	ftt.Run(`Testing the Walk function`, t, func(t *ftt.Test) {
 		count := 0
 		keepWalking := true
 		walkFn := func(err error) bool {
@@ -33,29 +35,29 @@ func TestWalk(t *testing.T) {
 			return keepWalking
 		}
 
-		Convey(`Will not walk at all for a nil error.`, func() {
+		t.Run(`Will not walk at all for a nil error.`, func(t *ftt.Test) {
 			Walk(nil, walkFn)
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, count, should.BeZero)
 		})
 
-		Convey(`Will fully traverse a wrapped MultiError.`, func() {
+		t.Run(`Will fully traverse a wrapped MultiError.`, func(t *ftt.Test) {
 			Walk(MultiError{nil, testWrap(New("sup")), nil}, walkFn)
-			So(count, ShouldEqual, 3)
+			assert.Loosely(t, count, should.Equal(3))
 		})
 
-		Convey(`Will unwrap a Wrapped error.`, func() {
+		t.Run(`Will unwrap a Wrapped error.`, func(t *ftt.Test) {
 			Walk(testWrap(New("sup")), walkFn)
-			So(count, ShouldEqual, 2)
+			assert.Loosely(t, count, should.Equal(2))
 		})
 
-		Convey(`Will short-circuit if the walk function returns false.`, func() {
+		t.Run(`Will short-circuit if the walk function returns false.`, func(t *ftt.Test) {
 			keepWalking = false
 			Walk(testWrap(New("sup")), walkFn)
-			So(count, ShouldEqual, 1)
+			assert.Loosely(t, count, should.Equal(1))
 		})
 	})
 
-	Convey(`Testing the WalkLeaves function`, t, func() {
+	ftt.Run(`Testing the WalkLeaves function`, t, func(t *ftt.Test) {
 		count := 0
 		keepWalking := true
 		walkFn := func(err error) bool {
@@ -63,25 +65,25 @@ func TestWalk(t *testing.T) {
 			return keepWalking
 		}
 
-		Convey(`Will not walk at all for a nil error.`, func() {
+		t.Run(`Will not walk at all for a nil error.`, func(t *ftt.Test) {
 			WalkLeaves(nil, walkFn)
-			So(count, ShouldEqual, 0)
+			assert.Loosely(t, count, should.BeZero)
 		})
 
-		Convey(`Will traverse leaves of a wrapped MultiError.`, func() {
+		t.Run(`Will traverse leaves of a wrapped MultiError.`, func(t *ftt.Test) {
 			WalkLeaves(MultiError{nil, testWrap(New("sup")), New("sup")}, walkFn)
-			So(count, ShouldEqual, 2)
+			assert.Loosely(t, count, should.Equal(2))
 		})
 
-		Convey(`Will unwrap a Wrapped error.`, func() {
+		t.Run(`Will unwrap a Wrapped error.`, func(t *ftt.Test) {
 			WalkLeaves(testWrap(New("sup")), walkFn)
-			So(count, ShouldEqual, 1)
+			assert.Loosely(t, count, should.Equal(1))
 		})
 
-		Convey(`Will short-circuit if the walk function returns false.`, func() {
+		t.Run(`Will short-circuit if the walk function returns false.`, func(t *ftt.Test) {
 			keepWalking = false
 			WalkLeaves(MultiError{testWrap(New("sup")), New("foo")}, walkFn)
-			So(count, ShouldEqual, 1)
+			assert.Loosely(t, count, should.Equal(1))
 		})
 	})
 }
@@ -102,7 +104,7 @@ func (i *intError) Error() string {
 func TestAny(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing the Any function`, t, func() {
+	ftt.Run(`Testing the Any function`, t, func(t *ftt.Test) {
 		testErr := errors.New("test error")
 		filter := func(err error) bool { return err == testErr }
 
@@ -111,8 +113,8 @@ func TestAny(t *testing.T) {
 			Reason("error test: foo").Err(),
 			errors.New("other error"),
 		} {
-			Convey(fmt.Sprintf(`Registers false for %T %v`, err, err), func() {
-				So(Any(err, filter), ShouldBeFalse)
+			t.Run(fmt.Sprintf(`Registers false for %T %v`, err, err), func(t *ftt.Test) {
+				assert.Loosely(t, Any(err, filter), should.BeFalse)
 			})
 		}
 
@@ -121,8 +123,8 @@ func TestAny(t *testing.T) {
 			MultiError{errors.New("other error"), MultiError{testErr, nil}},
 			Annotate(testErr, "error test").Err(),
 		} {
-			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
-				So(Any(err, filter), ShouldBeTrue)
+			t.Run(fmt.Sprintf(`Registers true for %T %v`, err, err), func(t *ftt.Test) {
+				assert.Loosely(t, Any(err, filter), should.BeTrue)
 			})
 		}
 	})
@@ -131,7 +133,7 @@ func TestAny(t *testing.T) {
 func TestContains(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing the Contains function`, t, func() {
+	ftt.Run(`Testing the Contains function`, t, func(t *ftt.Test) {
 		testErr := errors.New("test error")
 
 		for _, err := range []error{
@@ -139,8 +141,8 @@ func TestContains(t *testing.T) {
 			Reason("error test: foo").Err(),
 			errors.New("other error"),
 		} {
-			Convey(fmt.Sprintf(`Registers false for %T %v`, err, err), func() {
-				So(Contains(err, testErr), ShouldBeFalse)
+			t.Run(fmt.Sprintf(`Registers false for %T %v`, err, err), func(t *ftt.Test) {
+				assert.Loosely(t, Contains(err, testErr), should.BeFalse)
 			})
 		}
 
@@ -149,19 +151,19 @@ func TestContains(t *testing.T) {
 			MultiError{errors.New("other error"), MultiError{testErr, nil}},
 			Annotate(testErr, "error test").Err(),
 		} {
-			Convey(fmt.Sprintf(`Registers true for %T %v`, err, err), func() {
-				So(Contains(err, testErr), ShouldBeTrue)
+			t.Run(fmt.Sprintf(`Registers true for %T %v`, err, err), func(t *ftt.Test) {
+				assert.Loosely(t, Contains(err, testErr), should.BeTrue)
 			})
 		}
 
-		Convey(`Support Is`, func() {
+		t.Run(`Support Is`, func(t *ftt.Test) {
 			e0 := intError(0)
 			e1 := intError(1)
 			e2 := intError(2)
 			wrapped0 := testWrap(&e0)
-			So(Contains(wrapped0, &e0), ShouldBeTrue)
-			So(Contains(wrapped0, &e1), ShouldBeTrue)
-			So(Contains(wrapped0, &e2), ShouldBeFalse)
+			assert.Loosely(t, Contains(wrapped0, &e0), should.BeTrue)
+			assert.Loosely(t, Contains(wrapped0, &e1), should.BeTrue)
+			assert.Loosely(t, Contains(wrapped0, &e2), should.BeFalse)
 		})
 	})
 }

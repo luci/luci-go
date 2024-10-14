@@ -17,45 +17,46 @@ package flag
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/api/googleapi"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFieldSliceFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey("one", t, func() {
+	ftt.Run("one", t, func(t *ftt.Test) {
 		var flag fieldSliceFlag
-		So(flag.Set("abc"), ShouldBeNil)
-		So(flag.Get(), ShouldResemble, []googleapi.Field{"abc"})
-		So(flag.String(), ShouldEqual, "abc")
+		assert.Loosely(t, flag.Set("abc"), should.BeNil)
+		assert.Loosely(t, flag.Get(), should.Resemble([]googleapi.Field{"abc"}))
+		assert.Loosely(t, flag.String(), should.Equal("abc"))
 	})
 
-	Convey("many", t, func() {
+	ftt.Run("many", t, func(t *ftt.Test) {
 		var flag fieldSliceFlag
-		So(flag.Set("abc"), ShouldBeNil)
-		So(flag.Set("def"), ShouldBeNil)
-		So(flag.Set("ghi"), ShouldBeNil)
-		So(flag.Get(), ShouldResemble, []googleapi.Field{"abc", "def", "ghi"})
-		So(flag.String(), ShouldEqual, "abc, def, ghi")
+		assert.Loosely(t, flag.Set("abc"), should.BeNil)
+		assert.Loosely(t, flag.Set("def"), should.BeNil)
+		assert.Loosely(t, flag.Set("ghi"), should.BeNil)
+		assert.Loosely(t, flag.Get(), should.Resemble([]googleapi.Field{"abc", "def", "ghi"}))
+		assert.Loosely(t, flag.String(), should.Equal("abc, def, ghi"))
 	})
 }
 
 func TestFieldSlice(t *testing.T) {
 	t.Parallel()
 
-	Convey("one", t, func() {
+	ftt.Run("one", t, func(t *ftt.Test) {
 		var f []googleapi.Field
-		So(FieldSlice(&f).Set("abc"), ShouldBeNil)
-		So(f, ShouldResemble, []googleapi.Field{"abc"})
+		assert.Loosely(t, FieldSlice(&f).Set("abc"), should.BeNil)
+		assert.Loosely(t, f, should.Resemble([]googleapi.Field{"abc"}))
 	})
 
-	Convey("many", t, func() {
+	ftt.Run("many", t, func(t *ftt.Test) {
 		var f []googleapi.Field
-		So(FieldSlice(&f).Set("abc"), ShouldBeNil)
-		So(FieldSlice(&f).Set("def"), ShouldBeNil)
-		So(FieldSlice(&f).Set("ghi"), ShouldBeNil)
-		So(f, ShouldResemble, []googleapi.Field{"abc", "def", "ghi"})
+		assert.Loosely(t, FieldSlice(&f).Set("abc"), should.BeNil)
+		assert.Loosely(t, FieldSlice(&f).Set("def"), should.BeNil)
+		assert.Loosely(t, FieldSlice(&f).Set("ghi"), should.BeNil)
+		assert.Loosely(t, f, should.Resemble([]googleapi.Field{"abc", "def", "ghi"}))
 	})
 }

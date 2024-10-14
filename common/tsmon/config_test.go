@@ -19,25 +19,27 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLoadConfig(t *testing.T) {
-	Convey("No file", t, func() {
+	ftt.Run("No file", t, func(t *ftt.Test) {
 		c, err := loadConfig("")
-		So(c.Credentials, ShouldEqual, "")
-		So(c.Endpoint, ShouldEqual, "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, c.Credentials, should.BeEmpty)
+		assert.Loosely(t, c.Endpoint, should.BeEmpty)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Missing file", t, func() {
+	ftt.Run("Missing file", t, func(t *ftt.Test) {
 		c, err := loadConfig("/does/not/exist")
-		So(c.Credentials, ShouldEqual, "")
-		So(c.Endpoint, ShouldEqual, "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, c.Credentials, should.BeEmpty)
+		assert.Loosely(t, c.Endpoint, should.BeEmpty)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Empty file", t, func() {
+	ftt.Run("Empty file", t, func(t *ftt.Test) {
 		tf, err := ioutil.TempFile("", "config_test")
 		if err != nil {
 			t.Fail()
@@ -46,15 +48,15 @@ func TestLoadConfig(t *testing.T) {
 		defer os.Remove(tf.Name())
 
 		c, err := loadConfig(tf.Name())
-		So(c.Endpoint, ShouldEqual, "")
-		So(c.Credentials, ShouldEqual, "")
-		So(c.AutoGenHostname, ShouldEqual, false)
-		So(c.Hostname, ShouldEqual, "")
-		So(c.Region, ShouldEqual, "")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, c.Endpoint, should.BeEmpty)
+		assert.Loosely(t, c.Credentials, should.BeEmpty)
+		assert.Loosely(t, c.AutoGenHostname, should.Equal(false))
+		assert.Loosely(t, c.Hostname, should.BeEmpty)
+		assert.Loosely(t, c.Region, should.BeEmpty)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 
-	Convey("Full file", t, func() {
+	ftt.Run("Full file", t, func(t *ftt.Test) {
 		tf, err := ioutil.TempFile("", "config_test")
 		if err != nil {
 			t.Fail()
@@ -72,11 +74,11 @@ func TestLoadConfig(t *testing.T) {
 		tf.Sync()
 
 		c, err := loadConfig(tf.Name())
-		So(c.Endpoint, ShouldEqual, "foo")
-		So(c.Credentials, ShouldEqual, "bar")
-		So(c.AutoGenHostname, ShouldEqual, true)
-		So(c.Hostname, ShouldEqual, "test_host")
-		So(c.Region, ShouldEqual, "test_region")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, c.Endpoint, should.Equal("foo"))
+		assert.Loosely(t, c.Credentials, should.Equal("bar"))
+		assert.Loosely(t, c.AutoGenHostname, should.Equal(true))
+		assert.Loosely(t, c.Hostname, should.Equal("test_host"))
+		assert.Loosely(t, c.Region, should.Equal("test_region"))
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

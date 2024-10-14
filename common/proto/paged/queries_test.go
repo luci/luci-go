@@ -19,19 +19,19 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/common/proto/examples"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("Query", t, func() {
+	ftt.Run("Query", t, func(t *ftt.Test) {
 		type Record struct {
 			_kind string `gae:"$kind,kind"`
 			ID    string `gae:"$id"`
@@ -43,102 +43,102 @@ func TestQueries(t *testing.T) {
 		rsp := &examples.ListResponse{}
 		q := datastore.NewQuery("kind")
 
-		Convey("invalid", func() {
-			Convey("function", func() {
-				Convey("nil", func() {
-					So(Query(c, 0, "", rsp, q, nil), ShouldErrLike, "callback must be a function")
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("function", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					assert.Loosely(t, Query(c, 0, "", rsp, q, nil), should.ErrLike("callback must be a function"))
 				})
 
-				Convey("no inputs", func() {
+				t.Run("no inputs", func(t *ftt.Test) {
 					f := func() error {
 						return nil
 					}
-					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must accept one argument"))
 				})
 
-				Convey("many inputs", func() {
+				t.Run("many inputs", func(t *ftt.Test) {
 					f := func(any, datastore.CursorCB) error {
 						return nil
 					}
-					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must accept one argument")
+					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must accept one argument"))
 				})
 
-				Convey("no outputs", func() {
+				t.Run("no outputs", func(t *ftt.Test) {
 					f := func(any) {
 					}
-					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
+					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must return one value"))
 				})
 
-				Convey("many outputs", func() {
+				t.Run("many outputs", func(t *ftt.Test) {
 					f := func(any) (any, error) {
 						return nil, nil
 					}
-					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "callback function must return one value")
+					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("callback function must return one value"))
 				})
 			})
 
-			Convey("token", func() {
+			t.Run("token", func(t *ftt.Test) {
 				f := func(any) error {
 					return nil
 				}
-				So(Query(c, 0, "tok", rsp, q, f), ShouldErrLike, "invalid page token")
+				assert.Loosely(t, Query(c, 0, "tok", rsp, q, f), should.ErrLike("invalid page token"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("callback", func() {
-				Convey("error", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("callback", func(t *ftt.Test) {
+				t.Run("error", func(t *ftt.Test) {
 					f := func(r *Record) error {
 						return errors.New("error")
 					}
-					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
-					So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "error")
+					assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("error"))
 				})
 
-				Convey("stop", func() {
+				t.Run("stop", func(t *ftt.Test) {
 					f := func(*Record) error {
 						return datastore.Stop
 					}
 
-					Convey("first", func() {
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
+					t.Run("first", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)
 
-						Convey("limit", func() {
-							Convey("greater", func() {
-								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldNotBeEmpty)
+						t.Run("limit", func(t *ftt.Test) {
+							t.Run("greater", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 10, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(Query(c, 10, tok, rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+								assert.Loosely(t, Query(c, 10, tok, rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 
-							Convey("equal", func() {
-								So(Query(c, 1, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldNotBeEmpty)
+							t.Run("equal", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 1, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(Query(c, 1, tok, rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+								assert.Loosely(t, Query(c, 1, tok, rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 						})
 
-						Convey("no limit", func() {
-							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-							So(rsp.NextPageToken, ShouldNotBeEmpty)
+						t.Run("no limit", func(t *ftt.Test) {
+							assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+							assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 							tok := rsp.NextPageToken
 							rsp.NextPageToken = ""
-							So(Query(c, 0, tok, rsp, q, f), ShouldBeNil)
-							So(rsp.NextPageToken, ShouldBeEmpty)
+							assert.Loosely(t, Query(c, 0, tok, rsp, q, f), should.BeNil)
+							assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 						})
 					})
 
-					Convey("intermediate", func() {
+					t.Run("intermediate", func(t *ftt.Test) {
 						i := 0
 						f = func(*Record) error {
 							i++
@@ -147,154 +147,154 @@ func TestQueries(t *testing.T) {
 							}
 							return nil
 						}
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
-						Convey("limit", func() {
-							Convey("greater", func() {
-								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldNotBeEmpty)
+						t.Run("limit", func(t *ftt.Test) {
+							t.Run("greater", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 10, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(Query(c, 10, tok, rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+								assert.Loosely(t, Query(c, 10, tok, rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 
-							Convey("equal", func() {
-								So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldNotBeEmpty)
+							t.Run("equal", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 								tok := rsp.NextPageToken
 								rsp.NextPageToken = ""
-								So(Query(c, 2, tok, rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+								assert.Loosely(t, Query(c, 2, tok, rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 						})
 
-						Convey("no limit", func() {
-							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-							So(rsp.NextPageToken, ShouldNotBeEmpty)
+						t.Run("no limit", func(t *ftt.Test) {
+							assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+							assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 							tok := rsp.NextPageToken
 							rsp.NextPageToken = ""
-							So(Query(c, 0, tok, rsp, q, f), ShouldBeNil)
-							So(rsp.NextPageToken, ShouldBeEmpty)
+							assert.Loosely(t, Query(c, 0, tok, rsp, q, f), should.BeNil)
+							assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 						})
 					})
 
-					Convey("last", func() {
-						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+					t.Run("last", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
-						Convey("limit", func() {
-							Convey("greater", func() {
-								So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+						t.Run("limit", func(t *ftt.Test) {
+							t.Run("greater", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 10, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 
-							Convey("equal", func() {
-								So(Query(c, 1, "", rsp, q, f), ShouldBeNil)
-								So(rsp.NextPageToken, ShouldBeEmpty)
+							t.Run("equal", func(t *ftt.Test) {
+								assert.Loosely(t, Query(c, 1, "", rsp, q, f), should.BeNil)
+								assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 							})
 						})
 
-						Convey("no limit", func() {
-							So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-							So(rsp.NextPageToken, ShouldBeEmpty)
+						t.Run("no limit", func(t *ftt.Test) {
+							assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+							assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 						})
 					})
 				})
 
-				Convey("ok", func() {
+				t.Run("ok", func(t *ftt.Test) {
 					f := func(*Record) error {
 						return nil
 					}
-					So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
-					Convey("limit", func() {
-						So(Query(c, 10, "", rsp, q, f), ShouldBeNil)
+					t.Run("limit", func(t *ftt.Test) {
+						assert.Loosely(t, Query(c, 10, "", rsp, q, f), should.BeNil)
 					})
 
-					Convey("no limit", func() {
-						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
+					t.Run("no limit", func(t *ftt.Test) {
+						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
 					})
 				})
 			})
 
-			Convey("query", func() {
+			t.Run("query", func(t *ftt.Test) {
 				rsp.Records = make([]string, 0)
 				f := func(r *Record) error {
 					rsp.Records = append(rsp.Records, r.ID)
 					return nil
 				}
 
-				Convey("limit", func() {
-					Convey("none", func() {
-						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldBeEmpty)
+				t.Run("limit", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
+						assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.BeEmpty)
 					})
 
-					Convey("one", func() {
-						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+					t.Run("one", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
-						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id"})
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id"}))
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 
-					Convey("many", func() {
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+					t.Run("many", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
-						So(Query(c, 2, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id1", "id2"})
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
+						assert.Loosely(t, Query(c, 2, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id1", "id2"}))
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
 
 						tok := rsp.NextPageToken
 						rsp.NextPageToken = ""
 						rsp.Records = make([]string, 0)
-						So(Query(c, 2, tok, rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id3"})
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, Query(c, 2, tok, rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id3"}))
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 				})
 
-				Convey("no limit", func() {
-					Convey("none", func() {
-						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldBeEmpty)
+				t.Run("no limit", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
+						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.BeEmpty)
 					})
 
-					Convey("one", func() {
-						So(datastore.Put(c, &Record{ID: "id"}), ShouldBeNil)
+					t.Run("one", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id"}), should.BeNil)
 
-						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id"})
+						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id"}))
 					})
 
-					Convey("many", func() {
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+					t.Run("many", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
-						So(Query(c, 0, "", rsp, q, f), ShouldBeNil)
-						So(rsp.Records, ShouldResemble, []string{"id1", "id2", "id3"})
+						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.BeNil)
+						assert.Loosely(t, rsp.Records, should.Resemble([]string{"id1", "id2", "id3"}))
 					})
 
-					Convey("error", func() {
+					t.Run("error", func(t *ftt.Test) {
 						rsp.Records = make([]string, 0)
 						f := func(r *Record) error {
 							return errors.Reason("error").Err()
 						}
-						So(datastore.Put(c, &Record{ID: "id1"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id2"}), ShouldBeNil)
-						So(datastore.Put(c, &Record{ID: "id3"}), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id1"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id2"}), should.BeNil)
+						assert.Loosely(t, datastore.Put(c, &Record{ID: "id3"}), should.BeNil)
 
-						So(Query(c, 0, "", rsp, q, f), ShouldErrLike, "error")
-						So(rsp.Records, ShouldBeEmpty)
-						So(rsp.NextPageToken, ShouldBeEmpty)
+						assert.Loosely(t, Query(c, 0, "", rsp, q, f), should.ErrLike("error"))
+						assert.Loosely(t, rsp.Records, should.BeEmpty)
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
 					})
 				})
 			})

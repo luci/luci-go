@@ -17,7 +17,9 @@ package fixflagpos
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFixSubcommands(t *testing.T) {
@@ -27,7 +29,7 @@ func TestFixSubcommands(t *testing.T) {
 		return args
 	}
 
-	Convey(`Fix`, t, func() {
+	ftt.Run(`Fix`, t, func(t *ftt.Test) {
 		tests := []struct {
 			Name string
 			In   []string
@@ -57,13 +59,13 @@ func TestFixSubcommands(t *testing.T) {
 		}
 		for _, tc := range tests {
 			tc := tc
-			Convey(tc.Name, func() {
-				So(Fix(tc.In), ShouldResemble, tc.Out)
+			t.Run(tc.Name, func(t *ftt.Test) {
+				assert.Loosely(t, Fix(tc.In), should.Resemble(tc.Out))
 			})
 		}
 	})
 
-	Convey(`FixSubcommands`, t, func() {
+	ftt.Run(`FixSubcommands`, t, func(t *ftt.Test) {
 		tests := []struct {
 			Name string
 			In   []string
@@ -81,8 +83,8 @@ func TestFixSubcommands(t *testing.T) {
 		}
 		for _, tc := range tests {
 			tc := tc
-			Convey(tc.Name, func() {
-				So(FixSubcommands(tc.In), ShouldResemble, tc.Out)
+			t.Run(tc.Name, func(t *ftt.Test) {
+				assert.Loosely(t, FixSubcommands(tc.In), should.Resemble(tc.Out))
 			})
 		}
 	})

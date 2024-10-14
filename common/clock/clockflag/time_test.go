@@ -20,51 +20,53 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTime(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Time flag`, t, func() {
+	ftt.Run(`A Time flag`, t, func(t *ftt.Test) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		var d Time
 		fs.Var(&d, "time", "Test time parameter.")
 
-		Convey(`Parses a 10-second Time from "2015-05-05T23:47:17+00:00".`, func() {
+		t.Run(`Parses a 10-second Time from "2015-05-05T23:47:17+00:00".`, func(t *ftt.Test) {
 			err := fs.Parse([]string{"-time", "2015-05-05T23:47:17+00:00"})
-			So(err, ShouldBeNil)
-			So(d.Time().Equal(time.Unix(1430869637, 0)), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d.Time().Equal(time.Unix(1430869637, 0)), should.BeTrue)
 		})
 
-		Convey(`Returns an error when parsing "asdf".`, func() {
+		t.Run(`Returns an error when parsing "asdf".`, func(t *ftt.Test) {
 			err := fs.Parse([]string{"-time", "asdf"})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`When treated as a JSON field`, func() {
+		t.Run(`When treated as a JSON field`, func(t *ftt.Test) {
 			var s struct {
 				T Time `json:"time"`
 			}
 
 			testJSON := `{"time":"asdf"}`
-			Convey(`Fails to unmarshal from `+testJSON+`.`, func() {
+			t.Run(`Fails to unmarshal from `+testJSON+`.`, func(t *ftt.Test) {
 				testJSON := testJSON
 				err := json.Unmarshal([]byte(testJSON), &s)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey(`Marshals correctly to RFC3339 time string.`, func() {
+			t.Run(`Marshals correctly to RFC3339 time string.`, func(t *ftt.Test) {
 				s.T = Time(time.Unix(1430869637, 0))
 				testJSON, err := json.Marshal(&s)
-				So(err, ShouldBeNil)
-				So(string(testJSON), ShouldEqual, `{"time":"2015-05-05T23:47:17Z"}`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(testJSON), should.Equal(`{"time":"2015-05-05T23:47:17Z"}`))
 
-				Convey(`And Unmarshals correctly.`, func() {
+				t.Run(`And Unmarshals correctly.`, func(t *ftt.Test) {
 					s.T = Time{}
 					err := json.Unmarshal([]byte(testJSON), &s)
-					So(err, ShouldBeNil)
-					So(s.T.Time().Equal(time.Unix(1430869637, 0)), ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, s.T.Time().Equal(time.Unix(1430869637, 0)), should.BeTrue)
 				})
 			})
 		})

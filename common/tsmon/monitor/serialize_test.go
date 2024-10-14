@@ -19,23 +19,24 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 )
 
 func TestSerializeDistribution(t *testing.T) {
-	Convey("Fixed width params", t, func() {
+	ftt.Run("Fixed width params", t, func(t *ftt.Test) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
 		dpb := serializeDistribution(d)
 
-		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
 			Count: proto.Int64(0),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
 				LinearBuckets: &pb.MetricsData_Distribution_LinearOptions{
@@ -44,10 +45,10 @@ func TestSerializeDistribution(t *testing.T) {
 					Offset:           proto.Float64(0),
 				},
 			},
-		})
+		}))
 	})
 
-	Convey("Exponential buckets", t, func() {
+	ftt.Run("Exponential buckets", t, func(t *ftt.Test) {
 		d := distribution.New(distribution.GeometricBucketer(2, 20))
 		d.Add(0)
 		d.Add(4)
@@ -56,7 +57,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d.Add(1048576)
 
 		dpb := serializeDistribution(d)
-		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
 			Count: proto.Int64(5),
 			Mean:  proto.Float64(210228),
 			BucketOptions: &pb.MetricsData_Distribution_ExponentialBuckets{
@@ -68,10 +69,10 @@ func TestSerializeDistribution(t *testing.T) {
 			},
 			BucketCount: []int64{1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 1},
-		})
+		}))
 	})
 
-	Convey("Linear buckets", t, func() {
+	ftt.Run("Linear buckets", t, func(t *ftt.Test) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 2))
 		d.Add(0)
 		d.Add(1)
@@ -79,7 +80,7 @@ func TestSerializeDistribution(t *testing.T) {
 		d.Add(20)
 
 		dpb := serializeDistribution(d)
-		So(dpb, ShouldResembleProto, &pb.MetricsData_Distribution{
+		assert.Loosely(t, dpb, should.Resemble(&pb.MetricsData_Distribution{
 			Count: proto.Int64(4),
 			Mean:  proto.Float64(5.75),
 			BucketOptions: &pb.MetricsData_Distribution_LinearBuckets{
@@ -90,7 +91,7 @@ func TestSerializeDistribution(t *testing.T) {
 				},
 			},
 			BucketCount: []int64{0, 3, 0, 1},
-		})
+		}))
 	})
 }
 
@@ -113,7 +114,7 @@ func TestSerializeCell(t *testing.T) {
 		target.RootLabel("is_tsmon", true),
 	}
 
-	Convey("Int", t, func() {
+	ftt.Run("Int", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				Name:        "foo",
@@ -129,7 +130,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -148,10 +149,10 @@ func TestSerializeCell(t *testing.T) {
 					Timestamp: proto.Bool(true),
 				},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("Counter", t, func() {
+	ftt.Run("Counter", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				// Metric name with "/" prefix will be used as it is.
@@ -168,7 +169,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/foo"),
@@ -187,10 +188,10 @@ func TestSerializeCell(t *testing.T) {
 					Timestamp: proto.Bool(false),
 				},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("Float", t, func() {
+	ftt.Run("Float", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				Name:        "foo",
@@ -206,7 +207,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     float64(42),
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -221,10 +222,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("FloatCounter", t, func() {
+	ftt.Run("FloatCounter", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				Name:        "foo",
@@ -240,7 +241,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     float64(42),
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -255,10 +256,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("String", t, func() {
+	ftt.Run("String", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				Name:        "foo",
@@ -274,7 +275,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     "hello",
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -289,10 +290,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("Boolean", t, func() {
+	ftt.Run("Boolean", t, func(t *ftt.Test) {
 		ret := SerializeCells([]types.Cell{{
 			types.MetricInfo{
 				Name:        "foo",
@@ -308,7 +309,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     true,
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -323,10 +324,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("NonDefaultTarget", t, func() {
+	ftt.Run("NonDefaultTarget", t, func(t *ftt.Test) {
 		taskTarget := target.Task{
 			ServiceName: "hello",
 			JobName:     "world",
@@ -347,7 +348,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     int64(42),
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: []*pb.MetricsCollection_RootLabels{
 				target.RootLabel("proxy_environment", "pa"),
 				target.RootLabel("acquisition_name", "mon-chrome-infra"),
@@ -372,10 +373,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("CumulativeDistribution", t, func() {
+	ftt.Run("CumulativeDistribution", t, func(t *ftt.Test) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
 		d.Add(1024)
 		ret := SerializeCells([]types.Cell{{
@@ -395,7 +396,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     d,
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -433,10 +434,10 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 
-	Convey("NonCumulativeDistribution", t, func() {
+	ftt.Run("NonCumulativeDistribution", t, func(t *ftt.Test) {
 		d := distribution.New(distribution.FixedWidthBucketer(10, 20))
 		d.Add(1024)
 		ret := SerializeCells([]types.Cell{{
@@ -456,7 +457,7 @@ func TestSerializeCell(t *testing.T) {
 				Value:     d,
 			},
 		}}, now)
-		So(ret, ShouldResemble, []*pb.MetricsCollection{{
+		assert.Loosely(t, ret, should.Resemble([]*pb.MetricsCollection{{
 			RootLabels: emptyTaskRootLabels,
 			MetricsDataSet: []*pb.MetricsDataSet{{
 				MetricName:      proto.String("/chrome/infra/foo"),
@@ -494,6 +495,6 @@ func TestSerializeCell(t *testing.T) {
 					EndTimestamp:   nowTS,
 				}},
 			}},
-		}})
+		}}))
 	})
 }

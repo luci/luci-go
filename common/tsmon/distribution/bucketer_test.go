@@ -17,70 +17,72 @@ package distribution
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFixedWidthBucketer(t *testing.T) {
-	Convey("Invalid values panic", t, func() {
-		So(func() { FixedWidthBucketer(10, -1) }, ShouldPanic)
-		So(func() { FixedWidthBucketer(-1, 1) }, ShouldPanic)
+	ftt.Run("Invalid values panic", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { FixedWidthBucketer(10, -1) }, should.Panic)
+		assert.Loosely(t, func() { FixedWidthBucketer(-1, 1) }, should.Panic)
 	})
 
-	Convey("One size", t, func() {
+	ftt.Run("One size", t, func(t *ftt.Test) {
 		b := FixedWidthBucketer(10, 1)
-		So(b.NumBuckets(), ShouldEqual, 3)
-		So(b.Bucket(-100), ShouldEqual, 0)
-		So(b.Bucket(-1), ShouldEqual, 0)
-		So(b.Bucket(0), ShouldEqual, 1)
-		So(b.Bucket(5), ShouldEqual, 1)
-		So(b.Bucket(10), ShouldEqual, 2)
-		So(b.Bucket(100), ShouldEqual, 2)
+		assert.Loosely(t, b.NumBuckets(), should.Equal(3))
+		assert.Loosely(t, b.Bucket(-100), should.BeZero)
+		assert.Loosely(t, b.Bucket(-1), should.BeZero)
+		assert.Loosely(t, b.Bucket(0), should.Equal(1))
+		assert.Loosely(t, b.Bucket(5), should.Equal(1))
+		assert.Loosely(t, b.Bucket(10), should.Equal(2))
+		assert.Loosely(t, b.Bucket(100), should.Equal(2))
 	})
 }
 
 func TestGeometricBucketer(t *testing.T) {
-	Convey("Invalid values panic", t, func() {
-		So(func() { GeometricBucketer(10, -1) }, ShouldPanic)
-		So(func() { GeometricBucketer(-1, 10) }, ShouldPanic)
-		So(func() { GeometricBucketer(0, 10) }, ShouldPanic)
-		So(func() { GeometricBucketer(1, 10) }, ShouldPanic)
-		So(func() { GeometricBucketer(0.5, 10) }, ShouldPanic)
+	ftt.Run("Invalid values panic", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { GeometricBucketer(10, -1) }, should.Panic)
+		assert.Loosely(t, func() { GeometricBucketer(-1, 10) }, should.Panic)
+		assert.Loosely(t, func() { GeometricBucketer(0, 10) }, should.Panic)
+		assert.Loosely(t, func() { GeometricBucketer(1, 10) }, should.Panic)
+		assert.Loosely(t, func() { GeometricBucketer(0.5, 10) }, should.Panic)
 	})
 
-	Convey("One size", t, func() {
+	ftt.Run("One size", t, func(t *ftt.Test) {
 		b := GeometricBucketer(4, 4)
-		So(b.NumBuckets(), ShouldEqual, 6)
-		So(b.Bucket(-100), ShouldEqual, 0)
-		So(b.Bucket(-1), ShouldEqual, 0)
-		So(b.Bucket(0), ShouldEqual, 0)
-		So(b.Bucket(1), ShouldEqual, 1)
-		So(b.Bucket(3), ShouldEqual, 1)
-		So(b.Bucket(4), ShouldEqual, 2)
-		So(b.Bucket(15), ShouldEqual, 2)
-		So(b.Bucket(16), ShouldEqual, 3)
-		So(b.Bucket(63), ShouldEqual, 3)
-		So(b.Bucket(64), ShouldEqual, 4)
+		assert.Loosely(t, b.NumBuckets(), should.Equal(6))
+		assert.Loosely(t, b.Bucket(-100), should.BeZero)
+		assert.Loosely(t, b.Bucket(-1), should.BeZero)
+		assert.Loosely(t, b.Bucket(0), should.BeZero)
+		assert.Loosely(t, b.Bucket(1), should.Equal(1))
+		assert.Loosely(t, b.Bucket(3), should.Equal(1))
+		assert.Loosely(t, b.Bucket(4), should.Equal(2))
+		assert.Loosely(t, b.Bucket(15), should.Equal(2))
+		assert.Loosely(t, b.Bucket(16), should.Equal(3))
+		assert.Loosely(t, b.Bucket(63), should.Equal(3))
+		assert.Loosely(t, b.Bucket(64), should.Equal(4))
 	})
 }
 
 func TestGeometricBucketerWithScale(t *testing.T) {
-	Convey("Invalid values panic", t, func() {
-		So(func() { GeometricBucketerWithScale(10, 10, -1.0) }, ShouldPanic)
-		So(func() { GeometricBucketerWithScale(10, 10, 0) }, ShouldPanic)
+	ftt.Run("Invalid values panic", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { GeometricBucketerWithScale(10, 10, -1.0) }, should.Panic)
+		assert.Loosely(t, func() { GeometricBucketerWithScale(10, 10, 0) }, should.Panic)
 	})
 
-	Convey("pass", t, func() {
+	ftt.Run("pass", t, func(t *ftt.Test) {
 		b := GeometricBucketerWithScale(4, 4, 100)
-		So(b.NumBuckets(), ShouldEqual, 6)
-		So(b.Bucket(-100), ShouldEqual, 0)
-		So(b.Bucket(-1), ShouldEqual, 0)
-		So(b.Bucket(0), ShouldEqual, 0)
-		So(b.Bucket(100), ShouldEqual, 1)
-		So(b.Bucket(300), ShouldEqual, 1)
-		So(b.Bucket(400), ShouldEqual, 2)
-		So(b.Bucket(1500), ShouldEqual, 2)
-		So(b.Bucket(1600), ShouldEqual, 3)
-		So(b.Bucket(6300), ShouldEqual, 3)
-		So(b.Bucket(6400), ShouldEqual, 4)
+		assert.Loosely(t, b.NumBuckets(), should.Equal(6))
+		assert.Loosely(t, b.Bucket(-100), should.BeZero)
+		assert.Loosely(t, b.Bucket(-1), should.BeZero)
+		assert.Loosely(t, b.Bucket(0), should.BeZero)
+		assert.Loosely(t, b.Bucket(100), should.Equal(1))
+		assert.Loosely(t, b.Bucket(300), should.Equal(1))
+		assert.Loosely(t, b.Bucket(400), should.Equal(2))
+		assert.Loosely(t, b.Bucket(1500), should.Equal(2))
+		assert.Loosely(t, b.Bucket(1600), should.Equal(3))
+		assert.Loosely(t, b.Bucket(6300), should.Equal(3))
+		assert.Loosely(t, b.Bucket(6400), should.Equal(4))
 	})
 }

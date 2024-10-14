@@ -17,9 +17,9 @@ package proto
 import (
 	"testing"
 
-	. "go.chromium.org/luci/common/testing/assertions"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMultiline(t *testing.T) {
@@ -70,20 +70,20 @@ with empty line
 		DERP`},
 	}
 
-	Convey("Test ParseMultilineStrings", t, func() {
+	ftt.Run("Test ParseMultilineStrings", t, func(t *ftt.Test) {
 		for _, tc := range tcs {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				data, err := ParseMultilineStrings(tc.data)
-				So(err, ShouldBeNil)
-				So(data, ShouldEqual, tc.expect)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, data, should.Equal(tc.expect))
 			})
 		}
 
-		Convey("missing terminator", func() {
+		t.Run("missing terminator", func(t *ftt.Test) {
 			_, err := ParseMultilineStrings(`<<DERP
 			Some stuff
 			`)
-			So(err, ShouldErrLike, `failed to find matching terminator "DERP"`)
+			assert.Loosely(t, err, should.ErrLike(`failed to find matching terminator "DERP"`))
 		})
 	})
 }

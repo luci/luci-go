@@ -20,39 +20,41 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValueFlag(t *testing.T) {
-	Convey(`An empty Value`, t, func() {
-		Convey(`When used as a flag`, func() {
+	ftt.Run(`An empty Value`, t, func(t *ftt.Test) {
+		t.Run(`When used as a flag`, func(t *ftt.Test) {
 			var tm Value
 			fs := flag.NewFlagSet("Testing", flag.ContinueOnError)
 			fs.Var(&tm, "tag", "Testing tag.")
 
-			Convey(`Can successfully parse multiple parameters.`, func() {
+			t.Run(`Can successfully parse multiple parameters.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-tag", "foo=FOO", "-tag", "bar=BAR", "-tag", "baz"})
-				So(err, ShouldBeNil)
-				So(tm, ShouldResemble, Value{"foo": "FOO", "bar": "BAR", "baz": ""})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tm, should.Resemble(Value{"foo": "FOO", "bar": "BAR", "baz": ""}))
 
-				Convey(`Will build a correct string.`, func() {
-					So(tm.String(), ShouldEqual, `bar=BAR,baz,foo=FOO`)
+				t.Run(`Will build a correct string.`, func(t *ftt.Test) {
+					assert.Loosely(t, tm.String(), should.Equal(`bar=BAR,baz,foo=FOO`))
 				})
 			})
 
-			Convey(`Will refuse to parse an empty key.`, func() {
+			t.Run(`Will refuse to parse an empty key.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-tag", "="})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey(`Will refuse to parse an empty tag.`, func() {
+			t.Run(`Will refuse to parse an empty tag.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-tag", ""})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
-			Convey(`Will refuse to parse duplicate tags.`, func() {
+			t.Run(`Will refuse to parse duplicate tags.`, func(t *ftt.Test) {
 				err := fs.Parse([]string{"-tag", "foo=FOO", "-tag", "foo=BAR"})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 
 		})

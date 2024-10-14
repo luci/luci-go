@@ -19,23 +19,25 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/proto/internal/testingpb"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestStableHash(t *testing.T) {
-	Convey("stable hash for proto message", t, func() {
+	ftt.Run("stable hash for proto message", t, func(t *ftt.Test) {
 		h := sha256.New()
-		Convey("simple proto", func() {
+		t.Run("simple proto", func(t *ftt.Test) {
 			err := StableHash(h, &testingpb.Simple{
 				Id:   1,
 				Some: &testingpb.Some{I: 2},
 			})
-			So(err, ShouldBeNil)
-			So(fmt.Sprintf("%x", h.Sum(nil)), ShouldEqual, "09abb21ea7df951884db3c940c10866cc7949d4b93c3b498e39144e1e2e7a50e")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fmt.Sprintf("%x", h.Sum(nil)), should.Equal("09abb21ea7df951884db3c940c10866cc7949d4b93c3b498e39144e1e2e7a50e"))
 		})
-		Convey("full proto", func() {
+		t.Run("full proto", func(t *ftt.Test) {
 			err := StableHash(h, &testingpb.Full{
 				Nums:       []int32{1, 2, 3},
 				Strs:       []string{"a", "b"},
@@ -44,31 +46,31 @@ func TestStableHash(t *testing.T) {
 				MapNumStr:  map[int32]string{1: "x", 2: "y"},
 				MapBoolStr: map[bool]string{true: "x", false: "y"},
 			})
-			So(err, ShouldBeNil)
-			So(fmt.Sprintf("%x", h.Sum(nil)), ShouldEqual, "a03f498e9953da367ad852a7cc3a5825c4b5d37b31108065efc90542ee14bcfd")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fmt.Sprintf("%x", h.Sum(nil)), should.Equal("a03f498e9953da367ad852a7cc3a5825c4b5d37b31108065efc90542ee14bcfd"))
 		})
-		Convey("full proto - empty", func() {
+		t.Run("full proto - empty", func(t *ftt.Test) {
 			err := StableHash(h, &testingpb.Full{})
-			So(err, ShouldBeNil)
-			So(fmt.Sprintf("%x", h.Sum(nil)), ShouldEqual, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fmt.Sprintf("%x", h.Sum(nil)), should.Equal("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"))
 		})
-		Convey("any proto", func() {
+		t.Run("any proto", func(t *ftt.Test) {
 			msg, err := anypb.New(&testingpb.Simple{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = StableHash(h, msg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("any proto without type", func() {
+		t.Run("any proto without type", func(t *ftt.Test) {
 			err := StableHash(h, &anypb.Any{})
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "invalid empty type URL")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("invalid empty type URL"))
 		})
-		Convey("unknown field", func() {
+		t.Run("unknown field", func(t *ftt.Test) {
 			drv := &testingpb.Simple{}
 			drv.ProtoReflect().SetUnknown([]byte{0})
 			err := StableHash(h, drv)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "unknown fields cannot be hashed")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("unknown fields cannot be hashed"))
 		})
 	})
 }

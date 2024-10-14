@@ -28,8 +28,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func use(ctx context.Context, out io.Writer, proto LogEntry) context.Context {
@@ -51,33 +52,33 @@ func TestLogger(t *testing.T) {
 	c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 	buf := bytes.NewBuffer([]byte{})
 
-	Convey("Basic", t, func() {
+	ftt.Run("Basic", t, func(t *ftt.Test) {
 		c = use(c, buf, LogEntry{TraceID: "hi"})
 		logging.Infof(c, "test context")
-		So(read(buf), ShouldResemble, &LogEntry{
+		assert.Loosely(t, read(buf), should.Resemble(&LogEntry{
 			Message:   "test context",
 			Severity:  InfoSeverity,
 			Timestamp: Timestamp{Seconds: 1454472306, Nanos: 7},
 			TraceID:   "hi", // copied from the prototype
-		})
+		}))
 	})
 
-	Convey("Simple fields", t, func() {
+	ftt.Run("Simple fields", t, func(t *ftt.Test) {
 		c = use(c, buf, LogEntry{})
 		logging.NewFields(map[string]any{"foo": "bar"}).Infof(c, "test field")
 		e := read(buf)
-		So(e.Fields["foo"], ShouldEqual, "bar")
-		So(e.Message, ShouldEqual, `test field :: {"foo":"bar"}`)
+		assert.Loosely(t, e.Fields["foo"], should.Equal("bar"))
+		assert.Loosely(t, e.Message, should.Equal(`test field :: {"foo":"bar"}`))
 	})
 
-	Convey("Error field", t, func() {
+	ftt.Run("Error field", t, func(t *ftt.Test) {
 		c = use(c, buf, LogEntry{})
 		c = logging.SetField(c, "foo", "bar")
 		logging.WithError(fmt.Errorf("boom")).Infof(c, "boom")
 		e := read(buf)
-		So(e.Fields["foo"], ShouldEqual, "bar")             // still works
-		So(e.Fields[logging.ErrorKey], ShouldEqual, "boom") // also works
-		So(e.Message, ShouldEqual, `boom :: {"error":"boom", "foo":"bar"}`)
+		assert.Loosely(t, e.Fields["foo"], should.Equal("bar"))             // still works
+		assert.Loosely(t, e.Fields[logging.ErrorKey], should.Equal("boom")) // also works
+		assert.Loosely(t, e.Message, should.Equal(`boom :: {"error":"boom", "foo":"bar"}`))
 	})
 }
 
@@ -105,7 +106,7 @@ func useLog(ctx context.Context, fakeSink *fakeCloudErrorsSink, proto LogEntry) 
 func TestErrorReporting(t *testing.T) {
 	t.Parallel()
 
-	Convey("errStackRe regex match", t, func() {
+	ftt.Run("errStackRe regex match", t, func(t *ftt.Test) {
 		errStr := "original error: rpc error: code = Internal desc = internal: attaching a status: rpc error: code = FailedPrecondition desc = internal"
 		stackStr := `goroutine 27693:
 #0 go.chromium.org/luci/grpc/appstatus/status.go:59 - appstatus.Attach()
@@ -114,64 +115,64 @@ func TestErrorReporting(t *testing.T) {
 `
 		msg := errStr + "\n\n" + stackStr
 		match := errStackRe.FindStringSubmatch(msg)
-		So(match, ShouldNotBeNil)
-		So(match[1], ShouldEqual, errStr)
-		So(match[2], ShouldEqual, stackStr)
+		assert.Loosely(t, match, should.NotBeNil)
+		assert.Loosely(t, match[1], should.Equal(errStr))
+		assert.Loosely(t, match[2], should.Equal(stackStr))
 	})
 
-	Convey("end to end", t, func() {
+	ftt.Run("end to end", t, func(t *ftt.Test) {
 		c := context.Background()
 		c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 		buf := bytes.NewBuffer([]byte{})
 
-		Convey("logging error with full stack", func() {
+		t.Run("logging error with full stack", func(t *ftt.Test) {
 			fakeErrSink := newFakeCloudErrorsSink(buf)
 			c = useLog(c, fakeErrSink, LogEntry{TraceID: "trace123"})
 
 			errors.Log(c, errors.New("test error"))
 
 			// assert errorreporting.entry has the stack from errors.renderStack().
-			So(fakeErrSink.errRptEntry.Error.Error(), ShouldEqual, "original error: test error (Log Trace ID: trace123)")
+			assert.Loosely(t, fakeErrSink.errRptEntry.Error.Error(), should.Equal("original error: test error (Log Trace ID: trace123)"))
 			stackMatch, err := regexp.MatchString(`goroutine \d+:\n.*sdlogger.TestErrorReporting.func*`, string(fakeErrSink.errRptEntry.Stack))
-			So(err, ShouldBeNil)
-			So(stackMatch, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, stackMatch, should.BeTrue)
 
 			// assert outputted LogEntry.message
 			logOutput := read(buf)
 			logMsgMatch, err := regexp.MatchString(`original error: test error\n\ngoroutine \d+:\n.*sdlogger.TestErrorReporting.func*`, logOutput.Message)
-			So(err, ShouldBeNil)
-			So(logMsgMatch, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, logMsgMatch, should.BeTrue)
 		})
 
-		Convey("logging error without stack", func() {
+		t.Run("logging error without stack", func(t *ftt.Test) {
 			fakeErrSink := newFakeCloudErrorsSink(buf)
 			c = useLog(c, fakeErrSink, LogEntry{TraceID: "trace123"})
 
 			logging.Errorf(c, "test error")
 
-			So(fakeErrSink.errRptEntry.Error.Error(), ShouldEqual, "test error (Log Trace ID: trace123)")
-			So(fakeErrSink.errRptEntry.Stack, ShouldNotBeNil)
-			So(read(buf), ShouldResemble, &LogEntry{
+			assert.Loosely(t, fakeErrSink.errRptEntry.Error.Error(), should.Equal("test error (Log Trace ID: trace123)"))
+			assert.Loosely(t, fakeErrSink.errRptEntry.Stack, should.NotBeNil)
+			assert.Loosely(t, read(buf), should.Resemble(&LogEntry{
 				Message:   "test error",
 				Severity:  ErrorSeverity,
 				Timestamp: Timestamp{Seconds: 1454472306, Nanos: 7},
 				TraceID:   "trace123",
-			})
+			}))
 		})
 
-		Convey("logging non-error", func() {
+		t.Run("logging non-error", func(t *ftt.Test) {
 			fakeErrSink := newFakeCloudErrorsSink(buf)
 			c = useLog(c, fakeErrSink, LogEntry{TraceID: "trace123"})
 
 			logging.Infof(c, "info")
 
-			So(fakeErrSink.errRptEntry, ShouldBeNil)
-			So(read(buf), ShouldResemble, &LogEntry{
+			assert.Loosely(t, fakeErrSink.errRptEntry, should.BeNil)
+			assert.Loosely(t, read(buf), should.Resemble(&LogEntry{
 				Message:   "info",
 				Severity:  InfoSeverity,
 				Timestamp: Timestamp{Seconds: 1454472306, Nanos: 7},
 				TraceID:   "trace123",
-			})
+			}))
 		})
 	})
 }
@@ -183,7 +184,7 @@ func TestCleanupStack(t *testing.T) {
 		return string(cleanupStack([]byte(s)))
 	}
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		stack := `goroutine 19 [running]:
 go.chromium.org/luci/common/logging/sdlogger.prepErrorReportingEntry(0xc0001abea0, 0x0)
 	zzz/go.chromium.org/luci/common/logging/sdlogger/logger.go:210 +0x1d9
@@ -202,13 +203,13 @@ go.chromium.org/luci/common/some/package.SomeCall.func2.2()
 	zzz/infra/go/src/go.chromium.org/luci/common/some/package/file.go:150 +0x166
 `
 
-		So(call(stack), ShouldEqual, expected)
+		assert.Loosely(t, call(stack), should.Equal(expected))
 	})
 
-	Convey("Skips unexpected stuff", t, func() {
-		So(call(""), ShouldEqual, "")
-		So(call("abc"), ShouldEqual, "abc")
-		So(call("abc\ndef"), ShouldEqual, "abc\ndef")
+	ftt.Run("Skips unexpected stuff", t, func(t *ftt.Test) {
+		assert.Loosely(t, call(""), should.BeEmpty)
+		assert.Loosely(t, call("abc"), should.Equal("abc"))
+		assert.Loosely(t, call("abc\ndef"), should.Equal("abc\ndef"))
 	})
 }
 

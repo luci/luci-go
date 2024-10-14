@@ -18,11 +18,13 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseHostURL(t *testing.T) {
-	Convey(`Verifies that ParseHostURL properly checks a URL.`, t, func() {
+	ftt.Run(`Verifies that ParseHostURL properly checks a URL.`, t, func(t *ftt.Test) {
 		data := []struct {
 			in     string
 			scheme string
@@ -37,12 +39,12 @@ func TestParseHostURL(t *testing.T) {
 		}
 		for _, line := range data {
 			out, err := ParseHostURL(line.in)
-			So(err, ShouldResemble, line.err)
+			assert.Loosely(t, err, should.Resemble(line.err))
 			if line.err == nil {
-				So(out, ShouldNotBeNil)
-				So(out.Scheme, ShouldEqual, line.scheme)
-				So(out.Host, ShouldEqual, line.host)
-				So(out.Path, ShouldEqual, "")
+				assert.Loosely(t, out, should.NotBeNil)
+				assert.Loosely(t, out.Scheme, should.Equal(line.scheme))
+				assert.Loosely(t, out.Host, should.Equal(line.host))
+				assert.Loosely(t, out.Path, should.BeEmpty)
 			}
 		}
 	})

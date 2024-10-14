@@ -30,33 +30,33 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBuildURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("buildURL works correctly", t, func() {
+	ftt.Run("buildURL works correctly", t, func(t *ftt.Test) {
 		cPB, err := NewRESTClient(nil, "x-review.googlesource.com", true)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c, ok := cPB.(*client)
-		So(ok, ShouldBeTrue)
+		assert.Loosely(t, ok, should.BeTrue)
 
-		So(c.buildURL("/changes/project~123", nil, nil), ShouldResemble,
-			"https://x-review.googlesource.com/a/changes/project~123")
-		So(c.buildURL("/changes/project~123", url.Values{"o": []string{"ONE", "TWO"}}, nil), ShouldResemble,
-			"https://x-review.googlesource.com/a/changes/project~123?o=ONE&o=TWO")
+		assert.Loosely(t, c.buildURL("/changes/project~123", nil, nil), should.Match(
+			"https://x-review.googlesource.com/a/changes/project~123"))
+		assert.Loosely(t, c.buildURL("/changes/project~123", url.Values{"o": []string{"ONE", "TWO"}}, nil), should.Match(
+			"https://x-review.googlesource.com/a/changes/project~123?o=ONE&o=TWO"))
 
 		opt := UseGerritMirror(func(host string) string { return "mirror-" + host })
-		So(c.buildURL("/changes/project~123", nil, []grpc.CallOption{opt}), ShouldResemble,
-			"https://mirror-x-review.googlesource.com/a/changes/project~123")
+		assert.Loosely(t, c.buildURL("/changes/project~123", nil, []grpc.CallOption{opt}), should.Match(
+			"https://mirror-x-review.googlesource.com/a/changes/project~123"))
 
 		c.auth = false
-		So(c.buildURL("/path", nil, nil), ShouldResemble,
-			"https://x-review.googlesource.com/path")
+		assert.Loosely(t, c.buildURL("/path", nil, nil), should.Match(
+			"https://x-review.googlesource.com/path"))
 	})
 }
 
@@ -64,8 +64,8 @@ func TestListAccountEmails(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListAccountEmails", t, func() {
-		Convey("Validates empty email", func() {
+	ftt.Run("ListAccountEmails", t, func(t *ftt.Test) {
+		t.Run("Validates empty email", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 
@@ -73,10 +73,10 @@ func TestListAccountEmails(t *testing.T) {
 				Email: "",
 			})
 
-			So(err, ShouldErrLike, "The email field must be present")
+			assert.Loosely(t, err, should.ErrLike("The email field must be present"))
 		})
 
-		Convey("Returns emails API response", func() {
+		t.Run("Returns emails API response", func(t *ftt.Test) {
 			expectedResponse := &gerritpb.ListAccountEmailsResponse{
 				Emails: []*gerritpb.EmailInfo{
 					{Email: "foo@google.com", Preferred: true},
@@ -105,12 +105,12 @@ func TestListAccountEmails(t *testing.T) {
 				Email: "foo@google.com",
 			})
 
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, expectedResponse)
-			So(actualRequest.RequestURI, ShouldContainSubstring, "/accounts/foo@google.com/emails")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedResponse))
+			assert.Loosely(t, actualRequest.RequestURI, should.ContainSubstring("/accounts/foo@google.com/emails"))
 		})
 
-		Convey("escape + in email", func() {
+		t.Run("escape + in email", func(t *ftt.Test) {
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualRequest = r
@@ -127,8 +127,8 @@ func TestListAccountEmails(t *testing.T) {
 			_, err := c.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
 				Email: "foo+review@google.com",
 			})
-			So(err, ShouldBeNil)
-			So(actualRequest.RequestURI, ShouldContainSubstring, "/accounts/foo%2Breview@google.com/emails")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRequest.RequestURI, should.ContainSubstring("/accounts/foo%2Breview@google.com/emails"))
 		})
 	})
 }
@@ -137,8 +137,8 @@ func TestListChanges(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListChanges", t, func() {
-		Convey("Validates Limit number", func() {
+	ftt.Run("ListChanges", t, func(t *ftt.Test) {
+		t.Run("Validates Limit number", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 
@@ -146,13 +146,13 @@ func TestListChanges(t *testing.T) {
 				Query: "label:Commit-Queue",
 				Limit: -1,
 			})
-			So(err, ShouldErrLike, "must be nonnegative")
+			assert.Loosely(t, err, should.ErrLike("must be nonnegative"))
 
 			_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{
 				Query: "label:Commit-Queue",
 				Limit: 1001,
 			})
-			So(err, ShouldErrLike, "should be at most")
+			assert.Loosely(t, err, should.ErrLike("should be at most"))
 		})
 
 		req := &gerritpb.ListChangesRequest{
@@ -160,7 +160,7 @@ func TestListChanges(t *testing.T) {
 			Limit: 1,
 		}
 
-		Convey("OK case with one change, _more_changes set in response", func() {
+		t.Run("OK case with one change, _more_changes set in response", func(t *ftt.Test) {
 			expectedResponse := &gerritpb.ListChangesResponse{
 				Changes: []*gerritpb.ChangeInfo{
 					{
@@ -208,24 +208,24 @@ func TestListChanges(t *testing.T) {
 			})
 			defer srv.Close()
 
-			Convey("Response and request are as expected", func() {
+			t.Run("Response and request are as expected", func(t *ftt.Test) {
 				res, err := c.ListChanges(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, expectedResponse)
-				So(actualRequest.URL.Query()["q"], ShouldResemble, []string{"label:Code-Review"})
-				So(actualRequest.URL.Query()["S"], ShouldResemble, []string{"0"})
-				So(actualRequest.URL.Query()["n"], ShouldResemble, []string{"1"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(expectedResponse))
+				assert.Loosely(t, actualRequest.URL.Query()["q"], should.Resemble([]string{"label:Code-Review"}))
+				assert.Loosely(t, actualRequest.URL.Query()["S"], should.Resemble([]string{"0"}))
+				assert.Loosely(t, actualRequest.URL.Query()["n"], should.Resemble([]string{"1"}))
 			})
 
-			Convey("Options are included in the request", func() {
+			t.Run("Options are included in the request", func(t *ftt.Test) {
 				req.Options = append(req.Options, gerritpb.QueryOption_DETAILED_ACCOUNTS, gerritpb.QueryOption_ALL_COMMITS)
 				_, err := c.ListChanges(ctx, req)
-				So(err, ShouldBeNil)
-				So(
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t,
 					actualRequest.URL.Query()["o"],
-					ShouldResemble,
-					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
-				)
+					should.Resemble(
+						[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
+					))
 			})
 		})
 	})
@@ -235,18 +235,18 @@ func TestGetChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("GetChange", t, func() {
-		Convey("Validate args", func() {
+	ftt.Run("GetChange", t, func(t *ftt.Test) {
+		t.Run("Validate args", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 
 			_, err := c.GetChange(ctx, &gerritpb.GetChangeRequest{})
-			So(err, ShouldErrLike, "number must be positive")
+			assert.Loosely(t, err, should.ErrLike("number must be positive"))
 		})
 
 		req := &gerritpb.GetChangeRequest{Number: 1}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			expectedChange := &gerritpb.ChangeInfo{
 				Number: 1,
 				Owner: &gerritpb.AccountInfo{
@@ -644,40 +644,40 @@ func TestGetChange(t *testing.T) {
 			})
 			defer srv.Close()
 
-			Convey("Basic", func() {
+			t.Run("Basic", func(t *ftt.Test) {
 				res, err := c.GetChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, expectedChange)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(expectedChange))
 			})
 
-			Convey("With project", func() {
+			t.Run("With project", func(t *ftt.Test) {
 				req.Project = "infra/luci"
 				res, err := c.GetChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, expectedChange)
-				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/infra%2Fluci~1")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/infra%2Fluci~1"))
 			})
 
-			Convey("Options", func() {
+			t.Run("Options", func(t *ftt.Test) {
 				req.Options = append(req.Options, gerritpb.QueryOption_DETAILED_ACCOUNTS, gerritpb.QueryOption_ALL_COMMITS)
 				_, err := c.GetChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t,
 					actualRequest.URL.Query()["o"],
-					ShouldResemble,
-					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
-				)
+					should.Resemble(
+						[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
+					))
 			})
 
-			Convey("Meta", func() {
+			t.Run("Meta", func(t *ftt.Test) {
 				req.Meta = "deadbeef"
 				_, err := c.GetChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t,
 					actualRequest.URL.Query()["meta"],
-					ShouldResemble,
-					[]string{"deadbeef"},
-				)
+					should.Resemble(
+						[]string{"deadbeef"},
+					))
 			})
 		})
 	})
@@ -687,7 +687,7 @@ func TestRestCreateChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("CreateChange basic", t, func() {
+	ftt.Run("CreateChange basic", t, func(t *ftt.Test) {
 		var actualBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			// ignore errors here, but verify body later.
@@ -714,8 +714,8 @@ func TestRestCreateChange(t *testing.T) {
 			BaseCommit: "someOpaqueHash",
 		}
 		res, err := c.CreateChange(ctx, &req)
-		So(err, ShouldBeNil)
-		So(res, ShouldResemble, &gerritpb.ChangeInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.Resemble(&gerritpb.ChangeInfo{
 			Number:      1,
 			Project:     "example/repo",
 			Ref:         "refs/heads/master",
@@ -725,17 +725,17 @@ func TestRestCreateChange(t *testing.T) {
 			Updated:     timestamppb.New(parseTime("2014-05-05T07:15:44.639000000Z")),
 			Submitted:   timestamppb.New(parseTime("0001-01-01T00:00:00.00000000Z")),
 			Branch:      "master",
-		})
+		}))
 
 		var ci changeInput
 		err = json.Unmarshal(actualBody, &ci)
-		So(err, ShouldBeNil)
-		So(ci, ShouldResemble, changeInput{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ci, should.Resemble(changeInput{
 			Project:    "example/repo",
 			Branch:     "refs/heads/master",
 			Subject:    "example subject",
 			BaseCommit: "someOpaqueHash",
-		})
+		}))
 	})
 }
 
@@ -743,7 +743,7 @@ func TestSubmitRevision(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("SubmitRevision", t, func() {
+	ftt.Run("SubmitRevision", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -762,11 +762,11 @@ func TestSubmitRevision(t *testing.T) {
 			Project:    "someProject",
 		}
 		res, err := c.SubmitRevision(ctx, req)
-		So(err, ShouldBeNil)
-		So(res, ShouldResembleProto, &gerritpb.SubmitInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 			Status: gerritpb.ChangeStatus_MERGED,
-		})
-		So(actualURL.Path, ShouldEqual, "/changes/someProject~42/revisions/someRevision/submit")
+		}))
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someProject~42/revisions/someRevision/submit"))
 	})
 }
 
@@ -774,7 +774,7 @@ func TestRestChangeEditFileContent(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ChangeEditFileContent basic", t, func() {
+	ftt.Run("ChangeEditFileContent basic", t, func(t *ftt.Test) {
 		// large enough?
 		var actualBody []byte
 		var actualURL *url.URL
@@ -793,10 +793,10 @@ func TestRestChangeEditFileContent(t *testing.T) {
 			FilePath: "some/path+foo",
 			Content:  []byte("changed file"),
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.RawPath, ShouldEqual, "/changes/some%2Fproject~42/edit/some%2Fpath%2Bfoo")
-		So(actualURL.Path, ShouldEqual, "/changes/some/project~42/edit/some/path+foo")
-		So(actualBody, ShouldResemble, []byte("changed file"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.RawPath, should.Equal("/changes/some%2Fproject~42/edit/some%2Fpath%2Bfoo"))
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/some/project~42/edit/some/path+foo"))
+		assert.Loosely(t, actualBody, should.Resemble([]byte("changed file")))
 	})
 }
 
@@ -805,7 +805,7 @@ func TestAddReviewer(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Add reviewer to cc basic", t, func() {
+	ftt.Run("Add reviewer to cc basic", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		var actualBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -839,24 +839,24 @@ func TestAddReviewer(t *testing.T) {
 			Notify:    gerritpb.Notify_NOTIFY_OWNER,
 		}
 		res, err := c.AddReviewer(ctx, req)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// assert the request was as expected
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers")
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/reviewers"))
 		var body addReviewerRequest
 		err = json.Unmarshal(actualBody, &body)
 		if err != nil {
 			t.Logf("failed to decode req body: %v\n", err)
 		}
-		So(body, ShouldResemble, addReviewerRequest{
+		assert.Loosely(t, body, should.Resemble(addReviewerRequest{
 			Reviewer:  "ccer@test.com",
 			State:     "CC",
 			Confirmed: true,
 			Notify:    "OWNER",
-		})
+		}))
 
 		// assert the result was as expected
-		So(res, ShouldResemble, &gerritpb.AddReviewerResult{
+		assert.Loosely(t, res, should.Resemble(&gerritpb.AddReviewerResult{
 			Input:     "ccer@test.com",
 			Reviewers: []*gerritpb.ReviewerInfo{},
 			Ccs: []*gerritpb.ReviewerInfo{
@@ -870,7 +870,7 @@ func TestAddReviewer(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
 }
 
@@ -878,7 +878,7 @@ func TestDeleteReviewer(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Delete reviewer", t, func() {
+	ftt.Run("Delete reviewer", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -892,8 +892,8 @@ func TestDeleteReviewer(t *testing.T) {
 			Project:   "someproject",
 			AccountId: "jdoe@example.com",
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/reviewers/jdoe@example.com/delete")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/reviewers/jdoe@example.com/delete"))
 	})
 }
 
@@ -901,7 +901,7 @@ func TestSetReview(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Set Review", t, func() {
+	ftt.Run("Set Review", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		var actualRawBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -961,12 +961,12 @@ func TestSetReview(t *testing.T) {
 			},
 			IgnoreAutomaticAttentionSetRules: true,
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/review")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/review"))
 
 		var actualBody, expectedBody map[string]any
-		So(json.Unmarshal(actualRawBody, &actualBody), ShouldBeNil)
-		So(json.Unmarshal([]byte(`{
+		assert.Loosely(t, json.Unmarshal(actualRawBody, &actualBody), should.BeNil)
+		assert.Loosely(t, json.Unmarshal([]byte(`{
 			"message": "This is a message",
 			"labels": {
 				"Code-Review": -1
@@ -986,17 +986,17 @@ func TestSetReview(t *testing.T) {
 				{"user": "10001", "reason": "passed presubmit"}
 			],
 			"ignore_automatic_attention_set_rules": true
-		}`), &expectedBody), ShouldBeNil)
-		So(actualBody, ShouldResemble, expectedBody)
+		}`), &expectedBody), should.BeNil)
+		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
 
-		So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+		assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 			Labels: map[string]int32{
 				"Code-Review": -1,
 			},
-		})
+		}))
 	})
 
-	Convey("Set Review can add reviewers", t, func() {
+	ftt.Run("Set Review can add reviewers", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		var actualRawBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -1055,21 +1055,21 @@ func TestSetReview(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/review")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/review"))
 
 		var actualBody, expectedBody map[string]any
-		So(json.Unmarshal(actualRawBody, &actualBody), ShouldBeNil)
-		So(json.Unmarshal([]byte(`{
+		assert.Loosely(t, json.Unmarshal(actualRawBody, &actualBody), should.BeNil)
+		assert.Loosely(t, json.Unmarshal([]byte(`{
 			"message": "This is a message",
 			"reviewers": [
 				{"reviewer": "jdoe@example.com"},
 				{"reviewer": "10003", "state": "CC"}
 			]
-		}`), &expectedBody), ShouldBeNil)
-		So(actualBody, ShouldResemble, expectedBody)
+		}`), &expectedBody), should.BeNil)
+		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
 
-		So(res, ShouldResembleProto, &gerritpb.ReviewResult{
+		assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 			Reviewers: map[string]*gerritpb.AddReviewerResult{
 				"jdoe@example.com": {
 					Input: "jdoe@example.com",
@@ -1104,7 +1104,7 @@ func TestSetReview(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
 }
 
@@ -1112,7 +1112,7 @@ func TestAddToAttentionSet(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Add to attention set", t, func() {
+	ftt.Run("Add to attention set", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		var actualBody []byte
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -1141,10 +1141,10 @@ func TestAddToAttentionSet(t *testing.T) {
 			},
 		}
 		res, err := c.AddToAttentionSet(ctx, req)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// assert the request was as expected
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/attention")
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/attention"))
 		expectedBody, err := json.Marshal(attentionSetInput{
 			User:   "fyi@test.com",
 			Reason: "For awareness",
@@ -1153,15 +1153,15 @@ func TestAddToAttentionSet(t *testing.T) {
 		if err != nil {
 			t.Logf("failed to encode expected body: %v\n", err)
 		}
-		So(actualBody, ShouldResemble, expectedBody)
+		assert.Loosely(t, actualBody, should.Resemble(expectedBody))
 
 		// assert the result was as expected
-		So(res, ShouldResemble, &gerritpb.AccountInfo{
+		assert.Loosely(t, res, should.Resemble(&gerritpb.AccountInfo{
 			AccountId: 10001,
 			Name:      "FYI reviewer",
 			Email:     "fyi@test.com",
 			Username:  "fyi",
-		})
+		}))
 	})
 }
 
@@ -1169,16 +1169,16 @@ func TestRevertChange(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("RevertChange", t, func() {
-		Convey("Validate args", func() {
+	ftt.Run("RevertChange", t, func(t *ftt.Test) {
+		t.Run("Validate args", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 
 			_, err := c.RevertChange(ctx, &gerritpb.RevertChangeRequest{})
-			So(err, ShouldErrLike, "number must be positive")
+			assert.Loosely(t, err, should.ErrLike("number must be positive"))
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			req := &gerritpb.RevertChangeRequest{
 				Number:  3964,
 				Message: "This is the message added to the revert CL.",
@@ -1254,19 +1254,19 @@ func TestRevertChange(t *testing.T) {
 			})
 			defer srv.Close()
 
-			Convey("Basic", func() {
+			t.Run("Basic", func(t *ftt.Test) {
 				res, err := c.RevertChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResemble, expectedChange)
-				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/3964/revert")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/3964/revert"))
 			})
 
-			Convey("With project", func() {
+			t.Run("With project", func(t *ftt.Test) {
 				req.Project = "infra/luci"
 				res, err := c.RevertChange(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, expectedChange)
-				So(actualRequest.URL.EscapedPath(), ShouldEqual, "/changes/infra%2Fluci~3964/revert")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(expectedChange))
+				assert.Loosely(t, actualRequest.URL.EscapedPath(), should.Equal("/changes/infra%2Fluci~3964/revert"))
 			})
 		})
 	})
@@ -1276,7 +1276,7 @@ func TestGetMergeable(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("GetMergeable basic", t, func() {
+	ftt.Run("GetMergeable basic", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -1305,9 +1305,9 @@ func TestGetMergeable(t *testing.T) {
 			Project:    "someproject",
 			RevisionId: "somerevision",
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/mergeable")
-		So(mi, ShouldResemble, &gerritpb.MergeableInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/mergeable"))
+		assert.Loosely(t, mi, should.Resemble(&gerritpb.MergeableInfo{
 			SubmitType:    gerritpb.MergeableInfo_CHERRY_PICK,
 			Strategy:      gerritpb.MergeableStrategy_SIMPLE_TWO_WAY_IN_CORE,
 			Mergeable:     true,
@@ -1315,7 +1315,7 @@ func TestGetMergeable(t *testing.T) {
 			ContentMerged: false,
 			Conflicts:     []string{"conflict1", "conflict2"},
 			MergeableInto: []string{"my_branch_1"},
-		})
+		}))
 	})
 }
 
@@ -1323,7 +1323,7 @@ func TestListFiles(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListFiles basic", t, func() {
+	ftt.Run("ListFiles basic", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -1347,10 +1347,10 @@ func TestListFiles(t *testing.T) {
 			RevisionId: "somerevision",
 			Parent:     999,
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/revisions/somerevision/files/")
-		So(actualURL.Query().Get("parent"), ShouldEqual, "999")
-		So(mi, ShouldResemble, &gerritpb.ListFilesResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/revisions/somerevision/files/"))
+		assert.Loosely(t, actualURL.Query().Get("parent"), should.Equal("999"))
+		assert.Loosely(t, mi, should.Resemble(&gerritpb.ListFilesResponse{
 			Files: map[string]*gerritpb.FileInfo{
 				"gerrit-server/src/main/java/com/google/gerrit/server/project/RefControl.java": {
 					LinesInserted: 123456,
@@ -1359,7 +1359,7 @@ func TestListFiles(t *testing.T) {
 					Size: 7,
 				},
 			},
-		})
+		}))
 	})
 }
 
@@ -1367,7 +1367,7 @@ func TestGetRelatedChanges(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("GetRelatedChanges works", t, func() {
+	ftt.Run("GetRelatedChanges works", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -1458,9 +1458,9 @@ func TestGetRelatedChanges(t *testing.T) {
 			Project:    "playground/gerrit-cq",
 			RevisionId: "2",
 		})
-		So(err, ShouldBeNil)
-		So(actualURL.EscapedPath(), ShouldEqual, "/changes/playground%2Fgerrit-cq~1563638/revisions/2/related")
-		So(rcs, ShouldResembleProto, &gerritpb.GetRelatedChangesResponse{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.EscapedPath(), should.Equal("/changes/playground%2Fgerrit-cq~1563638/revisions/2/related"))
+		assert.Loosely(t, rcs, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 			Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
 				{
 					Project: "playground/gerrit-cq",
@@ -1508,15 +1508,15 @@ func TestGetRelatedChanges(t *testing.T) {
 					Status:          gerritpb.ChangeStatus_NEW,
 				},
 			},
-		})
+		}))
 	})
 }
 
 func TestGetFileOwners(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	Convey("Get Owners: ", t, func() {
-		Convey("Details", func() {
+	ftt.Run("Get Owners: ", t, func(t *ftt.Test) {
+		t.Run("Details", func(t *ftt.Test) {
 			var actualURL *url.URL
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualURL = r.URL
@@ -1541,10 +1541,10 @@ func TestGetFileOwners(t *testing.T) {
 					Details: true,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(actualURL.Path, ShouldEqual, "/projects/projectName/branches/main/code_owners/path/to/file")
-			So(actualURL.Query().Get("o"), ShouldEqual, "DETAILS")
-			So(resp, ShouldResemble, &gerritpb.ListOwnersResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualURL.Path, should.Equal("/projects/projectName/branches/main/code_owners/path/to/file"))
+			assert.Loosely(t, actualURL.Query().Get("o"), should.Equal("DETAILS"))
+			assert.Loosely(t, resp, should.Resemble(&gerritpb.ListOwnersResponse{
 				Owners: []*gerritpb.OwnerInfo{
 					{
 						Account: &gerritpb.AccountInfo{
@@ -1554,9 +1554,9 @@ func TestGetFileOwners(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("All Emails", func() {
+		t.Run("All Emails", func(t *ftt.Test) {
 			var actualURL *url.URL
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualURL = r.URL
@@ -1580,10 +1580,10 @@ func TestGetFileOwners(t *testing.T) {
 					AllEmails: true,
 				},
 			})
-			So(err, ShouldBeNil)
-			So(actualURL.Path, ShouldEqual, "/projects/projectName/branches/main/code_owners/path/to/file")
-			So(actualURL.Query().Get("o"), ShouldEqual, "ALL_EMAILS")
-			So(resp, ShouldResemble, &gerritpb.ListOwnersResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualURL.Path, should.Equal("/projects/projectName/branches/main/code_owners/path/to/file"))
+			assert.Loosely(t, actualURL.Query().Get("o"), should.Equal("ALL_EMAILS"))
+			assert.Loosely(t, resp, should.Resemble(&gerritpb.ListOwnersResponse{
 				Owners: []*gerritpb.OwnerInfo{
 					{
 						Account: &gerritpb.AccountInfo{
@@ -1593,7 +1593,7 @@ func TestGetFileOwners(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -1602,8 +1602,8 @@ func TestListProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("List Projects", t, func() {
-		Convey("...works for a single ref", func() {
+	ftt.Run("List Projects", t, func(t *ftt.Test) {
+		t.Run("...works for a single ref", func(t *ftt.Test) {
 			var actualURL *url.URL
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualURL = r.URL
@@ -1632,10 +1632,10 @@ func TestListProjects(t *testing.T) {
 			projects, err := c.ListProjects(ctx, &gerritpb.ListProjectsRequest{
 				Refs: []string{"refs/heads/main"},
 			})
-			So(err, ShouldBeNil)
-			So(actualURL.Path, ShouldEqual, "/projects/")
-			So(actualURL.Query().Get("b"), ShouldEqual, "refs/heads/main")
-			So(projects, ShouldResemble, &gerritpb.ListProjectsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualURL.Path, should.Equal("/projects/"))
+			assert.Loosely(t, actualURL.Query().Get("b"), should.Equal("refs/heads/main"))
+			assert.Loosely(t, projects, should.Resemble(&gerritpb.ListProjectsResponse{
 				Projects: map[string]*gerritpb.ProjectInfo{
 					"android_apks": {
 						Name:  "android_apks",
@@ -1651,10 +1651,10 @@ func TestListProjects(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("...works for multiple refs", func() {
+		t.Run("...works for multiple refs", func(t *ftt.Test) {
 			var actualURL *url.URL
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				actualURL = r.URL
@@ -1684,10 +1684,10 @@ func TestListProjects(t *testing.T) {
 			projects, err := c.ListProjects(ctx, &gerritpb.ListProjectsRequest{
 				Refs: []string{"refs/heads/main", "refs/heads/master"},
 			})
-			So(err, ShouldBeNil)
-			So(actualURL.Path, ShouldEqual, "/projects/")
-			So(actualURL.Query()["b"], ShouldResemble, []string{"refs/heads/main", "refs/heads/master"})
-			So(projects, ShouldResemble, &gerritpb.ListProjectsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualURL.Path, should.Equal("/projects/"))
+			assert.Loosely(t, actualURL.Query()["b"], should.Resemble([]string{"refs/heads/main", "refs/heads/master"}))
+			assert.Loosely(t, projects, should.Resemble(&gerritpb.ListProjectsResponse{
 				Projects: map[string]*gerritpb.ProjectInfo{
 					"android_apks": {
 						Name:  "android_apks",
@@ -1704,7 +1704,7 @@ func TestListProjects(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -1713,7 +1713,7 @@ func TestGetBranchInfo(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Get Branch Info", t, func() {
+	ftt.Run("Get Branch Info", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -1739,13 +1739,13 @@ func TestGetBranchInfo(t *testing.T) {
 			Project: "infra/experimental",
 			Ref:     "refs/heads/main",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(actualURL.Path, ShouldEqual, "/projects/infra/experimental/branches/refs/heads/main")
-		So(bi, ShouldResemble, &gerritpb.RefInfo{
+		assert.Loosely(t, actualURL.Path, should.Equal("/projects/infra/experimental/branches/refs/heads/main"))
+		assert.Loosely(t, bi, should.Resemble(&gerritpb.RefInfo{
 			Ref:      "refs/heads/main",
 			Revision: "10e5c33f63a843440cbe6c9c6cbc1bf513c598eb",
-		})
+		}))
 	})
 }
 
@@ -1753,7 +1753,7 @@ func TestGetPureRevert(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Get Pure Revert", t, func() {
+	ftt.Run("Get Pure Revert", t, func(t *ftt.Test) {
 		var actualURL *url.URL
 		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 			actualURL = r.URL
@@ -1771,11 +1771,11 @@ func TestGetPureRevert(t *testing.T) {
 			Project: "someproject",
 		}
 		res, err := c.GetPureRevert(ctx, req)
-		So(err, ShouldBeNil)
-		So(actualURL.Path, ShouldEqual, "/changes/someproject~42/pure_revert")
-		So(res, ShouldResemble, &gerritpb.PureRevertInfo{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actualURL.Path, should.Equal("/changes/someproject~42/pure_revert"))
+		assert.Loosely(t, res, should.Resemble(&gerritpb.PureRevertInfo{
 			IsPureRevert: false,
-		})
+		}))
 	})
 }
 
@@ -1783,11 +1783,11 @@ func TestGerritError(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Gerrit returns", t, func() {
+	ftt.Run("Gerrit returns", t, func(t *ftt.Test) {
 		// All APIs share the same error handling code path, so use SubmitChange as
 		// an example.
 		req := &gerritpb.SubmitChangeRequest{Number: 1}
-		Convey("HTTP 400", func() {
+		t.Run("HTTP 400", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(400)
 				w.Header().Set("Content-Type", "text/plain")
@@ -1795,25 +1795,25 @@ func TestGerritError(t *testing.T) {
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.InvalidArgument)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 		})
-		Convey("HTTP 403", func() {
+		t.Run("HTTP 403", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(403)
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.PermissionDenied))
 		})
-		Convey("HTTP 404 ", func() {
+		t.Run("HTTP 404 ", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(404)
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
 		})
-		Convey("HTTP 409 ", func() {
+		t.Run("HTTP 409 ", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(409)
 				w.Header().Set("Content-Type", "text/plain")
@@ -1821,10 +1821,10 @@ func TestGerritError(t *testing.T) {
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "block by Verified")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("block by Verified"))
 		})
-		Convey("HTTP 412 ", func() {
+		t.Run("HTTP 412 ", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(412)
 				w.Header().Set("Content-Type", "text/plain")
@@ -1832,24 +1832,24 @@ func TestGerritError(t *testing.T) {
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
-			So(err, ShouldErrLike, "precondition failed")
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike("precondition failed"))
 		})
-		Convey("HTTP 429 ", func() {
+		t.Run("HTTP 429 ", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(429)
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.ResourceExhausted)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.ResourceExhausted))
 		})
-		Convey("HTTP 503 ", func() {
+		t.Run("HTTP 503 ", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(503)
 			})
 			defer srv.Close()
 			_, err := c.SubmitChange(ctx, req)
-			So(grpcutil.Code(err), ShouldEqual, codes.Unavailable)
+			assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.Unavailable))
 		})
 	})
 }
@@ -2023,12 +2023,12 @@ func TestGetMetaDiff(t *testing.T) {
 	  }
 	}`
 
-	Convey("GetMetaDiff", t, func() {
-		Convey("Validates args", func() {
+	ftt.Run("GetMetaDiff", t, func(t *ftt.Test) {
+		t.Run("Validates args", func(t *ftt.Test) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 			_, err := c.GetMetaDiff(ctx, &gerritpb.GetMetaDiffRequest{})
-			So(err, ShouldErrLike, "number must be positive")
+			assert.Loosely(t, err, should.ErrLike("number must be positive"))
 		})
 
 		var actualRequest *http.Request
@@ -2041,22 +2041,22 @@ func TestGetMetaDiff(t *testing.T) {
 		defer srv.Close()
 		req := &gerritpb.GetMetaDiffRequest{Number: 1}
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			resp, err := c.GetMetaDiff(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp.OldChangeInfo.Number, ShouldEqual, 1)
-			So(resp.NewChangeInfo.Number, ShouldEqual, 1)
-			So(resp.Added.MetaRevId, ShouldEqual, resp.NewChangeInfo.MetaRevId)
-			So(resp.Removed.MetaRevId, ShouldEqual, resp.OldChangeInfo.MetaRevId)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.OldChangeInfo.Number, should.Equal(1))
+			assert.Loosely(t, resp.NewChangeInfo.Number, should.Equal(1))
+			assert.Loosely(t, resp.Added.MetaRevId, should.Equal(resp.NewChangeInfo.MetaRevId))
+			assert.Loosely(t, resp.Removed.MetaRevId, should.Equal(resp.OldChangeInfo.MetaRevId))
 		})
 
-		Convey("Passes old and meta", func() {
+		t.Run("Passes old and meta", func(t *ftt.Test) {
 			req.Old = "mehmeh"
 			req.Meta = "booboo"
 			_, err := c.GetMetaDiff(ctx, req)
-			So(err, ShouldBeNil)
-			So(actualRequest.URL.Query()["old"], ShouldResemble, []string{"mehmeh"})
-			So(actualRequest.URL.Query()["meta"], ShouldResemble, []string{"booboo"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actualRequest.URL.Query()["old"], should.Resemble([]string{"mehmeh"}))
+			assert.Loosely(t, actualRequest.URL.Query()["meta"], should.Resemble([]string{"booboo"}))
 		})
 	})
 

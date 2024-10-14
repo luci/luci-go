@@ -17,70 +17,72 @@ package nestedflagset
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestToken(t *testing.T) {
-	Convey(`An empty token`, t, func() {
+	ftt.Run(`An empty token`, t, func(t *ftt.Test) {
 		tok := token("")
 
-		Convey(`When split`, func() {
+		t.Run(`When split`, func(t *ftt.Test) {
 			name, value := tok.split()
 
-			Convey(`The "name" field should be zero-valued`, func() {
-				So(name, ShouldEqual, "")
+			t.Run(`The "name" field should be zero-valued`, func(t *ftt.Test) {
+				assert.Loosely(t, name, should.BeEmpty)
 			})
 
-			Convey(`The "value" field should be zero-valued`, func() {
-				So(value, ShouldEqual, "")
+			t.Run(`The "value" field should be zero-valued`, func(t *ftt.Test) {
+				assert.Loosely(t, value, should.BeEmpty)
 			})
 		})
 	})
 
-	Convey(`A token whose value is "name"`, t, func() {
+	ftt.Run(`A token whose value is "name"`, t, func(t *ftt.Test) {
 		tok := token("name")
 
-		Convey(`When split`, func() {
+		t.Run(`When split`, func(t *ftt.Test) {
 			name, value := tok.split()
 
-			Convey(`The "name" field should be "name"`, func() {
-				So(name, ShouldEqual, "name")
+			t.Run(`The "name" field should be "name"`, func(t *ftt.Test) {
+				assert.Loosely(t, name, should.Equal("name"))
 			})
 
-			Convey(`The "value" field should be zero-valued`, func() {
-				So(value, ShouldEqual, "")
+			t.Run(`The "value" field should be zero-valued`, func(t *ftt.Test) {
+				assert.Loosely(t, value, should.BeEmpty)
 			})
 		})
 	})
 
-	Convey(`A token whose value is "name=value"`, t, func() {
+	ftt.Run(`A token whose value is "name=value"`, t, func(t *ftt.Test) {
 		tok := token("name=value")
 
-		Convey(`When split`, func() {
+		t.Run(`When split`, func(t *ftt.Test) {
 			name, value := tok.split()
 
-			Convey(`The "name" field should be "name"`, func() {
-				So(name, ShouldEqual, "name")
+			t.Run(`The "name" field should be "name"`, func(t *ftt.Test) {
+				assert.Loosely(t, name, should.Equal("name"))
 			})
 
-			Convey(`The "value" field should be "value"`, func() {
-				So(value, ShouldEqual, "value")
+			t.Run(`The "value" field should be "value"`, func(t *ftt.Test) {
+				assert.Loosely(t, value, should.Equal("value"))
 			})
 		})
 	})
 
-	Convey(`A token whose value is "name=value=1=2=3"`, t, func() {
+	ftt.Run(`A token whose value is "name=value=1=2=3"`, t, func(t *ftt.Test) {
 		tok := token("name=value=1=2=3")
 
-		Convey(`When split`, func() {
+		t.Run(`When split`, func(t *ftt.Test) {
 			name, value := tok.split()
 
-			Convey(`The "name" field should be "name"`, func() {
-				So(name, ShouldEqual, "name")
+			t.Run(`The "name" field should be "name"`, func(t *ftt.Test) {
+				assert.Loosely(t, name, should.Equal("name"))
 			})
 
-			Convey(`The "value" field should "value=1=2=3"`, func() {
-				So(value, ShouldEqual, "value=1=2=3")
+			t.Run(`The "value" field should "value=1=2=3"`, func(t *ftt.Test) {
+				assert.Loosely(t, value, should.Equal("value=1=2=3"))
 			})
 		})
 	})

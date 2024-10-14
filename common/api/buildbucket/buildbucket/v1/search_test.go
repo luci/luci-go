@@ -21,13 +21,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSearch(t *testing.T) {
 	t.Parallel()
 
-	Convey("Search", t, func(c C) {
+	ftt.Run("Search", t, func(c *ftt.Test) {
 		ctx := context.Background()
 
 		// Mock buildbucket server.
@@ -65,7 +67,7 @@ func TestSearch(t *testing.T) {
 		var prevCursor string
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requests = append(requests, *r)
-			c.So(r.URL.Query().Get("start_cursor"), ShouldEqual, prevCursor)
+			assert.Loosely(c, r.URL.Query().Get("start_cursor"), should.Equal(prevCursor))
 			res := &responses[0]
 			if res.transientErrors > 0 {
 				res.transientErrors--
@@ -74,25 +76,25 @@ func TestSearch(t *testing.T) {
 			}
 			responses = responses[1:]
 			err := json.NewEncoder(w).Encode(res.body)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			prevCursor = res.body.NextCursor
 		}))
 		defer server.Close()
 
 		client, err := New(&http.Client{})
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 		client.BasePath = server.URL
 
-		Convey("Run until finished", func() {
+		c.Run("Run until finished", func(c *ftt.Test) {
 			builds := make(chan *LegacyApiCommonBuildMessage, 5)
 			cursor, err := client.Search().Run(builds, 0, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for id := 1; id <= 5; id++ {
-				So((<-builds).Id, ShouldEqual, id)
+				assert.Loosely(c, (<-builds).Id, should.Equal(id))
 			}
-			So(cursor, ShouldEqual, "")
+			assert.Loosely(c, cursor, should.BeEmpty)
 		})
-		Convey("Run until ctx is cancelled", func() {
+		c.Run("Run until ctx is cancelled", func(c *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			builds := make(chan *LegacyApiCommonBuildMessage)
 			go func() {
@@ -102,40 +104,40 @@ func TestSearch(t *testing.T) {
 				cancel()
 			}()
 			_, err := client.Search().Context(ctx).Run(builds, 0, nil)
-			So(err, ShouldEqual, context.Canceled)
+			assert.Loosely(c, err, should.Equal(context.Canceled))
 		})
-		Convey("Run with a partial response", func() {
+		c.Run("Run with a partial response", func(c *ftt.Test) {
 			builds := make(chan *LegacyApiCommonBuildMessage, 5)
 			cursor, err := client.Search().Fields("builds(id)").Run(builds, 0, nil)
-			So(err, ShouldBeNil)
-			So(len(requests), ShouldBeGreaterThan, 0)
-			So(requests[0].FormValue("fields"), ShouldEqual, "builds(id),next_cursor")
-			So(cursor, ShouldEqual, "")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, len(requests), should.BeGreaterThan(0))
+			assert.Loosely(c, requests[0].FormValue("fields"), should.Equal("builds(id),next_cursor"))
+			assert.Loosely(c, cursor, should.BeEmpty)
 		})
 
-		Convey("Fetch until finished", func() {
+		c.Run("Fetch until finished", func(c *ftt.Test) {
 			builds, cursor, err := client.Search().Fetch(0, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for i, b := range builds {
-				So(b.Id, ShouldEqual, i+1)
+				assert.Loosely(c, b.Id, should.Equal(i+1))
 			}
-			So(cursor, ShouldEqual, "")
+			assert.Loosely(c, cursor, should.BeEmpty)
 		})
-		Convey("Fetch until finished with transient errors", func() {
+		c.Run("Fetch until finished with transient errors", func(c *ftt.Test) {
 			responses[0].transientErrors = 2
 			builds, cursor, err := client.Search().Fetch(0, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for i, b := range builds {
-				So(b.Id, ShouldEqual, i+1)
+				assert.Loosely(c, b.Id, should.Equal(i+1))
 			}
-			So(cursor, ShouldEqual, "")
+			assert.Loosely(c, cursor, should.BeEmpty)
 		})
 
-		Convey("Fetch 3", func() {
+		c.Run("Fetch 3", func(c *ftt.Test) {
 			builds, cursor, err := client.Search().Fetch(3, nil)
-			So(err, ShouldBeNil)
-			So(builds, ShouldHaveLength, 3)
-			So(cursor, ShouldEqual, "id>4")
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, builds, should.HaveLength(3))
+			assert.Loosely(c, cursor, should.Equal("id>4"))
 		})
 	})
 }

@@ -17,42 +17,44 @@ package buildbucket
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAddress(t *testing.T) {
 	t.Parallel()
 
-	Convey("FormatBuildAddress", t, func(c C) {
-		Convey("Number", func() {
-			So(FormatBuildAddress(1, "luci.chromium.try", "linux-rel", 2), ShouldEqual, "luci.chromium.try/linux-rel/2")
+	ftt.Run("FormatBuildAddress", t, func(c *ftt.Test) {
+		c.Run("Number", func(c *ftt.Test) {
+			assert.Loosely(c, FormatBuildAddress(1, "luci.chromium.try", "linux-rel", 2), should.Equal("luci.chromium.try/linux-rel/2"))
 		})
-		Convey("ID", func() {
-			So(FormatBuildAddress(1, "luci.chromium.try", "linux-rel", 0), ShouldEqual, "1")
+		c.Run("ID", func(c *ftt.Test) {
+			assert.Loosely(c, FormatBuildAddress(1, "luci.chromium.try", "linux-rel", 0), should.Equal("1"))
 		})
 	})
-	Convey("ParseBuildAddress", t, func(c C) {
-		Convey("Number", func() {
+	ftt.Run("ParseBuildAddress", t, func(c *ftt.Test) {
+		c.Run("Number", func(c *ftt.Test) {
 			id, project, bucket, builder, number, err := ParseBuildAddress("luci.chromium.try/linux-rel/2")
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, 0)
-			So(project, ShouldEqual, "chromium")
-			So(bucket, ShouldEqual, "luci.chromium.try")
-			So(builder, ShouldEqual, "linux-rel")
-			So(number, ShouldEqual, 2)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, id, should.BeZero)
+			assert.Loosely(c, project, should.Equal("chromium"))
+			assert.Loosely(c, bucket, should.Equal("luci.chromium.try"))
+			assert.Loosely(c, builder, should.Equal("linux-rel"))
+			assert.Loosely(c, number, should.Equal(2))
 		})
-		Convey("ID", func() {
+		c.Run("ID", func(c *ftt.Test) {
 			id, project, bucket, builder, number, err := ParseBuildAddress("1")
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, 1)
-			So(project, ShouldEqual, "")
-			So(bucket, ShouldEqual, "")
-			So(builder, ShouldEqual, "")
-			So(number, ShouldEqual, 0)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, id, should.Equal(1))
+			assert.Loosely(c, project, should.BeEmpty)
+			assert.Loosely(c, bucket, should.BeEmpty)
+			assert.Loosely(c, builder, should.BeEmpty)
+			assert.Loosely(c, number, should.BeZero)
 		})
-		Convey("Unrecognized", func() {
+		c.Run("Unrecognized", func(c *ftt.Test) {
 			_, _, _, _, _, err := ParseBuildAddress("a/b")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(c, err, should.NotBeNil)
 		})
 	})
 }

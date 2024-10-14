@@ -22,7 +22,9 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // plainReader implements the io.Reader interface on top of a bytes.Buffer;
@@ -79,26 +81,26 @@ func btos(b ...[]byte) []string {
 func TestReader(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A frame reader with max size 1MB using a plain io.Reader`, t, func() {
+	ftt.Run(`A frame reader with max size 1MB using a plain io.Reader`, t, func(t *ftt.Test) {
 		maxSize := int64(1024 * 1024)
 		tr := plainReader{}
 		r := NewReader(&tr, maxSize)
 
-		Convey(`Will return io.EOF with an empty reader.`, func() {
+		t.Run(`Will return io.EOF with an empty reader.`, func(t *ftt.Test) {
 			_, err := r.ReadFrameAll()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`Can successfully read a frame.`, func() {
+		t.Run(`Can successfully read a frame.`, func(t *ftt.Test) {
 			data := []byte{0x13, 0x37, 0xd0, 0x65}
 			tr.loadFrames(data)
 
 			f, err := r.ReadFrameAll()
-			So(err, ShouldBeNil)
-			So(f, ShouldResemble, data)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, f, should.Resemble(data))
 		})
 
-		Convey(`Can successfully read two frames.`, func() {
+		t.Run(`Can successfully read two frames.`, func(t *ftt.Test) {
 			data := [][]byte{
 				{0x13, 0x37, 0xd0, 0x65},
 				{0xd0, 0x06, 0xea, 0x15, 0xf0, 0x0d},
@@ -106,55 +108,55 @@ func TestReader(t *testing.T) {
 			tr.loadFrames(data...)
 
 			c, fr, err := r.ReadFrame()
-			So(err, ShouldBeNil)
-			So(c, ShouldEqual, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c, should.Equal(4))
 
 			d, err := io.ReadAll(fr)
-			So(err, ShouldBeNil)
-			So(d, ShouldResemble, data[0])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(data[0]))
 
 			c, fr, err = r.ReadFrame()
-			So(err, ShouldBeNil)
-			So(c, ShouldEqual, 6)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c, should.Equal(6))
 
 			d, err = io.ReadAll(fr)
-			So(err, ShouldBeNil)
-			So(d, ShouldResemble, data[1])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(data[1]))
 		})
 
-		Convey(`When reading a frame, will return EOF if the frame is exceeded.`, func() {
+		t.Run(`When reading a frame, will return EOF if the frame is exceeded.`, func(t *ftt.Test) {
 			data := []byte{0x13, 0x37, 0xd0, 0x65}
 			tr.loadFrames(data)
 
 			count, fr, err := r.ReadFrame()
-			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, count, should.Equal(4))
 
 			buf := make([]byte, 5)
 			c, err := fr.Read(make([]byte, 5))
-			So(c, ShouldEqual, 4)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, c, should.Equal(4))
+			assert.Loosely(t, err, should.BeNil)
 
 			buf = buf[count:]
 			_, err = fr.Read(buf)
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`Will fail if the underlying frame exceeds the maximum size.`, func() {
+		t.Run(`Will fail if the underlying frame exceeds the maximum size.`, func(t *ftt.Test) {
 			var sizeBuf [binary.MaxVarintLen64]byte
 			tr.buf.Write(sizeBuf[:binary.PutUvarint(sizeBuf[:], uint64(maxSize+1))])
 
 			_, err := r.ReadFrameAll()
-			So(err, ShouldEqual, ErrFrameTooLarge)
+			assert.Loosely(t, err, should.Equal(ErrFrameTooLarge))
 		})
 
-		Convey(`Will fail if the frame contains an invalid size header.`, func() {
+		t.Run(`Will fail if the frame contains an invalid size header.`, func(t *ftt.Test) {
 			tr.buf.Write([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 			_, err := r.ReadFrameAll()
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`Can read conscutive frames, then io.EOF.`, func() {
+		t.Run(`Can read conscutive frames, then io.EOF.`, func(t *ftt.Test) {
 			data := [][]byte{}
 			for _, size := range []int{
 				0,
@@ -169,47 +171,47 @@ func TestReader(t *testing.T) {
 
 			for _, expected := range data {
 				f, err := r.ReadFrameAll()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				if len(expected) == 0 {
 					expected = nil
 				}
-				So(f, ShouldResemble, expected)
+				assert.Loosely(t, f, should.Resemble(expected))
 			}
 
 			_, err := r.ReadFrameAll()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 	})
 
-	Convey(`A frame reader with max size 1MB using an io.Reader+io.ByteReader`, t, func() {
+	ftt.Run(`A frame reader with max size 1MB using an io.Reader+io.ByteReader`, t, func(t *ftt.Test) {
 		tr := testByteReader{}
 		r := NewReader(&tr, 1024*1024)
 
-		Convey(`Will return io.EOF with an empty reader.`, func() {
+		t.Run(`Will return io.EOF with an empty reader.`, func(t *ftt.Test) {
 			_, err := r.ReadFrameAll()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`Will use io.ByteReader to read the frame header.`, func() {
+		t.Run(`Will use io.ByteReader to read the frame header.`, func(t *ftt.Test) {
 			data := []byte{0x13, 0x37, 0xd0, 0x65}
 			tr.loadFrames(data)
 
 			f, err := r.ReadFrameAll()
-			So(err, ShouldBeNil)
-			So(f, ShouldResemble, data)
-			So(tr.readBytes, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, f, should.Resemble(data))
+			assert.Loosely(t, tr.readBytes, should.Equal(1))
 		})
 
-		Convey(`Will fail if the underlying io.Reader returns an error.`, func() {
+		t.Run(`Will fail if the underlying io.Reader returns an error.`, func(t *ftt.Test) {
 			tr.loadFrames([]byte{})
 			tr.err = errors.New("test: test-induced error")
 			tr.readByteErr = tr.err
 			_, err := r.ReadFrameAll()
-			So(err, ShouldEqual, tr.err)
+			assert.Loosely(t, err, should.Equal(tr.err))
 		})
 
-		Convey(`Will fail if an error is returned while reading frame's data.`, func() {
+		t.Run(`Will fail if an error is returned while reading frame's data.`, func(t *ftt.Test) {
 			data := []byte{0x13, 0x37, 0xd0, 0x65}
 			tr.loadFrames(data)
 
@@ -218,7 +220,7 @@ func TestReader(t *testing.T) {
 			// return an error.
 			tr.err = errors.New("test: test-induced error")
 			data, err := r.ReadFrameAll()
-			So(err, ShouldEqual, tr.err)
+			assert.Loosely(t, err, should.Equal(tr.err))
 		})
 	})
 }
@@ -226,14 +228,14 @@ func TestReader(t *testing.T) {
 func TestSplit(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing Split`, t, func() {
+	ftt.Run(`Testing Split`, t, func(t *ftt.Test) {
 		for _, v := range [][]string{
 			{},
 			{""},
 			{"", "foo", ""},
 			{"foo", "bar", "baz"},
 		} {
-			Convey(fmt.Sprintf(`Can Split stream: %#v`, v), func() {
+			t.Run(fmt.Sprintf(`Can Split stream: %#v`, v), func(t *ftt.Test) {
 				// Write frames to "buf".
 				var buf bytes.Buffer
 				for _, s := range v {
@@ -245,20 +247,20 @@ func TestSplit(t *testing.T) {
 
 				// Confirm that Split works.
 				sp, err := Split(buf.Bytes())
-				So(err, ShouldBeNil)
-				So(btos(sp...), ShouldResemble, v)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, btos(sp...), should.Resemble(v))
 			})
 		}
 
-		Convey(`Will refuse to split a frame that is too large.`, func() {
+		t.Run(`Will refuse to split a frame that is too large.`, func(t *ftt.Test) {
 			_, err := Split([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00})
-			So(err, ShouldEqual, ErrFrameTooLarge)
+			assert.Loosely(t, err, should.Equal(ErrFrameTooLarge))
 		})
 
-		Convey(`Will fail to split if there aren't enough bytes.`, func() {
+		t.Run(`Will fail to split if there aren't enough bytes.`, func(t *ftt.Test) {
 			sp, err := Split([]byte{0x01, 0xAA, 0x02}) // 1-byte {0xAA}, 2-bytes ... EOF!
-			So(sp, ShouldResemble, [][]byte{{0xAA}})
-			So(err, ShouldEqual, ErrFrameTooLarge)
+			assert.Loosely(t, sp, should.Resemble([][]byte{{0xAA}}))
+			assert.Loosely(t, err, should.Equal(ErrFrameTooLarge))
 		})
 	})
 }

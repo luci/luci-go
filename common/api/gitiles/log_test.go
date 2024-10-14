@@ -21,15 +21,16 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/gitiles"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPagingLog(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("PagingLog", t, func() {
+	ftt.Run("PagingLog", t, func(t *ftt.Test) {
 		var reqs []http.Request
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			reqs = append(reqs, *r)
@@ -44,33 +45,33 @@ func TestPagingLog(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Page till no cursor", func() {
+		t.Run("Page till no cursor", func(t *ftt.Test) {
 			req := &gitiles.LogRequest{
 				Project:            "repo",
 				ExcludeAncestorsOf: "master",
 				Committish:         "8de6836858c99e48f3c58164ab717bda728e95dd",
 			}
 			commits, err := PagingLog(ctx, c, req, 10)
-			So(err, ShouldBeNil)
-			So(reqs, ShouldHaveLength, 2)
-			So(reqs[0].FormValue("s"), ShouldEqual, "")
-			So(reqs[1].FormValue("s"), ShouldEqual, "next_cursor_value")
-			So(len(commits), ShouldEqual, 2)
-			So(commits[0].Author.Name, ShouldEqual, "Author 1")
-			So(commits[1].Id, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reqs, should.HaveLength(2))
+			assert.Loosely(t, reqs[0].FormValue("s"), should.BeEmpty)
+			assert.Loosely(t, reqs[1].FormValue("s"), should.Equal("next_cursor_value"))
+			assert.Loosely(t, len(commits), should.Equal(2))
+			assert.Loosely(t, commits[0].Author.Name, should.Equal("Author 1"))
+			assert.Loosely(t, commits[1].Id, should.Equal("dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40"))
 		})
 
-		Convey("Page till limit", func() {
+		t.Run("Page till limit", func(t *ftt.Test) {
 			req := &gitiles.LogRequest{
 				Project:    "repo",
 				Committish: "master",
 			}
 			commits, err := PagingLog(ctx, c, req, 1)
-			So(err, ShouldBeNil)
-			So(reqs, ShouldHaveLength, 1)
-			So(reqs[0].FormValue("n"), ShouldEqual, "1")
-			So(len(commits), ShouldEqual, 1)
-			So(commits[0].Author.Name, ShouldEqual, "Author 1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reqs, should.HaveLength(1))
+			assert.Loosely(t, reqs[0].FormValue("n"), should.Equal("1"))
+			assert.Loosely(t, len(commits), should.Equal(1))
+			assert.Loosely(t, commits[0].Author.Name, should.Equal("Author 1"))
 		})
 	})
 }

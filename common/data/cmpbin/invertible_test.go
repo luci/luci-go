@@ -18,82 +18,84 @@ import (
 	"bytes"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestInvertible(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test InvertibleByteBuffer", t, func() {
+	ftt.Run("Test InvertibleByteBuffer", t, func(t *ftt.Test) {
 		inv := Invertible(&bytes.Buffer{})
 
-		Convey("normal writing", func() {
-			Convey("Write", func() {
+		t.Run("normal writing", func(t *ftt.Test) {
+			t.Run("Write", func(t *ftt.Test) {
 				n, err := inv.Write([]byte("hello"))
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, 5)
-				So(inv.String(), ShouldEqual, "hello")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(5))
+				assert.Loosely(t, inv.String(), should.Equal("hello"))
 			})
-			Convey("WriteString", func() {
+			t.Run("WriteString", func(t *ftt.Test) {
 				n, err := inv.WriteString("hello")
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, 5)
-				So(inv.String(), ShouldEqual, "hello")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(5))
+				assert.Loosely(t, inv.String(), should.Equal("hello"))
 			})
-			Convey("WriteByte", func() {
+			t.Run("WriteByte", func(t *ftt.Test) {
 				for i := byte('a'); i < 'f'; i++ {
 					err := inv.WriteByte(i)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
-				So(inv.String(), ShouldEqual, "abcde")
+				assert.Loosely(t, inv.String(), should.Equal("abcde"))
 
-				Convey("ReadByte", func() {
+				t.Run("ReadByte", func(t *ftt.Test) {
 					for i := 0; i < 5; i++ {
 						b, err := inv.ReadByte()
-						So(err, ShouldBeNil)
-						So(b, ShouldEqual, byte('a')+byte(i))
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, b, should.Equal(byte('a')+byte(i)))
 					}
 				})
 			})
 		})
-		Convey("inverted writing", func() {
+		t.Run("inverted writing", func(t *ftt.Test) {
 			inv.SetInvert(true)
-			Convey("Write", func() {
+			t.Run("Write", func(t *ftt.Test) {
 				n, err := inv.Write([]byte("hello"))
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, 5)
-				So(inv.String(), ShouldEqual, "\x97\x9a\x93\x93\x90")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(5))
+				assert.Loosely(t, inv.String(), should.Equal("\x97\x9a\x93\x93\x90"))
 			})
-			Convey("WriteString", func() {
+			t.Run("WriteString", func(t *ftt.Test) {
 				n, err := inv.WriteString("hello")
-				So(err, ShouldBeNil)
-				So(n, ShouldEqual, 5)
-				So(inv.String(), ShouldEqual, "\x97\x9a\x93\x93\x90")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, n, should.Equal(5))
+				assert.Loosely(t, inv.String(), should.Equal("\x97\x9a\x93\x93\x90"))
 			})
-			Convey("WriteByte", func() {
+			t.Run("WriteByte", func(t *ftt.Test) {
 				for i := byte('a'); i < 'f'; i++ {
 					err := inv.WriteByte(i)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
-				So(inv.String(), ShouldEqual, "\x9e\x9d\x9c\x9b\x9a")
+				assert.Loosely(t, inv.String(), should.Equal("\x9e\x9d\x9c\x9b\x9a"))
 
-				Convey("ReadByte", func() {
+				t.Run("ReadByte", func(t *ftt.Test) {
 					for i := 0; i < 5; i++ {
 						b, err := inv.ReadByte()
-						So(err, ShouldBeNil)
-						So(b, ShouldEqual, byte('a')+byte(i)) // inverted back to normal
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, b, should.Equal(byte('a')+byte(i))) // inverted back to normal
 					}
 				})
 			})
 		})
-		Convey("Toggleable", func() {
+		t.Run("Toggleable", func(t *ftt.Test) {
 			inv.SetInvert(true)
 			n, err := inv.Write([]byte("hello"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			inv.SetInvert(false)
 			n, err = inv.Write([]byte("hello"))
-			So(n, ShouldEqual, 5)
-			So(inv.String(), ShouldEqual, "\x97\x9a\x93\x93\x90hello")
+			assert.Loosely(t, n, should.Equal(5))
+			assert.Loosely(t, inv.String(), should.Equal("\x97\x9a\x93\x93\x90hello"))
 		})
 	})
 }

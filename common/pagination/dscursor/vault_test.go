@@ -20,11 +20,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/pagination"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type TestEntity struct {
@@ -35,7 +36,7 @@ type TestEntity struct {
 func TestPagination(t *testing.T) {
 	t.Parallel()
 
-	Convey("Vault", t, func() {
+	ftt.Run("Vault", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -43,55 +44,55 @@ func TestPagination(t *testing.T) {
 
 		for i := 1; i < 11; i++ {
 			err := datastore.Put(ctx, &TestEntity{ID: i, Value: fmt.Sprintf("%d", i)})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		vault := NewVault([]byte("additional"))
 
-		Convey("Cursor() with an empty page token", func() {
+		t.Run("Cursor() with an empty page token", func(t *ftt.Test) {
 			cursor, err := vault.Cursor(ctx, "")
-			So(err, ShouldBeNil)
-			So(cursor, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cursor, should.BeNil)
 		})
 
-		Convey("PageToken() with an empty cursor", func() {
+		t.Run("PageToken() with an empty cursor", func(t *ftt.Test) {
 			pageToken, err := vault.PageToken(ctx, nil)
-			So(err, ShouldBeNil)
-			So(pageToken, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pageToken, should.BeEmpty)
 		})
 
-		Convey("Cursor() with a page token created by PageToken()", func() {
+		t.Run("Cursor() with a page token created by PageToken()", func(t *ftt.Test) {
 			q := datastore.NewQuery("TestEntity")
 
 			var nextPageToken string
 			counter := 0
 			err := datastore.Run(ctx, q, func(e *TestEntity, cursorCB datastore.CursorCB) error {
 				counter++
-				So(e.ID, ShouldEqual, counter)
+				assert.Loosely(t, e.ID, should.Equal(counter))
 				if counter == 5 {
 					cursor, err := cursorCB()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					nextPageToken, err = vault.PageToken(ctx, cursor)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					return datastore.Stop
 				}
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(counter, ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, counter, should.Equal(5))
 
 			cursor, err := vault.Cursor(ctx, nextPageToken)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			q = datastore.NewQuery("TestEntity").Start(cursor)
 			err = datastore.Run(ctx, q, func(e *TestEntity) error {
 				counter++
-				So(e.ID, ShouldEqual, counter)
+				assert.Loosely(t, e.ID, should.Equal(counter))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Cursor() with a page token created by PageToken() from a different vault", func() {
+		t.Run("Cursor() with a page token created by PageToken() from a different vault", func(t *ftt.Test) {
 			anotherVault := NewVault([]byte("another additional"))
 			q := datastore.NewQuery("TestEntity")
 
@@ -99,22 +100,22 @@ func TestPagination(t *testing.T) {
 			counter := 0
 			err := datastore.Run(ctx, q, func(e *TestEntity, cursorCB datastore.CursorCB) error {
 				counter++
-				So(e.ID, ShouldEqual, counter)
+				assert.Loosely(t, e.ID, should.Equal(counter))
 				if counter == 5 {
 					cursor, err := cursorCB()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					nextPageToken, err = anotherVault.PageToken(ctx, cursor)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					return datastore.Stop
 				}
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(counter, ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, counter, should.Equal(5))
 
 			cursor, err := vault.Cursor(ctx, nextPageToken)
-			So(err, ShouldEqual, pagination.ErrInvalidPageToken)
-			So(cursor, ShouldBeNil)
+			assert.Loosely(t, err, should.Equal(pagination.ErrInvalidPageToken))
+			assert.Loosely(t, cursor, should.BeNil)
 		})
 	})
 }

@@ -19,7 +19,9 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type notAByteReader struct {
@@ -46,49 +48,49 @@ func (r *testByteReader) ReadByte() (byte, error) {
 }
 
 func TestCountingReader(t *testing.T) {
-	Convey(`Given a CountingReader backed by a 32-byte not-ByteReader Reader.`, t, func() {
+	ftt.Run(`Given a CountingReader backed by a 32-byte not-ByteReader Reader.`, t, func(t *ftt.Test) {
 		buf := bytes.NewBuffer(bytes.Repeat([]byte{0x55}, 32))
 		tr := &notAByteReader{buf}
 		cr := CountingReader{Reader: tr}
 
-		Convey(`When reading 10 bytes of data, registers a count of 10.`, func() {
+		t.Run(`When reading 10 bytes of data, registers a count of 10.`, func(t *ftt.Test) {
 			amount, err := cr.Read(make([]byte, 10))
-			So(err, ShouldBeNil)
-			So(amount, ShouldEqual, 10)
-			So(cr.Count, ShouldEqual, 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, amount, should.Equal(10))
+			assert.Loosely(t, cr.Count, should.Equal(10))
 		})
 
-		Convey(`When using 32 sequential ReadByte, registers a count of 32.`, func() {
+		t.Run(`When using 32 sequential ReadByte, registers a count of 32.`, func(t *ftt.Test) {
 			for i := 0; i < 32; i++ {
 				b, err := cr.ReadByte()
-				So(err, ShouldBeNil)
-				So(b, ShouldEqual, 0x55)
-				So(cr.Count, ShouldEqual, i+1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, b, should.Equal(0x55))
+				assert.Loosely(t, cr.Count, should.Equal(i+1))
 			}
 
 			_, err := cr.ReadByte()
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`ReadByte should return EOF if no more data.`, func() {
+		t.Run(`ReadByte should return EOF if no more data.`, func(t *ftt.Test) {
 			buf.Reset()
 
 			b, err := cr.ReadByte()
-			So(err, ShouldEqual, io.EOF)
-			So(b, ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(io.EOF))
+			assert.Loosely(t, b, should.BeZero)
 		})
 	})
 
-	Convey(`Given a CountingReader backed by a testByteReader.`, t, func() {
+	ftt.Run(`Given a CountingReader backed by a testByteReader.`, t, func(t *ftt.Test) {
 		tr := testByteReader{ByteReader: bytes.NewBuffer([]byte{0x55})}
 		cr := CountingReader{Reader: &tr}
 
-		Convey(`ReadByte should directly call the backing reader's ReadByte.`, func() {
+		t.Run(`ReadByte should directly call the backing reader's ReadByte.`, func(t *ftt.Test) {
 			b, err := cr.ReadByte()
-			So(err, ShouldBeNil)
-			So(b, ShouldEqual, 0x55)
-			So(cr.Count, ShouldEqual, 1)
-			So(tr.called, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, b, should.Equal(0x55))
+			assert.Loosely(t, cr.Count, should.Equal(1))
+			assert.Loosely(t, tr.called, should.BeTrue)
 		})
 	})
 }

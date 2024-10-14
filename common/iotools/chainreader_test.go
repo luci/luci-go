@@ -20,7 +20,9 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type infiniteReader struct{}
@@ -41,106 +43,106 @@ func (e *errorReader) Read([]byte) (int, error) {
 }
 
 func TestChainReader(t *testing.T) {
-	Convey(`An empty ChainReader`, t, func() {
+	ftt.Run(`An empty ChainReader`, t, func(t *ftt.Test) {
 		cr := ChainReader{}
 
-		Convey(`Should successfully read into a zero-byte array.`, func() {
+		t.Run(`Should successfully read into a zero-byte array.`, func(t *ftt.Test) {
 			d := []byte{}
 			count, err := cr.Read(d)
-			So(count, ShouldEqual, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, count, should.BeZero)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Should fail with io.EOF during ReadByte.`, func() {
+		t.Run(`Should fail with io.EOF during ReadByte.`, func(t *ftt.Test) {
 			b, err := cr.ReadByte()
-			So(b, ShouldEqual, 0)
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, b, should.BeZero)
+			assert.Loosely(t, err, should.Equal(io.EOF))
 		})
 
-		Convey(`Should have zero remaining bytes.`, func() {
-			So(cr.Remaining(), ShouldEqual, 0)
+		t.Run(`Should have zero remaining bytes.`, func(t *ftt.Test) {
+			assert.Loosely(t, cr.Remaining(), should.BeZero)
 		})
 	})
 
-	Convey(`A ChainReader with {{0x00, 0x01}, nil, nil, {0x02}, nil}`, t, func() {
+	ftt.Run(`A ChainReader with {{0x00, 0x01}, nil, nil, {0x02}, nil}`, t, func(t *ftt.Test) {
 		cr := ChainReader{bytes.NewReader([]byte{0x00, 0x01}), nil, nil, bytes.NewReader([]byte{0x02}), nil}
 
-		Convey(`The ChainReader should have a Remaining count of 3.`, func() {
-			So(cr.Remaining(), ShouldEqual, 3)
+		t.Run(`The ChainReader should have a Remaining count of 3.`, func(t *ftt.Test) {
+			assert.Loosely(t, cr.Remaining(), should.Equal(3))
 		})
 
-		Convey(`The ChainReader should read: []byte{0x00, 0x01, 0x02} for buffer size 3.`, func() {
+		t.Run(`The ChainReader should read: []byte{0x00, 0x01, 0x02} for buffer size 3.`, func(t *ftt.Test) {
 			data := make([]byte, 3)
 			count, err := cr.Read(data)
-			So(count, ShouldEqual, 3)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, []byte{0x00, 0x01, 0x02})
+			assert.Loosely(t, count, should.Equal(3))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Resemble([]byte{0x00, 0x01, 0x02}))
 
-			So(cr.Remaining(), ShouldEqual, 0)
+			assert.Loosely(t, cr.Remaining(), should.BeZero)
 		})
 
-		Convey(`The ChainReader should read: []byte{0x00, 0x01} for buffer size 2.`, func() {
+		t.Run(`The ChainReader should read: []byte{0x00, 0x01} for buffer size 2.`, func(t *ftt.Test) {
 			data := make([]byte, 2)
 			count, err := cr.Read(data)
-			So(count, ShouldEqual, 2)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, []byte{0x00, 0x01})
+			assert.Loosely(t, count, should.Equal(2))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Resemble([]byte{0x00, 0x01}))
 
-			So(cr.Remaining(), ShouldEqual, 1)
+			assert.Loosely(t, cr.Remaining(), should.Equal(1))
 		})
 
-		Convey(`The ChainReader should read bytes: 0x00, 0x01, 0x02, EOF.`, func() {
+		t.Run(`The ChainReader should read bytes: 0x00, 0x01, 0x02, EOF.`, func(t *ftt.Test) {
 			b, err := cr.ReadByte()
-			So(b, ShouldEqual, 0x00)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x00))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = cr.ReadByte()
-			So(b, ShouldEqual, 0x01)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x01))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = cr.ReadByte()
-			So(b, ShouldEqual, 0x02)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, b, should.Equal(0x02))
+			assert.Loosely(t, err, should.BeNil)
 
 			b, err = cr.ReadByte()
-			So(b, ShouldEqual, 0x00)
-			So(err, ShouldEqual, io.EOF)
+			assert.Loosely(t, b, should.Equal(0x00))
+			assert.Loosely(t, err, should.Equal(io.EOF))
 
-			So(cr.Remaining(), ShouldEqual, 0)
+			assert.Loosely(t, cr.Remaining(), should.BeZero)
 		})
 	})
 
-	Convey(`A ChainReader with an infinite io.Reader`, t, func() {
+	ftt.Run(`A ChainReader with an infinite io.Reader`, t, func(t *ftt.Test) {
 		cr := ChainReader{&infiniteReader{}}
 
-		Convey(`Should return an error on RemainingErr()`, func() {
+		t.Run(`Should return an error on RemainingErr()`, func(t *ftt.Test) {
 			_, err := cr.RemainingErr()
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`Should panic on Remaining()`, func() {
-			So(func() { cr.Remaining() }, ShouldPanic)
+		t.Run(`Should panic on Remaining()`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { cr.Remaining() }, should.Panic)
 		})
 
-		Convey(`Should fill a 1024-byte buffer`, func() {
+		t.Run(`Should fill a 1024-byte buffer`, func(t *ftt.Test) {
 			data := make([]byte, 1024)
 			count, err := cr.Read(data)
-			So(count, ShouldEqual, 1024)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, bytes.Repeat([]byte{0x55}, 1024))
+			assert.Loosely(t, count, should.Equal(1024))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.Resemble(bytes.Repeat([]byte{0x55}, 1024)))
 		})
 	})
 
-	Convey(`A ChainReader with {0x00, 0x01} and an error-returning io.Reader`, t, func() {
+	ftt.Run(`A ChainReader with {0x00, 0x01} and an error-returning io.Reader`, t, func(t *ftt.Test) {
 		e := errors.New("TEST ERROR")
 		cr := ChainReader{bytes.NewReader([]byte{0x00, 0x01}), &errorReader{e}}
 
-		Convey(`Should fill a 3-byte buffer with the first two bytes and return an error.`, func() {
+		t.Run(`Should fill a 3-byte buffer with the first two bytes and return an error.`, func(t *ftt.Test) {
 			data := make([]byte, 3)
 			count, err := cr.Read(data)
-			So(count, ShouldEqual, 2)
-			So(err, ShouldEqual, e)
-			So(data[:2], ShouldResemble, []byte{0x00, 0x01})
+			assert.Loosely(t, count, should.Equal(2))
+			assert.Loosely(t, err, should.Equal(e))
+			assert.Loosely(t, data[:2], should.Resemble([]byte{0x00, 0x01}))
 		})
 	})
 }

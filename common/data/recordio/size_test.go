@@ -20,15 +20,17 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFrameHeaderSize(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing FrameHeaderSize`, t, func() {
+	ftt.Run(`Testing FrameHeaderSize`, t, func(t *ftt.Test) {
 
-		Convey(`Matches actual written frame size`, func() {
+		t.Run(`Matches actual written frame size`, func(t *ftt.Test) {
 			prev := -1
 			for i := 0; i < 3; i++ {
 				base := 1 << uint64(7*i)
@@ -40,7 +42,7 @@ func TestFrameHeaderSize(t *testing.T) {
 					}
 					prev = base
 
-					Convey(fmt.Sprintf(`Frame size %d.`, base), func() {
+					t.Run(fmt.Sprintf(`Frame size %d.`, base), func(t *ftt.Test) {
 						data := bytes.Repeat([]byte{0x55}, int(base))
 
 						amt, err := WriteFrame(io.Discard, data)
@@ -48,13 +50,13 @@ func TestFrameHeaderSize(t *testing.T) {
 							panic(err)
 						}
 
-						So(amt-len(data), ShouldEqual, FrameHeaderSize(int64(len(data))))
+						assert.Loosely(t, amt-len(data), should.Equal(FrameHeaderSize(int64(len(data)))))
 					})
 				}
 			}
 		})
 
-		Convey(`Matches written frame header size (no alloc)`, func() {
+		t.Run(`Matches written frame header size (no alloc)`, func(t *ftt.Test) {
 			prev, first := int64(0), true
 			for i := 0; i < 9; i++ {
 				for _, delta := range []int64{-1, 0, 1} {
@@ -65,13 +67,13 @@ func TestFrameHeaderSize(t *testing.T) {
 					}
 					prev, first = base, false
 
-					Convey(fmt.Sprintf(`Frame size %d.`, base), func() {
+					t.Run(fmt.Sprintf(`Frame size %d.`, base), func(t *ftt.Test) {
 						amt, err := writeFrameHeader(io.Discard, uint64(base))
 						if err != nil {
 							panic(err)
 						}
 
-						So(amt, ShouldEqual, FrameHeaderSize(int64(base)))
+						assert.Loosely(t, amt, should.Equal(FrameHeaderSize(int64(base))))
 					})
 				}
 			}

@@ -17,65 +17,67 @@ package cmpbin
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestBinaryTools(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Join", t, func() {
-		Convey("returns bytes with nil separator", func() {
+	ftt.Run("Test Join", t, func(t *ftt.Test) {
+		t.Run("returns bytes with nil separator", func(t *ftt.Test) {
 			join := ConcatBytes([]byte("hello"), []byte("world"))
-			So(join, ShouldResemble, []byte("helloworld"))
+			assert.Loosely(t, join, should.Resemble([]byte("helloworld")))
 		})
 	})
 
-	Convey("Test Invert", t, func() {
-		Convey("returns nil for nil input", func() {
+	ftt.Run("Test Invert", t, func(t *ftt.Test) {
+		t.Run("returns nil for nil input", func(t *ftt.Test) {
 			inv := InvertBytes(nil)
-			So(inv, ShouldBeNil)
+			assert.Loosely(t, inv, should.BeNil)
 		})
 
-		Convey("returns nil for empty input", func() {
+		t.Run("returns nil for empty input", func(t *ftt.Test) {
 			inv := InvertBytes([]byte{})
-			So(inv, ShouldBeNil)
+			assert.Loosely(t, inv, should.BeNil)
 		})
 
-		Convey("returns byte slice of same length as input", func() {
+		t.Run("returns byte slice of same length as input", func(t *ftt.Test) {
 			input := []byte("こんにちは, world")
 			inv := InvertBytes(input)
-			So(len(input), ShouldEqual, len(inv))
+			assert.Loosely(t, len(input), should.Equal(len(inv)))
 		})
 
-		Convey("returns byte slice with each byte inverted", func() {
+		t.Run("returns byte slice with each byte inverted", func(t *ftt.Test) {
 			inv := InvertBytes([]byte("foo"))
-			So(inv, ShouldResemble, []byte{153, 144, 144})
+			assert.Loosely(t, inv, should.Resemble([]byte{153, 144, 144}))
 		})
 	})
 
-	Convey("Test Increment", t, func() {
-		Convey("returns empty slice and overflow true when input is nil", func() {
+	ftt.Run("Test Increment", t, func(t *ftt.Test) {
+		t.Run("returns empty slice and overflow true when input is nil", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes(nil)
-			So(incr, ShouldBeNil)
-			So(overflow, ShouldBeTrue)
+			assert.Loosely(t, incr, should.BeNil)
+			assert.Loosely(t, overflow, should.BeTrue)
 		})
 
-		Convey("returns empty slice and overflow true when input is empty", func() {
+		t.Run("returns empty slice and overflow true when input is empty", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes([]byte{})
-			So(incr, ShouldBeNil)
-			So(overflow, ShouldBeTrue)
+			assert.Loosely(t, incr, should.BeNil)
+			assert.Loosely(t, overflow, should.BeTrue)
 		})
 
-		Convey("handles overflow", func() {
+		t.Run("handles overflow", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes([]byte{0xFF, 0xFF})
-			So(incr, ShouldResemble, []byte{0, 0})
-			So(overflow, ShouldBeTrue)
+			assert.Loosely(t, incr, should.Resemble([]byte{0, 0}))
+			assert.Loosely(t, overflow, should.BeTrue)
 		})
 
-		Convey("increments with overflow false when there is no overflow", func() {
+		t.Run("increments with overflow false when there is no overflow", func(t *ftt.Test) {
 			incr, overflow := IncrementBytes([]byte{0xCA, 0xFF, 0xFF})
-			So(incr, ShouldResemble, []byte{0xCB, 0, 0})
-			So(overflow, ShouldBeFalse)
+			assert.Loosely(t, incr, should.Resemble([]byte{0xCB, 0, 0}))
+			assert.Loosely(t, overflow, should.BeFalse)
 		})
 	})
 }

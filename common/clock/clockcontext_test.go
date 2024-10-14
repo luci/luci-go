@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // manualClock is a partial Clock implementation that allows us to release
@@ -100,24 +102,24 @@ func wait(ctx context.Context) error {
 func TestClockContext(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A manual testing clock`, t, func() {
+	ftt.Run(`A manual testing clock`, t, func(t *ftt.Test) {
 		mc := manualClock{
 			now:           time.Date(2016, 1, 1, 0, 0, 0, 0, time.Local),
 			testFinishedC: make(chan struct{}),
 		}
 		defer close(mc.testFinishedC)
 
-		Convey(`A context with a deadline wrapping a cancellable parent`, func() {
-			Convey(`Successfully reports its deadline.`, func() {
+		t.Run(`A context with a deadline wrapping a cancellable parent`, func(t *ftt.Test) {
+			t.Run(`Successfully reports its deadline.`, func(t *ftt.Test) {
 				ctx, cancel := WithTimeout(Set(context.Background(), &mc), 10*time.Millisecond)
 				defer cancel()
 
 				deadline, ok := ctx.Deadline()
-				So(ok, ShouldBeTrue)
-				So(deadline.After(mc.now), ShouldBeTrue)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, deadline.After(mc.now), should.BeTrue)
 			})
 
-			Convey(`Will successfully time out.`, func() {
+			t.Run(`Will successfully time out.`, func(t *ftt.Test) {
 				mc.timeoutCallback = func(time.Duration) bool {
 					return true
 				}
@@ -126,51 +128,51 @@ func TestClockContext(t *testing.T) {
 				defer cancel()
 				ctx, cancel := WithTimeout(cctx, 10*time.Millisecond)
 				defer cancel()
-				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
+				assert.Loosely(t, wait(ctx).Error(), should.Equal(context.DeadlineExceeded.Error()))
 			})
 
-			Convey(`Will successfully cancel with its cancel func.`, func() {
+			t.Run(`Will successfully cancel with its cancel func.`, func(t *ftt.Test) {
 				cctx, cancel := context.WithCancel(Set(context.Background(), &mc))
 				defer cancel()
 				ctx, cf := WithTimeout(cctx, 10*time.Millisecond)
 				go cf()
-				So(wait(ctx), ShouldEqual, context.Canceled)
+				assert.Loosely(t, wait(ctx), should.Equal(context.Canceled))
 			})
 
-			Convey(`Will successfully cancel if the parent is canceled.`, func() {
+			t.Run(`Will successfully cancel if the parent is canceled.`, func(t *ftt.Test) {
 				cctx, pcf := context.WithCancel(Set(context.Background(), &mc))
 				ctx, cancel := WithTimeout(cctx, 10*time.Millisecond)
 				defer cancel()
 				go pcf()
-				So(wait(ctx), ShouldEqual, context.Canceled)
+				assert.Loosely(t, wait(ctx), should.Equal(context.Canceled))
 			})
 		})
 
-		Convey(`A context with a deadline wrapping a parent with a shorter deadline`, func() {
+		t.Run(`A context with a deadline wrapping a parent with a shorter deadline`, func(t *ftt.Test) {
 			cctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 			defer cancel()
 			ctx, cf := WithTimeout(cctx, 1*time.Hour)
 			defer cf()
 
-			Convey(`Will successfully time out.`, func() {
+			t.Run(`Will successfully time out.`, func(t *ftt.Test) {
 				mc.timeoutCallback = func(d time.Duration) bool {
 					return d == 10*time.Millisecond
 				}
 
-				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
+				assert.Loosely(t, wait(ctx).Error(), should.Equal(context.DeadlineExceeded.Error()))
 			})
 
-			Convey(`Will successfully cancel with its cancel func.`, func() {
+			t.Run(`Will successfully cancel with its cancel func.`, func(t *ftt.Test) {
 				go cf()
-				So(wait(ctx), ShouldEqual, context.Canceled)
+				assert.Loosely(t, wait(ctx), should.Equal(context.Canceled))
 			})
 		})
 
-		Convey(`A context with a deadline in the past`, func() {
+		t.Run(`A context with a deadline in the past`, func(t *ftt.Test) {
 			ctx, _ := WithDeadline(context.Background(), mc.now.Add(-time.Second))
 
-			Convey(`Will time out immediately.`, func() {
-				So(wait(ctx).Error(), ShouldEqual, context.DeadlineExceeded.Error())
+			t.Run(`Will time out immediately.`, func(t *ftt.Test) {
+				assert.Loosely(t, wait(ctx).Error(), should.Equal(context.DeadlineExceeded.Error()))
 			})
 		})
 	})

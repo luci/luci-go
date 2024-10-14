@@ -17,43 +17,45 @@ package flag
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStringSliceFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey("one", t, func() {
+	ftt.Run("one", t, func(t *ftt.Test) {
 		var flag stringSliceFlag
-		So(flag.Set("abc"), ShouldBeNil)
-		So(flag.Get(), ShouldResemble, []string{"abc"})
-		So(flag.String(), ShouldEqual, "abc")
+		assert.Loosely(t, flag.Set("abc"), should.BeNil)
+		assert.Loosely(t, flag.Get(), should.Resemble([]string{"abc"}))
+		assert.Loosely(t, flag.String(), should.Equal("abc"))
 	})
 
-	Convey("many", t, func() {
+	ftt.Run("many", t, func(t *ftt.Test) {
 		var flag stringSliceFlag
-		So(flag.Set("abc"), ShouldBeNil)
-		So(flag.Set("def"), ShouldBeNil)
-		So(flag.Set("ghi"), ShouldBeNil)
-		So(flag.Get(), ShouldResemble, []string{"abc", "def", "ghi"})
-		So(flag.String(), ShouldEqual, "abc, def, ghi")
+		assert.Loosely(t, flag.Set("abc"), should.BeNil)
+		assert.Loosely(t, flag.Set("def"), should.BeNil)
+		assert.Loosely(t, flag.Set("ghi"), should.BeNil)
+		assert.Loosely(t, flag.Get(), should.Resemble([]string{"abc", "def", "ghi"}))
+		assert.Loosely(t, flag.String(), should.Equal("abc, def, ghi"))
 	})
 }
 
 func TestStringSlice(t *testing.T) {
 	t.Parallel()
 
-	Convey("one", t, func() {
+	ftt.Run("one", t, func(t *ftt.Test) {
 		var s []string
-		So(StringSlice(&s).Set("abc"), ShouldBeNil)
-		So(s, ShouldResemble, []string{"abc"})
+		assert.Loosely(t, StringSlice(&s).Set("abc"), should.BeNil)
+		assert.Loosely(t, s, should.Resemble([]string{"abc"}))
 	})
 
-	Convey("many", t, func() {
+	ftt.Run("many", t, func(t *ftt.Test) {
 		var s []string
-		So(StringSlice(&s).Set("abc"), ShouldBeNil)
-		So(StringSlice(&s).Set("def"), ShouldBeNil)
-		So(StringSlice(&s).Set("ghi"), ShouldBeNil)
-		So(s, ShouldResemble, []string{"abc", "def", "ghi"})
+		assert.Loosely(t, StringSlice(&s).Set("abc"), should.BeNil)
+		assert.Loosely(t, StringSlice(&s).Set("def"), should.BeNil)
+		assert.Loosely(t, StringSlice(&s).Set("ghi"), should.BeNil)
+		assert.Loosely(t, s, should.Resemble([]string{"abc", "def", "ghi"}))
 	})
 }

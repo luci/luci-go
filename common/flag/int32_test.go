@@ -17,84 +17,85 @@ package flag
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestInt32Flag(t *testing.T) {
 	t.Parallel()
 
-	Convey("error", t, func() {
+	ftt.Run("error", t, func(t *ftt.Test) {
 		var flag int32Flag
-		So(flag.Set("0x01"), ShouldErrLike, "values must be 32-bit integers")
-		So(flag, ShouldEqual, 0)
-		So(flag.Get(), ShouldEqual, 0)
-		So(flag.String(), ShouldEqual, "0")
+		assert.Loosely(t, flag.Set("0x01"), should.ErrLike("values must be 32-bit integers"))
+		assert.Loosely(t, flag, should.BeZero)
+		assert.Loosely(t, flag.Get(), should.BeZero)
+		assert.Loosely(t, flag.String(), should.Equal("0"))
 	})
 
-	Convey("int64", t, func() {
+	ftt.Run("int64", t, func(t *ftt.Test) {
 		var flag int32Flag
-		So(flag.Set("2147483648"), ShouldErrLike, "values must be 32-bit integers")
-		So(flag, ShouldEqual, 0)
-		So(flag.Get(), ShouldEqual, 0)
-		So(flag.String(), ShouldEqual, "0")
+		assert.Loosely(t, flag.Set("2147483648"), should.ErrLike("values must be 32-bit integers"))
+		assert.Loosely(t, flag, should.BeZero)
+		assert.Loosely(t, flag.Get(), should.BeZero)
+		assert.Loosely(t, flag.String(), should.Equal("0"))
 	})
 
-	Convey("zero", t, func() {
+	ftt.Run("zero", t, func(t *ftt.Test) {
 		var flag int32Flag
-		So(flag.Set("0"), ShouldBeNil)
-		So(flag, ShouldEqual, 0)
-		So(flag.Get(), ShouldEqual, 0)
-		So(flag.String(), ShouldEqual, "0")
+		assert.Loosely(t, flag.Set("0"), should.BeNil)
+		assert.Loosely(t, flag, should.BeZero)
+		assert.Loosely(t, flag.Get(), should.BeZero)
+		assert.Loosely(t, flag.String(), should.Equal("0"))
 	})
 
-	Convey("min", t, func() {
+	ftt.Run("min", t, func(t *ftt.Test) {
 		var flag int32Flag
-		So(flag.Set("-2147483648"), ShouldBeNil)
-		So(flag, ShouldEqual, -2147483648)
-		So(flag.Get(), ShouldEqual, -2147483648)
-		So(flag.String(), ShouldEqual, "-2147483648")
+		assert.Loosely(t, flag.Set("-2147483648"), should.BeNil)
+		assert.Loosely(t, flag, should.Equal(-2147483648))
+		assert.Loosely(t, flag.Get(), should.Equal(-2147483648))
+		assert.Loosely(t, flag.String(), should.Equal("-2147483648"))
 	})
 
-	Convey("max", t, func() {
+	ftt.Run("max", t, func(t *ftt.Test) {
 		var flag int32Flag
-		So(flag.Set("2147483647"), ShouldBeNil)
-		So(flag, ShouldEqual, 2147483647)
-		So(flag.Get(), ShouldEqual, 2147483647)
-		So(flag.String(), ShouldEqual, "2147483647")
+		assert.Loosely(t, flag.Set("2147483647"), should.BeNil)
+		assert.Loosely(t, flag, should.Equal(2147483647))
+		assert.Loosely(t, flag.Get(), should.Equal(2147483647))
+		assert.Loosely(t, flag.String(), should.Equal("2147483647"))
 	})
 }
 
 func TestInt32(t *testing.T) {
 	t.Parallel()
 
-	Convey("error", t, func() {
+	ftt.Run("error", t, func(t *ftt.Test) {
 		var i int32
-		So(Int32(&i).Set("0x1"), ShouldErrLike, "values must be 32-bit integers")
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, Int32(&i).Set("0x1"), should.ErrLike("values must be 32-bit integers"))
+		assert.Loosely(t, i, should.BeZero)
 	})
 
-	Convey("int64", t, func() {
+	ftt.Run("int64", t, func(t *ftt.Test) {
 		var i int32
-		So(Int32(&i).Set("2147483648"), ShouldErrLike, "values must be 32-bit integers")
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, Int32(&i).Set("2147483648"), should.ErrLike("values must be 32-bit integers"))
+		assert.Loosely(t, i, should.BeZero)
 	})
 
-	Convey("zero", t, func() {
+	ftt.Run("zero", t, func(t *ftt.Test) {
 		var i int32
-		So(Int32(&i).Set("0"), ShouldBeNil)
-		So(i, ShouldEqual, 0)
+		assert.Loosely(t, Int32(&i).Set("0"), should.BeNil)
+		assert.Loosely(t, i, should.BeZero)
 	})
 
-	Convey("min", t, func() {
+	ftt.Run("min", t, func(t *ftt.Test) {
 		var i int32
-		So(Int32(&i).Set("-2147483648"), ShouldBeNil)
-		So(i, ShouldEqual, -2147483648)
+		assert.Loosely(t, Int32(&i).Set("-2147483648"), should.BeNil)
+		assert.Loosely(t, i, should.Equal(-2147483648))
 	})
 
-	Convey("max", t, func() {
+	ftt.Run("max", t, func(t *ftt.Test) {
 		var i int32
-		So(Int32(&i).Set("2147483647"), ShouldBeNil)
-		So(i, ShouldEqual, 2147483647)
+		assert.Loosely(t, Int32(&i).Set("2147483647"), should.BeNil)
+		assert.Loosely(t, i, should.Equal(2147483647))
 	})
 }

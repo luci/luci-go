@@ -21,9 +21,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vmihailenco/msgpack/v5"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -166,26 +167,26 @@ func TestRoundtrip(t *testing.T) {
 		},
 	}
 
-	Convey(`TestRoundtrip`, t, func() {
+	ftt.Run(`TestRoundtrip`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
 			tc := tc
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				raw, err := Marshal(tc.input, tc.options...)
 				if tc.err == "" {
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				} else {
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 					return
 				}
 
 				if tc.raw != nil {
-					So([]byte(raw), ShouldResemble, tc.raw)
+					assert.Loosely(t, []byte(raw), should.Resemble(tc.raw))
 				}
 
 				msg := &TestMessage{}
-				So(Unmarshal(raw, msg, tc.options...), ShouldBeNil)
+				assert.Loosely(t, Unmarshal(raw, msg, tc.options...), should.BeNil)
 
-				So(msg, ShouldResembleProto, tc.input)
+				assert.Loosely(t, msg, should.Resemble(tc.input))
 			})
 		}
 	})
@@ -195,19 +196,19 @@ func TestRoundtrip(t *testing.T) {
 func TestEncode(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestEncode`, t, func() {
-		Convey(`unknown fields`, func() {
+	ftt.Run(`TestEncode`, t, func(t *ftt.Test) {
+		t.Run(`unknown fields`, func(t *ftt.Test) {
 			// use Duration which encodes seconds with field 1, which is reserved.
 			enc, err := proto.Marshal(durationpb.New(20 * time.Second))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			tm := &TestMessage{}
-			So(proto.Unmarshal(enc, tm), ShouldBeNil)
+			assert.Loosely(t, proto.Unmarshal(enc, tm), should.BeNil)
 
-			So(tm.ProtoReflect().GetUnknown(), ShouldNotBeEmpty)
+			assert.Loosely(t, tm.ProtoReflect().GetUnknown(), should.NotBeEmpty)
 
 			_, err = Marshal(tm)
-			So(err, ShouldErrLike, "unknown non-msgpack fields")
+			assert.Loosely(t, err, should.ErrLike("unknown non-msgpack fields"))
 		})
 	})
 }
@@ -312,10 +313,10 @@ func TestDecode(t *testing.T) {
 		},
 	}
 
-	Convey(`TestDecode`, t, func() {
+	ftt.Run(`TestDecode`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
 			tc := tc
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				enc := msgpack.GetEncoder()
 				defer msgpack.PutEncoder(enc)
 
@@ -324,24 +325,24 @@ func TestDecode(t *testing.T) {
 				if tc.tweakEnc != nil {
 					tc.tweakEnc(enc)
 				}
-				So(enc.Encode(tc.input), ShouldBeNil)
+				assert.Loosely(t, enc.Encode(tc.input), should.BeNil)
 
 				msg := &TestMessage{}
 				err := Unmarshal(buf.Bytes(), msg)
 				if tc.err == "" {
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					known := proto.Clone(msg).(*TestMessage)
 					known.ProtoReflect().SetUnknown(nil)
-					So(known, ShouldResembleProto, tc.expect)
+					assert.Loosely(t, known, should.Resemble(tc.expect))
 
-					So(msg.ProtoReflect().GetUnknown(), ShouldResemble, tc.expectUnknown)
+					assert.Loosely(t, msg.ProtoReflect().GetUnknown(), should.Resemble(tc.expectUnknown))
 
 					if tc.expectRaw != nil {
 						raw, err := Marshal(msg, Deterministic)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(raw, ShouldResemble, tc.expectRaw)
+						assert.Loosely(t, raw, should.Resemble(tc.expectRaw))
 
 						if len(msg.ProtoReflect().GetUnknown()) > 0 {
 							dec := msgpack.GetDecoder()
@@ -354,13 +355,13 @@ func TestDecode(t *testing.T) {
 
 							decoded := reflect.MakeMap(reflect.TypeOf(tc.expectDecoded))
 
-							So(dec.DecodeValue(decoded), ShouldBeNil)
+							assert.Loosely(t, dec.DecodeValue(decoded), should.BeNil)
 
-							So(decoded.Interface(), ShouldResemble, tc.expectDecoded)
+							assert.Loosely(t, decoded.Interface(), should.Resemble(tc.expectDecoded))
 						}
 					}
 				} else {
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				}
 
 			})

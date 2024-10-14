@@ -21,8 +21,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTagsMatchProto(t *testing.T) {
@@ -37,35 +38,35 @@ func TestTagsMatchProto(t *testing.T) {
 		panic(fmt.Errorf("no property for %q", name))
 	}
 
-	Convey(`Hard-coded tag constants match protobuf.`, t, func() {
-		Convey(`For FileDescriptorProto`, func() {
+	ftt.Run(`Hard-coded tag constants match protobuf.`, t, func(t *ftt.Test) {
+		t.Run(`For FileDescriptorProto`, func(t *ftt.Test) {
 			props := proto.GetProperties(reflect.TypeOf(pb.FileDescriptorProto{}))
 
-			So(propertiesForField(props, "Package").Tag, ShouldEqual, FileDescriptorProtoPackageTag)
-			So(propertiesForField(props, "MessageType").Tag, ShouldEqual, FileDescriptorProtoMessageTag)
-			So(propertiesForField(props, "EnumType").Tag, ShouldEqual, FileDescriptorProtoEnumTag)
-			So(propertiesForField(props, "Service").Tag, ShouldEqual, FileDescriptorProtoServiceTag)
+			assert.Loosely(t, propertiesForField(props, "Package").Tag, should.Equal(FileDescriptorProtoPackageTag))
+			assert.Loosely(t, propertiesForField(props, "MessageType").Tag, should.Equal(FileDescriptorProtoMessageTag))
+			assert.Loosely(t, propertiesForField(props, "EnumType").Tag, should.Equal(FileDescriptorProtoEnumTag))
+			assert.Loosely(t, propertiesForField(props, "Service").Tag, should.Equal(FileDescriptorProtoServiceTag))
 		})
 
-		Convey(`For ServiceDescriptorProto`, func() {
+		t.Run(`For ServiceDescriptorProto`, func(t *ftt.Test) {
 			props := proto.GetProperties(reflect.TypeOf(pb.ServiceDescriptorProto{}))
 
-			So(propertiesForField(props, "Method").Tag, ShouldEqual, ServiceDescriptorProtoMethodTag)
+			assert.Loosely(t, propertiesForField(props, "Method").Tag, should.Equal(ServiceDescriptorProtoMethodTag))
 		})
 
-		Convey(`For DescriptorProto`, func() {
+		t.Run(`For DescriptorProto`, func(t *ftt.Test) {
 			props := proto.GetProperties(reflect.TypeOf(pb.DescriptorProto{}))
 
-			So(propertiesForField(props, "Field").Tag, ShouldEqual, DescriptorProtoFieldTag)
-			So(propertiesForField(props, "NestedType").Tag, ShouldEqual, DescriptorProtoNestedTypeTag)
-			So(propertiesForField(props, "EnumType").Tag, ShouldEqual, DescriptorProtoEnumTypeTag)
-			So(propertiesForField(props, "OneofDecl").Tag, ShouldEqual, DescriptorProtoOneOfTag)
+			assert.Loosely(t, propertiesForField(props, "Field").Tag, should.Equal(DescriptorProtoFieldTag))
+			assert.Loosely(t, propertiesForField(props, "NestedType").Tag, should.Equal(DescriptorProtoNestedTypeTag))
+			assert.Loosely(t, propertiesForField(props, "EnumType").Tag, should.Equal(DescriptorProtoEnumTypeTag))
+			assert.Loosely(t, propertiesForField(props, "OneofDecl").Tag, should.Equal(DescriptorProtoOneOfTag))
 		})
 
-		Convey(`For EnumDescriptorProto`, func() {
+		t.Run(`For EnumDescriptorProto`, func(t *ftt.Test) {
 			props := proto.GetProperties(reflect.TypeOf(pb.EnumDescriptorProto{}))
 
-			So(propertiesForField(props, "Value").Tag, ShouldEqual, EnumDescriptorProtoValueTag)
+			assert.Loosely(t, propertiesForField(props, "Value").Tag, should.Equal(EnumDescriptorProtoValueTag))
 		})
 	})
 }

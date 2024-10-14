@@ -17,68 +17,70 @@ package disjointset
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDisjointSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("DisjointSet works", t, func() {
+	ftt.Run("DisjointSet works", t, func(t *ftt.Test) {
 		d := New(5)
 		indexes := make([]struct{}, 5)
 
-		So(d.Merge(1, 1), ShouldBeFalse)
-		So(d.Count(), ShouldEqual, 5)
+		assert.Loosely(t, d.Merge(1, 1), should.BeFalse)
+		assert.Loosely(t, d.Count(), should.Equal(5))
 
 		for i := range indexes {
-			So(d.RootOf(i), ShouldEqual, i)
-			So(d.SizeOf(i), ShouldEqual, 1)
+			assert.Loosely(t, d.RootOf(i), should.Equal(i))
+			assert.Loosely(t, d.SizeOf(i), should.Equal(1))
 			for j := range indexes {
-				So(d.Disjoint(i, j), ShouldEqual, i != j)
+				assert.Loosely(t, d.Disjoint(i, j), should.Equal(i != j))
 			}
 		}
 
-		So(d.Merge(1, 4), ShouldBeTrue)
-		So(d.Count(), ShouldEqual, 4)
-		So(d.SizeOf(1), ShouldEqual, 2)
+		assert.Loosely(t, d.Merge(1, 4), should.BeTrue)
+		assert.Loosely(t, d.Count(), should.Equal(4))
+		assert.Loosely(t, d.SizeOf(1), should.Equal(2))
 
-		So(d.Disjoint(1, 4), ShouldBeFalse)
-		So(d.RootOf(4), ShouldEqual, 1)
-		So(d.RootOf(1), ShouldEqual, 1)
+		assert.Loosely(t, d.Disjoint(1, 4), should.BeFalse)
+		assert.Loosely(t, d.RootOf(4), should.Equal(1))
+		assert.Loosely(t, d.RootOf(1), should.Equal(1))
 
-		So(d.Merge(2, 3), ShouldBeTrue)
-		So(d.SizeOf(2), ShouldEqual, 2)
+		assert.Loosely(t, d.Merge(2, 3), should.BeTrue)
+		assert.Loosely(t, d.SizeOf(2), should.Equal(2))
 
-		So(d.Merge(1, 0), ShouldBeTrue)
-		So(d.SizeOf(4), ShouldEqual, 3)
+		assert.Loosely(t, d.Merge(1, 0), should.BeTrue)
+		assert.Loosely(t, d.SizeOf(4), should.Equal(3))
 
-		So(d.Merge(2, 1), ShouldBeTrue)
-		So(d.SizeOf(3), ShouldEqual, 5)
+		assert.Loosely(t, d.Merge(2, 1), should.BeTrue)
+		assert.Loosely(t, d.SizeOf(3), should.Equal(5))
 
 		for i := range indexes {
 			for j := range indexes {
-				So(d.Disjoint(i, j), ShouldBeFalse)
+				assert.Loosely(t, d.Disjoint(i, j), should.BeFalse)
 			}
 		}
 	})
 
-	Convey("DisjointSet SortedSets & String work", t, func() {
+	ftt.Run("DisjointSet SortedSets & String work", t, func(t *ftt.Test) {
 		d := New(7)
 		d.Merge(0, 4)
 		d.Merge(0, 6)
 		d.Merge(1, 3)
 		d.Merge(2, 5)
 
-		So(d.SortedSets(), ShouldResemble, [][]int{
+		assert.Loosely(t, d.SortedSets(), should.Resemble([][]int{
 			{0, 4, 6},
 			{1, 3},
 			{2, 5},
-		})
+		}))
 
-		So(d.String(), ShouldResemble, `DisjointSet([
+		assert.Loosely(t, d.String(), should.Match(`DisjointSet([
   [0, 4, 6]
   [1, 3]
   [2, 5]
-])`)
+])`))
 	})
 }

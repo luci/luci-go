@@ -26,14 +26,15 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCredentialsClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("SignBlob works", t, func(c C) {
+	ftt.Run("SignBlob works", t, func(c *ftt.Test) {
 		bodies := make(chan []byte, 1)
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,16 +67,16 @@ func TestCredentialsClient(t *testing.T) {
 		}
 
 		keyID, sig, err := cl.SignBlob(context.Background(), "abc@example.com", []byte("blob"))
-		So(err, ShouldBeNil)
-		So(keyID, ShouldEqual, "key_id")
-		So(string(sig), ShouldEqual, "signature")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, keyID, should.Equal("key_id"))
+		assert.Loosely(c, string(sig), should.Equal("signature"))
 
 		// The request body looks sane too.
 		body := <-bodies
-		So(string(body), ShouldEqual, `{"payload":"YmxvYg=="}`)
+		assert.Loosely(c, string(body), should.Equal(`{"payload":"YmxvYg=="}`))
 	})
 
-	Convey("SignJWT works", t, func(c C) {
+	ftt.Run("SignJWT works", t, func(c *ftt.Test) {
 		bodies := make(chan []byte, 1)
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -106,16 +107,16 @@ func TestCredentialsClient(t *testing.T) {
 		}
 
 		keyID, jwt, err := cl.SignJWT(context.Background(), "abc@example.com", &ClaimSet{Exp: 123})
-		So(err, ShouldBeNil)
-		So(keyID, ShouldEqual, "key_id")
-		So(jwt, ShouldEqual, "signed_jwt")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, keyID, should.Equal("key_id"))
+		assert.Loosely(c, jwt, should.Equal("signed_jwt"))
 
 		// The request body looks sane too.
 		body := <-bodies
-		So(string(body), ShouldEqual, `{"payload":"{\"iss\":\"\",\"aud\":\"\",\"exp\":123,\"iat\":0}"}`)
+		assert.Loosely(c, string(body), should.Equal(`{"payload":"{\"iss\":\"\",\"aud\":\"\",\"exp\":123,\"iat\":0}"}`))
 	})
 
-	Convey("GenerateAccessToken works", t, func(c C) {
+	ftt.Run("GenerateAccessToken works", t, func(c *ftt.Test) {
 		expireTime := testclock.TestRecentTimeUTC.Round(time.Second)
 
 		var body map[string]any
@@ -129,7 +130,7 @@ func TestCredentialsClient(t *testing.T) {
 			switch r.URL.Path {
 			case "/v1/projects/-/serviceAccounts/abc@example.com:generateAccessToken":
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-					c.Printf("Bad body: %s\n", err)
+					c.Logf("Bad body: %s\n", err)
 					w.WriteHeader(500)
 					return
 				}
@@ -139,7 +140,7 @@ func TestCredentialsClient(t *testing.T) {
 				w.Write([]byte(resp))
 
 			default:
-				c.Printf("Unknown URL: %q\n", r.URL.Path)
+				c.Logf("Unknown URL: %q\n", r.URL.Path)
 				w.WriteHeader(404)
 			}
 		}))
@@ -152,18 +153,18 @@ func TestCredentialsClient(t *testing.T) {
 
 		token, err := cl.GenerateAccessToken(context.Background(),
 			"abc@example.com", []string{"a", "b"}, []string{"deleg"}, 30*time.Minute)
-		So(err, ShouldBeNil)
-		So(token.AccessToken, ShouldEqual, "token1")
-		So(token.Expiry, ShouldResemble, expireTime)
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, token.AccessToken, should.Equal("token1"))
+		assert.Loosely(c, token.Expiry, should.Resemble(expireTime))
 
-		So(body, ShouldResemble, map[string]any{
+		assert.Loosely(c, body, should.Resemble(map[string]any{
 			"delegates": []any{"deleg"},
 			"scope":     []any{"a", "b"},
 			"lifetime":  "30m0s",
-		})
+		}))
 	})
 
-	Convey("GenerateIDToken works", t, func(c C) {
+	ftt.Run("GenerateIDToken works", t, func(c *ftt.Test) {
 		var body map[string]any
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +176,7 @@ func TestCredentialsClient(t *testing.T) {
 			switch r.URL.Path {
 			case "/v1/projects/-/serviceAccounts/abc@example.com:generateIdToken":
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-					c.Printf("Bad body: %s\n", err)
+					c.Logf("Bad body: %s\n", err)
 					w.WriteHeader(500)
 					return
 				}
@@ -184,7 +185,7 @@ func TestCredentialsClient(t *testing.T) {
 				w.Write([]byte(`{"token":"fake_id_token"}`))
 
 			default:
-				c.Printf("Unknown URL: %q\n", r.URL.Path)
+				c.Logf("Unknown URL: %q\n", r.URL.Path)
 				w.WriteHeader(404)
 			}
 		}))
@@ -197,13 +198,13 @@ func TestCredentialsClient(t *testing.T) {
 
 		token, err := cl.GenerateIDToken(context.Background(),
 			"abc@example.com", "aud", true, []string{"deleg"})
-		So(err, ShouldBeNil)
-		So(token, ShouldEqual, "fake_id_token")
+		assert.Loosely(c, err, should.BeNil)
+		assert.Loosely(c, token, should.Equal("fake_id_token"))
 
-		So(body, ShouldResemble, map[string]any{
+		assert.Loosely(c, body, should.Resemble(map[string]any{
 			"delegates":    []any{"deleg"},
 			"audience":     "aud",
 			"includeEmail": true,
-		})
+		}))
 	})
 }

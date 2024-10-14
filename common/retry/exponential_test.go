@@ -20,40 +20,41 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExponentialBackoff(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An ExponentialBackoff Iterator, using an instrumented context`, t, func() {
+	ftt.Run(`An ExponentialBackoff Iterator, using an instrumented context`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		l := ExponentialBackoff{}
 
-		Convey(`When empty, will Stop immediately.`, func() {
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+		t.Run(`When empty, will Stop immediately.`, func(t *ftt.Test) {
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 
-		Convey(`Will delay exponentially.`, func() {
+		t.Run(`Will delay exponentially.`, func(t *ftt.Test) {
 			l.Retries = 4
 			l.Delay = time.Second
-			So(l.Next(ctx, nil), ShouldEqual, 1*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 2*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 4*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 8*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(1*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(2*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(4*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(8*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 
-		Convey(`Will bound exponential delay when MaxDelay is set.`, func() {
+		t.Run(`Will bound exponential delay when MaxDelay is set.`, func(t *ftt.Test) {
 			l.Retries = 4
 			l.Delay = time.Second
 			l.MaxDelay = 4 * time.Second
-			So(l.Next(ctx, nil), ShouldEqual, 1*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 2*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 4*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, 4*time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(1*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(2*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(4*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(4*time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 	})
 }

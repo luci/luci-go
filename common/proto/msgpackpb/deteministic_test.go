@@ -18,15 +18,17 @@ import (
 	"reflect"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"github.com/vmihailenco/msgpack/v5"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMsgpackPBDeterministicEncod(t *testing.T) {
 	t.Parallel()
 
-	Convey(`msgpackpbDeterministicEncode`, t, func() {
-		Convey(`list`, func() {
+	ftt.Run(`msgpackpbDeterministicEncode`, t, func(t *ftt.Test) {
+		t.Run(`list`, func(t *ftt.Test) {
 			val := reflect.ValueOf([]any{
 				10,
 				"Hello",
@@ -59,8 +61,8 @@ func TestMsgpackPBDeterministicEncod(t *testing.T) {
 				-2,
 			})
 			enc, err := msgpackpbDeterministicEncode(val)
-			So(err, ShouldBeNil)
-			So(enc, ShouldResemble, msgpack.RawMessage{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, enc, should.Resemble(msgpack.RawMessage{
 				152,                         // 7 element array
 				10,                          //  10
 				165, 72, 101, 108, 108, 111, // "Hello"
@@ -86,7 +88,7 @@ func TestMsgpackPBDeterministicEncod(t *testing.T) {
 				165, 97, 114, 114, 97, 121, // "array"
 				164, 108, 105, 107, 101, // "like"
 				254, // -2
-			})
+			}))
 		})
 	})
 }

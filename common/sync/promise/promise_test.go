@@ -22,14 +22,15 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestPromise(t *testing.T) {
 	t.Parallel()
 
-	Convey(`An instrumented Promise instance`, t, func() {
+	ftt.Run(`An instrumented Promise instance`, t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 
 		type operation struct {
@@ -43,7 +44,7 @@ func TestPromise(t *testing.T) {
 			return op.d, op.e
 		})
 
-		Convey(`Will timeout with no data.`, func() {
+		t.Run(`Will timeout with no data.`, func(t *ftt.Test) {
 			// Wait until our Promise starts its timer. Then signal it.
 			readyC := make(chan struct{})
 			tc.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
@@ -57,25 +58,25 @@ func TestPromise(t *testing.T) {
 			ctx, cancel := clock.WithTimeout(ctx, 1*time.Second)
 			defer cancel()
 			data, err := p.Get(ctx)
-			So(data, ShouldBeNil)
-			So(err.Error(), ShouldEqual, context.DeadlineExceeded.Error())
+			assert.Loosely(t, data, should.BeNil)
+			assert.Loosely(t, err.Error(), should.Equal(context.DeadlineExceeded.Error()))
 		})
 
-		Convey(`With data already added`, func() {
+		t.Run(`With data already added`, func(t *ftt.Test) {
 			e := errors.New("promise: fake test error")
 			opC <- operation{"DATA", e}
 
 			data, err := p.Get(ctx)
-			So(data, ShouldEqual, "DATA")
-			So(err, ShouldEqual, e)
+			assert.Loosely(t, data, should.Equal("DATA"))
+			assert.Loosely(t, err, should.Equal(e))
 
-			Convey(`Will return data instead of timing out.`, func() {
+			t.Run(`Will return data instead of timing out.`, func(t *ftt.Test) {
 				ctx, cancelFunc := context.WithCancel(ctx)
 				cancelFunc()
 
 				data, err = p.Get(ctx)
-				So(data, ShouldEqual, "DATA")
-				So(err, ShouldEqual, e)
+				assert.Loosely(t, data, should.Equal("DATA"))
+				assert.Loosely(t, err, should.Equal(e))
 			})
 		})
 	})
@@ -84,23 +85,23 @@ func TestPromise(t *testing.T) {
 func TestDeferredPromise(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A deferred Promise instance`, t, func() {
+	ftt.Run(`A deferred Promise instance`, t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey(`Will defer running until Get is called, and will panic the Get goroutine.`, func() {
+		t.Run(`Will defer running until Get is called, and will panic the Get goroutine.`, func(t *ftt.Test) {
 			// Since our Get will cause the generator to be run in this goroutine,
 			// calling Get with a generator that panics should cause a panic.
 			p := NewDeferred(func(context.Context) (any, error) { panic("test panic") })
-			So(func() { p.Get(c) }, ShouldPanic)
+			assert.Loosely(t, func() { p.Get(c) }, should.Panic)
 		})
 
-		Convey(`Can output data.`, func() {
+		t.Run(`Can output data.`, func(t *ftt.Test) {
 			p := NewDeferred(func(context.Context) (any, error) {
 				return "hello", nil
 			})
 			v, err := p.Get(c)
-			So(err, ShouldBeNil)
-			So(v, ShouldEqual, "hello")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, v, should.Equal("hello"))
 		})
 	})
 }
@@ -108,7 +109,7 @@ func TestDeferredPromise(t *testing.T) {
 func TestPromiseSmoke(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Promise instance with multiple consumers will block.`, t, func() {
+	ftt.Run(`A Promise instance with multiple consumers will block.`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		dataC := make(chan any)
 		p := New(ctx, func(context.Context) (any, error) {
@@ -131,7 +132,7 @@ func TestPromiseSmoke(t *testing.T) {
 
 		dataC <- "DATA"
 		for i := uint(0); i < 200; i++ {
-			So(<-finishedC, ShouldEqual, "DATA")
+			assert.Loosely(t, <-finishedC, should.Equal("DATA"))
 		}
 	})
 }

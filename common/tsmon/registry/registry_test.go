@@ -18,11 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type metricDef struct {
@@ -38,7 +38,7 @@ func (m *metricDef) SetFixedResetTime(t time.Time)  { m.fixedResetTime = t }
 func TestAdd(t *testing.T) {
 	t.Parallel()
 
-	Convey("Add", t, func() {
+	ftt.Run("Add", t, func(t *ftt.Test) {
 		newMetric := func(name string, fns ...string) *metricDef {
 			ret := &metricDef{MetricInfo: types.MetricInfo{Name: name}}
 			for _, n := range fns {
@@ -48,38 +48,38 @@ func TestAdd(t *testing.T) {
 			return ret
 		}
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			Global.Add(newMetric("my/metric_/1"))
 			Global.Add(newMetric("my/metriC/2", "field_1"))
 			Global.Add(newMetric("my/metric-/3", "field_1", "field_2"))
 			Global.Add(newMetric("/my/metric_/1"))
 		})
 
-		Convey("panics", func() {
+		t.Run("panics", func(t *ftt.Test) {
 			m := func(n string, fns ...string) func() {
 				return func() { Global.Add(newMetric(n, fns...)) }
 			}
 
-			Convey("if metric name is invalid", func() {
-				So(m(""), ShouldPanicLike, "empty metric name")
-				So(m("/"), ShouldPanicLike, "invalid metric name")
-				So(m("//"), ShouldPanicLike, "invalid metric name")
-				So(m("meric//1"), ShouldPanicLike, "invalid metric name")
-				So(m("meric!"), ShouldPanicLike, "invalid metric name")
-				So(m("meric#//"), ShouldPanicLike, "invalid metric name")
+			t.Run("if metric name is invalid", func(t *ftt.Test) {
+				assert.Loosely(t, m(""), should.PanicLike("empty metric name"))
+				assert.Loosely(t, m("/"), should.PanicLike("invalid metric name"))
+				assert.Loosely(t, m("//"), should.PanicLike("invalid metric name"))
+				assert.Loosely(t, m("meric//1"), should.PanicLike("invalid metric name"))
+				assert.Loosely(t, m("meric!"), should.PanicLike("invalid metric name"))
+				assert.Loosely(t, m("meric#//"), should.PanicLike("invalid metric name"))
 			})
 
-			Convey("if metric name is duplicate", func() {
+			t.Run("if metric name is duplicate", func(t *ftt.Test) {
 				m("metric")()
-				So(m("metric"), ShouldPanicLike, "duplicate metric name")
+				assert.Loosely(t, m("metric"), should.PanicLike("duplicate metric name"))
 			})
 
-			Convey("if field name is invalid", func() {
-				So(m("metric/a", ""), ShouldPanicLike, "invalid field name")
-				So(m("metric/a", "-"), ShouldPanicLike, "invalid field name")
-				So(m("metric/a", "f-1"), ShouldPanicLike, "invalid field name")
-				So(m("metric/a", "f#1"), ShouldPanicLike, "invalid field name")
-				So(m("metric/a", "1_/"), ShouldPanicLike, "invalid field name")
+			t.Run("if field name is invalid", func(t *ftt.Test) {
+				assert.Loosely(t, m("metric/a", ""), should.PanicLike("invalid field name"))
+				assert.Loosely(t, m("metric/a", "-"), should.PanicLike("invalid field name"))
+				assert.Loosely(t, m("metric/a", "f-1"), should.PanicLike("invalid field name"))
+				assert.Loosely(t, m("metric/a", "f#1"), should.PanicLike("invalid field name"))
+				assert.Loosely(t, m("metric/a", "1_/"), should.PanicLike("invalid field name"))
 			})
 		})
 	})

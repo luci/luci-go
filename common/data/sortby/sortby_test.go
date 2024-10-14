@@ -18,7 +18,9 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type CoolStruct struct {
@@ -53,7 +55,7 @@ func TestSortBy(t *testing.T) {
 		return CoolStruct{A: a, B: b, C: c}
 	}
 
-	Convey("sortby", t, func() {
+	ftt.Run("sortby", t, func(t *ftt.Test) {
 		s := CoolStructSlice{
 			i(194, 771, 222),
 			i(209, 28, 300),
@@ -76,7 +78,7 @@ func TestSortBy(t *testing.T) {
 
 		sort.Stable(s)
 
-		So(s, ShouldResemble, CoolStructSlice{
+		assert.Loosely(t, s, should.Resemble(CoolStructSlice{
 			i(14, 761, 759),
 			i(132, 510, 149),
 			i(132, 510, 149, "dup"),
@@ -94,6 +96,6 @@ func TestSortBy(t *testing.T) {
 			i(778, 513, 156),
 			i(864, 100, 199),
 			i(866, 821, 447),
-		})
+		}))
 	})
 }

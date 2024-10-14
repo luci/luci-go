@@ -19,21 +19,23 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTimerResult(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing TimerResult`, t, func() {
-		Convey(`A TimerResult with no error is not incomplete.`, func() {
-			So(TimerResult{}.Incomplete(), ShouldBeFalse)
+	ftt.Run(`Testing TimerResult`, t, func(t *ftt.Test) {
+		t.Run(`A TimerResult with no error is not incomplete.`, func(t *ftt.Test) {
+			assert.Loosely(t, TimerResult{}.Incomplete(), should.BeFalse)
 		})
 
-		Convey(`A TimerResult with context.Canceled, context.DeadlineExceeded, or another error is incomplete.`, func() {
-			So(TimerResult{Err: context.Canceled}.Incomplete(), ShouldBeTrue)
-			So(TimerResult{Err: context.DeadlineExceeded}.Incomplete(), ShouldBeTrue)
-			So(TimerResult{Err: errors.New("foo")}.Incomplete(), ShouldBeTrue)
+		t.Run(`A TimerResult with context.Canceled, context.DeadlineExceeded, or another error is incomplete.`, func(t *ftt.Test) {
+			assert.Loosely(t, TimerResult{Err: context.Canceled}.Incomplete(), should.BeTrue)
+			assert.Loosely(t, TimerResult{Err: context.DeadlineExceeded}.Incomplete(), should.BeTrue)
+			assert.Loosely(t, TimerResult{Err: errors.New("foo")}.Incomplete(), should.BeTrue)
 		})
 	})
 }

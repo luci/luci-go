@@ -27,36 +27,35 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFixFieldMasks(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestFixFieldMasks", t, func() {
+	ftt.Run("TestFixFieldMasks", t, func(t *ftt.Test) {
 		normalizeJSON := func(jsonData []byte) string {
 			buf := &bytes.Buffer{}
 			err := json.Indent(buf, jsonData, "", "  ")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return buf.String()
 		}
 		testFix := func(pb proto.Message, expected string) {
 			typ := reflect.TypeOf(pb).Elem()
 
 			actual, err := protojson.Marshal(proto.MessageV2(pb))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(normalizeJSON(actual), ShouldEqual, normalizeJSON([]byte(expected)))
+			assert.Loosely(t, normalizeJSON(actual), should.Equal(normalizeJSON([]byte(expected))))
 
 			jsBadEmulated, err := FixFieldMasksBeforeUnmarshal([]byte(actual), typ)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(jsonpb.UnmarshalString(string(jsBadEmulated), pb), ShouldBeNil)
+			assert.Loosely(t, jsonpb.UnmarshalString(string(jsBadEmulated), pb), should.BeNil)
 		}
-		Convey("No field masks", func() {
+		t.Run("No field masks", func(t *ftt.Test) {
 			testFix(
 				&testingpb.Simple{Id: 1},
 				`{
@@ -65,7 +64,7 @@ func TestFixFieldMasks(t *testing.T) {
 			)
 		})
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			testFix(
 				&testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
 					"id", "some_field",
@@ -76,7 +75,7 @@ func TestFixFieldMasks(t *testing.T) {
 			)
 		})
 
-		Convey("Properties", func() {
+		t.Run("Properties", func(t *ftt.Test) {
 			testFix(
 				&testingpb.Props{
 					Properties: &structpb.Struct{
@@ -93,7 +92,7 @@ func TestFixFieldMasks(t *testing.T) {
 			)
 		})
 
-		Convey("Nested type", func() {
+		t.Run("Nested type", func(t *ftt.Test) {
 			testFix(
 				&testingpb.WithInner{
 					Msgs: []*testingpb.WithInner_Inner{
@@ -118,28 +117,28 @@ func TestFixFieldMasks(t *testing.T) {
 			)
 		})
 
-		Convey("invalid field", func() {
+		t.Run("invalid field", func(t *ftt.Test) {
 			input := `{
 				"a": 1
 			}`
 			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			So(err, ShouldErrLike, `unexpected field path "a"`)
+			assert.Loosely(t, err, should.ErrLike(`unexpected field path "a"`))
 		})
 
-		Convey("invalid field nested", func() {
+		t.Run("invalid field nested", func(t *ftt.Test) {
 			input := `{
 				"some": {"a": 1}
 			}`
 			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			So(err, ShouldErrLike, `unexpected field path "some.a"`)
+			assert.Loosely(t, err, should.ErrLike(`unexpected field path "some.a"`))
 		})
 
-		Convey("quotes", func() {
-			So(parseFieldMaskString("`a,b`,c"), ShouldResemble, []string{"`a,b`", "c"})
+		t.Run("quotes", func(t *ftt.Test) {
+			assert.Loosely(t, parseFieldMaskString("`a,b`,c"), should.Resemble([]string{"`a,b`", "c"}))
 		})
 
-		Convey("two seps", func() {
-			So(parseFieldMaskString("a,b,c"), ShouldResemble, []string{"a", "b", "c"})
+		t.Run("two seps", func(t *ftt.Test) {
+			assert.Loosely(t, parseFieldMaskString("a,b,c"), should.Resemble([]string{"a", "b", "c"}))
 		})
 	})
 }

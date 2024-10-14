@@ -25,27 +25,28 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	// Register proto extensions defined in util.proto.
 	_ "go.chromium.org/luci/common/proto/google/descutil/internal"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPrinter(t *testing.T) {
 	t.Parallel()
 
-	Convey("Printer", t, func() {
+	ftt.Run("Printer", t, func(t *ftt.Test) {
 		protoFile, err := os.ReadFile("../internal/util.proto")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		protoFileLines := strings.Split(string(protoFile), "\n")
 
 		descFileBytes, err := os.ReadFile("../internal/util.desc")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var desc descriptorpb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var file *descriptorpb.FileDescriptorProto
 		for _, filePb := range desc.File {
@@ -55,14 +56,14 @@ func TestPrinter(t *testing.T) {
 			}
 		}
 		// we must find the util_test.proto file in `desc`
-		So(file, ShouldNotBeNil)
+		assert.Loosely(t, file, should.NotBeNil)
 
 		sourceCodeInfo, err := descutil.IndexSourceCodeInfo(file)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		getExpectedDef := func(ptr any, unindent int) string {
 			loc := sourceCodeInfo[ptr]
-			So(loc, ShouldNotBeNil)
+			assert.Loosely(t, loc, should.NotBeNil)
 			startLine := loc.Span[0]
 			endLine := startLine
 			if len(loc.Span) > 3 {
@@ -83,20 +84,20 @@ func TestPrinter(t *testing.T) {
 
 		var buf bytes.Buffer
 		printer := NewPrinter(&buf)
-		So(printer.SetFile(file), ShouldBeNil)
+		assert.Loosely(t, printer.SetFile(file), should.BeNil)
 
 		checkOutput := func(ptr any, unindent int) {
-			So(buf.String(), ShouldEqual, getExpectedDef(ptr, unindent))
+			assert.Loosely(t, buf.String(), should.Equal(getExpectedDef(ptr, unindent)))
 		}
 
-		Convey("package", func() {
+		t.Run("package", func(t *ftt.Test) {
 			printer.Package(file.GetPackage())
 			checkOutput(file.Package, 0)
 		})
 
-		Convey("service", func() {
+		t.Run("service", func(t *ftt.Test) {
 			for _, s := range file.Service {
-				Convey(s.GetName(), func() {
+				t.Run(s.GetName(), func(t *ftt.Test) {
 					printer.Service(s, -1)
 					checkOutput(s, 0)
 				})
@@ -104,22 +105,22 @@ func TestPrinter(t *testing.T) {
 		})
 
 		testEnum := func(e *descriptorpb.EnumDescriptorProto, unindent int) {
-			Convey(e.GetName(), func() {
+			t.Run(e.GetName(), func(t *ftt.Test) {
 				printer.Enum(e)
 				checkOutput(e, unindent)
 			})
 		}
 
-		Convey("enum", func() {
+		t.Run("enum", func(t *ftt.Test) {
 			for _, e := range file.EnumType {
 				testEnum(e, 0)
 			}
 		})
 
-		Convey("message", func() {
+		t.Run("message", func(t *ftt.Test) {
 			var testMsg func(*descriptorpb.DescriptorProto, int)
 			testMsg = func(m *descriptorpb.DescriptorProto, unindent int) {
-				Convey(m.GetName(), func() {
+				t.Run(m.GetName(), func(t *ftt.Test) {
 					if len(m.NestedType) == 0 && len(m.EnumType) == 0 {
 						printer.Message(m)
 						checkOutput(m, unindent)
@@ -138,7 +139,7 @@ func TestPrinter(t *testing.T) {
 			}
 		})
 
-		Convey("synthesized message", func() {
+		t.Run("synthesized message", func(t *ftt.Test) {
 			myFakeMessage := mkMessage(
 				"myMessage",
 				mkField("f1", 1, descriptorpb.FieldDescriptorProto_TYPE_STRING, nil),
@@ -149,7 +150,7 @@ func TestPrinter(t *testing.T) {
 			printer.AppendLeadingComments(myFakeMessage.Field[1], []string{"cool message type"})
 
 			printer.Message(myFakeMessage)
-			So(buf.String(), ShouldEqual, `// Message comment
+			assert.Loosely(t, buf.String(), should.Equal(`// Message comment
 // second line.
 message myMessage {
 	// simple string
@@ -157,7 +158,7 @@ message myMessage {
 	// cool message type
 	google.protobuf.Struct st = 2;
 }
-`)
+`))
 		})
 	})
 }

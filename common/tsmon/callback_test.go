@@ -19,25 +19,26 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCallbacks(t *testing.T) {
 	t.Parallel()
 
-	Convey("With a testing State", t, func() {
+	ftt.Run("With a testing State", t, func(t *ftt.Test) {
 		c := WithState(context.Background(), NewState())
 
-		Convey("Register global callback without metrics panics", func() {
-			So(func() {
+		t.Run("Register global callback without metrics panics", func(t *ftt.Test) {
+			assert.Loosely(t, func() {
 				RegisterGlobalCallbackIn(c, func(context.Context) {})
-			}, ShouldPanic)
+			}, should.Panic)
 		})
 
-		Convey("Callback is run on Flush", func() {
+		t.Run("Callback is run on Flush", func(t *ftt.Test) {
 			c, s, m := WithFakes(c)
 
 			RegisterCallbackIn(c, func(ctx context.Context) {
@@ -56,11 +57,11 @@ func TestCallbacks(t *testing.T) {
 				})
 			})
 
-			So(Flush(c), ShouldBeNil)
+			assert.Loosely(t, Flush(c), should.BeNil)
 
-			So(len(m.Cells), ShouldEqual, 1)
-			So(len(m.Cells[0]), ShouldEqual, 1)
-			So(m.Cells[0][0], ShouldResemble, types.Cell{
+			assert.Loosely(t, len(m.Cells), should.Equal(1))
+			assert.Loosely(t, len(m.Cells[0]), should.Equal(1))
+			assert.Loosely(t, m.Cells[0][0], should.Resemble(types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},
@@ -72,7 +73,7 @@ func TestCallbacks(t *testing.T) {
 					ResetTime: time.Unix(1234, 1000),
 					Value:     "bar",
 				},
-			})
+			}))
 		})
 	})
 }

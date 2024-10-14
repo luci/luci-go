@@ -19,31 +19,33 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTestClock(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing clock instance`, t, func() {
+	ftt.Run(`A testing clock instance`, t, func(t *ftt.Test) {
 		now := time.Date(2015, 01, 01, 00, 00, 00, 00, time.UTC)
 		ctx, clk := UseTime(context.Background(), now)
 
-		Convey(`Returns the current time.`, func() {
-			So(clk.Now(), ShouldResemble, now)
+		t.Run(`Returns the current time.`, func(t *ftt.Test) {
+			assert.Loosely(t, clk.Now(), should.Resemble(now))
 		})
 
-		Convey(`When sleeping with a time of zero, immediately awakens.`, func() {
+		t.Run(`When sleeping with a time of zero, immediately awakens.`, func(t *ftt.Test) {
 			clk.Sleep(ctx, 0)
-			So(clk.Now(), ShouldResemble, now)
+			assert.Loosely(t, clk.Now(), should.Resemble(now))
 		})
 
-		Convey(`Will panic if going backwards in time.`, func() {
-			So(func() { clk.Add(-1 * time.Second) }, ShouldPanic)
+		t.Run(`Will panic if going backwards in time.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { clk.Add(-1 * time.Second) }, should.Panic)
 		})
 
-		Convey(`When sleeping for a period of time, awakens when signalled.`, func() {
+		t.Run(`When sleeping for a period of time, awakens when signalled.`, func(t *ftt.Test) {
 			sleepingC := make(chan struct{})
 			clk.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				close(sleepingC)
@@ -58,25 +60,25 @@ func TestTestClock(t *testing.T) {
 			<-sleepingC
 			clk.Set(now.Add(1 * time.Second))
 			clk.Set(now.Add(2 * time.Second))
-			So(<-awakeC, ShouldResemble, now.Add(2*time.Second))
+			assert.Loosely(t, <-awakeC, should.Resemble(now.Add(2*time.Second)))
 		})
 
-		Convey(`Awakens after a period of time.`, func() {
+		t.Run(`Awakens after a period of time.`, func(t *ftt.Test) {
 			afterC := clock.After(ctx, 2*time.Second)
 
 			clk.Set(now.Add(1 * time.Second))
 			clk.Set(now.Add(2 * time.Second))
-			So(<-afterC, ShouldResemble, clock.TimerResult{now.Add(2 * time.Second), nil})
+			assert.Loosely(t, <-afterC, should.Resemble(clock.TimerResult{now.Add(2 * time.Second), nil}))
 		})
 
-		Convey(`When sleeping, awakens if canceled.`, func() {
+		t.Run(`When sleeping, awakens if canceled.`, func(t *ftt.Test) {
 			ctx, cancelFunc := context.WithCancel(ctx)
 
 			clk.SetTimerCallback(func(_ time.Duration, _ clock.Timer) {
 				cancelFunc()
 			})
 
-			So(clk.Sleep(ctx, time.Second).Incomplete(), ShouldBeTrue)
+			assert.Loosely(t, clk.Sleep(ctx, time.Second).Incomplete(), should.BeTrue)
 		})
 	})
 }

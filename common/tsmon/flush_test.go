@@ -21,11 +21,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFlush(t *testing.T) {
@@ -33,10 +34,10 @@ func TestFlush(t *testing.T) {
 
 	defaultTarget := &target.Task{ServiceName: "test"}
 
-	Convey("With a testing State", t, func() {
+	ftt.Run("With a testing State", t, func(t *ftt.Test) {
 		c := WithState(context.Background(), NewState())
 
-		Convey("Sends a metric", func() {
+		t.Run("Sends a metric", func(t *ftt.Test) {
 			c, s, m := WithFakes(c)
 			s.Cells = []types.Cell{
 				{
@@ -56,11 +57,11 @@ func TestFlush(t *testing.T) {
 			s.DT = defaultTarget
 			m.CS = 42
 
-			So(Flush(c), ShouldBeNil)
+			assert.Loosely(t, Flush(c), should.BeNil)
 
-			So(len(m.Cells), ShouldEqual, 1)
-			So(len(m.Cells[0]), ShouldEqual, 1)
-			So(m.Cells[0][0], ShouldResemble, types.Cell{
+			assert.Loosely(t, len(m.Cells), should.Equal(1))
+			assert.Loosely(t, len(m.Cells[0]), should.Equal(1))
+			assert.Loosely(t, m.Cells[0][0], should.Resemble(types.Cell{
 				types.MetricInfo{
 					Name:      "foo",
 					Fields:    []field.Field{},
@@ -72,10 +73,10 @@ func TestFlush(t *testing.T) {
 					ResetTime: time.Unix(1234, 1000),
 					Value:     "bar",
 				},
-			})
+			}))
 		})
 
-		Convey("Splits up ChunkSize metrics", func() {
+		t.Run("Splits up ChunkSize metrics", func(t *ftt.Test) {
 			c, s, m := WithFakes(c)
 			s.Cells = make([]types.Cell, 43)
 			s.DT = defaultTarget
@@ -97,14 +98,14 @@ func TestFlush(t *testing.T) {
 				}
 			}
 
-			So(Flush(c), ShouldBeNil)
+			assert.Loosely(t, Flush(c), should.BeNil)
 
-			So(len(m.Cells), ShouldEqual, 2)
-			So(len(m.Cells[0]), ShouldEqual, 42)
-			So(len(m.Cells[1]), ShouldEqual, 1)
+			assert.Loosely(t, len(m.Cells), should.Equal(2))
+			assert.Loosely(t, len(m.Cells[0]), should.Equal(42))
+			assert.Loosely(t, len(m.Cells[1]), should.Equal(1))
 		})
 
-		Convey("Doesn't split metrics when ChunkSize is 0", func() {
+		t.Run("Doesn't split metrics when ChunkSize is 0", func(t *ftt.Test) {
 			c, s, m := WithFakes(c)
 			s.Cells = make([]types.Cell, 43)
 			s.DT = defaultTarget
@@ -126,21 +127,21 @@ func TestFlush(t *testing.T) {
 				}
 			}
 
-			So(Flush(c), ShouldBeNil)
+			assert.Loosely(t, Flush(c), should.BeNil)
 
-			So(len(m.Cells), ShouldEqual, 1)
-			So(len(m.Cells[0]), ShouldEqual, 43)
+			assert.Loosely(t, len(m.Cells), should.Equal(1))
+			assert.Loosely(t, len(m.Cells[0]), should.Equal(43))
 		})
 
-		Convey("No Monitor configured", func() {
+		t.Run("No Monitor configured", func(t *ftt.Test) {
 			c, _, _ := WithFakes(c)
 			state := GetState(c)
 			state.SetMonitor(nil)
 
-			So(Flush(c), ShouldNotBeNil)
+			assert.Loosely(t, Flush(c), should.NotBeNil)
 		})
 
-		Convey("Auto flush works", func() {
+		t.Run("Auto flush works", func(t *ftt.Test) {
 			start := time.Unix(1454561232, 0)
 			c, tc := testclock.UseTime(c, start)
 			tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
@@ -162,8 +163,8 @@ func TestFlush(t *testing.T) {
 
 			// Each 'flush' gets blocked on sending into 'moments'. Once unblocked, it
 			// advances timer by 'interval' sec (1 sec in the test).
-			So(<-moments, ShouldEqual, 1)
-			So(<-moments, ShouldEqual, 2)
+			assert.Loosely(t, <-moments, should.Equal(1))
+			assert.Loosely(t, <-moments, should.Equal(2))
 			// and so on ...
 
 			// Doesn't timeout => works.

@@ -20,9 +20,10 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSerializeDescriptor(t *testing.T) {
@@ -60,9 +61,9 @@ func TestSerializeDescriptor(t *testing.T) {
 	}
 
 	for i, d := range data {
-		Convey(fmt.Sprintf("%d. SerializeDescriptor(%v)", i, d.fields), t, func() {
+		ftt.Run(fmt.Sprintf("%d. SerializeDescriptor(%v)", i, d.fields), t, func(t *ftt.Test) {
 			got := SerializeDescriptor(d.fields)
-			So(got, ShouldResemble, d.want)
+			assert.Loosely(t, got, should.Resemble(d.want))
 		})
 	}
 }
@@ -106,9 +107,9 @@ func TestSerialize(t *testing.T) {
 	}
 
 	for i, d := range data {
-		Convey(fmt.Sprintf("%d. Serialize(%v, %v)", i, d.fields, d.values), t, func() {
+		ftt.Run(fmt.Sprintf("%d. Serialize(%v, %v)", i, d.fields, d.values), t, func(t *ftt.Test) {
 			got := Serialize(d.fields, d.values)
-			So(got, ShouldResemble, d.want)
+			assert.Loosely(t, got, should.Resemble(d.want))
 		})
 	}
 }

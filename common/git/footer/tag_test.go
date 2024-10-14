@@ -18,15 +18,16 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/strpair"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseLegacyMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("ParseLegacyMetadata", t, func() {
-		Convey("Complete", func() {
+	ftt.Run("ParseLegacyMetadata", t, func(t *ftt.Test) {
+		t.Run("Complete", func(t *ftt.Test) {
 			actual := ParseLegacyMetadata(`message
 
 commit details...
@@ -39,21 +40,21 @@ Footer: Cool
 MD_TWO=2222
 Footer: Awesome
 `)
-			So(actual, ShouldResemble, strpair.ParseMap([]string{
+			assert.Loosely(t, actual, should.Resemble(strpair.ParseMap([]string{
 				"MD_ONE:1111",
 				"MD_TWO:2222",
-			}))
+			})))
 		})
-		Convey("Honor metadata order", func() {
+		t.Run("Honor metadata order", func(t *ftt.Test) {
 			actual := ParseLegacyMetadata(`MD_FOO=foo
 MD_FOO=bar
 MD_FOO=baz
 `)
-			So(actual["MD_FOO"], ShouldResemble, []string{
+			assert.Loosely(t, actual["MD_FOO"], should.Resemble([]string{
 				"baz",
 				"bar",
 				"foo",
-			})
+			}))
 		})
 	})
 }

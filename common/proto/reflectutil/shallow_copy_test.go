@@ -17,21 +17,22 @@ package reflectutil
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestShallowCopy(t *testing.T) {
 	t.Parallel()
 
-	Convey(`ShallowCopy`, t, func() {
-		Convey(`nil`, func() {
+	ftt.Run(`ShallowCopy`, t, func(t *ftt.Test) {
+		t.Run(`nil`, func(t *ftt.Test) {
 			msg := (*TestShallowCopyMessage)(nil)
 			newMsg := ShallowCopy(msg).(*TestShallowCopyMessage)
-			So(newMsg, ShouldBeNil)
+			assert.Loosely(t, newMsg, should.BeNil)
 		})
 
-		Convey(`basic fields`, func() {
+		t.Run(`basic fields`, func(t *ftt.Test) {
 			msg := &TestShallowCopyMessage{
 				Field: "hello",
 				RepeatedField: []string{
@@ -43,16 +44,16 @@ func TestShallowCopy(t *testing.T) {
 				},
 			}
 			newMsg := ShallowCopy(msg).(*TestShallowCopyMessage)
-			So(newMsg, ShouldResembleProto, msg)
+			assert.Loosely(t, newMsg, should.Resemble(msg))
 
 			msg.RepeatedField[0] = "meepmorp"
-			So(newMsg.RepeatedField[0], ShouldEqual, "meepmorp")
+			assert.Loosely(t, newMsg.RepeatedField[0], should.Equal("meepmorp"))
 
 			msg.MappedField["this"] = "meepmorp"
-			So(newMsg.MappedField["this"], ShouldEqual, "meepmorp")
+			assert.Loosely(t, newMsg.MappedField["this"], should.Equal("meepmorp"))
 		})
 
-		Convey(`msg fields`, func() {
+		t.Run(`msg fields`, func(t *ftt.Test) {
 			msg := &TestShallowCopyMessage{
 				InnerMsg: &TestShallowCopyMessage_Inner{Field: "hello"},
 				RepeatedMsg: []*TestShallowCopyMessage_Inner{
@@ -64,16 +65,16 @@ func TestShallowCopy(t *testing.T) {
 				},
 			}
 			newMsg := ShallowCopy(msg).(*TestShallowCopyMessage)
-			So(newMsg, ShouldResembleProto, msg)
+			assert.Loosely(t, newMsg, should.Resemble(msg))
 
 			msg.InnerMsg.Field = "meepmorp"
-			So(newMsg.InnerMsg.Field, ShouldEqual, "meepmorp")
+			assert.Loosely(t, newMsg.InnerMsg.Field, should.Equal("meepmorp"))
 
 			msg.RepeatedMsg[0].Field = "meepmorp"
-			So(newMsg.RepeatedMsg[0].Field, ShouldEqual, "meepmorp")
+			assert.Loosely(t, newMsg.RepeatedMsg[0].Field, should.Equal("meepmorp"))
 
 			msg.MappedMsg["this"].Field = "meepmorp"
-			So(newMsg.MappedMsg["this"].Field, ShouldEqual, "meepmorp")
+			assert.Loosely(t, newMsg.MappedMsg["this"].Field, should.Equal("meepmorp"))
 		})
 	})
 }

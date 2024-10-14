@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func split2(s string, _ uint64) (string, string) {
@@ -56,11 +56,11 @@ func TestServer(t *testing.T) {
 		}
 	}
 
-	Convey(`TestServer`, t, func() {
+	ftt.Run(`TestServer`, t, func(t *ftt.Test) {
 		srv := Start()
 		defer srv.Close()
 
-		Convey(`simple types`, func() {
+		t.Run(`simple types`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: "world",
@@ -74,12 +74,12 @@ func TestServer(t *testing.T) {
 				return "hello " + input, 123, nil
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 123)
-			So(capturedOutput, ShouldEqual, "hello world")
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(123))
+			assert.Loosely(t, capturedOutput, should.Equal("hello world"))
 		})
 
-		Convey(`structs`, func() {
+		t.Run(`structs`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: TestStruct{[]string{"hello"}},
@@ -93,12 +93,12 @@ func TestServer(t *testing.T) {
 				return TestStruct{append(input.Things, "world")}, 123, nil
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 123)
-			So(capturedOutput, ShouldResemble, TestStruct{[]string{"hello", "world"}})
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(123))
+			assert.Loosely(t, capturedOutput, should.Resemble(TestStruct{[]string{"hello", "world"}}))
 		})
 
-		Convey(`*structs`, func() {
+		t.Run(`*structs`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: &TestStruct{[]string{"hello"}},
@@ -112,12 +112,12 @@ func TestServer(t *testing.T) {
 				return &TestStruct{append(input.Things, "world")}, 123, nil
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 123)
-			So(capturedOutput, ShouldResemble, &TestStruct{[]string{"hello", "world"}})
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(123))
+			assert.Loosely(t, capturedOutput, should.Resemble(&TestStruct{[]string{"hello", "world"}}))
 		})
 
-		Convey(`*nested structs`, func() {
+		t.Run(`*nested structs`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: &List{"hello", &List{"there", nil}},
@@ -131,12 +131,12 @@ func TestServer(t *testing.T) {
 				return &List{"stuff", input}, 123, nil
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 123)
-			So(capturedOutput, ShouldResemble, &List{"stuff", &List{"hello", &List{"there", nil}}})
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(123))
+			assert.Loosely(t, capturedOutput, should.Resemble(&List{"stuff", &List{"hello", &List{"there", nil}}}))
 		})
 
-		Convey(`panic function (error)`, func() {
+		t.Run(`panic function (error)`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: "input",
@@ -152,13 +152,13 @@ func TestServer(t *testing.T) {
 				panic(errors.New("boom"))
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 1)
-			So(capturedOutput, ShouldResemble, "")
-			So(capturedErr, ShouldErrLike, "boom")
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(1))
+			assert.Loosely(t, capturedOutput, should.BeBlank)
+			assert.Loosely(t, capturedErr, should.ErrLike("boom"))
 		})
 
-		Convey(`panic function (string)`, func() {
+		t.Run(`panic function (string)`, func(t *ftt.Test) {
 			input := InvocationInput{
 				RunnerID:    1,
 				RunnerInput: "input",
@@ -174,10 +174,10 @@ func TestServer(t *testing.T) {
 				panic("boom")
 			})})
 
-			So(intercepted, ShouldBeTrue)
-			So(exitcode, ShouldEqual, 1)
-			So(capturedOutput, ShouldResemble, "")
-			So(capturedErr, ShouldErrLike, "boom")
+			assert.Loosely(t, intercepted, should.BeTrue)
+			assert.Loosely(t, exitcode, should.Equal(1))
+			assert.Loosely(t, capturedOutput, should.BeBlank)
+			assert.Loosely(t, capturedErr, should.ErrLike("boom"))
 		})
 
 	})

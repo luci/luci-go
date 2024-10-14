@@ -18,29 +18,30 @@ import (
 	"os"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/proto"
 	pb "google.golang.org/protobuf/types/descriptorpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUtil(t *testing.T) {
 	t.Parallel()
 
-	Convey("Util", t, func() {
+	ftt.Run("Util", t, func(t *ftt.Test) {
 		descFileBytes, err := os.ReadFile("./internal/util.desc")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var desc pb.FileDescriptorSet
 		err = proto.Unmarshal(descFileBytes, &desc)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(desc.File, ShouldHaveLength, 2)
-		So(desc.File[0].GetName(), ShouldEqual, "google/protobuf/descriptor.proto")
+		assert.Loosely(t, desc.File, should.HaveLength(2))
+		assert.Loosely(t, desc.File[0].GetName(), should.Equal("google/protobuf/descriptor.proto"))
 		file := desc.File[1]
-		So(file.GetName(), ShouldEqual, "go.chromium.org/luci/common/proto/google/descutil/internal/util.proto")
+		assert.Loosely(t, file.GetName(), should.Equal("go.chromium.org/luci/common/proto/google/descutil/internal/util.proto"))
 
-		Convey("Resolve works", func() {
+		t.Run("Resolve works", func(t *ftt.Test) {
 			names := []string{
 				"descutil.E1",
 				"descutil.E1.V0",
@@ -66,28 +67,28 @@ func TestUtil(t *testing.T) {
 				"descutil.NestedMessageParent.NestedEnum.V0",
 			}
 			for _, n := range names {
-				Convey(n, func() {
+				t.Run(n, func(t *ftt.Test) {
 					actualFile, obj, _ := Resolve(&desc, n)
-					So(actualFile, ShouldEqual, file)
-					So(obj, ShouldNotBeNil)
+					assert.Loosely(t, actualFile, should.Equal(file))
+					assert.Loosely(t, obj, should.NotBeNil)
 				})
 			}
 
-			Convey("wrong name", func() {
+			t.Run("wrong name", func(t *ftt.Test) {
 				actualFile, obj, path := Resolve(&desc, "foo")
-				So(actualFile, ShouldBeNil)
-				So(obj, ShouldBeNil)
-				So(path, ShouldBeNil)
+				assert.Loosely(t, actualFile, should.BeNil)
+				assert.Loosely(t, obj, should.BeNil)
+				assert.Loosely(t, path, should.BeNil)
 			})
 		})
 
-		Convey("IndexSourceCodeInfo", func() {
+		t.Run("IndexSourceCodeInfo", func(t *ftt.Test) {
 			sourceCodeInfo, err := IndexSourceCodeInfo(file)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, m1, _ := Resolve(&desc, "descutil.M1")
 			loc := sourceCodeInfo[m1]
-			So(loc, ShouldNotBeNil)
-			So(loc.GetLeadingComments(), ShouldEqual, " M1\n next line.\n")
+			assert.Loosely(t, loc, should.NotBeNil)
+			assert.Loosely(t, loc.GetLeadingComments(), should.Equal(" M1\n next line.\n"))
 		})
 	})
 }

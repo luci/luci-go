@@ -19,36 +19,38 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCommaList(t *testing.T) {
 	t.Parallel()
-	Convey("Given a FlagSet with a CommaList flag", t, func() {
+	ftt.Run("Given a FlagSet with a CommaList flag", t, func(t *ftt.Test) {
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		fs.Usage = func() {}
 		fs.SetOutput(io.Discard)
 		var s []string
 		fs.Var(CommaList(&s), "list", "Some list")
-		Convey("When parsing with flag absent", func() {
+		t.Run("When parsing with flag absent", func(t *ftt.Test) {
 			err := fs.Parse([]string{})
-			Convey("The parsed slice should be empty", func() {
-				So(err, ShouldEqual, nil)
-				So(len(s), ShouldEqual, 0)
+			t.Run("The parsed slice should be empty", func(t *ftt.Test) {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(s), should.BeZero)
 			})
 		})
-		Convey("When parsing a single item", func() {
+		t.Run("When parsing a single item", func(t *ftt.Test) {
 			err := fs.Parse([]string{"-list", "foo"})
-			Convey("The parsed slice should contain the item", func() {
-				So(err, ShouldEqual, nil)
-				So(s, ShouldResemble, []string{"foo"})
+			t.Run("The parsed slice should contain the item", func(t *ftt.Test) {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Resemble([]string{"foo"}))
 			})
 		})
-		Convey("When parsing multiple items", func() {
+		t.Run("When parsing multiple items", func(t *ftt.Test) {
 			err := fs.Parse([]string{"-list", "foo,bar,spam"})
-			Convey("The parsed slice should contain the items", func() {
-				So(err, ShouldEqual, nil)
-				So(s, ShouldResemble, []string{"foo", "bar", "spam"})
+			t.Run("The parsed slice should contain the items", func(t *ftt.Test) {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Resemble([]string{"foo", "bar", "spam"}))
 			})
 		})
 	})

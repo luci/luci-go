@@ -17,116 +17,117 @@ package structmask
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParseElement(t *testing.T) {
 	t.Parallel()
 
-	Convey("Field", t, func() {
+	ftt.Run("Field", t, func(t *ftt.Test) {
 		elem, err := parseElement("abc.def")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"abc.def"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"abc.def"}))
 
 		elem, err = parseElement("abc.de\"f")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"abc.de\"f"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"abc.de\"f"}))
 
 		elem, err = parseElement("\"abc.def\"")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"abc.def"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"abc.def"}))
 
 		elem, err = parseElement("'a'")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"a"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"a"}))
 
 		elem, err = parseElement("\"*\"")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"*"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"*"}))
 
 		elem, err = parseElement("\"10\"")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"10"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"10"}))
 
 		elem, err = parseElement("`'`")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"'"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"'"}))
 
 		elem, err = parseElement("")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{""})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{""}))
 
 		elem, err = parseElement("/")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, fieldElement{"/"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(fieldElement{"/"}))
 
 		_, err = parseElement("'not closed")
-		So(err, ShouldErrLike, `bad quoted string`)
+		assert.Loosely(t, err, should.ErrLike(`bad quoted string`))
 	})
 
-	Convey("Index", t, func() {
+	ftt.Run("Index", t, func(t *ftt.Test) {
 		elem, err := parseElement("0")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, indexElement{0})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(indexElement{0}))
 
 		elem, err = parseElement("+10")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, indexElement{10})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(indexElement{10}))
 
 		_, err = parseElement("10.0")
-		So(err, ShouldErrLike, `an index must be a non-negative integer`)
+		assert.Loosely(t, err, should.ErrLike(`an index must be a non-negative integer`))
 
 		_, err = parseElement("-10")
-		So(err, ShouldErrLike, `an index must be a non-negative integer`)
+		assert.Loosely(t, err, should.ErrLike(`an index must be a non-negative integer`))
 	})
 
-	Convey("Star", t, func() {
+	ftt.Run("Star", t, func(t *ftt.Test) {
 		elem, err := parseElement("*")
-		So(err, ShouldBeNil)
-		So(elem, ShouldResemble, starElement{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, elem, should.Resemble(starElement{}))
 
 		_, err = parseElement("p*")
-		So(err, ShouldErrLike, `prefix and suffix matches are not supported`)
+		assert.Loosely(t, err, should.ErrLike(`prefix and suffix matches are not supported`))
 	})
 
-	Convey("/.../", t, func() {
+	ftt.Run("/.../", t, func(t *ftt.Test) {
 		_, err := parseElement("//")
-		So(err, ShouldErrLike, `regexp matches are not supported`)
+		assert.Loosely(t, err, should.ErrLike(`regexp matches are not supported`))
 	})
 }
 
 func TestParseMask(t *testing.T) {
 	t.Parallel()
 
-	Convey("OK", t, func() {
+	ftt.Run("OK", t, func(t *ftt.Test) {
 		filter, err := NewFilter([]*StructMask{
 			{Path: []string{"a", "b1", "c"}},
 			{Path: []string{"a", "*", "d"}},
 		})
-		So(err, ShouldBeNil)
-		So(filter, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, filter, should.NotBeNil)
 	})
 
-	Convey("Bad selector", t, func() {
+	ftt.Run("Bad selector", t, func(t *ftt.Test) {
 		_, err := NewFilter([]*StructMask{
 			{Path: []string{"*", "-10"}},
 		})
-		So(err, ShouldErrLike, `bad element "-10" in the mask ["*","-10"]`)
+		assert.Loosely(t, err, should.ErrLike(`bad element "-10" in the mask ["*","-10"]`))
 	})
 
-	Convey("Empty mask", t, func() {
+	ftt.Run("Empty mask", t, func(t *ftt.Test) {
 		_, err := NewFilter([]*StructMask{
 			{Path: []string{"a", "b1", "c"}},
 			{Path: []string{}},
 		})
-		So(err, ShouldErrLike, "bad empty mask")
+		assert.Loosely(t, err, should.ErrLike("bad empty mask"))
 	})
 
-	Convey("Index selector ", t, func() {
+	ftt.Run("Index selector ", t, func(t *ftt.Test) {
 		_, err := NewFilter([]*StructMask{
 			{Path: []string{"a", "1", "*"}},
 		})
-		So(err, ShouldErrLike, "individual index selectors are not supported")
+		assert.Loosely(t, err, should.ErrLike("individual index selectors are not supported"))
 	})
 }

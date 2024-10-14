@@ -20,39 +20,40 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLimited(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Limited Iterator, using an instrumented context`, t, func() {
+	ftt.Run(`A Limited Iterator, using an instrumented context`, t, func(t *ftt.Test) {
 		ctx, clock := testclock.UseTime(context.Background(), time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		l := Limited{}
 
-		Convey(`When empty, will return Stop immediately..`, func() {
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+		t.Run(`When empty, will return Stop immediately..`, func(t *ftt.Test) {
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 
-		Convey(`With 3 retries, will Stop after three retries.`, func() {
+		t.Run(`With 3 retries, will Stop after three retries.`, func(t *ftt.Test) {
 			l.Delay = time.Second
 			l.Retries = 3
 
-			So(l.Next(ctx, nil), ShouldEqual, time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(time.Second))
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 
-		Convey(`Will stop after MaxTotal.`, func() {
+		t.Run(`Will stop after MaxTotal.`, func(t *ftt.Test) {
 			l.Retries = 1000
 			l.Delay = 3 * time.Second
 			l.MaxTotal = 8 * time.Second
 
-			So(l.Next(ctx, nil), ShouldEqual, 3*time.Second)
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(3*time.Second))
 			clock.Add(8 * time.Second)
-			So(l.Next(ctx, nil), ShouldEqual, Stop)
+			assert.Loosely(t, l.Next(ctx, nil), should.Equal(Stop))
 		})
 	})
 }

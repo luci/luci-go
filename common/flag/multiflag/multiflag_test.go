@@ -23,7 +23,9 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testMultiFlag struct {
@@ -62,62 +64,62 @@ func (w *failWriter) Write(data []byte) (int, error) {
 }
 
 func TestParsing(t *testing.T) {
-	Convey("Given empty MultiFlag", t, func() {
+	ftt.Run("Given empty MultiFlag", t, func(t *ftt.Test) {
 		of := &testMultiFlag{}
 
-		Convey("Its option list should be empty", func() {
-			So(of.OptionNames(), ShouldBeEmpty)
+		t.Run("Its option list should be empty", func(t *ftt.Test) {
+			assert.Loosely(t, of.OptionNames(), should.BeEmpty)
 		})
 
-		Convey(`Parsing an option spec with an empty option value should fail.`, func() {
-			So(of.Parse(`,params`), ShouldNotBeNil)
+		t.Run(`Parsing an option spec with an empty option value should fail.`, func(t *ftt.Test) {
+			assert.Loosely(t, of.Parse(`,params`), should.NotBeNil)
 		})
 	})
 
-	Convey("Given Flags with two option values", t, func() {
+	ftt.Run("Given Flags with two option values", t, func(t *ftt.Test) {
 		of := &testMultiFlag{}
 		of.Options = []Option{
 			of.newOption("foo", "Test option 'foo'."),
 			of.newOption("bar", "Test option 'bar'."),
 		}
 
-		Convey("Its option list should be: ['foo', 'bar'].", func() {
-			So(of.OptionNames(), ShouldResemble, []string{"foo", "bar"})
+		t.Run("Its option list should be: ['foo', 'bar'].", func(t *ftt.Test) {
+			assert.Loosely(t, of.OptionNames(), should.Resemble([]string{"foo", "bar"}))
 		})
 
-		Convey(`When parsing 'foo,string-var="hello world"'`, func() {
+		t.Run(`When parsing 'foo,string-var="hello world"'`, func(t *ftt.Test) {
 			err := of.Parse(`foo,string-var="hello world",bool-var=true`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("The option, 'foo', should be selected.", func() {
-				So(of.Selected, ShouldNotBeNil)
-				So(of.Selected.Descriptor().Name, ShouldEqual, "foo")
+			t.Run("The option, 'foo', should be selected.", func(t *ftt.Test) {
+				assert.Loosely(t, of.Selected, should.NotBeNil)
+				assert.Loosely(t, of.Selected.Descriptor().Name, should.Equal("foo"))
 			})
 
-			Convey(`The value of 'string-var' should be, "hello world".`, func() {
-				So(of.S, ShouldEqual, "hello world")
+			t.Run(`The value of 'string-var' should be, "hello world".`, func(t *ftt.Test) {
+				assert.Loosely(t, of.S, should.Equal("hello world"))
 			})
 
-			Convey(`The value of 'int-var' should be default (123)".`, func() {
-				So(of.I, ShouldEqual, 123)
+			t.Run(`The value of 'int-var' should be default (123)".`, func(t *ftt.Test) {
+				assert.Loosely(t, of.I, should.Equal(123))
 			})
 
-			Convey(`The value of 'bool-var' should be "true".`, func() {
-				So(of.B, ShouldEqual, true)
+			t.Run(`The value of 'bool-var' should be "true".`, func(t *ftt.Test) {
+				assert.Loosely(t, of.B, should.Equal(true))
 			})
 		})
 	})
 }
 
 func TestHelp(t *testing.T) {
-	Convey(`A 'MultiFlag' instance`, t, func() {
+	ftt.Run(`A 'MultiFlag' instance`, t, func(t *ftt.Test) {
 		of := &MultiFlag{}
 
-		Convey(`Uses os.Stderr for output.`, func() {
-			So(of.GetOutput(), ShouldEqual, os.Stderr)
+		t.Run(`Uses os.Stderr for output.`, func(t *ftt.Test) {
+			assert.Loosely(t, of.GetOutput(), should.Equal(os.Stderr))
 		})
 
-		Convey(`Configured with a simple FlagOption with flags`, func() {
+		t.Run(`Configured with a simple FlagOption with flags`, func(t *ftt.Test) {
 			opt := &FlagOption{
 				Name:        "foo",
 				Description: "An option, 'foo'.",
@@ -125,29 +127,29 @@ func TestHelp(t *testing.T) {
 			opt.Flags().String("bar", "", "An option, 'bar'.")
 			of.Options = []Option{opt}
 
-			Convey(`Should successfully parse "foo" with no flags.`, func() {
-				So(of.Parse(`foo`), ShouldBeNil)
+			t.Run(`Should successfully parse "foo" with no flags.`, func(t *ftt.Test) {
+				assert.Loosely(t, of.Parse(`foo`), should.BeNil)
 			})
 
-			Convey(`Should successfully parse "foo" with a "bar" flag.`, func() {
-				So(of.Parse(`foo,bar="Hello!"`), ShouldBeNil)
+			t.Run(`Should successfully parse "foo" with a "bar" flag.`, func(t *ftt.Test) {
+				assert.Loosely(t, of.Parse(`foo,bar="Hello!"`), should.BeNil)
 			})
 
-			Convey(`Should fail to parse a non-existent flag.`, func() {
-				So(of.Parse(`foo,baz`), ShouldNotBeNil)
+			t.Run(`Should fail to parse a non-existent flag.`, func(t *ftt.Test) {
+				assert.Loosely(t, of.Parse(`foo,baz`), should.NotBeNil)
 			})
 		})
 	})
 
-	Convey(`Given a testMultiFlag configured with 'nil' output.`, t, func() {
+	ftt.Run(`Given a testMultiFlag configured with 'nil' output.`, t, func(t *ftt.Test) {
 		of := &testMultiFlag{}
 
-		Convey(`Should default to os.Stderr`, func() {
-			So(of.GetOutput(), ShouldEqual, os.Stderr)
+		t.Run(`Should default to os.Stderr`, func(t *ftt.Test) {
+			assert.Loosely(t, of.GetOutput(), should.Equal(os.Stderr))
 		})
 	})
 
-	Convey("Given Flags with two options, one of which is 'help'", t, func() {
+	ftt.Run("Given Flags with two options, one of which is 'help'", t, func(t *ftt.Test) {
 		var buf bytes.Buffer
 		of := &testMultiFlag{}
 		of.Output = &buf
@@ -161,25 +163,25 @@ help  Displays this help message. Can be run as "help,<option>" to display help 
 foo   Test option 'foo'.
 `
 
-		Convey("Should print a correct help string", func() {
+		t.Run("Should print a correct help string", func(t *ftt.Test) {
 			err := of.PrintHelp()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(buf.String(), ShouldEqual, correctHelpString)
+			assert.Loosely(t, buf.String(), should.Equal(correctHelpString))
 		})
 
-		Convey(`Should fail to print a help string when the writer fails.`, func() {
+		t.Run(`Should fail to print a help string when the writer fails.`, func(t *ftt.Test) {
 			w := &failWriter{}
 			w.Error = errors.New("fail")
 			of.Output = w
-			So(of.PrintHelp(), ShouldNotBeNil)
+			assert.Loosely(t, of.PrintHelp(), should.NotBeNil)
 		})
 
-		Convey(`Should parse a request for a specific option's help string.`, func() {
+		t.Run(`Should parse a request for a specific option's help string.`, func(t *ftt.Test) {
 			err := of.Parse(`help,foo`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`And should print help for that option.`, func() {
+			t.Run(`And should print help for that option.`, func(t *ftt.Test) {
 				correctOptionHelpString := `Help for 'foo': Test option 'foo'.
   -bool-var
     	A boolean variable.
@@ -188,32 +190,32 @@ foo   Test option 'foo'.
   -string-var string
     	A string variable.
 `
-				So(buf.String(), ShouldEqual, correctOptionHelpString)
+				assert.Loosely(t, buf.String(), should.Equal(correctOptionHelpString))
 			})
 		})
 
-		Convey("Should parse the 'help' option", func() {
+		t.Run("Should parse the 'help' option", func(t *ftt.Test) {
 			err := of.Parse(`help`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("Should print the correct help string in response.", func() {
-				So(buf.String(), ShouldEqual, correctHelpString)
+			t.Run("Should print the correct help string in response.", func(t *ftt.Test) {
+				assert.Loosely(t, buf.String(), should.Equal(correctHelpString))
 			})
 		})
 
-		Convey("Should parse 'help,junk=1'", func() {
+		t.Run("Should parse 'help,junk=1'", func(t *ftt.Test) {
 			err := of.Parse(`help,junk=1`)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Should notify the user that "junk=1" is not an option.`, func() {
-				So(buf.String(), ShouldEqual, "Unknown option 'junk=1'\n")
+			t.Run(`Should notify the user that "junk=1" is not an option.`, func(t *ftt.Test) {
+				assert.Loosely(t, buf.String(), should.Equal("Unknown option 'junk=1'\n"))
 			})
 		})
 	})
 }
 
 func TestHelpItemSlice(t *testing.T) {
-	Convey(`Given a slice of testOption instances`, t, func() {
+	ftt.Run(`Given a slice of testOption instances`, t, func(t *ftt.Test) {
 		options := optionDescriptorSlice{
 			&OptionDescriptor{
 				Name:        "a",
@@ -238,47 +240,47 @@ func TestHelpItemSlice(t *testing.T) {
 		}
 		sort.Sort(options)
 
-		Convey(`The options should be sorted: c, b, a, b`, func() {
+		t.Run(`The options should be sorted: c, b, a, b`, func(t *ftt.Test) {
 			var names []string
 			for _, opt := range options {
 				names = append(names, opt.Name)
 			}
-			So(names, ShouldResemble, []string{"c", "d", "a", "b"})
+			assert.Loosely(t, names, should.Resemble([]string{"c", "d", "a", "b"}))
 		})
 	})
 }
 
 func TestFlagParse(t *testing.T) {
-	Convey("Given a MultiFlag with one option, 'foo'", t, func() {
+	ftt.Run("Given a MultiFlag with one option, 'foo'", t, func(t *ftt.Test) {
 		of := &testMultiFlag{}
 		of.Options = []Option{
 			of.newOption("foo", "Test option 'foo'."),
 		}
 
-		Convey("When configured as an output to a Go flag.MultiFlag", func() {
+		t.Run("When configured as an output to a Go flag.MultiFlag", func(t *ftt.Test) {
 			gof := &flag.FlagSet{}
 			gof.Var(of, "option", "Single line option")
 
-			Convey(`Should parse '-option foo,string-var="hello world",int-var=1337'`, func() {
+			t.Run(`Should parse '-option foo,string-var="hello world",int-var=1337'`, func(t *ftt.Test) {
 				err := gof.Parse([]string{"-option", `foo,string-var="hello world",int-var=1337"`})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				Convey("Should parse out 'foo' as the option", func() {
-					So(of.Selected.Descriptor().Name, ShouldEqual, "foo")
+				t.Run("Should parse out 'foo' as the option", func(t *ftt.Test) {
+					assert.Loosely(t, of.Selected.Descriptor().Name, should.Equal("foo"))
 				})
 
-				Convey(`Should parse out 'string-var' as "hello world".`, func() {
-					So(of.S, ShouldEqual, "hello world")
+				t.Run(`Should parse out 'string-var' as "hello world".`, func(t *ftt.Test) {
+					assert.Loosely(t, of.S, should.Equal("hello world"))
 				})
 
-				Convey(`Should parse out 'int-var' as '1337'.`, func() {
-					So(of.I, ShouldEqual, 1337)
+				t.Run(`Should parse out 'int-var' as '1337'.`, func(t *ftt.Test) {
+					assert.Loosely(t, of.I, should.Equal(1337))
 				})
 			})
 
-			Convey(`When parsing 'bar'`, func() {
+			t.Run(`When parsing 'bar'`, func(t *ftt.Test) {
 				err := gof.Parse([]string{"-option", "bar"})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 	})

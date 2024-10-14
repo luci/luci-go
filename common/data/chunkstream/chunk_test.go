@@ -19,7 +19,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testChunk struct {
@@ -59,20 +61,20 @@ func (c *testChunk) Release() {
 }
 
 func TestChunkNode(t *testing.T) {
-	Convey(`A chunkNode wrapping a testing Chunk implementation`, t, func() {
+	ftt.Run(`A chunkNode wrapping a testing Chunk implementation`, t, func(t *ftt.Test) {
 		c := tc(0, 1, 2)
 		n := newChunkNode(c)
 
-		Convey(`Should call Chunk methods.`, func() {
-			So(n.Bytes(), ShouldResemble, []byte{0, 1, 2})
+		t.Run(`Should call Chunk methods.`, func(t *ftt.Test) {
+			assert.Loosely(t, n.Bytes(), should.Resemble([]byte{0, 1, 2}))
 		})
 
-		Convey(`When released, releases the wrapped Chunk.`, func() {
+		t.Run(`When released, releases the wrapped Chunk.`, func(t *ftt.Test) {
 			n.release()
-			So(c.released, ShouldBeTrue)
+			assert.Loosely(t, c.released, should.BeTrue)
 
-			Convey(`If released again, panics.`, func() {
-				So(func() { n.release() }, ShouldPanic)
+			t.Run(`If released again, panics.`, func(t *ftt.Test) {
+				assert.Loosely(t, func() { n.release() }, should.Panic)
 			})
 		})
 	})

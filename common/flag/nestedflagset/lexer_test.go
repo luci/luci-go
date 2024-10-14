@@ -17,32 +17,34 @@ package nestedflagset
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLexer(t *testing.T) {
-	Convey("Given a lexer with an empty value", t, func() {
+	ftt.Run("Given a lexer with an empty value", t, func(t *ftt.Test) {
 		l := lexer("", ':')
 
-		Convey("The lexer should start in a finished state.", func() {
-			So(l.finished(), ShouldBeTrue)
+		t.Run("The lexer should start in a finished state.", func(t *ftt.Test) {
+			assert.Loosely(t, l.finished(), should.BeTrue)
 		})
 
-		Convey("The next token should be empty.", func() {
+		t.Run("The next token should be empty.", func(t *ftt.Test) {
 
-			So(l.nextToken(), ShouldEqual, token(""))
+			assert.Loosely(t, l.nextToken(), should.Equal(token("")))
 		})
 
-		Convey("Splitting should yield a zero-length token slice.", func() {
-			So(l.split(), ShouldResemble, []token{})
+		t.Run("Splitting should yield a zero-length token slice.", func(t *ftt.Test) {
+			assert.Loosely(t, l.split(), should.Resemble([]token{}))
 		})
 	})
 
 	s := `a: b c:d":e:ł:f":g:ü:h\"i:j\":k`
-	Convey(`Given a complex test string: `+s, t, func() {
+	ftt.Run(`Given a complex test string: `+s, t, func(t *ftt.Test) {
 		l := lexer(s, ':')
 
-		Convey("Should yield the expected token set and be finished.", func() {
+		t.Run("Should yield the expected token set and be finished.", func(t *ftt.Test) {
 			expectedTokens := []token{
 				`a`,
 				` b c`,
@@ -54,19 +56,19 @@ func TestLexer(t *testing.T) {
 				`k`,
 			}
 			for _, expected := range expectedTokens {
-				So(l.nextToken(), ShouldEqual, expected)
+				assert.Loosely(t, l.nextToken(), should.Equal(expected))
 			}
 
-			So(l.finished(), ShouldBeTrue)
-			So(l.nextToken(), ShouldEqual, token(""))
+			assert.Loosely(t, l.finished(), should.BeTrue)
+			assert.Loosely(t, l.nextToken(), should.Equal(token("")))
 		})
 	})
 
-	Convey("Given a simple lexer string: a:b:c", t, func() {
+	ftt.Run("Given a simple lexer string: a:b:c", t, func(t *ftt.Test) {
 		l := lexer(`a:b:c`, ':')
 
-		Convey("Split should yield three elements.", func() {
-			So(l.split(), ShouldResemble, []token{"a", "b", "c"})
+		t.Run("Split should yield three elements.", func(t *ftt.Test) {
+			assert.Loosely(t, l.split(), should.Resemble([]token{"a", "b", "c"}))
 		})
 	})
 }

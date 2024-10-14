@@ -18,13 +18,15 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestCacheContext(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A caching Context populated with values`, t, func() {
+	ftt.Run(`A caching Context populated with values`, t, func(t *ftt.Test) {
 		const count = 3
 		c := context.Background()
 		for i := 0; i < count; i++ {
@@ -32,7 +34,7 @@ func TestCacheContext(t *testing.T) {
 		}
 		c = Wrap(c)
 
-		Convey(`Successfully caches values.`, func() {
+		t.Run(`Successfully caches values.`, func(t *ftt.Test) {
 			// Perform initial lookup to cache.
 			for i := 0; i < count; i++ {
 				_ = c.Value(i)
@@ -43,17 +45,17 @@ func TestCacheContext(t *testing.T) {
 
 			// Clear the Context. Any passthrough calls will now panic.
 			c.(*cacheContext).Context = nil
-			So(func() { c.Value("not cached") }, ShouldPanic)
+			assert.Loosely(t, func() { c.Value("not cached") }, should.Panic)
 
 			// Confirm that lookups happen from cache.
 			for i := 0; i < count; i++ {
-				So(c.Value(i), ShouldEqual, i)
+				assert.Loosely(t, c.Value(i), should.Equal(i))
 			}
-			So(c.Value("missing"), ShouldBeNil)
+			assert.Loosely(t, c.Value("missing"), should.BeNil)
 		})
 
-		Convey(`Will not double-wrap.`, func() {
-			So(Wrap(c), ShouldEqual, c)
+		t.Run(`Will not double-wrap.`, func(t *ftt.Test) {
+			assert.Loosely(t, Wrap(c), should.Equal(c))
 		})
 	})
 }

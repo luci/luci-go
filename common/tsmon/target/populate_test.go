@@ -17,12 +17,12 @@ package target
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 
 	"google.golang.org/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTargetPopulate(t *testing.T) {
@@ -41,11 +41,11 @@ func TestTargetPopulate(t *testing.T) {
 		TaskNum:     1,
 	}
 
-	Convey("Populate metrics collection", t, func() {
-		Convey("With DeviceTarget", func() {
+	ftt.Run("Populate metrics collection", t, func(t *ftt.Test) {
+		t.Run("With DeviceTarget", func(t *ftt.Test) {
 			d := &pb.MetricsCollection{}
 			deviceTarget.PopulateProto(d)
-			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
+			assert.Loosely(t, d.RootLabels, should.Resemble([]*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},
@@ -94,13 +94,13 @@ func TestTargetPopulate(t *testing.T) {
 					Key:   proto.String("hostgroup"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "test-hostgroup"},
 				},
-			})
+			}))
 		})
 
-		Convey("With TaskTarget", func() {
+		t.Run("With TaskTarget", func(t *ftt.Test) {
 			d := &pb.MetricsCollection{}
 			taskTarget.PopulateProto(d)
-			So(d.RootLabels, ShouldResembleProto, []*pb.MetricsCollection_RootLabels{
+			assert.Loosely(t, d.RootLabels, should.Resemble([]*pb.MetricsCollection_RootLabels{
 				{
 					Key:   proto.String("proxy_environment"),
 					Value: &pb.MetricsCollection_RootLabels_StringValue{StringValue: "pa"},
@@ -133,7 +133,7 @@ func TestTargetPopulate(t *testing.T) {
 					Key:   proto.String("task_num"),
 					Value: &pb.MetricsCollection_RootLabels_Int64Value{Int64Value: 1},
 				},
-			})
+			}))
 		})
 	})
 }

@@ -24,36 +24,36 @@ import (
 
 	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/gitiles"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNewRESTClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("accept valid gitiles host", t, func() {
+	ftt.Run("accept valid gitiles host", t, func(t *ftt.Test) {
 		c, err := NewRESTClient(&http.Client{}, "chromium.googlesource.com", false)
-		So(c, ShouldNotBeNil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("accept valid gitiles host with dash", t, func() {
+	ftt.Run("accept valid gitiles host with dash", t, func(t *ftt.Test) {
 		c, err := NewRESTClient(&http.Client{}, "chromium-foo.googlesource.com", false)
-		So(c, ShouldNotBeNil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Reject invalid gitiles host", t, func() {
+	ftt.Run("Reject invalid gitiles host", t, func(t *ftt.Test) {
 		c, err := NewRESTClient(&http.Client{}, "chromium.hijacked.com", false)
-		So(c, ShouldBeNil)
-		So(err, ShouldErrLike, "is not a valid Gitiles host")
+		assert.Loosely(t, c, should.BeNil)
+		assert.Loosely(t, err, should.ErrLike("is not a valid Gitiles host"))
 	})
 
-	Convey("Reject invalid gitiles host with matching suffix", t, func() {
+	ftt.Run("Reject invalid gitiles host with matching suffix", t, func(t *ftt.Test) {
 		c, err := NewRESTClient(&http.Client{}, "chromium.hijacked.com/chromium.googlesource.com", false)
-		So(c, ShouldBeNil)
-		So(err, ShouldErrLike, "is not a valid Gitiles host")
+		assert.Loosely(t, c, should.BeNil)
+		assert.Loosely(t, err, should.ErrLike("is not a valid Gitiles host"))
 	})
 }
 
@@ -61,14 +61,14 @@ func TestLog(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("Log with bad project", t, func() {
+	ftt.Run("Log with bad project", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {})
 		defer srv.Close()
 		_, err := c.Log(ctx, &gitiles.LogRequest{})
-		So(err, ShouldErrLike, "project is required")
+		assert.Loosely(t, err, should.ErrLike("project is required"))
 	})
 
-	Convey("Log w/o pages", t, func() {
+	ftt.Run("Log w/o pages", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -76,17 +76,17 @@ func TestLog(t *testing.T) {
 		})
 		defer srv.Close()
 
-		Convey("Return All", func() {
+		t.Run("Return All", func(t *ftt.Test) {
 			res, err := c.Log(ctx, &gitiles.LogRequest{
 				Project:            "repo",
 				Committish:         "8de6836858c99e48f3c58164ab717bda728e95dd",
 				ExcludeAncestorsOf: "master",
 				PageSize:           10,
 			})
-			So(err, ShouldBeNil)
-			So(len(res.Log), ShouldEqual, 2)
-			So(res.Log[0].Author.Name, ShouldEqual, "Author 1")
-			So(res.Log[1].Id, ShouldEqual, "dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.Log), should.Equal(2))
+			assert.Loosely(t, res.Log[0].Author.Name, should.Equal("Author 1"))
+			assert.Loosely(t, res.Log[1].Id, should.Equal("dc1dbf1aa56e4dd4cbfaab61c4d30a35adce5f40"))
 		})
 	})
 }
@@ -95,24 +95,24 @@ func TestRefs(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("bad project", t, func() {
+	ftt.Run("bad project", t, func(t *ftt.Test) {
 		c := &client{BaseURL: "https://a.googlesource.com/a"}
 		_, err := c.Refs(ctx, &gitiles.RefsRequest{
 			RefsPath: gitiles.AllRefs,
 		})
-		So(err, ShouldErrLike, `project is required`)
+		assert.Loosely(t, err, should.ErrLike(`project is required`))
 	})
 
-	Convey("bad RefsPath", t, func() {
+	ftt.Run("bad RefsPath", t, func(t *ftt.Test) {
 		c := &client{BaseURL: "https://a.googlesource.com/a"}
 		_, err := c.Refs(ctx, &gitiles.RefsRequest{
 			Project:  "repo",
 			RefsPath: "bad",
 		})
-		So(err, ShouldErrLike, `refsPath must be "refs" or start with "refs/"`)
+		assert.Loosely(t, err, should.ErrLike(`refsPath must be "refs" or start with "refs/"`))
 	})
 
-	Convey("Refs All", t, func() {
+	ftt.Run("Refs All", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -136,17 +136,17 @@ func TestRefs(t *testing.T) {
 			Project:  "repo",
 			RefsPath: gitiles.AllRefs,
 		})
-		So(err, ShouldBeNil)
-		So(res.Revisions, ShouldResemble, map[string]string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Revisions, should.Resemble(map[string]string{
 			"HEAD":                     "refs/heads/master",
 			"refs/heads/master":        "deadbeef",
 			"refs/heads/infra/config":  "0000beef",
 			"refs/other/ref":           "ba6",
 			"refs/changes/01/123001/1": "123dead001beef1",
 			// Skipping "123dead001beef1" which has no value.
-		})
+		}))
 	})
-	Convey("Refs heads", t, func() {
+	ftt.Run("Refs heads", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -163,11 +163,11 @@ func TestRefs(t *testing.T) {
 			Project:  "repo",
 			RefsPath: gitiles.Branches,
 		})
-		So(err, ShouldBeNil)
-		So(res.Revisions, ShouldResemble, map[string]string{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Revisions, should.Resemble(map[string]string{
 			"refs/heads/master":       "deadbeef",
 			"refs/heads/infra/config": "0000beef",
-		})
+		}))
 	})
 }
 
@@ -175,7 +175,7 @@ func TestGetProject(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("GetProject", t, func() {
+	ftt.Run("GetProject", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -189,11 +189,11 @@ func TestGetProject(t *testing.T) {
 		defer srv.Close()
 
 		res, err := c.GetProject(ctx, &gitiles.GetProjectRequest{Name: "bar"})
-		So(err, ShouldBeNil)
-		So(res, ShouldResemble, &gitiles.Project{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res, should.Resemble(&gitiles.Project{
 			Name:     "bar",
 			CloneUrl: "https://foo.googlesource.com/bar",
-		})
+		}))
 	})
 }
 
@@ -201,7 +201,7 @@ func TestProjects(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("List Projects", t, func() {
+	ftt.Run("List Projects", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -223,13 +223,13 @@ func TestProjects(t *testing.T) {
 		defer srv.Close()
 
 		res, err := c.Projects(ctx, &gitiles.ProjectsRequest{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// Sort project to make it deterministic
 		sort.Strings(res.Projects)
-		So(res.Projects, ShouldResemble, []string{
+		assert.Loosely(t, res.Projects, should.Resemble([]string{
 			"All-Projects",
 			"bar",
-		})
+		}))
 	})
 }
 
@@ -237,7 +237,7 @@ func TestList(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	Convey("ListFiles", t, func() {
+	ftt.Run("ListFiles", t, func(t *ftt.Test) {
 		srv, c := newMockClient(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 			w.Header().Set("Content-Type", "application/json")
@@ -280,8 +280,8 @@ func TestList(t *testing.T) {
 			Committish: "main",
 			Path:       "path/to/dir",
 		})
-		So(err, ShouldBeNil)
-		So(res.Files, ShouldResemble, []*git.File{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Files, should.Resemble([]*git.File{
 			{
 				Mode: 33188,
 				Id:   "7e5b457d492b50762386611fc7f1302f23b313cf",
@@ -306,7 +306,7 @@ func TestList(t *testing.T) {
 				Path: "new",
 				Type: git.File_UNKNOWN,
 			},
-		})
+		}))
 	})
 }
 
