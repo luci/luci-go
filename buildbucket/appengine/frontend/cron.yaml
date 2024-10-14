@@ -49,15 +49,6 @@ cron:
   url: /internal/cron/config/update
   schedule: every 10 minutes
 
-### bq export
-
-- description: export completed builds to BigQuery
-  target: backend
-  url: /internal/cron/buildbucket/bq-export
-  schedule: every 1 minutes
-  retry_parameters:
-    min_backoff_seconds: 2
-
 ## cleanup builders
 
 - description: removes inactive BuilderStats
