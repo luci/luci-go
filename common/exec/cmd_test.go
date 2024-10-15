@@ -23,11 +23,12 @@ import (
 	"runtime"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/exec/execmock"
 	"go.chromium.org/luci/common/system/environ"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var panicRunner = execmock.Register(func(_ execmock.None) (_ execmock.None, exitcode int, err error) {
@@ -45,24 +46,26 @@ func TestCmd(t *testing.T) {
 
 	t.Parallel()
 
-	Convey(`Cmd`, t, func() {
+	ftt.Run(`Cmd`, t, func(t *ftt.Test) {
 		ctx := execmock.Init(context.Background())
 
-		// b/351223612: Broken on Windows.
-		SkipConvey(`works with pasthrough`, func() {
+		t.Run(`works with pasthrough`, func(t *ftt.Test) {
+			if runtime.GOOS == "windows" {
+				t.Skip("b/351223612: Broken on Windows")
+			}
 			execmock.Passthrough.Mock(ctx)
 
 			cmd := exec.Command(ctx, prog, args...)
 			data, err := cmd.Output()
-			So(err, ShouldBeNil)
-			So(bytes.TrimSpace(data), ShouldResemble, []byte("hello there"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bytes.TrimSpace(data), should.Resemble([]byte("hello there")))
 
 			cmd = exec.Command(ctx, prog, args...)
 			data, err = cmd.CombinedOutput()
-			So(err, ShouldBeNil)
-			So(bytes.TrimSpace(data), ShouldResemble, []byte("hello there"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, bytes.TrimSpace(data), should.Resemble([]byte("hello there")))
 		})
-		Convey(`works with mocking`, func() {
+		t.Run(`works with mocking`, func(t *ftt.Test) {
 			execmock.Simple.
 				WithArgs("echo").
 				WithLimit(1).
@@ -72,20 +75,20 @@ func TestCmd(t *testing.T) {
 
 			cmd := exec.Command(ctx, prog, args...)
 			data, err := cmd.CombinedOutput()
-			So(err, ShouldBeNil)
-			So(string(data), ShouldResemble, "not what you expected")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(data), should.Match("not what you expected"))
 
-			Convey(`and still can't run it twice`, func() {
-				So(cmd.Start(), ShouldErrLike, "exec: already started")
+			t.Run(`and still can't run it twice`, func(t *ftt.Test) {
+				assert.Loosely(t, cmd.Start(), should.ErrLike("exec: already started"))
 			})
 		})
 
-		Convey(`mocking without a fallback generates an error`, func() {
+		t.Run(`mocking without a fallback generates an error`, func(t *ftt.Test) {
 			cmd := exec.CommandContext(ctx, prog, args...)
-			So(cmd.Run(), ShouldErrLike, "no mock matches")
+			assert.Loosely(t, cmd.Run(), should.ErrLike("no mock matches"))
 		})
 
-		Convey(`can collect the remaining mocks`, func() {
+		t.Run(`can collect the remaining mocks`, func(t *ftt.Test) {
 			echoSingle := execmock.Simple.WithArgs("echo").WithLimit(1)
 
 			notExpected := echoSingle.Mock(ctx, execmock.SimpleInput{
@@ -102,100 +105,100 @@ func TestCmd(t *testing.T) {
 
 			cmd := exec.CommandContext(ctx, prog, args...)
 			data, err := cmd.Output()
-			So(err, ShouldBeNil)
-			So(string(data), ShouldResemble, "not what you expected")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(data), should.Match("not what you expected"))
 
-			So(notExpected.Snapshot(), ShouldHaveLength, 1)
-			So(different.Snapshot(), ShouldHaveLength, 0)
-			So(exit100.Snapshot(), ShouldHaveLength, 0)
+			assert.Loosely(t, notExpected.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, different.Snapshot(), should.HaveLength(0))
+			assert.Loosely(t, exit100.Snapshot(), should.HaveLength(0))
 
 			cmd = exec.CommandContext(ctx, prog, args...)
 			data, err = cmd.Output()
-			So(err, ShouldBeNil)
-			So(string(data), ShouldResemble, "a different outcome")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(data), should.Match("a different outcome"))
 
-			So(notExpected.Snapshot(), ShouldHaveLength, 1)
-			So(different.Snapshot(), ShouldHaveLength, 1)
-			So(exit100.Snapshot(), ShouldHaveLength, 0)
+			assert.Loosely(t, notExpected.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, different.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, exit100.Snapshot(), should.HaveLength(0))
 
 			cmd = exec.CommandContext(ctx, prog, args...)
 			_, err = cmd.Output()
-			So(err, ShouldErrLike, "exit status 100")
-			So(cmd.ProcessState.ExitCode(), ShouldEqual, 100)
+			assert.Loosely(t, err, should.ErrLike("exit status 100"))
+			assert.Loosely(t, cmd.ProcessState.ExitCode(), should.Equal(100))
 
-			So(notExpected.Snapshot(), ShouldHaveLength, 1)
-			So(different.Snapshot(), ShouldHaveLength, 1)
-			So(exit100.Snapshot(), ShouldHaveLength, 1)
+			assert.Loosely(t, notExpected.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, different.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, exit100.Snapshot(), should.HaveLength(1))
 		})
 
-		Convey(`can detect misses`, func() {
+		t.Run(`can detect misses`, func(t *ftt.Test) {
 			cmd := exec.CommandContext(ctx, prog, args...)
-			So(cmd.Run(), ShouldErrLike, "no mock matches")
+			assert.Loosely(t, cmd.Run(), should.ErrLike("no mock matches"))
 
 			misses := execmock.ResetState(ctx)
-			So(misses, ShouldHaveLength, 1)
-			So(misses[0].Args, ShouldResemble, fullArgs)
+			assert.Loosely(t, misses, should.HaveLength(1))
+			assert.Loosely(t, misses[0].Args, should.Resemble(fullArgs))
 		})
 
-		Convey(`can simulate a startup error`, func() {
+		t.Run(`can simulate a startup error`, func(t *ftt.Test) {
 			execmock.StartError.WithArgs("echo").WithLimit(1).Mock(ctx, errors.New("start boom"))
 
 			cmd := exec.CommandContext(ctx, prog, args...)
-			So(cmd.Run(), ShouldErrLike, "start boom")
+			assert.Loosely(t, cmd.Run(), should.ErrLike("start boom"))
 
-			Convey(`which persists`, func() {
-				So(cmd.Start(), ShouldErrLike, "start boom")
+			t.Run(`which persists`, func(t *ftt.Test) {
+				assert.Loosely(t, cmd.Start(), should.ErrLike("start boom"))
 			})
 		})
 
-		Convey(`can use StdoutPipe`, func() {
+		t.Run(`can use StdoutPipe`, func(t *ftt.Test) {
 			execmock.Simple.Mock(ctx, execmock.SimpleInput{
 				Stdout: "hello world",
 			})
 
 			cmd := exec.CommandContext(ctx, prog, args...)
 			out, err := cmd.StdoutPipe()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(cmd.Start(), ShouldBeNil)
+			assert.Loosely(t, cmd.Start(), should.BeNil)
 			data, err := io.ReadAll(out)
-			So(cmd.Wait(), ShouldBeNil)
-			So(err, ShouldBeNil)
-			So(string(data), ShouldResemble, "hello world")
+			assert.Loosely(t, cmd.Wait(), should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(data), should.Match("hello world"))
 		})
 
-		Convey(`can use StderrPipe`, func() {
+		t.Run(`can use StderrPipe`, func(t *ftt.Test) {
 			execmock.Simple.Mock(ctx, execmock.SimpleInput{
 				Stderr: "hello world",
 			})
 
 			cmd := exec.CommandContext(ctx, prog, args...)
 			out, err := cmd.StderrPipe()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(cmd.Start(), ShouldBeNil)
+			assert.Loosely(t, cmd.Start(), should.BeNil)
 			data, err := io.ReadAll(out)
-			So(cmd.Wait(), ShouldBeNil)
-			So(err, ShouldBeNil)
-			So(string(data), ShouldResemble, "hello world")
+			assert.Loosely(t, cmd.Wait(), should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(data), should.Match("hello world"))
 		})
 
-		Convey(`can see panic`, func() {
+		t.Run(`can see panic`, func(t *ftt.Test) {
 			uses := panicRunner.Mock(ctx)
 
 			cmd := exec.CommandContext(ctx, prog, args...)
 			out, err := cmd.StdoutPipe()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(cmd.Start(), ShouldBeNil)
+			assert.Loosely(t, cmd.Start(), should.BeNil)
 			data, err := io.ReadAll(out)
-			So(err, ShouldBeNil)
-			So(data, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, data, should.BeEmpty)
 
-			So(cmd.Wait(), ShouldErrLike, "exit status 1")
+			assert.Loosely(t, cmd.Wait(), should.ErrLike("exit status 1"))
 
-			_, _, panicStack := uses.Snapshot()[0].GetOutput(context.Background())
-			So(panicStack, ShouldNotBeEmpty)
+			_, panicStack, _ := uses.Snapshot()[0].GetOutput(context.Background())
+			assert.Loosely(t, panicStack, should.NotBeEmpty)
 		})
 	})
 

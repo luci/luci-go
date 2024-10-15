@@ -21,60 +21,60 @@ import (
 	"go.chromium.org/luci/common/exec"
 	"go.chromium.org/luci/common/exec/internal/execmockctx"
 	"go.chromium.org/luci/common/system/environ"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFilter(t *testing.T) {
 	t.Parallel()
 
-	Convey(`filter`, t, func() {
-		Convey(`Args`, func() {
-			Convey(`valid`, func() {
+	ftt.Run(`filter`, t, func(t *ftt.Test) {
+		t.Run(`Args`, func(t *ftt.Test) {
+			t.Run(`valid`, func(t *ftt.Test) {
 				e := filter{}.withArgs([]string{"hello", "/(there|you)/"})
-				So(e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "there"}}), ShouldBeTrue)
-				So(e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "you"}}), ShouldBeTrue)
-				So(e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "sir"}}), ShouldBeFalse)
+				assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "there"}}), should.BeTrue)
+				assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "you"}}), should.BeTrue)
+				assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Args: []string{"hello", "sir"}}), should.BeFalse)
 			})
 
-			Convey(`invalid`, func() {
-				So(func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
+				assert.Loosely(t, func() {
 					filter{}.withArgs([]string{"/*/"})
-				}, ShouldPanicLike, "invalid regexp")
+				}, should.PanicLike("invalid regexp"))
 			})
 		})
 
-		Convey(`Env`, func() {
-			Convey(`valid`, func() {
-				Convey(`single`, func() {
+		t.Run(`Env`, func(t *ftt.Test) {
+			t.Run(`valid`, func(t *ftt.Test) {
+				t.Run(`single`, func(t *ftt.Test) {
 					e := filter{}.withEnv("SOMETHING", "/cool.beans/")
-					So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), ShouldBeTrue)
-					So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool?beans"})}), ShouldBeTrue)
-					So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool pintos"})}), ShouldBeFalse)
+					assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), should.BeTrue)
+					assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool?beans"})}), should.BeTrue)
+					assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool pintos"})}), should.BeFalse)
 
-					Convey(`double`, func() {
+					t.Run(`double`, func(t *ftt.Test) {
 						e = e.withEnv("OTHER", "nerds")
-						So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), ShouldBeFalse)
-						So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans", "OTHER=nerds"})}), ShouldBeTrue)
+						assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), should.BeFalse)
+						assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans", "OTHER=nerds"})}), should.BeTrue)
 					})
 
-					Convey(`negative`, func() {
+					t.Run(`negative`, func(t *ftt.Test) {
 						e = e.withEnv("OTHER", "!")
-						So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), ShouldBeTrue)
-						So(e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans", "OTHER=nerds"})}), ShouldBeFalse)
+						assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans"})}), should.BeTrue)
+						assert.Loosely(t, e.matches(&execmockctx.MockCriteria{Env: environ.New([]string{"SOMETHING=cool beans", "OTHER=nerds"})}), should.BeFalse)
 					})
 				})
 			})
 
-			Convey(`invalid`, func() {
-				So(func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
+				assert.Loosely(t, func() {
 					filter{}.withEnv("SOMETHING", "/*/")
-				}, ShouldPanicLike, "invalid regexp")
+				}, should.PanicLike("invalid regexp"))
 			})
 		})
 
-		Convey(`Less`, func() {
+		t.Run(`Less`, func(t *ftt.Test) {
 			// TODO: Test me
 		})
 	})
@@ -83,68 +83,68 @@ func TestFilter(t *testing.T) {
 func TestContext(t *testing.T) {
 	t.Parallel()
 
-	Convey(`context`, t, func() {
+	ftt.Run(`context`, t, func(t *ftt.Test) {
 		ctx := Init(context.Background())
 
-		Convey(`uninitialized`, func() {
+		t.Run(`uninitialized`, func(t *ftt.Test) {
 			err := exec.Command(context.Background(), "echo", "hello").Run()
-			So(err, ShouldErrLike, execmockctx.ErrNoMatchingMock)
-			So(err, ShouldErrLike, "execmock.Init not called on context")
+			assert.Loosely(t, err, should.ErrLike(execmockctx.ErrNoMatchingMock))
+			assert.Loosely(t, err, should.ErrLike("execmock.Init not called on context"))
 		})
 
-		Convey(`zero`, func() {
+		t.Run(`zero`, func(t *ftt.Test) {
 			err := exec.Command(ctx, "echo", "hello").Run()
-			So(err, ShouldErrLike, execmockctx.ErrNoMatchingMock)
+			assert.Loosely(t, err, should.ErrLike(execmockctx.ErrNoMatchingMock))
 
 			misses := ResetState(ctx)
-			So(misses, ShouldHaveLength, 1)
-			So(misses[0].Args, ShouldResemble, []string{"echo", "hello"})
+			assert.Loosely(t, misses, should.HaveLength(1))
+			assert.Loosely(t, misses[0].Args, should.Resemble([]string{"echo", "hello"}))
 		})
 
-		Convey(`single`, func() {
+		t.Run(`single`, func(t *ftt.Test) {
 			uses := Simple.Mock(ctx)
 
 			err := exec.Command(ctx, "echo", "hello").Run()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			usages := uses.Snapshot()
-			So(usages, ShouldHaveLength, 1)
-			So(usages[0].Args, ShouldResemble, []string{"echo", "hello"})
-			So(usages[0].GetPID(), ShouldNotEqual, 0)
+			assert.Loosely(t, usages, should.HaveLength(1))
+			assert.Loosely(t, usages[0].Args, should.Resemble([]string{"echo", "hello"}))
+			assert.Loosely(t, usages[0].GetPID(), should.NotEqual(0))
 		})
 
-		Convey(`multi`, func() {
+		t.Run(`multi`, func(t *ftt.Test) {
 			generalUsage := Simple.Mock(ctx)
 			specificUsage := Simple.WithArgs("echo").Mock(ctx, SimpleInput{Stdout: "mocky mock"})
 
 			out, err := exec.Command(ctx, "echo", "hello").CombinedOutput()
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []byte("mocky mock"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]byte("mocky mock")))
 
-			So(generalUsage.Snapshot(), ShouldBeEmpty)
+			assert.Loosely(t, generalUsage.Snapshot(), should.BeEmpty)
 
 			usages := specificUsage.Snapshot()
-			So(usages, ShouldHaveLength, 1)
-			So(usages[0].Args, ShouldResemble, []string{"echo", "hello"})
-			So(usages[0].GetPID(), ShouldNotEqual, 0)
+			assert.Loosely(t, usages, should.HaveLength(1))
+			assert.Loosely(t, usages[0].Args, should.Resemble([]string{"echo", "hello"}))
+			assert.Loosely(t, usages[0].GetPID(), should.NotEqual(0))
 		})
 
-		Convey(`multi (limit)`, func() {
+		t.Run(`multi (limit)`, func(t *ftt.Test) {
 			generalUsage := Simple.Mock(ctx)
 			specificUsage := Simple.WithArgs("echo").WithLimit(1).Mock(ctx, SimpleInput{Stdout: "mocky mock"})
 
 			// fully consumes specificUsage
 			out, err := exec.Command(ctx, "echo", "hello").CombinedOutput()
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []byte("mocky mock"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]byte("mocky mock")))
 
 			// falls into generalUsage mock
 			out, err = exec.Command(ctx, "echo", "hello").CombinedOutput()
-			So(err, ShouldBeNil)
-			So(out, ShouldResemble, []byte(""))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.Resemble([]byte("")))
 
-			So(generalUsage.Snapshot(), ShouldHaveLength, 1)
-			So(specificUsage.Snapshot(), ShouldHaveLength, 1)
+			assert.Loosely(t, generalUsage.Snapshot(), should.HaveLength(1))
+			assert.Loosely(t, specificUsage.Snapshot(), should.HaveLength(1))
 		})
 	})
 }
@@ -152,10 +152,10 @@ func TestContext(t *testing.T) {
 func TestGobName(t *testing.T) {
 	t.Parallel()
 
-	Convey(`gobName`, t, func() {
-		So(gobName(SimpleInput{}), ShouldResemble, "go.chromium.org/luci/common/exec/execmock.SimpleInput")
-		So(gobName(&SimpleInput{}), ShouldResemble, "*go.chromium.org/luci/common/exec/execmock.SimpleInput")
+	ftt.Run(`gobName`, t, func(t *ftt.Test) {
+		assert.Loosely(t, gobName(SimpleInput{}), should.Match("go.chromium.org/luci/common/exec/execmock.SimpleInput"))
+		assert.Loosely(t, gobName(&SimpleInput{}), should.Match("*go.chromium.org/luci/common/exec/execmock.SimpleInput"))
 
-		So(gobName(100), ShouldResemble, "int")
+		assert.Loosely(t, gobName(100), should.Match("int"))
 	})
 }
