@@ -29,13 +29,19 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -43,10 +49,11 @@ import (
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(testFile{}))
+}
 
 type testConsumerServer struct {
 	cfgcommonpb.UnimplementedConsumerServer
@@ -110,7 +117,7 @@ var _ File = testFile{} // ensure testFile implements File interface.
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
 		ctl := gomock.NewController(t)
@@ -121,7 +128,7 @@ func TestValidate(t *testing.T) {
 			Finder:   finder,
 		}
 
-		Convey("Single File", func() {
+		t.Run("Single File", func(t *ftt.Test) {
 			cs := config.MustProjectSet("my-project")
 			const filePath = "sub/foo.cfg"
 			const serviceName = "my-service"
@@ -131,25 +138,26 @@ func TestValidate(t *testing.T) {
 			ts.Start(ctx)
 			defer ts.Close()
 
-			Convey("No service to validate", func() {
+			t.Run("No service to validate", func(t *ftt.Test) {
 				res, err := v.Validate(ctx, cs, []File{testFile{path: filePath}})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
 			})
-			Convey("Validate", func() {
+			t.Run("Validate", func(t *ftt.Test) {
 				const singedURL = "https://example.com/signed"
 				var recordedOpts *storage.SignedURLOptions
-				mockGsClient.EXPECT().SignedURL(
-					gomock.Eq("test-bucket"),
-					gomock.Eq("test-obj"),
-					gomock.AssignableToTypeOf(recordedOpts),
-				).DoAndReturn(
-					func(_, _ string, opts *storage.SignedURLOptions) (string, error) {
-						recordedOpts = opts
-						return singedURL, nil
-					},
-				)
-
+				expect := func() {
+					mockGsClient.EXPECT().SignedURL(
+						gomock.Eq("test-bucket"),
+						gomock.Eq("test-obj"),
+						gomock.AssignableToTypeOf(recordedOpts),
+					).DoAndReturn(
+						func(_, _ string, opts *storage.SignedURLOptions) (string, error) {
+							recordedOpts = opts
+							return singedURL, nil
+						},
+					)
+				}
 				finder.mapping = map[string][]*model.Service{
 					filePath: {
 						{
@@ -161,7 +169,8 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				Convey("Success", func() {
+				t.Run("Success", func(t *ftt.Test) {
+					expect()
 					srv.fileToExpectedURL = map[string]string{
 						filePath: singedURL,
 					}
@@ -178,8 +187,8 @@ func TestValidate(t *testing.T) {
 					res, err := v.Validate(ctx, cs, []File{
 						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
 					})
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
 								Path:     filePath,
@@ -187,22 +196,23 @@ func TestValidate(t *testing.T) {
 								Text:     "bad bad bad",
 							},
 						},
-					})
-					So(recordedOpts.Method, ShouldEqual, http.MethodGet)
-					So(recordedOpts.Headers, ShouldBeEmpty)
+					}))
+					assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodGet))
+					assert.Loosely(t, recordedOpts.Headers, should.BeEmpty)
 				})
-				Convey("Error", func() {
+				t.Run("Error", func(t *ftt.Test) {
+					expect()
 					srv.err = status.Errorf(codes.Internal, "internal server error")
 
 					res, err := v.Validate(ctx, cs, []File{
 						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
 					})
-					So(err, ShouldErrLike, "failed to validate configs against service \"my-service\"")
-					So(res, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("failed to validate configs against service \"my-service\""))
+					assert.Loosely(t, res, should.BeNil)
 				})
 			})
 
-			Convey("Validate against self", func() {
+			t.Run("Validate against self", func(t *ftt.Test) {
 				v.SelfRuleSet = validation.NewRuleSet()
 				finder.mapping = map[string][]*model.Service{
 					filePath: {
@@ -215,7 +225,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				Convey("Succeeds", func() {
+				t.Run("Succeeds", func(t *ftt.Test) {
 					var validated bool
 					var recordedContent []byte
 					v.SelfRuleSet.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
@@ -229,8 +239,8 @@ func TestValidate(t *testing.T) {
 						content: []byte("This is config content"),
 					}
 					res, err := v.Validate(ctx, cs, []File{tf})
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
 								Path:     filePath,
@@ -238,11 +248,11 @@ func TestValidate(t *testing.T) {
 								Text:     "in \"sub/foo.cfg\": bad config",
 							},
 						},
-					})
-					So(validated, ShouldBeTrue)
-					So(recordedContent, ShouldEqual, tf.content)
+					}))
+					assert.Loosely(t, validated, should.BeTrue)
+					assert.Loosely(t, recordedContent, should.Match(tf.content))
 				})
-				Convey("Error", func() {
+				t.Run("Error", func(t *ftt.Test) {
 					v.SelfRuleSet.Add(string(cs), filePath, func(vCtx *validation.Context, configSet, path string, content []byte) error {
 						return errors.New("something went wrong")
 					})
@@ -251,13 +261,13 @@ func TestValidate(t *testing.T) {
 						content: []byte("This is config content"),
 					}
 					res, err := v.Validate(ctx, cs, []File{tf})
-					So(err, ShouldErrLike, "something went wrong")
-					So(res, ShouldBeNil)
+					assert.Loosely(t, err, should.ErrLike("something went wrong"))
+					assert.Loosely(t, res, should.BeNil)
 				})
 			})
 		})
 
-		Convey("Multiple files and services", func() {
+		t.Run("Multiple files and services", func(t *ftt.Test) {
 			// test cases:
 			//  4 files: a,b,c,d and 2 services: foo and bar
 			//  file a: validated by both foo and bar, foo output 1 warning and bar
@@ -368,8 +378,8 @@ func TestValidate(t *testing.T) {
 			}
 
 			res, err := v.Validate(ctx, config.MustProjectSet("my-project"), []File{fileA, fileB, fileC, fileD})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
 				Messages: []*cfgcommonpb.ValidationResult_Message{
 					{
 						Path:     fileA.path,
@@ -392,7 +402,7 @@ func TestValidate(t *testing.T) {
 						Text:     "warning for file c from service bar",
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -400,7 +410,7 @@ func TestValidate(t *testing.T) {
 func TestValidateLegacy(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate using legacy protocol", t, func() {
+	ftt.Run("Validate using legacy protocol", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
 		ctl := gomock.NewController(t)
@@ -460,91 +470,97 @@ func TestValidateLegacy(t *testing.T) {
 			},
 		}
 
-		Convey("Works", func() {
-			Convey("With int severity", func() {
-				srvResponse = []byte(`{"messages": [{"severity": 40, "text": "bad config"}]}`)
-			})
-			Convey("With string severity", func() {
-				srvResponse = []byte(`{"messages": [{"severity": "ERROR", "text": "bad config"}]}`)
-			})
-			tf := testFile{
-				path:    filePath,
-				content: []byte("This is config content"),
-			}
-			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
-				Messages: []*cfgcommonpb.ValidationResult_Message{
-					{
-						Path:     filePath,
-						Severity: cfgcommonpb.ValidationResult_ERROR,
-						Text:     "bad config",
+		t.Run("Works", func(t *ftt.Test) {
+			check := func(t testing.TB) {
+				t.Helper()
+				tf := testFile{
+					path:    filePath,
+					content: []byte("This is config content"),
+				}
+				res, err := v.Validate(ctx, cs, []File{tf})
+				assert.Loosely(t, err, should.BeNil, truth.LineContext())
+				assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
+					Messages: []*cfgcommonpb.ValidationResult_Message{
+						{
+							Path:     filePath,
+							Severity: cfgcommonpb.ValidationResult_ERROR,
+							Text:     "bad config",
+						},
 					},
-				},
-			})
+				}), truth.LineContext())
 
-			So(capturedRequestBody, ShouldNotBeEmpty)
-			reqMap := map[string]any{}
-			So(json.Unmarshal(capturedRequestBody, &reqMap), ShouldBeNil)
-			So(reqMap, ShouldHaveLength, 3)
-			So(reqMap["config_set"], ShouldEqual, "projects/my-project")
-			So(reqMap["path"], ShouldEqual, filePath)
-			So(reqMap["content"], ShouldEqual, base64.StdEncoding.EncodeToString(tf.content))
-			So(capturedRequestHeader.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
-			So(capturedRequestHeader.Get("Content-Encoding"), ShouldBeEmpty)
+				assert.Loosely(t, capturedRequestBody, should.NotBeEmpty, truth.LineContext())
+				reqMap := map[string]any{}
+				assert.Loosely(t, json.Unmarshal(capturedRequestBody, &reqMap), should.BeNil, truth.LineContext())
+				assert.Loosely(t, reqMap, should.HaveLength(3), truth.LineContext())
+				assert.Loosely(t, reqMap["config_set"], should.Equal("projects/my-project"), truth.LineContext())
+				assert.Loosely(t, reqMap["path"], should.Equal(filePath), truth.LineContext())
+				assert.Loosely(t, reqMap["content"], should.Equal(base64.StdEncoding.EncodeToString(tf.content)), truth.LineContext())
+				assert.Loosely(t, capturedRequestHeader.Get("Content-Type"), should.Equal("application/json; charset=utf-8"), truth.LineContext())
+				assert.Loosely(t, capturedRequestHeader.Get("Content-Encoding"), should.BeEmpty, truth.LineContext())
+			}
+
+			t.Run("With int severity", func(t *ftt.Test) {
+				srvResponse = []byte(`{"messages": [{"severity": 40, "text": "bad config"}]}`)
+				check(t)
+			})
+			t.Run("With string severity", func(t *ftt.Test) {
+				srvResponse = []byte(`{"messages": [{"severity": "ERROR", "text": "bad config"}]}`)
+				check(t)
+			})
 		})
 
-		Convey("Empty messages", func() {
+		t.Run("Empty messages", func(t *ftt.Test) {
 			srvResponse = []byte(`{"messages": []}`)
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
 		})
 
-		Convey("Empty response", func() {
+		t.Run("Empty response", func(t *ftt.Test) {
 			srvResponse = nil
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
 		})
 
-		Convey("Compress large payload", func() {
+		t.Run("Compress large payload", func(t *ftt.Test) {
 			tf := testFile{
 				path:    filePath,
 				content: make([]byte, 1024*1024),
 			}
 			_, err := rand.Read(tf.content)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
 
-			So(capturedRequestBody, ShouldNotBeEmpty)
+			assert.Loosely(t, capturedRequestBody, should.NotBeEmpty)
 			r, err := gzip.NewReader(bytes.NewBuffer(capturedRequestBody))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			uncompressed, err := io.ReadAll(r)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			reqMap := map[string]any{}
-			So(json.Unmarshal(uncompressed, &reqMap), ShouldBeNil)
-			So(reqMap, ShouldHaveLength, 3)
-			So(reqMap["content"], ShouldEqual, base64.StdEncoding.EncodeToString(tf.content))
-			So(capturedRequestHeader.Get("Content-Type"), ShouldEqual, "application/json; charset=utf-8")
-			So(capturedRequestHeader.Get("Content-Encoding"), ShouldEqual, "gzip")
+			assert.Loosely(t, json.Unmarshal(uncompressed, &reqMap), should.BeNil)
+			assert.Loosely(t, reqMap, should.HaveLength(3))
+			assert.Loosely(t, reqMap["content"], should.Equal(base64.StdEncoding.EncodeToString(tf.content)))
+			assert.Loosely(t, capturedRequestHeader.Get("Content-Type"), should.Equal("application/json; charset=utf-8"))
+			assert.Loosely(t, capturedRequestHeader.Get("Content-Encoding"), should.Equal("gzip"))
 		})
 
-		Convey("Omit unknown severity", func() {
-			Convey("Not provided", func() {
+		t.Run("Omit unknown severity", func(t *ftt.Test) {
+			t.Run("Not provided", func(t *ftt.Test) {
 				srvResponse = []byte(`{"messages": [{"text": "bad config"}]}`)
 			})
-			Convey("Returns unknown", func() {
+			t.Run("Returns unknown", func(t *ftt.Test) {
 				srvResponse = []byte(`{"messages": [{"severity": 0, "text": "bad config"}]}`)
 			})
 
@@ -553,49 +569,56 @@ func TestValidateLegacy(t *testing.T) {
 				content: []byte("This is config content"),
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{}))
 		})
 
-		Convey("Error on unrecognized severity", func() {
-			Convey("Int severity", func() {
-				srvResponse = []byte(`{"messages": [{"severity": 1234, "text": "bad config"}]}`)
-			})
-			Convey("String severity", func() {
-				srvResponse = []byte(`{"messages": [{"severity": "BAD", "text": "bad config"}]}`)
-			})
-			Convey("Not int not string", func() {
-				srvResponse = []byte(`{"messages": [{"severity": true, "text": "bad config"}]}`)
-			})
-			tf := testFile{
-				path:    filePath,
-				content: []byte("This is config content"),
+		t.Run("Error on unrecognized severity", func(t *ftt.Test) {
+			check := func(t testing.TB) {
+				t.Helper()
+				tf := testFile{
+					path:    filePath,
+					content: []byte("This is config content"),
+				}
+				res, err := v.Validate(ctx, cs, []File{tf})
+				assert.Loosely(t, err, should.ErrLike("unrecognized severity"), truth.LineContext())
+				assert.Loosely(t, res, should.BeNil, truth.LineContext())
 			}
-			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldErrLike, "unrecognized severity")
-			So(res, ShouldBeNil)
+
+			t.Run("Int severity", func(t *ftt.Test) {
+				srvResponse = []byte(`{"messages": [{"severity": 1234, "text": "bad config"}]}`)
+				check(t)
+			})
+			t.Run("String severity", func(t *ftt.Test) {
+				srvResponse = []byte(`{"messages": [{"severity": "BAD", "text": "bad config"}]}`)
+				check(t)
+			})
+			t.Run("Not int not string", func(t *ftt.Test) {
+				srvResponse = []byte(`{"messages": [{"severity": true, "text": "bad config"}]}`)
+				check(t)
+			})
 		})
 
-		Convey("Server Error", func() {
+		t.Run("Server Error", func(t *ftt.Test) {
 			srvErrMsg = "server encounter error"
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldErrLike, legacyTestSrv.URL+" returns 500")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike(legacyTestSrv.URL+" returns 500"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("Server returns malformed response", func() {
+		t.Run("Server returns malformed response", func(t *ftt.Test) {
 			srvResponse = []byte("[")
 			tf := testFile{
 				path:    filePath,
 				content: []byte("This is config content"),
 			}
 			res, err := v.Validate(ctx, cs, []File{tf})
-			So(err, ShouldErrLike, "failed to unmarshal response")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal response"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 	})
 }

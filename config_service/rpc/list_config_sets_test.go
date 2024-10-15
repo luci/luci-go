@@ -35,20 +35,23 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestListConfigSets(t *testing.T) {
 	t.Parallel()
 
-	Convey("ListConfigSets", t, func() {
+	ftt.Run("ListConfigSets", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		srv := &Configs{}
 
 		userID := identity.Identity("user:user@example.com")
 		fakeAuthDB := authtest.NewFakeDB()
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ProjectAccessGroup: "project-access-group",
 				ServiceAccessGroup: "service-access-group",
@@ -63,38 +66,38 @@ func TestListConfigSets(t *testing.T) {
 			FakeDB:   fakeAuthDB,
 		})
 
-		testutil.InjectConfigSet(ctx, config.MustProjectSet("project1"), nil)
+		testutil.InjectConfigSet(ctx, t, config.MustProjectSet("project1"), nil)
 		commitTime := clock.Now(ctx)
 
-		Convey("invalid mask", func() {
+		t.Run("invalid mask", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"configs"},
 				},
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveRPCCode, codes.InvalidArgument, `'configs' is not supported in fields mask`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, `'configs' is not supported in fields mask`))
 
 			res, err = srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"random"},
 				},
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveRPCCode, codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`))
 		})
 
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:random@example.com"),
 				FakeDB:   authtest.NewFakeDB(),
 			})
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{}))
 		})
 
-		Convey("partial permission", func() {
+		t.Run("partial permission", func(t *ftt.Test) {
 			another := identity.Identity("user:another@example.com")
 			fakeAuthDB1 := authtest.NewFakeDB()
 			fakeAuthDB1.AddMocks(
@@ -105,8 +108,8 @@ func TestListConfigSets(t *testing.T) {
 				FakeDB:   fakeAuthDB1,
 			})
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -116,13 +119,13 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("req for project config sets", func() {
+		t.Run("req for project config sets", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_PROJECT})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -132,13 +135,13 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("req for service config sets", func() {
+		t.Run("req for service config sets", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{Domain: pb.ListConfigSetsRequest_SERVICE})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "services/luci-config-dev",
@@ -148,13 +151,13 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("req for all domains", func() {
+		t.Run("req for all domains", func(t *ftt.Test) {
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -171,11 +174,11 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("with last_import_attempt mask", func() {
-			So(datastore.Put(ctx, &model.ImportAttempt{
+		t.Run("with last_import_attempt mask", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.ImportAttempt{
 				ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project1"),
 				Success:   true,
 				Message:   "Up-to-date",
@@ -191,15 +194,15 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Domain: pb.ListConfigSetsRequest_PROJECT,
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"last_import_attempt", "name", "revision"},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -225,11 +228,11 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("with other valid masks and sub-masks", func() {
-			So(datastore.Put(ctx, &model.ImportAttempt{
+		t.Run("with other valid masks and sub-masks", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(ctx, &model.ImportAttempt{
 				ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project1"),
 				Success:   true,
 				Message:   "Up-to-date",
@@ -237,15 +240,15 @@ func TestListConfigSets(t *testing.T) {
 					ID:         "1",
 					CommitTime: commitTime,
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			res, err := srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Domain: pb.ListConfigSetsRequest_PROJECT,
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"last_import_attempt.revision.id", "name", "revision.id"},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ListConfigSetsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ListConfigSetsResponse{
 				ConfigSets: []*pb.ConfigSet{
 					{
 						Name: "projects/project1",
@@ -259,7 +262,7 @@ func TestListConfigSets(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }

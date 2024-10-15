@@ -29,7 +29,11 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -38,9 +42,6 @@ import (
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testConsumerServer struct {
@@ -55,7 +56,7 @@ func (srv *testConsumerServer) GetMetadata(context.Context, *emptypb.Empty) (*cf
 func TestUpdateService(t *testing.T) {
 	t.Parallel()
 
-	Convey("Update Service", t, func() {
+	ftt.Run("Update Service", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
 
@@ -76,7 +77,7 @@ func TestUpdateService(t *testing.T) {
 			Id:       serviceName,
 			Hostname: ts.Host,
 		}
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 				Services: []*cfgcommonpb.Service{
 					serviceInfo,
@@ -84,40 +85,40 @@ func TestUpdateService(t *testing.T) {
 			},
 		})
 
-		Convey("First time update", func() {
+		t.Run("First time update", func(t *ftt.Test) {
 			service := &model.Service{
 				Name: serviceName,
 			}
-			So(datastore.Get(ctx, service), ShouldErrLike, datastore.ErrNoSuchEntity)
-			So(Update(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, service), ShouldBeNil)
-			So(service.Info, ShouldResembleProto, serviceInfo)
-			So(service.Metadata, ShouldResembleProto, serviceMetadata)
-			So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+			assert.Loosely(t, datastore.Get(ctx, service), should.ErrLike(datastore.ErrNoSuchEntity))
+			assert.Loosely(t, Update(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+			assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+			assert.Loosely(t, service.Metadata, should.Resemble(serviceMetadata))
+			assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 		})
 
-		Convey("Update existing", func() {
-			So(Update(ctx), ShouldBeNil)
-			Convey("Info changed", func() {
+		t.Run("Update existing", func(t *ftt.Test) {
+			assert.Loosely(t, Update(ctx), should.BeNil)
+			t.Run("Info changed", func(t *ftt.Test) {
 				updatedInfo := proto.Clone(serviceInfo).(*cfgcommonpb.Service)
 				updatedInfo.Owners = append(updatedInfo.Owners, "new-owner@example.com")
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 						Services: []*cfgcommonpb.Service{
 							updatedInfo,
 						},
 					},
 				})
-				So(Update(ctx), ShouldBeNil)
+				assert.Loosely(t, Update(ctx), should.BeNil)
 				service := &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, updatedInfo)
-				So(service.Metadata, ShouldResembleProto, serviceMetadata)
-				So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(updatedInfo))
+				assert.Loosely(t, service.Metadata, should.Resemble(serviceMetadata))
+				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
-			Convey("Metadata changed", func() {
+			t.Run("Metadata changed", func(t *ftt.Test) {
 				updated := &cfgcommonpb.ServiceMetadata{
 					ConfigPatterns: []*cfgcommonpb.ConfigPattern{
 						{ConfigSet: string(config.MustProjectSet("foo")), Path: "exact:bar.cfg"},
@@ -125,45 +126,45 @@ func TestUpdateService(t *testing.T) {
 					},
 				}
 				srv.sm = updated
-				So(Update(ctx), ShouldBeNil)
+				assert.Loosely(t, Update(ctx), should.BeNil)
 				service := &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, serviceInfo)
-				So(service.Metadata, ShouldResembleProto, updated)
-				So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+				assert.Loosely(t, service.Metadata, should.Resemble(updated))
+				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
 		})
 
-		Convey("Error for invalid metadata", func() {
+		t.Run("Error for invalid metadata", func(t *ftt.Test) {
 			srv.sm = &cfgcommonpb.ServiceMetadata{
 				ConfigPatterns: []*cfgcommonpb.ConfigPattern{
 					{ConfigSet: string(config.MustProjectSet("foo")), Path: "regex:["},
 				},
 			}
-			So(Update(ctx), ShouldErrLike, "invalid metadata for service")
+			assert.Loosely(t, Update(ctx), should.ErrLike("invalid metadata for service"))
 		})
 
-		Convey("Skip update if nothing changed", func() {
-			So(Update(ctx), ShouldBeNil)
+		t.Run("Skip update if nothing changed", func(t *ftt.Test) {
+			assert.Loosely(t, Update(ctx), should.BeNil)
 			service := &model.Service{
 				Name: serviceName,
 			}
-			So(datastore.Get(ctx, service), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
 			prevUpdateTime := service.UpdateTime
 			tc := clock.Get(ctx).(testclock.TestClock)
 			tc.Add(1 * time.Hour)
-			So(Update(ctx), ShouldBeNil)
+			assert.Loosely(t, Update(ctx), should.BeNil)
 			service = &model.Service{
 				Name: serviceName,
 			}
-			So(datastore.Get(ctx, service), ShouldBeNil)
-			So(service.UpdateTime, ShouldEqual, prevUpdateTime)
+			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+			assert.Loosely(t, service.UpdateTime, should.Match(prevUpdateTime))
 		})
 
-		Convey("Update Service without metadata", func() {
-			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		t.Run("Update Service without metadata", func(t *ftt.Test) {
+			testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 					Services: []*cfgcommonpb.Service{
 						{
@@ -172,18 +173,18 @@ func TestUpdateService(t *testing.T) {
 					},
 				},
 			})
-			So(Update(ctx), ShouldBeNil)
+			assert.Loosely(t, Update(ctx), should.BeNil)
 			service := &model.Service{
 				Name: serviceName,
 			}
-			So(datastore.Get(ctx, service), ShouldBeNil)
-			So(service.Info, ShouldResembleProto, &cfgcommonpb.Service{
+			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+			assert.Loosely(t, service.Info, should.Resemble(&cfgcommonpb.Service{
 				Id: serviceName,
-			})
-			So(service.Metadata, ShouldBeNil)
-			So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
-			Convey("Update again", func() {
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			}))
+			assert.Loosely(t, service.Metadata, should.BeNil)
+			assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
+			t.Run("Update again", func(t *ftt.Test) {
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 						Services: []*cfgcommonpb.Service{
 							{
@@ -193,26 +194,26 @@ func TestUpdateService(t *testing.T) {
 						},
 					},
 				})
-				So(Update(ctx), ShouldBeNil)
+				assert.Loosely(t, Update(ctx), should.BeNil)
 				service := &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, &cfgcommonpb.Service{
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(&cfgcommonpb.Service{
 					Id:     serviceName,
 					Owners: []string{"owner@example.com"},
-				})
+				}))
 			})
 		})
 
-		Convey("Update self", func() {
+		t.Run("Update self", func(t *ftt.Test) {
 			serviceInfo := &cfgcommonpb.Service{
 				Id:       testutil.AppID,
 				Hostname: ts.Host,
 				// Add the service endpoint to ensure LUCI Config update its own
 				// Service entity without making rpc call to itself.
 			}
-			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 					Services: []*cfgcommonpb.Service{
 						serviceInfo,
@@ -223,37 +224,37 @@ func TestUpdateService(t *testing.T) {
 			service := &model.Service{
 				Name: testutil.AppID,
 			}
-			So(Update(ctx), ShouldBeNil)
-			So(datastore.Get(ctx, service), ShouldBeNil)
-			So(service.Info, ShouldResembleProto, serviceInfo)
-			So(service.Metadata, ShouldResembleProto, &cfgcommonpb.ServiceMetadata{
+			assert.Loosely(t, Update(ctx), should.BeNil)
+			assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+			assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+			assert.Loosely(t, service.Metadata, should.Resemble(&cfgcommonpb.ServiceMetadata{
 				ConfigPatterns: []*cfgcommonpb.ConfigPattern{
 					{
 						ConfigSet: "exact:services/" + testutil.AppID,
 						Path:      "exact:foo.cfg",
 					},
 				},
-			})
-			So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+			}))
+			assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 		})
 
-		Convey("Delete Service entity for deleted service", func() {
-			So(Update(ctx), ShouldBeNil)
+		t.Run("Delete Service entity for deleted service", func(t *ftt.Test) {
+			assert.Loosely(t, Update(ctx), should.BeNil)
 			er, err := datastore.Exists(ctx, datastore.MakeKey(ctx, model.ServiceKind, serviceName))
-			So(err, ShouldBeNil)
-			So(er.All(), ShouldBeTrue)
-			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.All(), should.BeTrue)
+			testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 					Services: []*cfgcommonpb.Service{}, // delete the existing Service
 				},
 			})
-			So(Update(ctx), ShouldBeNil)
+			assert.Loosely(t, Update(ctx), should.BeNil)
 			er, err = datastore.Exists(ctx, datastore.MakeKey(ctx, model.ServiceKind, serviceName))
-			So(err, ShouldBeNil)
-			So(er.Any(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.Any(), should.BeFalse)
 		})
 
-		Convey("Legacy Metadata", func() {
+		t.Run("Legacy Metadata", func(t *ftt.Test) {
 			legacyMetadata := &cfgcommonpb.ServiceDynamicMetadata{
 				Version: "1.0",
 				Validation: &cfgcommonpb.Validator{
@@ -287,7 +288,7 @@ func TestUpdateService(t *testing.T) {
 				Id:          serviceName,
 				MetadataUrl: legacyTestSrv.URL,
 			}
-			testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 				common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 					Services: []*cfgcommonpb.Service{
 						serviceInfo,
@@ -295,99 +296,105 @@ func TestUpdateService(t *testing.T) {
 				},
 			})
 
-			Convey("First time update", func() {
+			t.Run("First time update", func(t *ftt.Test) {
 				service := &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldErrLike, datastore.ErrNoSuchEntity)
-				So(Update(ctx), ShouldBeNil)
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, serviceInfo)
-				So(service.LegacyMetadata, ShouldResembleProto, legacyMetadata)
-				So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+				assert.Loosely(t, datastore.Get(ctx, service), should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.Loosely(t, Update(ctx), should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+				assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+				assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 			})
 
-			Convey("Update existing", func() {
-				So(Update(ctx), ShouldBeNil)
-				Convey("Service info changed", func() {
+			t.Run("Update existing", func(t *ftt.Test) {
+				assert.Loosely(t, Update(ctx), should.BeNil)
+				t.Run("Service info changed", func(t *ftt.Test) {
 					updatedInfo := proto.Clone(serviceInfo).(*cfgcommonpb.Service)
 					updatedInfo.Owners = append(updatedInfo.Owners, "new-owner@example.com")
-					testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+					testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 						common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 							Services: []*cfgcommonpb.Service{
 								updatedInfo,
 							},
 						},
 					})
-					So(Update(ctx), ShouldBeNil)
+					assert.Loosely(t, Update(ctx), should.BeNil)
 					service := &model.Service{
 						Name: serviceName,
 					}
-					So(datastore.Get(ctx, service), ShouldBeNil)
-					So(service.Info, ShouldResembleProto, updatedInfo)
-					So(service.LegacyMetadata, ShouldResembleProto, legacyMetadata)
-					So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+					assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+					assert.Loosely(t, service.Info, should.Resemble(updatedInfo))
+					assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+					assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 				})
-				Convey("Legacy metadata changed", func() {
+				t.Run("Legacy metadata changed", func(t *ftt.Test) {
 					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
 					legacyMetadata.SupportsGzipCompression = false
-					So(Update(ctx), ShouldBeNil)
+					assert.Loosely(t, Update(ctx), should.BeNil)
 					service := &model.Service{
 						Name: serviceName,
 					}
-					So(datastore.Get(ctx, service), ShouldBeNil)
-					So(service.Info, ShouldResembleProto, serviceInfo)
-					So(service.LegacyMetadata, ShouldResembleProto, legacyMetadata)
-					So(service.UpdateTime, ShouldEqual, clock.Now(ctx).UTC())
+					assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+					assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+					assert.Loosely(t, service.LegacyMetadata, should.Resemble(legacyMetadata))
+					assert.Loosely(t, service.UpdateTime, should.Match(clock.Now(ctx).UTC()))
 				})
 			})
 
-			Convey("Error for invalid legacy metadata", func() {
-				Convey("Invalid regex", func() {
+			t.Run("Error for invalid legacy metadata", func(t *ftt.Test) {
+				check := func(t testing.TB) {
+					t.Helper()
+					assert.Loosely(t, Update(ctx), should.ErrLike("invalid legacy metadata for service"), truth.LineContext())
+				}
+				t.Run("Invalid regex", func(t *ftt.Test) {
 					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
 					legacyMetadata.Validation.Patterns = []*cfgcommonpb.ConfigPattern{
 						{ConfigSet: string(config.MustProjectSet("foo")), Path: "regex:["},
 					}
+					check(t)
 				})
-				Convey("Empty url", func() {
+				t.Run("Empty url", func(t *ftt.Test) {
 					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
 					legacyMetadata.Validation.Url = ""
+					check(t)
 				})
-				Convey("Invalid url", func() {
+				t.Run("Invalid url", func(t *ftt.Test) {
 					legacyMetadata = proto.Clone(legacyMetadata).(*cfgcommonpb.ServiceDynamicMetadata)
 					legacyMetadata.Validation.Url = "http://example.com\\validate"
+					check(t)
 				})
-				So(Update(ctx), ShouldErrLike, "invalid legacy metadata for service")
 			})
 
-			Convey("Upgrade from legacy to new", func() {
-				So(Update(ctx), ShouldBeNil)
+			t.Run("Upgrade from legacy to new", func(t *ftt.Test) {
+				assert.Loosely(t, Update(ctx), should.BeNil)
 				service := &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, serviceInfo)
-				So(service.Metadata, ShouldBeNil)
-				So(service.LegacyMetadata, ShouldNotBeNil)
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(serviceInfo))
+				assert.Loosely(t, service.Metadata, should.BeNil)
+				assert.Loosely(t, service.LegacyMetadata, should.NotBeNil)
 
 				newInfo := proto.Clone(serviceInfo).(*cfgcommonpb.Service)
 				newInfo.Hostname = ts.Host
 				newInfo.MetadataUrl = ""
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					common.ServiceRegistryFilePath: &cfgcommonpb.ServicesCfg{
 						Services: []*cfgcommonpb.Service{
 							newInfo,
 						},
 					},
 				})
-				So(Update(ctx), ShouldBeNil)
+				assert.Loosely(t, Update(ctx), should.BeNil)
 				service = &model.Service{
 					Name: serviceName,
 				}
-				So(datastore.Get(ctx, service), ShouldBeNil)
-				So(service.Info, ShouldResembleProto, newInfo)
-				So(service.Metadata, ShouldNotBeNil)
-				So(service.LegacyMetadata, ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, service), should.BeNil)
+				assert.Loosely(t, service.Info, should.Resemble(newInfo))
+				assert.Loosely(t, service.Metadata, should.NotBeNil)
+				assert.Loosely(t, service.LegacyMetadata, should.BeNil)
 			})
 		})
 	})

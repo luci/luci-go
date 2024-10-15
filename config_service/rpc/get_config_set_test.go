@@ -35,8 +35,11 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // sha256("")
@@ -45,13 +48,13 @@ const emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b785
 func TestGetConfigSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetConfigSet", t, func() {
+	ftt.Run("GetConfigSet", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		srv := &Configs{}
 
 		userID := identity.Identity("user:user@example.com")
 		fakeAuthDB := authtest.NewFakeDB()
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ProjectAccessGroup: "project-access-group",
 			},
@@ -64,12 +67,12 @@ func TestGetConfigSet(t *testing.T) {
 			FakeDB:   fakeAuthDB,
 		})
 
-		testutil.InjectConfigSet(ctx, config.MustProjectSet("project"), map[string]proto.Message{
+		testutil.InjectConfigSet(ctx, t, config.MustProjectSet("project"), map[string]proto.Message{
 			"config1.cfg": nil,
 			"config2.cfg": nil,
 		})
 		commitTime := clock.Now(ctx)
-		So(datastore.Put(ctx, &model.ImportAttempt{
+		assert.Loosely(t, datastore.Put(ctx, &model.ImportAttempt{
 			ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project"),
 			Success:   true,
 			Message:   "Up-to-date",
@@ -87,34 +90,34 @@ func TestGetConfigSet(t *testing.T) {
 					},
 				},
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("empty req", func() {
+		t.Run("empty req", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "config_set is not specified")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "config_set is not specified"))
 		})
 
-		Convey("invalid config set", func() {
+		t.Run("invalid config set", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "project/abc",
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `unknown domain "project" for config set "project/abc"; currently supported domains [projects, services]`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `unknown domain "project" for config set "project/abc"; currently supported domains [projects, services]`))
 		})
 
-		Convey("invalid field mask", func() {
+		t.Run("invalid field mask", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"random"},
 				},
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`))
 		})
 
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:random@example.com"),
 				FakeDB:   authtest.NewFakeDB(),
@@ -122,41 +125,41 @@ func TestGetConfigSet(t *testing.T) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`))
 		})
 
-		Convey("non-existent configSet", func() {
+		t.Run("non-existent configSet", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/random",
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
 		})
 
-		Convey("ok with default mask", func() {
+		t.Run("ok with default mask", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ConfigSet{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
 					Timestamp: timestamppb.New(commitTime),
 				},
-			})
+			}))
 		})
 
-		Convey("with last_import_attempt", func() {
+		t.Run("with last_import_attempt", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"last_import_attempt", "name", "revision"},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ConfigSet{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -180,36 +183,36 @@ func TestGetConfigSet(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("with file_paths", func() {
+		t.Run("with file_paths", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"file_paths", "name", "revision"},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ConfigSet{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
 					Timestamp: timestamppb.New(commitTime),
 				},
 				FilePaths: []string{"config1.cfg", "config2.cfg"},
-			})
+			}))
 		})
 
-		Convey("with configs", func() {
+		t.Run("with configs", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"configs", "name", "revision"},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ConfigSet{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id:        "1",
@@ -219,10 +222,10 @@ func TestGetConfigSet(t *testing.T) {
 					{ConfigSet: "projects/project", Path: "config1.cfg", Revision: "1", ContentSha256: emptySHA256},
 					{ConfigSet: "projects/project", Path: "config2.cfg", Revision: "1", ContentSha256: emptySHA256},
 				},
-			})
+			}))
 		})
 
-		Convey("with mixed masks and sub-masks", func() {
+		t.Run("with mixed masks and sub-masks", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 				ConfigSet: "projects/project",
 				Fields: &field_mask.FieldMask{
@@ -234,8 +237,8 @@ func TestGetConfigSet(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.ConfigSet{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.ConfigSet{
 				Name: "projects/project",
 				Revision: &pb.ConfigSet_Revision{
 					Id: "1",
@@ -247,7 +250,7 @@ func TestGetConfigSet(t *testing.T) {
 				LastImportAttempt: &pb.ConfigSet_Attempt{
 					Success: true,
 				},
-			})
+			}))
 		})
 	})
 }

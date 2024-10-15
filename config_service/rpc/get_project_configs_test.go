@@ -40,20 +40,23 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetProjectConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetProjectConfigs", t, func() {
+	ftt.Run("GetProjectConfigs", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		srv := &Configs{}
 
 		userID := identity.Identity("user:user@example.com")
 		fakeAuthDB := authtest.NewFakeDB()
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ProjectAccessGroup: "project-access-group",
 			},
@@ -67,61 +70,61 @@ func TestGetProjectConfigs(t *testing.T) {
 		})
 
 		// Inject "services/myservice"
-		testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), nil)
+		testutil.InjectConfigSet(ctx, t, config.MustServiceSet("myservice"), nil)
 
 		// Inject "projects/project1" with a small "config.cfg" file and "other1.cfg" file.
 		configPb := &cfgcommonpb.ProjectCfg{Name: "config.cfg"}
 		configPbBytes, err := prototext.Marshal(configPb)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		configPbSha := sha256.Sum256(configPbBytes)
 		configPbShaStr := hex.EncodeToString(configPbSha[:])
-		testutil.InjectConfigSet(ctx, config.MustProjectSet("project1"), map[string]proto.Message{
+		testutil.InjectConfigSet(ctx, t, config.MustProjectSet("project1"), map[string]proto.Message{
 			"config.cfg": configPb,
 			"other1.cfg": &cfgcommonpb.ProjectCfg{Name: "other1.cfg"},
 		})
 
 		// Inject "projects/project2" with a large "config.cfg" file and "other2.cfg" file.
-		testutil.InjectConfigSet(ctx, config.MustProjectSet("project2"), map[string]proto.Message{
+		testutil.InjectConfigSet(ctx, t, config.MustProjectSet("project2"), map[string]proto.Message{
 			"other2.cfg": &cfgcommonpb.ProjectCfg{Name: "other2.cfg"},
 		})
-		So(datastore.Put(ctx, &model.File{
+		assert.Loosely(t, datastore.Put(ctx, &model.File{
 			Path:          "config.cfg",
 			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "projects/project2", model.RevisionKind, "1"),
 			ContentSHA256: "configsha256",
 			GcsURI:        "gs://bucket/configsha256",
 			Size:          1000,
-		}), ShouldBeNil)
+		}), should.BeNil)
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		mockGsClient := clients.NewMockGsClient(ctl)
 		ctx = clients.WithGsClient(ctx, mockGsClient)
 
-		Convey("invalid path", func() {
+		t.Run("invalid path", func(t *ftt.Test) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid path - "": not specified`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "": not specified`))
 
 			res, err = srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{Path: "/file"})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid path - "/file": must not be absolute`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "/file": must not be absolute`))
 
 			res, err = srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{Path: "./file"})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid path - "./file": should not start with './' or '../'`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "./file": should not start with './' or '../'`))
 		})
 
-		Convey("invalid mask", func() {
+		t.Run("invalid mask", func(t *ftt.Test) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "file",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{"random"},
 				},
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`)
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`))
 		})
 
-		Convey("no access to matched files", func() {
+		t.Run("no access to matched files", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:random@example.com"),
 				FakeDB:   fakeAuthDB,
@@ -129,19 +132,19 @@ func TestGetProjectConfigs(t *testing.T) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{}))
 		})
 
-		Convey("no matched files", func() {
+		t.Run("no matched files", func(t *ftt.Test) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "non_exist.cfg",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{}))
 		})
 
-		Convey("found", func() {
+		t.Run("found", func(t *ftt.Test) {
 			mockGsClient.EXPECT().SignedURL(
 				gomock.Eq("bucket"),
 				gomock.Eq("configsha256"),
@@ -151,8 +154,8 @@ func TestGetProjectConfigs(t *testing.T) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",
@@ -175,17 +178,17 @@ func TestGetProjectConfigs(t *testing.T) {
 						Size:          1000,
 					},
 				},
-			})
+			}))
 		})
 
-		Convey(" config size > maxRawContentSize", func() {
+		t.Run(" config size > maxRawContentSize", func(t *ftt.Test) {
 			fooPb := &cfgcommonpb.ProjectCfg{Name: strings.Repeat("0123456789", maxRawContentSize/10)}
 			fooPbBytes, err := prototext.Marshal(fooPb)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			fooPbSha := sha256.Sum256(fooPbBytes)
 			fooPbShaStr := hex.EncodeToString(fooPbSha[:])
 
-			testutil.InjectConfigSet(ctx, config.MustProjectSet("foo"), map[string]proto.Message{
+			testutil.InjectConfigSet(ctx, t, config.MustProjectSet("foo"), map[string]proto.Message{
 				"foo.cfg": fooPb,
 			})
 			mockGsClient.EXPECT().SignedURL(
@@ -197,8 +200,8 @@ func TestGetProjectConfigs(t *testing.T) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "foo.cfg",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/foo",
@@ -211,10 +214,10 @@ func TestGetProjectConfigs(t *testing.T) {
 						Size:          int64(len(fooPbBytes)),
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("total size > maxProjConfigsResSize", func() {
+		t.Run("total size > maxProjConfigsResSize", func(t *ftt.Test) {
 			originalLimit := maxProjConfigsResSize
 			// Make the limit to 1 byte to avoid taking too much memory to test this
 			// use case.
@@ -235,8 +238,8 @@ func TestGetProjectConfigs(t *testing.T) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
 			})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",
@@ -259,10 +262,10 @@ func TestGetProjectConfigs(t *testing.T) {
 						Size:          1000,
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("mask", func() {
+		t.Run("mask", func(t *ftt.Test) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "other1.cfg",
 				Fields: &field_mask.FieldMask{
@@ -270,18 +273,18 @@ func TestGetProjectConfigs(t *testing.T) {
 				},
 			})
 
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &pb.GetProjectConfigsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&pb.GetProjectConfigsResponse{
 				Configs: []*pb.Config{
 					{
 						ConfigSet: "projects/project1",
 						Path:      "other1.cfg",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("GCS error on signed url", func() {
+		t.Run("GCS error on signed url", func(t *ftt.Test) {
 			mockGsClient.EXPECT().SignedURL(
 				gomock.Eq("bucket"),
 				gomock.Eq("configsha256"),
@@ -291,8 +294,8 @@ func TestGetProjectConfigs(t *testing.T) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
 			})
-			So(res, ShouldBeNil)
-			So(err, ShouldHaveGRPCStatus, codes.Internal, "error while generating the config signed url")
+			assert.Loosely(t, res, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "error while generating the config signed url"))
 		})
 	})
 }

@@ -38,6 +38,9 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -47,8 +50,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/config_service/internal/model"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const AppID = "luci-config-dev"
@@ -106,7 +107,8 @@ func SetupContext() context.Context {
 // InjectConfigSet writes a new revision for the provided config set.
 //
 // The revision ID is a monotonically increasing integer.
-func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]proto.Message) {
+func InjectConfigSet(ctx context.Context, t testing.TB, cfgSet config.Set, configs map[string]proto.Message) {
+	t.Helper()
 	cs := &model.ConfigSet{
 		ID: cfgSet,
 	}
@@ -115,24 +117,24 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 		cs.LatestRevision.ID = "1"
 	case nil:
 		prevID, err := strconv.Atoi(cs.LatestRevision.ID)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		cs.LatestRevision.ID = strconv.Itoa(prevID + 1)
 	default:
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	}
 	cs.LatestRevision.CommitTime = clock.Now(ctx)
 
 	var files []*model.File
 	for filepath, msg := range configs {
 		content, err := prototext.Marshal(msg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		var compressed bytes.Buffer
 		gw := gzip.NewWriter(&compressed)
 		sha := sha256.New()
 		mw := io.MultiWriter(sha, gw)
 		_, err = mw.Write(content)
-		So(err, ShouldBeNil)
-		So(gw.Close(), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
+		assert.Loosely(t, gw.Close(), should.BeNil, truth.LineContext())
 		files = append(files, &model.File{
 			Path:          filepath,
 			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, string(cfgSet), model.RevisionKind, cs.LatestRevision.ID),
@@ -142,10 +144,11 @@ func InjectConfigSet(ctx context.Context, cfgSet config.Set, configs map[string]
 			GcsURI:        gs.MakePath(TestGsBucket, filepath),
 		})
 	}
-	So(datastore.Put(ctx, cs, files), ShouldBeNil)
+	assert.Loosely(t, datastore.Put(ctx, cs, files), should.BeNil, truth.LineContext())
 }
 
 // InjectSelfConfigs is a shorthand for updating LUCI Config self config.
-func InjectSelfConfigs(ctx context.Context, configs map[string]proto.Message) {
-	InjectConfigSet(ctx, config.MustServiceSet(AppID), configs)
+func InjectSelfConfigs(ctx context.Context, t testing.TB, configs map[string]proto.Message) {
+	t.Helper()
+	InjectConfigSet(ctx, t, config.MustServiceSet(AppID), configs)
 }

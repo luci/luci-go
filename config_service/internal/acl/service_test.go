@@ -20,6 +20,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -28,14 +31,12 @@ import (
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestServiceConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Service Config ACL Check", t, func() {
+	ftt.Run("Service Config ACL Check", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		fakeAuthDB := authtest.NewFakeDB()
 		const requester = identity.Identity("user:requester@example.com")
@@ -47,7 +48,7 @@ func TestServiceConfig(t *testing.T) {
 		const accessGroup = "access-group"
 		const validationGroup = "validate-group"
 		const reimportGroup = "reimport-group"
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ServiceAccessGroup:     accessGroup,
 				ServiceValidationGroup: validationGroup,
@@ -55,12 +56,12 @@ func TestServiceConfig(t *testing.T) {
 			},
 		})
 
-		Convey("CanReadService", func() {
-			Convey("Access Denied", func() {
+		t.Run("CanReadService", func(t *ftt.Test) {
+			t.Run("Access Denied", func(t *ftt.Test) {
 				allowed, err := CanReadService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
-				Convey("Not even with consulting service config", func() {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
+				t.Run("Not even with consulting service config", func(t *ftt.Test) {
 					srv := &model.Service{
 						Name: service,
 						Info: &cfgcommonpb.Service{
@@ -68,20 +69,20 @@ func TestServiceConfig(t *testing.T) {
 							Access: []string{"admin@example.com"},
 						},
 					}
-					So(datastore.Put(ctx, srv), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 					allowed, err := CanReadService(ctx, service)
-					So(err, ShouldBeNil)
-					So(allowed, ShouldBeFalse)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, allowed, should.BeFalse)
 				})
 			})
-			Convey("Allowed in AccessGroup", func() {
+			t.Run("Allowed in AccessGroup", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				allowed, err := CanReadService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
-			Convey("Allowed in service config", func() {
-				Convey("By group", func() {
+			t.Run("Allowed in service config", func(t *ftt.Test) {
+				t.Run("By group", func(t *ftt.Test) {
 					srv := &model.Service{
 						Name: service,
 						Info: &cfgcommonpb.Service{
@@ -89,15 +90,15 @@ func TestServiceConfig(t *testing.T) {
 							Access: []string{"group:some-access-group"},
 						},
 					}
-					So(datastore.Put(ctx, srv), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 					fakeAuthDB.AddMocks(authtest.MockMembership(requester, "some-access-group"))
 					allowed, err := CanReadService(ctx, service)
-					So(err, ShouldBeNil)
-					So(allowed, ShouldBeTrue)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, allowed, should.BeTrue)
 				})
-				Convey("By explicit identity", func() {
+				t.Run("By explicit identity", func(t *ftt.Test) {
 					for _, prefix := range []string{"", "user:"} {
-						Convey(fmt.Sprintf("With prefix %q", prefix), func() {
+						t.Run(fmt.Sprintf("With prefix %q", prefix), func(t *ftt.Test) {
 							srv := &model.Service{
 								Name: service,
 								Info: &cfgcommonpb.Service{
@@ -105,71 +106,71 @@ func TestServiceConfig(t *testing.T) {
 									Access: []string{prefix + requester.Email()},
 								},
 							}
-							So(datastore.Put(ctx, srv), ShouldBeNil)
+							assert.Loosely(t, datastore.Put(ctx, srv), should.BeNil)
 							allowed, err := CanReadService(ctx, service)
-							So(err, ShouldBeNil)
-							So(allowed, ShouldBeTrue)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, allowed, should.BeTrue)
 						})
 					}
 				})
 			})
 		})
 
-		Convey("CanReadServices", func() {
+		t.Run("CanReadServices", func(t *ftt.Test) {
 			services := []string{"service1", "service2"}
 			result, err := CanReadServices(ctx, services)
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []bool{false, false})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]bool{false, false}))
 			// allow access
 			fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 			result, err = CanReadServices(ctx, services)
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []bool{true, true})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]bool{true, true}))
 		})
 
-		Convey("CanValidateService", func() {
-			Convey("Denied because of no read access", func() {
+		t.Run("CanValidateService", func(t *ftt.Test) {
+			t.Run("Denied because of no read access", func(t *ftt.Test) {
 				// This should allow validate
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, validationGroup))
 				allowed, err := CanValidateService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Denied even with read access", func() {
+			t.Run("Denied even with read access", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				allowed, err := CanValidateService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Allowed by ValidationGroup", func() {
+			t.Run("Allowed by ValidationGroup", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, validationGroup))
 				allowed, err := CanValidateService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 		})
 
-		Convey("CanReimportService", func() {
-			Convey("Denied because of no read access", func() {
+		t.Run("CanReimportService", func(t *ftt.Test) {
+			t.Run("Denied because of no read access", func(t *ftt.Test) {
 				// This should allow reimport
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, reimportGroup))
 				allowed, err := CanReimportService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Denied even with read access", func() {
+			t.Run("Denied even with read access", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				allowed, err := CanReimportService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Allowed by ReimportGroup", func() {
+			t.Run("Allowed by ReimportGroup", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, reimportGroup))
 				allowed, err := CanReimportService(ctx, service)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 		})
 	})

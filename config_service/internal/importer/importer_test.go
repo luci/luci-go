@@ -44,6 +44,10 @@ import (
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -61,15 +65,12 @@ import (
 	"go.chromium.org/luci/config_service/internal/taskpb"
 	"go.chromium.org/luci/config_service/internal/validation"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestImportAllConfigs(t *testing.T) {
 	t.Parallel()
 
-	Convey("import all configs", t, func() {
+	ftt.Run("import all configs", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		disp := &tq.Dispatcher{}
 		ctx, sch := tq.TestingContext(ctx, disp)
@@ -86,42 +87,46 @@ func TestImportAllConfigs(t *testing.T) {
 		importer := &Importer{}
 		importer.registerTQTask(disp)
 
-		Convey("ok", func() {
-			mockClient.EXPECT().ListFiles(gomock.Any(), protoutil.MatcherEqual(
-				&gitilespb.ListFilesRequest{
-					Project:    "infradata/config",
-					Committish: "refs/heads/main",
-					Path:       "dev-configs",
-				},
-			)).Return(&gitilespb.ListFilesResponse{
-				Files: []*git.File{
-					{
-						Id:   "hash1",
-						Path: "service1",
-						Type: git.File_TREE,
+		t.Run("ok", func(t *ftt.Test) {
+			expectCall := func() {
+				mockClient.EXPECT().ListFiles(gomock.Any(), protoutil.MatcherEqual(
+					&gitilespb.ListFilesRequest{
+						Project:    "infradata/config",
+						Committish: "refs/heads/main",
+						Path:       "dev-configs",
 					},
-					{
-						Id:   "hash2",
-						Path: "service2",
-						Type: git.File_TREE,
+				)).Return(&gitilespb.ListFilesResponse{
+					Files: []*git.File{
+						{
+							Id:   "hash1",
+							Path: "service1",
+							Type: git.File_TREE,
+						},
+						{
+							Id:   "hash2",
+							Path: "service2",
+							Type: git.File_TREE,
+						},
+						{
+							Id:   "hash3",
+							Path: "file1",
+							Type: git.File_BLOB,
+						},
 					},
-					{
-						Id:   "hash3",
-						Path: "file1",
-						Type: git.File_BLOB,
-					},
-				},
-			}, nil)
+				}, nil)
+			}
 
-			Convey("projects.cfg File entity not exist", func() {
+			t.Run("projects.cfg File entity not exist", func(t *ftt.Test) {
+				expectCall()
 				err := importAllConfigs(ctx, disp)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cfgSetsInQueue := getCfgSetsInTaskQueue(sch)
-				So(cfgSetsInQueue, ShouldResemble, []string{"services/service1", "services/service2"})
+				assert.Loosely(t, cfgSetsInQueue, should.Resemble([]string{"services/service1", "services/service2"}))
 			})
 
-			Convey("projects.cfg File entity exist", func() {
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			t.Run("projects.cfg File entity exist", func(t *ftt.Test) {
+				expectCall()
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					"projects.cfg": &cfgcommonpb.ProjectsCfg{
 						Projects: []*cfgcommonpb.Project{
 							{Id: "proj1"},
@@ -129,36 +134,37 @@ func TestImportAllConfigs(t *testing.T) {
 					},
 				})
 				err := importAllConfigs(ctx, disp)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cfgSetsInQueue := getCfgSetsInTaskQueue(sch)
-				So(cfgSetsInQueue, ShouldResemble, []string{"projects/proj1", "services/service1", "services/service2"})
+				assert.Loosely(t, cfgSetsInQueue, should.Resemble([]string{"projects/proj1", "services/service1", "services/service2"}))
 			})
 
-			Convey("delete stale config set", func() {
+			t.Run("delete stale config set", func(t *ftt.Test) {
+				expectCall()
 				stale := &model.ConfigSet{ID: config.MustServiceSet("stale")}
-				So(datastore.Put(ctx, stale), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, stale), should.BeNil)
 				err := importAllConfigs(ctx, disp)
-				So(err, ShouldBeNil)
-				So(datastore.Get(ctx, stale), ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, datastore.Get(ctx, stale), should.Equal(datastore.ErrNoSuchEntity))
 			})
 		})
 
-		Convey("error", func() {
-			Convey("gitiles", func() {
+		t.Run("error", func(t *ftt.Test) {
+			t.Run("gitiles", func(t *ftt.Test) {
 				mockClient.EXPECT().ListFiles(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles error"))
 				err := importAllConfigs(ctx, disp)
-				So(err, ShouldErrLike, "failed to load service config sets: failed to call Gitiles to list files: gitiles error")
+				assert.Loosely(t, err, should.ErrLike("failed to load service config sets: failed to call Gitiles to list files: gitiles error"))
 			})
 
-			Convey("bad projects.cfg content", func() {
+			t.Run("bad projects.cfg content", func(t *ftt.Test) {
 				mockClient.EXPECT().ListFiles(gomock.Any(), gomock.Any()).Return(&gitilespb.ListFilesResponse{}, nil)
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					"projects.cfg": &cfgcommonpb.ServicesCfg{
 						Services: []*cfgcommonpb.Service{
 							{Id: "my-service"},
 						}}, // bad type
 				})
-				So(importAllConfigs(ctx, disp), ShouldErrLike, `failed to load project config sets: failed to unmarshal file "projects.cfg": proto`)
+				assert.Loosely(t, importAllConfigs(ctx, disp), should.ErrLike(`failed to load project config sets: failed to unmarshal file "projects.cfg": proto`))
 			})
 		})
 	})
@@ -176,7 +182,7 @@ func (mv *mockValidator) Validate(context.Context, config.Set, []validation.File
 func TestImportConfigSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("import single ConfigSet", t, func() {
+	ftt.Run("import single ConfigSet", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
 			Repo: "https://a.googlesource.com/infradata/config",
@@ -214,8 +220,8 @@ func TestImportConfigSet(t *testing.T) {
 			GSBucket:  testGSBucket,
 		}
 
-		Convey("happy path", func() {
-			Convey("success import", func() {
+		t.Run("happy path", func(t *ftt.Test) {
+			t.Run("success import", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
@@ -227,7 +233,7 @@ func TestImportConfigSet(t *testing.T) {
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 				tarGzContent, err := buildTarGz(map[string]any{"file1": "file1 content", "sub_dir/file2": "file2 content", "sub_dir/": "", "empty_file": ""})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.ArchiveRequest{
 						Project: "infradata/config",
@@ -249,7 +255,7 @@ func TestImportConfigSet(t *testing.T) {
 				)
 
 				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cfgSet := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
 				}
@@ -258,10 +264,10 @@ func TestImportConfigSet(t *testing.T) {
 				}
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
 				var files []*model.File
-				So(datastore.Get(ctx, cfgSet, attempt), ShouldBeNil)
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, cfgSet, attempt), should.BeNil)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
 
-				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				assert.Loosely(t, cfgSet.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -269,8 +275,8 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
-				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				}))
+				assert.Loosely(t, cfgSet.LatestRevision.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -278,22 +284,22 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
+				}))
 				// Drop the `Location` as model ConfigSet has to use ShouldResemble which
 				// will not work if it contains proto. Same for other tests.
 				cfgSet.Location = nil
 				cfgSet.LatestRevision.Location = nil
-				So(cfgSet, ShouldResemble, &model.ConfigSet{
+				assert.Loosely(t, cfgSet, should.Resemble(&model.ConfigSet{
 					ID:             "services/myservice",
 					LatestRevision: expectedLatestRevInfo,
 					Version:        model.CurrentCfgSetVersion,
-				})
+				}))
 
-				So(files, ShouldHaveLength, 3)
+				assert.Loosely(t, files, should.HaveLength(3))
 				sort.Slice(files, func(i, j int) bool {
 					return strings.Compare(files[i].Path, files[j].Path) < 0
 				})
-				So(files[0].Location, ShouldResembleProto, &cfgcommonpb.Location{
+				assert.Loosely(t, files[0].Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -301,19 +307,19 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice/empty_file",
 						},
 					},
-				})
+				}))
 				files[0].Location = nil
 				expectedSha256, expectedContent0, err := hashAndCompressConfig(bytes.NewBuffer([]byte("")))
-				So(err, ShouldBeNil)
-				So(files[0], ShouldResemble, &model.File{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, files[0], should.Resemble(&model.File{
 					Path:          "empty_file",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
 					Content:       expectedContent0,
 					ContentSHA256: expectedSha256,
 					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
-				})
-				So(files[1].Location, ShouldResembleProto, &cfgcommonpb.Location{
+				}))
+				assert.Loosely(t, files[1].Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -321,11 +327,11 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice/file1",
 						},
 					},
-				})
+				}))
 				files[1].Location = nil
 				expectedSha256, expectedContent1, err := hashAndCompressConfig(bytes.NewBuffer([]byte("file1 content")))
-				So(err, ShouldBeNil)
-				So(files[1], ShouldResemble, &model.File{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, files[1], should.Resemble(&model.File{
 					Path:          "file1",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
@@ -333,8 +339,8 @@ func TestImportConfigSet(t *testing.T) {
 					ContentSHA256: expectedSha256,
 					Size:          int64(len("file1 content")),
 					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
-				})
-				So(files[2].Location, ShouldResembleProto, &cfgcommonpb.Location{
+				}))
+				assert.Loosely(t, files[2].Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -342,11 +348,11 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice/sub_dir/file2",
 						},
 					},
-				})
+				}))
 				files[2].Location = nil
 				expectedSha256, expectedContent2, err := hashAndCompressConfig(bytes.NewBuffer([]byte("file2 content")))
-				So(err, ShouldBeNil)
-				So(files[2], ShouldResemble, &model.File{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, files[2], should.Resemble(&model.File{
 					Path:          "sub_dir/file2",
 					Revision:      revKey,
 					CreateTime:    datastore.RoundTime(clock.Now(ctx).UTC()),
@@ -354,9 +360,9 @@ func TestImportConfigSet(t *testing.T) {
 					ContentSHA256: expectedSha256,
 					Size:          int64(len("file2 content")),
 					GcsURI:        gs.MakePath(testGSBucket, fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, expectedSha256)),
-				})
+				}))
 
-				So(recordedGSPaths, ShouldHaveLength, len(files))
+				assert.Loosely(t, recordedGSPaths, should.HaveLength(len(files)))
 				sort.Slice(recordedGSPaths, func(i, j int) bool {
 					return strings.Compare(string(recordedGSPaths[i]), string(recordedGSPaths[j])) < 0
 				})
@@ -367,9 +373,9 @@ func TestImportConfigSet(t *testing.T) {
 				sort.Slice(expectedGSPaths, func(i, j int) bool {
 					return strings.Compare(string(expectedGSPaths[i]), string(expectedGSPaths[j])) < 0
 				})
-				So(recordedGSPaths, ShouldResemble, expectedGSPaths)
+				assert.Loosely(t, recordedGSPaths, should.Resemble(expectedGSPaths))
 
-				So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				assert.Loosely(t, attempt.Revision.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -377,17 +383,17 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
+				}))
 				attempt.Revision.Location = nil
-				So(attempt, ShouldResemble, &model.ImportAttempt{
+				assert.Loosely(t, attempt, should.Resemble(&model.ImportAttempt{
 					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
 					Revision:  expectedLatestRevInfo,
 					Success:   true,
 					Message:   "Imported",
-				})
+				}))
 			})
 
-			Convey("same git revision", func() {
+			t.Run("same git revision", func(t *ftt.Test) {
 				loc := &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
@@ -403,33 +409,37 @@ func TestImportConfigSet(t *testing.T) {
 					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
 				}
 
-				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
-				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
-					Log: []*git.Commit{latestCommit},
-				}, nil)
+				assert.Loosely(t, datastore.Put(ctx, cfgSetBeforeImport), should.BeNil)
 
-				Convey("last attempt succeeded", func() {
+				expectCall := func() {
+					mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+						Log: []*git.Commit{latestCommit},
+					}, nil)
+				}
+
+				t.Run("last attempt succeeded", func(t *ftt.Test) {
+					expectCall()
 					lastAttempt := &model.ImportAttempt{
 						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
 						Success:   true,
 						Message:   "imported",
 					}
-					So(datastore.Put(ctx, cfgSetBeforeImport, lastAttempt), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, cfgSetBeforeImport, lastAttempt), should.BeNil)
 
 					err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					cfgSetAfterImport := &model.ConfigSet{
 						ID: config.MustServiceSet("myservice"),
 					}
-					So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
-					So(cfgSetAfterImport.Location, ShouldResembleProto, loc)
+					assert.Loosely(t, datastore.Get(ctx, cfgSetAfterImport), should.BeNil)
+					assert.Loosely(t, cfgSetAfterImport.Location, should.Resemble(loc))
 					cfgSetAfterImport.Location = nil
 					cfgSetBeforeImport.Location = nil
-					So(cfgSetAfterImport, ShouldResemble, cfgSetBeforeImport)
+					assert.Loosely(t, cfgSetAfterImport, should.Resemble(cfgSetBeforeImport))
 					attempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport)}
-					So(datastore.Get(ctx, attempt), ShouldBeNil)
-					So(attempt.Revision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+					assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil)
+					assert.Loosely(t, attempt.Revision.Location, should.Resemble(&cfgcommonpb.Location{
 						Location: &cfgcommonpb.Location_GitilesLocation{
 							GitilesLocation: &cfgcommonpb.GitilesLocation{
 								Repo: "https://a.googlesource.com/infradata/config",
@@ -437,9 +447,9 @@ func TestImportConfigSet(t *testing.T) {
 								Path: "dev-configs/myservice",
 							},
 						},
-					})
+					}))
 					attempt.Revision.Location = nil
-					So(attempt, ShouldResemble, &model.ImportAttempt{
+					assert.Loosely(t, attempt, should.Resemble(&model.ImportAttempt{
 						ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport),
 						Success:   true,
 						Message:   "Up-to-date",
@@ -449,10 +459,11 @@ func TestImportConfigSet(t *testing.T) {
 							CommitterEmail: latestCommit.Committer.Email,
 							AuthorEmail:    latestCommit.Author.Email,
 						},
-					})
+					}))
 				})
 
-				Convey("last attempt succeeded but with validation msg", func() {
+				t.Run("last attempt succeeded but with validation msg", func(t *ftt.Test) {
+					expectCall()
 					lastAttempt := &model.ImportAttempt{
 						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
 						Success:   true,
@@ -467,10 +478,10 @@ func TestImportConfigSet(t *testing.T) {
 							},
 						},
 					}
-					So(datastore.Put(ctx, lastAttempt), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, lastAttempt), should.BeNil)
 
 					tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 						Contents: tarGzContent,
 					}, nil)
@@ -481,23 +492,24 @@ func TestImportConfigSet(t *testing.T) {
 
 					err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					currentAttempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport)}
-					So(datastore.Get(ctx, currentAttempt), ShouldBeNil)
-					So(currentAttempt.ValidationResult, ShouldResembleProto, lastAttempt.ValidationResult)
-					So(currentAttempt.Success, ShouldBeTrue)
+					assert.Loosely(t, datastore.Get(ctx, currentAttempt), should.BeNil)
+					assert.Loosely(t, currentAttempt.ValidationResult, should.Resemble(lastAttempt.ValidationResult))
+					assert.Loosely(t, currentAttempt.Success, should.BeTrue)
 				})
 
-				Convey("last attempt not succeeded", func() {
+				t.Run("last attempt not succeeded", func(t *ftt.Test) {
+					expectCall()
 					lastAttempt := &model.ImportAttempt{
 						ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport),
 						Success:   false,
 						Message:   "transient gitilies error",
 					}
-					So(datastore.Put(ctx, lastAttempt), ShouldBeNil)
+					assert.Loosely(t, datastore.Put(ctx, lastAttempt), should.BeNil)
 
 					tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 						Contents: tarGzContent,
 					}, nil)
@@ -507,14 +519,14 @@ func TestImportConfigSet(t *testing.T) {
 
 					err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					currentAttempt := &model.ImportAttempt{ConfigSet: datastore.KeyForObj(ctx, cfgSetBeforeImport)}
-					So(datastore.Get(ctx, currentAttempt), ShouldBeNil)
-					So(currentAttempt.Success, ShouldBeTrue)
+					assert.Loosely(t, datastore.Get(ctx, currentAttempt), should.BeNil)
+					assert.Loosely(t, currentAttempt.Success, should.BeTrue)
 				})
 			})
 
-			Convey("empty archive", func() {
+			t.Run("empty archive", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
@@ -529,7 +541,7 @@ func TestImportConfigSet(t *testing.T) {
 
 				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cfgSet := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
 				}
@@ -537,14 +549,14 @@ func TestImportConfigSet(t *testing.T) {
 					ConfigSet: datastore.KeyForObj(ctx, cfgSet),
 				}
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
-				So(datastore.Get(ctx, cfgSet, attempt), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, cfgSet, attempt), should.BeNil)
 				var files []*model.File
-				So(datastore.Run(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), func(f *model.File) {
+				assert.Loosely(t, datastore.Run(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), func(f *model.File) {
 					files = append(files, f)
-				}), ShouldBeNil)
-				So(files, ShouldHaveLength, 0)
+				}), should.BeNil)
+				assert.Loosely(t, files, should.HaveLength(0))
 
-				So(cfgSet.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				assert.Loosely(t, cfgSet.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -552,8 +564,8 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
-				So(cfgSet.LatestRevision.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				}))
+				assert.Loosely(t, cfgSet.LatestRevision.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -561,21 +573,21 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
+				}))
 
 				cfgSet.Location = nil
 				cfgSet.LatestRevision.Location = nil
-				So(cfgSet, ShouldResemble, &model.ConfigSet{
+				assert.Loosely(t, cfgSet, should.Resemble(&model.ConfigSet{
 					ID:             "services/myservice",
 					LatestRevision: expectedLatestRevInfo,
 					Version:        model.CurrentCfgSetVersion,
-				})
+				}))
 
-				So(attempt.Success, ShouldBeTrue)
-				So(attempt.Message, ShouldEqual, "No Configs. Imported as empty")
+				assert.Loosely(t, attempt.Success, should.BeTrue)
+				assert.Loosely(t, attempt.Message, should.Equal("No Configs. Imported as empty"))
 			})
 
-			Convey("config set location change", func() {
+			t.Run("config set location change", func(t *ftt.Test) {
 				cfgSetBeforeImport := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
 					Location: &cfgcommonpb.Location{
@@ -589,7 +601,7 @@ func TestImportConfigSet(t *testing.T) {
 					},
 					LatestRevision: model.RevisionInfo{ID: latestCommit.Id},
 				}
-				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cfgSetBeforeImport), should.BeNil)
 				mockGtClient.EXPECT().Log(gomock.Any(), protoutil.MatcherEqual(
 					&gitilespb.LogRequest{
 						Project:    "infradata/config",
@@ -604,13 +616,13 @@ func TestImportConfigSet(t *testing.T) {
 
 				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				cfgSetAfterImport := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
 				}
-				So(datastore.Get(ctx, cfgSetAfterImport), ShouldBeNil)
-				So(cfgSetAfterImport.Location.GetGitilesLocation().Ref, ShouldNotEqual, cfgSetBeforeImport.Location.GetGitilesLocation().Ref)
-				So(cfgSetAfterImport.Location, ShouldResembleProto, &cfgcommonpb.Location{
+				assert.Loosely(t, datastore.Get(ctx, cfgSetAfterImport), should.BeNil)
+				assert.Loosely(t, cfgSetAfterImport.Location.GetGitilesLocation().Ref, should.NotEqual(cfgSetBeforeImport.Location.GetGitilesLocation().Ref))
+				assert.Loosely(t, cfgSetAfterImport.Location, should.Resemble(&cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
 							Repo: "https://a.googlesource.com/infradata/config",
@@ -618,38 +630,41 @@ func TestImportConfigSet(t *testing.T) {
 							Path: "dev-configs/myservice",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("no logs", func() {
+			t.Run("no logs", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{},
 				}, nil)
 				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
 				}
-				So(datastore.Get(ctx, attempt), ShouldBeNil)
-				So(attempt.Success, ShouldBeTrue)
-				So(attempt.Message, ShouldContainSubstring, "no commit logs")
+				assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil)
+				assert.Loosely(t, attempt.Success, should.BeTrue)
+				assert.Loosely(t, attempt.Message, should.ContainSubstring("no commit logs"))
 			})
 
-			Convey("validate", func() {
-				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
-					Log: []*git.Commit{latestCommit},
-				}, nil)
+			t.Run("validate", func(t *ftt.Test) {
+				expect := func() {
+					mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
+						Log: []*git.Commit{latestCommit},
+					}, nil)
 
-				tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
-				So(err, ShouldBeNil)
-				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
-					Contents: tarGzContent,
-				}, nil)
-				mockGsClient.EXPECT().UploadIfMissing(
-					gomock.Any(), gomock.Eq(testGSBucket),
-					gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
+					assert.Loosely(t, err, should.BeNil)
+					mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
+						Contents: tarGzContent,
+					}, nil)
+					mockGsClient.EXPECT().UploadIfMissing(
+						gomock.Any(), gomock.Eq(testGSBucket),
+						gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				}
 
-				Convey("has warning", func() {
+				t.Run("has warning", func(t *ftt.Test) {
+					expect()
 					mockValidator.result = &cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
@@ -659,23 +674,24 @@ func TestImportConfigSet(t *testing.T) {
 							},
 						},
 					}
-					err = importer.ImportConfigSet(ctx, cs)
-					So(err, ShouldBeNil)
+					err := importer.ImportConfigSet(ctx, cs)
+					assert.Loosely(t, err, should.BeNil)
 					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
 					var files []*model.File
-					So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
-					So(files, ShouldHaveLength, 1)
-					So(files[0].Path, ShouldEqual, "foo.cfg")
+					assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+					assert.Loosely(t, files, should.HaveLength(1))
+					assert.Loosely(t, files[0].Path, should.Equal("foo.cfg"))
 					attempt := &model.ImportAttempt{
 						ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
 					}
-					So(datastore.Get(ctx, attempt), ShouldBeNil)
-					So(attempt.Success, ShouldBeTrue)
-					So(attempt.Revision.ID, ShouldEqual, latestCommit.Id)
-					So(attempt.Message, ShouldEqual, "Imported with warnings")
-					So(attempt.ValidationResult, ShouldResembleProto, mockValidator.result)
+					assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil)
+					assert.Loosely(t, attempt.Success, should.BeTrue)
+					assert.Loosely(t, attempt.Revision.ID, should.Equal(latestCommit.Id))
+					assert.Loosely(t, attempt.Message, should.Equal("Imported with warnings"))
+					assert.Loosely(t, attempt.ValidationResult, should.Resemble(mockValidator.result))
 				})
-				Convey("has error", func() {
+
+				t.Run("has error", func(t *ftt.Test) {
 					mockValidator.result = &cfgcommonpb.ValidationResult{
 						Messages: []*cfgcommonpb.ValidationResult_Message{
 							{
@@ -686,59 +702,66 @@ func TestImportConfigSet(t *testing.T) {
 						},
 					}
 
-					Convey("author email is google", func() {
+					check := func(t testing.TB) {
+						t.Helper()
+						revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
+						var files []*model.File
+						assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil, truth.LineContext())
+						assert.Loosely(t, files, should.BeEmpty, truth.LineContext())
+						attempt := &model.ImportAttempt{
+							ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
+						}
+						assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil, truth.LineContext())
+						assert.Loosely(t, attempt.Success, should.BeFalse, truth.LineContext())
+						assert.Loosely(t, attempt.Message, should.Equal("Invalid config"), truth.LineContext())
+						assert.Loosely(t, attempt.Revision.ID, should.Equal(latestCommit.Id), truth.LineContext())
+						assert.Loosely(t, attempt.ValidationResult, should.Resemble(mockValidator.result), truth.LineContext())
+					}
+
+					t.Run("author email is google", func(t *ftt.Test) {
+						expect()
 						latestCommit.Author = &git.Commit_User{
 							Name:  "author",
 							Email: "author@google.com",
 						}
 
-						err = importer.ImportConfigSet(ctx, cs)
-						So(err, ShouldBeNil)
+						err := importer.ImportConfigSet(ctx, cs)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, "author"), ShouldEqual, 1)
+						assert.Loosely(t, metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, "author"), should.Equal(1))
+						check(t)
 					})
 
-					Convey("author email is non-google", func() {
+					t.Run("author email is non-google", func(t *ftt.Test) {
+						expect()
 						latestCommit.Author = &git.Commit_User{
 							Name:  "author",
 							Email: "author@chrmoium.org",
 						}
 
-						err = importer.ImportConfigSet(ctx, cs)
-						So(err, ShouldBeNil)
+						err := importer.ImportConfigSet(ctx, cs)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, ""), ShouldEqual, 1)
+						assert.Loosely(t, metrics.RejectedCfgImportCounter.Get(ctx, string(cs), latestCommit.Id, ""), should.Equal(1))
+						check(t)
 					})
-
-					revKey := datastore.MakeKey(ctx, model.ConfigSetKind, string(cs), model.RevisionKind, latestCommit.Id)
-					var files []*model.File
-					So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
-					So(files, ShouldBeEmpty)
-					attempt := &model.ImportAttempt{
-						ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, string(cs)),
-					}
-					So(datastore.Get(ctx, attempt), ShouldBeNil)
-					So(attempt.Success, ShouldBeFalse)
-					So(attempt.Message, ShouldEqual, "Invalid config")
-					So(attempt.Revision.ID, ShouldEqual, latestCommit.Id)
-					So(attempt.ValidationResult, ShouldResembleProto, mockValidator.result)
 				})
 			})
 
-			Convey("large config", func() {
+			t.Run("large config", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 				// Construct incompressible data which is larger than compressedContentLimit.
 				incompressible := make([]byte, compressedContentLimit+1024*1024)
 				_, err := rand.New(rand.NewSource(1234)).Read(incompressible)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				compressed, err := gzipCompress(incompressible)
-				So(err, ShouldBeNil)
-				So(len(compressed) > compressedContentLimit, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(compressed) > compressedContentLimit, should.BeTrue)
 
 				tarGzContent, err := buildTarGz(map[string]any{"large": incompressible})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedSha256 := sha256.Sum256(incompressible)
 				expectedGsFileName := "configs/sha256/" + hex.EncodeToString(expectedSha256[:])
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
@@ -750,26 +773,26 @@ func TestImportConfigSet(t *testing.T) {
 
 				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
 				var files []*model.File
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
-				So(files, ShouldHaveLength, 1)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+				assert.Loosely(t, files, should.HaveLength(1))
 				file := files[0]
-				So(file.Path, ShouldEqual, "large")
-				So(file.Content, ShouldBeNil)
-				So(file.GcsURI, ShouldEqual, gs.MakePath(testGSBucket, expectedGsFileName))
+				assert.Loosely(t, file.Path, should.Equal("large"))
+				assert.Loosely(t, file.Content, should.BeNil)
+				assert.Loosely(t, file.GcsURI, should.Equal(gs.MakePath(testGSBucket, expectedGsFileName)))
 			})
 		})
 
-		Convey("unhappy path", func() {
-			Convey("bad config set format", func() {
+		t.Run("unhappy path", func(t *ftt.Test) {
+			t.Run("bad config set format", func(t *ftt.Test) {
 				err := importer.ImportConfigSet(ctx, config.Set("bad"))
-				So(err, ShouldErrLike, "Invalid config set")
+				assert.Loosely(t, err, should.ErrLike("Invalid config set"))
 			})
 
-			Convey("project doesn't exist ", func() {
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			t.Run("project doesn't exist ", func(t *ftt.Test) {
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					common.ProjRegistryFilePath: &cfgcommonpb.ProjectsCfg{
 						Projects: []*cfgcommonpb.Project{
 							{
@@ -786,12 +809,12 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				err := importer.ImportConfigSet(ctx, config.MustProjectSet("unknown_proj"))
-				So(err, ShouldErrLike, `project "unknown_proj" not exist or has no gitiles location`)
-				So(ErrFatalTag.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike(`project "unknown_proj" not exist or has no gitiles location`))
+				assert.Loosely(t, ErrFatalTag.In(err), should.BeTrue)
 			})
 
-			Convey("no project gitiles location", func() {
-				testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+			t.Run("no project gitiles location", func(t *ftt.Test) {
+				testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 					common.ProjRegistryFilePath: &cfgcommonpb.ProjectsCfg{
 						Projects: []*cfgcommonpb.Project{
 							{Id: "proj"},
@@ -799,23 +822,24 @@ func TestImportConfigSet(t *testing.T) {
 					},
 				})
 				err := importer.ImportConfigSet(ctx, config.MustProjectSet("proj"))
-				So(err, ShouldErrLike, `project "proj" not exist or has no gitiles location`)
-				So(ErrFatalTag.In(err), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike(`project "proj" not exist or has no gitiles location`))
+				assert.Loosely(t, ErrFatalTag.In(err), should.BeTrue)
 			})
 
-			Convey("cannot fetch logs", func() {
+			t.Run("cannot fetch logs", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(nil, errors.New("gitiles internal errors"))
 				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
-				So(err, ShouldErrLike, "cannot fetch logs", "gitiles internal errors")
+				assert.Loosely(t, err, should.ErrLike("cannot fetch logs"))
+				assert.Loosely(t, err, should.ErrLike("gitiles internal errors"))
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
 				}
-				So(datastore.Get(ctx, attempt), ShouldBeNil)
-				So(attempt.Success, ShouldBeFalse)
-				So(attempt.Message, ShouldContainSubstring, "cannot fetch logs")
+				assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil)
+				assert.Loosely(t, attempt.Success, should.BeFalse)
+				assert.Loosely(t, attempt.Message, should.ContainSubstring("cannot fetch logs"))
 			})
 
-			Convey("bad tar file", func() {
+			t.Run("bad tar file", func(t *ftt.Test) {
 				loc := &cfgcommonpb.Location{
 					Location: &cfgcommonpb.Location_GitilesLocation{
 						GitilesLocation: &cfgcommonpb.GitilesLocation{
@@ -830,7 +854,7 @@ func TestImportConfigSet(t *testing.T) {
 					Location:       loc,
 					LatestRevision: model.RevisionInfo{ID: "old revision"},
 				}
-				So(datastore.Put(ctx, cfgSetBeforeImport), ShouldBeNil)
+				assert.Loosely(t, datastore.Put(ctx, cfgSetBeforeImport), should.BeNil)
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
@@ -840,35 +864,35 @@ func TestImportConfigSet(t *testing.T) {
 
 				err := importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-				So(err, ShouldErrLike, "Failed to import services/myservice revision latest revision")
+				assert.Loosely(t, err, should.ErrLike("Failed to import services/myservice revision latest revision"))
 				cfgSetAfterImport := &model.ConfigSet{
 					ID: config.MustServiceSet("myservice"),
 				}
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.KeyForObj(ctx, cfgSetAfterImport),
 				}
-				So(datastore.Get(ctx, cfgSetAfterImport, attempt), ShouldBeNil)
+				assert.Loosely(t, datastore.Get(ctx, cfgSetAfterImport, attempt), should.BeNil)
 
-				So(cfgSetAfterImport.Location, ShouldResembleProto, cfgSetBeforeImport.Location)
-				So(cfgSetAfterImport.LatestRevision.ID, ShouldEqual, cfgSetBeforeImport.LatestRevision.ID)
+				assert.Loosely(t, cfgSetAfterImport.Location, should.Resemble(cfgSetBeforeImport.Location))
+				assert.Loosely(t, cfgSetAfterImport.LatestRevision.ID, should.Equal(cfgSetBeforeImport.LatestRevision.ID))
 
-				So(attempt.Success, ShouldBeFalse)
-				So(attempt.Message, ShouldContainSubstring, "Failed to import services/myservice revision latest revision")
+				assert.Loosely(t, attempt.Success, should.BeFalse)
+				assert.Loosely(t, attempt.Message, should.ContainSubstring("Failed to import services/myservice revision latest revision"))
 			})
 
-			Convey("failed to upload to GCS", func() {
+			t.Run("failed to upload to GCS", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 				// Construct incompressible data which is larger than compressedContentLimit.
 				incompressible := make([]byte, compressedContentLimit+1024*1024)
 				_, err := rand.New(rand.NewSource(1234)).Read(incompressible)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				compressed, err := gzipCompress(incompressible)
-				So(err, ShouldBeNil)
-				So(len(compressed) > compressedContentLimit, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(compressed) > compressedContentLimit, should.BeTrue)
 				tarGzContent, err := buildTarGz(map[string]any{"large": incompressible})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				expectedSha256 := sha256.Sum256(incompressible)
 				expectedGsFileName := "configs/sha256/" + hex.EncodeToString(expectedSha256[:])
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
@@ -880,27 +904,28 @@ func TestImportConfigSet(t *testing.T) {
 
 				err = importer.ImportConfigSet(ctx, config.MustServiceSet("myservice"))
 
-				So(err, ShouldErrLike, "failed to upload file", "GCS internal error")
+				assert.Loosely(t, err, should.ErrLike("failed to upload file"))
+				assert.Loosely(t, err, should.ErrLike("GCS internal error"))
 				revKey := datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, latestCommit.Id)
 				var files []*model.File
-				So(datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), ShouldBeNil)
-				So(files, ShouldHaveLength, 0)
+				assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery(model.FileKind).Ancestor(revKey), &files), should.BeNil)
+				assert.Loosely(t, files, should.HaveLength(0))
 
 				attempt := &model.ImportAttempt{
 					ConfigSet: datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice"),
 				}
-				So(datastore.Get(ctx, attempt), ShouldBeNil)
-				So(attempt.Success, ShouldBeFalse)
-				So(attempt.Message, ShouldContainSubstring, "failed to upload file")
+				assert.Loosely(t, datastore.Get(ctx, attempt), should.BeNil)
+				assert.Loosely(t, attempt.Success, should.BeFalse)
+				assert.Loosely(t, attempt.Message, should.ContainSubstring("failed to upload file"))
 			})
 
-			Convey("validation error", func() {
+			t.Run("validation error", func(t *ftt.Test) {
 				mockGtClient.EXPECT().Log(gomock.Any(), gomock.Any()).Return(&gitilespb.LogResponse{
 					Log: []*git.Commit{latestCommit},
 				}, nil)
 
 				tarGzContent, err := buildTarGz(map[string]any{"foo.cfg": "content"})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				mockGtClient.EXPECT().Archive(gomock.Any(), gomock.Any()).Return(&gitilespb.ArchiveResponse{
 					Contents: tarGzContent,
 				}, nil)
@@ -910,7 +935,7 @@ func TestImportConfigSet(t *testing.T) {
 
 				mockValidator.err = errors.New("something went wrong during validation")
 				err = importer.ImportConfigSet(ctx, cs)
-				So(err, ShouldErrLike, "something went wrong during validation")
+				assert.Loosely(t, err, should.ErrLike("something went wrong during validation"))
 			})
 		})
 	})
@@ -919,7 +944,7 @@ func TestImportConfigSet(t *testing.T) {
 func TestReImport(t *testing.T) {
 	t.Parallel()
 
-	Convey("Reimport", t, func() {
+	ftt.Run("Reimport", t, func(t *ftt.Test) {
 		rsp := httptest.NewRecorder()
 		rctx := &router.Context{
 			Writer: rsp,
@@ -932,7 +957,7 @@ func TestReImport(t *testing.T) {
 		ctx := testutil.SetupContext()
 		userID := identity.Identity("user:user@example.com")
 		fakeAuthDB := authtest.NewFakeDB()
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ServiceAccessGroup:   "service-access-group",
 				ServiceReimportGroup: "service-reimport-group",
@@ -947,24 +972,24 @@ func TestReImport(t *testing.T) {
 			FakeDB:   fakeAuthDB,
 		})
 
-		Convey("no ConfigSet param", func() {
+		t.Run("no ConfigSet param", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			importer.Reimport(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
-			So(rsp.Body.String(), ShouldContainSubstring, "config set is not specified")
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring("config set is not specified"))
 		})
 
-		Convey("invalid config set", func() {
+		t.Run("invalid config set", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "ConfigSet", Value: "badCfgSet"},
 			}
 			importer.Reimport(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusBadRequest)
-			So(rsp.Body.String(), ShouldContainSubstring, `invalid config set: unknown domain "badCfgSet" for config set "badCfgSet"`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusBadRequest))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`invalid config set: unknown domain "badCfgSet" for config set "badCfgSet"`))
 		})
 
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: identity.Identity("user:random@example.com"),
 				FakeDB:   authtest.NewFakeDB(),
@@ -974,27 +999,27 @@ func TestReImport(t *testing.T) {
 				{Key: "ConfigSet", Value: "services/myservice"},
 			}
 			importer.Reimport(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusForbidden)
-			So(rsp.Body.String(), ShouldContainSubstring, `"user:random@example.com" is not allowed to reimport services/myservice`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusForbidden))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`"user:random@example.com" is not allowed to reimport services/myservice`))
 		})
 
-		Convey("config set not found", func() {
+		t.Run("config set not found", func(t *ftt.Test) {
 			rctx.Request = (&http.Request{}).WithContext(ctx)
 			rctx.Params = httprouter.Params{
 				{Key: "ConfigSet", Value: "services/myservice"},
 			}
 			importer.Reimport(rctx)
-			So(rsp.Code, ShouldEqual, http.StatusNotFound)
-			So(rsp.Body.String(), ShouldContainSubstring, `"services/myservice" is not found`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`"services/myservice" is not found`))
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
 				Repo: "https://a.googlesource.com/infradata/config",
 				Ref:  "refs/heads/main",
 				Path: "dev-configs",
 			})
-			testutil.InjectConfigSet(ctx, "services/myservice", nil)
+			testutil.InjectConfigSet(ctx, t, "services/myservice", nil)
 			ctl := gomock.NewController(t)
 			mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
 			ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
@@ -1006,16 +1031,16 @@ func TestReImport(t *testing.T) {
 			}
 			importer.Reimport(rctx)
 
-			So(rsp.Code, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusOK))
 		})
 
-		Convey("internal error", func() {
+		t.Run("internal error", func(t *ftt.Test) {
 			ctx = settings.WithGlobalConfigLoc(ctx, &cfgcommonpb.GitilesLocation{
 				Repo: "https://a.googlesource.com/infradata/config",
 				Ref:  "refs/heads/main",
 				Path: "dev-configs",
 			})
-			testutil.InjectConfigSet(ctx, "services/myservice", nil)
+			testutil.InjectConfigSet(ctx, t, "services/myservice", nil)
 			ctl := gomock.NewController(t)
 			mockGtClient := mock_gitiles.NewMockGitilesClient(ctl)
 			ctx = context.WithValue(ctx, &clients.MockGitilesClientKey, mockGtClient)
@@ -1027,8 +1052,8 @@ func TestReImport(t *testing.T) {
 			}
 			importer.Reimport(rctx)
 
-			So(rsp.Code, ShouldEqual, http.StatusInternalServerError)
-			So(rsp.Body.String(), ShouldContainSubstring, `error when reimporting "services/myservice"`)
+			assert.Loosely(t, rsp.Code, should.Equal(http.StatusInternalServerError))
+			assert.Loosely(t, rsp.Body.String(), should.ContainSubstring(`error when reimporting "services/myservice"`))
 		})
 	})
 }

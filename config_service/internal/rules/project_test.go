@@ -17,26 +17,26 @@ package rules
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateProjectsCfg(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate projects.cfg", t, func() {
+	ftt.Run("Validate projects.cfg", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 		cs := config.MustServiceSet(testutil.AppID)
 		path := common.ProjRegistryFilePath
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "team-maintenance@example.com"
@@ -54,54 +54,55 @@ func TestValidateProjectsCfg(t *testing.T) {
 					service_account_email: "example-sa@example.com"
 				}
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("invalid proto", func() {
+		t.Run("invalid proto", func(t *ftt.Test) {
 			content := []byte(`bad config`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `in "projects.cfg"`, "invalid projects proto:")
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`in "projects.cfg"`))
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("invalid projects proto:"))
 		})
 
-		Convey("missing maintenance contact", func() {
+		t.Run("missing maintenance contact", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				escalation_contact: "team-escalation@google.com"
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(teams #0): maintenance_contact is required`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(teams #0): maintenance_contact is required`))
 		})
-		Convey("invalid maintenance contact", func() {
+		t.Run("invalid maintenance contact", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "bad email"
 				escalation_contact: "team-escalation@google.com"
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(teams #0 / maintenance_contact #0): invalid email address`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(teams #0 / maintenance_contact #0): invalid email address`))
 		})
 
-		Convey("warn on missing escalation contact", func() {
+		t.Run("warn on missing escalation contact", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "team-maintenance@example.com"
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
 			vErr := vctx.Finalize().(*validation.Error)
-			So(vErr.WithSeverity(validation.Warning), ShouldErrLike, `(teams #0): escalation_contact is recommended`)
+			assert.Loosely(t, vErr.WithSeverity(validation.Warning), should.ErrLike(`(teams #0): escalation_contact is recommended`))
 		})
-		Convey("invalid escalation contact", func() {
+		t.Run("invalid escalation contact", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "team-maintenance@example.com"
 				escalation_contact: "bad email"
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(teams #0 / escalation_contact #0): invalid email address`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(teams #0 / escalation_contact #0): invalid email address`))
 		})
 
-		Convey("not sorted teams", func() {
+		t.Run("not sorted teams", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team B"
 				maintenance_contact: "team-b-maintenance@example.com"
@@ -112,11 +113,11 @@ func TestValidateProjectsCfg(t *testing.T) {
 				maintenance_contact: "team-a-maintenance@example.com"
 				escalation_contact: "team-a-escalation@google.com"
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `teams are not sorted by id. First offending id: "Example Team A"`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`teams are not sorted by id. First offending id: "Example Team A"`))
 		})
 
-		Convey("invalid project ID", func() {
+		t.Run("invalid project ID", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "team-maintenance@example.com"
@@ -134,11 +135,11 @@ func TestValidateProjectsCfg(t *testing.T) {
 					service_account_email: "example-sa@example.com"
 				}
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(projects #0 / id): invalid id:`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(projects #0 / id): invalid id:`))
 		})
 
-		Convey("invalid gitiles location", func() {
+		t.Run("invalid gitiles location", func(t *ftt.Test) {
 			content := []byte(`teams {
 				name: "Example Team"
 				maintenance_contact: "team-maintenance@example.com"
@@ -156,11 +157,11 @@ func TestValidateProjectsCfg(t *testing.T) {
 					service_account_email: "example-sa@example.com"
 				}
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(projects #0 / gitiles_location): repo: only https scheme is supported`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(projects #0 / gitiles_location): repo: only https scheme is supported`))
 		})
 
-		Convey("empty owned_by", func() {
+		t.Run("empty owned_by", func(t *ftt.Test) {
 			content := []byte(`projects {
 				id: "example-proj"
 				owned_by: ""
@@ -173,10 +174,10 @@ func TestValidateProjectsCfg(t *testing.T) {
 					service_account_email: "example-sa@example.com"
 				}
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(projects #0 / owned_by): not specified`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(projects #0 / owned_by): not specified`))
 		})
-		Convey("unknown owned_by", func() {
+		t.Run("unknown owned_by", func(t *ftt.Test) {
 			content := []byte(`projects {
 				id: "example-proj"
 				owned_by: "Example Team"
@@ -189,8 +190,8 @@ func TestValidateProjectsCfg(t *testing.T) {
 					service_account_email: "example-sa@example.com"
 				}
 			}`)
-			So(validateProjectsCfg(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(projects #0 / owned_by): unknown team "Example Team`)
+			assert.Loosely(t, validateProjectsCfg(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(projects #0 / owned_by): unknown team "Example Team`))
 		})
 	})
 }
@@ -198,43 +199,44 @@ func TestValidateProjectsCfg(t *testing.T) {
 func TestValidateProjectMetadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate project.cfg", t, func() {
+	ftt.Run("Validate project.cfg", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		vctx := &validation.Context{Context: ctx}
 		cs := config.MustServiceSet(testutil.AppID)
 		path := common.ProjMetadataFilePath
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			content := []byte(`
 			name: "example-proj"
 			access: "group:all"
 			`)
-			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectMetadata(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 
-		Convey("invalid proto", func() {
+		t.Run("invalid proto", func(t *ftt.Test) {
 			content := []byte(`bad config`)
-			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `in "project.cfg"`, "invalid project proto:")
+			assert.Loosely(t, validateProjectMetadata(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`in "project.cfg"`))
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("invalid project proto:"))
 		})
 
-		Convey("missing name", func() {
+		t.Run("missing name", func(t *ftt.Test) {
 			content := []byte(`
 			name: ""
 			access: "group:all"
 			`)
-			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, "name is not specified")
+			assert.Loosely(t, validateProjectMetadata(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike("name is not specified"))
 		})
 
-		Convey("invalid access group", func() {
+		t.Run("invalid access group", func(t *ftt.Test) {
 			content := []byte(`
 				name: "example-proj"
 				access: "group:goo!"
 			`)
-			So(validateProjectMetadata(vctx, string(cs), path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldErrLike, `(access #0): invalid auth group`)
+			assert.Loosely(t, validateProjectMetadata(vctx, string(cs), path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.ErrLike(`(access #0): invalid auth group`))
 		})
 	})
 }

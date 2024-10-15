@@ -19,6 +19,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -26,14 +29,12 @@ import (
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestProjectConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Project Config ACL Check", t, func() {
+	ftt.Run("Project Config ACL Check", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		fakeAuthDB := authtest.NewFakeDB()
 		const requester = identity.Identity("user:requester@example.com")
@@ -46,7 +47,7 @@ func TestProjectConfig(t *testing.T) {
 		const accessGroup = "access-group"
 		const validationGroup = "validate-group"
 		const reimportGroup = "reimport-group"
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ProjectAccessGroup:     accessGroup,
 				ProjectValidationGroup: validationGroup,
@@ -54,27 +55,27 @@ func TestProjectConfig(t *testing.T) {
 			},
 		})
 
-		Convey("CanReadProject", func() {
-			Convey("Access Denied", func() {
+		t.Run("CanReadProject", func(t *ftt.Test) {
+			t.Run("Access Denied", func(t *ftt.Test) {
 				allowed, err := CanReadProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("allowed in Acl.cfg", func() {
+			t.Run("allowed in Acl.cfg", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, accessGroup))
 				allowed, err := CanReadProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
-			Convey("allowed in realm", func() {
+			t.Run("allowed in realm", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockPermission(requester, realm, ReadPermission))
 				allowed, err := CanReadProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 		})
 
-		Convey("CanReadProjects", func() {
+		t.Run("CanReadProjects", func(t *ftt.Test) {
 			const (
 				project1 = "project1"
 				project2 = "project2"
@@ -86,71 +87,71 @@ func TestProjectConfig(t *testing.T) {
 				authtest.MockPermission(requester, realms.Join(project3, realms.RootRealm), ReadPermission),
 			)
 			result, err := CanReadProjects(ctx, []string{project1, project2, project3})
-			So(err, ShouldBeNil)
-			So(result, ShouldResemble, []bool{true, false, true})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble([]bool{true, false, true}))
 		})
 
-		Convey("CanValidateProject", func() {
-			Convey("Denied because of no read access", func() {
+		t.Run("CanValidateProject", func(t *ftt.Test) {
+			t.Run("Denied because of no read access", func(t *ftt.Test) {
 				// This should allow validate
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, validationGroup))
 				allowed, err := CanValidateProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Denied even with read access", func() {
+			t.Run("Denied even with read access", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockPermission(requester, realm, ReadPermission))
 				allowed, err := CanValidateProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Allowed by Acl.cfg", func() {
+			t.Run("Allowed by Acl.cfg", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockPermission(requester, realm, ReadPermission))
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, validationGroup))
 				allowed, err := CanValidateProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
-			Convey("Allowed by Realm", func() {
+			t.Run("Allowed by Realm", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(
 					authtest.MockPermission(requester, realm, ReadPermission),
 					authtest.MockPermission(requester, realm, ValidatePermission),
 				)
 				allowed, err := CanValidateProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 		})
 
-		Convey("CanReimportProject", func() {
-			Convey("Denied because of no read access", func() {
+		t.Run("CanReimportProject", func(t *ftt.Test) {
+			t.Run("Denied because of no read access", func(t *ftt.Test) {
 				// This should allow reimport
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, reimportGroup))
 				allowed, err := CanReimportProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Denied even with read access", func() {
+			t.Run("Denied even with read access", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockPermission(requester, realm, ReadPermission))
 				allowed, err := CanReimportProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeFalse)
 			})
-			Convey("Allowed by Acl.cfg", func() {
+			t.Run("Allowed by Acl.cfg", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(authtest.MockPermission(requester, realm, ReadPermission))
 				fakeAuthDB.AddMocks(authtest.MockMembership(requester, reimportGroup))
 				allowed, err := CanReimportProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
-			Convey("Allowed by Realm", func() {
+			t.Run("Allowed by Realm", func(t *ftt.Test) {
 				fakeAuthDB.AddMocks(
 					authtest.MockPermission(requester, realm, ReadPermission),
 					authtest.MockPermission(requester, realm, ReimportPermission),
 				)
 				allowed, err := CanReimportProject(ctx, lProject)
-				So(err, ShouldBeNil)
-				So(allowed, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, allowed, should.BeTrue)
 			})
 		})
 	})

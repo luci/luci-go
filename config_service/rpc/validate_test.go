@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -39,9 +40,18 @@ import (
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(validationFile{}))
+}
 
 type mockValidator struct {
 	examineResult  *validation.ExamineResult
@@ -74,11 +84,11 @@ func (mv *mockValidator) Validate(ctx context.Context, cs config.Set, files []va
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		fakeAuthDB := authtest.NewFakeDB()
 		requester := identity.Identity(fmt.Sprintf("%s:requester@example.com", identity.User))
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ProjectAccessGroup:     "access-group",
 				ProjectValidationGroup: "validate-group",
@@ -99,7 +109,7 @@ func TestValidate(t *testing.T) {
 			GSValidationBucket: "test-bucket",
 		}
 		cs := config.MustProjectSet("example-project")
-		So(datastore.Put(ctx, &model.ConfigSet{ID: cs}), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(ctx, &model.ConfigSet{ID: cs}), should.BeNil)
 		const filePath = "sub/foo.cfg"
 		fileSHA256 := fmt.Sprintf("%x", sha256.Sum256([]byte("some content")))
 		validateRequest := &configpb.ValidateConfigsRequest{
@@ -109,88 +119,88 @@ func TestValidate(t *testing.T) {
 			},
 		}
 
-		Convey("Invalid input", func() {
+		t.Run("Invalid input", func(t *ftt.Test) {
 			req := proto.Clone(validateRequest).(*configpb.ValidateConfigsRequest)
-			Convey("Empty config set", func() {
+			t.Run("Empty config set", func(t *ftt.Test) {
 				req.ConfigSet = ""
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "config set is required")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "config set is required"))
 			})
-			Convey("Invalid config set", func() {
+			t.Run("Invalid config set", func(t *ftt.Test) {
 				req.ConfigSet = "bad bad"
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "invalid config set")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "invalid config set"))
 			})
-			Convey("Empty file hashes", func() {
+			t.Run("Empty file hashes", func(t *ftt.Test) {
 				req.FileHashes = nil
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "must provide non-empty file_hashes")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must provide non-empty file_hashes"))
 			})
-			Convey("Empty path", func() {
+			t.Run("Empty path", func(t *ftt.Test) {
 				req.FileHashes[0].Path = ""
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "file_hash[0]: path is empty")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "file_hash[0]: path is empty"))
 			})
-			Convey("Absolute path", func() {
+			t.Run("Absolute path", func(t *ftt.Test) {
 				req.FileHashes[0].Path = "/home/foo.cfg"
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "must not be absolute")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must not be absolute"))
 			})
 			for _, invalidSeg := range []string{".", ".."} {
-				Convey(fmt.Sprintf("Path contain %q", invalidSeg), func() {
+				t.Run(fmt.Sprintf("Path contain %q", invalidSeg), func(t *ftt.Test) {
 					req.FileHashes[0].Path = fmt.Sprintf("sub/%s/a.cfg", invalidSeg)
 					res, err := c.ValidateConfigs(ctx, req)
-					So(res, ShouldBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "must not contain '.' or '..' components")
+					assert.Loosely(t, res, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must not contain '.' or '..' components"))
 				})
 			}
 
-			Convey("Empty hash", func() {
+			t.Run("Empty hash", func(t *ftt.Test) {
 				req.FileHashes[0].Sha256 = ""
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "file_hash[0]: sha256 is empty")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "file_hash[0]: sha256 is empty"))
 			})
-			Convey("Invalid hash", func() {
+			t.Run("Invalid hash", func(t *ftt.Test) {
 				req.FileHashes[0].Sha256 = "x.y.z"
 				res, err := c.ValidateConfigs(ctx, req)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "invalid sha256 hash")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "invalid sha256 hash"))
 			})
 		})
 
-		Convey("ACL Check", func() {
-			Convey("Disallow anonymous", func() {
+		t.Run("ACL Check", func(t *ftt.Test) {
+			t.Run("Disallow anonymous", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: identity.AnonymousIdentity,
 					FakeDB:   fakeAuthDB,
 				})
 				res, err := c.ValidateConfigs(ctx, validateRequest)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, "user must be authenticated to validate config")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, "user must be authenticated to validate config"))
 			})
 
-			Convey("Permission Denied", func() {
+			t.Run("Permission Denied", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: identity.Identity(fmt.Sprintf("%s:another-requester@example.com", identity.User)),
 					FakeDB:   fakeAuthDB,
 				})
 				res, err := c.ValidateConfigs(ctx, validateRequest)
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied, "\"user:another-requester@example.com\" does not have permission to validate config set")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, "\"user:another-requester@example.com\" does not have permission to validate config set"))
 			})
 		})
 
-		Convey("Unknown config Set", func() {
-			So(datastore.Delete(ctx, &model.ConfigSet{ID: cs}), ShouldBeNil)
+		t.Run("Unknown config Set", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Delete(ctx, &model.ConfigSet{ID: cs}), should.BeNil)
 			res, err := c.ValidateConfigs(ctx, validateRequest)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &cfgcommonpb.ValidationResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&cfgcommonpb.ValidationResult{
 				Messages: []*cfgcommonpb.ValidationResult_Message{
 					{
 						Path:     ".",
@@ -198,10 +208,10 @@ func TestValidate(t *testing.T) {
 						Text:     "The config set is not registered, skipping validation",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Successful validation", func() {
+		t.Run("Successful validation", func(t *ftt.Test) {
 			vr := &cfgcommonpb.ValidationResult{
 				Messages: []*cfgcommonpb.ValidationResult_Message{
 					{
@@ -212,30 +222,30 @@ func TestValidate(t *testing.T) {
 				},
 			}
 			mv.examineResult = &validation.ExamineResult{} //passed
-			So(mv.examineResult.Passed(), ShouldBeTrue)
+			assert.Loosely(t, mv.examineResult.Passed(), should.BeTrue)
 			mv.validateResult = vr
 			res, err := c.ValidateConfigs(ctx, validateRequest)
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, vr)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(vr))
 			expectedValidationFiles := []validation.File{
 				validationFile{
 					path:   filePath,
 					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
 				},
 			}
-			So(mv.recordedExamineFiles, ShouldResemble, expectedValidationFiles)
-			So(mv.recordedValidateFiles, ShouldResemble, expectedValidationFiles)
+			assert.Loosely(t, mv.recordedExamineFiles, should.Resemble(expectedValidationFiles))
+			assert.Loosely(t, mv.recordedValidateFiles, should.Resemble(expectedValidationFiles))
 		})
-		Convey("Validate error", func() {
+		t.Run("Validate error", func(t *ftt.Test) {
 			mv.examineResult = &validation.ExamineResult{} //passed
 			mv.validateErr = errors.New("something went wrong. Transient but confidential!!!")
 			res, err := c.ValidateConfigs(ctx, validateRequest)
-			So(err, ShouldHaveGRPCStatus, codes.Internal, "failed to validate the configs")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "failed to validate the configs"))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("Doesn't pass examination", func() {
-			Convey("Require uploading file", func() {
+		t.Run("Doesn't pass examination", func(t *ftt.Test) {
+			t.Run("Require uploading file", func(t *ftt.Test) {
 				vf := validationFile{
 					path:   filePath,
 					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
@@ -253,14 +263,14 @@ func TestValidate(t *testing.T) {
 				}
 				mv.validateErr = errors.New("unreachable")
 				res, err := c.ValidateConfigs(ctx, validateRequest)
-				So(err, ShouldNotBeNil)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, res, should.BeNil)
 				st, ok := status.FromError(err)
-				SoMsg("err must be a grpc error status", ok, ShouldBeTrue)
-				So(st.Code(), ShouldEqual, codes.InvalidArgument)
-				So(st.Message(), ShouldEqual, "invalid validate config request. See status detail for fix instruction.")
-				So(st.Details(), ShouldHaveLength, 1)
-				So(st.Details()[0], ShouldResembleProto, &configpb.BadValidationRequestFixInfo{
+				assert.Loosely(t, ok, should.BeTrue, truth.Explain("err must be a grpc error status"))
+				assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, st.Message(), should.Equal("invalid validate config request. See status detail for fix instruction."))
+				assert.Loosely(t, st.Details(), should.HaveLength(1))
+				assert.Loosely(t, st.Details()[0], should.Resemble(&configpb.BadValidationRequestFixInfo{
 					UploadFiles: []*configpb.BadValidationRequestFixInfo_UploadFile{
 						{
 							Path:          vf.GetPath(),
@@ -268,10 +278,10 @@ func TestValidate(t *testing.T) {
 							MaxConfigSize: common.ConfigMaxSize,
 						},
 					},
-				})
-				So(mv.recordedExamineFiles, ShouldResemble, []validation.File{vf})
+				}))
+				assert.Loosely(t, mv.recordedExamineFiles, should.Resemble([]validation.File{vf}))
 			})
-			Convey("Unvalidatable file", func() {
+			t.Run("Unvalidatable file", func(t *ftt.Test) {
 				vf := validationFile{
 					path:   filePath,
 					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
@@ -281,17 +291,17 @@ func TestValidate(t *testing.T) {
 				}
 				mv.validateErr = errors.New("unreachable")
 				res, err := c.ValidateConfigs(ctx, validateRequest)
-				So(err, ShouldNotBeNil)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, res, should.BeNil)
 				st, ok := status.FromError(err)
-				SoMsg("err must be a grpc error status", ok, ShouldBeTrue)
-				So(st.Code(), ShouldEqual, codes.InvalidArgument)
-				So(st.Message(), ShouldEqual, "invalid validate config request. See status detail for fix instruction.")
-				So(st.Details(), ShouldHaveLength, 1)
-				So(st.Details()[0], ShouldResembleProto, &configpb.BadValidationRequestFixInfo{
+				assert.Loosely(t, ok, should.BeTrue, truth.Explain("err must be a grpc error status"))
+				assert.Loosely(t, st.Code(), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, st.Message(), should.Equal("invalid validate config request. See status detail for fix instruction."))
+				assert.Loosely(t, st.Details(), should.HaveLength(1))
+				assert.Loosely(t, st.Details()[0], should.Resemble(&configpb.BadValidationRequestFixInfo{
 					UnvalidatableFiles: []string{vf.GetPath()},
-				})
-				So(mv.recordedExamineFiles, ShouldResemble, []validation.File{vf})
+				}))
+				assert.Loosely(t, mv.recordedExamineFiles, should.Resemble([]validation.File{vf}))
 			})
 		})
 	})

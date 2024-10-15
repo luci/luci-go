@@ -23,20 +23,21 @@ import (
 
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestExamine(t *testing.T) {
 	t.Parallel()
 
-	Convey("Examine", t, func() {
+	ftt.Run("Examine", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
 		ctl := gomock.NewController(t)
@@ -62,7 +63,7 @@ func TestExamine(t *testing.T) {
 			Finder:   mockFinder,
 		}
 
-		Convey("Passed", func() {
+		t.Run("Passed", func(t *ftt.Test) {
 			mockGsClient.EXPECT().Touch(
 				gomock.Any(),
 				gomock.Eq("test-bucket"),
@@ -75,11 +76,11 @@ func TestExamine(t *testing.T) {
 					gsPath: gs.MakePath("test-bucket", "test-object"),
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res.Passed(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Passed(), should.BeTrue)
 		})
 
-		Convey("Missing file", func() {
+		t.Run("Missing file", func(t *ftt.Test) {
 			mockGsClient.EXPECT().Touch(
 				gomock.Any(),
 				gomock.Eq("test-bucket"),
@@ -103,9 +104,9 @@ func TestExamine(t *testing.T) {
 					gsPath: gs.MakePath("test-bucket", "test-object"),
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res.Passed(), ShouldBeFalse)
-			So(res, ShouldResemble, &ExamineResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Passed(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ExamineResult{
 				MissingFiles: []struct {
 					File      File
 					SignedURL string
@@ -118,12 +119,12 @@ func TestExamine(t *testing.T) {
 						SignedURL: "http://example.com/singed-url",
 					},
 				},
-			})
-			So(recordedOpts.Method, ShouldEqual, http.MethodPut)
-			So(recordedOpts.Headers, ShouldResemble, []string{"Content-Encoding:gzip", "x-goog-content-length-range:0,209715200"})
+			}))
+			assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodPut))
+			assert.Loosely(t, recordedOpts.Headers, should.Resemble([]string{"Content-Encoding:gzip", "x-goog-content-length-range:0,209715200"}))
 		})
 
-		Convey("Unvalidatable file", func() {
+		t.Run("Unvalidatable file", func(t *ftt.Test) {
 			mockFinder.mapping = nil
 			res, err := v.Examine(ctx, cs, []File{
 				testFile{
@@ -131,16 +132,16 @@ func TestExamine(t *testing.T) {
 					gsPath: gs.MakePath("test-bucket", "test-object"),
 				},
 			})
-			So(err, ShouldBeNil)
-			So(res.Passed(), ShouldBeFalse)
-			So(res, ShouldResemble, &ExamineResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Passed(), should.BeFalse)
+			assert.Loosely(t, res, should.Resemble(&ExamineResult{
 				UnvalidatableFiles: []File{
 					testFile{
 						path:   filePath,
 						gsPath: gs.MakePath("test-bucket", "test-object"),
 					},
 				},
-			})
+			}))
 		})
 	})
 }

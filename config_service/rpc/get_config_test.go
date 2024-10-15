@@ -40,89 +40,92 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validateGetConfig", t, func() {
-		Convey("ok", func() {
-			So(validateGetConfig(&pb.GetConfigRequest{
+	ftt.Run("validateGetConfig", t, func(t *ftt.Test) {
+		t.Run("ok", func(t *ftt.Test) {
+			assert.Loosely(t, validateGetConfig(&pb.GetConfigRequest{
 				ConfigSet:     "services/abc",
 				ContentSha256: "sha256",
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			So(validateGetConfig(&pb.GetConfigRequest{
+			assert.Loosely(t, validateGetConfig(&pb.GetConfigRequest{
 				ConfigSet: "services/abc",
 				Path:      "path",
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				err := validateGetConfig(&pb.GetConfigRequest{})
-				So(err, ShouldErrLike, "config_set is not specified")
+				assert.Loosely(t, err, should.ErrLike("config_set is not specified"))
 			})
 
-			Convey("path + content_sha256", func() {
+			t.Run("path + content_sha256", func(t *ftt.Test) {
 				err := validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet:     "services/abc",
 					Path:          "path",
 					ContentSha256: "hash",
 				})
-				So(err, ShouldErrLike, "content_sha256 and path are mutually exclusive")
+				assert.Loosely(t, err, should.ErrLike("content_sha256 and path are mutually exclusive"))
 			})
 
-			Convey("config_set", func() {
+			t.Run("config_set", func(t *ftt.Test) {
 				err := validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "services/abc",
 				})
-				So(err, ShouldErrLike, "content_sha256 or path is required")
+				assert.Loosely(t, err, should.ErrLike("content_sha256 or path is required"))
 
 				err = validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "random/abc",
 					Path:      "path",
 				})
-				So(err, ShouldErrLike, `config_set "random/abc": unknown domain "random" for config set "random/abc"; currently supported domains [projects, services]`)
+				assert.Loosely(t, err, should.ErrLike(`config_set "random/abc": unknown domain "random" for config set "random/abc"; currently supported domains [projects, services]`))
 
 				err = validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "services/a$c",
 					Path:      "path",
 				})
-				So(err, ShouldErrLike, `config_set "services/a$c": invalid service name "a$c", expected to match "[a-z0-9\\-_]+"`)
+				assert.Loosely(t, err, should.ErrLike(`config_set "services/a$c": invalid service name "a$c", expected to match "[a-z0-9\\-_]+"`))
 
 				err = validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "projects/_abc",
 					Path:      "path",
 				})
-				So(err, ShouldErrLike, `config_set "projects/_abc": invalid project name: must begin with a letter`)
+				assert.Loosely(t, err, should.ErrLike(`config_set "projects/_abc": invalid project name: must begin with a letter`))
 			})
 
-			Convey("path", func() {
+			t.Run("path", func(t *ftt.Test) {
 				err := validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "services/abc",
 					Path:      "/path",
 				})
-				So(err, ShouldErrLike, `path "/path": must not be absolute`)
+				assert.Loosely(t, err, should.ErrLike(`path "/path": must not be absolute`))
 
 				err = validateGetConfig(&pb.GetConfigRequest{
 					ConfigSet: "services/abc",
 					Path:      "./path",
 				})
-				So(err, ShouldErrLike, `path "./path": should not start with './' or '../'`)
+				assert.Loosely(t, err, should.ErrLike(`path "./path": should not start with './' or '../'`))
 			})
 		})
 	})
 
-	Convey("GetConfig", t, func() {
+	ftt.Run("GetConfig", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		srv := &Configs{}
 		userID := identity.Identity("user:user@example.com")
 
 		fakeAuthDB := authtest.NewFakeDB()
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.ACLRegistryFilePath: &cfgcommonpb.AclCfg{
 				ServiceAccessGroup: "service-access-group",
 				ProjectAccessGroup: "project-access-group",
@@ -137,14 +140,14 @@ func TestGetConfig(t *testing.T) {
 			FakeDB:   fakeAuthDB,
 		})
 
-		Convey("not ok", func() {
-			Convey("invalid req", func() {
+		t.Run("not ok", func(t *ftt.Test) {
+			t.Run("invalid req", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{ConfigSet: "services/myservice"})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, "content_sha256 or path is required")
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "content_sha256 or path is required"))
 			})
 
-			Convey("bad field mask", func() {
+			t.Run("bad field mask", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "path",
@@ -152,11 +155,11 @@ func TestGetConfig(t *testing.T) {
 						Paths: []string{"random"},
 					},
 				})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`))
 			})
 
-			Convey("no permission", func() {
+			t.Run("no permission", func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: identity.Identity("user:random@example.com"),
 					FakeDB:   fakeAuthDB,
@@ -165,57 +168,57 @@ func TestGetConfig(t *testing.T) {
 					ConfigSet: "services/myservice",
 					Path:      "path",
 				})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`))
 			})
 
-			Convey("missing config set", func() {
+			t.Run("missing config set", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "path",
 				})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 
-			Convey("missing config", func() {
-				testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), map[string]proto.Message{})
+			t.Run("missing config", func(t *ftt.Test) {
+				testutil.InjectConfigSet(ctx, t, config.MustServiceSet("myservice"), map[string]proto.Message{})
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "path",
 				})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 
-			Convey("not exist config sha256", func() {
-				testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), map[string]proto.Message{})
+			t.Run("not exist config sha256", func(t *ftt.Test) {
+				testutil.InjectConfigSet(ctx, t, config.MustServiceSet("myservice"), map[string]proto.Message{})
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet:     "services/myservice",
 					ContentSha256: "abc",
 				})
-				So(res, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`)
+				assert.Loosely(t, res, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 		})
 
-		Convey("ok", func() {
+		t.Run("ok", func(t *ftt.Test) {
 			file := &cfgcommonpb.ProjectCfg{Name: "file"}
-			testutil.InjectConfigSet(ctx, config.MustServiceSet("myservice"), map[string]proto.Message{
+			testutil.InjectConfigSet(ctx, t, config.MustServiceSet("myservice"), map[string]proto.Message{
 				"file": file,
 			})
 			fileBytes, err := prototext.Marshal(file)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			contentSha := sha256.Sum256(fileBytes)
 			contextShaStr := hex.EncodeToString(contentSha[:])
 
-			Convey("by configset + path", func() {
+			t.Run("by configset + path", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "file",
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.Config{
 					ConfigSet: "services/myservice",
 					Path:      "file",
 					Content: &pb.Config_RawContent{
@@ -224,16 +227,16 @@ func TestGetConfig(t *testing.T) {
 					Revision:      "1",
 					Size:          int64(len(fileBytes)),
 					ContentSha256: contextShaStr,
-				})
+				}))
 			})
 
-			Convey("by content hash", func() {
+			t.Run("by content hash", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet:     "services/myservice",
 					ContentSha256: contextShaStr,
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.Config{
 					ConfigSet: "services/myservice",
 					Path:      "file",
 					Content: &pb.Config_RawContent{
@@ -242,10 +245,10 @@ func TestGetConfig(t *testing.T) {
 					Revision:      "1",
 					Size:          int64(len(fileBytes)),
 					ContentSha256: contextShaStr,
-				})
+				}))
 			})
 
-			Convey("partial fields", func() {
+			t.Run("partial fields", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "file",
@@ -253,15 +256,15 @@ func TestGetConfig(t *testing.T) {
 						Paths: []string{"config_set", "path", "content_sha256"},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.Config{
 					ConfigSet:     "services/myservice",
 					Path:          "file",
 					ContentSha256: contextShaStr,
-				})
+				}))
 			})
 
-			Convey("content field mask", func() {
+			t.Run("content field mask", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "file",
@@ -269,15 +272,15 @@ func TestGetConfig(t *testing.T) {
 						Paths: []string{"content"},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.Config{
 					Content: &pb.Config_RawContent{
 						RawContent: fileBytes,
 					},
-				})
+				}))
 			})
 
-			Convey("dup content related field masks", func() {
+			t.Run("dup content related field masks", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 					ConfigSet: "services/myservice",
 					Path:      "file",
@@ -285,16 +288,16 @@ func TestGetConfig(t *testing.T) {
 						Paths: []string{"content", "raw_content", "signed_url"},
 					},
 				})
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.Config{
 					Content: &pb.Config_RawContent{
 						RawContent: fileBytes,
 					},
-				})
+				}))
 			})
 
-			Convey("GCS signed url", func() {
-				So(datastore.Put(ctx, &model.File{
+			t.Run("GCS signed url", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(ctx, &model.File{
 					Path:          "large",
 					Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/myservice", model.RevisionKind, "1"),
 					ContentSHA256: "largesha256",
@@ -308,14 +311,14 @@ func TestGetConfig(t *testing.T) {
 							},
 						},
 					},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				ctl := gomock.NewController(t)
 				defer ctl.Finish()
 				mockGsClient := clients.NewMockGsClient(ctl)
 				ctx = clients.WithGsClient(ctx, mockGsClient)
 
-				Convey("successfully generate signed url", func() {
+				t.Run("successfully generate signed url", func(t *ftt.Test) {
 					mockGsClient.EXPECT().SignedURL(
 						gomock.Eq("bucket"),
 						gomock.Eq("large"),
@@ -326,8 +329,8 @@ func TestGetConfig(t *testing.T) {
 						ConfigSet: "services/myservice",
 						Path:      "large",
 					})
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &pb.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Resemble(&pb.Config{
 						ConfigSet:     "services/myservice",
 						Path:          "large",
 						ContentSha256: "largesha256",
@@ -336,10 +339,10 @@ func TestGetConfig(t *testing.T) {
 						},
 						Revision: "1",
 						Url:      "repo/+/ref/path",
-					})
+					}))
 				})
 
-				Convey("failed to generate the signed url", func() {
+				t.Run("failed to generate the signed url", func(t *ftt.Test) {
 					mockGsClient.EXPECT().SignedURL(
 						gomock.Eq("bucket"),
 						gomock.Eq("large"),
@@ -350,14 +353,14 @@ func TestGetConfig(t *testing.T) {
 						ConfigSet: "services/myservice",
 						Path:      "large",
 					})
-					So(res, ShouldBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.Internal, "error while generating the config signed url")
+					assert.Loosely(t, res, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "error while generating the config signed url"))
 				})
 
-				Convey("content size > maxRawContentSize", func() {
+				t.Run("content size > maxRawContentSize", func(t *ftt.Test) {
 					fooPb := &cfgcommonpb.ProjectCfg{Name: strings.Repeat("0123456789", maxRawContentSize/10)}
-					So(err, ShouldBeNil)
-					testutil.InjectConfigSet(ctx, config.MustProjectSet("foo"), map[string]proto.Message{
+					assert.Loosely(t, err, should.BeNil)
+					testutil.InjectConfigSet(ctx, t, config.MustProjectSet("foo"), map[string]proto.Message{
 						"foo.cfg": fooPb,
 					})
 
@@ -374,15 +377,15 @@ func TestGetConfig(t *testing.T) {
 							Paths: []string{"config_set", "path", "content", "revision"},
 						},
 					})
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &pb.Config{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.Resemble(&pb.Config{
 						ConfigSet: "projects/foo",
 						Path:      "foo.cfg",
 						Content: &pb.Config_SignedUrl{
 							SignedUrl: "signed_url",
 						},
 						Revision: "1",
-					})
+					}))
 				})
 			})
 		})

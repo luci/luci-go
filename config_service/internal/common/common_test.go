@@ -24,58 +24,59 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/testutil"
 
 	"github.com/golang/mock/gomock"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCommon(t *testing.T) {
 	t.Parallel()
 
-	Convey("GitilesURL", t, func() {
-		So(GitilesURL(nil), ShouldBeEmpty)
-		So(GitilesURL(&cfgcommonpb.GitilesLocation{}), ShouldBeEmpty)
+	ftt.Run("GitilesURL", t, func(t *ftt.Test) {
+		assert.Loosely(t, GitilesURL(nil), should.BeEmpty)
+		assert.Loosely(t, GitilesURL(&cfgcommonpb.GitilesLocation{}), should.BeEmpty)
 
-		So(GitilesURL(&cfgcommonpb.GitilesLocation{
+		assert.Loosely(t, GitilesURL(&cfgcommonpb.GitilesLocation{
 			Repo: "https://chromium.googlesource.com/infra/infra",
 			Ref:  "refs/heads/main",
 			Path: "myfile.cfg",
-		}), ShouldEqual, "https://chromium.googlesource.com/infra/infra/+/refs/heads/main/myfile.cfg")
+		}), should.Equal("https://chromium.googlesource.com/infra/infra/+/refs/heads/main/myfile.cfg"))
 
-		So(GitilesURL(&cfgcommonpb.GitilesLocation{
+		assert.Loosely(t, GitilesURL(&cfgcommonpb.GitilesLocation{
 			Repo: "https://chromium.googlesource.com/infra/infra",
 			Ref:  "refs/heads/main",
-		}), ShouldEqual, "https://chromium.googlesource.com/infra/infra/+/refs/heads/main")
+		}), should.Equal("https://chromium.googlesource.com/infra/infra/+/refs/heads/main"))
 
-		So(GitilesURL(&cfgcommonpb.GitilesLocation{
+		assert.Loosely(t, GitilesURL(&cfgcommonpb.GitilesLocation{
 			Repo: "https://chromium.googlesource.com/infra/infra",
-		}), ShouldEqual, "https://chromium.googlesource.com/infra/infra")
+		}), should.Equal("https://chromium.googlesource.com/infra/infra"))
 	})
 
-	Convey("LoadSelfConfig", t, func() {
+	ftt.Run("LoadSelfConfig", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		projectsCfg := &cfgcommonpb.ProjectsCfg{
 			Projects: []*cfgcommonpb.Project{
 				{Id: "foo"},
 			},
 		}
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			"projects.cfg": projectsCfg,
 		})
 
 		loaded := &cfgcommonpb.ProjectsCfg{}
-		So(LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg", loaded), ShouldBeNil)
-		So(loaded, ShouldResembleProto, projectsCfg)
+		assert.Loosely(t, LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg", loaded), should.BeNil)
+		assert.Loosely(t, loaded, should.Resemble(projectsCfg))
 
-		So(LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "service.cfg", loaded), ShouldErrLike, "can not find file entity \"service.cfg\" from datastore for config set")
+		assert.Loosely(t, LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "service.cfg", loaded), should.ErrLike("can not find file entity \"service.cfg\" from datastore for config set"))
 
-		So(LoadSelfConfig[*cfgcommonpb.ServicesCfg](ctx, "projects.cfg", &cfgcommonpb.ServicesCfg{}), ShouldErrLike, "failed to unmarshal")
+		assert.Loosely(t, LoadSelfConfig[*cfgcommonpb.ServicesCfg](ctx, "projects.cfg", &cfgcommonpb.ServicesCfg{}), should.ErrLike("failed to unmarshal"))
 	})
 
-	Convey("CreateSignedURLs", t, func() {
+	ftt.Run("CreateSignedURLs", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctl := gomock.NewController(t)
 		mockGsClient := clients.NewMockGsClient(ctl)
@@ -105,12 +106,12 @@ func TestCommon(t *testing.T) {
 			"Custom-Header":         "Value",
 			"Another-Custom-Header": "Another-Value",
 		})
-		So(err, ShouldBeNil)
-		So(urls, ShouldResemble, []string{"signed-url-1", "signed-url-2"})
-		So(recordedOpts.GoogleAccessID, ShouldEqual, testutil.ServiceAccount)
-		So(recordedOpts.Scheme, ShouldEqual, storage.SigningSchemeV4)
-		So(recordedOpts.Method, ShouldEqual, http.MethodGet)
-		So(recordedOpts.Expires, ShouldEqual, clock.Now(ctx).Add(signedURLExpireDur))
-		So(recordedOpts.Headers, ShouldResemble, []string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, urls, should.Resemble([]string{"signed-url-1", "signed-url-2"}))
+		assert.Loosely(t, recordedOpts.GoogleAccessID, should.Equal(testutil.ServiceAccount))
+		assert.Loosely(t, recordedOpts.Scheme, should.Equal(storage.SigningSchemeV4))
+		assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodGet))
+		assert.Loosely(t, recordedOpts.Expires, should.Match(clock.Now(ctx).Add(signedURLExpireDur)))
+		assert.Loosely(t, recordedOpts.Headers, should.Resemble([]string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"}))
 	})
 }

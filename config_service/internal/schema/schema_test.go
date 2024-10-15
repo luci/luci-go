@@ -20,20 +20,21 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLookupSchemaURL(t *testing.T) {
 	t.Parallel()
 
-	Convey("lookup schema url", t, func() {
+	ftt.Run("lookup schema url", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 
-		testutil.InjectSelfConfigs(ctx, map[string]proto.Message{
+		testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
 			common.SchemaConfigFilePath: &cfgcommonpb.SchemasCfg{
 				Schemas: []*cfgcommonpb.SchemasCfg_Schema{
 					{
@@ -44,16 +45,16 @@ func TestLookupSchemaURL(t *testing.T) {
 			},
 		})
 
-		Convey("found", func() {
+		t.Run("found", func(t *ftt.Test) {
 			url, err := lookupSchemaURL(ctx, "project:foo")
-			So(err, ShouldBeNil)
-			So(url, ShouldEqual, "https://example.com/foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.Equal("https://example.com/foo"))
 		})
 
-		Convey("not found", func() {
+		t.Run("not found", func(t *ftt.Test) {
 			url, err := lookupSchemaURL(ctx, "project:bar")
-			So(err, ShouldBeNil)
-			So(url, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.BeEmpty)
 		})
 
 	})
