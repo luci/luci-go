@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -50,6 +51,49 @@ type Config struct {
 
 // prjKey is the key to a projects.ProjectsServer in the context.
 var prjKey = "prj"
+
+func init() {
+	validation.Rules.Add("services/${appid}", projectsFile, validateProjectsCfg)
+	validation.Rules.Add("services/${appid}", vmsFile, validateVMsCfg)
+}
+
+// validateProjectsCfg implements validation.Func and validates the content of
+// the projects file.
+//
+// Validation errors are returned via validation.Context. An error directly
+// returned by this function means a bug in the code.
+func validateProjectsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	cfg := &projects.Configs{}
+
+	ctx.SetFile(path)
+
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		ctx.Errorf("invalid ProjectsCfg proto message: %s", err)
+		return nil
+	}
+
+	cfg.Validate(ctx)
+	return nil
+}
+
+// validateVMsCfg implements validation.Func and validates the content of
+// the vms file.
+//
+// Validation errors are returned via validation.Context. An error directly
+// returned by this function means a bug in the code.
+func validateVMsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	cfg := &gce.Configs{}
+
+	ctx.SetFile(path)
+
+	if err := prototext.Unmarshal(content, cfg); err != nil {
+		ctx.Errorf("invalid VMsCfg proto message: %s", err)
+		return nil
+	}
+
+	cfg.Validate(ctx)
+	return nil
+}
 
 // withProjServer returns a new context with the given projects.ProjectsServer
 // installed.

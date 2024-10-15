@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/config/validation"
 	gae "go.chromium.org/luci/gae/impl/memory"
 
 	gce "go.chromium.org/luci/gce/api/config/v1"
@@ -487,6 +488,77 @@ func TestValidate(t *testing.T) {
 				err := validate(c, cfg)
 				So(err, ShouldBeNil)
 			})
+		})
+	})
+}
+
+func TestValidateProjectsConfig(t *testing.T) {
+	t.Parallel()
+
+	Convey("validate projects.cfg", t, func() {
+		vctx := &validation.Context{
+			Context: context.Background(),
+		}
+		configSet := "services/${appid}"
+		path := "projects.cfg"
+
+		Convey("bad proto", func() {
+			content := []byte(` bad: "bad" `)
+			So(validateProjectsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid ProjectsCfg proto message")
+		})
+
+		Convey("valid proto", func() {
+			content := []byte(` `)
+			So(validateProjectsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
+		})
+	})
+}
+
+func TestValidateVMsConfig(t *testing.T) {
+	t.Parallel()
+
+	Convey("validate vms.cfg", t, func() {
+		vctx := &validation.Context{
+			Context: context.Background(),
+		}
+		configSet := "services/${appid}"
+		path := "vms.cfg"
+
+		Convey("bad proto", func() {
+			content := []byte(` bad: "bad" `)
+			So(validateVMsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid VMsCfg proto message")
+		})
+
+		Convey("valid proto", func() {
+			content := []byte(`
+				vms {
+					amount {
+						min: 1
+						max: 1
+					}
+					attributes {
+						network_interface {
+							access_config {
+							}
+						}
+						disk {
+							image: "global/images/chrome-trusty-v1"
+						}
+						machine_type: "zones/{{.Zone}}/machineTypes/n1-standard-2"
+						project: "google.com:chromecompute"
+						zone: "us-central1-b"
+					}
+					lifetime {
+						duration: "1d"
+					}
+					prefix: "chrome-trusty"
+				}
+			`)
+			So(validateVMsCfg(vctx, configSet, path, content), ShouldBeNil)
+			So(vctx.Finalize(), ShouldBeNil)
 		})
 	})
 }
