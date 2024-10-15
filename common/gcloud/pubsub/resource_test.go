@@ -16,14 +16,15 @@ package pubsub
 
 import (
 	"fmt"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestResource(t *testing.T) {
-	Convey(`Resource validation`, t, func() {
+	ftt.Run(`Resource validation`, t, func(t *ftt.Test) {
 		for _, tc := range []struct {
 			v     string
 			c     string
@@ -42,33 +43,33 @@ func TestResource(t *testing.T) {
 			{"projects/foo/topics/myResource-a_b.c~d+e%%f", "topics", true},
 		} {
 			if tc.valid {
-				Convey(fmt.Sprintf(`A valid resource [%s] will validate.`, tc.v), func() {
-					So(validateResource(tc.v, tc.c), ShouldBeNil)
+				t.Run(fmt.Sprintf(`A valid resource [%s] will validate.`, tc.v), func(t *ftt.Test) {
+					assert.Loosely(t, validateResource(tc.v, tc.c), should.BeNil)
 				})
 			} else {
-				Convey(fmt.Sprintf(`An invalid resource [%s] will not validate.`, tc.v), func() {
-					So(validateResource(tc.v, tc.c), ShouldNotBeNil)
+				t.Run(fmt.Sprintf(`An invalid resource [%s] will not validate.`, tc.v), func(t *ftt.Test) {
+					assert.Loosely(t, validateResource(tc.v, tc.c), should.NotBeNil)
 				})
 			}
 		}
 	})
 
-	Convey(`Can create a new, valid Topic.`, t, func() {
-		t := NewTopic("foo", "testTopic")
-		So(t, ShouldEqual, Topic("projects/foo/topics/testTopic"))
-		So(t.Validate(), ShouldBeNil)
+	ftt.Run(`Can create a new, valid Topic.`, t, func(t *ftt.Test) {
+		top := NewTopic("foo", "testTopic")
+		assert.Loosely(t, top, should.Equal(Topic("projects/foo/topics/testTopic")))
+		assert.Loosely(t, top.Validate(), should.BeNil)
 	})
 
-	Convey(`Can create a new, valid Subscription.`, t, func() {
-		t := NewSubscription("foo", "testSubscription")
-		So(t, ShouldEqual, Subscription("projects/foo/subscriptions/testSubscription"))
-		So(t.Validate(), ShouldBeNil)
+	ftt.Run(`Can create a new, valid Subscription.`, t, func(t *ftt.Test) {
+		sub := NewSubscription("foo", "testSubscription")
+		assert.Loosely(t, sub, should.Equal(Subscription("projects/foo/subscriptions/testSubscription")))
+		assert.Loosely(t, sub.Validate(), should.BeNil)
 	})
 
-	Convey(`Can extract a resource project.`, t, func() {
+	ftt.Run(`Can extract a resource project.`, t, func(t *ftt.Test) {
 		p, n, err := resourceProjectName("projects/foo/topics/bar")
-		So(err, ShouldBeNil)
-		So(p, ShouldEqual, "foo")
-		So(n, ShouldEqual, "bar")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p, should.Equal("foo"))
+		assert.Loosely(t, n, should.Equal("bar"))
 	})
 }

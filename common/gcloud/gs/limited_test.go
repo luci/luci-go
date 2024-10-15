@@ -20,7 +20,9 @@ import (
 	"io"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testReaderClient struct {
@@ -104,7 +106,7 @@ func (tr *testReader) Read(b []byte) (amt int, err error) {
 func TestLimitedClient(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing limited client`, t, func() {
+	ftt.Run(`Testing limited client`, t, func(t *ftt.Test) {
 		const path = "gs://bucket/file"
 		data := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 		trc := testReaderClient{
@@ -113,7 +115,7 @@ func TestLimitedClient(t *testing.T) {
 			},
 			readers: map[*testReader]struct{}{},
 		}
-		defer So(trc.readers, ShouldHaveLength, 0)
+		defer assert.Loosely(t, trc.readers, should.BeEmpty)
 
 		lc := &LimitedClient{
 			Client: &trc,
@@ -124,112 +126,112 @@ func TestLimitedClient(t *testing.T) {
 			trc.maxRead = int64(limit)
 		}
 
-		Convey(`With no read limit, can read the full stream.`, func() {
+		t.Run(`With no read limit, can read the full stream.`, func(t *ftt.Test) {
 			r, err := lc.NewReader(path, 0, -1)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer r.Close()
 
 			d, err := io.ReadAll(r)
-			So(err, ShouldBeNil)
-			So(d, ShouldResemble, data)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(data))
 		})
 
 		for _, limit := range []int{-1, 1, 2, 5, len(data) - 1, len(data), len(data) + 1} {
-			Convey(fmt.Sprintf(`Variety test: with a read limit of %d`, limit), func() {
+			t.Run(fmt.Sprintf(`Variety test: with a read limit of %d`, limit), func(t *ftt.Test) {
 				setLimit(limit)
 
-				Convey(`Can read the full stream with no limit.`, func() {
+				t.Run(`Can read the full stream with no limit.`, func(t *ftt.Test) {
 					r, err := lc.NewReader(path, 0, -1)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer r.Close()
 
 					d, err := io.ReadAll(r)
-					So(err, ShouldBeNil)
-					So(d, ShouldResemble, data)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, d, should.Resemble(data))
 				})
 
-				Convey(`Can read a partial stream.`, func() {
+				t.Run(`Can read a partial stream.`, func(t *ftt.Test) {
 					r, err := lc.NewReader(path, 3, 6)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer r.Close()
 
 					d, err := io.ReadAll(r)
-					So(err, ShouldBeNil)
-					So(d, ShouldResemble, data[3:9])
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, d, should.Resemble(data[3:9]))
 				})
 
-				Convey(`Can read an offset stream with a limit.`, func() {
+				t.Run(`Can read an offset stream with a limit.`, func(t *ftt.Test) {
 					r, err := lc.NewReader(path, 3, 6)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer r.Close()
 
 					d, err := io.ReadAll(r)
-					So(err, ShouldBeNil)
-					So(d, ShouldResemble, data[3:9])
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, d, should.Resemble(data[3:9]))
 				})
 			})
 		}
 
-		Convey(`With a read limit of 2`, func() {
+		t.Run(`With a read limit of 2`, func(t *ftt.Test) {
 			setLimit(2)
 
-			Convey(`Reading full stream creates expected readers.`, func() {
+			t.Run(`Reading full stream creates expected readers.`, func(t *ftt.Test) {
 				r, err := lc.NewReader(path, 0, -1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer r.Close()
 
 				d, err := io.ReadAll(r)
-				So(err, ShouldBeNil)
-				So(d, ShouldResemble, data)
-				So(trc.totalReaders, ShouldEqual, 6) // One for each, plus real EOF.
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, d, should.Resemble(data))
+				assert.Loosely(t, trc.totalReaders, should.Equal(6)) // One for each, plus real EOF.
 			})
 
-			Convey(`Reading partial stream (even) creates expected readers.`, func() {
+			t.Run(`Reading partial stream (even) creates expected readers.`, func(t *ftt.Test) {
 				r, err := lc.NewReader(path, 3, 6)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer r.Close()
 
 				d, err := io.ReadAll(r)
-				So(err, ShouldBeNil)
-				So(d, ShouldResemble, data[3:9])
-				So(trc.totalReaders, ShouldEqual, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, d, should.Resemble(data[3:9]))
+				assert.Loosely(t, trc.totalReaders, should.Equal(3))
 			})
 
-			Convey(`Reading partial stream (odd) creates expected readers.`, func() {
+			t.Run(`Reading partial stream (odd) creates expected readers.`, func(t *ftt.Test) {
 				r, err := lc.NewReader(path, 3, 5)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer r.Close()
 
 				d, err := io.ReadAll(r)
-				So(err, ShouldBeNil)
-				So(d, ShouldResemble, data[3:8])
-				So(trc.totalReaders, ShouldEqual, 3)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, d, should.Resemble(data[3:8]))
+				assert.Loosely(t, trc.totalReaders, should.Equal(3))
 			})
 
-			Convey(`Configured to error on new reader, returns that error.`, func() {
+			t.Run(`Configured to error on new reader, returns that error.`, func(t *ftt.Test) {
 				trc.newReaderErr = errors.New("test error")
 				_, err := lc.NewReader(path, 3, 5)
-				So(err, ShouldEqual, trc.newReaderErr)
+				assert.Loosely(t, err, should.Equal(trc.newReaderErr))
 			})
 
-			Convey(`Configured to error on close, returns that error on read.`, func() {
+			t.Run(`Configured to error on close, returns that error on read.`, func(t *ftt.Test) {
 				r, err := lc.NewReader(path, 0, -1)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer r.Close()
 
 				trc.readErr = errors.New("test error")
 				_, err = io.ReadAll(r)
-				So(err, ShouldEqual, trc.readErr)
+				assert.Loosely(t, err, should.Equal(trc.readErr))
 			})
 
-			Convey(`Configured to error on read, returns that error.`, func() {
+			t.Run(`Configured to error on read, returns that error.`, func(t *ftt.Test) {
 				r, err := lc.NewReader(path, 3, 5)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer r.Close()
 
 				trc.closeErr = errors.New("test error")
 				_, err = io.ReadAll(r)
-				So(err, ShouldEqual, trc.closeErr)
+				assert.Loosely(t, err, should.Equal(trc.closeErr))
 			})
 		})
 	})
