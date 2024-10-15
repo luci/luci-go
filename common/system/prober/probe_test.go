@@ -28,8 +28,10 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/environ"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func baseTestContext() context.Context {
@@ -63,7 +65,7 @@ func TestResolveSelf(t *testing.T) {
 		t.Fatalf("failed to stat the real executable %q: %s", realExec, err)
 	}
 
-	Convey(`With a temporary directory`, t, func() {
+	ftt.Run(`With a temporary directory`, t, func(t *ftt.Test) {
 		tdir := evalSymlinks(t.TempDir())
 
 		// Set up a base probe.
@@ -71,22 +73,22 @@ func TestResolveSelf(t *testing.T) {
 			Target: "git",
 		}
 
-		Convey(`Will resolve our executable.`, func() {
-			So(probe.ResolveSelf(), ShouldBeNil)
-			So(probe.Self, ShouldEqual, realExec)
-			So(os.SameFile(probe.SelfStat, realExecStat), ShouldBeTrue)
+		t.Run(`Will resolve our executable.`, func(t *ftt.Test) {
+			assert.Loosely(t, probe.ResolveSelf(), should.BeNil)
+			assert.Loosely(t, probe.Self, should.Equal(realExec))
+			assert.Loosely(t, os.SameFile(probe.SelfStat, realExecStat), should.BeTrue)
 		})
 
-		Convey(`When "self" is a symlink to the executable`, func() {
+		t.Run(`When "self" is a symlink to the executable`, func(t *ftt.Test) {
 			symSelf := filepath.Join(tdir, "me")
 			if err := os.Symlink(realExec, symSelf); err != nil {
 				t.Skipf("Could not create symlink %q => %q: %s", realExec, symSelf, err)
 				return
 			}
 
-			So(probe.ResolveSelf(), ShouldBeNil)
-			So(probe.Self, ShouldEqual, realExec)
-			So(os.SameFile(probe.SelfStat, realExecStat), ShouldBeTrue)
+			assert.Loosely(t, probe.ResolveSelf(), should.BeNil)
+			assert.Loosely(t, probe.Self, should.Equal(realExec))
+			assert.Loosely(t, os.SameFile(probe.SelfStat, realExecStat), should.BeTrue)
 		})
 	})
 }
@@ -103,7 +105,7 @@ func TestSystemProbe(t *testing.T) {
 		envBase.Set("PATHEXT", strings.Join([]string{".com", ".exe", ".bat", ".ohai"}, string(os.PathListSeparator)))
 	}
 
-	Convey(`With a fake PATH setup`, t, func() {
+	ftt.Run(`With a fake PATH setup`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 		c := baseTestContext()
 
@@ -160,111 +162,109 @@ func TestSystemProbe(t *testing.T) {
 			env.Set("PATH", strings.Join(v, string(os.PathListSeparator)))
 		}
 
-		Convey(`Can identify the next Git when it follows self in PATH.`, func() {
+		t.Run(`Can identify the next Git when it follows self in PATH.`, func(t *ftt.Test) {
 			setPATH(selfDir, selfDir, fooDir, wrapperDir, otherDir, nonexistDir)
 
 			git, err := probe.Locate(c, "", env)
-			So(err, ShouldBeNil)
-			So(git, shouldBeSameFileAs, fooGit)
-			So(wrapperChecks, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+			assert.Loosely(t, wrapperChecks, should.Equal(1))
 		})
 
-		Convey(`When Git precedes self in PATH`, func() {
+		t.Run(`When Git precedes self in PATH`, func(t *ftt.Test) {
 			setPATH(fooDir, selfDir, wrapperDir, otherDir, nonexistDir)
 
-			Convey(`Will identify Git`, func() {
+			t.Run(`Will identify Git`, func(t *ftt.Test) {
 				git, err := probe.Locate(c, "", env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(1))
 			})
 
-			Convey(`Will prefer an override Git`, func() {
+			t.Run(`Will prefer an override Git`, func(t *ftt.Test) {
 				probe.RelativePathOverride = []string{
 					"override/reldir", // (see "overrideGit")
 				}
 
 				git, err := probe.Locate(c, "", env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, overrideGit)
-				So(wrapperChecks, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(overrideGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(1))
 			})
 		})
 
-		Convey(`Can identify the next Git when self does not exist.`, func() {
+		t.Run(`Can identify the next Git when self does not exist.`, func(t *ftt.Test) {
 			setPATH(wrapperDir, selfDir, wrapperDir, otherDir, nonexistDir, fooDir)
 
 			probe.Self = nonexistGit
 			git, err := probe.Locate(c, "", env)
-			So(err, ShouldBeNil)
-			So(git, shouldBeSameFileAs, fooGit)
-			So(wrapperChecks, ShouldEqual, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+			assert.Loosely(t, wrapperChecks, should.Equal(2))
 		})
 
-		Convey(`With PATH setup pointing to a wrapper, self, and then the system Git`, func() {
+		t.Run(`With PATH setup pointing to a wrapper, self, and then the system Git`, func(t *ftt.Test) {
 			// NOTE: wrapperDir is repeated, but it will only count towards one check,
 			// since we cache checks on a per-directory basis.
 			setPATH(wrapperDir, wrapperDir, selfDir, otherDir, fooDir, nonexistDir)
 
-			Convey(`Will prefer the cached value.`, func() {
+			t.Run(`Will prefer the cached value.`, func(t *ftt.Test) {
 				git, err := probe.Locate(c, fooGit, env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.BeZero)
 			})
 
-			Convey(`Will ignore the cached value if it is self.`, func() {
+			t.Run(`Will ignore the cached value if it is self.`, func(t *ftt.Test) {
 				git, err := probe.Locate(c, selfGit, env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(2))
 			})
 
-			Convey(`Will ignore the cached value if it does not exist.`, func() {
+			t.Run(`Will ignore the cached value if it does not exist.`, func(t *ftt.Test) {
 				git, err := probe.Locate(c, nonexistGit, env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(2))
 			})
 
-			Convey(`Will skip the wrapper and identify the system Git.`, func() {
+			t.Run(`Will skip the wrapper and identify the system Git.`, func(t *ftt.Test) {
 				git, err := probe.Locate(c, "", env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(2))
 			})
 		})
 
-		Convey(`Will skip everything if the wrapper check fails.`, func() {
+		t.Run(`Will skip everything if the wrapper check fails.`, func(t *ftt.Test) {
 			setPATH(wrapperDir, brokenDir, selfDir, otherDir, fooDir, nonexistDir)
 
 			git, err := probe.Locate(c, "", env)
-			So(err, ShouldBeNil)
-			So(git, shouldBeSameFileAs, fooGit)
-			So(wrapperChecks, ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+			assert.Loosely(t, wrapperChecks, should.Equal(3))
 		})
 
-		Convey(`Will fail if cannot find another Git in PATH.`, func() {
+		t.Run(`Will fail if cannot find another Git in PATH.`, func(t *ftt.Test) {
 			setPATH(selfDir, otherDir, nonexistDir)
 
 			_, err := probe.Locate(c, "", env)
-			So(err, ShouldErrLike, "could not find target in system")
-			So(wrapperChecks, ShouldEqual, 0)
+			assert.Loosely(t, err, should.ErrLike("could not find target in system"))
+			assert.Loosely(t, wrapperChecks, should.BeZero)
 		})
 
-		Convey(`When a symlink is created`, func() {
-			conveyFn := Convey
-			if err := os.Symlink(selfGit, filepath.Join(otherDir, filepath.Base(selfGit))); err != nil {
-				t.Logf("Failed to create symlink; skipping symlink test: %s", err)
-				conveyFn = SkipConvey
-			}
+		t.Run(`When a symlink is created`, func(t *ftt.Test) {
+			t.Run(`Will ignore symlink because it's the same file.`, func(t *ftt.Test) {
+				if err := os.Symlink(selfGit, filepath.Join(otherDir, filepath.Base(selfGit))); err != nil {
+					t.Skipf("Failed to create symlink; skipping symlink test: %s", err)
+				}
 
-			conveyFn(`Will ignore symlink because it's the same file.`, func() {
 				setPATH(selfDir, otherDir, fooDir, wrapperDir)
 				git, err := probe.Locate(c, "", env)
-				So(err, ShouldBeNil)
-				So(git, shouldBeSameFileAs, fooGit)
-				So(wrapperChecks, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, git, convey.Adapt(shouldBeSameFileAs)(fooGit))
+				assert.Loosely(t, wrapperChecks, should.Equal(1))
 			})
 		})
 	})

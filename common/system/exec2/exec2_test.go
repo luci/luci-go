@@ -24,8 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/system/environ"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func build(src, tmpdir string) (string, error) {
@@ -40,54 +41,54 @@ func build(src, tmpdir string) (string, error) {
 func TestExec(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestExec", t, func() {
+	ftt.Run("TestExec", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		tmpdir := t.TempDir()
 
 		errCh := make(chan error, 1)
 
-		Convey("exit", func() {
+		t.Run("exit", func(t *ftt.Test) {
 			testBinary, err := build(filepath.Join("testdata", "exit.go"), tmpdir)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("exit 0", func() {
+			t.Run("exit 0", func(t *ftt.Test) {
 				cmd := CommandContext(ctx, testBinary)
-				So(cmd.Start(), ShouldBeNil)
+				assert.Loosely(t, cmd.Start(), should.BeNil)
 
-				So(cmd.Wait(), ShouldBeNil)
+				assert.Loosely(t, cmd.Wait(), should.BeNil)
 
-				So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
+				assert.Loosely(t, cmd.ProcessState.ExitCode(), should.BeZero)
 			})
 
-			Convey("exit 42", func() {
+			t.Run("exit 42", func(t *ftt.Test) {
 				cmd := CommandContext(ctx, testBinary, "42")
-				So(cmd.Start(), ShouldBeNil)
+				assert.Loosely(t, cmd.Start(), should.BeNil)
 
-				So(cmd.Wait(), ShouldBeError, "exit status 42")
+				assert.Loosely(t, cmd.Wait(), should.ErrLike("exit status 42"))
 
-				So(cmd.ProcessState.ExitCode(), ShouldEqual, 42)
+				assert.Loosely(t, cmd.ProcessState.ExitCode(), should.Equal(42))
 			})
 		})
 
-		Convey("timeout", func() {
+		t.Run("timeout", func(t *ftt.Test) {
 			testBinary, err := build(filepath.Join("testdata", "timeout.go"), tmpdir)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cmd := CommandContext(ctx, testBinary)
 			rc, err := cmd.StdoutPipe()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(cmd.Start(), ShouldBeNil)
+			assert.Loosely(t, cmd.Start(), should.BeNil)
 
 			expected := []byte("I'm alive!")
 			buf := make([]byte, len(expected))
 			n, err := rc.Read(buf)
-			So(err, ShouldBeNil)
-			So(n, ShouldEqual, len(expected))
-			So(buf, ShouldResemble, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, n, should.Equal(len(expected)))
+			assert.Loosely(t, buf, should.Resemble(expected))
 
-			So(rc.Close(), ShouldBeNil)
+			assert.Loosely(t, rc.Close(), should.BeNil)
 
 			go func() {
 				errCh <- cmd.Wait()
@@ -95,31 +96,31 @@ func TestExec(t *testing.T) {
 
 			select {
 			case err := <-errCh:
-				Print(err)
-				So("should not reach here", ShouldBeNil)
+				t.Log(err)
+				assert.Loosely(t, "should not reach here", should.BeNil)
 			case <-time.After(time.Millisecond):
 			}
 
-			So(cmd.Terminate(), ShouldBeNil)
+			assert.Loosely(t, cmd.Terminate(), should.BeNil)
 
 			select {
 			case err := <-errCh:
 				if runtime.GOOS == "windows" {
-					So(err, ShouldErrLike, "exit status")
+					assert.Loosely(t, err, should.ErrLike("exit status"))
 				} else {
-					So(err, ShouldErrLike, "signal: terminated")
+					assert.Loosely(t, err, should.ErrLike("signal: terminated"))
 				}
 				// The value of the exit code depends on GOOS and version of Go runtime.
-				So(cmd.ProcessState.ExitCode(), ShouldNotEqual, 0)
+				assert.Loosely(t, cmd.ProcessState.ExitCode(), should.NotEqual(0))
 			case <-time.After(time.Minute):
-				Print(err)
-				So("should not reach here", ShouldBeNil)
+				t.Log(err)
+				assert.Loosely(t, "should not reach here", should.BeNil)
 			}
 		})
 
-		Convey("context timeout", func() {
+		t.Run("context timeout", func(t *ftt.Test) {
 			testBinary, err := build(filepath.Join("testdata", "timeout.go"), tmpdir)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			if runtime.GOOS == "windows" {
 				// TODO(tikuta): support context timeout on windows
@@ -131,11 +132,11 @@ func TestExec(t *testing.T) {
 
 			cmd := CommandContext(ctx, testBinary)
 
-			So(cmd.Start(), ShouldBeNil)
+			assert.Loosely(t, cmd.Start(), should.BeNil)
 
-			So(cmd.Wait(), ShouldBeError, "signal: killed")
+			assert.Loosely(t, cmd.Wait(), should.ErrLike("signal: killed"))
 
-			So(cmd.ProcessState.ExitCode(), ShouldEqual, -1)
+			assert.Loosely(t, cmd.ProcessState.ExitCode(), should.Equal(-1))
 		})
 
 	})
@@ -144,23 +145,23 @@ func TestExec(t *testing.T) {
 func TestSetEnv(t *testing.T) {
 	t.Parallel()
 
-	Convey("TestSetEnv", t, func() {
+	ftt.Run("TestSetEnv", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		tmpdir := t.TempDir()
 
 		testBinary, err := build(filepath.Join("testdata", "env.go"), tmpdir)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		cmd := CommandContext(ctx, testBinary)
 		env := environ.System()
 		env.Set("envvar", "envvar")
 		cmd.Env = env.Sorted()
 
-		So(cmd.Start(), ShouldBeNil)
+		assert.Loosely(t, cmd.Start(), should.BeNil)
 
-		So(cmd.Wait(), ShouldBeNil)
+		assert.Loosely(t, cmd.Wait(), should.BeNil)
 
-		So(cmd.ProcessState.ExitCode(), ShouldEqual, 0)
+		assert.Loosely(t, cmd.ProcessState.ExitCode(), should.BeZero)
 	})
 }

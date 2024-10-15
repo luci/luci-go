@@ -20,7 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // Note: all tests here are NOT marked with t.Parallel() because they mutate
@@ -35,8 +37,8 @@ func pretendLinux() {
 }
 
 func TestEnvironmentConversion(t *testing.T) {
-	Convey(`Source environment slice translates correctly to/from an Env.`, t, func() {
-		Convey(`Case insensitive (e.g., Windows)`, func() {
+	ftt.Run(`Source environment slice translates correctly to/from an Env.`, t, func(t *ftt.Test) {
+		t.Run(`Case insensitive (e.g., Windows)`, func(t *ftt.Test) {
 			pretendWindows()
 
 			env := New([]string{
@@ -46,29 +48,29 @@ func TestEnvironmentConversion(t *testing.T) {
 				"bar=baz",
 				"qux=quux=quuuuuuux",
 			})
-			So(env, ShouldResemble, Env{
+			assert.Loosely(t, env, should.Resemble(Env{
 				env: map[string]string{
 					"FOO": "FOO=",
 					"BAR": "bar=baz",
 					"QUX": "qux=quux=quuuuuuux",
 				},
-			})
+			}))
 
-			So(env.Sorted(), ShouldResemble, []string{
+			assert.Loosely(t, env.Sorted(), should.Resemble([]string{
 				"FOO=",
 				"bar=baz",
 				"qux=quux=quuuuuuux",
-			})
+			}))
 
-			So(env.Get(""), ShouldEqual, "")
-			So(env.Get("FOO"), ShouldEqual, "")
-			So(env.Get("BAR"), ShouldEqual, "baz")
-			So(env.Get("bar"), ShouldEqual, "baz")
-			So(env.Get("qux"), ShouldEqual, "quux=quuuuuuux")
-			So(env.Get("QuX"), ShouldEqual, "quux=quuuuuuux")
+			assert.Loosely(t, env.Get(""), should.BeEmpty)
+			assert.Loosely(t, env.Get("FOO"), should.BeEmpty)
+			assert.Loosely(t, env.Get("BAR"), should.Equal("baz"))
+			assert.Loosely(t, env.Get("bar"), should.Equal("baz"))
+			assert.Loosely(t, env.Get("qux"), should.Equal("quux=quuuuuuux"))
+			assert.Loosely(t, env.Get("QuX"), should.Equal("quux=quuuuuuux"))
 		})
 
-		Convey(`Case sensitive (e.g., POSIX)`, func() {
+		t.Run(`Case sensitive (e.g., POSIX)`, func(t *ftt.Test) {
 			pretendLinux()
 
 			env := New([]string{
@@ -78,86 +80,86 @@ func TestEnvironmentConversion(t *testing.T) {
 				"bar=baz",
 				"qux=quux=quuuuuuux",
 			})
-			So(env, ShouldResemble, Env{
+			assert.Loosely(t, env, should.Resemble(Env{
 				env: map[string]string{
 					"FOO": "FOO=",
 					"BAR": "BAR=BAZ",
 					"bar": "bar=baz",
 					"qux": "qux=quux=quuuuuuux",
 				},
-			})
+			}))
 
-			So(env.Sorted(), ShouldResemble, []string{
+			assert.Loosely(t, env.Sorted(), should.Resemble([]string{
 				"BAR=BAZ",
 				"FOO=",
 				"bar=baz",
 				"qux=quux=quuuuuuux",
-			})
+			}))
 
-			So(env.Get(""), ShouldEqual, "")
-			So(env.Get("FOO"), ShouldEqual, "")
-			So(env.Get("BAR"), ShouldEqual, "BAZ")
-			So(env.Get("bar"), ShouldEqual, "baz")
-			So(env.Get("qux"), ShouldEqual, "quux=quuuuuuux")
-			So(env.Get("QuX"), ShouldEqual, "")
+			assert.Loosely(t, env.Get(""), should.BeEmpty)
+			assert.Loosely(t, env.Get("FOO"), should.BeEmpty)
+			assert.Loosely(t, env.Get("BAR"), should.Equal("BAZ"))
+			assert.Loosely(t, env.Get("bar"), should.Equal("baz"))
+			assert.Loosely(t, env.Get("qux"), should.Equal("quux=quuuuuuux"))
+			assert.Loosely(t, env.Get("QuX"), should.BeEmpty)
 		})
 	})
 }
 
 func TestEnvironmentManipulation(t *testing.T) {
-	Convey(`A zero-valued Env`, t, func() {
+	ftt.Run(`A zero-valued Env`, t, func(t *ftt.Test) {
 		pretendLinux()
 
 		var env Env
-		So(env.Len(), ShouldEqual, 0)
+		assert.Loosely(t, env.Len(), should.BeZero)
 
-		Convey(`Can be sorted.`, func() {
-			So(env.Sorted(), ShouldBeNil)
+		t.Run(`Can be sorted.`, func(t *ftt.Test) {
+			assert.Loosely(t, env.Sorted(), should.BeNil)
 		})
 
-		Convey(`Can call Get`, func() {
+		t.Run(`Can call Get`, func(t *ftt.Test) {
 			v, ok := env.Lookup("foo")
-			So(ok, ShouldBeFalse)
-			So(v, ShouldEqual, "")
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, v, should.BeEmpty)
 		})
 
-		Convey(`Can be cloned`, func() {
-			So(env.Clone(), ShouldResemble, New(nil))
+		t.Run(`Can be cloned`, func(t *ftt.Test) {
+			assert.Loosely(t, env.Clone(), should.Resemble(New(nil)))
 		})
 
-		Convey(`Set panics`, func() {
-			So(func() { env.Set("foo", "bar") }, ShouldPanic)
+		t.Run(`Set panics`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { env.Set("foo", "bar") }, should.Panic)
 		})
 	})
 
-	Convey(`An empty Env`, t, func() {
+	ftt.Run(`An empty Env`, t, func(t *ftt.Test) {
 		pretendLinux()
 
 		env := New(nil)
-		So(env.Len(), ShouldEqual, 0)
+		assert.Loosely(t, env.Len(), should.BeZero)
 
-		Convey(`Can be sorted.`, func() {
-			So(env.Sorted(), ShouldBeNil)
+		t.Run(`Can be sorted.`, func(t *ftt.Test) {
+			assert.Loosely(t, env.Sorted(), should.BeNil)
 		})
 
-		Convey(`Can call Get`, func() {
+		t.Run(`Can call Get`, func(t *ftt.Test) {
 			v, ok := env.Lookup("foo")
-			So(ok, ShouldBeFalse)
-			So(v, ShouldEqual, "")
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, v, should.BeEmpty)
 		})
 
-		Convey(`Can call Set`, func() {
+		t.Run(`Can call Set`, func(t *ftt.Test) {
 			env.Set("foo", "bar")
-			So(env.Len(), ShouldEqual, 1)
-			So(env.Sorted(), ShouldResemble, []string{"foo=bar"})
+			assert.Loosely(t, env.Len(), should.Equal(1))
+			assert.Loosely(t, env.Sorted(), should.Resemble([]string{"foo=bar"}))
 		})
 
-		Convey(`Can be cloned`, func() {
-			So(env.Clone(), ShouldResemble, New(nil))
+		t.Run(`Can be cloned`, func(t *ftt.Test) {
+			assert.Loosely(t, env.Clone(), should.Resemble(New(nil)))
 		})
 	})
 
-	Convey(`A testing Env`, t, func() {
+	ftt.Run(`A testing Env`, t, func(t *ftt.Test) {
 		pretendWindows()
 
 		env := New([]string{
@@ -166,47 +168,47 @@ func TestEnvironmentManipulation(t *testing.T) {
 			"http_proxy=http://example.com",
 			"novalue",
 		})
-		So(env.Len(), ShouldEqual, 3)
+		assert.Loosely(t, env.Len(), should.Equal(3))
 
-		Convey(`Can Get values.`, func() {
+		t.Run(`Can Get values.`, func(t *ftt.Test) {
 			v, ok := env.Lookup("PYTHONPATH")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "/foo:/bar:/baz")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("/foo:/bar:/baz"))
 
 			v, ok = env.Lookup("http_proxy")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "http://example.com")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("http://example.com"))
 
 			v, ok = env.Lookup("novalue")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.BeEmpty)
 		})
 
-		Convey(`Will note missing values.`, func() {
+		t.Run(`Will note missing values.`, func(t *ftt.Test) {
 			_, ok := env.Lookup("missing")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			_, ok = env.Lookup("")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey(`Can be converted into a map and enumerated`, func() {
-			So(env.Map(), ShouldResemble, map[string]string{
+		t.Run(`Can be converted into a map and enumerated`, func(t *ftt.Test) {
+			assert.Loosely(t, env.Map(), should.Resemble(map[string]string{
 				"PYTHONPATH": "/foo:/bar:/baz",
 				"http_proxy": "http://example.com",
 				"novalue":    "",
-			})
+			}))
 
-			Convey(`Can perform iteration`, func() {
+			t.Run(`Can perform iteration`, func(t *ftt.Test) {
 				buildMap := make(map[string]string)
-				So(env.Iter(func(k, v string) error {
+				assert.Loosely(t, env.Iter(func(k, v string) error {
 					buildMap[k] = v
 					return nil
-				}), ShouldBeNil)
-				So(env.Map(), ShouldResemble, buildMap)
+				}), should.BeNil)
+				assert.Loosely(t, env.Map(), should.Resemble(buildMap))
 			})
 
-			Convey(`Can have elements removed through iteration`, func() {
+			t.Run(`Can have elements removed through iteration`, func(t *ftt.Test) {
 				env.RemoveMatch(func(k, v string) bool {
 					switch k {
 					case "PYTHONPATH", "novalue":
@@ -215,59 +217,59 @@ func TestEnvironmentManipulation(t *testing.T) {
 						return false
 					}
 				})
-				So(env.Map(), ShouldResemble, map[string]string{
+				assert.Loosely(t, env.Map(), should.Resemble(map[string]string{
 					"http_proxy": "http://example.com",
-				})
+				}))
 			})
 		})
 
-		Convey(`Can update its values.`, func() {
+		t.Run(`Can update its values.`, func(t *ftt.Test) {
 			orig := env.Clone()
 
 			// Update PYTHONPATH, confirm that it updated correctly.
 			v, _ := env.Lookup("PYTHONPATH")
 			env.Set("PYTHONPATH", "/override:"+v)
-			So(env.Sorted(), ShouldResemble, []string{
+			assert.Loosely(t, env.Sorted(), should.Resemble([]string{
 				"PYTHONPATH=/override:/foo:/bar:/baz",
 				"http_proxy=http://example.com",
 				"novalue=",
-			})
+			}))
 
 			// Use a different-case key, and confirm that it still updated correctly.
-			Convey(`When case insensitive, will update common keys.`, func() {
+			t.Run(`When case insensitive, will update common keys.`, func(t *ftt.Test) {
 				env.Set("pYtHoNpAtH", "/override:"+v)
-				So(env.Sorted(), ShouldResemble, []string{
+				assert.Loosely(t, env.Sorted(), should.Resemble([]string{
 					"http_proxy=http://example.com",
 					"novalue=",
 					"pYtHoNpAtH=/override:/foo:/bar:/baz",
-				})
-				So(env.Get("PYTHONPATH"), ShouldEqual, "/override:/foo:/bar:/baz")
+				}))
+				assert.Loosely(t, env.Get("PYTHONPATH"), should.Equal("/override:/foo:/bar:/baz"))
 
-				So(env.Remove("HTTP_PROXY"), ShouldBeTrue)
-				So(env.Remove("nonexistent"), ShouldBeFalse)
-				So(env.Sorted(), ShouldResemble, []string{
+				assert.Loosely(t, env.Remove("HTTP_PROXY"), should.BeTrue)
+				assert.Loosely(t, env.Remove("nonexistent"), should.BeFalse)
+				assert.Loosely(t, env.Sorted(), should.Resemble([]string{
 					"novalue=",
 					"pYtHoNpAtH=/override:/foo:/bar:/baz",
-				})
+				}))
 
 				// Test that the clone didn't change.
-				So(orig.Sorted(), ShouldResemble, []string{
+				assert.Loosely(t, orig.Sorted(), should.Resemble([]string{
 					"PYTHONPATH=/foo:/bar:/baz",
 					"http_proxy=http://example.com",
 					"novalue=",
-				})
+				}))
 
 				orig.Update(New([]string{
 					"http_PROXY=foo",
 					"HTTP_PROXY=FOO",
 					"newkey=value",
 				}))
-				So(orig.Sorted(), ShouldResemble, []string{
+				assert.Loosely(t, orig.Sorted(), should.Resemble([]string{
 					"HTTP_PROXY=FOO",
 					"PYTHONPATH=/foo:/bar:/baz",
 					"newkey=value",
 					"novalue=",
-				})
+				}))
 			})
 		})
 	})
@@ -276,41 +278,41 @@ func TestEnvironmentManipulation(t *testing.T) {
 func TestEnvironmentConstruction(t *testing.T) {
 	pretendLinux()
 
-	Convey(`Can load an initial set of values from a map`, t, func() {
+	ftt.Run(`Can load an initial set of values from a map`, t, func(t *ftt.Test) {
 		env := New(nil)
 		env.Load(map[string]string{
 			"FOO": "BAR",
 			"foo": "bar",
 		})
-		So(env, ShouldResemble, Env{
+		assert.Loosely(t, env, should.Resemble(Env{
 			env: map[string]string{
 				"FOO": "FOO=BAR",
 				"foo": "foo=bar",
 			},
-		})
+		}))
 	})
 }
 
 func TestEnvironmentContext(t *testing.T) {
 	pretendLinux()
 
-	Convey(`Can set and retrieve env from context`, t, func() {
+	ftt.Run(`Can set and retrieve env from context`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`Default is system`, func() {
-			So(FromCtx(ctx), ShouldResemble, System())
+		t.Run(`Default is system`, func(t *ftt.Test) {
+			assert.Loosely(t, FromCtx(ctx), should.Resemble(System()))
 		})
 
-		Convey(`Setting nil works`, func() {
+		t.Run(`Setting nil works`, func(t *ftt.Test) {
 			ctx = (Env{}).SetInCtx(ctx)
 			env := FromCtx(ctx)
 			// We specifically want FromCtx to always return a mutable Env, even if
 			// the one in context is nil.
-			So(env, ShouldNotBeNil)
-			So(env, ShouldResemble, Env{env: map[string]string{}})
+			assert.Loosely(t, env.env, should.NotBeNil)
+			assert.Loosely(t, env, should.Resemble(Env{env: map[string]string{}}))
 		})
 
-		Convey(`Can set in context`, func() {
+		t.Run(`Can set in context`, func(t *ftt.Test) {
 			env := New(nil)
 			env.Load(map[string]string{
 				"FOO":  "BAR",
@@ -319,28 +321,27 @@ func TestEnvironmentContext(t *testing.T) {
 
 			ctx = env.SetInCtx(ctx)
 
-			Convey(`And get a copy back`, func() {
+			t.Run(`And get a copy back`, func(t *ftt.Test) {
 				ptr := func(e Env) uintptr {
 					return reflect.ValueOf(e.env).Pointer()
 				}
 
 				env2 := FromCtx(ctx)
-				So(ptr(env2), ShouldNotEqual, ptr(env))
-				So(env2, ShouldResemble, env)
+				assert.Loosely(t, ptr(env2), should.NotEqual(ptr(env)))
+				assert.Loosely(t, env2, should.Resemble(env))
 
-				So(ptr(FromCtx(ctx)), ShouldNotEqual, ptr(env))
-				So(ptr(FromCtx(ctx)), ShouldNotEqual, ptr(env2))
+				assert.Loosely(t, ptr(FromCtx(ctx)), should.NotEqual(ptr(env)))
+				assert.Loosely(t, ptr(FromCtx(ctx)), should.NotEqual(ptr(env2)))
 			})
 
-			Convey(`Mutating after installation has no effect`, func() {
+			t.Run(`Mutating after installation has no effect`, func(t *ftt.Test) {
 				env.Set("COOL", "Nope")
 
 				env2 := FromCtx(ctx)
-				So(env2, ShouldNotEqual, env)
-				So(env2, ShouldNotResemble, env)
+				assert.Loosely(t, env2, should.NotResemble(env))
 
 				env2.Set("COOL", "Nope")
-				So(env2, ShouldResemble, env)
+				assert.Loosely(t, env2, should.Resemble(env))
 			})
 		})
 	})

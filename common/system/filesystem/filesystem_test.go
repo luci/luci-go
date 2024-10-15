@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestIsNotExist(t *testing.T) {
@@ -37,12 +37,12 @@ func TestIsNotExist(t *testing.T) {
 		t.Fatalf("failed to get IsNotExist error: %s", err)
 	}
 
-	Convey(`IsNotExist works`, t, func() {
-		So(IsNotExist(nil), ShouldBeFalse)
-		So(IsNotExist(errors.New("something")), ShouldBeFalse)
+	ftt.Run(`IsNotExist works`, t, func(t *ftt.Test) {
+		assert.Loosely(t, IsNotExist(nil), should.BeFalse)
+		assert.Loosely(t, IsNotExist(errors.New("something")), should.BeFalse)
 
-		So(IsNotExist(err), ShouldBeTrue)
-		So(IsNotExist(errors.Annotate(err, "annotated").Err()), ShouldBeTrue)
+		assert.Loosely(t, IsNotExist(err), should.BeTrue)
+		assert.Loosely(t, IsNotExist(errors.Annotate(err, "annotated").Err()), should.BeTrue)
 	})
 }
 
@@ -52,74 +52,74 @@ func TestAbsPath(t *testing.T) {
 	tdir := t.TempDir()
 	tdirName := filepath.Base(tdir)
 
-	Convey(`AbsPath works`, t, func() {
+	ftt.Run(`AbsPath works`, t, func(t *ftt.Test) {
 		base := filepath.Join(tdir, "..", tdirName, "file.txt")
-		So(AbsPath(&base), ShouldBeNil)
-		So(base, ShouldEqual, filepath.Join(tdir, "file.txt"))
+		assert.Loosely(t, AbsPath(&base), should.BeNil)
+		assert.Loosely(t, base, should.Equal(filepath.Join(tdir, "file.txt")))
 	})
 }
 
 func TestTouch(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing Touch`, t, func() {
+	ftt.Run(`Testing Touch`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 
 		thePast := time.Now().Add(-10 * time.Second)
 
-		Convey(`Can update a directory timestamp`, func() {
+		t.Run(`Can update a directory timestamp`, func(t *ftt.Test) {
 			path := filepath.Join(tdir, "subdir")
 
-			So(os.Mkdir(path, 0755), ShouldBeNil)
+			assert.Loosely(t, os.Mkdir(path, 0755), should.BeNil)
 			st, err := os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			initialModTime := st.ModTime()
 
-			So(Touch(path, thePast, 0), ShouldBeNil)
+			assert.Loosely(t, Touch(path, thePast, 0), should.BeNil)
 			st, err = os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(st.ModTime(), ShouldHappenBefore, initialModTime)
+			assert.Loosely(t, st.ModTime(), should.HappenBefore(initialModTime))
 		})
 
-		Convey(`Can update an empty file timestamp`, func() {
+		t.Run(`Can update an empty file timestamp`, func(t *ftt.Test) {
 			path := filepath.Join(tdir, "touch")
 
-			So(Touch(path, time.Time{}, 0644), ShouldBeNil)
+			assert.Loosely(t, Touch(path, time.Time{}, 0644), should.BeNil)
 			st, err := os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			initialModTime := st.ModTime()
 
-			So(Touch(path, thePast, 0), ShouldBeNil)
+			assert.Loosely(t, Touch(path, thePast, 0), should.BeNil)
 			st, err = os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			pastModTime := st.ModTime()
-			So(pastModTime, ShouldHappenBefore, initialModTime)
+			assert.Loosely(t, pastModTime, should.HappenBefore(initialModTime))
 
 			// Touch back to "now".
-			So(Touch(path, time.Time{}, 0644), ShouldBeNil)
+			assert.Loosely(t, Touch(path, time.Time{}, 0644), should.BeNil)
 			st, err = os.Lstat(path)
-			So(err, ShouldBeNil)
-			So(st.ModTime(), ShouldHappenOnOrAfter, initialModTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, st.ModTime(), should.HappenOnOrAfter(initialModTime))
 		})
 
-		Convey(`Can update a populated file timestamp`, func() {
+		t.Run(`Can update a populated file timestamp`, func(t *ftt.Test) {
 			path := filepath.Join(tdir, "touch")
 
-			So(os.WriteFile(path, []byte("sup"), 0644), ShouldBeNil)
+			assert.Loosely(t, os.WriteFile(path, []byte("sup"), 0644), should.BeNil)
 			st, err := os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			initialModTime := st.ModTime()
 
-			So(Touch(path, thePast, 0), ShouldBeNil)
+			assert.Loosely(t, Touch(path, thePast, 0), should.BeNil)
 			st, err = os.Lstat(path)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(st.ModTime(), ShouldHappenBefore, initialModTime)
+			assert.Loosely(t, st.ModTime(), should.HappenBefore(initialModTime))
 
 			content, err := os.ReadFile(path)
-			So(err, ShouldBeNil)
-			So(content, ShouldResemble, []byte("sup"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, content, should.Resemble([]byte("sup")))
 		})
 	})
 }
@@ -127,10 +127,10 @@ func TestTouch(t *testing.T) {
 func TestMakeReadOnly(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can RemoveAll`, t, func() {
+	ftt.Run(`Can RemoveAll`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 		defer func() {
-			So(recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), ShouldBeNil)
+			assert.Loosely(t, recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), should.BeNil)
 		}()
 		for _, path := range []string{
 			filepath.Join(tdir, "foo", "bar"),
@@ -146,29 +146,29 @@ func TestMakeReadOnly(t *testing.T) {
 			}
 		}
 
-		Convey(`Can mark the entire subdirectory read-only`, func() {
-			So(MakeReadOnly(tdir, nil), ShouldBeNil)
+		t.Run(`Can mark the entire subdirectory read-only`, func(t *ftt.Test) {
+			assert.Loosely(t, MakeReadOnly(tdir, nil), should.BeNil)
 			filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
-				So(err, ShouldBeNil)
-				So(info.Mode()&0222, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, info.Mode()&0222, should.BeZero)
 				return nil
 			})
 		})
 
-		Convey(`Can selectively mark files read-only`, func() {
+		t.Run(`Can selectively mark files read-only`, func(t *ftt.Test) {
 			// Don't mark <TMP>/foo read-only.
 			fooPath := filepath.Join(tdir, "foo")
 
-			So(MakeReadOnly(tdir, func(path string) bool {
+			assert.Loosely(t, MakeReadOnly(tdir, func(path string) bool {
 				return path != fooPath
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			filepath.Walk(tdir, func(path string, info os.FileInfo, err error) error {
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				if path == fooPath {
-					So(info.Mode()&0222, ShouldNotEqual, 0)
+					assert.Loosely(t, info.Mode()&0222, should.NotEqual(0))
 				} else {
-					So(info.Mode()&0222, ShouldEqual, 0)
+					assert.Loosely(t, info.Mode()&0222, should.BeZero)
 				}
 				return nil
 			})
@@ -179,14 +179,14 @@ func TestMakeReadOnly(t *testing.T) {
 func TestRemoveAll(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can RemoveAll`, t, func() {
+	ftt.Run(`Can RemoveAll`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 		defer func() {
-			So(recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), ShouldBeNil)
+			assert.Loosely(t, recursiveChmod(tdir, nil, func(mode os.FileMode) os.FileMode { return mode | 0222 }), should.BeNil)
 		}()
 		subDir := filepath.Join(tdir, "sub")
 
-		Convey(`With directory contents...`, func() {
+		t.Run(`With directory contents...`, func(t *ftt.Test) {
 			for _, path := range []string{
 				filepath.Join(subDir, "foo", "bar"),
 				filepath.Join(subDir, "foo", "baz"),
@@ -203,53 +203,53 @@ func TestRemoveAll(t *testing.T) {
 			}
 
 			// Make invalid symlink here.
-			So(os.Symlink("dummy", filepath.Join(subDir, "invalid_symlink")), ShouldBeNil)
-			So(os.Remove(filepath.Join(subDir, "dummy")), ShouldBeNil)
+			assert.Loosely(t, os.Symlink("dummy", filepath.Join(subDir, "invalid_symlink")), should.BeNil)
+			assert.Loosely(t, os.Remove(filepath.Join(subDir, "dummy")), should.BeNil)
 
-			Convey(`Can remove the directory`, func() {
-				So(RemoveAll(subDir), ShouldBeNil)
-				So(isGone(subDir), ShouldBeTrue)
+			t.Run(`Can remove the directory`, func(t *ftt.Test) {
+				assert.Loosely(t, RemoveAll(subDir), should.BeNil)
+				assert.Loosely(t, isGone(subDir), should.BeTrue)
 			})
 
-			Convey(`Removing inside a read-only dir...`, func() {
-				So(MakeReadOnly(subDir, nil), ShouldBeNil)
+			t.Run(`Removing inside a read-only dir...`, func(t *ftt.Test) {
+				assert.Loosely(t, MakeReadOnly(subDir, nil), should.BeNil)
 				qux := filepath.Join(subDir, "qux")
 				if runtime.GOOS == "windows" {
-					Convey(`... is fine on Windows`, func() {
-						So(RemoveAll(qux), ShouldBeNil)
-						So(isGone(qux), ShouldBeTrue)
+					t.Run(`... is fine on Windows`, func(t *ftt.Test) {
+						assert.Loosely(t, RemoveAll(qux), should.BeNil)
+						assert.Loosely(t, isGone(qux), should.BeTrue)
 					})
 				} else {
-					Convey(`... fails on POSIX`, func() {
-						So(RemoveAll(qux), ShouldNotBeNil)
-						So(isGone(qux), ShouldBeFalse)
+					t.Run(`... fails on POSIX`, func(t *ftt.Test) {
+						assert.Loosely(t, RemoveAll(qux), should.NotBeNil)
+						assert.Loosely(t, isGone(qux), should.BeFalse)
 					})
 				}
 			})
 
-			Convey(`Can remove the directory when it is read-only`, func() {
+			t.Run(`Can remove the directory when it is read-only`, func(t *ftt.Test) {
 				// Make the directory read-only, and assert that classic os.RemoveAll
 				// fails. Except on Windows it doesn't, see:
 				// https://github.com/golang/go/issues/26295.
-				So(MakeReadOnly(subDir, nil), ShouldBeNil)
+				assert.Loosely(t, MakeReadOnly(subDir, nil), should.BeNil)
 				if runtime.GOOS != "windows" {
-					So(os.RemoveAll(subDir), ShouldNotBeNil)
+					assert.Loosely(t, os.RemoveAll(subDir), should.NotBeNil)
 				}
 
-				So(RemoveAll(subDir), ShouldBeNil)
-				So(isGone(subDir), ShouldBeTrue)
+				assert.Loosely(t, RemoveAll(subDir), should.BeNil)
+				assert.Loosely(t, isGone(subDir), should.BeTrue)
 			})
 
-			Convey(`Can remove the directory when it has read-only files`, func() {
+			t.Run(`Can remove the directory when it has read-only files`, func(t *ftt.Test) {
 				readOnly := filepath.Join(subDir, "foo", "bar")
-				So(MakeReadOnly(readOnly, nil), ShouldBeNil)
-				So(RemoveAll(subDir), ShouldBeNil)
-				So(isGone(subDir), ShouldBeTrue)
+				assert.Loosely(t, MakeReadOnly(readOnly, nil), should.BeNil)
+				assert.Loosely(t, RemoveAll(subDir), should.BeNil)
+				assert.Loosely(t, isGone(subDir), should.BeTrue)
 			})
 		})
 
-		Convey(`Will return nil if the target does not exist`, func() {
-			So(RemoveAll(filepath.Join(tdir, "dne")), ShouldBeNil)
+		t.Run(`Will return nil if the target does not exist`, func(t *ftt.Test) {
+			assert.Loosely(t, RemoveAll(filepath.Join(tdir, "dne")), should.BeNil)
 		})
 	})
 }
@@ -257,7 +257,7 @@ func TestRemoveAll(t *testing.T) {
 func TestRenamingRemoveAll(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Can RenamingRemoveAll`, t, func() {
+	ftt.Run(`Can RenamingRemoveAll`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 		subDir := filepath.Join(tdir, "sub")
 		fooDir := filepath.Join(subDir, "foo")
@@ -269,84 +269,84 @@ func TestRenamingRemoveAll(t *testing.T) {
 			t.Fatalf("failed to create file [%s]: %s", fooBarFile, err)
 		}
 
-		Convey(`No dir to rename into specified`, func() {
+		t.Run(`No dir to rename into specified`, func(t *ftt.Test) {
 			renamedTo, err := RenamingRemoveAll(fooDir, "")
-			So(err, ShouldBeNil)
-			So(isGone(fooDir), ShouldBeTrue)
-			So(renamedTo, ShouldStartWith, filepath.Join(subDir, ".trash-"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isGone(fooDir), should.BeTrue)
+			assert.Loosely(t, renamedTo, should.HavePrefix(filepath.Join(subDir, ".trash-")))
 		})
 
-		Convey(`Renaming to specified dir works`, func() {
+		t.Run(`Renaming to specified dir works`, func(t *ftt.Test) {
 			renamedTo, err := RenamingRemoveAll(fooDir, tdir)
-			So(err, ShouldBeNil)
-			So(isGone(fooDir), ShouldBeTrue)
-			So(renamedTo, ShouldStartWith, filepath.Join(tdir, ".trash-"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isGone(fooDir), should.BeTrue)
+			assert.Loosely(t, renamedTo, should.HavePrefix(filepath.Join(tdir, ".trash-")))
 		})
 
-		Convey(`Renaming to specified dir fails due to not exist error`, func() {
+		t.Run(`Renaming to specified dir fails due to not exist error`, func(t *ftt.Test) {
 			renamedTo, err := RenamingRemoveAll(fooDir, filepath.Join(tdir, "not-exists"))
-			So(err, ShouldBeNil)
-			So(isGone(fooDir), ShouldBeTrue)
-			So(renamedTo, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isGone(fooDir), should.BeTrue)
+			assert.Loosely(t, renamedTo, should.BeEmpty)
 		})
 
-		Convey(`Will return nil if the target does not exist`, func() {
+		t.Run(`Will return nil if the target does not exist`, func(t *ftt.Test) {
 			_, err := RenamingRemoveAll(filepath.Join(tdir, "not-exists"), "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestReadableCopy(t *testing.T) {
-	Convey("ReadableCopy", t, func() {
+	ftt.Run("ReadableCopy", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "out")
 		in := filepath.Join(dir, "in")
 		content := []byte("test")
-		So(os.WriteFile(in, content, 0644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(in, content, 0644), should.BeNil)
 
 		// Change umask on unix so that test is not affected by default umask.
 		old := umask(022)
-		So(ReadableCopy(out, in), ShouldBeNil)
+		assert.Loosely(t, ReadableCopy(out, in), should.BeNil)
 		umask(old)
 
 		buf, err := os.ReadFile(out)
-		So(err, ShouldBeNil)
-		So(buf, ShouldResemble, content)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buf, should.Resemble(content))
 
 		ostat, err := os.Stat(out)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		istat, err := os.Stat(in)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(ostat.Mode(), ShouldEqual, addReadMode(istat.Mode()))
+		assert.Loosely(t, ostat.Mode(), should.Equal(addReadMode(istat.Mode())))
 	})
 }
 
 func TestCopy(t *testing.T) {
-	Convey("Copy", t, func() {
+	ftt.Run("Copy", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "out")
 		in := filepath.Join(dir, "in")
 		content := []byte("test")
-		So(os.WriteFile(in, content, 0o644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(in, content, 0o644), should.BeNil)
 
 		// Change umask on unix so that test is not affected by default umask.
 		old := umask(0o22)
-		So(Copy(out, in, 0o644), ShouldBeNil)
+		assert.Loosely(t, Copy(out, in, 0o644), should.BeNil)
 		umask(old)
 
 		buf, err := os.ReadFile(out)
-		So(err, ShouldBeNil)
-		So(buf, ShouldResemble, content)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buf, should.Resemble(content))
 
 		ostat, err := os.Stat(out)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		_, err = os.Stat(in)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		if runtime.GOOS != "windows" {
-			So(ostat.Mode(), ShouldEqual, 0o644)
+			assert.Loosely(t, ostat.Mode(), should.Equal(0o644))
 		}
 	})
 }
@@ -356,53 +356,53 @@ func TestHardlinkRecursively(t *testing.T) {
 
 	checkFile := func(path, content string) {
 		buf, err := os.ReadFile(path)
-		So(err, ShouldBeNil)
-		So(string(buf), ShouldResemble, content)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, string(buf), should.Resemble(content))
 	}
 
-	Convey("HardlinkRecursively", t, func() {
+	ftt.Run("HardlinkRecursively", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		src1 := filepath.Join(dir, "src1")
 		src2 := filepath.Join(src1, "src2")
-		So(os.MkdirAll(src2, 0755), ShouldBeNil)
+		assert.Loosely(t, os.MkdirAll(src2, 0755), should.BeNil)
 
-		So(os.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), ShouldBeNil)
-		So(os.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(filepath.Join(src1, "file1"), []byte("test1"), 0644), should.BeNil)
+		assert.Loosely(t, os.WriteFile(filepath.Join(src2, "file2"), []byte("test2"), 0644), should.BeNil)
 
-		So(os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), ShouldBeNil)
+		assert.Loosely(t, os.Symlink(filepath.Join("src2", "file2"), filepath.Join(src1, "link")), should.BeNil)
 
 		dst := filepath.Join(dir, "dst")
-		So(HardlinkRecursively(src1, dst), ShouldBeNil)
+		assert.Loosely(t, HardlinkRecursively(src1, dst), should.BeNil)
 
 		checkFile(filepath.Join(dst, "file1"), "test1")
 		checkFile(filepath.Join(dst, "src2", "file2"), "test2")
 		checkFile(filepath.Join(dst, "link"), "test2")
 
 		stat, err := os.Stat(filepath.Join(dst, "link"))
-		So(err, ShouldBeNil)
-		So(stat.Mode()&os.ModeSymlink, ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, stat.Mode()&os.ModeSymlink, should.BeZero)
 	})
 
-	Convey("HardlinkRecursively nested", t, func() {
+	ftt.Run("HardlinkRecursively nested", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		top := filepath.Join(dir, "top")
 		nested := filepath.Join(top, "nested")
-		So(os.MkdirAll(nested, 0755), ShouldBeNil)
+		assert.Loosely(t, os.MkdirAll(nested, 0755), should.BeNil)
 
-		So(os.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(filepath.Join(nested, "file"), []byte("test"), 0644), should.BeNil)
 
 		dstTop := filepath.Join(dir, "dst")
-		So(HardlinkRecursively(top, dstTop), ShouldBeNil)
+		assert.Loosely(t, HardlinkRecursively(top, dstTop), should.BeNil)
 		dstDested := filepath.Join(dstTop, "nested")
-		So(HardlinkRecursively(nested, dstDested), ShouldNotBeNil)
+		assert.Loosely(t, HardlinkRecursively(nested, dstDested), should.NotBeNil)
 	})
 }
 
 func TestCreateDirectories(t *testing.T) {
 	t.Parallel()
-	Convey("CreateDirectories", t, func() {
+	ftt.Run("CreateDirectories", t, func(t *ftt.Test) {
 		dir := t.TempDir()
-		So(CreateDirectories(dir, []string{}), ShouldBeNil)
+		assert.Loosely(t, CreateDirectories(dir, []string{}), should.BeNil)
 
 		var paths []string
 		correctFiles := func(path string, info os.FileInfo, err error) error {
@@ -410,80 +410,80 @@ func TestCreateDirectories(t *testing.T) {
 			return nil
 		}
 
-		So(filepath.Walk(dir, correctFiles), ShouldBeNil)
-		So(paths, ShouldResemble, []string{dir})
+		assert.Loosely(t, filepath.Walk(dir, correctFiles), should.BeNil)
+		assert.Loosely(t, paths, should.Resemble([]string{dir}))
 
-		So(CreateDirectories(dir, []string{
+		assert.Loosely(t, CreateDirectories(dir, []string{
 			filepath.Join("a", "b"),
 			filepath.Join("c", "d", "e"),
 			filepath.Join("c", "f"),
 			filepath.Join("g"),
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		paths = nil
-		So(filepath.Walk(dir, correctFiles), ShouldBeNil)
-		So(paths, ShouldResemble, []string{
+		assert.Loosely(t, filepath.Walk(dir, correctFiles), should.BeNil)
+		assert.Loosely(t, paths, should.Resemble([]string{
 			dir,
 			filepath.Join(dir, "a"),
 			filepath.Join(dir, "c"),
 			filepath.Join(dir, "c", "d"),
-		})
+		}))
 	})
 }
 
 func TestIsEmptyDir(t *testing.T) {
-	Convey("IsEmptyDir", t, func() {
+	ftt.Run("IsEmptyDir", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		emptyDir := filepath.Join(dir, "empty")
-		So(MakeDirs(emptyDir), ShouldBeNil)
+		assert.Loosely(t, MakeDirs(emptyDir), should.BeNil)
 
 		isEmpty, err := IsEmptyDir(emptyDir)
-		So(err, ShouldBeNil)
-		So(isEmpty, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, isEmpty, should.BeTrue)
 
 		nonEmptyDir := filepath.Join(dir, "non-empty")
-		So(MakeDirs(nonEmptyDir), ShouldBeNil)
+		assert.Loosely(t, MakeDirs(nonEmptyDir), should.BeNil)
 		file1 := filepath.Join(nonEmptyDir, "file1")
-		So(os.WriteFile(file1, []byte("test1"), 0644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(file1, []byte("test1"), 0644), should.BeNil)
 
 		isEmpty, err = IsEmptyDir(nonEmptyDir)
-		So(err, ShouldBeNil)
-		So(isEmpty, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, isEmpty, should.BeFalse)
 
 		_, err = IsEmptyDir(file1)
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, err = IsEmptyDir(filepath.Join(dir, "not-existing"))
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }
 
 func TestIsDir(t *testing.T) {
-	Convey("IsDir", t, func() {
+	ftt.Run("IsDir", t, func(t *ftt.Test) {
 		dir := t.TempDir()
 		b, err := IsDir(dir)
-		So(err, ShouldBeNil)
-		So(b, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.BeTrue)
 
 		b, err = IsDir(filepath.Join(dir, "not_exists"))
-		So(err, ShouldBeNil)
-		So(b, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.BeFalse)
 
 		file := filepath.Join(dir, "file")
-		So(os.WriteFile(file, []byte(""), 0644), ShouldBeNil)
+		assert.Loosely(t, os.WriteFile(file, []byte(""), 0644), should.BeNil)
 		b, err = IsDir(file)
-		So(err, ShouldBeNil)
-		So(b, ShouldBeFalse)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, b, should.BeFalse)
 	})
 }
 
 func TestGetFreeSpace(t *testing.T) {
 	t.Parallel()
 
-	Convey("GetFreeSpace", t, func() {
+	ftt.Run("GetFreeSpace", t, func(t *ftt.Test) {
 		size, err := GetFreeSpace(".")
-		So(err, ShouldBeNil)
-		So(size, ShouldBeGreaterThan, 4096)
+		assert.Loosely(t, err, should.BeNil)
+		assert.That(t, size, should.BeGreaterThan[uint64](4096))
 	})
 }
 
@@ -516,113 +516,113 @@ func TestGetCommonAncestor(t *testing.T) {
 
 	const sep = string(filepath.Separator)
 
-	Convey(`GetCommonAncestor`, t, func() {
-		Convey(`common ancestor logic`, func() {
-			Convey(`common`, func() {
+	ftt.Run(`GetCommonAncestor`, t, func(t *ftt.Test) {
+		t.Run(`common ancestor logic`, func(t *ftt.Test) {
+			t.Run(`common`, func(t *ftt.Test) {
 				tdir := t.TempDir()
-				So(os.MkdirAll(filepath.Join(tdir, "a", "b", "c", "d"), 0o777), ShouldBeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "a", "b", "c", "d"), 0o777), should.BeNil)
 				if fsCaseSensitive {
-					So(os.MkdirAll(filepath.Join(tdir, "a", "B", "c"), 0o777), ShouldBeNil)
-					So(os.MkdirAll(filepath.Join(tdir, "A", "b", "c", "d"), 0o777), ShouldBeNil)
+					assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "a", "B", "c"), 0o777), should.BeNil)
+					assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "A", "b", "c", "d"), 0o777), should.BeNil)
 				}
-				So(os.MkdirAll(filepath.Join(tdir, "a", "1", "2", "3"), 0o777), ShouldBeNil)
-				So(os.MkdirAll(filepath.Join(tdir, "r", "o", "o", "t"), 0o777), ShouldBeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "a", "1", "2", "3"), 0o777), should.BeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "r", "o", "o", "t"), 0o777), should.BeNil)
 
-				So(Touch(filepath.Join(tdir, "a", "B", "c", "something"), time.Now(), 0o666), ShouldBeNil)
-				So(Touch(filepath.Join(tdir, "a", "b", "else"), time.Now(), 0o666), ShouldBeNil)
+				assert.Loosely(t, Touch(filepath.Join(tdir, "a", "B", "c", "something"), time.Now(), 0o666), should.BeNil)
+				assert.Loosely(t, Touch(filepath.Join(tdir, "a", "b", "else"), time.Now(), 0o666), should.BeNil)
 
-				Convey(`stops at 'local' common ancestor`, func() {
+				t.Run(`stops at 'local' common ancestor`, func(t *ftt.Test) {
 					common, err := GetCommonAncestor([]string{
 						filepath.Join(tdir, "a", "b", "c", "d"),
 						filepath.Join(tdir, "a", "B", "c", "something"),
 						filepath.Join(tdir, "A", "b", "c", "d"),
 						filepath.Join(tdir, "a", "b", "else"),
 					}, []string{".git"})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					if fsCaseSensitive {
-						So(common, ShouldResemble, tdir+sep)
+						assert.Loosely(t, common, should.Resemble(tdir+sep))
 					} else {
-						So(common, ShouldResemble, filepath.Join(tdir, "a", "b")+sep)
+						assert.Loosely(t, common, should.Resemble(filepath.Join(tdir, "a", "b")+sep))
 					}
 				})
 
-				Convey(`walks up to fs root`, func() {
+				t.Run(`walks up to fs root`, func(t *ftt.Test) {
 					common, err := GetCommonAncestor([]string{
 						filepath.VolumeName(tdir) + sep,
 						filepath.Join(tdir, "a", "B", "c", "something"),
 						filepath.Join(tdir, "A", "b", "c", "d"),
 						filepath.Join(tdir, "a", "b", "else"),
 					}, []string{".git"})
-					So(err, ShouldBeNil)
-					So(common, ShouldResemble, filepath.VolumeName(tdir)+sep)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, common, should.Resemble(filepath.VolumeName(tdir)+sep))
 				})
 			})
 
-			Convey(`slash comparison`, func() {
+			t.Run(`slash comparison`, func(t *ftt.Test) {
 				tdir := t.TempDir()
-				So(os.MkdirAll(filepath.Join(tdir, "longpath", "a", "c", "d"), 0o777), ShouldBeNil)
-				So(os.MkdirAll(filepath.Join(tdir, "a", "longpath", "c", "d"), 0o777), ShouldBeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "longpath", "a", "c", "d"), 0o777), should.BeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "a", "longpath", "c", "d"), 0o777), should.BeNil)
 
 				common, err := GetCommonAncestor([]string{
 					filepath.Join(tdir, "longpath", "a", "c", "d"),
 					filepath.Join(tdir, "a", "longpath", "c", "d"),
 				}, []string{".git"})
-				So(err, ShouldBeNil)
-				So(common, ShouldResemble, tdir+sep)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, common, should.Resemble(tdir+sep))
 			})
 
-			Convey(`non exist`, func() {
+			t.Run(`non exist`, func(t *ftt.Test) {
 				_, err := GetCommonAncestor([]string{
 					filepath.Join("i", "dont", "exist"),
 				}, []string{".git"})
-				So(err, ShouldErrLike, "reading path[0]")
+				assert.Loosely(t, err, should.ErrLike("reading path[0]"))
 			})
 
-			Convey(`sentinel`, func() {
+			t.Run(`sentinel`, func(t *ftt.Test) {
 				tdir := t.TempDir()
-				So(os.MkdirAll(filepath.Join(tdir, "repoA", ".git"), 0o777), ShouldBeNil)
-				So(os.MkdirAll(filepath.Join(tdir, "repoA", "something"), 0o777), ShouldBeNil)
-				So(os.MkdirAll(filepath.Join(tdir, "repoB", ".git"), 0o777), ShouldBeNil)
-				So(os.MkdirAll(filepath.Join(tdir, "repoB", "else"), 0o777), ShouldBeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "repoA", ".git"), 0o777), should.BeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "repoA", "something"), 0o777), should.BeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "repoB", ".git"), 0o777), should.BeNil)
+				assert.Loosely(t, os.MkdirAll(filepath.Join(tdir, "repoB", "else"), 0o777), should.BeNil)
 
 				_, err := GetCommonAncestor([]string{
 					filepath.Join(tdir, "repoA", "something"),
 					filepath.Join(tdir, "repoB", "else"),
 				}, []string{".git"})
-				So(err, ShouldErrLike, "hit root sentinel")
-				So(errors.Is(err, ErrRootSentinel), ShouldBeTrue)
+				assert.Loosely(t, err, should.ErrLike("hit root sentinel"))
+				assert.Loosely(t, errors.Is(err, ErrRootSentinel), should.BeTrue)
 			})
 
 			if runtime.GOOS == "windows" {
-				Convey(`different volumes`, func() {
+				t.Run(`different volumes`, func(t *ftt.Test) {
 					tdir := t.TempDir()
 					_, err := GetCommonAncestor([]string{
 						tdir,
 						`\\fake\network\share`,
 					}, nil)
-					So(err, ShouldErrLike, "originate on different volumes")
+					assert.Loosely(t, err, should.ErrLike("originate on different volumes"))
 				})
 			}
 		})
 
-		Convey(`helpers`, func() {
+		t.Run(`helpers`, func(t *ftt.Test) {
 			if runtime.GOOS == "windows" {
-				Convey(`windows paths`, func() {
-					So(findPathSeparators(`D:\something\`), ShouldResemble, []int{2, 12})
-					So(findPathSeparators(`D:\`), ShouldResemble, []int{2})
-					So(findPathSeparators(`\\some\host\something\`),
-						ShouldResemble, []int{11, 21})
-					So(findPathSeparators(`\\some\host\`),
-						ShouldResemble, []int{11})
-					So(findPathSeparators(`\\?\C:\Test\`),
-						ShouldResemble, []int{6, 11})
+				t.Run(`windows paths`, func(t *ftt.Test) {
+					assert.Loosely(t, findPathSeparators(`D:\something\`), should.Resemble([]int{2, 12}))
+					assert.Loosely(t, findPathSeparators(`D:\`), should.Resemble([]int{2}))
+					assert.Loosely(t, findPathSeparators(`\\some\host\something\`),
+						should.Resemble([]int{11, 21}))
+					assert.Loosely(t, findPathSeparators(`\\some\host\`),
+						should.Resemble([]int{11}))
+					assert.Loosely(t, findPathSeparators(`\\?\C:\Test\`),
+						should.Resemble([]int{6, 11}))
 				})
 			} else {
-				Convey(`*nix paths`, func() {
-					So(findPathSeparators(`/something/`),
-						ShouldResemble, []int{0, 10})
-					So(findPathSeparators(`/`),
-						ShouldResemble, []int{0})
+				t.Run(`*nix paths`, func(t *ftt.Test) {
+					assert.Loosely(t, findPathSeparators(`/something/`),
+						should.Resemble([]int{0, 10}))
+					assert.Loosely(t, findPathSeparators(`/`),
+						should.Resemble([]int{0}))
 				})
 			}
 		})
