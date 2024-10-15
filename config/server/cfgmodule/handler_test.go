@@ -36,14 +36,18 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConsumerServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("ConsumerServer", t, func() {
+	ftt.Run("ConsumerServer", t, func(t *ftt.Test) {
 		const configSA = "luci-config-service@luci-config.iam.gserviceaccount.com"
 		authState := &authtest.FakeState{
 			Identity: "user:" + configSA,
@@ -58,52 +62,58 @@ func TestConsumerServer(t *testing.T) {
 			},
 		}
 
-		Convey("Check caller", func() {
-			Convey("Allow LUCI Config service account", func() {
+		t.Run("Check caller", func(t *ftt.Test) {
+			t.Run("Allow LUCI Config service account", func(t *ftt.Test) {
 				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("Allow Admin group", func() {
+			t.Run("Allow Admin group", func(t *ftt.Test) {
 				authState := &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{adminGroup},
 				}
 				ctx = auth.WithState(ctx, authState)
 				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("Disallow", func() {
-				Convey("Non-admin users", func() {
+			t.Run("Disallow", func(t *ftt.Test) {
+				check := func(t testing.TB) {
+					t.Helper()
+					ctx = auth.WithState(ctx, authState)
+					_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied), truth.LineContext())
+				}
+
+				t.Run("Non-admin users", func(t *ftt.Test) {
 					authState = &authtest.FakeState{
 						Identity: "user:someone@example.com",
 					}
+					check(t)
 				})
-				Convey("Anonymous", func() {
+				t.Run("Anonymous", func(t *ftt.Test) {
 					authState = &authtest.FakeState{
 						Identity: identity.AnonymousIdentity,
 					}
+					check(t)
 				})
-				ctx = auth.WithState(ctx, authState)
-				_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
-				So(err, ShouldHaveGRPCStatus, codes.PermissionDenied)
 			})
 		})
 
-		Convey("GetMetadata", func() {
+		t.Run("GetMetadata", func(t *ftt.Test) {
 			rules.Add("configSet", "path", nil)
 			res, err := srv.GetMetadata(ctx, &emptypb.Empty{})
-			So(err, ShouldBeNil)
-			So(res, ShouldResembleProto, &config.ServiceMetadata{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(&config.ServiceMetadata{
 				ConfigPatterns: []*config.ConfigPattern{
 					{
 						ConfigSet: "exact:configSet",
 						Path:      "exact:path",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("ValidateConfig", func() {
+		t.Run("ValidateConfig", func(t *ftt.Test) {
 			const configSet = "project/xyz"
 			addRule := func(path string) {
 				rules.Add(configSet, path, func(ctx *validation.Context, configSet, path string, content []byte) error {
@@ -129,8 +139,8 @@ func TestConsumerServer(t *testing.T) {
 					var b bytes.Buffer
 					gw := gzip.NewWriter(&b)
 					_, err := gw.Write(data)
-					So(err, ShouldBeNil)
-					So(gw.Close(), ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, gw.Close(), should.BeNil)
 					data = b.Bytes()
 				}
 				resources[path] = struct {
@@ -173,7 +183,7 @@ func TestConsumerServer(t *testing.T) {
 			}))
 			defer ts.Close()
 
-			Convey("Single file", func() {
+			t.Run("Single file", func(t *ftt.Test) {
 				const path = "some_file.cfg"
 				addRule(path)
 				file := &config.ValidateConfigsRequest_File{
@@ -187,114 +197,134 @@ func TestConsumerServer(t *testing.T) {
 						},
 					},
 				}
-				Convey("Pass validation", func() {
-					Convey("With raw content", func() {
+				t.Run("Pass validation", func(t *ftt.Test) {
+					check := func(t testing.TB) {
+						t.Helper()
+						res, err := srv.ValidateConfigs(ctx, req)
+						assert.Loosely(t, err, should.BeNil, truth.LineContext())
+						assert.Loosely(t, res.GetMessages(), should.BeEmpty, truth.LineContext())
+					}
+					t.Run("With raw content", func(t *ftt.Test) {
 						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("good config"),
 						}
+						check(t)
 					})
-					Convey("With signed url", func() {
+					t.Run("With signed url", func(t *ftt.Test) {
 						addFileToRemote(path, []byte("good config"), true)
 						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
+						check(t)
 					})
-					res, err := srv.ValidateConfigs(ctx, req)
-					So(err, ShouldBeNil)
-					So(res.GetMessages(), ShouldBeEmpty)
 				})
-				Convey("With error", func() {
-					Convey("With raw content", func() {
+				t.Run("With error", func(t *ftt.Test) {
+					check := func(t testing.TB) {
+						t.Helper()
+						res, err := srv.ValidateConfigs(ctx, req)
+						assert.Loosely(t, err, should.BeNil, truth.LineContext())
+						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+							Messages: []*config.ValidationResult_Message{
+								{
+									Path:     path,
+									Text:     "in \"some_file.cfg\": blocking error",
+									Severity: config.ValidationResult_ERROR,
+								},
+							},
+						}), truth.LineContext())
+					}
+					t.Run("With raw content", func(t *ftt.Test) {
 						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with error"),
 						}
+						check(t)
 					})
-					Convey("With signed url", func() {
+					t.Run("With signed url", func(t *ftt.Test) {
 						addFileToRemote(path, []byte("config with error"), true)
 						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
-					})
-					res, err := srv.ValidateConfigs(ctx, req)
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidationResult{
-						Messages: []*config.ValidationResult_Message{
-							{
-								Path:     path,
-								Text:     "in \"some_file.cfg\": blocking error",
-								Severity: config.ValidationResult_ERROR,
-							},
-						},
+						check(t)
 					})
 				})
-				Convey("With warning", func() {
-					Convey("With raw content", func() {
+				t.Run("With warning", func(t *ftt.Test) {
+					check := func(t testing.TB) {
+						t.Helper()
+						res, err := srv.ValidateConfigs(ctx, req)
+						assert.Loosely(t, err, should.BeNil, truth.LineContext())
+						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+							Messages: []*config.ValidationResult_Message{
+								{
+									Path:     path,
+									Text:     "in \"some_file.cfg\": diagnostic warning",
+									Severity: config.ValidationResult_WARNING,
+								},
+							},
+						}), truth.LineContext())
+					}
+					t.Run("With raw content", func(t *ftt.Test) {
 						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with warning"),
 						}
+						check(t)
 					})
-					Convey("With signed url", func() {
+					t.Run("With signed url", func(t *ftt.Test) {
 						addFileToRemote(path, []byte("config with warning"), true)
 						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
-					})
-					res, err := srv.ValidateConfigs(ctx, req)
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidationResult{
-						Messages: []*config.ValidationResult_Message{
-							{
-								Path:     path,
-								Text:     "in \"some_file.cfg\": diagnostic warning",
-								Severity: config.ValidationResult_WARNING,
-							},
-						},
+						check(t)
 					})
 				})
-				Convey("With both", func() {
-					Convey("With raw content", func() {
+				t.Run("With both", func(t *ftt.Test) {
+					check := func(t testing.TB) {
+						t.Helper()
+						res, err := srv.ValidateConfigs(ctx, req)
+						assert.Loosely(t, err, should.BeNil, truth.LineContext())
+						assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
+							Messages: []*config.ValidationResult_Message{
+								{
+									Path:     path,
+									Text:     "in \"some_file.cfg\": blocking error",
+									Severity: config.ValidationResult_ERROR,
+								},
+								{
+									Path:     path,
+									Text:     "in \"some_file.cfg\": diagnostic warning",
+									Severity: config.ValidationResult_WARNING,
+								},
+							},
+						}), truth.LineContext())
+					}
+					t.Run("With raw content", func(t *ftt.Test) {
 						file.Content = &config.ValidateConfigsRequest_File_RawContent{
 							RawContent: []byte("config with error and warning"),
 						}
+						check(t)
 					})
-					Convey("With signed url", func() {
+					t.Run("With signed url", func(t *ftt.Test) {
 						addFileToRemote(path, []byte("config with error and warning"), true)
 						file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 							SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 						}
-					})
-					res, err := srv.ValidateConfigs(ctx, req)
-					So(err, ShouldBeNil)
-					So(res, ShouldResembleProto, &config.ValidationResult{
-						Messages: []*config.ValidationResult_Message{
-							{
-								Path:     path,
-								Text:     "in \"some_file.cfg\": blocking error",
-								Severity: config.ValidationResult_ERROR,
-							},
-							{
-								Path:     path,
-								Text:     "in \"some_file.cfg\": diagnostic warning",
-								Severity: config.ValidationResult_WARNING,
-							},
-						},
+						check(t)
 					})
 				})
 
-				Convey("Signed Url not found", func() {
+				t.Run("Signed Url not found", func(t *ftt.Test) {
 					// Without adding the file to remote
 					file.Content = &config.ValidateConfigsRequest_File_SignedUrl{
 						SignedUrl: fmt.Sprintf("%s/%s", ts.URL, path),
 					}
 					res, err := srv.ValidateConfigs(ctx, req)
 					grpcStatus, ok := status.FromError(err)
-					So(ok, ShouldBeTrue)
-					So(grpcStatus, ShouldBeLikeStatus, codes.Internal, "Unknown resource")
-					So(res, ShouldBeNil)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, grpcStatus, convey.Adapt(ShouldBeLikeStatus)(codes.Internal, "Unknown resource"))
+					assert.Loosely(t, res, should.BeNil)
 				})
 			})
 
-			Convey("Multiple files", func() {
+			t.Run("Multiple files", func(t *ftt.Test) {
 				addRule("foo.cfg")
 				addRule("bar.cfg")
 				addRule("baz.cfg")
@@ -329,8 +359,8 @@ func TestConsumerServer(t *testing.T) {
 				}
 
 				res, err := srv.ValidateConfigs(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &config.ValidationResult{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&config.ValidationResult{
 					Messages: []*config.ValidationResult_Message{
 						{
 							Path:     "foo.cfg",
@@ -348,7 +378,7 @@ func TestConsumerServer(t *testing.T) {
 							Severity: config.ValidationResult_WARNING,
 						},
 					},
-				})
+				}))
 			})
 		})
 	})

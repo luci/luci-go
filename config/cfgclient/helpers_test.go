@@ -22,14 +22,15 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestHelpers(t *testing.T) {
 	t.Parallel()
 
-	Convey("ProjectsWithConfig works", t, func() {
+	ftt.Run("ProjectsWithConfig works", t, func(t *ftt.Test) {
 		ctx := Use(context.Background(), memory.New(map[config.Set]memory.Files{
 			"projects/a": {"f.cfg": ""},
 			"projects/b": {},
@@ -37,11 +38,11 @@ func TestHelpers(t *testing.T) {
 			"services/s": {"f.cfg": ""},
 		}))
 		p, err := ProjectsWithConfig(ctx, "f.cfg")
-		So(err, ShouldBeNil)
-		So(p, ShouldResemble, []string{"a", "c"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, p, should.Resemble([]string{"a", "c"}))
 	})
 
-	Convey("Get works", t, func() {
+	ftt.Run("Get works", t, func(t *ftt.Test) {
 		ctx := Use(context.Background(), memory.New(map[config.Set]memory.Files{
 			"projects/a": {
 				"cfg.text":   `blah`,
@@ -50,47 +51,47 @@ func TestHelpers(t *testing.T) {
 			},
 		}))
 
-		Convey("Bytes", func() {
+		t.Run("Bytes", func(t *ftt.Test) {
 			dst := []byte(nil)
 			meta := config.Meta{}
-			So(Get(ctx, "projects/a", "cfg.text", Bytes(&dst), &meta), ShouldBeNil)
-			So(dst, ShouldResemble, []byte("blah"))
-			So(meta.ContentHash, ShouldNotBeBlank)
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.text", Bytes(&dst), &meta), should.BeNil)
+			assert.Loosely(t, dst, should.Resemble([]byte("blah")))
+			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
-		Convey("String", func() {
+		t.Run("String", func(t *ftt.Test) {
 			dst := ""
 			meta := config.Meta{}
-			So(Get(ctx, "projects/a", "cfg.text", String(&dst), &meta), ShouldBeNil)
-			So(dst, ShouldEqual, "blah")
-			So(meta.ContentHash, ShouldNotBeBlank)
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.text", String(&dst), &meta), should.BeNil)
+			assert.Loosely(t, dst, should.Equal("blah"))
+			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
-		Convey("ProtoText", func() {
+		t.Run("ProtoText", func(t *ftt.Test) {
 			dst := configPB.ProjectCfg{}
 			meta := config.Meta{}
-			So(Get(ctx, "projects/a", "cfg.textpb", ProtoText(&dst), &meta), ShouldBeNil)
-			So(&dst, ShouldResembleProto, &configPB.ProjectCfg{Name: "blah"})
-			So(meta.ContentHash, ShouldNotBeBlank)
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.textpb", ProtoText(&dst), &meta), should.BeNil)
+			assert.Loosely(t, &dst, should.Resemble(&configPB.ProjectCfg{Name: "blah"}))
+			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
-		Convey("ProtoJSON", func() {
+		t.Run("ProtoJSON", func(t *ftt.Test) {
 			dst := configPB.ProjectCfg{}
 			meta := config.Meta{}
-			So(Get(ctx, "projects/a", "cfg.jsonpb", ProtoJSON(&dst), &meta), ShouldBeNil)
-			So(&dst, ShouldResembleProto, &configPB.ProjectCfg{Name: "blah"})
-			So(meta.ContentHash, ShouldNotBeBlank)
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.jsonpb", ProtoJSON(&dst), &meta), should.BeNil)
+			assert.Loosely(t, &dst, should.Resemble(&configPB.ProjectCfg{Name: "blah"}))
+			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
-		Convey("Meta only", func() {
+		t.Run("Meta only", func(t *ftt.Test) {
 			meta := config.Meta{}
-			So(Get(ctx, "projects/a", "cfg.text", nil, &meta), ShouldBeNil)
-			So(meta.ContentHash, ShouldNotBeBlank)
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.text", nil, &meta), should.BeNil)
+			assert.Loosely(t, meta.ContentHash, should.NotBeBlank)
 		})
 
-		Convey("Presence only", func() {
-			So(Get(ctx, "projects/a", "cfg.text", nil, nil), ShouldBeNil)
-			So(Get(ctx, "projects/a", "missing", nil, nil), ShouldEqual, config.ErrNoConfig)
+		t.Run("Presence only", func(t *ftt.Test) {
+			assert.Loosely(t, Get(ctx, "projects/a", "cfg.text", nil, nil), should.BeNil)
+			assert.Loosely(t, Get(ctx, "projects/a", "missing", nil, nil), should.Equal(config.ErrNoConfig))
 		})
 	})
 }

@@ -21,88 +21,89 @@ import (
 	"go.chromium.org/luci/common/errors"
 	configpb "go.chromium.org/luci/common/proto/config"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey("No errors", t, func() {
+	ftt.Run("No errors", t, func(t *ftt.Test) {
 		c := Context{Context: context.Background()}
 
 		c.SetFile("zz")
 		c.Enter("zzz")
 		c.Exit()
 
-		So(c.Finalize(), ShouldBeNil)
+		assert.Loosely(t, c.Finalize(), should.BeNil)
 	})
 
-	Convey("One simple error", t, func() {
+	ftt.Run("One simple error", t, func(t *ftt.Test) {
 		c := Context{Context: context.Background()}
 
 		c.SetFile("file.cfg")
 		c.Enter("ctx %d", 123)
 		c.Errorf("blah %s", "zzz")
 		err := c.Finalize()
-		So(err, ShouldHaveSameTypeAs, &Error{})
-		So(err.Error(), ShouldEqual, `in "file.cfg" (ctx 123): blah zzz`)
+		assert.Loosely(t, err, should.HaveType[*Error])
+		assert.Loosely(t, err.Error(), should.Equal(`in "file.cfg" (ctx 123): blah zzz`))
 
 		singleErr := err.(*Error).Errors[0]
-		So(singleErr.Error(), ShouldEqual, `in "file.cfg" (ctx 123): blah zzz`)
+		assert.Loosely(t, singleErr.Error(), should.Equal(`in "file.cfg" (ctx 123): blah zzz`))
 		d, ok := fileTag.In(singleErr)
-		So(ok, ShouldBeTrue)
-		So(d, ShouldEqual, "file.cfg")
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, d, should.Equal("file.cfg"))
 
 		elts, ok := elementTag.In(singleErr)
-		So(ok, ShouldBeTrue)
-		So(elts, ShouldResemble, []string{"ctx 123"})
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, elts, should.Resemble([]string{"ctx 123"}))
 
 		severity, ok := SeverityTag.In(singleErr)
-		So(ok, ShouldBeTrue)
-		So(severity, ShouldEqual, Blocking)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, severity, should.Equal(Blocking))
 
 		blocking := err.(*Error).WithSeverity(Blocking)
-		So(blocking.(errors.MultiError), ShouldHaveLength, 1)
+		assert.Loosely(t, blocking.(errors.MultiError), should.HaveLength(1))
 		warns := err.(*Error).WithSeverity(Warning)
-		So(warns, ShouldBeNil)
+		assert.Loosely(t, warns, should.BeNil)
 
-		So(err.(*Error).ToValidationResultMsgs(c.Context), ShouldResembleProto, []*configpb.ValidationResult_Message{
+		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Resemble([]*configpb.ValidationResult_Message{
 			{
 				Path:     "file.cfg",
 				Severity: configpb.ValidationResult_ERROR,
 				Text:     `in "file.cfg" (ctx 123): blah zzz`,
 			},
-		})
+		}))
 	})
 
-	Convey("One simple warning", t, func() {
+	ftt.Run("One simple warning", t, func(t *ftt.Test) {
 		c := Context{Context: context.Background()}
 		c.Warningf("option %q is a noop, please remove", "xyz: true")
 		err := c.Finalize()
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 		singleErr := err.(*Error).Errors[0]
-		So(singleErr.Error(), ShouldContainSubstring, `option "xyz: true" is a noop, please remove`)
+		assert.Loosely(t, singleErr.Error(), should.ContainSubstring(`option "xyz: true" is a noop, please remove`))
 
 		severity, ok := SeverityTag.In(singleErr)
-		So(ok, ShouldBeTrue)
-		So(severity, ShouldEqual, Warning)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, severity, should.Equal(Warning))
 
 		blocking := err.(*Error).WithSeverity(Blocking)
-		So(blocking, ShouldBeNil)
+		assert.Loosely(t, blocking, should.BeNil)
 		warns := err.(*Error).WithSeverity(Warning)
-		So(warns.(errors.MultiError), ShouldHaveLength, 1)
+		assert.Loosely(t, warns.(errors.MultiError), should.HaveLength(1))
 
-		So(err.(*Error).ToValidationResultMsgs(c.Context), ShouldResembleProto, []*configpb.ValidationResult_Message{
+		assert.Loosely(t, err.(*Error).ToValidationResultMsgs(c.Context), should.Resemble([]*configpb.ValidationResult_Message{
 			{
 				Path:     "unspecified file",
 				Severity: configpb.ValidationResult_WARNING,
 				Text:     `in <unspecified file>: option "xyz: true" is a noop, please remove`,
 			},
-		})
+		}))
 	})
 
-	Convey("Regular usage", t, func() {
+	ftt.Run("Regular usage", t, func(t *ftt.Test) {
 		c := Context{Context: context.Background()}
 
 		c.Errorf("top %d", 1)
@@ -125,14 +126,14 @@ func TestValidation(t *testing.T) {
 		c.Errorf("zzz 4")
 
 		err := c.Finalize()
-		So(err, ShouldHaveSameTypeAs, &Error{})
-		So(err.Error(), ShouldEqual, `in <unspecified file>: top 1 (and 7 other errors)`)
+		assert.Loosely(t, err, should.HaveType[*Error])
+		assert.Loosely(t, err.Error(), should.Equal(`in <unspecified file>: top 1 (and 7 other errors)`))
 
 		var errs []string
 		for _, e := range err.(*Error).Errors {
 			errs = append(errs, e.Error())
 		}
-		So(errs, ShouldResemble, []string{
+		assert.Loosely(t, errs, should.Resemble([]string{
 			`in <unspecified file>: top 1`,
 			`in <unspecified file>: top 2`,
 			`in "file_1.cfg": f1`,
@@ -141,11 +142,11 @@ func TestValidation(t *testing.T) {
 			`in "file_1.cfg" (p 1 / p 2): zzz 2`,
 			`in "file_1.cfg" (p 1): zzz 3`,
 			`in "file_2.cfg": zzz 4`,
-		})
+		}))
 
 		blocking := err.(*Error).WithSeverity(Blocking)
-		So(blocking.(errors.MultiError), ShouldHaveLength, 7)
+		assert.Loosely(t, blocking.(errors.MultiError), should.HaveLength(7))
 		warns := err.(*Error).WithSeverity(Warning)
-		So(warns.(errors.MultiError), ShouldHaveLength, 1)
+		assert.Loosely(t, warns.(errors.MultiError), should.HaveLength(1))
 	})
 }

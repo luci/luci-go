@@ -37,14 +37,17 @@ import (
 	"go.chromium.org/luci/config"
 	pb "go.chromium.org/luci/config_service/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRemoteCalls(t *testing.T) {
 	t.Parallel()
 
-	Convey("Remote calls", t, func() {
+	ftt.Run("Remote calls", t, func(t *ftt.Test) {
 		ctl := gomock.NewController(t)
 		mockClient := pb.NewMockConfigsClient(ctl)
 		impl := remoteImpl{
@@ -53,8 +56,8 @@ func TestRemoteCalls(t *testing.T) {
 		}
 		ctx := context.Background()
 
-		Convey("GetConfig", func() {
-			Convey("ok - raw content", func() {
+		t.Run("GetConfig", func(t *ftt.Test) {
+			t.Run("ok - raw content", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
@@ -71,8 +74,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", false)
 
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -81,11 +84,11 @@ func TestRemoteCalls(t *testing.T) {
 						ViewURL:     "url",
 					},
 					Content: "content",
-				})
+				}))
 			})
 
-			Convey("ok - signed url", func(c C) {
-				signedURLServer := signedURLServer(c, "content")
+			t.Run("ok - signed url", func(t *ftt.Test) {
+				signedURLServer := signedURLServer(t, "content")
 				defer signedURLServer.Close()
 
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
@@ -104,8 +107,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", false)
 
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -114,10 +117,10 @@ func TestRemoteCalls(t *testing.T) {
 						ViewURL:     "url",
 					},
 					Content: "content",
-				})
+				}))
 			})
 
-			Convey("ok - meta only", func() {
+			t.Run("ok - meta only", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
@@ -134,8 +137,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
-				So(err, ShouldBeNil)
-				So(cfg, ShouldResemble, &config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(&config.Config{
 					Meta: config.Meta{
 						ConfigSet:   "projects/project1",
 						Path:        "config.cfg",
@@ -143,32 +146,32 @@ func TestRemoteCalls(t *testing.T) {
 						Revision:    "revision",
 						ViewURL:     "url",
 					},
-				})
+				}))
 			})
 
-			Convey("error - not found", func() {
+			t.Run("error - not found", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any(), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.NotFound, "not found"))
 
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
-				So(cfg, ShouldBeNil)
-				So(err, ShouldErrLike, config.ErrNoConfig)
+				assert.Loosely(t, cfg, should.BeNil)
+				assert.Loosely(t, err, should.ErrLike(config.ErrNoConfig))
 			})
 
-			Convey("error - other", func() {
+			t.Run("error - other", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), gomock.Any(), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.Internal, "internal error"))
 
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
-				So(cfg, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.Internal, "internal error")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, cfg, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "internal error"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("GetProjectConfigs", func() {
+		t.Run("GetProjectConfigs", func(t *ftt.Test) {
 
-			Convey("ok - meta only", func() {
+			t.Run("ok - meta only", func(t *ftt.Test) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
 					Fields: &field_mask.FieldMask{
@@ -187,8 +190,8 @@ func TestRemoteCalls(t *testing.T) {
 				}, nil)
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", true)
-				So(err, ShouldBeNil)
-				So(configs, ShouldResemble, []config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, configs, should.Resemble([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
@@ -198,11 +201,11 @@ func TestRemoteCalls(t *testing.T) {
 							ViewURL:     "url",
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("ok - raw + signed url", func(c C) {
-				signedURLServer := signedURLServer(c, "large content")
+			t.Run("ok - raw + signed url", func(t *ftt.Test) {
+				signedURLServer := signedURLServer(t, "large content")
 				defer signedURLServer.Close()
 
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
@@ -233,8 +236,8 @@ func TestRemoteCalls(t *testing.T) {
 				}, nil)
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
-				So(err, ShouldBeNil)
-				So(configs, ShouldResemble, []config.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, configs, should.Resemble([]config.Config{
 					{
 						Meta: config.Meta{
 							ConfigSet:   "projects/project1",
@@ -255,46 +258,46 @@ func TestRemoteCalls(t *testing.T) {
 						},
 						Content: "large content",
 					},
-				})
+				}))
 			})
 
-			Convey("empty response", func() {
+			t.Run("empty response", func(t *ftt.Test) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{}, nil)
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
-				So(err, ShouldBeNil)
-				So(configs, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, configs, should.BeEmpty)
 			})
 
-			Convey("rpc error", func() {
+			t.Run("rpc error", func(t *ftt.Test) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(nil, status.Errorf(codes.Internal, "config server internal error"))
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
-				So(configs, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.Internal, "config server internal error")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, configs, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "config server internal error"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 
-			Convey("signed url error", func(c C) {
+			t.Run("signed url error", func(t *ftt.Test) {
 				signedURLSever := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if strings.HasSuffix(r.URL.String(), "err") {
 						w.WriteHeader(http.StatusInternalServerError)
 						_, err := w.Write([]byte("internal error"))
-						c.So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						return
 					}
 					buf := &bytes.Buffer{}
 					gw := gzip.NewWriter(buf)
 					_, err := gw.Write([]byte("large content"))
-					c.So(err, ShouldBeNil)
-					c.So(gw.Close(), ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, gw.Close(), should.BeNil)
 					w.Header().Set("Content-Encoding", "gzip")
 					_, err = w.Write(buf.Bytes())
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}))
 				defer signedURLSever.Close()
 
@@ -320,14 +323,14 @@ func TestRemoteCalls(t *testing.T) {
 				}, nil)
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
-				So(configs, ShouldBeNil)
-				So(err, ShouldErrLike, `for file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`)
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, configs, should.BeNil)
+				assert.Loosely(t, err, should.ErrLike(`for file(config.cfg) in config_set(projects/project2): failed to download file, got http response code: 500, body: "internal error"`))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("GetProjects", func() {
-			Convey("ok", func() {
+		t.Run("GetProjects", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
 				res := &pb.ListConfigSetsResponse{
 					ConfigSets: []*pb.ConfigSet{
 						{
@@ -345,13 +348,13 @@ func TestRemoteCalls(t *testing.T) {
 				})).Return(res, nil)
 
 				projects, err := impl.GetProjects(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				url1, err := url.Parse(res.ConfigSets[0].Url)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				url2, err := url.Parse(res.ConfigSets[1].Url)
-				So(err, ShouldBeNil)
-				So(projects, ShouldResemble, []config.Project{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, projects, should.Resemble([]config.Project{
 					{
 						ID:       "project1",
 						Name:     "project1",
@@ -364,23 +367,23 @@ func TestRemoteCalls(t *testing.T) {
 						RepoType: config.GitilesRepo,
 						RepoURL:  url2,
 					},
-				})
+				}))
 			})
 
-			Convey("rpc err", func() {
+			t.Run("rpc err", func(t *ftt.Test) {
 				mockClient.EXPECT().ListConfigSets(gomock.Any(), proto.MatcherEqual(&pb.ListConfigSetsRequest{
 					Domain: pb.ListConfigSetsRequest_PROJECT,
 				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
 
 				projects, err := impl.GetProjects(ctx)
-				So(projects, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, projects, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("ListFiles", func() {
-			Convey("ok", func() {
+		t.Run("ListFiles", func(t *ftt.Test) {
+			t.Run("ok", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
 					Fields: &field_mask.FieldMask{
@@ -394,11 +397,11 @@ func TestRemoteCalls(t *testing.T) {
 				}, nil)
 
 				files, err := impl.ListFiles(ctx, config.Set("projects/project"))
-				So(err, ShouldBeNil)
-				So(files, ShouldResemble, []string{"file1", "file2"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, files, should.Resemble([]string{"file1", "file2"}))
 			})
 
-			Convey("rpc err", func() {
+			t.Run("rpc err", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
 					Fields: &field_mask.FieldMask{
@@ -407,14 +410,14 @@ func TestRemoteCalls(t *testing.T) {
 				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
 
 				files, err := impl.ListFiles(ctx, config.Set("projects/project"))
-				So(files, ShouldBeNil)
-				So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
-				So(transient.Tag.In(err), ShouldBeTrue)
+				assert.Loosely(t, files, should.BeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
 
-		Convey("GetConfigs", func() {
-			Convey("listing err", func() {
+		t.Run("GetConfigs", func(t *ftt.Test) {
+			t.Run("listing err", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
 					Fields: &field_mask.FieldMask{
@@ -422,42 +425,44 @@ func TestRemoteCalls(t *testing.T) {
 					},
 				})).Return(nil, status.Errorf(codes.NotFound, "no config set"))
 				files, err := impl.GetConfigs(ctx, "projects/project", nil, false)
-				So(files, ShouldBeNil)
-				So(err, ShouldEqual, config.ErrNoConfig)
+				assert.Loosely(t, files, should.BeNil)
+				assert.Loosely(t, err, should.Equal(config.ErrNoConfig))
 			})
 
-			Convey("listing ok", func() {
-				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
-					ConfigSet: "projects/project",
-					Fields: &field_mask.FieldMask{
-						Paths: []string{"configs"},
-					},
-				})).Return(&pb.ConfigSet{
-					Configs: []*pb.Config{
-						{
-							ConfigSet:     "projects/project",
-							Path:          "file1",
-							ContentSha256: "file1-hash",
-							Size:          123,
-							Revision:      "rev",
-							Url:           "file1-url",
+			t.Run("listing ok", func(t *ftt.Test) {
+				expectCall := func() {
+					mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
+						ConfigSet: "projects/project",
+						Fields: &field_mask.FieldMask{
+							Paths: []string{"configs"},
 						},
-						{
-							ConfigSet: "projects/project",
-							Path:      "ignored",
-							Revision:  "rev",
+					})).Return(&pb.ConfigSet{
+						Configs: []*pb.Config{
+							{
+								ConfigSet:     "projects/project",
+								Path:          "file1",
+								ContentSha256: "file1-hash",
+								Size:          123,
+								Revision:      "rev",
+								Url:           "file1-url",
+							},
+							{
+								ConfigSet: "projects/project",
+								Path:      "ignored",
+								Revision:  "rev",
+							},
+							{
+								ConfigSet:     "projects/project",
+								Path:          "file2",
+								ContentSha256: "file2-hash",
+								Size:          456,
+								Revision:      "rev",
+								Url:           "file2-url",
+							},
 						},
-						{
-							ConfigSet:     "projects/project",
-							Path:          "file2",
-							ContentSha256: "file2-hash",
-							Size:          456,
-							Revision:      "rev",
-							Url:           "file2-url",
-						},
-					},
-				}, nil)
+					}, nil)
 
+				}
 				filter := func(path string) bool { return path != "ignored" }
 
 				expectedOutput := func(metaOnly bool) map[string]config.Config {
@@ -503,13 +508,15 @@ func TestRemoteCalls(t *testing.T) {
 					}), grpc.UseCompressor(grpcGzip.Name)).Return(cfg, err)
 				}
 
-				Convey("meta only", func() {
+				t.Run("meta only", func(t *ftt.Test) {
+					expectCall()
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, true)
-					So(err, ShouldBeNil)
-					So(files, ShouldResemble, expectedOutput(true))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, files, should.Resemble(expectedOutput(true)))
 				})
 
-				Convey("small bodies", func() {
+				t.Run("small bodies", func(t *ftt.Test) {
+					expectCall()
 					expectGetConfigCall("file1-hash", nil, &pb.Config{
 						Content: &pb.Config_RawContent{
 							RawContent: []byte("file1 content"),
@@ -522,11 +529,12 @@ func TestRemoteCalls(t *testing.T) {
 					})
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
-					So(err, ShouldBeNil)
-					So(files, ShouldResemble, expectedOutput(false))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, files, should.Resemble(expectedOutput(false)))
 				})
 
-				Convey("single fetch err", func() {
+				t.Run("single fetch err", func(t *ftt.Test) {
+					expectCall()
 					expectGetConfigCall("file1-hash", nil, &pb.Config{
 						Content: &pb.Config_RawContent{
 							RawContent: []byte("file1 content"),
@@ -536,12 +544,13 @@ func TestRemoteCalls(t *testing.T) {
 						status.Errorf(codes.Internal, "server internal error"), nil)
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
-					So(files, ShouldBeNil)
-					So(err, ShouldHaveGRPCStatus, codes.Internal, "server internal error")
-					So(transient.Tag.In(err), ShouldBeTrue)
+					assert.Loosely(t, files, should.BeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+					assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 				})
 
-				Convey("single fetch unexpectedly missing", func() {
+				t.Run("single fetch unexpectedly missing", func(t *ftt.Test) {
+					expectCall()
 					expectGetConfigCall("file1-hash", nil, &pb.Config{
 						Content: &pb.Config_RawContent{
 							RawContent: []byte("file1 content"),
@@ -551,13 +560,14 @@ func TestRemoteCalls(t *testing.T) {
 						status.Errorf(codes.NotFound, "gone but why"), nil)
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
-					So(files, ShouldBeNil)
-					So(err, ShouldErrLike, "is unexpectedly gone")
-					So(transient.Tag.In(err), ShouldBeFalse)
+					assert.Loosely(t, files, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike("is unexpectedly gone"))
+					assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 				})
 
-				Convey("large body - ok", func(c C) {
-					signedURLServer := signedURLServer(c, "file2 content")
+				t.Run("large body - ok", func(t *ftt.Test) {
+					expectCall()
+					signedURLServer := signedURLServer(t, "file2 content")
 					defer signedURLServer.Close()
 
 					expectGetConfigCall("file1-hash", nil, &pb.Config{
@@ -572,12 +582,13 @@ func TestRemoteCalls(t *testing.T) {
 					})
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
-					So(err, ShouldBeNil)
-					So(files, ShouldResemble, expectedOutput(false))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, files, should.Resemble(expectedOutput(false)))
 				})
 
-				Convey("large body - err", func(c C) {
-					signedURLServer := signedURLServer(c, "file2 content")
+				t.Run("large body - err", func(t *ftt.Test) {
+					expectCall()
+					signedURLServer := signedURLServer(t, "file2 content")
 					defer signedURLServer.Close()
 
 					expectGetConfigCall("file1-hash", nil, &pb.Config{
@@ -592,30 +603,30 @@ func TestRemoteCalls(t *testing.T) {
 					})
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
-					So(files, ShouldBeNil)
-					So(err, ShouldErrLike, `fetching "file2" from signed URL: failed to download file`)
-					So(transient.Tag.In(err), ShouldBeTrue)
+					assert.Loosely(t, files, should.BeNil)
+					assert.Loosely(t, err, should.ErrLike(`fetching "file2" from signed URL: failed to download file`))
+					assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 				})
 			})
 		})
 	})
 }
 
-func signedURLServer(c C, body string) *httptest.Server {
+func signedURLServer(t testing.TB, body string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.String(), "err") {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, err := w.Write([]byte(body))
-			c.So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return
 		}
 		buf := &bytes.Buffer{}
 		gw := gzip.NewWriter(buf)
 		_, err := gw.Write([]byte(body))
-		c.So(err, ShouldBeNil)
-		c.So(gw.Close(), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, gw.Close(), should.BeNil)
 		w.Header().Set("Content-Encoding", "gzip")
 		_, err = w.Write(buf.Bytes())
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	}))
 }

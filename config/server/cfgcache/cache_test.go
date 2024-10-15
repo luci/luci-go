@@ -25,15 +25,15 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	configpb "go.chromium.org/luci/common/proto/config" // some "random" v1 proto
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var testEntry = Register(&Entry{
@@ -57,36 +57,36 @@ var testEntryCustomConfigSet = Register(&Entry{
 func TestProtoReflection(t *testing.T) {
 	t.Parallel()
 
-	Convey("Proto reflection magic", t, func() {
-		Convey("v1 protos", func() {
+	ftt.Run("Proto reflection magic", t, func(t *ftt.Test) {
+		t.Run("v1 protos", func(t *ftt.Test) {
 			e := Entry{
 				Path: "unused",
 				Type: protov1.MessageV2((*configpb.Project)(nil)),
 			}
 			msg, err := e.validate(&validation.Context{}, `id: "zzz"`)
-			So(err, ShouldBeNil)
-			So(protov1.MessageV1(msg).(*configpb.Project).Id, ShouldEqual, "zzz")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, protov1.MessageV1(msg).(*configpb.Project).Id, should.Equal("zzz"))
 
 			// Make sure proto.Merge() would do the correct thing too.
 			msgV1 := &configpb.Project{}
 			msgV1asV2 := protov1.MessageV2(msgV1)
 			proto.Reset(msgV1asV2)
 			proto.Merge(msgV1asV2, msg)
-			So(msgV1.Id, ShouldEqual, "zzz")
+			assert.Loosely(t, msgV1.Id, should.Equal("zzz"))
 		})
 
-		Convey("v2 protos", func() {
+		t.Run("v2 protos", func(t *ftt.Test) {
 			e := Entry{
 				Path: "unused",
 				Type: (*durationpb.Duration)(nil),
 			}
 			msg, err := e.validate(&validation.Context{}, "seconds: 123")
-			So(err, ShouldBeNil)
-			So(msg.(*durationpb.Duration).Seconds, ShouldEqual, 123)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, msg.(*durationpb.Duration).Seconds, should.Equal(123))
 		})
 	})
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		const (
 			rev1 = "1704e5202d83e699573530524b078a03a160979f"
 			rev2 = "407a70a0258bccc412a570f069c14caa64fab3bb"
@@ -102,103 +102,101 @@ func TestProtoReflection(t *testing.T) {
 		ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 		ctx = caching.WithEmptyProcessCache(ctx)
 
-		Convey("Eager update success", func() {
+		t.Run("Eager update success", func(t *ftt.Test) {
 			meta := config.Meta{}
 
 			pb, err := testEntry.Get(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
-			Convey("Custom ConfigSet", func() {
-				meta := config.Meta{}
+			meta = config.Meta{}
 
-				pb, err := testEntryCustomConfigSet.Get(ctx, &meta)
-				So(err, ShouldBeNil)
-				So(pb.(*durationpb.Duration).Nanos, ShouldEqual, 5)
-			})
+			pb, err = testEntryCustomConfigSet.Get(ctx, &meta)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Nanos, should.Equal(5))
 		})
 
-		Convey("Eager update fail", func() {
+		t.Run("Eager update fail", func(t *ftt.Test) {
 			configs[defaultServiceConfigSet][testEntry.Path] = `broken`
 			_, err := testEntry.Get(ctx, nil)
-			So(err, ShouldErrLike, "no such entity")
+			assert.Loosely(t, err, should.ErrLike("no such entity"))
 		})
 
-		Convey("Update works", func() {
+		t.Run("Update works", func(t *ftt.Test) {
 			meta := config.Meta{}
 
 			// Initial update.
 			pb, err := testEntry.Update(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
 			// Fetch works now.
 			pb, err = testEntry.Fetch(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
 			// Get works as well.
 			pb, err = testEntry.Get(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
 			// Noop update.
 			pb, err = testEntry.Update(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
 			// Real update.
 			configs[defaultServiceConfigSet][testEntry.Path] = `seconds: 2`
 			pb, err = testEntry.Update(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 2)
-			So(meta.Revision, ShouldEqual, rev2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(2))
+			assert.Loosely(t, meta.Revision, should.Equal(rev2))
 
 			// Fetch returns the new value right away.
 			pb, err = testEntry.Fetch(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 2)
-			So(meta.Revision, ShouldEqual, rev2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(2))
+			assert.Loosely(t, meta.Revision, should.Equal(rev2))
 
 			// Get still uses in-memory cached copy.
 			pb, err = testEntry.Get(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 1)
-			So(meta.Revision, ShouldEqual, rev1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(1))
+			assert.Loosely(t, meta.Revision, should.Equal(rev1))
 
 			// Time passes, in-memory cached copy expires.
 			tc.Add(2 * time.Minute)
 
 			// Get returns the new value now too.
 			pb, err = testEntry.Get(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 2)
-			So(meta.Revision, ShouldEqual, rev2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(2))
+			assert.Loosely(t, meta.Revision, should.Equal(rev2))
 		})
 
-		Convey("Failing validation", func() {
+		t.Run("Failing validation", func(t *ftt.Test) {
 			configs[defaultServiceConfigSet][testEntry.Path] = `wat?`
 			_, err := testEntry.Update(ctx, nil)
-			So(err, ShouldErrLike, "validation errors")
+			assert.Loosely(t, err, should.ErrLike("validation errors"))
 		})
 
-		Convey("Set works", func() {
+		t.Run("Set works", func(t *ftt.Test) {
 			err := testEntry.Set(ctx, &durationpb.Duration{Seconds: 666}, &config.Meta{
 				Revision: "123",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			var meta config.Meta
 
 			pb, err := testEntry.Get(ctx, &meta)
-			So(err, ShouldBeNil)
-			So(pb.(*durationpb.Duration).Seconds, ShouldEqual, 666)
-			So(meta.Revision, ShouldEqual, "123")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pb.(*durationpb.Duration).Seconds, should.Equal(666))
+			assert.Loosely(t, meta.Revision, should.Equal("123"))
 		})
 	})
 }

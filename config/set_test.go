@@ -17,49 +17,52 @@ package config
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestConfigSet(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing config set utility methods`, t, func() {
+	ftt.Run(`Testing config set utility methods`, t, func(t *ftt.Test) {
 		ss, err := ServiceSet("my-service")
-		So(err, ShouldBeNil)
-		So(ss.Validate(), ShouldBeNil)
-		So(ss, ShouldEqual, Set("services/my-service"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ss.Validate(), should.BeNil)
+		assert.Loosely(t, ss, should.Equal(Set("services/my-service")))
 		ps, err := ProjectSet("my-project")
-		So(err, ShouldBeNil)
-		So(ps.Validate(), ShouldBeNil)
-		So(ps, ShouldEqual, Set("projects/my-project"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ps.Validate(), should.BeNil)
+		assert.Loosely(t, ps, should.Equal(Set("projects/my-project")))
 
 		s := MustServiceSet("foo")
-		So(s.Service(), ShouldEqual, "foo")
-		So(s.Project(), ShouldEqual, "")
-		So(s.Domain(), ShouldEqual, ServiceDomain)
+		assert.Loosely(t, s.Service(), should.Equal("foo"))
+		assert.Loosely(t, s.Project(), should.BeEmpty)
+		assert.Loosely(t, s.Domain(), should.Equal(ServiceDomain))
 
 		s = MustProjectSet("foo")
-		So(s.Service(), ShouldEqual, "")
-		So(s.Project(), ShouldEqual, "foo")
-		So(s.Domain(), ShouldEqual, ProjectDomain)
+		assert.Loosely(t, s.Service(), should.BeEmpty)
+		assert.Loosely(t, s.Project(), should.Equal("foo"))
+		assert.Loosely(t, s.Domain(), should.Equal(ProjectDomain))
 
 		s = Set("malformed/set/abc/def")
-		So(s.Validate(), ShouldErrLike, "unknown domain \"malformed\" for config set \"malformed/set/abc/def\"; currently supported domains [projects, services]")
-		So(s.Service(), ShouldEqual, "")
-		So(s.Project(), ShouldEqual, "")
+		assert.Loosely(t, s.Validate(), should.ErrLike("unknown domain \"malformed\" for config set \"malformed/set/abc/def\"; currently supported domains [projects, services]"))
+		assert.Loosely(t, s.Service(), should.BeEmpty)
+		assert.Loosely(t, s.Project(), should.BeEmpty)
 
 		s, err = ServiceSet("malformed/service/set/abc")
-		So(err, ShouldErrLike, "invalid service name \"malformed/service/set/abc\", expected to match")
-		So(s, ShouldBeEmpty)
-		So(Set("services/malformed/service/set/abc").Validate(), ShouldErrLike, err)
+		errText := "invalid service name \"malformed/service/set/abc\", expected to match"
+		assert.Loosely(t, err, should.ErrLike(errText))
+		assert.Loosely(t, s, should.BeEmpty)
+		assert.Loosely(t, Set("services/malformed/service/set/abc").Validate(), should.ErrLike(errText))
 
 		s, err = ProjectSet("malformed/project/set/abc")
-		So(err, ShouldErrLike, "invalid project name: invalid character")
-		So(s, ShouldBeEmpty)
-		So(Set("projects/malformed/service/set/abc").Validate(), ShouldErrLike, err)
+		errText = "invalid project name: invalid character"
+		assert.Loosely(t, err, should.ErrLike(errText))
+		assert.Loosely(t, s, should.BeEmpty)
+		assert.Loosely(t, Set("projects/malformed/service/set/abc").Validate(), should.ErrLike(errText))
 
-		So(Set("/abc").Validate(), ShouldErrLike, "can not extract domain from config set \"/abc\". expected syntax \"domain/target\"")
-		So(Set("unknown/abc").Validate(), ShouldErrLike, "unknown domain \"unknown\" for config set \"unknown/abc\"")
+		assert.Loosely(t, Set("/abc").Validate(), should.ErrLike("can not extract domain from config set \"/abc\". expected syntax \"domain/target\""))
+		assert.Loosely(t, Set("unknown/abc").Validate(), should.ErrLike("unknown domain \"unknown\" for config set \"unknown/abc\""))
 	})
 }
