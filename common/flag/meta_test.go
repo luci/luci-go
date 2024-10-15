@@ -18,47 +18,47 @@ import (
 	"flag"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/grpc/metadata"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGRPCMEtadata(t *testing.T) {
 	t.Parallel()
 
-	Convey("GRPCMetadata", t, func() {
+	ftt.Run("GRPCMetadata", t, func(t *ftt.Test) {
 		md := metadata.MD{}
 		v := GRPCMetadata(md)
 
-		Convey("Set", func() {
-			Convey("Once", func() {
-				So(v.Set("a:1"), ShouldBeNil)
-				So(md, ShouldResemble, metadata.Pairs("a", "1"))
+		t.Run("Set", func(t *ftt.Test) {
+			t.Run("Once", func(t *ftt.Test) {
+				assert.Loosely(t, v.Set("a:1"), should.BeNil)
+				assert.Loosely(t, md, should.Resemble(metadata.Pairs("a", "1")))
 
-				Convey("Second time", func() {
-					So(v.Set("b:1"), ShouldBeNil)
-					So(md, ShouldResemble, metadata.Pairs("a", "1", "b", "1"))
+				t.Run("Second time", func(t *ftt.Test) {
+					assert.Loosely(t, v.Set("b:1"), should.BeNil)
+					assert.Loosely(t, md, should.Resemble(metadata.Pairs("a", "1", "b", "1")))
 				})
 
-				Convey("Same key", func() {
-					So(v.Set("a:2"), ShouldBeNil)
-					So(md, ShouldResemble, metadata.Pairs("a", "1", "a", "2"))
+				t.Run("Same key", func(t *ftt.Test) {
+					assert.Loosely(t, v.Set("a:2"), should.BeNil)
+					assert.Loosely(t, md, should.Resemble(metadata.Pairs("a", "1", "a", "2")))
 				})
 			})
-			Convey("No colon", func() {
-				So(v.Set("a"), ShouldErrLike, "no colon")
+			t.Run("No colon", func(t *ftt.Test) {
+				assert.Loosely(t, v.Set("a"), should.ErrLike("no colon"))
 			})
 		})
 
-		Convey("String", func() {
+		t.Run("String", func(t *ftt.Test) {
 			md.Append("a", "1", "2")
 			md.Append("b", "1")
-			So(v.String(), ShouldEqual, "a:1, a:2, b:1")
+			assert.Loosely(t, v.String(), should.Equal("a:1, a:2, b:1"))
 		})
 
-		Convey("Get", func() {
-			So(v.(flag.Getter).Get(), ShouldEqual, md)
+		t.Run("Get", func(t *ftt.Test) {
+			assert.Loosely(t, v.(flag.Getter).Get(), should.Match(md))
 		})
 	})
 }

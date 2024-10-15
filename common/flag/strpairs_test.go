@@ -19,52 +19,52 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/strpair"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStrPairs(t *testing.T) {
 	t.Parallel()
 
-	Convey("StringPairs", t, func() {
+	ftt.Run("StringPairs", t, func(t *ftt.Test) {
 		m := strpair.Map{}
 		v := StringPairs(m)
 
-		Convey("Set", func() {
-			Convey("Once", func() {
-				So(v.Set("a:1"), ShouldBeNil)
-				So(m.Format(), ShouldResemble, []string{"a:1"})
+		t.Run("Set", func(t *ftt.Test) {
+			t.Run("Once", func(t *ftt.Test) {
+				assert.Loosely(t, v.Set("a:1"), should.BeNil)
+				assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1"}))
 
-				Convey("Second time", func() {
-					So(v.Set("b:1"), ShouldBeNil)
-					So(m.Format(), ShouldResemble, []string{"a:1", "b:1"})
+				t.Run("Second time", func(t *ftt.Test) {
+					assert.Loosely(t, v.Set("b:1"), should.BeNil)
+					assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1", "b:1"}))
 				})
 
-				Convey("Same key", func() {
-					So(v.Set("a:2"), ShouldBeNil)
-					So(m.Format(), ShouldResemble, []string{"a:1", "a:2"})
+				t.Run("Same key", func(t *ftt.Test) {
+					assert.Loosely(t, v.Set("a:2"), should.BeNil)
+					assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1", "a:2"}))
 				})
 			})
-			Convey("No colon", func() {
-				So(v.Set("a"), ShouldErrLike, "no colon")
+			t.Run("No colon", func(t *ftt.Test) {
+				assert.Loosely(t, v.Set("a"), should.ErrLike("no colon"))
 			})
-			Convey("Value has a colon", func() {
-				So(v.Set("a:1:1"), ShouldBeNil)
-				So(m.Format(), ShouldResemble, []string{"a:1:1"})
+			t.Run("Value has a colon", func(t *ftt.Test) {
+				assert.Loosely(t, v.Set("a:1:1"), should.BeNil)
+				assert.Loosely(t, m.Format(), should.Resemble([]string{"a:1:1"}))
 			})
 		})
 
-		Convey("String", func() {
+		t.Run("String", func(t *ftt.Test) {
 			m.Add("a", "1")
 			m.Add("a", "2")
 			// Value has a colon.
 			m.Add("b", "1:1")
-			So(v.String(), ShouldEqual, "a:1, a:2, b:1:1")
+			assert.Loosely(t, v.String(), should.Equal("a:1, a:2, b:1:1"))
 		})
 
-		Convey("Get", func() {
-			So(v.(flag.Getter).Get(), ShouldEqual, m)
+		t.Run("Get", func(t *ftt.Test) {
+			assert.Loosely(t, v.(flag.Getter).Get(), should.Match(m))
 		})
 	})
 }

@@ -18,27 +18,29 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTimeLayoutFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TimeLayoutFlag`, t, func() {
-		Convey(`Works`, func() {
-			var t time.Time
-			f := Date(&t)
+	ftt.Run(`TimeLayoutFlag`, t, func(t *ftt.Test) {
+		t.Run(`Works`, func(t *ftt.Test) {
+			var ts time.Time
+			f := Date(&ts)
 
-			So(f.Set("2020-01-24"), ShouldBeNil)
-			So(t, ShouldResemble, time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC))
+			assert.Loosely(t, f.Set("2020-01-24"), should.BeNil)
+			assert.Loosely(t, ts, should.Resemble(time.Date(2020, 1, 24, 0, 0, 0, 0, time.UTC)))
 
-			So(f.String(), ShouldEqual, "2020-01-24")
-			So(f.Get(), ShouldResemble, t)
+			assert.Loosely(t, f.String(), should.Equal("2020-01-24"))
+			assert.Loosely(t, f.Get(), should.Resemble(ts))
 		})
 
-		Convey(`zero value`, func() {
-			var t timeLayoutFlag
-			So(t.String(), ShouldEqual, "")
+		t.Run(`zero value`, func(t *ftt.Test) {
+			var tf timeLayoutFlag
+			assert.Loosely(t, tf.String(), should.BeEmpty)
 		})
 	})
 }

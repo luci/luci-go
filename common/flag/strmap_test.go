@@ -17,38 +17,39 @@ package flag
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStringMap(t *testing.T) {
-	Convey(`StringMap`, t, func() {
+	ftt.Run(`StringMap`, t, func(t *ftt.Test) {
 		m := map[string]string{}
 		f := StringMap(m)
 
-		Convey(`Set`, func() {
-			So(f.Set("a:1"), ShouldBeNil)
-			So(m, ShouldResemble, map[string]string{"a": "1"})
+		t.Run(`Set`, func(t *ftt.Test) {
+			assert.Loosely(t, f.Set("a:1"), should.BeNil)
+			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1"}))
 
-			So(f.Set("b:2"), ShouldBeNil)
-			So(m, ShouldResemble, map[string]string{"a": "1", "b": "2"})
+			assert.Loosely(t, f.Set("b:2"), should.BeNil)
+			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1", "b": "2"}))
 
-			So(f.Set("b:3"), ShouldErrLike, `key "b" is already specified`)
+			assert.Loosely(t, f.Set("b:3"), should.ErrLike(`key "b" is already specified`))
 
-			So(f.Set("c:something:with:colon"), ShouldBeNil)
-			So(m, ShouldResemble, map[string]string{"a": "1", "b": "2", "c": "something:with:colon"})
+			assert.Loosely(t, f.Set("c:something:with:colon"), should.BeNil)
+			assert.Loosely(t, m, should.Resemble(map[string]string{"a": "1", "b": "2", "c": "something:with:colon"}))
 		})
 
-		Convey(`String`, func() {
+		t.Run(`String`, func(t *ftt.Test) {
 			m["a"] = "1"
-			So(f.String(), ShouldEqual, "a:1")
+			assert.Loosely(t, f.String(), should.Equal("a:1"))
 
 			m["b"] = "2"
-			So(f.String(), ShouldEqual, "a:1 b:2")
+			assert.Loosely(t, f.String(), should.Equal("a:1 b:2"))
 		})
 
-		Convey(`Value`, func() {
-			So(f.Get(), ShouldEqual, m)
+		t.Run(`Value`, func(t *ftt.Test) {
+			assert.Loosely(t, f.Get(), should.Match(m))
 		})
 	})
 }

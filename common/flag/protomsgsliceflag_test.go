@@ -24,8 +24,9 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // special type that implements proto.Message interface for test purpose
@@ -41,7 +42,7 @@ func (messageImpl) ProtoMessage() {}
 var _ = proto.Message(new(messageImpl))
 
 func TestProtoMessageSliceFlag(t *testing.T) {
-	Convey("Basic", t, func() {
+	ftt.Run("Basic", t, func(t *ftt.Test) {
 		var builds []*pb.Build
 		fs := flag.NewFlagSet("test", flag.ContinueOnError)
 		flag := MessageSliceFlag(&builds)
@@ -49,38 +50,38 @@ func TestProtoMessageSliceFlag(t *testing.T) {
 
 		var err error
 		err = flag.Set("{\"id\": 111111, \"status\": \"SUCCESS\"}")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = flag.Set("{\"id\": 222222, \"status\": \"FAILURE\"}")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = flag.Set("{\"id\": 333333, \"status\": \"CANCELED\"}")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(flag.Get(), ShouldResembleProto, builds)
-		So(builds, ShouldHaveLength, 3)
-		So(builds[0].Id, ShouldEqual, 111111)
-		So(builds[0].Status, ShouldEqual, pb.Status_SUCCESS)
-		So(builds[1].Id, ShouldEqual, 222222)
-		So(builds[1].Status, ShouldEqual, pb.Status_FAILURE)
-		So(builds[2].Id, ShouldEqual, 333333)
-		So(builds[2].Status, ShouldEqual, pb.Status_CANCELED)
+		assert.Loosely(t, flag.Get(), should.Resemble(builds))
+		assert.Loosely(t, builds, should.HaveLength(3))
+		assert.Loosely(t, builds[0].Id, should.Equal(111111))
+		assert.Loosely(t, builds[0].Status, should.Equal(pb.Status_SUCCESS))
+		assert.Loosely(t, builds[1].Id, should.Equal(222222))
+		assert.Loosely(t, builds[1].Status, should.Equal(pb.Status_FAILURE))
+		assert.Loosely(t, builds[2].Id, should.Equal(333333))
+		assert.Loosely(t, builds[2].Status, should.Equal(pb.Status_CANCELED))
 		// Hard to set expectation for JSON string due to indentation
 		// and field order. Therefore, simply check if it's empty or not.
-		So(flag.String(), ShouldNotBeBlank)
+		assert.Loosely(t, flag.String(), should.NotBeBlank)
 	})
-	Convey("Panic when input is not pointer", t, func() {
-		So(func() { MessageSliceFlag("a string") }, ShouldPanic)
+	ftt.Run("Panic when input is not pointer", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MessageSliceFlag("a string") }, should.Panic)
 	})
-	Convey("Panic when input pointer dose not point to a slice", t, func() {
-		So(func() { MessageSliceFlag(&map[string]string{}) }, ShouldPanic)
+	ftt.Run("Panic when input pointer dose not point to a slice", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MessageSliceFlag(&map[string]string{}) }, should.Panic)
 	})
-	Convey("Panic when element does not implement proto.Message", t, func() {
-		So(func() { MessageSliceFlag(&[]string{}) }, ShouldPanic)
+	ftt.Run("Panic when element does not implement proto.Message", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MessageSliceFlag(&[]string{}) }, should.Panic)
 	})
-	Convey("Panic when element is not pointer", t, func() {
-		So(func() { MessageSliceFlag(&[]messageImpl{}) }, ShouldPanic)
+	ftt.Run("Panic when element is not pointer", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MessageSliceFlag(&[]messageImpl{}) }, should.Panic)
 	})
-	Convey("Panic when element pointer does not point to a struct", t, func() {
-		So(func() { MessageSliceFlag(&[]*messageImpl{}) }, ShouldPanic)
+	ftt.Run("Panic when element pointer does not point to a struct", t, func(t *ftt.Test) {
+		assert.Loosely(t, func() { MessageSliceFlag(&[]*messageImpl{}) }, should.Panic)
 	})
 }
 

@@ -20,57 +20,59 @@ import (
 
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNestedFlagSet(t *testing.T) {
-	Convey("Given a multi-field FlagSet object", t, func() {
+	ftt.Run("Given a multi-field FlagSet object", t, func(t *ftt.Test) {
 		nfs := FlagSet{}
 		s := nfs.F.String("field-str", "", "String field.")
 		i := nfs.F.Int("field-int", 0, "Integer field.")
 		d := nfs.F.String("field-default", "default",
 			"Another string field.")
 
-		Convey("When parsed with a valid field set", func() {
+		t.Run("When parsed with a valid field set", func(t *ftt.Test) {
 			err := nfs.Parse("field-str=foo,field-int=123")
-			Convey("It should parse without error.", FailureHalts, func() {
-				So(err, ShouldBeNil)
+			t.Run("It should parse without error.", func(t *ftt.Test) {
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("It should parse 'field-str' as 'foo'", func() {
-				So(*s, ShouldEqual, "foo")
+			t.Run("It should parse 'field-str' as 'foo'", func(t *ftt.Test) {
+				assert.Loosely(t, *s, should.Equal("foo"))
 			})
 
-			Convey("It should parse 'field-int' as 123", func() {
-				So(*i, ShouldEqual, 123)
+			t.Run("It should parse 'field-int' as 123", func(t *ftt.Test) {
+				assert.Loosely(t, *i, should.Equal(123))
 			})
 
-			Convey("It should leave 'field-default' to its default value, 'default'", func() {
-				So(*d, ShouldEqual, "default")
+			t.Run("It should leave 'field-default' to its default value, 'default'", func(t *ftt.Test) {
+				assert.Loosely(t, *d, should.Equal("default"))
 			})
 		})
 
-		Convey("When parsed with an unexpected field", func() {
+		t.Run("When parsed with an unexpected field", func(t *ftt.Test) {
 			err := nfs.Parse("field-invalid=foo")
 
-			Convey("It should error.", FailureHalts, func() {
-				So(err, ShouldNotBeNil)
+			t.Run("It should error.", func(t *ftt.Test) {
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
-		Convey("It should return a valid usage string.", func() {
-			So(nfs.Usage(), ShouldEqual, "help[,field-default][,field-int][,field-str]")
+		t.Run("It should return a valid usage string.", func(t *ftt.Test) {
+			assert.Loosely(t, nfs.Usage(), should.Equal("help[,field-default][,field-int][,field-str]"))
 		})
 
-		Convey(`When installed as a flag`, func() {
+		t.Run(`When installed as a flag`, func(t *ftt.Test) {
 			fs := flag.NewFlagSet("test", flag.PanicOnError)
 			fs.Var(&nfs, "flagset", "The FlagSet instance.")
 
-			Convey(`Accepts the FlagSet as a parameter.`, func() {
+			t.Run(`Accepts the FlagSet as a parameter.`, func(t *ftt.Test) {
 				fs.Parse([]string{"-flagset", `field-str="hello",field-int=20`})
-				So(*s, ShouldEqual, "hello")
-				So(*i, ShouldEqual, 20)
-				So(*d, ShouldEqual, "default")
+				assert.Loosely(t, *s, should.Equal("hello"))
+				assert.Loosely(t, *i, should.Equal(20))
+				assert.Loosely(t, *d, should.Equal("default"))
 			})
 		})
 	})
