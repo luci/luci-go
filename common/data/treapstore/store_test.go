@@ -21,8 +21,11 @@ import (
 	"testing"
 
 	"github.com/luci/gtreap"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func stringCompare(a, b any) int {
@@ -55,42 +58,41 @@ func iterAll(it *gtreap.Iterator) []string {
 	}
 }
 
-func shouldHaveKeys(actual any, expected ...any) string {
-	c := actual.(*Collection)
-
-	// expected can either be a single []string or a series of strings.
-	var keys []string
-	var ok bool
-	if len(expected) == 1 {
-		keys, ok = expected[0].([]string)
+func shouldHaveKeys(expected ...string) comparison.Func[*Collection] {
+	if expected == nil {
+		expected = []string{}
 	}
-	if !ok {
-		keys = make([]string, len(expected))
-		for i, v := range expected {
-			keys[i] = v.(string)
+
+	return func(c *Collection) *failure.Summary {
+		if fail := should.Match(expected)(iterAll(c.Iterator(""))); fail != nil {
+			fail.Findings = append(fail.Findings, &failure.Finding{
+				Name:  "shouldHaveKeys.Method",
+				Value: []string{"iterAll"},
+			})
+			return fail
 		}
+		if fail := should.Match(expected)(visitAll(c, "")); fail != nil {
+			fail.Findings = append(fail.Findings, &failure.Finding{
+				Name:  "shouldHaveKeys.Method",
+				Value: []string{"visitAll"},
+			})
+			return fail
+		}
+		return nil
 	}
-
-	if err := ShouldResemble(iterAll(c.Iterator("")), keys); err != "" {
-		return fmt.Sprintf("failed via iterator: %s", err)
-	}
-	if err := ShouldResemble(visitAll(c, ""), keys); err != "" {
-		return fmt.Sprintf("failed via visit: %s", err)
-	}
-	return ""
 }
 
 func TestStore(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing a string Store`, t, func() {
+	ftt.Run(`Testing a string Store`, t, func(t *ftt.Test) {
 		st := New()
 		coll := st.CreateCollection("test", stringCompare)
 
-		Convey(`When empty`, func() {
+		t.Run(`When empty`, func(t *ftt.Test) {
 			checkEmpty := func(c *Collection) {
-				So(c.Get("foo"), ShouldBeNil)
-				So(c, shouldHaveKeys)
+				assert.Loosely(t, c.Get("foo"), should.BeNil)
+				assert.Loosely(t, c, shouldHaveKeys())
 			}
 
 			// Check the basic Store.
@@ -103,19 +105,19 @@ func TestStore(t *testing.T) {
 			checkEmpty(snap.GetCollection("test"))
 		})
 
-		Convey(`With keys`, func() {
+		t.Run(`With keys`, func(t *ftt.Test) {
 			putMulti(coll, "x", "w", "b", "a")
 
-			Convey(`Can iterate`, func() {
+			t.Run(`Can iterate`, func(t *ftt.Test) {
 				checkKeys := func(coll *Collection, keys ...string) {
 					for _, k := range keys {
-						So(coll.Get(k), ShouldEqual, k)
+						assert.Loosely(t, coll.Get(k), should.Equal(k))
 					}
 
-					So(coll, shouldHaveKeys, keys)
+					assert.Loosely(t, coll, shouldHaveKeys(keys...))
 					for i, k := range keys {
-						So(iterAll(coll.Iterator(k)), ShouldResemble, keys[i:])
-						So(iterAll(coll.Iterator(k+"1")), ShouldResemble, keys[i+1:])
+						assert.Loosely(t, iterAll(coll.Iterator(k)), should.Resemble(keys[i:]))
+						assert.Loosely(t, iterAll(coll.Iterator(k+"1")), should.Resemble(keys[i+1:]))
 					}
 				}
 				checkKeys(coll, "a", "b", "w", "x")
@@ -130,59 +132,59 @@ func TestStore(t *testing.T) {
 				checkKeys(coll, "a", "foo", "w", "x")
 			})
 
-			Convey(`Modified after a snapshot`, func() {
+			t.Run(`Modified after a snapshot`, func(t *ftt.Test) {
 				snap := st.Snapshot()
 				snapColl := snap.GetCollection("test")
 				putMulti(coll, "z")
 
-				Convey(`A snapshot of a snapshot is itself.`, func() {
-					So(snap.Snapshot(), ShouldEqual, snap)
+				t.Run(`A snapshot of a snapshot is itself.`, func(t *ftt.Test) {
+					assert.Loosely(t, snap.Snapshot(), should.Equal(snap))
 				})
 
-				Convey(`A snapshot is read-only, and cannot create collections.`, func() {
-					So(func() { snap.CreateCollection("new", stringCompare) }, ShouldPanic)
+				t.Run(`A snapshot is read-only, and cannot create collections.`, func(t *ftt.Test) {
+					assert.Loosely(t, func() { snap.CreateCollection("new", stringCompare) }, should.Panic)
 				})
 
-				Convey(`Can get its collection name`, func() {
-					So(coll.Name(), ShouldEqual, "test")
-					So(snapColl.Name(), ShouldEqual, "test")
+				t.Run(`Can get its collection name`, func(t *ftt.Test) {
+					assert.Loosely(t, coll.Name(), should.Equal("test"))
+					assert.Loosely(t, snapColl.Name(), should.Equal("test"))
 				})
 
-				Convey(`Can fetch the Min and Max`, func() {
-					So(coll.Min(), ShouldResemble, "a")
-					So(coll.Max(), ShouldResemble, "z")
+				t.Run(`Can fetch the Min and Max`, func(t *ftt.Test) {
+					assert.Loosely(t, coll.Min(), should.Match("a"))
+					assert.Loosely(t, coll.Max(), should.Match("z"))
 
-					So(snapColl.Min(), ShouldResemble, "a")
-					So(snapColl.Max(), ShouldResemble, "x")
+					assert.Loosely(t, snapColl.Min(), should.Match("a"))
+					assert.Loosely(t, snapColl.Max(), should.Match("x"))
 				})
 
-				Convey(`Cannot Put to a read-only snapshot.`, func() {
-					So(func() { snapColl.Put("panic") }, ShouldPanic)
+				t.Run(`Cannot Put to a read-only snapshot.`, func(t *ftt.Test) {
+					assert.Loosely(t, func() { snapColl.Put("panic") }, should.Panic)
 				})
 			})
 		})
 
-		Convey(`Creating a Collection with a duplicate name will panic.`, func() {
-			So(func() { st.CreateCollection("test", stringCompare) }, ShouldPanic)
+		t.Run(`Creating a Collection with a duplicate name will panic.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { st.CreateCollection("test", stringCompare) }, should.Panic)
 		})
 
-		Convey(`With multiple Collections`, func() {
+		t.Run(`With multiple Collections`, func(t *ftt.Test) {
 			for _, v := range []string{"foo", "bar", "baz"} {
 				st.CreateCollection(v, stringCompare)
 			}
-			So(st.GetCollectionNames(), ShouldResemble, []string{"bar", "baz", "foo", "test"})
+			assert.Loosely(t, st.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
 			snap := st.Snapshot()
-			So(snap.GetCollectionNames(), ShouldResemble, []string{"bar", "baz", "foo", "test"})
+			assert.Loosely(t, snap.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
 
-			Convey(`When new Collections are added, names remain sorted.`, func() {
+			t.Run(`When new Collections are added, names remain sorted.`, func(t *ftt.Test) {
 				for _, v := range []string{"app", "cat", "bas", "qux"} {
 					st.CreateCollection(v, stringCompare)
 				}
-				So(st.GetCollectionNames(), ShouldResemble,
-					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"})
-				So(st.Snapshot().GetCollectionNames(), ShouldResemble,
-					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"})
-				So(snap.GetCollectionNames(), ShouldResemble, []string{"bar", "baz", "foo", "test"})
+				assert.Loosely(t, st.GetCollectionNames(), should.Resemble(
+					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"}))
+				assert.Loosely(t, st.Snapshot().GetCollectionNames(), should.Resemble(
+					[]string{"app", "bar", "bas", "baz", "cat", "foo", "qux", "test"}))
+				assert.Loosely(t, snap.GetCollectionNames(), should.Resemble([]string{"bar", "baz", "foo", "test"}))
 			})
 		})
 	})
@@ -191,31 +193,31 @@ func TestStore(t *testing.T) {
 func TestStoreZeroValue(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Store's zero value is valid, empty, and read-only.`, t, func() {
+	ftt.Run(`A Store's zero value is valid, empty, and read-only.`, t, func(t *ftt.Test) {
 		s := Store{}
 
-		So(s.IsReadOnly(), ShouldBeTrue)
-		So(s.GetCollectionNames(), ShouldBeNil)
-		So(s.GetCollection("foo"), ShouldBeNil)
-		So(s.Snapshot(), ShouldEqual, &s)
+		assert.Loosely(t, s.IsReadOnly(), should.BeTrue)
+		assert.Loosely(t, s.GetCollectionNames(), should.BeNil)
+		assert.Loosely(t, s.GetCollection("foo"), should.BeNil)
+		assert.Loosely(t, s.Snapshot(), should.Equal(&s))
 	})
 }
 
 func TestCollectionZeroValue(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Collection's zero value is valid, empty, and read-only.`, t, func() {
+	ftt.Run(`A Collection's zero value is valid, empty, and read-only.`, t, func(t *ftt.Test) {
 		c := Collection{}
 
-		So(c.IsReadOnly(), ShouldBeTrue)
-		So(c.Name(), ShouldEqual, "")
-		So(c.Get("foo"), ShouldBeNil)
-		So(c.Min(), ShouldBeNil)
-		So(c.Max(), ShouldBeNil)
+		assert.Loosely(t, c.IsReadOnly(), should.BeTrue)
+		assert.Loosely(t, c.Name(), should.BeEmpty)
+		assert.Loosely(t, c.Get("foo"), should.BeNil)
+		assert.Loosely(t, c.Min(), should.BeNil)
+		assert.Loosely(t, c.Max(), should.BeNil)
 
 		it := c.Iterator(nil)
-		So(it, ShouldNotBeNil)
-		So(iterAll(it), ShouldHaveLength, 0)
+		assert.Loosely(t, it, should.NotBeNil)
+		assert.Loosely(t, iterAll(it), should.HaveLength(0))
 	})
 }
 
@@ -228,7 +230,7 @@ func TestCollectionZeroValue(t *testing.T) {
 func TestStoreParallel(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing a string Store for parallel access.`, t, func() {
+	ftt.Run(`Testing a string Store for parallel access.`, t, func(t *ftt.Test) {
 		const (
 			readers = 128
 			writers = 16
@@ -305,14 +307,14 @@ func TestStoreParallel(t *testing.T) {
 
 			<-writeDoneC
 
-			check := ShouldBeGreaterThan
+			var check func(int) comparison.Func[int] = should.BeGreaterThan[int]
 			if i == 0 {
 				// The first time around, we *could* read before anything has been
 				// written. Every other time, something from the previous round will
 				// have been written.
-				check = ShouldBeGreaterThanOrEqualTo
+				check = should.BeGreaterThanOrEqual[int]
 			}
-			So(<-readDoneC, check, 0)
+			assert.Loosely(t, <-readDoneC, check(0))
 			snaps = append(snaps, head.Snapshot())
 		}
 	})
