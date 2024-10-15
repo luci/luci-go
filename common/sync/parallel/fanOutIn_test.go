@@ -19,15 +19,17 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFanOutIn(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A FanOutIn call will run as many goroutines as necessary.`, t, func() {
+	ftt.Run(`A FanOutIn call will run as many goroutines as necessary.`, t, func(t *ftt.Test) {
 		const iters = 100
 
 		// Track the number of simultaneous goroutines.
@@ -37,11 +39,11 @@ func TestFanOutIn(t *testing.T) {
 				taskC <- f
 			})
 		})
-		So(err, ShouldBeNil)
-		So(max, ShouldEqual, iters)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, max, should.Equal(iters))
 	})
 
-	Convey(`FanOutIn will return a MultiError if its tasks return an error.`, t, func() {
+	ftt.Run(`FanOutIn will return a MultiError if its tasks return an error.`, t, func(t *ftt.Test) {
 		terr := errors.New("test error")
 		const iters = 100
 
@@ -57,7 +59,7 @@ func TestFanOutIn(t *testing.T) {
 				}
 			}
 		})
-		So(err, ShouldResemble, errors.MultiError{terr})
+		assert.Loosely(t, err, should.Match([]error{terr}, cmpopts.EquateErrors()))
 	})
 }
 

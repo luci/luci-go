@@ -19,14 +19,16 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRunMulti(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A RunMulti operation with two workers can be nested without deadlock.`, t, func() {
+	ftt.Run(`A RunMulti operation with two workers can be nested without deadlock.`, t, func(t *ftt.Test) {
 		const n = 2
 		const inner = 128
 
@@ -69,13 +71,13 @@ func TestRunMulti(t *testing.T) {
 		})
 
 		// Flatten our "n" top-level MultiErrors together.
-		So(err, ShouldHaveSameTypeAs, (errors.MultiError)(nil))
+		assert.Loosely(t, err, should.HaveType[errors.MultiError])
 		aggregateErr := make(errors.MultiError, 0, (n * inner))
 		for _, ierr := range err.(errors.MultiError) {
-			So(ierr, ShouldHaveSameTypeAs, (errors.MultiError)(nil))
+			assert.Loosely(t, ierr, should.HaveType[errors.MultiError])
 			aggregateErr = append(aggregateErr, ierr.(errors.MultiError)...)
 		}
-		So(aggregateErr, ShouldHaveLength, (n * inner))
+		assert.Loosely(t, aggregateErr, should.HaveLength((n * inner)))
 
 		// Make sure all of the error values that we expect are present.
 		actual := make([]int, len(aggregateErr))
@@ -85,10 +87,10 @@ func TestRunMulti(t *testing.T) {
 			expected[i] = i
 		}
 		sort.Ints(actual)
-		So(actual, ShouldResemble, expected)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 
-	Convey(`A RunMulti operation will stop executing jobs if its Context is canceled.`, t, func() {
+	ftt.Run(`A RunMulti operation will stop executing jobs if its Context is canceled.`, t, func(t *ftt.Test) {
 		const n = 128
 		const cancelPoint = 16
 
@@ -112,11 +114,11 @@ func TestRunMulti(t *testing.T) {
 
 		// We should have somewhere between (n-cancelPoint-1) and (n-cancelPoint)
 		// context errors.
-		So(err, ShouldHaveSameTypeAs, (errors.MultiError)(nil))
-		So(len(err.(errors.MultiError)), ShouldBeBetweenOrEqual, n-cancelPoint-1, n-cancelPoint)
+		assert.Loosely(t, err, should.HaveType[errors.MultiError])
+		assert.Loosely(t, len(err.(errors.MultiError)), should.BeBetweenOrEqual(n-cancelPoint-1, n-cancelPoint))
 	})
 
-	Convey(`A RunMulti operation with no worker limit will not be constrained.`, t, func() {
+	ftt.Run(`A RunMulti operation with no worker limit will not be constrained.`, t, func(t *ftt.Test) {
 		const n = 128
 
 		// This will hand out "n" tokens, then close "tokensOutC".
@@ -142,6 +144,6 @@ func TestRunMulti(t *testing.T) {
 				}
 			})
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

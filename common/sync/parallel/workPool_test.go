@@ -19,9 +19,11 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func ExampleWorkPool() {
@@ -46,31 +48,31 @@ func ExampleWorkPool() {
 func TestWorkPool(t *testing.T) {
 	t.Parallel()
 
-	Convey("When running WorkPool tests", t, func() {
-		Convey("Various sized workpools execute their work successfully", func() {
+	ftt.Run("When running WorkPool tests", t, func(t *ftt.Test) {
+		t.Run("Various sized workpools execute their work successfully", func(t *ftt.Test) {
 			val := int32(0)
 
-			Convey("single goroutine", func() {
+			t.Run("single goroutine", func(t *ftt.Test) {
 				WorkPool(1, func(ch chan<- func() error) {
 					for i := 0; i < 100; i++ {
 						ch <- func() error { atomic.AddInt32(&val, 1); return nil }
 					}
 				})
 
-				So(val, ShouldEqual, 100)
+				assert.Loosely(t, val, should.Equal(100))
 			})
 
-			Convey("multiple goroutines", func() {
+			t.Run("multiple goroutines", func(t *ftt.Test) {
 				WorkPool(10, func(ch chan<- func() error) {
 					for i := 0; i < 100; i++ {
 						ch <- func() error { atomic.AddInt32(&val, 1); return nil }
 					}
 				})
 
-				So(val, ShouldEqual, 100)
+				assert.Loosely(t, val, should.Equal(100))
 			})
 
-			Convey("more goroutines than jobs", func() {
+			t.Run("more goroutines than jobs", func(t *ftt.Test) {
 				const workers = 10
 
 				// Execute (100*workers) tasks and confirm that only (workers) workers
@@ -81,12 +83,12 @@ func TestWorkPool(t *testing.T) {
 						taskC <- f
 					})
 				})
-				So(err, ShouldBeNil)
-				So(max, ShouldEqual, workers)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, max, should.Equal(workers))
 			})
 		})
 
-		Convey(`<= 0 workers will behave like FanOutIn.`, func() {
+		t.Run(`<= 0 workers will behave like FanOutIn.`, func(t *ftt.Test) {
 			const iters = 100
 
 			// Track the number of simultaneous goroutines.
@@ -96,25 +98,25 @@ func TestWorkPool(t *testing.T) {
 					taskC <- f
 				})
 			})
-			So(err, ShouldBeNil)
-			So(max, ShouldEqual, iters)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, max, should.Equal(iters))
 		})
 
-		Convey("and testing error handling with a workpool size of 1", func() {
+		t.Run("and testing error handling with a workpool size of 1", func(t *ftt.Test) {
 			e1 := errors.New("red fish")
 			e2 := errors.New("blue fish")
-			Convey("every job failing returns every error", func() {
+			t.Run("every job failing returns every error", func(t *ftt.Test) {
 				result := WorkPool(1, func(ch chan<- func() error) {
 					ch <- func() error { return e1 }
 					ch <- func() error { return e2 }
 				})
 
-				So(result, ShouldHaveLength, 2)
-				So(result, ShouldContain, e1)
-				So(result, ShouldContain, e2)
+				assert.Loosely(t, result, should.HaveLength(2))
+				assert.Loosely(t, result, should.Contain(e1))
+				assert.Loosely(t, result, should.Contain(e2))
 			})
 
-			Convey("some jobs failing return those errors", func() {
+			t.Run("some jobs failing return those errors", func(t *ftt.Test) {
 				result := WorkPool(1, func(ch chan<- func() error) {
 					ch <- func() error { return nil }
 					ch <- func() error { return e1 }
@@ -122,13 +124,13 @@ func TestWorkPool(t *testing.T) {
 					ch <- func() error { return e2 }
 				})
 
-				So(result, ShouldHaveLength, 2)
-				So(result, ShouldContain, e1)
-				So(result, ShouldContain, e2)
+				assert.Loosely(t, result, should.HaveLength(2))
+				assert.Loosely(t, result, should.Contain(e1))
+				assert.Loosely(t, result, should.Contain(e2))
 			})
 		})
 
-		Convey("and testing the worker number parameter", func() {
+		t.Run("and testing the worker number parameter", func(t *ftt.Test) {
 			started := make([]bool, 2)
 			okToTest := make(chan struct{}, 1)
 			gogo := make(chan int)
@@ -137,7 +139,7 @@ func TestWorkPool(t *testing.T) {
 			e1 := errors.New("1 fish")
 			e2 := errors.New("2 fish")
 
-			Convey("2 jobs with 1 worker sequences correctly", func(c C) {
+			t.Run("2 jobs with 1 worker sequences correctly", func(c *ftt.Test) {
 				err := WorkPool(1, func(ch chan<- func() error) {
 					ch <- func() error {
 						started[0] = true
@@ -154,23 +156,23 @@ func TestWorkPool(t *testing.T) {
 					}
 
 					<-okToTest
-					c.So(started[0], ShouldBeTrue)
+					assert.Loosely(c, started[0], should.BeTrue)
 					// Only 1 worker, so the second function should not have started
 					// yet.
-					c.So(started[1], ShouldBeFalse)
+					assert.Loosely(c, started[1], should.BeFalse)
 
-					c.So(<-gogo, ShouldEqual, 1)
+					assert.Loosely(c, <-gogo, should.Equal(1))
 					<-quitting
 
 					// First worker should have died.
 					<-okToTest
-					c.So(started[1], ShouldBeTrue)
-					c.So(<-gogo, ShouldEqual, 2)
+					assert.Loosely(c, started[1], should.BeTrue)
+					assert.Loosely(c, <-gogo, should.Equal(2))
 				})
-				So(err, ShouldResemble, errors.MultiError{
+				assert.Loosely(c, err, should.Match([]error{
 					// Make sure they return in the right order.
 					e1, e2,
-				})
+				}, cmpopts.EquateErrors()))
 			})
 		})
 	})

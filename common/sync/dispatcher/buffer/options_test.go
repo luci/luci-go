@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/retry"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOptionValidationGood(t *testing.T) {
@@ -235,21 +235,21 @@ func TestOptionValidationGood(t *testing.T) {
 		},
 	}
 
-	Convey(`test good option groups`, t, func() {
+	ftt.Run(`test good option groups`, t, func(t *ftt.Test) {
 		for _, options := range goodOptions {
-			Convey(options.name, func() {
+			t.Run(options.name, func(t *ftt.Test) {
 				myOptions := options.options
 				expect := options.expected
 
-				So(myOptions.normalize(), ShouldBeNil)
+				assert.Loosely(t, myOptions.normalize(), should.BeNil)
 
 				// ShouldResemble doesn't like function pointers, apparently, so
 				// explicitly compare the Retry field.
-				So(myOptions.Retry, ShouldEqual, expect.Retry)
+				assert.Loosely(t, myOptions.Retry, should.Match(expect.Retry))
 				myOptions.Retry = nil
 				expect.Retry = nil
 
-				So(myOptions, ShouldResemble, expect)
+				assert.Loosely(t, myOptions, should.Resemble(expect))
 			})
 		}
 	})
@@ -367,11 +367,11 @@ func TestOptionValidationBad(t *testing.T) {
 		},
 	}
 
-	Convey(`test bad option groups`, t, func() {
+	ftt.Run(`test bad option groups`, t, func(t *ftt.Test) {
 		for _, options := range badOptions {
-			Convey(options.name, func() {
+			t.Run(options.name, func(t *ftt.Test) {
 				myOptions := options.options
-				So(myOptions.normalize(), ShouldErrLike, options.expected)
+				assert.Loosely(t, myOptions.normalize(), should.ErrLike(options.expected))
 			})
 		}
 	})

@@ -16,15 +16,17 @@ package dispatcher
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestOptionValidationGood(t *testing.T) {
@@ -58,10 +60,20 @@ func TestOptionValidationGood(t *testing.T) {
 		},
 	}
 
-	Convey(`test good option groups`, t, func() {
+	funcCheck := cmp.FilterPath(
+		func(p cmp.Path) bool {
+			return p.Last().Type().Kind() == reflect.Func
+		}, cmp.Transformer("func.pointer", func(fn any) uintptr {
+			if fn == nil {
+				return 0
+			}
+			return reflect.ValueOf(fn).Pointer()
+		}))
+
+	ftt.Run(`test good option groups`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		for _, options := range goodOptions {
-			Convey(options.name, func() {
+			t.Run(options.name, func(t *ftt.Test) {
 				myOptions := options.options
 				expect := options.expected
 
@@ -70,70 +82,68 @@ func TestOptionValidationGood(t *testing.T) {
 				myOptions.Buffer.Retry = nil
 				expect.Buffer.Retry = nil
 
-				So(myOptions.normalize(ctx), ShouldBeNil)
+				assert.Loosely(t, myOptions.normalize(ctx), should.BeNil)
 
-				// Directly compare function pointers; ShouldResemble doesn't compare
-				// them sensibly.
 				if expect.ErrorFn == nil {
-					So(myOptions.ErrorFn, ShouldNotBeNil) // default is non-nil
+					assert.Loosely(t, myOptions.ErrorFn, should.NotBeNil) // default is non-nil
 				} else {
-					So(myOptions.ErrorFn, ShouldEqual, expect.ErrorFn)
+					assert.That(t, myOptions.ErrorFn, should.Match(expect.ErrorFn, funcCheck))
 					expect.ErrorFn = nil
 				}
 				myOptions.ErrorFn = nil
 
 				if expect.DropFn == nil {
-					So(myOptions.DropFn, ShouldNotBeNil) // default is non-nil
+					assert.Loosely(t, myOptions.DropFn, should.NotBeNil) // default is non-nil
 				} else {
-					So(myOptions.DropFn, ShouldEqual, expect.DropFn)
+					assert.That(t, &myOptions.DropFn, should.Match(&expect.DropFn, funcCheck))
 					expect.DropFn = nil
 				}
 				myOptions.DropFn = nil
 
 				if expect.ItemSizeFunc == nil {
-					So(myOptions.ItemSizeFunc, ShouldBeNil)
+					assert.Loosely(t, myOptions.ItemSizeFunc, should.BeNil)
 				} else {
-					So(myOptions.ItemSizeFunc, ShouldEqual, expect.ItemSizeFunc)
+					assert.Loosely(t, &myOptions.ItemSizeFunc, should.Match(&expect.ItemSizeFunc, funcCheck))
 					expect.ItemSizeFunc = nil
 				}
 				myOptions.ItemSizeFunc = nil
 
-				So(myOptions, ShouldResemble, expect)
+				assert.Loosely(t, myOptions, should.Resemble(expect))
 			})
 		}
 	})
 }
 
 func TestOptionValidationBad(t *testing.T) {
-	Convey(`bad option validation`, t, func() {
+	ftt.Run(`bad option validation`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`QPSLimit`, func() {
+		t.Run(`QPSLimit`, func(t *ftt.Test) {
 			opts := Options[string]{QPSLimit: rate.NewLimiter(100, 0), Buffer: buffer.Defaults}
-			So(opts.normalize(ctx), ShouldErrLike, "QPSLimit has burst size < 1")
+			assert.Loosely(t, opts.normalize(ctx), should.ErrLike("QPSLimit has burst size < 1"))
 		})
 
-		Convey(`ItemSizeFunc == nil`, func() {
-			Convey(`BatchSizeMax > 0`, func() {
+		t.Run(`ItemSizeFunc == nil`, func(t *ftt.Test) {
+			t.Run(`BatchSizeMax > 0`, func(t *ftt.Test) {
 				opts := Options[string]{Buffer: buffer.Defaults}
 				opts.Buffer.BatchSizeMax = 1000
-				So(opts.normalize(ctx), ShouldErrLike, "Buffer.BatchSizeMax > 0")
+				assert.Loosely(t, opts.normalize(ctx), should.ErrLike("Buffer.BatchSizeMax > 0"))
 			})
 		})
 
-		Convey(`MinQPS`, func() {
-			Convey(`MinQPS == rate.Inf`, func() {
+		t.Run(`MinQPS`, func(t *ftt.Test) {
+			t.Run(`MinQPS == rate.Inf`, func(t *ftt.Test) {
 				opts := Options[string]{
 					MinQPS: rate.Inf,
 					Buffer: buffer.Defaults}
-				So(opts.normalize(ctx), ShouldErrLike, "MinQPS cannot be infinite")
+				assert.Loosely(t, opts.normalize(ctx), should.ErrLike("MinQPS cannot be infinite"))
 			})
-			Convey(`MinQPS greater than QPSLimit`, func() {
+			t.Run(`MinQPS greater than QPSLimit`, func(t *ftt.Test) {
 				opts := Options[string]{
 					QPSLimit: rate.NewLimiter(100, 1),
 					MinQPS:   rate.Every(time.Millisecond),
 					Buffer:   buffer.Defaults}
-				So(opts.normalize(ctx), ShouldErrLike, "MinQPS: 1000.000000 is greater than QPSLimit: 100.000000")
+				assert.Loosely(t, opts.normalize(ctx), should.ErrLike("MinQPS: 1000.000000 is greater than QPSLimit: 100.000000"))
 			})
 		})
 	})
