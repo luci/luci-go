@@ -20,7 +20,9 @@ import (
 	"math/rand"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -30,33 +32,33 @@ func init() {
 func Test(t *testing.T) {
 	t.Parallel()
 
-	Convey("test mathrand", t, func() {
-		c := context.Background()
+	ftt.Run("test mathrand", t, func(t *ftt.Test) {
+		ctx := context.Background()
 
-		Convey("unset", func() {
+		t.Run("unset", func(t *ftt.Test) {
 			// Just ensure doesn't crash.
-			So(Get(c).Int()+1 > 0, ShouldBeTrue)
-			So(WithGoRand(c, func(r *rand.Rand) error {
-				So(r.Int(), ShouldBeGreaterThanOrEqualTo, 0)
+			assert.Loosely(t, Get(ctx).Int()+1 > 0, should.BeTrue)
+			assert.Loosely(t, WithGoRand(ctx, func(r *rand.Rand) error {
+				assert.Loosely(t, r.Int(), should.BeGreaterThanOrEqual(0))
 				return nil
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("set persistence", func() {
-			c = Set(c, rand.New(rand.NewSource(12345)))
+		t.Run("set persistence", func(t *ftt.Test) {
+			ctx = Set(ctx, rand.New(rand.NewSource(12345)))
 			r := rand.New(rand.NewSource(12345))
-			So(Get(c).Int(), ShouldEqual, r.Int())
-			So(Get(c).Int(), ShouldEqual, r.Int())
+			assert.Loosely(t, Get(ctx).Int(), should.Equal(r.Int()))
+			assert.Loosely(t, Get(ctx).Int(), should.Equal(r.Int()))
 		})
 
-		Convey("nil set", func() {
-			c = Set(c, nil)
+		t.Run("nil set", func(t *ftt.Test) {
+			ctx = Set(ctx, nil)
 			// Just ensure doesn't crash.
-			So(Get(c).Int()+1 > 0, ShouldBeTrue)
+			assert.Loosely(t, Get(ctx).Int()+1 > 0, should.BeTrue)
 		})
 	})
 
-	Convey("fairness of uninitialized source", t, func() {
+	ftt.Run("fairness of uninitialized source", t, func(t *ftt.Test) {
 		// We do some ugly stuff in Get(...) if context doesn't have math.Rand set,
 		// check that the produced RNG sequence matches the uniform distribution
 		// at least at first two moments.
@@ -68,19 +70,19 @@ func Test(t *testing.T) {
 		// For ideal uniform [0, 1) distribution it should be:
 		// Average: 0.500000
 		// Standard deviation: 0.288675
-		So(mean, ShouldBeBetween, 0.495, 0.505)
-		So(dev, ShouldBeBetween, 0.284, 0.29)
+		assert.Loosely(t, mean, should.BeBetween(0.495, 0.505))
+		assert.Loosely(t, dev, should.BeBetween(0.284, 0.29))
 	})
 }
 
-func testConcurrentAccess(t *testing.T, r *rand.Rand) {
+func testConcurrentAccess(t *ftt.Test, r *rand.Rand) {
 	const goroutines = 16
 	const rounds = 1024
 
-	Convey(`Concurrent access does not produce a race or deadlock.`, func() {
-		c := context.Background()
+	t.Run(`Concurrent access does not produce a race or deadlock.`, func(t *ftt.Test) {
+		ctx := context.Background()
 		if r != nil {
-			c = Set(c, r)
+			ctx = Set(ctx, r)
 		}
 
 		startC := make(chan struct{})
@@ -93,7 +95,7 @@ func testConcurrentAccess(t *testing.T, r *rand.Rand) {
 
 				<-startC
 				for i := 0; i < rounds; i++ {
-					Int(c)
+					Int(ctx)
 				}
 			}()
 		}
@@ -109,16 +111,16 @@ func testConcurrentAccess(t *testing.T, r *rand.Rand) {
 // TestConcurrentGlobalAccess is intentionally NOT Parallel, since we want to
 // have exclusive access to the global instance.
 func TestConcurrentGlobalAccess(t *testing.T) {
-	Convey(`Testing concurrent global access`, t, func() {
-		testConcurrentAccess(t, nil)
+	ftt.Run(`Testing concurrent global access`, t, func(c *ftt.Test) {
+		testConcurrentAccess(c, nil)
 	})
 }
 
 func TestConcurrentAccess(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Testing concurrent non-global access`, t, func() {
-		testConcurrentAccess(t, newRand())
+	ftt.Run(`Testing concurrent non-global access`, t, func(c *ftt.Test) {
+		testConcurrentAccess(c, newRand())
 	})
 }
 
