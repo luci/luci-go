@@ -53,7 +53,9 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 				ID:     bld.Proto.Builder.Builder,
 				Parent: model.BucketKey(ctx, bld.Proto.Builder.Project, bld.Proto.Builder.Bucket),
 			}
-			if err := datastore.Get(ctx, bldr); err != nil {
+			// Get the builder out of transaction to avoid "concurrent transaction"
+			// errors with too many concurrent reads on a busy builder.
+			if err := datastore.Get(datastore.WithoutTransaction(ctx), bldr); err != nil {
 				if errors.Is(err, datastore.ErrNoSuchEntity) {
 					// Builder not found. Could be
 					// * The build runs in a dynamic builder,
