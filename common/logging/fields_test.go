@@ -21,7 +21,10 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type stringStruct struct {
@@ -37,141 +40,147 @@ func (s *stringStruct) String() string {
 // TestFieldEntry tests methods associated with the FieldEntry and
 // fieldEntrySlice types.
 func TestFieldEntry(t *testing.T) {
-	Convey(`A FieldEntry instance: "value" => "\"Hello, World!\""`, t, func() {
+	ftt.Run(`A FieldEntry instance: "value" => "\"Hello, World!\""`, t, func(t *ftt.Test) {
 		fe := FieldEntry{"value", `"Hello, World!"`}
 
-		Convey(`Has a String() value, "value":"\"Hello, World!\"".`, func() {
-			So(fe.String(), ShouldEqual, `"value":"\"Hello, World!\""`)
+		t.Run(`Has a String() value, "value":"\"Hello, World!\"".`, func(t *ftt.Test) {
+			assert.Loosely(t, fe.String(), should.Equal(`"value":"\"Hello, World!\""`))
 		})
 	})
 
-	Convey(`A FieldEntry instance: "value" => 42`, t, func() {
+	ftt.Run(`A FieldEntry instance: "value" => 42`, t, func(t *ftt.Test) {
 		fe := FieldEntry{"value", 42}
 
-		Convey(`Has a String() value, "value":"42".`, func() {
-			So(fe.String(), ShouldEqual, `"value":42`)
+		t.Run(`Has a String() value, "value":"42".`, func(t *ftt.Test) {
+			assert.Loosely(t, fe.String(), should.Equal(`"value":42`))
 		})
 	})
 
-	Convey(`A FieldEntry instance: "value" => stringStruct{"My \"value\""}`, t, func() {
+	ftt.Run(`A FieldEntry instance: "value" => stringStruct{"My \"value\""}`, t, func(t *ftt.Test) {
 		fe := FieldEntry{"value", &stringStruct{`My "value"`}}
 
-		Convey(`Has a String() value, "value":"My \"value\"".`, func() {
-			So(fe.String(), ShouldEqual, `"value":"My \"value\""`)
+		t.Run(`Has a String() value, "value":"My \"value\"".`, func(t *ftt.Test) {
+			assert.Loosely(t, fe.String(), should.Equal(`"value":"My \"value\""`))
 		})
 	})
 
-	Convey(`A FieldEntry instance: "value" => error{"There was a \"failure\"}`, t, func() {
+	ftt.Run(`A FieldEntry instance: "value" => error{"There was a \"failure\"}`, t, func(t *ftt.Test) {
 		fe := FieldEntry{"value", errors.New(`There was a "failure"`)}
 
-		Convey(`Has a String() value, "value":"There was a \"failure\"".`, func() {
-			So(fe.String(), ShouldEqual, `"value":"There was a \"failure\""`)
+		t.Run(`Has a String() value, "value":"There was a \"failure\"".`, func(t *ftt.Test) {
+			assert.Loosely(t, fe.String(), should.Equal(`"value":"There was a \"failure\""`))
 		})
 	})
 
-	Convey(`A FieldEntry instance: "value" => struct{a: "Hello!", b: 42}`, t, func() {
+	ftt.Run(`A FieldEntry instance: "value" => struct{a: "Hello!", b: 42}`, t, func(t *ftt.Test) {
 		type myStruct struct {
 			a string
 			b int
 		}
 		fe := FieldEntry{"value", &myStruct{"Hello!", 42}}
 
-		Convey(`Has a String() value, "value":myStruct { a: "Hello!", b: 42 }".`, func() {
-			So(fe.String(), ShouldEqual, `"value":&logging.myStruct{a:"Hello!", b:42}`)
+		t.Run(`Has a String() value, "value":myStruct { a: "Hello!", b: 42 }".`, func(t *ftt.Test) {
+			assert.Loosely(t, fe.String(), should.Equal(`"value":&logging.myStruct{a:"Hello!", b:42}`))
 		})
 	})
 
-	Convey(`A fieldEntrySlice: {foo/bar, error/z, asdf/baz}`, t, func() {
+	ftt.Run(`A fieldEntrySlice: {foo/bar, error/z, asdf/baz}`, t, func(t *ftt.Test) {
+		zErr := errors.New("z")
 		fes := fieldEntrySlice{
 			&FieldEntry{"foo", "bar"},
-			&FieldEntry{ErrorKey, errors.New("z")},
+			&FieldEntry{ErrorKey, zErr},
 			&FieldEntry{"asdf", "baz"},
 		}
 
-		Convey(`Should be sorted: [error, asdf, foo].`, func() {
+		t.Run(`Should be sorted: [error, asdf, foo].`, func(t *ftt.Test) {
 			sorted := make(fieldEntrySlice, len(fes))
 			copy(sorted, fes)
 			sort.Sort(sorted)
 
-			So(sorted, ShouldResemble, fieldEntrySlice{fes[1], fes[2], fes[0]})
+			assert.Loosely(t, sorted, should.Match(
+				fieldEntrySlice{fes[1], fes[2], fes[0]},
+				cmpopts.EquateErrors()))
 		})
 	})
 }
 
 func TestFields(t *testing.T) {
-	Convey(`A nil Fields`, t, func() {
+	ftt.Run(`A nil Fields`, t, func(t *ftt.Test) {
 		fm := Fields(nil)
 
-		Convey(`Returns nil when Copied with an empty Fields.`, func() {
-			So(fm.Copy(Fields{}), ShouldBeNil)
+		t.Run(`Returns nil when Copied with an empty Fields.`, func(t *ftt.Test) {
+			assert.Loosely(t, fm.Copy(Fields{}), should.BeNil)
 		})
 
-		Convey(`Returns a populated Fields when Copied with a populated Fields.`, func() {
+		t.Run(`Returns a populated Fields when Copied with a populated Fields.`, func(t *ftt.Test) {
 			other := Fields{
 				"foo": "bar",
 				"baz": "qux",
 			}
-			So(fm.Copy(other), ShouldResemble, Fields{"foo": "bar", "baz": "qux"})
+			assert.Loosely(t, fm.Copy(other), should.Resemble(Fields{"foo": "bar", "baz": "qux"}))
 		})
 
-		Convey(`Returns the populated Fields when Copied with a populated Fields.`, func() {
+		t.Run(`Returns the populated Fields when Copied with a populated Fields.`, func(t *ftt.Test) {
 			other := Fields{
 				"foo": "bar",
 				"baz": "qux",
 			}
-			So(fm.Copy(other), ShouldResemble, other)
+			assert.Loosely(t, fm.Copy(other), should.Match(
+				other, cmpopts.EquateErrors()))
 		})
 	})
 
-	Convey(`A populated Fields`, t, func() {
+	ftt.Run(`A populated Fields`, t, func(t *ftt.Test) {
 		fm := NewFields(map[string]any{
 			"foo": "bar",
 			"baz": "qux",
 		})
-		So(fm, ShouldHaveSameTypeAs, Fields(nil))
+		assert.Loosely(t, fm, should.HaveType[Fields])
 
-		Convey(`Returns an augmented Fields when Copied with a populated Fields.`, func() {
-			other := Fields{
-				ErrorKey: errors.New("err"),
-			}
-			So(fm.Copy(other), ShouldResemble, Fields{"foo": "bar", "baz": "qux", ErrorKey: errors.New("err")})
+		t.Run(`Returns an augmented Fields when Copied with a populated Fields.`, func(t *ftt.Test) {
+			err := errors.New("err")
+			other := Fields{ErrorKey: err}
+			assert.Loosely(t, fm.Copy(other), should.Match(
+				Fields{"foo": "bar", "baz": "qux", ErrorKey: err},
+				cmpopts.EquateErrors()))
 		})
 
-		Convey(`Has a String representation: {"baz":"qux", "foo":"bar"}`, func() {
-			So(fm.String(), ShouldEqual, `{"baz":"qux", "foo":"bar"}`)
+		t.Run(`Has a String representation: {"baz":"qux", "foo":"bar"}`, func(t *ftt.Test) {
+			assert.Loosely(t, fm.String(), should.Equal(`{"baz":"qux", "foo":"bar"}`))
 		})
 	})
 }
 
 func TestContextFields(t *testing.T) {
-	Convey(`An empty Context`, t, func() {
+	ftt.Run(`An empty Context`, t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey(`Has no Fields.`, func() {
-			So(GetFields(c), ShouldBeNil)
+		t.Run(`Has no Fields.`, func(t *ftt.Test) {
+			assert.Loosely(t, GetFields(c), should.BeNil)
 		})
 
-		Convey(`Sets {"foo": "bar", "baz": "qux"}`, func() {
+		t.Run(`Sets {"foo": "bar", "baz": "qux"}`, func(t *ftt.Test) {
 			c = SetFields(c, Fields{
 				"foo": "bar",
 				"baz": "qux",
 			})
-			So(GetFields(c), ShouldResemble, Fields{
+			assert.Loosely(t, GetFields(c), should.Resemble(Fields{
 				"foo": "bar",
 				"baz": "qux",
-			})
+			}))
 
-			Convey(`Is overridden by: {"foo": "override", "error": "failure"}`, func() {
+			t.Run(`Is overridden by: {"foo": "override", "error": "failure"}`, func(t *ftt.Test) {
+				err := errors.New("failure")
 				c = SetFields(c, Fields{
 					"foo":   "override",
-					"error": errors.New("failure"),
+					"error": err,
 				})
 
-				So(GetFields(c), ShouldResemble, Fields{
+				assert.Loosely(t, GetFields(c), should.Match(Fields{
 					"foo":   "override",
 					"baz":   "qux",
-					"error": errors.New("failure"),
-				})
+					"error": err,
+				}, cmpopts.EquateErrors()))
 			})
 		})
 	})

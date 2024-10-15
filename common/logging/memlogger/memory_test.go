@@ -20,24 +20,26 @@ import (
 	"sync"
 	"testing"
 
-	cv "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestLogger(t *testing.T) {
-	cv.Convey("Zero", t, func() {
+	ftt.Run("Zero", t, func(t *ftt.Test) {
 		var l MemLogger
 		l.Debugf("test %s", logging.Debug)
 		l.Infof("test %s", logging.Info)
 
-		cv.So(&l, ShouldHaveLog, logging.Debug, "test debug")
-		cv.So(&l, ShouldHaveLog, logging.Info, "test info")
+		assert.Loosely(t, &l, convey.Adapt(ShouldHaveLog)(logging.Debug, "test debug"))
+		assert.Loosely(t, &l, convey.Adapt(ShouldHaveLog)(logging.Info, "test info"))
 	})
-	cv.Convey("logger", t, func() {
+	ftt.Run("logger", t, func(t *ftt.Test) {
 		c := Use(logging.SetLevel(context.Background(), logging.Debug))
 		l := logging.Get(c)
-		cv.So(l, cv.ShouldNotBeNil)
+		assert.Loosely(t, l, should.NotBeNil)
 		l.Debugf("test %s", logging.Debug)
 		l.Infof("test %s", logging.Info)
 		l.Warningf("test %s", logging.Warning)
@@ -45,26 +47,26 @@ func TestLogger(t *testing.T) {
 		l.Errorf("test WAT: %s", logging.Level(9001))
 		ml := l.(*MemLogger)
 
-		cv.So(ml, ShouldHaveLog, logging.Debug, "test debug")
-		cv.So(ml, ShouldHaveLog, logging.Info, "test info")
-		cv.So(ml, ShouldHaveLog, logging.Warning, "test warning")
-		cv.So(ml, ShouldHaveLog, logging.Error, "test error")
-		cv.So(ml, ShouldHaveLog, logging.Error, "test WAT: unknown")
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Debug, "test debug"))
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Info, "test info"))
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Warning, "test warning"))
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Error, "test error"))
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Error, "test WAT: unknown"))
 	})
 
-	cv.Convey("logger context", t, func() {
+	ftt.Run("logger context", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 		l := logging.Get(c)
-		cv.So(l, cv.ShouldNotBeNil)
+		assert.Loosely(t, l, should.NotBeNil)
 		ml := l.(*MemLogger)
 
 		l.Infof("totally works: %s", "yes")
 
-		cv.So(ml, ShouldHaveLog, logging.Info, "totally works: yes")
-		cv.So(ml, ShouldNotHaveLog, logging.Warning, "totally works: yes")
+		assert.Loosely(t, ml, convey.Adapt(ShouldHaveLog)(logging.Info, "totally works: yes"))
+		assert.Loosely(t, ml, convey.Adapt(ShouldNotHaveLog)(logging.Warning, "totally works: yes"))
 	})
 
-	cv.Convey("field data", t, func() {
+	ftt.Run("field data", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 		data := map[string]any{
 			"trombone": 50,
@@ -76,25 +78,25 @@ func TestLogger(t *testing.T) {
 
 		l.Infof("Some unsuspecting log")
 		msgs := ml.Messages()
-		cv.So(msgs[0].Data["trombone"], cv.ShouldEqual, 50)
-		cv.So(msgs[0].Data["cat"], cv.ShouldEqual, "amazing")
+		assert.Loosely(t, msgs[0].Data["trombone"], should.Equal(50))
+		assert.Loosely(t, msgs[0].Data["cat"], should.Equal("amazing"))
 	})
 
-	cv.Convey("reset", t, func() {
+	ftt.Run("reset", t, func(t *ftt.Test) {
 		c := Use(context.Background())
 		l := logging.Get(c).(*MemLogger)
 
 		l.Infof("hello")
-		cv.So(len(l.Messages()), cv.ShouldEqual, 1)
+		assert.Loosely(t, len(l.Messages()), should.Equal(1))
 
 		l.Reset()
-		cv.So(len(l.Messages()), cv.ShouldEqual, 0)
+		assert.Loosely(t, len(l.Messages()), should.BeZero)
 
 		l.Infof("shweeet")
-		cv.So(len(l.Messages()), cv.ShouldEqual, 1)
+		assert.Loosely(t, len(l.Messages()), should.Equal(1))
 	})
 
-	cv.Convey("dump", t, func() {
+	ftt.Run("dump", t, func(t *ftt.Test) {
 		var l MemLogger
 		l.fields = map[string]any{"key": 100}
 		l.Debugf("test %s", logging.Debug)
@@ -103,19 +105,19 @@ func TestLogger(t *testing.T) {
 		buf := bytes.Buffer{}
 		l.Dump(&buf)
 
-		cv.So(buf.String(), cv.ShouldEqual, `
+		assert.Loosely(t, buf.String(), should.Equal(`
 DUMP LOG:
   debug: test debug: {"key":100}
   info: test info: {"key":100}
-`)
+`))
 	})
 }
 
 func TestLoggerAssertion(t *testing.T) {
 	t.Parallel()
 
-	cv.Convey("ShouldHaveLog", t, func() {
-		cv.Convey("basic", func() {
+	ftt.Run("ShouldHaveLog", t, func(t *ftt.Test) {
+		t.Run("basic", func(t *ftt.Test) {
 			m := &MemLogger{
 				lock: &sync.Mutex{},
 				data: &[]LogEntry{
@@ -128,13 +130,13 @@ func TestLoggerAssertion(t *testing.T) {
 				},
 			}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 3}), cv.ShouldEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "Hi THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error, "THAR", map[string]any{"hi": 4}), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 3}), should.BeEmpty)
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "HI THAR", map[string]any{"hi": 4}), should.NotEqual(""))
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "Hi THAR", map[string]any{"hi": 4}), should.NotEqual(""))
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "THAR", map[string]any{"hi": 4}), should.NotEqual(""))
 		})
 
-		cv.Convey("level and message", func() {
+		t.Run("level and message", func(t *ftt.Test) {
 			m := &MemLogger{
 				lock: &sync.Mutex{},
 				data: &[]LogEntry{
@@ -146,10 +148,10 @@ func TestLoggerAssertion(t *testing.T) {
 				},
 			}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR"), cv.ShouldEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "HI THAR"), should.BeEmpty)
 		})
 
-		cv.Convey("level only", func() {
+		t.Run("level only", func(t *ftt.Test) {
 			m := &MemLogger{
 				lock: &sync.Mutex{},
 				data: &[]LogEntry{
@@ -162,45 +164,45 @@ func TestLoggerAssertion(t *testing.T) {
 				},
 			}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "BYE"), cv.ShouldNotEqual, "")
-			cv.So(ShouldHaveLog(m, logging.Error), cv.ShouldEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "BYE"), should.NotEqual(""))
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error), should.BeEmpty)
 		})
 
-		cv.Convey("bad logger", func() {
-			cv.So(ShouldHaveLog(nil), cv.ShouldNotEqual, "")
+		t.Run("bad logger", func(t *ftt.Test) {
+			assert.Loosely(t, ShouldHaveLog(nil), should.NotEqual(""))
 		})
 
-		cv.Convey("bad level", func() {
+		t.Run("bad level", func(t *ftt.Test) {
 			m := &MemLogger{}
 
-			cv.So(ShouldHaveLog(m, "BOO"), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, "BOO"), should.NotEqual(""))
 		})
 
-		cv.Convey("bad message", func() {
+		t.Run("bad message", func(t *ftt.Test) {
 			m := &MemLogger{}
 
-			cv.So(ShouldHaveLog(m, logging.Error, 48), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, 48), should.NotEqual(""))
 		})
 
-		cv.Convey("bad depth", func() {
+		t.Run("bad depth", func(t *ftt.Test) {
 			m := &MemLogger{}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "HI THAR", "NO BAD"), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "HI THAR", "NO BAD"), should.NotEqual(""))
 		})
 
-		cv.Convey("not found", func() {
+		t.Run("not found", func(t *ftt.Test) {
 			m := &MemLogger{
 				lock: &sync.Mutex{},
 				data: &[]LogEntry{},
 			}
 
-			cv.So(ShouldHaveLog(m, logging.Error, "BYE THAR", 47), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m, logging.Error, "BYE THAR", 47), should.NotEqual(""))
 		})
 
-		cv.Convey("need at least one argument", func() {
+		t.Run("need at least one argument", func(t *ftt.Test) {
 			m := &MemLogger{}
 
-			cv.So(ShouldHaveLog(m), cv.ShouldNotEqual, "")
+			assert.Loosely(t, ShouldHaveLog(m), should.NotEqual(""))
 		})
 	})
 }
