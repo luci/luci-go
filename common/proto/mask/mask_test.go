@@ -18,64 +18,70 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(Mask{}))
+}
 
 type testMsg = testingpb.Full
 
 var testMsgDescriptor = proto.MessageReflect(&testMsg{}).Descriptor()
 
 func TestNormalizePath(t *testing.T) {
-	Convey("Retrun empty paths when given empty paths", t, func() {
-		So(normalizePaths([]path{}), ShouldResemble, []path{})
+	ftt.Run("Retrun empty paths when given empty paths", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizePaths([]path{}), should.Resemble([]path{}))
 	})
-	Convey("Remove all deduplicate paths", t, func() {
-		So(normalizePaths([]path{
+	ftt.Run("Remove all deduplicate paths", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizePaths([]path{
 			{"a", "b"},
 			{"a", "b"},
 			{"a", "b"},
-		}), ShouldResemble, []path{
+		}), should.Resemble([]path{
 			{"a", "b"},
-		})
+		}))
 	})
-	Convey("Remove all redundant paths and return sorted", t, func() {
-		So(normalizePaths([]path{
+	ftt.Run("Remove all redundant paths and return sorted", t, func(t *ftt.Test) {
+		assert.Loosely(t, normalizePaths([]path{
 			{"b", "z"},
 			{"b", "c", "d"},
 			{"b", "c"},
 			{"a"},
-		}), ShouldResemble, []path{
+		}), should.Resemble([]path{
 			{"a"},
 			{"b", "c"},
 			{"b", "z"},
-		})
+		}))
 	})
 }
 
 func TestFromFieldMask(t *testing.T) {
-	Convey("From", t, func() {
+	ftt.Run("From", t, func(t *ftt.Test) {
 		parse := func(paths []string, isUpdateMask bool) (*Mask, error) {
 			return FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, isUpdateMask)
 		}
 
-		Convey("empty field mask", func() {
+		t.Run("empty field mask", func(t *ftt.Test) {
 			actual, err := parse([]string{}, false)
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, &Mask{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
-			})
+			}))
 		})
 
-		Convey("field mask with scalar and message fields", func() {
+		t.Run("field mask with scalar and message fields", func(t *ftt.Test) {
 			actual, err := parse([]string{"str", "num", "msg.num"}, false)
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, &Mask{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]*Mask{
 					"str": {},
@@ -87,12 +93,12 @@ func TestFromFieldMask(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("field mask with map field", func() {
+		t.Run("field mask with map field", func(t *ftt.Test) {
 			actual, err := parse([]string{"map_str_msg.some_key.str", "map_str_num.another_key"}, false)
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, &Mask{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]*Mask{
 					"map_str_msg": {
@@ -115,12 +121,12 @@ func TestFromFieldMask(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
-		Convey("field mask with repeated field", func() {
+		t.Run("field mask with repeated field", func(t *ftt.Test) {
 			actual, err := parse([]string{"nums", "msgs.*.str"}, false)
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, &Mask{
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
 				children: map[string]*Mask{
 					"msgs": {
@@ -139,56 +145,56 @@ func TestFromFieldMask(t *testing.T) {
 						isRepeated: true,
 					},
 				},
-			})
+			}))
 		})
-		Convey("update mask", func() {
+		t.Run("update mask", func(t *ftt.Test) {
 			_, err := parse([]string{"msgs.*.str"}, true)
-			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: msgs is not last")
+			assert.Loosely(t, err, should.ErrLike("update mask allows a repeated field only at the last position; field: msgs is not last"))
 			_, err = parse([]string{"map_str_msg.*.str"}, true)
-			So(err, ShouldErrLike, "update mask allows a repeated field only at the last position; field: map_str_msg is not last")
+			assert.Loosely(t, err, should.ErrLike("update mask allows a repeated field only at the last position; field: map_str_msg is not last"))
 			_, err = parse([]string{"map_str_num.some_key"}, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 func TestTrim(t *testing.T) {
-	Convey("Test", t, func() {
+	ftt.Run("Test", t, func(t *ftt.Test) {
 		testTrim := func(maskPaths []string, msg proto.Message) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(msg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
-		Convey("trim scalar field", func() {
+		t.Run("trim scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
 		})
-		Convey("keep scalar field", func() {
+		t.Run("keep scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Num: 1}
 			testTrim([]string{"num"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{Num: 1})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
 		})
-		Convey("trim repeated scalar field", func() {
+		t.Run("trim repeated scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
 		})
-		Convey("keep repeated scalar field", func() {
+		t.Run("keep repeated scalar field", func(t *ftt.Test) {
 			msg := &testMsg{Nums: []int32{1, 2}}
 			testTrim([]string{"nums"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{Nums: []int32{1, 2}})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{Nums: []int32{1, 2}}))
 		})
-		Convey("trim submessage", func() {
+		t.Run("trim submessage", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msg: &testMsg{
 					Num: 1,
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
 		})
-		Convey("keep submessage entirely", func() {
+		t.Run("keep submessage entirely", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msg: &testMsg{
 					Num: 1,
@@ -196,14 +202,14 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "abc",
 				},
-			})
+			}))
 		})
-		Convey("keep submessage partially", func() {
+		t.Run("keep submessage partially", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msg: &testMsg{
 					Num: 1,
@@ -211,13 +217,13 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msg.str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				Msg: &testMsg{
 					Str: "abc",
 				},
-			})
+			}))
 		})
-		Convey("trim repeated message field", func() {
+		t.Run("trim repeated message field", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msgs: []*testMsg{
 					{Num: 1},
@@ -225,9 +231,9 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
 		})
-		Convey("keep subfield of repeated message field entirely", func() {
+		t.Run("keep subfield of repeated message field entirely", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msgs: []*testMsg{
 					{Num: 1, Str: "abc"},
@@ -235,14 +241,14 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				Msgs: []*testMsg{
 					{Num: 1, Str: "abc"},
 					{Num: 2, Str: "bcd"},
 				},
-			})
+			}))
 		})
-		Convey("keep subfield of repeated message field partially", func() {
+		t.Run("keep subfield of repeated message field partially", func(t *ftt.Test) {
 			msg := &testMsg{
 				Msgs: []*testMsg{
 					{Num: 1, Str: "abc"},
@@ -250,21 +256,21 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"msgs.*.str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				Msgs: []*testMsg{
 					{Str: "abc"},
 					{Str: "bcd"},
 				},
-			})
+			}))
 		})
-		Convey("trim map field", func() {
+		t.Run("trim map field", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrNum: map[string]int32{"a": 1},
 			}
 			testTrim([]string{"str"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{}))
 		})
-		Convey("trim map (scalar value)", func() {
+		t.Run("trim map (scalar value)", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrNum: map[string]int32{
 					"a": 1,
@@ -272,13 +278,13 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_num.a"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				MapStrNum: map[string]int32{
 					"a": 1,
 				},
-			})
+			}))
 		})
-		Convey("trim map (message value) ", func() {
+		t.Run("trim map (message value) ", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
@@ -286,13 +292,13 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 				},
-			})
+			}))
 		})
-		Convey("trim map (message value) and keep message value partially", func() {
+		t.Run("trim map (message value) and keep message value partially", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1, Str: "abc"},
@@ -300,13 +306,13 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.a.num"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 				},
-			})
+			}))
 		})
-		Convey("trim map (message value) with star key and keep message value partially", func() {
+		t.Run("trim map (message value) with star key and keep message value partially", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1, Str: "abc"},
@@ -314,14 +320,14 @@ func TestTrim(t *testing.T) {
 				},
 			}
 			testTrim([]string{"map_str_msg.*.num"}, msg)
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
 				},
-			})
+			}))
 		})
-		Convey("trim map (message value) with both star key and actual key", func() {
+		t.Run("trim map (message value) with both star key and actual key", func(t *ftt.Test) {
 			msg := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1, Str: "abc"},
@@ -330,111 +336,111 @@ func TestTrim(t *testing.T) {
 			}
 			testTrim([]string{"map_str_msg.*.num", "map_str_msg.a"}, msg)
 			// expect keep "a" entirely and "b" partially
-			So(msg, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, msg, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1, Str: "abc"},
 					"b": {Num: 2},
 				},
-			})
+			}))
 		})
-		Convey("No-op for empty mask trim", func() {
+		t.Run("No-op for empty mask trim", func(t *ftt.Test) {
 			m, msg := Mask{}, &testMsg{Num: 1}
 			m.Trim(msg)
-			So(msg, ShouldResembleProto, &testMsg{Num: 1})
+			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
 		})
-		Convey("Error when trim nil message", func() {
+		t.Run("Error when trim nil message", func(t *ftt.Test) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var msg proto.Message
 			err = m.Trim(msg)
-			So(err, ShouldErrLike, "nil message")
+			assert.Loosely(t, err, should.ErrLike("nil message"))
 		})
-		Convey("Error when descriptor mismatch", func() {
+		t.Run("Error when descriptor mismatch", func(t *ftt.Test) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(&testingpb.Simple{})
-			So(err, ShouldErrLike, "expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple")
+			assert.Loosely(t, err, should.ErrLike("expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
 		})
 	})
 }
 
 func TestIncludes(t *testing.T) {
-	Convey("Test include", t, func() {
+	ftt.Run("Test include", t, func(t *ftt.Test) {
 		testIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual, err := m.Includes(path)
-			So(err, ShouldBeNil)
-			So(actual, ShouldEqual, expectedIncl)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Equal(expectedIncl))
 		}
-		Convey("all", func() {
+		t.Run("all", func(t *ftt.Test) {
 			testIncludes([]string{}, "str", IncludeEntirely)
 		})
-		Convey("entirely", func() {
+		t.Run("entirely", func(t *ftt.Test) {
 			testIncludes([]string{"str"}, "str", IncludeEntirely)
 		})
-		Convey("entirely multiple levels", func() {
+		t.Run("entirely multiple levels", func(t *ftt.Test) {
 			testIncludes([]string{"msg.msg.str"}, "msg.msg.str", IncludeEntirely)
 		})
-		Convey("entirely star", func() {
+		t.Run("entirely star", func(t *ftt.Test) {
 			testIncludes([]string{"map_str_msg.*.str"}, "map_str_msg.xyz.str", IncludeEntirely)
 		})
-		Convey("partially", func() {
+		t.Run("partially", func(t *ftt.Test) {
 			testIncludes([]string{"msg.str"}, "msg", IncludePartially)
 		})
-		Convey("partially multiple levels", func() {
+		t.Run("partially multiple levels", func(t *ftt.Test) {
 			testIncludes([]string{"msg.msg.str"}, "msg.msg", IncludePartially)
 		})
-		Convey("partially star", func() {
+		t.Run("partially star", func(t *ftt.Test) {
 			testIncludes([]string{"map_str_msg.*.str"}, "map_str_msg.xyz", IncludePartially)
 		})
-		Convey("exclude", func() {
+		t.Run("exclude", func(t *ftt.Test) {
 			testIncludes([]string{"str"}, "num", Exclude)
 		})
-		Convey("exclude multiple levels", func() {
+		t.Run("exclude multiple levels", func(t *ftt.Test) {
 			testIncludes([]string{"msg.str"}, "msg.num", Exclude)
 		})
 	})
 
-	Convey("Test MustIncludes", t, func() {
+	ftt.Run("Test MustIncludes", t, func(t *ftt.Test) {
 		testMustIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual := m.MustIncludes(path)
-			So(actual, ShouldEqual, expectedIncl)
+			assert.Loosely(t, actual, should.Equal(expectedIncl))
 		}
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			testMustIncludes([]string{}, "str", IncludeEntirely)
 		})
 
-		Convey("panics", func() {
+		t.Run("panics", func(t *ftt.Test) {
 			// expected delimiter: .; got @'
-			So(func() { testMustIncludes([]string{}, "str@", IncludeEntirely) }, ShouldPanic)
+			assert.Loosely(t, func() { testMustIncludes([]string{}, "str@", IncludeEntirely) }, should.Panic)
 		})
 	})
 }
 
 func TestMerge(t *testing.T) {
-	Convey("Test merge", t, func() {
+	ftt.Run("Test merge", t, func(t *ftt.Test) {
 		testMerge := func(maskPaths []string, src *testMsg, dest *testMsg) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
-			So(m.Merge(src, dest), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, m.Merge(src, dest), should.BeNil)
 		}
-		Convey("scalar field", func() {
+		t.Run("scalar field", func(t *ftt.Test) {
 			src := &testMsg{Num: 1}
 			dest := &testMsg{Num: 2}
 			testMerge([]string{"num"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{Num: 1})
+			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1}))
 		})
-		Convey("repeated scalar field", func() {
+		t.Run("repeated scalar field", func(t *ftt.Test) {
 			src := &testMsg{Nums: []int32{1, 2, 3}}
 			dest := &testMsg{Nums: []int32{4, 5}}
 			testMerge([]string{"nums"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{Nums: []int32{1, 2, 3}})
+			assert.Loosely(t, dest, should.Resemble(&testMsg{Nums: []int32{1, 2, 3}}))
 		})
-		Convey("repeated message field", func() {
+		t.Run("repeated message field", func(t *ftt.Test) {
 			src := &testMsg{
 				Msgs: []*testMsg{
 					{Num: 1},
@@ -447,14 +453,14 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msgs"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				Msgs: []*testMsg{
 					{Num: 1},
 					{Str: "abc"},
 				},
-			})
+			}))
 		})
-		Convey("entire submessage", func() {
+		t.Run("entire submessage", func(t *ftt.Test) {
 			src := &testMsg{
 				Msg: &testMsg{
 					Num: 1,
@@ -468,14 +474,14 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msg"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "abc",
 				},
-			})
+			}))
 		})
-		Convey("partial submessage", func() {
+		t.Run("partial submessage", func(t *ftt.Test) {
 			src := &testMsg{
 				Msg: &testMsg{
 					Num: 1,
@@ -489,54 +495,54 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"msg.num"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				Msg: &testMsg{
 					Num: 1,
 					Str: "def",
 				},
-			})
+			}))
 		})
-		Convey("nil message", func() {
+		t.Run("nil message", func(t *ftt.Test) {
 			src := &testMsg{
 				Msg: nil,
 			}
-			Convey("last seg is message itself", func() {
+			t.Run("last seg is message itself", func(t *ftt.Test) {
 				dest := &testMsg{
 					Msg: &testMsg{
 						Str: "def",
 					},
 				}
 				testMerge([]string{"msg"}, src, dest)
-				So(dest, ShouldResembleProto, &testMsg{})
+				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
 			})
-			Convey("last seg is field in message", func() {
+			t.Run("last seg is field in message", func(t *ftt.Test) {
 				dest := &testMsg{
 					Msg: &testMsg{
 						Str: "def",
 					},
 				}
 				testMerge([]string{"msg.num"}, src, dest)
-				So(dest, ShouldResembleProto, &testMsg{
+				assert.Loosely(t, dest, should.Resemble(&testMsg{
 					Msg: &testMsg{
 						Str: "def",
 					},
-				})
+				}))
 				testMerge([]string{"msg.str"}, src, dest)
-				So(dest, ShouldResembleProto, &testMsg{
+				assert.Loosely(t, dest, should.Resemble(&testMsg{
 					Msg: &testMsg{},
-				})
+				}))
 			})
-			Convey("dest is also nil messages", func() {
+			t.Run("dest is also nil messages", func(t *ftt.Test) {
 				dest := &testMsg{
 					Msg: nil,
 				}
 				testMerge([]string{"msg"}, src, dest)
-				So(dest, ShouldResembleProto, &testMsg{})
+				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
 				testMerge([]string{"msg.str"}, src, dest)
-				So(dest, ShouldResembleProto, &testMsg{})
+				assert.Loosely(t, dest, should.Resemble(&testMsg{}))
 			})
 		})
-		Convey("map field ", func() {
+		t.Run("map field ", func(t *ftt.Test) {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
@@ -549,14 +555,14 @@ func TestMerge(t *testing.T) {
 				},
 			}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
 				},
-			})
+			}))
 		})
-		Convey("map field (dest map is nil)", func() {
+		t.Run("map field (dest map is nil)", func(t *ftt.Test) {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
@@ -567,14 +573,14 @@ func TestMerge(t *testing.T) {
 				MapStrMsg: nil,
 			}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": {Num: 1},
 					"b": {Num: 2},
 				},
-			})
+			}))
 		})
-		Convey("map field (value is nil message)", func() {
+		t.Run("map field (value is nil message)", func(t *ftt.Test) {
 			src := &testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": nil,
@@ -582,36 +588,36 @@ func TestMerge(t *testing.T) {
 			}
 			dest := &testMsg{}
 			testMerge([]string{"map_str_msg"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{
+			assert.Loosely(t, dest, should.Resemble(&testMsg{
 				MapStrMsg: map[string]*testMsg{
 					"a": nil,
 				},
-			})
+			}))
 		})
-		Convey("empty mask", func() {
+		t.Run("empty mask", func(t *ftt.Test) {
 			src := &testMsg{Num: 1}
 			dest := &testMsg{Num: 2}
 			m := &Mask{}
-			So(m.Merge(src, dest), ShouldBeNil)
-			So(dest, ShouldResembleProto, &testMsg{Num: 2})
+			assert.Loosely(t, m.Merge(src, dest), should.BeNil)
+			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 2}))
 		})
-		Convey("multiple fields", func() {
+		t.Run("multiple fields", func(t *ftt.Test) {
 			src := &testMsg{Num: 1, Strs: []string{"a", "b"}}
 			dest := &testMsg{Num: 2, Strs: []string{"c"}}
 			testMerge([]string{"num", "strs"}, src, dest)
-			So(dest, ShouldResembleProto, &testMsg{Num: 1, Strs: []string{"a", "b"}})
+			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1, Strs: []string{"a", "b"}}))
 		})
-		Convey("Error when one of proto message is nil", func() {
+		t.Run("Error when one of proto message is nil", func(t *ftt.Test) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var src proto.Message
-			So(m.Merge(src, &testMsg{}), ShouldErrLike, "src message: nil message")
+			assert.Loosely(t, m.Merge(src, &testMsg{}), should.ErrLike("src message: nil message"))
 		})
-		Convey("Error when proto message descriptors does not match", func() {
+		t.Run("Error when proto message descriptors does not match", func(t *ftt.Test) {
 			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = m.Merge(&testMsg{}, &testingpb.Simple{})
-			So(err, ShouldErrLike, "dest message: expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple")
+			assert.Loosely(t, err, should.ErrLike("dest message: expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
 		})
 	})
 }
@@ -619,61 +625,44 @@ func TestMerge(t *testing.T) {
 func TestSubmask(t *testing.T) {
 	buildMask := func(paths ...string) *Mask {
 		m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return m
 	}
 
-	Convey("Test submask", t, func() {
-		Convey("when path is partially included", func() {
+	ftt.Run("Test submask", t, func(t *ftt.Test) {
+		t.Run("when path is partially included", func(t *ftt.Test) {
 			actual, err := buildMask("msg.msgs.*.str").Submask("msg")
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, buildMask("msgs.*.str"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(buildMask("msgs.*.str")))
 		})
-		Convey("when path is entirely included", func() {
+		t.Run("when path is entirely included", func(t *ftt.Test) {
 			actual, err := buildMask("msg").Submask("msg.msgs.*.msg")
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, &Mask{descriptor: testMsgDescriptor})
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(&Mask{descriptor: testMsgDescriptor}))
 		})
-		Convey("Error when path is excluded", func() {
+		t.Run("Error when path is excluded", func(t *ftt.Test) {
 			_, err := buildMask("msg.msg.str").Submask("str")
-			So(err, ShouldErrLike, "the given path \"str\" is excluded from mask")
+			assert.Loosely(t, err, should.ErrLike("the given path \"str\" is excluded from mask"))
 		})
-		Convey("when path ends with star", func() {
+		t.Run("when path ends with star", func(t *ftt.Test) {
 			actual, err := buildMask("msgs.*.str").Submask("msgs.*")
-			So(err, ShouldBeNil)
-			assertMaskEqual(actual, buildMask("str"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, actual, should.Match(buildMask("str")))
 		})
 	})
 
-	Convey("Test MustSubmask", t, func() {
+	ftt.Run("Test MustSubmask", t, func(t *ftt.Test) {
 		m := buildMask("msg.msg.str")
 
-		Convey("works", func() {
-			assertMaskEqual(m.MustSubmask("msg.msg"), buildMask("str"))
+		t.Run("works", func(t *ftt.Test) {
+			assert.That(t, m.MustSubmask("msg.msg"), should.Match(buildMask("str")))
 		})
 
-		Convey("panics", func() {
+		t.Run("panics", func(t *ftt.Test) {
 			// the given path "str" is excluded from mask
-			So(func() { m.MustSubmask("str") }, ShouldPanic)
+			assert.Loosely(t, func() { m.MustSubmask("str") }, should.Panic)
 			// expected delimiter: .; got @'
-			So(func() { m.MustSubmask("str@") }, ShouldPanic)
+			assert.Loosely(t, func() { m.MustSubmask("str@") }, should.Panic)
 		})
 	})
-}
-
-// TODO(yiwzhang): ShouldResemble will hit infinite loop when comparing
-// descriptor. Comparing the full name of message as a temporary workaround
-func assertMaskEqual(actual *Mask, expect *Mask) {
-	if expect.descriptor == nil {
-		So(actual.descriptor, ShouldBeNil)
-	} else {
-		So(actual.descriptor, ShouldNotBeNil)
-		So(actual.descriptor.FullName(), ShouldEqual, expect.descriptor.FullName())
-	}
-	So(actual.isRepeated, ShouldEqual, expect.isRepeated)
-	So(actual.children, ShouldHaveLength, len(expect.children))
-	for seg, expectSubmask := range expect.children {
-		So(actual.children, ShouldContainKey, seg)
-		assertMaskEqual(actual.children[seg], expectSubmask)
-	}
 }

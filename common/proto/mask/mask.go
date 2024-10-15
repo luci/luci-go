@@ -133,7 +133,12 @@ func All(targetMsg proto.Message) *Mask {
 func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, isUpdateMask bool) (*Mask, error) {
 	root := &Mask{
 		descriptor: desc,
-		children:   make(map[string]*Mask),
+	}
+	ensureChildren := func(n *Mask, hint int) map[string]*Mask {
+		if n.children == nil {
+			n.children = make(map[string]*Mask, hint)
+		}
+		return n.children
 	}
 	for _, p := range normalizePaths(parsedPaths) {
 		curNode := root
@@ -143,9 +148,7 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 				return nil, err
 			}
 			if _, ok := curNode.children[seg]; !ok {
-				child := &Mask{
-					children: make(map[string]*Mask),
-				}
+				child := &Mask{}
 				switch curDesc := curNode.descriptor; {
 				case curDesc.IsMapEntry():
 					child.descriptor = curDesc.Fields().ByName(protoreflect.Name("value")).Message()
@@ -156,7 +159,7 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 					child.descriptor = field.Message()
 					child.isRepeated = field.Cardinality() == protoreflect.Repeated
 				}
-				curNode.children[seg] = child
+				ensureChildren(curNode, len(p))[seg] = child
 			}
 			curNode = curNode.children[seg]
 			curNodeName = seg

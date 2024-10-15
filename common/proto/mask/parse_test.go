@@ -18,107 +18,108 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestParsePath(t *testing.T) {
-	Convey("Expect path parsing", t, func() {
-		Convey("succeeds when parsing scalar field", func() {
-			tryParsePath("str").andExpectPath("str")
-			tryParsePath("num").andExpectPath("num")
+	ftt.Run("Expect path parsing", t, func(t *ftt.Test) {
+		t.Run("succeeds when parsing scalar field", func(t *ftt.Test) {
+			tryParsePath("str").andExpectPath(t, "str")
+			tryParsePath("num").andExpectPath(t, "num")
 		})
-		Convey("fails when given subfield for a scalar field", func() {
-			tryParsePath("str.str").andExpectErrorLike("scalar field cannot have subfield: \"str\"")
+		t.Run("fails when given subfield for a scalar field", func(t *ftt.Test) {
+			tryParsePath("str.str").andExpectErrorLike(t, "scalar field cannot have subfield: \"str\"")
 		})
-		Convey("fails for invalid delimiter", func() {
-			tryParsePath("str@").andExpectErrorLike("expected delimiter: .; got @")
+		t.Run("fails for invalid delimiter", func(t *ftt.Test) {
+			tryParsePath("str@").andExpectErrorLike(t, "expected delimiter: .; got @")
 		})
-		Convey("succeeds when parsing repeated field", func() {
-			tryParsePath("strs").andExpectPath("strs")
-			tryParsePath("nums").andExpectPath("nums")
-			tryParsePath("msgs").andExpectPath("msgs")
+		t.Run("succeeds when parsing repeated field", func(t *ftt.Test) {
+			tryParsePath("strs").andExpectPath(t, "strs")
+			tryParsePath("nums").andExpectPath(t, "nums")
+			tryParsePath("msgs").andExpectPath(t, "msgs")
 		})
-		Convey("succeeds when parsing repeated field and path ends with star", func() {
+		t.Run("succeeds when parsing repeated field and path ends with star", func(t *ftt.Test) {
 			// trailing stars are kept
-			tryParsePath("strs.*").andExpectPath("strs", "*")
-			tryParsePath("nums.*").andExpectPath("nums", "*")
-			tryParsePath("msgs.*").andExpectPath("msgs", "*")
+			tryParsePath("strs.*").andExpectPath(t, "strs", "*")
+			tryParsePath("nums.*").andExpectPath(t, "nums", "*")
+			tryParsePath("msgs.*").andExpectPath(t, "msgs", "*")
 		})
-		Convey("fails when parsing repeated field and path ends with index", func() {
-			tryParsePath("strs.1").andExpectErrorLike("expected a star following a repeated field; got token: \"1\"")
-			tryParsePath("nums.2").andExpectErrorLike("expected a star following a repeated field; got token: \"2\"")
-			tryParsePath("msgs.a").andExpectErrorLike("expected a star following a repeated field; got token: \"a\"")
+		t.Run("fails when parsing repeated field and path ends with index", func(t *ftt.Test) {
+			tryParsePath("strs.1").andExpectErrorLike(t, "expected a star following a repeated field; got token: \"1\"")
+			tryParsePath("nums.2").andExpectErrorLike(t, "expected a star following a repeated field; got token: \"2\"")
+			tryParsePath("msgs.a").andExpectErrorLike(t, "expected a star following a repeated field; got token: \"a\"")
 		})
-		Convey("succeeds when parsing map field (key type integer, scalar value)", func() {
-			tryParsePath("map_num_str.1").andExpectPath("map_num_str", "1")
-			tryParsePath("map_num_str.-1").andExpectPath("map_num_str", "-1")
-			tryParsePath("map_num_str.*").andExpectPath("map_num_str", "*")
+		t.Run("succeeds when parsing map field (key type integer, scalar value)", func(t *ftt.Test) {
+			tryParsePath("map_num_str.1").andExpectPath(t, "map_num_str", "1")
+			tryParsePath("map_num_str.-1").andExpectPath(t, "map_num_str", "-1")
+			tryParsePath("map_num_str.*").andExpectPath(t, "map_num_str", "*")
 		})
-		Convey("succeeds when parsing map field (key type string, scalar value)", func() {
+		t.Run("succeeds when parsing map field (key type string, scalar value)", func(t *ftt.Test) {
 			// unquoted
-			tryParsePath("map_str_num.abcd").andExpectPath("map_str_num", "abcd")
-			tryParsePath("map_str_num._ab_cd").andExpectPath("map_str_num", "_ab_cd")
+			tryParsePath("map_str_num.abcd").andExpectPath(t, "map_str_num", "abcd")
+			tryParsePath("map_str_num._ab_cd").andExpectPath(t, "map_str_num", "_ab_cd")
 			// quoted
-			tryParsePath("map_str_num.`abcd`").andExpectPath("map_str_num", "abcd")
-			tryParsePath("map_str_num.`_ab.cd`").andExpectPath("map_str_num", "_ab.cd")
-			tryParsePath("map_str_num.`ab``cd`").andExpectPath("map_str_num", "ab`cd")
-			tryParsePath("map_str_num.*").andExpectPath("map_str_num", "*")
+			tryParsePath("map_str_num.`abcd`").andExpectPath(t, "map_str_num", "abcd")
+			tryParsePath("map_str_num.`_ab.cd`").andExpectPath(t, "map_str_num", "_ab.cd")
+			tryParsePath("map_str_num.`ab``cd`").andExpectPath(t, "map_str_num", "ab`cd")
+			tryParsePath("map_str_num.*").andExpectPath(t, "map_str_num", "*")
 		})
-		Convey("succeeds when parsing map field (key type boolean, scalar value)", func() {
-			tryParsePath("map_bool_str.false").andExpectPath("map_bool_str", "false")
-			tryParsePath("map_bool_str.true").andExpectPath("map_bool_str", "true")
-			tryParsePath("map_bool_str.*").andExpectPath("map_bool_str", "*")
+		t.Run("succeeds when parsing map field (key type boolean, scalar value)", func(t *ftt.Test) {
+			tryParsePath("map_bool_str.false").andExpectPath(t, "map_bool_str", "false")
+			tryParsePath("map_bool_str.true").andExpectPath(t, "map_bool_str", "true")
+			tryParsePath("map_bool_str.*").andExpectPath(t, "map_bool_str", "*")
 		})
-		Convey("fails when parsing map field with incompatible key type", func() {
-			tryParsePath("map_num_str.a").andExpectErrorLike("expected map key kind int32; got token: \"a\"")
-			tryParsePath("map_str_num.1").andExpectErrorLike("expected map key kind string; got token: \"1\"")
-			tryParsePath("map_bool_str.not_a_bool").andExpectErrorLike("expected map key kind bool; got token: \"not_a_bool\"")
+		t.Run("fails when parsing map field with incompatible key type", func(t *ftt.Test) {
+			tryParsePath("map_num_str.a").andExpectErrorLike(t, "expected map key kind int32; got token: \"a\"")
+			tryParsePath("map_str_num.1").andExpectErrorLike(t, "expected map key kind string; got token: \"1\"")
+			tryParsePath("map_bool_str.not_a_bool").andExpectErrorLike(t, "expected map key kind bool; got token: \"not_a_bool\"")
 		})
-		Convey("succeeds when parsing map field (value type message)", func() {
-			tryParsePath("map_str_msg.some_key.str").andExpectPath("map_str_msg",
+		t.Run("succeeds when parsing map field (value type message)", func(t *ftt.Test) {
+			tryParsePath("map_str_msg.some_key.str").andExpectPath(t, "map_str_msg",
 				"some_key", "str")
-			tryParsePath("map_str_msg.*.str").andExpectPath("map_str_msg", "*", "str")
+			tryParsePath("map_str_msg.*.str").andExpectPath(t, "map_str_msg", "*", "str")
 		})
-		Convey("succeeds when parsing message field", func() {
-			tryParsePath("msg.str").andExpectPath("msg", "str")
-			tryParsePath("msg.*").andExpectPath("msg", "*")
-			tryParsePath("msg.msg.msg.*").andExpectPath("msg", "msg", "msg", "*")
+		t.Run("succeeds when parsing message field", func(t *ftt.Test) {
+			tryParsePath("msg.str").andExpectPath(t, "msg", "str")
+			tryParsePath("msg.*").andExpectPath(t, "msg", "*")
+			tryParsePath("msg.msg.msg.*").andExpectPath(t, "msg", "msg", "msg", "*")
 		})
-		Convey("fails when parsing message field and given a non-string field name", func() {
-			tryParsePath("msg.123").andExpectErrorLike("expected a field name of type string; got token: \"123\"")
+		t.Run("fails when parsing message field and given a non-string field name", func(t *ftt.Test) {
+			tryParsePath("msg.123").andExpectErrorLike(t, "expected a field name of type string; got token: \"123\"")
 		})
-		Convey("fails when parsing message field and star is not the last token", func() {
-			tryParsePath("msg.*.str").andExpectErrorLike("expected end of string; got token: \"str\"")
+		t.Run("fails when parsing message field and star is not the last token", func(t *ftt.Test) {
+			tryParsePath("msg.*.str").andExpectErrorLike(t, "expected end of string; got token: \"str\"")
 		})
-		Convey("fails when parsing message field with unknown subfield", func() {
-			tryParsePath("msg.unknown_field").andExpectErrorLike(fmt.Sprintf("field \"unknown_field\" does not exist in message %s", testMsgDescriptor.Name()))
-			tryParsePath("msg.msg.unknown_field").andExpectErrorLike(fmt.Sprintf("field \"unknown_field\" does not exist in message %s", testMsgDescriptor.Name()))
+		t.Run("fails when parsing message field with unknown subfield", func(t *ftt.Test) {
+			tryParsePath("msg.unknown_field").andExpectErrorLike(t, fmt.Sprintf("field \"unknown_field\" does not exist in message %s", testMsgDescriptor.Name()))
+			tryParsePath("msg.msg.unknown_field").andExpectErrorLike(t, fmt.Sprintf("field \"unknown_field\" does not exist in message %s", testMsgDescriptor.Name()))
 		})
-		Convey("succeeds when parsing repeated message fields given subfield", func() {
-			tryParsePath("msgs.*.str").andExpectPath("msgs", "*", "str")
+		t.Run("succeeds when parsing repeated message fields given subfield", func(t *ftt.Test) {
+			tryParsePath("msgs.*.str").andExpectPath(t, "msgs", "*", "str")
 		})
-		Convey("fails when ends delimiter", func() {
-			tryParsePath("msg.").andExpectErrorLike("path can't end with delimiter: .")
+		t.Run("fails when ends delimiter", func(t *ftt.Test) {
+			tryParsePath("msg.").andExpectErrorLike(t, "path can't end with delimiter: .")
 		})
-		Convey("fails when quoted string is not closed", func() {
-			tryParsePath("`quoted``str").andExpectErrorLike("a quoted string is never closed; got: \"quoted`str\"")
+		t.Run("fails when quoted string is not closed", func(t *ftt.Test) {
+			tryParsePath("`quoted``str").andExpectErrorLike(t, "a quoted string is never closed; got: \"quoted`str\"")
 		})
-		Convey("fails when an integer literal has only minus sign", func() {
-			tryParsePath("map_num_str.-").andExpectErrorLike("expected digit following minus sign for negative numbers; got minus sign only")
+		t.Run("fails when an integer literal has only minus sign", func(t *ftt.Test) {
+			tryParsePath("map_num_str.-").andExpectErrorLike(t, "expected digit following minus sign for negative numbers; got minus sign only")
 		})
-		Convey("fails when multiple delimiters", func() {
-			tryParsePath("msg..str").andExpectErrorLike("unexpected token: .")
-			tryParsePath("msg..").andExpectErrorLike("unexpected token: .")
+		t.Run("fails when multiple delimiters", func(t *ftt.Test) {
+			tryParsePath("msg..str").andExpectErrorLike(t, "unexpected token: .")
+			tryParsePath("msg..").andExpectErrorLike(t, "unexpected token: .")
 		})
-		Convey("succeeds for json name", func() {
+		t.Run("succeeds for json name", func(t *ftt.Test) {
 			p, err := parsePath("jsonName", testMsgDescriptor, true)
-			So(err, ShouldBeNil)
-			So(p, ShouldResemble, path{"json_name"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Resemble(path{"json_name"}))
 			p, err = parsePath("another_json_name", testMsgDescriptor, true)
-			So(err, ShouldBeNil)
-			So(p, ShouldResemble, path{"json_name_option"})
-
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p, should.Resemble(path{"json_name_option"}))
 		})
 	})
 }
@@ -137,15 +138,17 @@ func tryParsePath(rawPath string) parseResult {
 	}
 }
 
-func (res parseResult) andExpectErrorLike(errorSubstring string) {
-	So(res.err, ShouldErrLike, errorSubstring)
+func (res parseResult) andExpectErrorLike(t testing.TB, errorSubstring string) {
+	t.Helper()
+	assert.Loosely(t, res.err, should.ErrLike(errorSubstring), truth.LineContext())
 }
 
-func (res parseResult) andExpectPath(segments ...string) {
-	So(res.err, ShouldBeNil)
+func (res parseResult) andExpectPath(t testing.TB, segments ...string) {
+	t.Helper()
+	assert.Loosely(t, res.err, should.BeNil, truth.LineContext())
 	expectedPath := make(path, len(segments))
 	for i, seg := range segments {
 		expectedPath[i] = seg
 	}
-	So(res.p, ShouldResemble, expectedPath)
+	assert.Loosely(t, res.p, should.Resemble(expectedPath), truth.LineContext())
 }

@@ -13,23 +13,54 @@
 // limitations under the License.
 
 // Package registry provides a way to register options to cmp.Diff.
+//
+// This is known to be used by:
+//
+//   - go.chromium.org/luci/testing/truth/should.{Resemble,Match}
+//   - go.chromium.org/luci/testing/typed.{Diff,Got}
+//
+// By default this includes:
+//   - "google.golang.org/protobuf/testing/protocmp".Transform()
+//   - A direct comparison of protoreflect.Descriptor types. These are
+//     documented as being comparable with `==`, but by default `cmp` will
+//     recurse into their guts.
 package registry
 
 import (
+	"reflect"
 	"slices"
 	"sync"
 
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
 // globalOptionsRegistryMutex is the mutex governing globalOptionsRegistry.
 var globalOptionsRegistryMutex sync.Mutex
 
+var msgDescTs = map[reflect.Type]bool{
+	reflect.TypeFor[protoreflect.FileDescriptor]():      true,
+	reflect.TypeFor[protoreflect.MessageDescriptor]():   true,
+	reflect.TypeFor[protoreflect.FieldDescriptor]():     true,
+	reflect.TypeFor[protoreflect.OneofDescriptor]():     true,
+	reflect.TypeFor[protoreflect.EnumDescriptor]():      true,
+	reflect.TypeFor[protoreflect.EnumValueDescriptor](): true,
+	reflect.TypeFor[protoreflect.ServiceDescriptor]():   true,
+	reflect.TypeFor[protoreflect.MethodDescriptor]():    true,
+}
+
 // globalOptionsRegistry is the registry of global options that will get passed to
 // typed.Diff and other similar things that eventually call cmp.Diff.
 var globalOptionsRegistry = []cmp.Option{
 	protocmp.Transform(),
+	// This incantation ensures that all protoreflect descriptor instances will be
+	// compared with `==`, rather than being recursed into.
+	cmp.FilterPath(func(p cmp.Path) bool {
+		return msgDescTs[p.Last().Type()]
+	}, cmp.Comparer(func(a, b any) bool {
+		return a == b
+	})),
 }
 
 // RegisterCmpOption registers an option to the registry.

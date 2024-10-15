@@ -20,8 +20,9 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/proto/git"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFake(t *testing.T) {
@@ -29,80 +30,80 @@ func TestFake(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("Implements GitilesClient", t, func() {
+	ftt.Run("Implements GitilesClient", t, func(t *ftt.Test) {
 		var _ GitilesClient = &Fake{}
-		So(nil, ShouldBeNil)
+		assert.Loosely(t, nil, should.BeNil)
 	})
 
-	Convey("Edge cases", t, func() {
-		Convey("Empty", func() {
+	ftt.Run("Edge cases", t, func(t *ftt.Test) {
+		t.Run("Empty", func(t *ftt.Test) {
 			fake := Fake{}
-			Convey("Projects", func() {
+			t.Run("Projects", func(t *ftt.Test) {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
-				So(err, ShouldBeNil)
-				So(resp.GetProjects(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetProjects(), should.BeEmpty)
 			})
-			Convey("Revs", func() {
+			t.Run("Revs", func(t *ftt.Test) {
 				in := &RefsRequest{
 					Project: "foo",
 				}
 				// Repository not found
 				_, err := fake.Refs(ctx, in)
-				So(err, ShouldBeError)
+				assert.Loosely(t, err, should.ErrLike("Repository not found"))
 			})
 		})
 
-		Convey("Empty project", func() {
+		t.Run("Empty project", func(t *ftt.Test) {
 			fake := Fake{}
 			fake.SetRepository("foo", nil, nil)
-			Convey("Projects", func() {
+			t.Run("Projects", func(t *ftt.Test) {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
-				So(err, ShouldBeNil)
-				So(resp.GetProjects(), ShouldResemble, []string{"foo"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetProjects(), should.Resemble([]string{"foo"}))
 			})
 
-			Convey("Revs", func() {
+			t.Run("Revs", func(t *ftt.Test) {
 				in := &RefsRequest{
 					Project: "foo",
 				}
 				// Repository not found
 				out, err := fake.Refs(ctx, in)
-				So(err, ShouldBeNil)
-				So(out.GetRevisions(), ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, out.GetRevisions(), should.BeEmpty)
 			})
 		})
 
-		Convey("Empty repository", func() {
+		t.Run("Empty repository", func(t *ftt.Test) {
 			fake := Fake{}
 			refs := map[string]string{"refs/heads/main": ""}
 			fake.SetRepository("foo", refs, nil)
-			Convey("Projects", func() {
+			t.Run("Projects", func(t *ftt.Test) {
 				resp, err := fake.Projects(ctx, &ProjectsRequest{})
-				So(err, ShouldBeNil)
-				So(resp.GetProjects(), ShouldResemble, []string{"foo"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp.GetProjects(), should.Resemble([]string{"foo"}))
 			})
 
-			Convey("Revs", func() {
+			t.Run("Revs", func(t *ftt.Test) {
 				in := &RefsRequest{
 					Project: "foo",
 				}
 				// Repository not found
 				out, err := fake.Refs(ctx, in)
-				So(err, ShouldBeNil)
-				So(out.GetRevisions(), ShouldResemble, refs)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, out.GetRevisions(), should.Resemble(refs))
 			})
 		})
 
-		Convey("Reference points to invalid revision", func() {
+		t.Run("Reference points to invalid revision", func(t *ftt.Test) {
 			fake := Fake{}
-			So(func() {
+			assert.Loosely(t, func() {
 				fake.SetRepository("foo", map[string]string{"foo": "bar"}, nil)
-			}, ShouldPanic)
+			}, should.Panic)
 		})
 
-		Convey("Duplicate commit", func() {
+		t.Run("Duplicate commit", func(t *ftt.Test) {
 			fake := Fake{}
-			So(func() {
+			assert.Loosely(t, func() {
 				commits := []*git.Commit{
 					{
 						Id: "bar",
@@ -112,10 +113,10 @@ func TestFake(t *testing.T) {
 					},
 				}
 				fake.SetRepository("foo", map[string]string{"foo": "bar"}, commits)
-			}, ShouldPanic)
+			}, should.Panic)
 		})
 
-		Convey("Broken commit chain", func() {
+		t.Run("Broken commit chain", func(t *ftt.Test) {
 			fake := Fake{}
 			commits := []*git.Commit{
 				{
@@ -124,17 +125,17 @@ func TestFake(t *testing.T) {
 				},
 			}
 			fake.SetRepository("foo", map[string]string{"refs/heads/main": "bar"}, commits)
-			So(func() {
+			assert.Loosely(t, func() {
 				in := &LogRequest{
 					Project:    "foo",
 					Committish: "refs/heads/main",
 				}
 				fake.Log(ctx, in)
-			}, ShouldPanic)
+			}, should.Panic)
 		})
 	})
 
-	Convey("Linear commits", t, func() {
+	ftt.Run("Linear commits", t, func(t *ftt.Test) {
 		// Commit structure: 9 -> 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
 		commits := make([]*git.Commit, 10)
 		for i := 0; i < 10; i++ {
@@ -152,66 +153,66 @@ func TestFake(t *testing.T) {
 		fake := Fake{}
 		fake.SetRepository("foo", refs, commits)
 
-		Convey("Revs", func() {
+		t.Run("Revs", func(t *ftt.Test) {
 			in := &RefsRequest{
 				Project: "foo",
 			}
 			out, err := fake.Refs(ctx, in)
-			So(err, ShouldBeNil)
-			So(out.GetRevisions(), ShouldResemble, refs)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetRevisions(), should.Resemble(refs))
 		})
 
-		Convey("Log pagination main", func() {
+		t.Run("Log pagination main", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/main",
 				PageSize:   5,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(len(out.GetLog()), ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(5))
 			// Last element returned is 5, which is the token
-			So(out.GetNextPageToken(), ShouldEqual, "5")
+			assert.Loosely(t, out.GetNextPageToken(), should.Equal("5"))
 
 			in.PageToken = out.GetNextPageToken()
 			out, err = fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(len(out.GetLog()), ShouldEqual, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(5))
 			// Last element returned is 0, which is the token
-			So(out.GetNextPageToken(), ShouldEqual, "0")
+			assert.Loosely(t, out.GetNextPageToken(), should.Equal("0"))
 
 			// We reached the end
 			in.PageToken = out.GetNextPageToken()
 			out, err = fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(len(out.GetLog()), ShouldEqual, 0)
-			So(out.GetNextPageToken(), ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(out.GetLog()), should.BeZero)
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
 		})
 
-		Convey("Log stable branch", func() {
+		t.Run("Log stable branch", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/stable",
 				PageSize:   5,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(len(out.GetLog()), ShouldEqual, 2)
-			So(out.GetNextPageToken(), ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(2))
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
 		})
 
-		Convey("Log Non existing branch", func() {
+		t.Run("Log Non existing branch", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/foo",
 				PageSize:   5,
 			}
 			_, err := fake.Log(ctx, in)
-			So(err, ShouldBeError)
+			assert.Loosely(t, err, should.ErrLike("commit refs/heads/foo not found"))
 		})
 	})
 
-	Convey("Merge logs", t, func() {
+	ftt.Run("Merge logs", t, func(t *ftt.Test) {
 		// Commit structure: 9 -> 8 -> 7 -> 6 -> 5 -> 4 -> 3 -> 2 -> 1 -> 0
 		//                          \_ b2      ->     b1  /
 		commits := make([]*git.Commit, 12)
@@ -242,52 +243,52 @@ func TestFake(t *testing.T) {
 		fake := Fake{}
 		fake.SetRepository("foo", refs, commits)
 
-		Convey("Entire log", func() {
+		t.Run("Entire log", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/main",
 				PageSize:   100,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(out.GetNextPageToken(), ShouldBeEmpty)
-			So(len(out.GetLog()), ShouldEqual, 12)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(12))
 		})
 
-		Convey("Partial log, before merge", func() {
+		t.Run("Partial log, before merge", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/stable",
 				PageSize:   100,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(out.GetNextPageToken(), ShouldBeEmpty)
-			So(len(out.GetLog()), ShouldEqual, 8)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(8))
 		})
 
-		Convey("Partial log, before merge (feature branch)", func() {
+		t.Run("Partial log, before merge (feature branch)", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "refs/heads/feature",
 				PageSize:   100,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(out.GetNextPageToken(), ShouldBeEmpty)
-			So(len(out.GetLog()), ShouldEqual, 6)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(6))
 		})
 
-		Convey("Partial log, specific commit", func() {
+		t.Run("Partial log, specific commit", func(t *ftt.Test) {
 			in := &LogRequest{
 				Project:    "foo",
 				Committish: "8",
 				PageSize:   100,
 			}
 			out, err := fake.Log(ctx, in)
-			So(err, ShouldBeNil)
-			So(out.GetNextPageToken(), ShouldBeEmpty)
-			So(len(out.GetLog()), ShouldEqual, 11)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out.GetNextPageToken(), should.BeEmpty)
+			assert.Loosely(t, len(out.GetLog()), should.Equal(11))
 		})
 	})
 }
