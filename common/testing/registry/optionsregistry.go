@@ -24,6 +24,7 @@
 //   - A direct comparison of protoreflect.Descriptor types. These are
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
+//   - A direct comparison of reflect.Type interfaces.
 package registry
 
 import (
@@ -39,7 +40,7 @@ import (
 // globalOptionsRegistryMutex is the mutex governing globalOptionsRegistry.
 var globalOptionsRegistryMutex sync.Mutex
 
-var msgDescTs = map[reflect.Type]bool{
+var comparableInterfaces = map[reflect.Type]bool{
 	reflect.TypeFor[protoreflect.FileDescriptor]():      true,
 	reflect.TypeFor[protoreflect.MessageDescriptor]():   true,
 	reflect.TypeFor[protoreflect.FieldDescriptor]():     true,
@@ -48,6 +49,8 @@ var msgDescTs = map[reflect.Type]bool{
 	reflect.TypeFor[protoreflect.EnumValueDescriptor](): true,
 	reflect.TypeFor[protoreflect.ServiceDescriptor]():   true,
 	reflect.TypeFor[protoreflect.MethodDescriptor]():    true,
+
+	reflect.TypeFor[reflect.Type](): true,
 }
 
 // globalOptionsRegistry is the registry of global options that will get passed to
@@ -57,7 +60,7 @@ var globalOptionsRegistry = []cmp.Option{
 	// This incantation ensures that all protoreflect descriptor instances will be
 	// compared with `==`, rather than being recursed into.
 	cmp.FilterPath(func(p cmp.Path) bool {
-		return msgDescTs[p.Last().Type()]
+		return comparableInterfaces[p.Last().Type()]
 	}, cmp.Comparer(func(a, b any) bool {
 		return a == b
 	})),

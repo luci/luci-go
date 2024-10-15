@@ -23,6 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -32,9 +35,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"google.golang.org/protobuf/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // Store is a store under test.
@@ -116,7 +116,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			deltas:   makeInterfaceSlice(float64(3.2), float64(5.3)),
 			wantIncrValidator: func(v any) {
 				d := v.(*distribution.Distribution)
-				So(d.Buckets(), ShouldResemble, []int64{0, 0, 0, 1, 1})
+				assert.Loosely(t, d.Buckets(), should.Resemble([]int64{0, 0, 0, 1, 1}))
 			},
 			wantStartTimestamp: true,
 		},
@@ -141,8 +141,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			wantSetValidator: func(got, want any) {
 				// The distribution might be serialized/deserialized and lose sums and
 				// counts.
-				So(got.(*distribution.Distribution).Buckets(), ShouldResemble,
-					want.(*distribution.Distribution).Buckets())
+				assert.Loosely(t, got.(*distribution.Distribution).Buckets(), should.Resemble(
+					want.(*distribution.Distribution).Buckets()))
 			},
 		},
 		{
@@ -159,10 +159,10 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		},
 	}
 
-	Convey("Set and get", t, func() {
-		Convey("With no fields", func() {
+	ftt.Run("Set and get", t, func(t *ftt.Test) {
+		t.Run("With no fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -179,7 +179,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Value should be nil initially.
 					v := s.Get(ctx, m, time.Time{}, []any{})
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 
 					// Set and get the value.
 					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
@@ -187,15 +187,15 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(v, ShouldEqual, test.values[0])
+						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 				})
 			}
 		})
 
-		Convey("With fields", func() {
+		t.Run("With fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -211,9 +211,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Values should be nil initially.
 					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 
 					// Set and get the values.
 					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
@@ -223,22 +223,22 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(v, ShouldEqual, test.values[0])
+						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
 					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
-						So(v, ShouldEqual, test.values[1])
+						assert.Loosely(t, v, should.Equal(test.values[1]))
 					}
 				})
 			}
 		})
 
-		Convey("With a fixed reset time", func() {
+		t.Run("With a fixed reset time", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -254,34 +254,34 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Do the set with a fixed time.
-					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					s.Set(ctx, m, t, []any{}, test.values[0])
+					tZero := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
+					s.Set(ctx, m, tZero, []any{}, test.values[0])
 
 					v := s.Get(ctx, m, time.Time{}, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(v, ShouldEqual, test.values[0])
+						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
 					// Check the time in the Cell is the same.
 					all := s.GetAll(ctx)
-					So(len(all), ShouldEqual, 1)
+					assert.Loosely(t, len(all), should.Equal(1))
 
 					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
 					ts := msg.GetStartTimestamp()
 					if test.wantStartTimestamp {
-						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, t.String())
+						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(tZero.String()))
 					} else {
-						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, testclock.TestRecentTimeUTC.String())
+						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(testclock.TestRecentTimeUTC.String()))
 					}
 				})
 			}
 		})
 
-		Convey("With a target set in the context", func() {
+		t.Run("With a target set in the context", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -310,19 +310,19 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(v, ShouldEqual, test.values[0])
+						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
 					v = s.Get(ctxWithTarget, m, time.Time{}, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
-						So(v, ShouldEqual, test.values[1])
+						assert.Loosely(t, v, should.Equal(test.values[1]))
 					}
 
 					// The targets should be set in the Cells.
 					all := s.GetAll(ctx)
-					So(len(all), ShouldEqual, 2)
+					assert.Loosely(t, len(all), should.Equal(2))
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
 
@@ -343,9 +343,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					if proto.Equal(s0, serviceName) {
-						So(s1, ShouldResembleProto, defaultServiceName)
+						assert.Loosely(t, s1, should.Resemble(defaultServiceName))
 					} else if proto.Equal(s1, serviceName) {
-						So(s0, ShouldResembleProto, defaultServiceName)
+						assert.Loosely(t, s0, should.Resemble(defaultServiceName))
 					} else {
 						t.Fail()
 					}
@@ -353,12 +353,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			}
 		})
 
-		Convey("With a decreasing value", func() {
+		t.Run("With a decreasing value", func(t *ftt.Test) {
 			for i, test := range tests {
 				if !test.typ.IsCumulative() || test.bucketer != nil {
 					continue
 				}
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					m := &FakeMetric{
 						types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
 						types.MetricMetadata{}}
@@ -366,20 +366,20 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Set the bigger value.
 					s.Set(ctx, m, time.Time{}, []any{}, test.values[1])
-					So(s.Get(ctx, m, time.Time{}, []any{}), ShouldResemble, test.values[1])
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.Resemble(test.values[1]))
 
 					// Setting the smaller value should be ignored.
 					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
-					So(s.Get(ctx, m, time.Time{}, []any{}), ShouldResemble, test.values[1])
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.Resemble(test.values[1]))
 				})
 			}
 		})
 	})
 
-	Convey("Increment and get", t, func() {
-		Convey("With no fields", func() {
+	ftt.Run("Increment and get", t, func(t *ftt.Test) {
+		t.Run("With no fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -396,13 +396,13 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Value should be nil initially.
 					v := s.Get(ctx, m, time.Time{}, []any{})
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 
 					// Increment the metric.
 					for _, delta := range test.deltas {
 						call := func() { s.Incr(ctx, m, time.Time{}, []any{}, delta) }
 						if test.wantIncrPanic {
-							So(call, ShouldPanic)
+							assert.Loosely(t, call, should.Panic)
 						} else {
 							call()
 						}
@@ -411,7 +411,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					// Get the final value.
 					v = s.Get(ctx, m, time.Time{}, []any{})
 					if test.wantIncrValue != nil {
-						So(v, ShouldEqual, test.wantIncrValue)
+						assert.Loosely(t, v, should.Equal(test.wantIncrValue))
 					} else if test.wantIncrValidator != nil {
 						test.wantIncrValidator(v)
 					}
@@ -419,9 +419,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			}
 		})
 
-		Convey("With fields", func() {
+		t.Run("With fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -437,15 +437,15 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Values should be nil initially.
 					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 
 					// Increment one cell.
 					for _, delta := range test.deltas {
 						call := func() { s.Incr(ctx, m, time.Time{}, makeInterfaceSlice("one"), delta) }
 						if test.wantIncrPanic {
-							So(call, ShouldPanic)
+							assert.Loosely(t, call, should.Panic)
 						} else {
 							call()
 						}
@@ -454,25 +454,25 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					// Get the final value.
 					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
 					if test.wantIncrValue != nil {
-						So(v, ShouldEqual, test.wantIncrValue)
+						assert.Loosely(t, v, should.Equal(test.wantIncrValue))
 					} else if test.wantIncrValidator != nil {
 						test.wantIncrValidator(v)
 					}
 
 					// Another cell should still be nil.
 					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
-					So(v, ShouldBeNil)
+					assert.Loosely(t, v, should.BeNil)
 				})
 			}
 		})
 
-		Convey("With a fixed reset time", func() {
+		t.Run("With a fixed reset time", func(t *ftt.Test) {
 			for i, test := range tests {
 				if test.wantIncrPanic {
 					continue
 				}
 
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -488,31 +488,31 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					opts.RegistrationFinished(s)
 
 					// Do the incr with a fixed time.
-					t := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					s.Incr(ctx, m, t, []any{}, test.deltas[0])
+					tZero := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
+					s.Incr(ctx, m, tZero, []any{}, test.deltas[0])
 
 					// Check the time in the Cell is the same.
 					all := s.GetAll(ctx)
-					So(len(all), ShouldEqual, 1)
+					assert.Loosely(t, len(all), should.Equal(1))
 
 					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
 					if test.wantStartTimestamp {
 						ts := msg.GetStartTimestamp()
-						So(time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), ShouldEqual, t.String())
+						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(tZero.String()))
 					} else {
-						So(msg.StartTimestamp, ShouldBeNil)
+						assert.Loosely(t, msg.StartTimestamp, should.BeNil)
 					}
 				})
 			}
 		})
 
-		Convey("With a target set in the context", func() {
+		t.Run("With a target set in the context", func(t *ftt.Test) {
 			for i, test := range tests {
 				if test.wantIncrPanic {
 					continue
 				}
 
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{
@@ -540,11 +540,11 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					// Get should return different values for different contexts.
 					v1 := s.Get(ctx, m, time.Time{}, []any{})
 					v2 := s.Get(ctxWithTarget, m, time.Time{}, []any{})
-					So(v1, ShouldNotEqual, v2)
+					assert.Loosely(t, v1, should.NotEqual(v2))
 
 					// The targets should be set in the Cells.
 					all := s.GetAll(ctx)
-					So(len(all), ShouldEqual, 2)
+					assert.Loosely(t, len(all), should.Equal(2))
 
 					coll := monitor.SerializeCells(all, testclock.TestRecentTimeUTC)
 
@@ -565,9 +565,9 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					if proto.Equal(s0, serviceName) {
-						So(s1, ShouldResembleProto, defaultServiceName)
+						assert.Loosely(t, s1, should.Resemble(defaultServiceName))
 					} else if proto.Equal(s1, serviceName) {
-						So(s0, ShouldResembleProto, defaultServiceName)
+						assert.Loosely(t, s0, should.Resemble(defaultServiceName))
 					} else {
 						t.Fail()
 					}
@@ -576,7 +576,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 		})
 	})
 
-	Convey("GetAll", t, func() {
+	ftt.Run("GetAll", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		s := opts.Factory()
@@ -703,26 +703,26 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 				},
 			},
 		}
-		So(len(got), ShouldEqual, len(want))
+		assert.Loosely(t, len(got), should.Equal(len(want)))
 
 		for i, g := range got {
 			w := want[i]
 
-			Convey(fmt.Sprintf("%d", i), func() {
-				So(g.Name, ShouldEqual, w.Name)
-				So(len(g.Fields), ShouldEqual, len(w.Fields))
-				So(g.ValueType, ShouldEqual, w.ValueType)
-				So(g.FieldVals, ShouldResemble, w.FieldVals)
-				So(g.Value, ShouldResemble, w.Value)
-				So(g.Units, ShouldEqual, w.Units)
+			t.Run(fmt.Sprintf("%d", i), func(t *ftt.Test) {
+				assert.Loosely(t, g.Name, should.Equal(w.Name))
+				assert.Loosely(t, len(g.Fields), should.Equal(len(w.Fields)))
+				assert.Loosely(t, g.ValueType, should.Equal(w.ValueType))
+				assert.Loosely(t, g.FieldVals, should.Resemble(w.FieldVals))
+				assert.Loosely(t, g.Value, should.Resemble(w.Value))
+				assert.Loosely(t, g.Units, should.Equal(w.Units))
 			})
 		}
 	})
 
-	Convey("Set and del", t, func() {
-		Convey("With no fields", func() {
+	ftt.Run("Set and del", t, func(t *ftt.Test) {
+		t.Run("With no fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -738,7 +738,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					So(s.Get(ctx, m, time.Time{}, []any{}), ShouldBeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.BeNil)
 
 					// Set and get the value.
 					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
@@ -746,19 +746,19 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
-						So(v, ShouldEqual, test.values[0])
+						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
 					// Delete the cell. Then, get should return nil.
 					s.Del(ctx, m, []any{})
-					So(s.Get(ctx, m, time.Time{}, []any{}), ShouldBeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.BeNil)
 				})
 			}
 		})
 
-		Convey("With fields", func() {
+		t.Run("With fields", func(t *ftt.Test) {
 			for i, test := range tests {
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -773,8 +773,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), ShouldBeNil)
-					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two")), ShouldBeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two")), should.BeNil)
 
 					// Set both and then delete "one".
 					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
@@ -782,24 +782,24 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s.Del(ctx, m, makeInterfaceSlice("one"))
 
 					// Get should return nil for "one", but the value for "two".
-					So(s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), ShouldBeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), should.BeNil)
 					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
-						So(v, ShouldEqual, test.values[1])
+						assert.Loosely(t, v, should.Equal(test.values[1]))
 					}
 				})
 			}
 		})
 
-		Convey("With a target set in the context", func() {
+		t.Run("With a target set in the context", func(t *ftt.Test) {
 			for i, test := range tests {
 				if test.wantIncrPanic {
 					continue
 				}
 
-				Convey(fmt.Sprintf("%d. %s", i, test.typ), func() {
+				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
 					var m types.Metric
 					if test.bucketer != nil {
 						m = &fakeDistributionMetric{FakeMetric{
@@ -828,23 +828,23 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					// Get should return different values for different contexts.
 					v1 := s.Get(ctx, m, time.Time{}, fvs())
 					v2 := s.Get(ctxWithTarget, m, time.Time{}, fvs())
-					So(v1, ShouldNotEqual, v2)
+					assert.Loosely(t, v1, should.NotEqual(v2))
 
 					// Delete the cell with the custom target. Then, get should return
 					// the value for the default target, and nil for the custom target.
 					s.Del(ctxWithTarget, m, fvs())
-					So(s.Get(ctx, m, time.Time{}, fvs()), ShouldEqual, test.values[0])
-					So(s.Get(ctxWithTarget, m, time.Time{}, fvs()), ShouldBeNil)
+					assert.Loosely(t, s.Get(ctx, m, time.Time{}, fvs()), should.Equal(test.values[0]))
+					assert.Loosely(t, s.Get(ctxWithTarget, m, time.Time{}, fvs()), should.BeNil)
 				})
 			}
 		})
 	})
 
-	Convey("Concurrency", t, func() {
+	ftt.Run("Concurrency", t, func(t *ftt.Test) {
 		const numIterations = 100
 		const numGoroutines = 32
 
-		Convey("Incr", func(c C) {
+		t.Run("Incr", func(c *ftt.Test) {
 			s := opts.Factory()
 			m := &FakeMetric{
 				types.MetricInfo{"m", "", []field.Field{}, types.CumulativeIntType, target.NilType},
@@ -865,12 +865,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			wg.Wait()
 
 			val := s.Get(ctx, m, time.Time{}, []any{})
-			So(val, ShouldEqual, numIterations*numGoroutines)
+			assert.Loosely(c, val, should.Equal(numIterations*numGoroutines))
 		})
 	})
 
-	Convey("Multiple targets with the same TargetType", t, func() {
-		Convey("Gets from context", func() {
+	ftt.Run("Multiple targets with the same TargetType", t, func(c *ftt.Test) {
+		c.Run("Gets from context", func(c *ftt.Test) {
 			s := opts.Factory()
 			m := &FakeMetric{
 				types.MetricInfo{"m", "", []field.Field{}, types.NonCumulativeIntType, target.NilType},
@@ -884,27 +884,27 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			s.Set(ctxWithTarget, m, time.Time{}, []any{}, int64(43))
 
 			val := s.Get(ctx, m, time.Time{}, []any{})
-			So(val, ShouldEqual, 42)
+			assert.Loosely(c, val, should.Equal(42))
 
 			val = s.Get(ctxWithTarget, m, time.Time{}, []any{})
-			So(val, ShouldEqual, 43)
+			assert.Loosely(c, val, should.Equal(43))
 
 			all := s.GetAll(ctx)
-			So(len(all), ShouldEqual, 2)
+			assert.Loosely(c, len(all), should.Equal(2))
 
 			// The order is undefined.
 			if all[0].Value.(int64) == 42 {
-				So(all[0].Target, ShouldResemble, s.DefaultTarget())
-				So(all[1].Target, ShouldResemble, &t)
+				assert.Loosely(c, all[0].Target, should.Resemble(s.DefaultTarget()))
+				assert.Loosely(c, all[1].Target, should.Resemble(&t))
 			} else {
-				So(all[0].Target, ShouldResemble, &t)
-				So(all[1].Target, ShouldResemble, s.DefaultTarget())
+				assert.Loosely(c, all[0].Target, should.Resemble(&t))
+				assert.Loosely(c, all[1].Target, should.Resemble(s.DefaultTarget()))
 			}
 		})
 	})
 
-	Convey("Multiple targets with multiple TargetTypes", t, func() {
-		Convey("Gets from context", func() {
+	ftt.Run("Multiple targets with multiple TargetTypes", t, func(c *ftt.Test) {
+		c.Run("Gets from context", func(c *ftt.Test) {
 			s := opts.Factory()
 			// Two metrics with the same metric name, but different types.
 			mTask := &FakeMetric{
@@ -923,21 +923,21 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			s.Set(ctxWithTarget, mDevice, time.Time{}, []any{}, int64(43))
 
 			val := s.Get(ctxWithTarget, mTask, time.Time{}, []any{})
-			So(val, ShouldEqual, 42)
+			assert.Loosely(c, val, should.Equal(42))
 
 			val = s.Get(ctxWithTarget, mDevice, time.Time{}, []any{})
-			So(val, ShouldEqual, 43)
+			assert.Loosely(c, val, should.Equal(43))
 
 			all := s.GetAll(ctx)
-			So(len(all), ShouldEqual, 2)
+			assert.Loosely(c, len(all), should.Equal(2))
 
 			// The order is undefined.
 			if all[0].Value.(int64) == 42 {
-				So(all[0].Target, ShouldResemble, &taskTarget)
-				So(all[1].Target, ShouldResemble, &deviceTarget)
+				assert.Loosely(c, all[0].Target, should.Resemble(&taskTarget))
+				assert.Loosely(c, all[1].Target, should.Resemble(&deviceTarget))
 			} else {
-				So(all[0].Target, ShouldResemble, &deviceTarget)
-				So(all[1].Target, ShouldResemble, &taskTarget)
+				assert.Loosely(c, all[0].Target, should.Resemble(&deviceTarget))
+				assert.Loosely(c, all[1].Target, should.Resemble(&taskTarget))
 			}
 		})
 	})

@@ -152,6 +152,7 @@ func extractAllowUnexportedFromLocked(typ reflect.Type) []cmp.Option {
 //   - A direct comparison of protoreflect.Descriptor types. These are
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
+//   - A direct comparison of reflect.Type interfaces.
 //   - "github.com/google/go-cmp/cmp".AllowUnexported(expected) (if `expected`
 //     has an underlying struct type after peeling off slices, pointers, etc.)
 //
@@ -177,6 +178,7 @@ func Resemble[T any](expected T) comparison.Func[T] {
 //   - A direct comparison of protoreflect.Descriptor types. These are
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
+//   - A direct comparison of reflect.Type interfaces.
 //   - "github.com/google/go-cmp/cmp".AllowUnexported(expected) (if `expected`
 //     has an underlying struct type after peeling off slices, pointers, etc.)
 //
@@ -198,6 +200,7 @@ func NotResemble[T any](expected T) comparison.Func[T] {
 //   - A direct comparison of protoreflect.Descriptor types. These are
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
+//   - A direct comparison of reflect.Type interfaces.
 //
 // This is done via the go.chromium.org/luci/common/testing/registry package,
 // which also allows process-wide registration of additional default
@@ -224,6 +227,7 @@ func Match[T any](expected T, opts ...cmp.Option) comparison.Func[T] {
 //   - A direct comparison of protoreflect.Descriptor types. These are
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
+//   - A direct comparison of reflect.Type interfaces.
 //
 // This is done via the go.chromium.org/luci/common/testing/registry package,
 // which also allows process-wide registration of additional default

@@ -17,51 +17,53 @@ package distribution
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNew(t *testing.T) {
-	Convey("Passing nil uses the default bucketer", t, func() {
+	ftt.Run("Passing nil uses the default bucketer", t, func(t *ftt.Test) {
 		d := New(nil)
-		So(d.Bucketer(), ShouldEqual, DefaultBucketer)
+		assert.Loosely(t, d.Bucketer(), should.Equal(DefaultBucketer))
 	})
 }
 
 func TestAdd(t *testing.T) {
-	Convey("Add", t, func() {
+	ftt.Run("Add", t, func(t *ftt.Test) {
 		d := New(FixedWidthBucketer(10, 2))
-		So(d.Sum(), ShouldEqual, 0)
-		So(d.Count(), ShouldEqual, 0)
+		assert.Loosely(t, d.Sum(), should.BeZero)
+		assert.Loosely(t, d.Count(), should.BeZero)
 
 		d.Add(1)
-		So(d.Buckets(), ShouldResemble, []int64{0, 1})
+		assert.Loosely(t, d.Buckets(), should.Resemble([]int64{0, 1}))
 		d.Add(10)
-		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1})
+		assert.Loosely(t, d.Buckets(), should.Resemble([]int64{0, 1, 1}))
 		d.Add(20)
-		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1, 1})
+		assert.Loosely(t, d.Buckets(), should.Resemble([]int64{0, 1, 1, 1}))
 		d.Add(30)
-		So(d.Buckets(), ShouldResemble, []int64{0, 1, 1, 2})
-		So(d.Sum(), ShouldEqual, 61)
-		So(d.Count(), ShouldEqual, 4)
+		assert.Loosely(t, d.Buckets(), should.Resemble([]int64{0, 1, 1, 2}))
+		assert.Loosely(t, d.Sum(), should.Equal(61.0))
+		assert.Loosely(t, d.Count(), should.Equal(4))
 	})
 }
 
 func TestClone(t *testing.T) {
-	Convey("Clone empty", t, func() {
+	ftt.Run("Clone empty", t, func(t *ftt.Test) {
 		d := New(FixedWidthBucketer(10, 2))
-		So(d, ShouldResemble, d.Clone())
+		assert.Loosely(t, d, should.Resemble(d.Clone()))
 	})
 
-	Convey("Clone populated", t, func() {
+	ftt.Run("Clone populated", t, func(t *ftt.Test) {
 		d := New(FixedWidthBucketer(10, 2))
 		d.Add(1)
 		d.Add(10)
 		d.Add(20)
 
 		clone := d.Clone()
-		So(d, ShouldResemble, clone)
+		assert.Loosely(t, d, should.Resemble(clone))
 
 		d.Add(30)
-		So(d, ShouldNotResemble, clone)
+		assert.Loosely(t, d, should.NotResemble(clone))
 	})
 }

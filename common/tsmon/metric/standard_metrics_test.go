@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestStandardMetrics(t *testing.T) {
@@ -30,65 +31,65 @@ func TestStandardMetrics(t *testing.T) {
 	durMillis := 5.0
 	dur := time.Duration(durMillis * float64(time.Millisecond))
 
-	Convey("UpdatePresenceMetrics updates presenceMetric", t, func() {
+	ftt.Run("UpdatePresenceMetrics updates presenceMetric", t, func(t *ftt.Test) {
 		c, m := tsmon.WithDummyInMemory(context.Background())
 		registerCallbacks(c)
 
-		So(tsmon.Flush(c), ShouldBeNil)
+		assert.Loosely(t, tsmon.Flush(c), should.BeNil)
 
-		So(len(m.Cells), ShouldEqual, 1)
-		So(len(m.Cells[0]), ShouldEqual, 1)
-		So(m.Cells[0][0].Name, ShouldEqual, "presence/up")
-		So(m.Cells[0][0].Value, ShouldEqual, true)
+		assert.Loosely(t, len(m.Cells), should.Equal(1))
+		assert.Loosely(t, len(m.Cells[0]), should.Equal(1))
+		assert.Loosely(t, m.Cells[0][0].Name, should.Equal("presence/up"))
+		assert.Loosely(t, m.Cells[0][0].Value, should.Equal(true))
 	})
 
-	Convey("UpdateHTTPMetrics updates client metrics", t, func() {
+	ftt.Run("UpdateHTTPMetrics updates client metrics", t, func(t *ftt.Test) {
 		c := makeContext()
 		name, client := "test_name", "test_client"
-		So(requestBytesMetric.Get(c, name, client), ShouldBeNil)
-		So(responseBytesMetric.Get(c, name, client), ShouldBeNil)
-		So(requestDurationsMetric.Get(c, name, client), ShouldBeNil)
-		So(responseStatusMetric.Get(c, 200, name, client), ShouldEqual, 0)
+		assert.Loosely(t, requestBytesMetric.Get(c, name, client), should.BeNil)
+		assert.Loosely(t, responseBytesMetric.Get(c, name, client), should.BeNil)
+		assert.Loosely(t, requestDurationsMetric.Get(c, name, client), should.BeNil)
+		assert.Loosely(t, responseStatusMetric.Get(c, 200, name, client), should.BeZero)
 
 		UpdateHTTPMetrics(c, name, client, 200, dur, 123, 321)
 
-		So(requestBytesMetric.Get(c, name, client).Sum(), ShouldEqual, 123)
-		So(responseBytesMetric.Get(c, name, client).Sum(), ShouldEqual, 321)
-		So(requestDurationsMetric.Get(c, name, client).Sum(), ShouldEqual, durMillis)
-		So(responseStatusMetric.Get(c, 200, name, client), ShouldEqual, 1)
+		assert.That(t, requestBytesMetric.Get(c, name, client).Sum(), should.Equal(123.0))
+		assert.That(t, responseBytesMetric.Get(c, name, client).Sum(), should.Equal(321.0))
+		assert.That(t, requestDurationsMetric.Get(c, name, client).Sum(), should.Equal(durMillis))
+		assert.Loosely(t, responseStatusMetric.Get(c, 200, name, client), should.Equal(1))
 	})
 
-	Convey("UpdateServerMetrics updates server metrics", t, func() {
+	ftt.Run("UpdateServerMetrics updates server metrics", t, func(t *ftt.Test) {
 		c := makeContext()
 		code, name, isRobot := 200, "test_client", false
 
-		So(serverDurationsMetric.Get(c, code, name, isRobot), ShouldBeNil)
-		So(serverRequestBytesMetric.Get(c, code, name, isRobot), ShouldBeNil)
-		So(serverResponseBytesMetric.Get(c, code, name, isRobot), ShouldBeNil)
-		So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 0)
+		assert.Loosely(t, serverDurationsMetric.Get(c, code, name, isRobot), should.BeNil)
+		assert.Loosely(t, serverRequestBytesMetric.Get(c, code, name, isRobot), should.BeNil)
+		assert.Loosely(t, serverResponseBytesMetric.Get(c, code, name, isRobot), should.BeNil)
+		assert.Loosely(t, serverResponseStatusMetric.Get(c, code, name, isRobot), should.BeZero)
 
-		Convey("for a robot user agent", func() {
+		t.Run("for a robot user agent", func(t *ftt.Test) {
 			isRobot = true
 			userAgent := "I am a GoogleBot."
 
 			UpdateServerMetrics(c, name, code, dur, 123, 321, userAgent)
 
-			So(serverDurationsMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, durMillis)
-			So(serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 123)
-			So(serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 321)
-			So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 1)
+			assert.That(t, serverDurationsMetric.Get(c, code, name, isRobot).Sum(), should.Equal(durMillis))
+			assert.That(t, serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), should.Equal(123.0))
+			assert.That(t, serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), should.Equal(321.0))
+			assert.Loosely(t, serverResponseStatusMetric.Get(c, code, name, isRobot), should.Equal(1))
 		})
 
-		Convey("for a non-robot user agent", func() {
+		t.Run("for a non-robot user agent", func(t *ftt.Test) {
 			isRobot = false
 			userAgent := "I am a human."
 
 			UpdateServerMetrics(c, name, code, dur, 123, 321, userAgent)
 
-			So(serverDurationsMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, durMillis)
-			So(serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 123)
-			So(serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), ShouldEqual, 321)
-			So(serverResponseStatusMetric.Get(c, code, name, isRobot), ShouldEqual, 1)
+			assert.That(t, serverDurationsMetric.Get(c, code, name, isRobot).Sum(), should.Equal(durMillis))
+			assert.That(t, serverRequestBytesMetric.Get(c, code, name, isRobot).Sum(), should.Equal(123.0))
+			assert.That(t, serverResponseBytesMetric.Get(c, code, name, isRobot).Sum(), should.Equal(321.0))
+			assert.Loosely(t, serverResponseStatusMetric.Get(c, code, name, isRobot), should.Equal(1))
 		})
 	})
 }

@@ -24,9 +24,10 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeRoundTripper struct {
@@ -46,14 +47,14 @@ func (t *fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 func TestHTTPRoundTripper(t *testing.T) {
 	t.Parallel()
 
-	Convey("With a fake round tripper and dummy state", t, func() {
+	ftt.Run("With a fake round tripper and dummy state", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
 		rt := &fakeRoundTripper{tc: tc}
 		c := http.Client{Transport: InstrumentTransport(ctx, rt, "foo")}
 
-		Convey("successful request", func() {
+		t.Run("successful request", func(t *ftt.Test) {
 			rt.duration = time.Millisecond * 42
 			rt.resp.StatusCode = 200
 			rt.resp.Body = io.NopCloser(strings.NewReader("12345678"))
@@ -63,23 +64,23 @@ func TestHTTPRoundTripper(t *testing.T) {
 			req = req.WithContext(ctx)
 
 			resp, err := c.Do(req)
-			So(err, ShouldBeNil)
-			So(resp.StatusCode, ShouldEqual, 200)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.StatusCode, should.Equal(200))
 
 			v := requestBytesMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 5)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(5.0))
 			v = responseBytesMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 8)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(8.0))
 			v = requestDurationsMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 42)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(42.0))
 			iv := responseStatusMetric.Get(ctx, 200, "www.example.com", "foo")
-			So(iv, ShouldEqual, 1)
+			assert.Loosely(t, iv, should.Equal(1))
 		})
 
-		Convey("error with no response", func() {
+		t.Run("error with no response", func(t *ftt.Test) {
 			rt.duration = time.Millisecond * 42
 			rt.err = errors.New("oops")
 
@@ -87,20 +88,20 @@ func TestHTTPRoundTripper(t *testing.T) {
 			req = req.WithContext(ctx)
 
 			resp, err := c.Do(req)
-			So(err, ShouldNotBeNil)
-			So(resp, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, resp, should.BeNil)
 
 			v := requestBytesMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 5)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(5.0))
 			v = responseBytesMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 0)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(0.0))
 			v = requestDurationsMetric.Get(ctx, "www.example.com", "foo")
-			So(v.Count(), ShouldEqual, 1)
-			So(v.Sum(), ShouldEqual, 42)
+			assert.Loosely(t, v.Count(), should.Equal(1))
+			assert.That(t, v.Sum(), should.Equal(42.0))
 			iv := responseStatusMetric.Get(ctx, 0, "www.example.com", "foo")
-			So(iv, ShouldEqual, 1)
+			assert.Loosely(t, iv, should.Equal(1))
 		})
 	})
 }
