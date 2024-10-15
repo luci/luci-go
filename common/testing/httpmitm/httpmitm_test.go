@@ -20,10 +20,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type record struct {
@@ -32,50 +34,28 @@ type record struct {
 	e error
 }
 
-// shouldRecord tests whether a captured record (actual) matches the expected result:
+// checkRecorded tests whether a captured record (actual) matches the expected result:
 // 0) Origin
 // 1) bool (are we expecting an error?)
 // 2) string (optional). If present, the regexp pattern that must match the data.
-func shouldRecord(actual any, expected ...any) string {
-	r := actual.(*record)
-	o := expected[0].(Origin)
-	e := expected[1].(bool)
+func checkRecorded(t testing.TB, actual *record, expected Origin, expectErr bool, expectRe ...string) {
+	t.Helper()
 
-	var re string
-	if len(expected) == 3 {
-		re = expected[2].(string)
-	}
-
-	if err := ShouldEqual(r.o, o); err != "" {
-		return err
-	}
-	if !e {
-		// No error.
-		if err := ShouldBeNil(r.e); err != "" {
-			return err
-		}
+	assert.That(t, actual.o, should.Match(expected), truth.LineContext())
+	if expectErr {
+		assert.Loosely(t, actual.e, should.NotBeNil, truth.LineContext())
 	} else {
-		// Error expected.
-		if err := ShouldNotBeNil(r.e); err != "" {
-			return err
-		}
+		assert.That(t, actual.e, should.ErrLike(nil), truth.LineContext())
 	}
-	if re != "" {
-		m, e := regexp.MatchString(re, r.d)
-		if err := ShouldEqual(e, nil); err != "" {
-			return err
-		}
-		if err := ShouldBeTrue(m); err != "" {
-			return err
-		}
+	for _, re := range expectRe {
+		assert.That(t, actual.d, should.MatchRegexp(re), truth.LineContext())
 	}
-	return ""
 }
 
 func TestTransport(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A debug HTTP client`, t, func() {
+	ftt.Run(`A debug HTTP client`, t, func(t *ftt.Test) {
 		// Generic callback-based server. Each test will set its callback.
 		var callback func() (string, error)
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -102,54 +82,49 @@ func TestTransport(t *testing.T) {
 			},
 		}
 
-		Convey(`Successfully fetches content.`, func() {
+		t.Run(`Successfully fetches content.`, func(t *ftt.Test) {
 			callback = func() (string, error) {
 				return "Hello, client!", nil
 			}
 			resp, err := client.Post(ts.URL, "test", bytes.NewBufferString("DATA"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer resp.Body.Close()
 
-			So(len(records), ShouldEqual, 2)
-			So(records[0], shouldRecord, Request, false,
-				"(?s:POST / HTTP/1.1\r\n(.+:.+\r\n)*\r\nDATA)")
-			So(records[1], shouldRecord, Response, false,
-				"(?s:HTTP/1.1 200 OK\r\n(.+:.+\r\n)*\r\nHello, client!)")
+			assert.Loosely(t, len(records), should.Equal(2))
+			checkRecorded(t, records[0], Request, false, "(?s:POST / HTTP/1.1\r\n(.+:.+\r\n)*\r\nDATA)")
+			checkRecorded(t, records[1], Response, false, "(?s:HTTP/1.1 200 OK\r\n(.+:.+\r\n)*\r\nHello, client!)")
 
 			body, err := io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "Hello, client!")
-			So(resp.StatusCode, ShouldEqual, http.StatusOK)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("Hello, client!"))
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusOK))
 		})
 
-		Convey(`Handles HTTP error.`, func() {
+		t.Run(`Handles HTTP error.`, func(t *ftt.Test) {
 			callback = func() (string, error) {
 				return "", errors.New("Failure!")
 			}
 			resp, err := client.Post(ts.URL, "test", bytes.NewBufferString("DATA"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer resp.Body.Close()
 
-			So(len(records), ShouldEqual, 2)
-			So(records[0], shouldRecord, Request, false,
-				"(?s:POST / HTTP/1.1\r\n(.+:.+\r\n)*\r\nDATA)")
-			So(records[1], shouldRecord, Response, false,
-				"(?s:HTTP/1.1 500 Internal Server Error\r\n(.+:.+\r\n)*\r\nFailure!)")
+			assert.Loosely(t, len(records), should.Equal(2))
+			checkRecorded(t, records[0], Request, false, "(?s:POST / HTTP/1.1\r\n(.+:.+\r\n)*\r\nDATA)")
+			checkRecorded(t, records[1], Response, false, "(?s:HTTP/1.1 500 Internal Server Error\r\n(.+:.+\r\n)*\r\nFailure!)")
 
 			body, err := io.ReadAll(resp.Body)
-			So(err, ShouldBeNil)
-			So(string(body), ShouldEqual, "Failure!\n")
-			So(resp.StatusCode, ShouldEqual, http.StatusInternalServerError)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(body), should.Equal("Failure!\n"))
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusInternalServerError))
 		})
 
-		Convey(`Handles connection error.`, func() {
+		t.Run(`Handles connection error.`, func(t *ftt.Test) {
 			_, err := client.Get("http+testingfakeprotocol://")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 
-			So(len(records), ShouldEqual, 2)
-			So(records[0], shouldRecord, Request, false,
-				"(?s:GET / HTTP/1.1\r\n(.+:.+\r\n)*)")
-			So(records[1], shouldRecord, Response, true)
+			assert.Loosely(t, len(records), should.Equal(2))
+			checkRecorded(t, records[0], Request, false, "(?s:GET / HTTP/1.1\r\n(.+:.+\r\n)*)")
+			checkRecorded(t, records[1], Response, true)
 		})
 	})
 }

@@ -15,6 +15,7 @@
 package should
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -140,4 +141,31 @@ func NotBeBlank(actual string) *failure.Summary {
 			Summary
 	}
 	return nil
+}
+
+// MatchRegexp returns a comparison.Func[string] that asserts that `actual`
+// matches the given regexp `re`.
+func MatchRegexp(re string) comparison.Func[string] {
+	const cmpName = "should.MatchRegexp"
+
+	reComp, err := regexp.Compile(re)
+	if err != nil {
+		return func(s string) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName).
+				Because("Failed to compile regex: %s", err).
+				Summary
+		}
+	}
+
+	return func(actual string) *failure.Summary {
+		if reComp.MatchString(actual) {
+			return nil
+		}
+
+		return comparison.NewSummaryBuilder(cmpName).
+			Actual(actual).
+			AddFindingf("Regexp", re).
+			Because("Regexp did not match Actual").
+			Summary
+	}
 }

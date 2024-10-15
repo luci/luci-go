@@ -71,7 +71,6 @@ func TestBeBlank(t *testing.T) {
 	t.Run("fail3", shouldFail(BeBlank("4")))
 }
 
-
 func TestNotBeBlank(t *testing.T) {
 	t.Parallel()
 
@@ -81,4 +80,13 @@ func TestNotBeBlank(t *testing.T) {
 	t.Run("pass1", shouldPass(NotBeBlank("a")))
 	t.Run("pass2", shouldPass(NotBeBlank("a ")))
 	t.Run("pass3", shouldPass(NotBeBlank("4")))
+}
+
+func TestMatchRegexp(t *testing.T) {
+	t.Parallel()
+
+	t.Run("fail1", shouldFail(MatchRegexp("h.llo")("goodbye"), "did not match"))
+	t.Run("fail2", shouldFail(MatchRegexp("bad(")("goodbye"), "missing closing )"))
+
+	t.Run("pass1", shouldPass(MatchRegexp("h.llo")("hello")))
 }
