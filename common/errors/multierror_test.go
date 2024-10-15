@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMultiError(t *testing.T) {
@@ -46,56 +46,56 @@ func TestMultiError(t *testing.T) {
 func TestUpstreamErrors(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test MultiError", t, func() {
-		Convey("nil", func() {
+	ftt.Run("Test MultiError", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			me := MultiError(nil)
-			So(me.Error(), ShouldEqual, "(0 errors)")
-			Convey("single", func() {
-				So(SingleError(error(me)), ShouldBeNil)
+			assert.Loosely(t, me.Error(), should.Equal("(0 errors)"))
+			t.Run("single", func(t *ftt.Test) {
+				assert.Loosely(t, SingleError(error(me)), should.BeNil)
 			})
 		})
-		Convey("one", func() {
+		t.Run("one", func(t *ftt.Test) {
 			me := MultiError{errors.New("sup")}
-			So(me.Error(), ShouldEqual, "sup")
+			assert.Loosely(t, me.Error(), should.Equal("sup"))
 		})
-		Convey("two", func() {
+		t.Run("two", func(t *ftt.Test) {
 			me := MultiError{errors.New("sup"), errors.New("what")}
-			So(me.Error(), ShouldEqual, "sup (and 1 other error)")
+			assert.Loosely(t, me.Error(), should.Equal("sup (and 1 other error)"))
 		})
-		Convey("more", func() {
+		t.Run("more", func(t *ftt.Test) {
 			me := MultiError{errors.New("sup"), errors.New("what"), errors.New("nerds")}
-			So(me.Error(), ShouldEqual, "sup (and 2 other errors)")
+			assert.Loosely(t, me.Error(), should.Equal("sup (and 2 other errors)"))
 
-			Convey("single", func() {
-				So(SingleError(error(me)), ShouldResemble, errors.New("sup"))
+			t.Run("single", func(t *ftt.Test) {
+				assert.Loosely(t, SingleError(error(me)), should.Resemble(errors.New("sup")))
 			})
 		})
 	})
 
-	Convey("MaybeAdd", t, func() {
+	ftt.Run("MaybeAdd", t, func(t *ftt.Test) {
 		me := MultiError(nil)
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			me.MaybeAdd(nil)
-			So(me, ShouldHaveLength, 0)
-			So(error(me), ShouldBeNil)
+			assert.Loosely(t, me, should.HaveLength(0))
+			assert.That(t, me == nil, should.BeTrue)
 		})
 
-		Convey("thing", func() {
+		t.Run("thing", func(t *ftt.Test) {
 			me.MaybeAdd(errors.New("sup"))
-			So(me, ShouldHaveLength, 1)
-			So(error(me), ShouldNotBeNil)
+			assert.Loosely(t, me, should.HaveLength(1))
+			assert.Loosely(t, error(me), should.NotBeNilInterface)
 
 			me.MaybeAdd(errors.New("what"))
-			So(me, ShouldHaveLength, 2)
-			So(error(me), ShouldNotBeNil)
+			assert.Loosely(t, me, should.HaveLength(2))
+			assert.Loosely(t, error(me), should.NotBeNilInterface)
 		})
 
 	})
 
-	Convey("AsError", t, func() {
+	ftt.Run("AsError", t, func(t *ftt.Test) {
 		var me MultiError
-		So(me, ShouldBeNil)
+		assert.Loosely(t, me == nil, should.BeTrue)
 
 		var err error
 		err = me
@@ -106,61 +106,64 @@ func TestUpstreamErrors(t *testing.T) {
 
 		// However!
 		err = me.AsError()
-		So(err == nil, ShouldBeTrue)
+		assert.Loosely(t, err == nil, should.BeTrue)
 	})
 
-	Convey("SingleError passes through", t, func() {
+	ftt.Run("SingleError passes through", t, func(t *ftt.Test) {
 		e := errors.New("unique")
-		So(SingleError(e), ShouldEqual, e)
+		assert.Loosely(t, SingleError(e), should.Equal(e))
 	})
 }
 
 func TestFlatten(t *testing.T) {
 	t.Parallel()
 
-	Convey("Flatten works", t, func() {
-		Convey("Nil", func() {
-			So(Flatten(MultiError{nil, nil, MultiError{nil, nil, nil}}), ShouldBeNil)
+	ftt.Run("Flatten works", t, func(t *ftt.Test) {
+		t.Run("Nil", func(t *ftt.Test) {
+			assert.Loosely(t, Flatten(MultiError{nil, nil, MultiError{nil, nil, nil}}), should.BeNil)
 		})
 
-		Convey("2-dim", func() {
-			So(Flatten(MultiError{nil, errors.New("1"), nil, MultiError{nil, errors.New("2"), nil}}),
-				ShouldResemble, MultiError{errors.New("1"), errors.New("2")})
+		t.Run("2-dim", func(t *ftt.Test) {
+			oneErr := errors.New("1")
+			twoErr := errors.New("2")
+			assert.Loosely(t, Flatten(MultiError{nil, oneErr, nil, MultiError{nil, twoErr, nil}}),
+				should.Match([]error{oneErr, twoErr}, cmpopts.EquateErrors()))
 		})
 
-		Convey("Doesn't unwrap", func() {
+		t.Run("Doesn't unwrap", func(t *ftt.Test) {
 			ann := Annotate(MultiError{nil, nil, nil}, "don't do this").Err()
-			merr, yup := Flatten(MultiError{nil, ann, nil, MultiError{nil, errors.New("2"), nil}}).(MultiError)
-			So(yup, ShouldBeTrue)
-			So(len(merr), ShouldEqual, 2)
-			So(merr, ShouldResemble, MultiError{ann, errors.New("2")})
+			twoErr := errors.New("2")
+			merr, yup := Flatten(MultiError{nil, ann, nil, MultiError{nil, twoErr, nil}}).(MultiError)
+			assert.Loosely(t, yup, should.BeTrue)
+			assert.Loosely(t, len(merr), should.Equal(2))
+			assert.Loosely(t, merr, should.Match([]error{ann, twoErr}, cmpopts.EquateErrors()))
 		})
 	})
 }
 
 func TestAppend(t *testing.T) {
 	t.Parallel()
-	Convey("Test Append function", t, func() {
-		Convey("combine empty", func() {
-			So(Append(), ShouldBeNil)
+	ftt.Run("Test Append function", t, func(t *ftt.Test) {
+		t.Run("combine empty", func(t *ftt.Test) {
+			assert.Loosely(t, Append(), should.BeNil)
 		})
-		Convey("more intricate empty cases", func() {
-			So(Append(Append()), ShouldBeNil)
-			So(Append(nil), ShouldBeNil)
-			So(Append(Append(Append()), Append(), nil, Append(nil, nil)), ShouldBeNil)
+		t.Run("more intricate empty cases", func(t *ftt.Test) {
+			assert.Loosely(t, Append(Append()), should.BeNil)
+			assert.Loosely(t, Append(nil), should.BeNil)
+			assert.Loosely(t, Append(Append(Append()), Append(), nil, Append(nil, nil)), should.BeNil)
 		})
-		Convey("singleton physical equality", func() {
+		t.Run("singleton physical equality", func(t *ftt.Test) {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
-			So(e, ShouldEqual, Append(e))
-			So(e, ShouldEqual, Append(Append(e)))
+			assert.Loosely(t, e, should.Equal(Append(e)))
+			assert.Loosely(t, e, should.Equal(Append(Append(e))))
 		})
-		Convey("doubleton physical equality", func() {
+		t.Run("doubleton physical equality", func(t *ftt.Test) {
 			e := fmt.Errorf("f59031c1-3d8d-47c4-8cff-b2b5d67ce7e7")
-			So(Append(e, e).(MultiError)[0], ShouldEqual, e)
+			assert.Loosely(t, Append(e, e).(MultiError)[0], should.Equal(e))
 		})
-		Convey("doubleton physical equality with nils", func() {
+		t.Run("doubleton physical equality with nils", func(t *ftt.Test) {
 			e := fmt.Errorf("2d2a3939-e185-4210-9060-0cb0fdab42be")
-			So(Append(nil, e, e, nil).(MultiError)[0], ShouldEqual, e)
+			assert.Loosely(t, Append(nil, e, e, nil).(MultiError)[0], should.Equal(e))
 		})
 	})
 }

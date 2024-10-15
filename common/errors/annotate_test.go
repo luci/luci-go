@@ -23,8 +23,9 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -35,8 +36,7 @@ var (
 
 	excludedPkgs = []string{
 		`runtime`,
-		`github.com/jtolds/gls`,
-		`github.com/smartystreets/goconvey/convey`,
+		`go.chromium.org/luci/common/testing/ftt`,
 	}
 )
 
@@ -71,20 +71,20 @@ func FixForTest(lines []string) []string {
 func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test annotation struct", t, func() {
+	ftt.Run("Test annotation struct", t, func(t *ftt.Test) {
 		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy").
 			InternalReason("extra(%.3f)", 8.2).Err()
 		ae := e.(*annotatedError)
 
-		Convey("annotation can render itself for public usage", func() {
-			So(ae.Error(), ShouldEqual, `20 some error: "stringy": bad thing`)
+		t.Run("annotation can render itself for public usage", func(t *ftt.Test) {
+			assert.Loosely(t, ae.Error(), should.Equal(`20 some error: "stringy": bad thing`))
 		})
 
-		Convey("annotation can render itself for internal usage", func() {
+		t.Run("annotation can render itself for internal usage", func(t *ftt.Test) {
 			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
 
-			So(lines, ShouldResemble, []string{
+			assert.Loosely(t, lines, should.Resemble([]string{
 				`original error: bad thing`,
 				``,
 				`GOROUTINE LINE`,
@@ -92,17 +92,14 @@ func TestAnnotation(t *testing.T) {
 				`  reason: 20 some error: "stringy"`,
 				`  internal reason: extra(8.200)`,
 				``,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
-				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
-			})
+			}))
 		})
 
-		Convey("can render whole stack", func() {
+		t.Run("can render whole stack", func(t *ftt.Test) {
 			e = Annotate(e, "outer frame %s", "outer").Err()
 			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
@@ -118,55 +115,52 @@ func TestAnnotation(t *testing.T) {
 				`    reason: 20 some error: "stringy"`,
 				`    internal reason: extra(8.200)`,
 				``,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
-				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			}
-			So(lines, ShouldResemble, expectedLines)
+			assert.Loosely(t, lines, should.Resemble(expectedLines))
 
-			Convey("via Log", func() {
+			t.Run("via Log", func(t *ftt.Test) {
 				ctx := memlogger.Use(context.Background())
 				Log(ctx, e, excludedPkgs...)
 				ml := logging.Get(ctx).(*memlogger.MemLogger)
 				msgs := ml.Messages()
-				So(msgs, ShouldHaveLength, 1)
+				assert.Loosely(t, msgs, should.HaveLength(1))
 				lines := strings.Split(msgs[0].Msg, "\n")
 				FixForTest(lines)
-				So(lines, ShouldResemble, expectedLines)
+				assert.Loosely(t, lines, should.Resemble(expectedLines))
 			})
-			Convey("via Log in chunks", func() {
+			t.Run("via Log in chunks", func(t *ftt.Test) {
 				maxLogEntrySize = 200
 				ctx := memlogger.Use(context.Background())
 				Log(ctx, e, excludedPkgs...)
 				ml := logging.Get(ctx).(*memlogger.MemLogger)
 				var lines []string
 				for i, m := range ml.Messages() {
-					So(len(m.Msg), ShouldBeLessThan, maxLogEntrySize)
+					assert.Loosely(t, len(m.Msg), should.BeLessThan(maxLogEntrySize))
 					mLines := strings.Split(m.Msg, "\n")
 					if i > 0 {
-						So(mLines[0], ShouldEqual, "(continuation of error log)")
+						assert.Loosely(t, mLines[0], should.Equal("(continuation of error log)"))
 						mLines = mLines[1:]
 					}
 					lines = append(lines, mLines...)
 				}
 				FixForTest(lines)
-				So(lines, ShouldResemble, expectedLines)
+				assert.Loosely(t, lines, should.Resemble(expectedLines))
 			})
 		})
 
-		Convey(`can render external errors with Unwrap and no inner error`, func() {
-			So(RenderStack(emptyWrapper("hi")), ShouldResemble, []string{"hi"})
+		t.Run(`can render external errors with Unwrap and no inner error`, func(t *ftt.Test) {
+			assert.Loosely(t, RenderStack(emptyWrapper("hi")), should.Resemble([]string{"hi"}))
 		})
 
-		Convey(`can render external errors with Unwrap`, func() {
-			So(RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), ShouldResemble, []string{"outer: inner"})
+		t.Run(`can render external errors with Unwrap`, func(t *ftt.Test) {
+			assert.Loosely(t, RenderStack(fmt.Errorf("outer: %w", fmt.Errorf("inner"))), should.Resemble([]string{"outer: inner"}))
 		})
 
-		Convey(`can render external errors using Unwrap when Annotated`, func() {
+		t.Run(`can render external errors using Unwrap when Annotated`, func(t *ftt.Test) {
 			e := Annotate(fmt.Errorf("outer: %w", fmt.Errorf("inner")), "annotate").Err()
 			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
@@ -178,20 +172,15 @@ func TestAnnotation(t *testing.T) {
 				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1.6()`,
 				`  reason: annotate`,
 				``,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
-				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
 				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
-				`... skipped SOME frames in pkg "github.com/jtolds/gls"...`,
-				`... skipped SOME frames in pkg "github.com/smartystreets/goconvey/convey"...`,
+				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
-				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation()`,
 				`#? testing/testing.go:XXX - testing.tRunner()`,
 				`... skipped SOME frames in pkg "runtime"...`,
 			}
-			So(lines, ShouldResemble, expectedLines)
+			assert.Loosely(t, lines, should.Resemble(expectedLines))
 		})
 	})
 }

@@ -17,7 +17,10 @@ package errors
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFilter(t *testing.T) {
@@ -26,28 +29,29 @@ func TestFilter(t *testing.T) {
 	aerr := New("test error A")
 	berr := New("test error B")
 
-	Convey(`Filter works.`, t, func() {
-		So(Filter(nil, nil), ShouldEqual, nil)
-		So(Filter(nil, nil, aerr, berr), ShouldEqual, nil)
-		So(Filter(aerr, nil), ShouldEqual, aerr)
-		So(Filter(aerr, nil, aerr, berr), ShouldEqual, nil)
-		So(Filter(aerr, berr), ShouldEqual, aerr)
-		So(Filter(MultiError{aerr, berr}, berr), ShouldResemble, MultiError{aerr, nil})
-		So(Filter(MultiError{aerr, aerr}, aerr), ShouldEqual, nil)
-		So(Filter(MultiError{MultiError{aerr, aerr}, aerr}, aerr), ShouldEqual, nil)
+	ftt.Run(`Filter works.`, t, func(t *ftt.Test) {
+		assert.Loosely(t, Filter(nil, nil), should.BeNil)
+		assert.Loosely(t, Filter(nil, nil, aerr, berr), should.BeNil)
+		assert.Loosely(t, Filter(aerr, nil), should.Equal(aerr))
+		assert.Loosely(t, Filter(aerr, nil, aerr, berr), should.BeNil)
+		assert.Loosely(t, Filter(aerr, berr), should.Equal(aerr))
+		assert.Loosely(t, Filter(MultiError{aerr, berr}, berr), should.Match(
+			[]error{aerr, nil}, cmpopts.EquateErrors()))
+		assert.Loosely(t, Filter(MultiError{aerr, aerr}, aerr), should.BeNil)
+		assert.Loosely(t, Filter(MultiError{MultiError{aerr, aerr}, aerr}, aerr), should.BeNil)
 	})
 
-	Convey(`FilterFunc works.`, t, func() {
-		So(FilterFunc(nil, func(error) bool { return false }), ShouldEqual, nil)
-		So(FilterFunc(aerr, func(error) bool { return true }), ShouldEqual, nil)
-		So(FilterFunc(aerr, func(error) bool { return false }), ShouldEqual, aerr)
+	ftt.Run(`FilterFunc works.`, t, func(t *ftt.Test) {
+		assert.Loosely(t, FilterFunc(nil, func(error) bool { return false }), should.BeNil)
+		assert.Loosely(t, FilterFunc(aerr, func(error) bool { return true }), should.BeNil)
+		assert.Loosely(t, FilterFunc(aerr, func(error) bool { return false }), should.Equal(aerr))
 
 		// Make sure MultiError gets evaluated before its contents do.
-		So(FilterFunc(MultiError{aerr, berr}, func(e error) bool {
+		assert.Loosely(t, FilterFunc(MultiError{aerr, berr}, func(e error) bool {
 			if me, ok := e.(MultiError); ok {
 				return len(me) == 2
 			}
 			return false
-		}), ShouldEqual, nil)
+		}), should.BeNil)
 	})
 }
