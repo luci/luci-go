@@ -16,32 +16,41 @@ package paniccatcher
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/typed"
 )
 
 func TestCatch(t *testing.T) {
-	Convey(`Catch will suppress a panic.`, t, func() {
+	t.Run(`Catch will suppress a panic.`, func(t *testing.T) {
 		var pv *Panic
-		So(func() {
+		func() {
 			defer Catch(func(p *Panic) {
 				pv = p
 			})
 			panic("Everybody panic!")
-		}, ShouldNotPanic)
-		So(pv, ShouldNotBeNil)
-		So(pv.Reason, ShouldEqual, "Everybody panic!")
-		So(pv.Stack, ShouldContainSubstring, "TestCatch")
+		}() // should not panic
+		if pv == nil {
+			t.Fatalf("pv == nil (should not be)")
+		}
+		if diff := typed.Diff(pv.Reason, "Everybody panic!"); diff != "" {
+			t.Fatalf("pv.Reason diff: %q", diff)
+		}
+		if !strings.Contains(pv.Stack, "TestCatch") {
+			t.Fatalf("pv.Stack does not contain TestCatch: %q", pv.Stack)
+		}
 	})
-	Convey(`Body does not run with no panic`, t, func() {
+	t.Run(`Body does not run with no panic`, func(t *testing.T) {
 		didRun := false
 		func() {
 			defer Catch(func(*Panic) {
 				didRun = true
 			})
 		}()
-		So(didRun, ShouldBeFalse)
+		if didRun {
+			t.Fatal("body ran somehow?")
+		}
 	})
 }
 
