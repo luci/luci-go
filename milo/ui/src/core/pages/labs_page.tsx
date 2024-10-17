@@ -13,13 +13,16 @@
 // limitations under the License.
 
 import { Box } from '@mui/material';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
+import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 export function Component() {
+  const [feedbackUrlArgs, setFeedbackUrlArgs] = useState<GenFeedbackUrlArgs>();
   return (
     <>
       <Box sx={{ width: '100%', backgroundColor: 'rgb(229, 246, 253)' }}>
@@ -29,6 +32,7 @@ export function Component() {
          ** lab page breaks, we don't want users to think this is a production
          ** page. */}
         <LabsWarningAlert
+          feedbackUrlArgs={feedbackUrlArgs}
           sx={{
             backgroundColor: 'rgb(229, 246, 253)',
             // In case the page grows wider than 100vw, make
@@ -47,7 +51,7 @@ export function Component() {
           // error this way.
           key="labs"
         >
-          <Outlet />
+          <Outlet context={{ setFeedbackUrlArgs }} />
         </RecoverableErrorBoundary>
       </ContentGroup>
     </>

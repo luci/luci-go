@@ -12,10 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export type GenFeedbackUrlArgs =
+  | {
+    errMsg?: string;
+    stacktrace?: string;
+    bugComponent?: string;
+  }
+  | undefined;
 /**
  * Generates URL for collecting feedback.
  */
-export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
+export function genFeedbackUrl({
+  errMsg,
+  stacktrace,
+  bugComponent,
+}: GenFeedbackUrlArgs = {}) {
   const feedbackComment =
     `# Basic Info\n\n` +
     `Version: ${UI_VERSION}\n\n` +
@@ -34,7 +45,7 @@ export function genFeedbackUrl(errMsg?: string, stacktrace?: string) {
 
   const searchParams = new URLSearchParams({
     // Public Trackers > Chromium Public Trackers > Chromium > Infra > LUCI > UserInterface
-    component: '1456503',
+    component: bugComponent ?? '1456503',
     type: 'BUG',
     priority: 'P2',
     severity: 'S2',

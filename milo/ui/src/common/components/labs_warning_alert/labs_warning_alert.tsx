@@ -17,16 +17,21 @@ import Alert, { AlertProps } from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Link from '@mui/material/Link';
 
-import { genFeedbackUrl } from '@/common/tools/utils';
+import { genFeedbackUrl, GenFeedbackUrlArgs } from '@/common/tools/utils';
 
-export interface LabsWarningAlertProps extends AlertProps {}
+export interface LabsWarningAlertProps extends AlertProps {
+  feedbackUrlArgs: GenFeedbackUrlArgs;
+}
 
-export function LabsWarningAlert(props: LabsWarningAlertProps) {
+export function LabsWarningAlert({
+  feedbackUrlArgs,
+  ...alertProps
+}: LabsWarningAlertProps) {
   return (
-    <Alert severity="info" icon={<ScienceIcon />} {...props}>
+    <Alert severity="info" icon={<ScienceIcon />} {...alertProps}>
       <AlertTitle>Page under construction</AlertTitle>
       This page is experimental. Please provide{' '}
-      <Link href={genFeedbackUrl()} target="_blank">
+      <Link href={genFeedbackUrl(feedbackUrlArgs)} target="_blank">
         feedback
       </Link>
       . URLs can be updated without backwards compatibility.

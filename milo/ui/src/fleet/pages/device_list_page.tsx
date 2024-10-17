@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
+
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export const DeviceListPage = () => {
@@ -26,6 +30,18 @@ export const DeviceListPage = () => {
 };
 
 export function Component() {
+  const { setFeedbackUrlArgs } = useOutletContext() as {
+    feedbackUrlArgs: GenFeedbackUrlArgs;
+    setFeedbackUrlArgs: React.Dispatch<
+      React.SetStateAction<GenFeedbackUrlArgs>
+    >;
+  };
+
+  useEffect(() => {
+    setFeedbackUrlArgs({ bugComponent: '1664178' });
+    return () => setFeedbackUrlArgs(undefined);
+  }, [setFeedbackUrlArgs]);
+
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <RecoverableErrorBoundary

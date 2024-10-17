@@ -58,7 +58,10 @@ export function ErrorDisplay({
       </pre>
       {showFileBugButton && (
         <Button
-          href={genFeedbackUrl(error.message, error.stack)}
+          href={genFeedbackUrl({
+            errMsg: error.message,
+            stacktrace: error.stack,
+          })}
           target="_blank"
           rel="noopener"
           color="secondary"
