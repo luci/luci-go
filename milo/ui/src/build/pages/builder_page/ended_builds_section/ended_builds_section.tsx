@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import { Autocomplete, Box, capitalize, Stack, TextField } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useRef } from 'react';
 
+import { BUILD_STATUS_DISPLAY_MAP } from '@/build/constants';
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
 import {
@@ -34,7 +35,12 @@ import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/pr
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { EndedBuildTable } from './ended_build_table';
-import { createdBeforeUpdater, getCreatedBefore } from './search_param_utils';
+import {
+  statusUpdater,
+  createdBeforeUpdater,
+  getStatus,
+  getCreatedBefore,
+} from './search_param_utils';
 
 const FIELD_MASK = Object.freeze([
   'builds.*.status',
@@ -48,6 +54,16 @@ const FIELD_MASK = Object.freeze([
   'builds.*.input.gerrit_changes',
   'builds.*.summary_markdown',
 ]);
+
+const STATUS_OPTIONS = [
+  Status.ENDED_MASK,
+  Status.SCHEDULED,
+  Status.STARTED,
+  Status.SUCCESS,
+  Status.FAILURE,
+  Status.INFRA_FAILURE,
+  Status.CANCELED,
+] as const;
 
 export interface EndedBuildsSectionProps {
   readonly builderId: BuilderID;
@@ -65,13 +81,14 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
   const pageSize = getPageSize(pagerCtx, searchParams);
   const pageToken = getPageToken(pagerCtx, searchParams);
   const createdBefore = getCreatedBefore(searchParams);
+  const status = getStatus(searchParams); // as (typeof STATUS_OPTIONS)[number];
 
   const client = useBuildsClient();
   const req = SearchBuildsRequest.fromPartial({
     predicate: {
       builder: builderId,
       includeExperimental: true,
-      status: Status.ENDED_MASK,
+      status: status,
       createTime: {
         endTime: createdBefore?.toISO(),
       },
@@ -80,6 +97,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     pageToken,
     fields: FIELD_MASK,
   });
+
   const { data, error, isError, isLoading, isPreviousData } = useQuery({
     ...client.SearchBuilds.query(req),
     keepPreviousData: true,
@@ -89,13 +107,13 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     throw error;
   }
 
-  const nextPageToken = isPreviousData ? '' : data?.nextPageToken || '';
+  const nextPageToken = isPreviousData ? '' : data?.nextPageToken ?? '';
   const builds = (data?.builds || []) as readonly OutputBuild[];
 
   return (
     <>
       <h3 ref={headingRef}>Ended Builds</h3>
-      <Box>
+      <Stack direction="row" spacing={2} aria-label="filters">
         <DateTimePicker
           label="Created Before"
           format={SHORT_TIME_FORMAT}
@@ -118,7 +136,34 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
             headingRef.current?.scrollIntoView();
           }}
         />
-      </Box>
+        <Autocomplete
+          value={status}
+          getOptionLabel={(s) => {
+            switch (s) {
+              case Status.ENDED_MASK:
+                return 'Ended';
+              case Status.STATUS_UNSPECIFIED:
+                // Only happens if the url is manually changed
+                setSearchParams(statusUpdater(Status.ENDED_MASK));
+                return 'Ended';
+              default:
+                return capitalize(BUILD_STATUS_DISPLAY_MAP[s]);
+            }
+          }}
+          disableClearable
+          sx={{ minWidth: '180px' }}
+          size="small"
+          renderInput={(params) => (
+            <TextField {...params} label="Build Status" />
+          )}
+          options={STATUS_OPTIONS}
+          onChange={(_event, newStatus) => {
+            setSearchParams(statusUpdater(newStatus));
+            setSearchParams(emptyPageTokenUpdater(pagerCtx));
+            headingRef.current?.scrollIntoView();
+          }}
+        />
+      </Stack>
       <EndedBuildTable
         endedBuilds={builds}
         isLoading={isLoading || isPreviousData}

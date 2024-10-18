@@ -90,10 +90,20 @@ describe('EndedBuildsSection', () => {
     jest.useFakeTimers();
     jest
       .spyOn(BuildsClientImpl.prototype, 'SearchBuilds')
-      .mockImplementation(
-        async ({ pageToken, predicate }) =>
-          pages[predicate?.createTime?.endTime || ''][pageToken || ''],
-      );
+      .mockImplementation(async ({ pageToken, predicate }) => {
+        const { builds, nextPageToken } =
+          pages[predicate?.createTime?.endTime || ''][pageToken || ''];
+
+        return {
+          nextPageToken,
+          builds: builds.filter(
+            (b) =>
+              predicate?.status === undefined ||
+              predicate?.status === Status.ENDED_MASK ||
+              b.status === predicate.status,
+          ),
+        };
+      });
     endedBuildsTableMock = jest.mocked(EndedBuildTable);
   });
 
@@ -146,6 +156,33 @@ describe('EndedBuildsSection', () => {
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
         endedBuilds: builds.slice(1, 3),
+        isLoading: false,
+      },
+      expect.anything(),
+    );
+
+    const buildStatusFilter = screen.getByRole('combobox', {
+      name: 'Build Status',
+    });
+    expect(buildStatusFilter).toHaveAttribute('value', 'Ended');
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open',
+      }),
+    );
+    await act(() => jest.runAllTimersAsync());
+
+    const infraFailureOption = screen.getByRole('option', {
+      name: 'Infra failed',
+    });
+    endedBuildsTableMock.mockClear();
+    fireEvent.click(infraFailureOption);
+    await act(() => jest.runAllTimersAsync());
+    expect(buildStatusFilter).toHaveAttribute('value', 'Infra failed');
+    expect(endedBuildsTableMock).toHaveBeenCalledWith(
+      {
+        endedBuilds: [],
         isLoading: false,
       },
       expect.anything(),

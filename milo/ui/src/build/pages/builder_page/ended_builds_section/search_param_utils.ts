@@ -14,8 +14,17 @@
 
 import { DateTime } from 'luxon';
 
+import {
+  statusToJSON,
+  Status,
+  statusFromJSON,
+} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
+
+const CREATED_BEFORE_PARAM_KEY = 'createdBefore';
+const STATUS_PARAM_KEY = 'status';
+
 export function getCreatedBefore(params: URLSearchParams) {
-  const createdBefore = params.get('createdBefore');
+  const createdBefore = params.get(CREATED_BEFORE_PARAM_KEY);
   return createdBefore ? DateTime.fromSeconds(Number(createdBefore)) : null;
 }
 
@@ -23,9 +32,35 @@ export function createdBeforeUpdater(newCreatedBefore: DateTime | null) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
     if (!newCreatedBefore) {
-      searchParams.delete('createdBefore');
+      searchParams.delete(CREATED_BEFORE_PARAM_KEY);
     } else {
-      searchParams.set('createdBefore', String(newCreatedBefore.toSeconds()));
+      searchParams.set(
+        CREATED_BEFORE_PARAM_KEY,
+        String(newCreatedBefore.toSeconds()),
+      );
+    }
+    return searchParams;
+  };
+}
+
+const DEFAULT_STATUS = Status.ENDED_MASK;
+
+export function getStatus(params: URLSearchParams) {
+  const status = params.get(STATUS_PARAM_KEY);
+  try {
+    return status ? statusFromJSON(status) : DEFAULT_STATUS;
+  } catch (err) {
+    return DEFAULT_STATUS;
+  }
+}
+
+export function statusUpdater(newStatus: Status) {
+  return (params: URLSearchParams) => {
+    const searchParams = new URLSearchParams(params);
+    if (newStatus === DEFAULT_STATUS) {
+      searchParams.delete(STATUS_PARAM_KEY);
+    } else {
+      searchParams.set(STATUS_PARAM_KEY, statusToJSON(newStatus));
     }
     return searchParams;
   };
