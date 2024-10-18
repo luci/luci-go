@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -355,32 +356,18 @@ func UpdateProjectCfg(ctx context.Context) error {
 		}
 
 		// Update shadow buckets.
-		stringSliceEqual := func(a, b []string) bool {
-			if len(a) != len(b) {
-				return false
-			}
-			sort.Strings(a)
-			sort.Strings(b)
-			for i, item := range a {
-				if item != b[i] {
-					return false
-				}
-			}
-			return true
-		}
 		var shadowBucketsToUpdate []*model.Bucket
 		for shadow, shadowed := range shadows {
-			shadowed = stringset.NewFromSlice(shadowed...).ToSlice() // Deduplicate
+			shadowed = stringset.NewFromSlice(shadowed...).ToSortedSlice() // Deduplicate
 			toUpdate, ok := buckets[shadow]
 			if !ok {
 				logging.Infof(ctx, "cannot find config for shadow bucket %s in project %s", shadow, project)
 				continue
 			}
-			sort.Strings(shadowed)
-			if !stringSliceEqual(toUpdate.Shadows, shadowed) {
+			if !slices.Equal(toUpdate.Shadows, shadowed) {
 				toUpdate.Shadows = shadowed
+				shadowBucketsToUpdate = append(shadowBucketsToUpdate, toUpdate)
 			}
-			shadowBucketsToUpdate = append(shadowBucketsToUpdate, toUpdate)
 		}
 		if len(shadowBucketsToUpdate) > 0 {
 			if err := datastore.Put(ctx, shadowBucketsToUpdate); err != nil {
