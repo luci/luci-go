@@ -74,7 +74,7 @@ func New(ctx context.Context, addr string, instance string, opts auth.Options, r
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get grpc opts").Err()
 	}
-	conn, err := grpc.Dial(dialParams.Service, grpcOpts...)
+	conn, err := grpc.NewClient(dialParams.Service, grpcOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to dial RBE").Err()
 	}

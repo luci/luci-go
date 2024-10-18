@@ -116,7 +116,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 // to the server.
 func setupTestPubsub(ctx context.Context, cloudProject string) (*pstest.Server, *pubsub.Client, error) {
 	srv := pstest.NewServer()
-	conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, nil, err
 	}

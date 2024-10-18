@@ -62,10 +62,9 @@ func TestWithMultiStatsHandler(t *testing.T) {
 		defer srv.Stop()
 
 		connect := func(opt grpc.DialOption) *grpc.ClientConn {
-			conn, err := grpc.Dial(
+			conn, err := grpc.NewClient(
 				l.Addr().String(),
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithBlock(),
 				opt,
 			)
 			So(err, ShouldBeNil)

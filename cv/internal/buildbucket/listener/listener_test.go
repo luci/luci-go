@@ -97,7 +97,7 @@ func TestListener(t *testing.T) {
 
 		srv := pstest.NewServer()
 		defer srv.Close()
-		conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		assert.Loosely(t, err, should.BeNil)
 		defer conn.Close()
 		client, err := pubsub.NewClient(ctx, "testProj", option.WithGRPCConn(conn))

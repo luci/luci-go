@@ -236,7 +236,7 @@ func setUp(t *testing.T) (context.Context, *localGRPC, *bigQueryWrite, *pubSubPu
 	ps := &pubSubPublisher{t: t}
 	bq.register(g)
 	ps.register(g)
-	g.start(ctx)
+	g.start()
 
 	op := &ExportOp{
 		BQClient:    bq.client(ctx, g),
@@ -293,14 +293,13 @@ func newLocalGRPC() *localGRPC {
 	}
 }
 
-func (l *localGRPC) start(ctx context.Context) {
+func (l *localGRPC) start() {
 	go func() { _ = l.server.Serve(l.listener) }()
-	conn, err := grpc.DialContext(ctx, "",
+	conn, err := grpc.NewClient("passthrough:///ignored",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return l.listener.Dial()
 		}),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	)
 	if err != nil {
 		panic(fmt.Sprintf("failed to dial gRPC: %s", err))

@@ -89,10 +89,9 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 	if handshake.error != nil {
 		return errors.Annotate(handshake.error, "failed to read the handshake message").Err()
 	}
-	conn, err := grpc.DialContext(ctx,
-		fmt.Sprintf("127.0.0.1:%d", handshake.PB.Port),
+	conn, err := grpc.NewClient(
+		fmt.Sprintf("passthrough:///127.0.0.1:%d", handshake.PB.Port),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 		grpc.WithPerRPCCredentials(&pluginPerRPCCredentials{handshake.PB.Ticket}),
 	)
 	if err != nil {

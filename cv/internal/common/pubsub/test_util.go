@@ -62,7 +62,7 @@ func NewTestPSServer(ctx context.Context) (*TestPSServer, error) {
 	ret.subName = fmt.Sprintf("projects/%s/subscriptions/%s", ret.ProjID, ret.SubID)
 	ret.topicName = fmt.Sprintf("projects/%s/topics/%s", ret.ProjID, ret.topicID)
 	ret.Server = pstest.NewServer()
-	conn, err := grpc.Dial(ret.Server.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(ret.Server.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

@@ -46,7 +46,7 @@ func RBEConn(ctx context.Context) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	return grpc.Dial(
+	return grpc.NewClient(
 		"remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),

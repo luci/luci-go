@@ -212,7 +212,7 @@ func (c *Subcommand) MakeConfigServiceConn(ctx context.Context, host string) (*g
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get credentials to access %s", host).Err()
 	}
-	conn, err := grpc.DialContext(ctx, host+":443",
+	conn, err := grpc.NewClient(host+":443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
 		grpc.WithUserAgent(lucicfg.UserAgent),

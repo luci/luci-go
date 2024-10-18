@@ -54,10 +54,9 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 		defer srv.Stop()
 
 		// construct a client
-		conn, err := grpc.Dial(
+		conn, err := grpc.NewClient(
 			l.Addr().String(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithBlock(),
 			grpc.WithStatsHandler(&ClientRPCStatsMonitor{}),
 		)
 		So(err, ShouldBeNil)

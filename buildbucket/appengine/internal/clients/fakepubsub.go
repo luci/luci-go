@@ -28,7 +28,7 @@ import (
 // to the server. It also adds the client into the context.
 func SetupTestPubsub(ctx context.Context, cloudProject string) (context.Context, *pstest.Server, *pubsub.Client, error) {
 	srv := pstest.NewServer()
-	conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return ctx, nil, nil, err
 	}

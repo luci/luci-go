@@ -41,7 +41,7 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()
 	}
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		prodXEndpoint,
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(cred),

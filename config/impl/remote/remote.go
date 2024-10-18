@@ -122,7 +122,7 @@ func New(ctx context.Context, opts Options) (config.Interface, error) {
 		dialOpts = append(dialOpts, grpc.WithUserAgent(defaultUserAgent))
 	}
 
-	conn, err := grpc.DialContext(ctx, opts.Host+":443", dialOpts...)
+	conn, err := grpc.NewClient(opts.Host+":443", dialOpts...)
 	if err != nil {
 		return nil, errors.Annotate(err, "cannot dial to %s", opts.Host).Err()
 	}

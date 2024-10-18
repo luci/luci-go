@@ -1110,7 +1110,7 @@ func (s *testServer) GetAdmin(uri string, headers map[string]string) (string, er
 
 // GrpcClientConn returns the gRPC client connection.
 func (s *testServer) GrpcClientConn() *grpc.ClientConn {
-	conn, err := grpc.Dial(s.grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(s.grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}

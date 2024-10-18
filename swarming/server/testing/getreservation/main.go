@@ -62,10 +62,9 @@ func run(ctx context.Context, args []string) error {
 		return err
 	}
 
-	cc, err := grpc.DialContext(ctx, "remotebuildexecution.googleapis.com:443",
+	cc, err := grpc.NewClient("remotebuildexecution.googleapis.com:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(nil)),
 		grpc.WithPerRPCCredentials(creds),
-		grpc.WithBlock(),
 	)
 	if err != nil {
 		return err
