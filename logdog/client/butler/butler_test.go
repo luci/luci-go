@@ -28,15 +28,17 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/output/null"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testOutput struct {
@@ -109,34 +111,44 @@ func (to *testOutput) isTerminal(name string) bool {
 	return isTerminal
 }
 
-func shouldHaveTextLogs(actual any, expected ...any) string {
-	exp := make([]string, len(expected))
-	for i, e := range expected {
-		exp[i] = e.(string)
-	}
+func shouldHaveTextLogs(expected ...string) comparison.Func[[]*logpb.LogEntry] {
+	const cmpName = "shouldHaveTextLogs"
 
-	var lines []string
-	var prev string
-	for _, le := range actual.([]*logpb.LogEntry) {
-		if le.GetText() == nil {
-			return fmt.Sprintf("non-text entry: %T %#v", le, le)
-		}
+	return func(actual []*logpb.LogEntry) *failure.Summary {
+		var lines []string
+		var prev string
+		var nonTextIndexes []int
+		for i, le := range actual {
+			if le.GetText() == nil {
+				nonTextIndexes = append(nonTextIndexes, i)
+				continue
+			}
 
-		for _, l := range le.GetText().Lines {
-			prev += string(l.Value)
-			if l.Delimiter != "" {
-				lines = append(lines, prev)
-				prev = ""
+			for _, l := range le.GetText().Lines {
+				prev += string(l.Value)
+				if l.Delimiter != "" {
+					lines = append(lines, prev)
+					prev = ""
+				}
 			}
 		}
-	}
+		if len(nonTextIndexes) > 0 {
+			return comparison.NewSummaryBuilder(cmpName).
+				Because("The following actual LogEntry's contained non-text data: %#v", nonTextIndexes).
+				Summary
+		}
 
-	// Add any trailing (non-delimited) data.
-	if prev != "" {
-		lines = append(lines, prev)
-	}
+		// Add any trailing (non-delimited) data.
+		if prev != "" {
+			lines = append(lines, prev)
+		}
 
-	return ShouldResemble(lines, exp)
+		ret := should.Match(expected)(lines)
+		if ret != nil {
+			ret.Comparison.Name = cmpName
+		}
+		return ret
+	}
 }
 
 type testStreamData struct {
@@ -242,7 +254,7 @@ func (tss *testStreamServer) enqueue(ts *testStream) {
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A Config instance`, t, func() {
+	ftt.Run(`A Config instance`, t, func(t *ftt.Test) {
 		to := testOutput{
 			maxSize: 1024,
 		}
@@ -250,13 +262,13 @@ func TestConfig(t *testing.T) {
 			Output: &to,
 		}
 
-		Convey(`Will validate.`, func() {
-			So(conf.Validate(), ShouldBeNil)
+		t.Run(`Will validate.`, func(t *ftt.Test) {
+			assert.Loosely(t, conf.Validate(), should.BeNil)
 		})
 
-		Convey(`Will not validate with a nil Output.`, func() {
+		t.Run(`Will not validate with a nil Output.`, func(t *ftt.Test) {
 			conf.Output = nil
-			So(conf.Validate(), ShouldErrLike, "an Output must be supplied")
+			assert.Loosely(t, conf.Validate(), should.ErrLike("an Output must be supplied"))
 		})
 	})
 }
@@ -274,7 +286,7 @@ func mkb(c context.Context, config Config) *Butler {
 func TestButler(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing Butler instance`, t, func() {
+	ftt.Run(`A testing Butler instance`, t, func(t *ftt.Test) {
 		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		to := testOutput{
 			maxSize: 1024,
@@ -285,38 +297,38 @@ func TestButler(t *testing.T) {
 			BufferLogs: false,
 		}
 
-		Convey(`Will error if an invalid Config is passed.`, func() {
+		t.Run(`Will error if an invalid Config is passed.`, func(t *ftt.Test) {
 			conf.Output = nil
-			So(conf.Validate(), ShouldNotBeNil)
+			assert.Loosely(t, conf.Validate(), should.NotBeNil)
 
 			_, err := New(c, conf)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey(`Will Run until Activated, then shut down.`, func() {
+		t.Run(`Will Run until Activated, then shut down.`, func(t *ftt.Test) {
 			conf.BufferLogs = true // (Coverage)
 
 			b := mkb(c, conf)
 			b.Activate()
-			So(b.Wait(), ShouldBeNil)
+			assert.Loosely(t, b.Wait(), should.BeNil)
 		})
 
-		Convey(`Will forward a Shutdown error.`, func() {
+		t.Run(`Will forward a Shutdown error.`, func(t *ftt.Test) {
 			conf.BufferLogs = true // (Coverage)
 
 			b := mkb(c, conf)
 			b.shutdown(errors.New("shutdown error"))
-			So(b.Wait(), ShouldErrLike, "shutdown error")
+			assert.Loosely(t, b.Wait(), should.ErrLike("shutdown error"))
 		})
 
-		Convey(`Will retain the first error and ignore duplicate shutdowns.`, func() {
+		t.Run(`Will retain the first error and ignore duplicate shutdowns.`, func(t *ftt.Test) {
 			b := mkb(c, conf)
 			b.shutdown(errors.New("first error"))
 			b.shutdown(errors.New("second error"))
-			So(b.Wait(), ShouldErrLike, "first error")
+			assert.Loosely(t, b.Wait(), should.ErrLike("first error"))
 		})
 
-		Convey(`Using a generic stream Properties`, func() {
+		t.Run(`Using a generic stream Properties`, func(t *ftt.Test) {
 			newTestStream := func(setup func(d *logpb.LogStreamDescriptor)) *testStream {
 				desc := &logpb.LogStreamDescriptor{
 					Name:        "test",
@@ -334,26 +346,26 @@ func TestButler(t *testing.T) {
 				}
 			}
 
-			Convey(`Will not add a stream with an invalid configuration.`, func() {
+			t.Run(`Will not add a stream with an invalid configuration.`, func(t *ftt.Test) {
 				// No content type.
 				s := newTestStream(func(d *logpb.LogStreamDescriptor) {
 					d.ContentType = ""
 				})
 				b := mkb(c, conf)
-				So(b.AddStream(s, s.desc), ShouldNotBeNil)
+				assert.Loosely(t, b.AddStream(s, s.desc), should.NotBeNil)
 			})
 
-			Convey(`Will not add a stream with a duplicate stream name.`, func() {
+			t.Run(`Will not add a stream with a duplicate stream name.`, func(t *ftt.Test) {
 				b := mkb(c, conf)
 
 				s0 := newTestStream(nil)
-				So(b.AddStream(s0, s0.desc), ShouldBeNil)
+				assert.Loosely(t, b.AddStream(s0, s0.desc), should.BeNil)
 
 				s1 := newTestStream(nil)
-				So(b.AddStream(s1, s1.desc), ShouldErrLike, "duplicate registration")
+				assert.Loosely(t, b.AddStream(s1, s1.desc), should.ErrLike("duplicate registration"))
 			})
 
-			Convey(`Can apply global tags.`, func() {
+			t.Run(`Can apply global tags.`, func(t *ftt.Test) {
 				conf.GlobalTags = streamproto.TagMap{
 					"foo": "bar",
 					"baz": "qux",
@@ -384,13 +396,13 @@ func TestButler(t *testing.T) {
 					b.Wait()
 				}()
 
-				Convey(`Applies global tags, but allows the stream to override.`, func() {
+				t.Run(`Applies global tags, but allows the stream to override.`, func(t *ftt.Test) {
 					desc.Tags = map[string]string{
 						"baz": "override",
 					}
 
-					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
-					So(b.bundler.GetStreamDescs()["stdout"], ShouldResembleProto, &logpb.LogStreamDescriptor{
+					assert.Loosely(t, b.AddStream(newTestStream(), desc), should.BeNil)
+					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Resemble(&logpb.LogStreamDescriptor{
 						Name:        "stdout",
 						ContentType: "test/data",
 						Timestamp:   desc.Timestamp,
@@ -398,12 +410,12 @@ func TestButler(t *testing.T) {
 							"foo": "bar",
 							"baz": "override",
 						},
-					})
+					}))
 				})
 
-				Convey(`Will apply global tags if the stream has none (nil).`, func() {
-					So(b.AddStream(newTestStream(), desc), ShouldBeNil)
-					So(b.bundler.GetStreamDescs()["stdout"], ShouldResembleProto, &logpb.LogStreamDescriptor{
+				t.Run(`Will apply global tags if the stream has none (nil).`, func(t *ftt.Test) {
+					assert.Loosely(t, b.AddStream(newTestStream(), desc), should.BeNil)
+					assert.Loosely(t, b.bundler.GetStreamDescs()["stdout"], should.Resemble(&logpb.LogStreamDescriptor{
 						Name:        "stdout",
 						ContentType: "test/data",
 						Timestamp:   desc.Timestamp,
@@ -411,11 +423,11 @@ func TestButler(t *testing.T) {
 							"foo": "bar",
 							"baz": "qux",
 						},
-					})
+					}))
 				})
 			})
 
-			Convey(`Run with 256 streams, stream{0..256} will deplete and finish.`, func() {
+			t.Run(`Run with 256 streams, stream{0..256} will deplete and finish.`, func(t *ftt.Test) {
 				b := mkb(c, conf)
 				streams := make([]*testStream, 256)
 				for i := range streams {
@@ -425,7 +437,7 @@ func TestButler(t *testing.T) {
 				}
 
 				for _, s := range streams {
-					So(b.AddStream(s, s.desc), ShouldBeNil)
+					assert.Loosely(t, b.AddStream(s, s.desc), should.BeNil)
 					s.data([]byte("stream data 0!\n"), nil)
 					s.data([]byte("stream data 1!\n"), nil)
 				}
@@ -436,17 +448,17 @@ func TestButler(t *testing.T) {
 				}
 
 				b.Activate()
-				So(b.Wait(), ShouldBeNil)
+				assert.Loosely(t, b.Wait(), should.BeNil)
 
 				for _, s := range streams {
 					name := string(s.desc.Name)
 
-					So(to.logs(name), shouldHaveTextLogs, "stream data 0!", "stream data 1!", "stream data 2!")
-					So(to.isTerminal(name), ShouldBeTrue)
+					assert.Loosely(t, to.logs(name), shouldHaveTextLogs("stream data 0!", "stream data 1!", "stream data 2!"))
+					assert.Loosely(t, to.isTerminal(name), should.BeTrue)
 				}
 			})
 
-			Convey(`Shutdown with 256 in-progress streams, stream{0..256} will terminate if they emitted logs.`, func() {
+			t.Run(`Shutdown with 256 in-progress streams, stream{0..256} will terminate if they emitted logs.`, func(t *ftt.Test) {
 				b := mkb(c, conf)
 				streams := make([]*testStream, 256)
 				for i := range streams {
@@ -456,30 +468,30 @@ func TestButler(t *testing.T) {
 				}
 
 				for _, s := range streams {
-					So(b.AddStream(s, s.desc), ShouldBeNil)
+					assert.Loosely(t, b.AddStream(s, s.desc), should.BeNil)
 					s.data([]byte("stream data!\n"), nil)
 				}
 
 				b.shutdown(errors.New("test shutdown"))
-				So(b.Wait(), ShouldErrLike, "test shutdown")
+				assert.Loosely(t, b.Wait(), should.ErrLike("test shutdown"))
 
 				for _, s := range streams {
 					if len(to.logs(s.desc.Name)) > 0 {
-						So(to.isTerminal(string(s.desc.Name)), ShouldBeTrue)
+						assert.Loosely(t, to.isTerminal(string(s.desc.Name)), should.BeTrue)
 					} else {
-						So(to.isTerminal(string(s.desc.Name)), ShouldBeFalse)
+						assert.Loosely(t, to.isTerminal(string(s.desc.Name)), should.BeFalse)
 					}
 				}
 			})
 
-			Convey(`Using ten test stream servers`, func() {
+			t.Run(`Using ten test stream servers`, func(t *ftt.Test) {
 				servers := make([]*testStreamServer, 10)
 				for i := range servers {
 					servers[i] = newTestStreamServer()
 				}
 				streams := []*testStream(nil)
 
-				Convey(`Can register both before Run and will retain streams.`, func() {
+				t.Run(`Can register both before Run and will retain streams.`, func(t *ftt.Test) {
 					b := mkb(c, conf)
 					for i, tss := range servers {
 						b.AddStreamServer(tss)
@@ -493,15 +505,15 @@ func TestButler(t *testing.T) {
 					}
 
 					b.Activate()
-					So(b.Wait(), ShouldBeNil)
+					assert.Loosely(t, b.Wait(), should.BeNil)
 
 					for _, s := range streams {
-						So(to.logs(s.desc.Name), shouldHaveTextLogs, "test data")
-						So(to.isTerminal(s.desc.Name), ShouldBeTrue)
+						assert.Loosely(t, to.logs(s.desc.Name), shouldHaveTextLogs("test data"))
+						assert.Loosely(t, to.isTerminal(s.desc.Name), should.BeTrue)
 					}
 				})
 
-				Convey(`Can register both during Run and will retain streams.`, func() {
+				t.Run(`Can register both during Run and will retain streams.`, func(t *ftt.Test) {
 					b := mkb(c, conf)
 					for i, tss := range servers {
 						b.AddStreamServer(tss)
@@ -515,16 +527,16 @@ func TestButler(t *testing.T) {
 					}
 
 					b.Activate()
-					So(b.Wait(), ShouldBeNil)
+					assert.Loosely(t, b.Wait(), should.BeNil)
 
 					for _, s := range streams {
-						So(to.logs(s.desc.Name), shouldHaveTextLogs, "test data")
-						So(to.isTerminal(s.desc.Name), ShouldBeTrue)
+						assert.Loosely(t, to.logs(s.desc.Name), shouldHaveTextLogs("test data"))
+						assert.Loosely(t, to.isTerminal(s.desc.Name), should.BeTrue)
 					}
 				})
 			})
 
-			Convey(`Will ignore stream registration errors, allowing re-registration.`, func() {
+			t.Run(`Will ignore stream registration errors, allowing re-registration.`, func(t *ftt.Test) {
 				tss := newTestStreamServer()
 
 				// Generate an invalid stream for "tss" to register.
@@ -541,16 +553,16 @@ func TestButler(t *testing.T) {
 				tss.enqueue(sBad)
 				tss.enqueue(sGood)
 				b.Activate()
-				So(b.Wait(), ShouldBeNil)
+				assert.Loosely(t, b.Wait(), should.BeNil)
 
-				So(sBad.isClosed(), ShouldBeTrue)
-				So(sGood.isClosed(), ShouldBeTrue)
-				So(to.logs("test"), shouldHaveTextLogs, "good test data")
-				So(to.isTerminal("test"), ShouldBeTrue)
+				assert.Loosely(t, sBad.isClosed(), should.BeTrue)
+				assert.Loosely(t, sGood.isClosed(), should.BeTrue)
+				assert.Loosely(t, to.logs("test"), shouldHaveTextLogs("good test data"))
+				assert.Loosely(t, to.isTerminal("test"), should.BeTrue)
 			})
 		})
 
-		Convey(`Will terminate if the stream server panics.`, func() {
+		t.Run(`Will terminate if the stream server panics.`, func(t *ftt.Test) {
 			tss := newTestStreamServer()
 			tss.onNext = func() {
 				panic("test panic")
@@ -558,10 +570,10 @@ func TestButler(t *testing.T) {
 
 			b := mkb(c, conf)
 			b.AddStreamServer(tss)
-			So(b.Wait(), ShouldErrLike, "test panic")
+			assert.Loosely(t, b.Wait(), should.ErrLike("test panic"))
 		})
 
-		Convey(`Can wait for a subset of streams to complete.`, func() {
+		t.Run(`Can wait for a subset of streams to complete.`, func(t *ftt.Test) {
 			c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
 
 			b := mkb(c, conf)
@@ -601,7 +613,7 @@ func TestButler(t *testing.T) {
 			b.AddStream(ns, ns.desc)
 			b.AddStream(s, s.desc)
 
-			wait := func(cvctx C, ns ...types.StreamName) <-chan struct{} {
+			wait := func(t testing.TB, ns ...types.StreamName) <-chan struct{} {
 				ch := make(chan struct{})
 				ret := sync.WaitGroup{}
 				ret.Add(len(ns))
@@ -613,7 +625,7 @@ func TestButler(t *testing.T) {
 					singleNS := singleNS
 					go func() {
 						defer ret.Done()
-						cvctx.So(b.DrainNamespace(c, singleNS), ShouldBeNil)
+						assert.Loosely(t, b.DrainNamespace(c, singleNS), should.BeEmpty)
 					}()
 				}
 				return ch
@@ -627,54 +639,54 @@ func TestButler(t *testing.T) {
 				}
 
 				for _, c := range toClose {
-					So(c.Close(), ShouldBeNil)
+					assert.Loosely(t, c.Close(), should.BeNil)
 				}
 				<-toWait
 			}
 
-			Convey(`waiting for already-empty namespace works`, func() {
-				So(b.DrainNamespace(c, "other"), ShouldBeNil)
+			t.Run(`waiting for already-empty namespace works`, func(t *ftt.Test) {
+				assert.Loosely(t, b.DrainNamespace(c, "other"), should.BeNil)
 			})
 
-			Convey(`can wait at a deep level`, func(cvctx C) {
-				check(wait(cvctx, "ns/deep"), deep)
+			t.Run(`can wait at a deep level`, func(t *ftt.Test) {
+				check(wait(t, "ns/deep"), deep)
 
-				Convey(`and we now cannot open new streams under that namespace`, func() {
+				t.Run(`and we now cannot open new streams under that namespace`, func(t *ftt.Test) {
 					err := b.AddStream(nil, &logpb.LogStreamDescriptor{
 						Name:        "ns/deep/other",
 						ContentType: "wat",
 					})
-					So(err, ShouldErrLike, `namespace "ns/deep/": already closed`)
+					assert.Loosely(t, err, should.ErrLike(`namespace "ns/deep/": already closed`))
 				})
 
-				Convey(`can still open new adjacent streams`, func() {
+				t.Run(`can still open new adjacent streams`, func(t *ftt.Test) {
 					cool := newTestStream(func(d *logpb.LogStreamDescriptor) { d.Name = "ns/side/other" })
 					defer cool.Close()
-					So(b.AddStream(cool, cool.desc), ShouldBeNil)
+					assert.Loosely(t, b.AddStream(cool, cool.desc), should.BeNil)
 				})
 
-				Convey(`then we can also wait at higher levels`, func(cvctx C) {
-					check(wait(cvctx, "ns"), ns)
+				t.Run(`then we can also wait at higher levels`, func(t *ftt.Test) {
+					check(wait(t, "ns"), ns)
 				})
 			})
 
-			Convey(`can wait at multiple levels`, func(cvctx C) {
-				check(wait(cvctx, "ns", "ns/deep"), ns, deep)
+			t.Run(`can wait at multiple levels`, func(t *ftt.Test) {
+				check(wait(t, "ns", "ns/deep"), ns, deep)
 			})
 
-			Convey(`can cancel the wait and see leftovers`, func() {
+			t.Run(`can cancel the wait and see leftovers`, func(t *ftt.Test) {
 				cctx, cancel := context.WithCancel(c)
 				cancel()
-				So(b.DrainNamespace(cctx, "ns"), ShouldResemble, []types.StreamName{
+				assert.Loosely(t, b.DrainNamespace(cctx, "ns"), should.Resemble([]types.StreamName{
 					"ns/deep/s",
 					"ns/s",
-				})
+				}))
 			})
 
-			Convey(`can cancel entire namespace`, func(cvctx C) {
+			t.Run(`can cancel entire namespace`, func(t *ftt.Test) {
 				// TODO(iannucci): We should use this in Wait() for a more orderly
 				// shutdown.
-				check(wait(cvctx, ""), ns, deep, s)
+				check(wait(t, ""), ns, deep, s)
 			})
 		})
 	})

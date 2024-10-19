@@ -21,58 +21,59 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestNullProtocol(t *testing.T) {
-	Convey(`"null" protocol Client`, t, func() {
+	ftt.Run(`"null" protocol Client`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
-		Convey(`good`, func() {
+		t.Run(`good`, func(t *ftt.Test) {
 			client, err := New("null", "namespace")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`can use a text stream`, func() {
+			t.Run(`can use a text stream`, func(t *ftt.Test) {
 				stream, err := client.NewStream(ctx, "test")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				n, err := stream.Write([]byte("hi"))
-				So(n, ShouldEqual, 2)
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, n, should.Equal(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 			})
 
-			Convey(`can use a text stream for a subprocess`, func() {
+			t.Run(`can use a text stream for a subprocess`, func(t *ftt.Test) {
 				stream, err := client.NewStream(ctx, "test", ForProcess())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer stream.Close()
-				So(stream, ShouldHaveSameTypeAs, (*os.File)(nil))
+				assert.Loosely(t, stream, should.HaveType[*os.File])
 
 				n, err := stream.Write([]byte("hi"))
-				So(n, ShouldEqual, 2)
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
-				So(stream.Close(), ShouldErrLike, os.ErrClosed)
+				assert.Loosely(t, n, should.Equal(2))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
+				assert.Loosely(t, stream.Close(), should.ErrLike(os.ErrClosed))
 			})
 
-			Convey(`can use a binary stream`, func() {
+			t.Run(`can use a binary stream`, func(t *ftt.Test) {
 				stream, err := client.NewStream(ctx, "test", Binary())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				n, err := stream.Write([]byte{0, 1, 2, 3})
-				So(n, ShouldEqual, 4)
-				So(err, ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, n, should.Equal(4))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 			})
 
-			Convey(`can use a datagram stream`, func() {
+			t.Run(`can use a datagram stream`, func(t *ftt.Test) {
 				stream, err := client.NewDatagramStream(ctx, "test")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(stream.WriteDatagram([]byte("hi")), ShouldBeNil)
-				So(stream.WriteDatagram([]byte("there")), ShouldBeNil)
-				So(stream.Close(), ShouldBeNil)
+				assert.Loosely(t, stream.WriteDatagram([]byte("hi")), should.BeNil)
+				assert.Loosely(t, stream.WriteDatagram([]byte("there")), should.BeNil)
+				assert.Loosely(t, stream.Close(), should.BeNil)
 			})
 		})
 	})

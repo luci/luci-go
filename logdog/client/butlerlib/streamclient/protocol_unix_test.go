@@ -23,31 +23,33 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestUnixClient(t *testing.T) {
 	t.Parallel()
 
-	Convey(`test unix`, t, func() {
+	ftt.Run(`test unix`, t, func(t *ftt.Test) {
 		defer timebomb()()
 
 		ctx, cancel := mkTestCtx()
 		defer cancel()
 
 		f, err := ioutil.TempFile("", "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		name := f.Name()
-		So(f.Close(), ShouldBeNil)
-		So(os.Remove(name), ShouldBeNil)
+		assert.Loosely(t, f.Close(), should.BeNil)
+		assert.Loosely(t, os.Remove(name), should.BeNil)
 
 		dataChan := acceptOne(func() (net.Listener, error) {
 			var lc net.ListenConfig
 			return lc.Listen(ctx, "unix", name)
 		})
 		client, err := New("unix:"+name, "")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		runWireProtocolTest(ctx, dataChan, client, true)
+		runWireProtocolTest(ctx, t, dataChan, client, true)
 	})
 }

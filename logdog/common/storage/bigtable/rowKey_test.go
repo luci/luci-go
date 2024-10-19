@@ -18,20 +18,22 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRowKey(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A row key, constructed from "test-project" and "a/b/+/c/d"`, t, func() {
+	ftt.Run(`A row key, constructed from "test-project" and "a/b/+/c/d"`, t, func(t *ftt.Test) {
 		project := "test-project"
 		path := "a/b/+/c/d"
 
 		rk := newRowKey(project, path, 1337, 42)
 
-		Convey(`Shares a path with a row key from the same Path.`, func() {
-			So(rk.sharesPathWith(newRowKey(project, path, 2468, 0)), ShouldBeTrue)
+		t.Run(`Shares a path with a row key from the same Path.`, func(t *ftt.Test) {
+			assert.Loosely(t, rk.sharesPathWith(newRowKey(project, path, 2468, 0)), should.BeTrue)
 		})
 
 		for _, project := range []string{
@@ -43,26 +45,26 @@ func TestRowKey(t *testing.T) {
 				"asdf",
 				"",
 			} {
-				Convey(fmt.Sprintf(`Does not share a path with project %q, path %q`, project, path), func() {
-					So(rk.sharesPathWith(newRowKey(project, path, 0, 0)), ShouldBeFalse)
+				t.Run(fmt.Sprintf(`Does not share a path with project %q, path %q`, project, path), func(t *ftt.Test) {
+					assert.Loosely(t, rk.sharesPathWith(newRowKey(project, path, 0, 0)), should.BeFalse)
 				})
 			}
 		}
 
-		Convey(`Can be encoded, then decoded into its fields.`, func() {
+		t.Run(`Can be encoded, then decoded into its fields.`, func(t *ftt.Test) {
 			enc := rk.encode()
-			So(len(enc), ShouldBeLessThanOrEqualTo, maxEncodedKeySize)
+			assert.Loosely(t, len(enc), should.BeLessThanOrEqual(maxEncodedKeySize))
 
 			drk, err := decodeRowKey(enc)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(drk.pathHash, ShouldResemble, rk.pathHash)
-			So(drk.index, ShouldEqual, rk.index)
-			So(drk.count, ShouldEqual, rk.count)
+			assert.Loosely(t, drk.pathHash, should.Resemble(rk.pathHash))
+			assert.Loosely(t, drk.index, should.Equal(rk.index))
+			assert.Loosely(t, drk.count, should.Equal(rk.count))
 		})
 	})
 
-	Convey(`A series of ordered row keys`, t, func() {
+	ftt.Run(`A series of ordered row keys`, t, func(t *ftt.Test) {
 		prev := ""
 		for _, i := range []int64{
 			-1, /* Why not? */
@@ -73,31 +75,31 @@ func TestRowKey(t *testing.T) {
 			1029,
 			1337,
 		} {
-			Convey(fmt.Sprintf(`Row key %d should be ascendingly sorted and parsable.`, i), func() {
+			t.Run(fmt.Sprintf(`Row key %d should be ascendingly sorted and parsable.`, i), func(t *ftt.Test) {
 				rk := newRowKey("test-project", "test", i, i)
 
 				// Test that it encodes/decodes back to identity.
 				enc := rk.encode()
 				drk, err := decodeRowKey(enc)
-				So(err, ShouldBeNil)
-				So(drk.index, ShouldEqual, i)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, drk.index, should.Equal(i))
 
 				// Assert that it is ordered.
 				if prev != "" {
-					So(prev, ShouldBeLessThan, enc)
+					assert.Loosely(t, prev, should.BeLessThan(enc))
 
 					prevp, err := decodeRowKey(prev)
-					So(err, ShouldBeNil)
-					So(prevp.sharesPathWith(rk), ShouldBeTrue)
-					So(prevp.index, ShouldBeLessThan, drk.index)
-					So(prevp.count, ShouldBeLessThan, drk.count)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, prevp.sharesPathWith(rk), should.BeTrue)
+					assert.Loosely(t, prevp.index, should.BeLessThan(drk.index))
+					assert.Loosely(t, prevp.count, should.BeLessThan(drk.count))
 				}
 			})
 		}
 	})
 
-	Convey(`Invalid row keys will fail to decode with "errMalformedRowKey".`, t, func() {
-		for _, t := range []struct {
+	ftt.Run(`Invalid row keys will fail to decode with "errMalformedRowKey".`, t, func(t *ftt.Test) {
+		for _, tc := range []struct {
 			name string
 			v    string
 		}{
@@ -110,9 +112,9 @@ func TestRowKey(t *testing.T) {
 			{"Varint overflow", "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3~ffffffffffff"},
 			{"Trailing data", "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3~8080badd06"},
 		} {
-			Convey(fmt.Sprintf(`Row key fails to decode [%s]: %q`, t.name, t.v), func() {
-				_, err := decodeRowKey(t.v)
-				So(err, ShouldEqual, errMalformedRowKey)
+			t.Run(fmt.Sprintf(`Row key fails to decode [%s]: %q`, tc.name, tc.v), func(t *ftt.Test) {
+				_, err := decodeRowKey(tc.v)
+				assert.Loosely(t, err, should.Equal(errMalformedRowKey))
 			})
 		}
 	})

@@ -32,11 +32,11 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func gen(i int) *logpb.LogEntry {
@@ -140,30 +140,19 @@ func (ic *indexChecker) size(pb proto.Message) int {
 // If additional expected elements are supplied, they are the specific integers
 // that should appear in the index. Otherwise, it is assumed that the log is a
 // complete index.
-func (ic *indexChecker) shouldContainIndexFor(actual any, expected ...any) string {
-	indexB := actual.(*bytes.Buffer)
-
-	if len(expected) < 2 {
-		return "at least two expected arguments are required"
-	}
-	desc := expected[0].(*logpb.LogStreamDescriptor)
-	logB := expected[1].(*bytes.Buffer)
-	expected = expected[2:]
-
+func (ic *indexChecker) shouldContainIndexFor(t testing.TB, indexB *bytes.Buffer, desc *logpb.LogStreamDescriptor, logB *bytes.Buffer, expectedIdx ...uint64) {
+	t.Helper()
 	// Load our log index.
 	index := logpb.LogIndex{}
-	if err := proto.Unmarshal(indexB.Bytes(), &index); err != nil {
-		return fmt.Sprintf("failed to unmarshal index protobuf: %v", err)
-	}
+	err := proto.Unmarshal(indexB.Bytes(), &index)
+	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 
 	// Descriptors must match.
-	if err := ShouldResembleProto(index.Desc, desc); err != "" {
-		return err
-	}
+	assert.That(t, index.Desc, should.Match(desc), truth.LineContext())
 
 	// Catalog the log entries in "expected".
 	entries := map[uint64]*logpb.LogEntry{}
-	offsets := map[uint64]int64{}
+	offsets := map[uint64]uint64{}
 	csizes := map[uint64]uint64{}
 	var eidx []uint64
 
@@ -174,25 +163,22 @@ func (ic *indexChecker) shouldContainIndexFor(actual any, expected ...any) strin
 	csize := uint64(0)
 	r := recordio.NewReader(&cr, 1024*1024)
 	d, err := r.ReadFrameAll()
-	if err != nil {
-		return "failed to skip descriptor frame"
-	}
+	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+
 	for {
 		offset := cr.Count
 		d, err = r.ReadFrameAll()
 		if err == io.EOF {
 			break
 		}
-		if err != nil {
-			return fmt.Sprintf("failed to read entry #%d: %v", len(entries), err)
-		}
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext(), truth.Explain("entry #%d", len(entries)))
 
 		le := logpb.LogEntry{}
-		if err := proto.Unmarshal(d, &le); err != nil {
-			return fmt.Sprintf("failed to unmarshal entry #%d: %v", len(entries), err)
-		}
+		err := proto.Unmarshal(d, &le)
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext(), truth.Explain("entry #%d", len(entries)))
+
 		entries[le.StreamIndex] = &le
-		offsets[le.StreamIndex] = offset
+		offsets[le.StreamIndex] = uint64(offset)
 		csizes[le.StreamIndex] = csize
 
 		csize += uint64(ic.size(&le))
@@ -200,49 +186,31 @@ func (ic *indexChecker) shouldContainIndexFor(actual any, expected ...any) strin
 	}
 
 	// Determine our expected archive indexes.
-	if len(expected) > 0 {
-		eidx = make([]uint64, 0, len(expected))
-		for _, e := range expected {
-			eidx = append(eidx, uint64(e.(int)))
-		}
+	if len(expectedIdx) > 0 {
+		eidx = expectedIdx
 	}
 
 	iidx := make([]uint64, len(index.Entries))
 	for i, e := range index.Entries {
 		iidx[i] = e.StreamIndex
 	}
-	if err := ShouldResemble(iidx, eidx); err != "" {
-		return err
-	}
+	assert.That(t, iidx, should.Match(eidx), truth.LineContext())
 
 	for i, cur := range index.Entries {
 		cidx := eidx[i]
 		le, offset := entries[uint64(cidx)], offsets[cidx]
-		if le == nil {
-			return fmt.Sprintf("no log entry for stream index %d", cidx)
-		}
+		assert.Loosely(t, le, should.NotBeNil, truth.LineContext(), truth.Explain("stream index #%d", cidx))
 
-		if cur.StreamIndex != le.StreamIndex {
-			return fmt.Sprintf("index entry %d has incorrect stream index (%d != %d)", i, cur.StreamIndex, le.StreamIndex)
-		}
-		if cur.Offset != uint64(offset) {
-			return fmt.Sprintf("index entry %d has incorrect offset (%d != %d)", i, cur.Offset, offset)
-		}
-		if cur.PrefixIndex != le.PrefixIndex {
-			return fmt.Sprintf("index entry %d has incorrect prefix index (%d != %d)", i, cur.StreamIndex, le.PrefixIndex)
-		}
-		if curOff, leOff := cur.TimeOffset.AsDuration(), le.TimeOffset.AsDuration(); curOff != leOff {
-			return fmt.Sprintf("index entry %d has incorrect time offset (%v != %v)", i, curOff, leOff)
-		}
-		if cur.Sequence != le.Sequence {
-			return fmt.Sprintf("index entry %d has incorrect sequence (%d != %d)", i, cur.Sequence, le.Sequence)
-		}
+		assert.That(t, cur.StreamIndex, should.Equal(le.StreamIndex), truth.LineContext(), truth.Explain("index entry #%d", i))
+		assert.That(t, cur.Offset, should.Equal(offset), truth.LineContext(), truth.Explain("index entry #%d", i))
+		assert.That(t, cur.PrefixIndex, should.Equal(le.PrefixIndex), truth.LineContext(), truth.Explain("index entry #%d", i))
+		assert.That(t, cur.TimeOffset, should.Match(le.TimeOffset), truth.LineContext(), truth.Explain("index entry #%d", i))
+		assert.That(t, cur.Sequence, should.Match(le.Sequence), truth.LineContext(), truth.Explain("index entry #%d", i))
 	}
-	return ""
 }
 
 func TestArchive(t *testing.T) {
-	Convey(`A Manifest connected to Buffer Writers`, t, func() {
+	ftt.Run(`A Manifest connected to Buffer Writers`, t, func(t *ftt.Test) {
 		var logB, indexB bytes.Buffer
 		desc := &logpb.LogStreamDescriptor{
 			Prefix:    "test",
@@ -260,181 +228,181 @@ func TestArchive(t *testing.T) {
 			CloudLogger: &testCLLogger{},
 		}
 
-		Convey(`A sequence of logs will build a complete index.`, func() {
+		t.Run(`A sequence of logs will build a complete index.`, func(t *ftt.Test) {
 			ts.add(0, 1, 2, 3, 4, 5, 6)
-			So(Archive(m), ShouldBeNil)
+			assert.Loosely(t, Archive(m), should.BeNil)
 
-			So(&indexB, ic.shouldContainIndexFor, desc, &logB)
-			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+			ic.shouldContainIndexFor(t, &indexB, desc, &logB)
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
 				LogEntryCount:   7,
-			})
+			}))
 		})
 
-		Convey(`A sequence of non-contiguous logs will build a complete index.`, func() {
+		t.Run(`A sequence of non-contiguous logs will build a complete index.`, func(t *ftt.Test) {
 			ts.add(0, 1, 3, 6)
-			So(Archive(m), ShouldBeNil)
+			assert.Loosely(t, Archive(m), should.BeNil)
 
-			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 6)
-			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 6)
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
 				LogEntryCount:   4,
-			})
+			}))
 		})
 
-		Convey(`Out of order logs are ignored`, func() {
-			Convey(`When StreamIndex is out of order.`, func() {
+		t.Run(`Out of order logs are ignored`, func(t *ftt.Test) {
+			t.Run(`When StreamIndex is out of order.`, func(t *ftt.Test) {
 				ts.add(0, 2, 1, 3)
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 3)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 3)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 6,
 					LastStreamIndex: 3,
 					LogEntryCount:   3,
-				})
+				}))
 			})
 
-			Convey(`When PrefixIndex is out of order.`, func() {
+			t.Run(`When PrefixIndex is out of order.`, func(t *ftt.Test) {
 				ts.add(0, 1)
 				le := gen(2)
 				le.PrefixIndex = 1
 				ts.addEntries(le)
 				ts.add(3, 4)
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
 					LogEntryCount:   4,
-				})
+				}))
 			})
 
-			Convey(`When Sequence is out of order.`, func() {
+			t.Run(`When Sequence is out of order.`, func(t *ftt.Test) {
 				ts.add(0, 1)
 				le := gen(2)
 				le.Sequence = 0
 				ts.addEntries(le)
 				ts.add(3, 4)
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 3, 4)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
 					LogEntryCount:   4,
-				})
+				}))
 			})
 		})
 
-		Convey(`When TimeOffset is out of order, it is bumped to max.`, func() {
+		t.Run(`When TimeOffset is out of order, it is bumped to max.`, func(t *ftt.Test) {
 			ts.add(0, 1)
 			le := gen(2)
 			le.TimeOffset = nil // 0
 			ts.addEntries(le)
 			ts.add(3, 4)
-			So(Archive(m), ShouldBeNil)
+			assert.Loosely(t, Archive(m), should.BeNil)
 
-			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 2, 3, 4)
-			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+			ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 1, 2, 3, 4)
+			assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 8,
 				LastStreamIndex: 4,
 				LogEntryCount:   5,
-			})
+			}))
 		})
 
-		Convey(`Source errors will be returned`, func() {
-			Convey(`nil LogEntry`, func() {
+		t.Run(`Source errors will be returned`, func(t *ftt.Test) {
+			t.Run(`nil LogEntry`, func(t *ftt.Test) {
 				ts.addLogEntry(nil)
-				So(Archive(m), ShouldErrLike, "nil LogEntry")
+				assert.Loosely(t, Archive(m), should.ErrLike("nil LogEntry"))
 			})
 
-			Convey(`Error returned`, func() {
+			t.Run(`Error returned`, func(t *ftt.Test) {
 				ts.add(0, 1, 2, 3, 4, 5)
 				ts.err = errors.New("test error")
-				So(Archive(m), ShouldErrLike, "test error")
+				assert.Loosely(t, Archive(m), should.ErrLike("test error"))
 			})
 		})
 
-		Convey(`Writer errors will be returned`, func() {
+		t.Run(`Writer errors will be returned`, func(t *ftt.Test) {
 			ts.add(0, 1, 2, 3, 4, 5)
 
-			Convey(`For log writer errors.`, func() {
+			t.Run(`For log writer errors.`, func(t *ftt.Test) {
 				m.LogWriter = &errWriter{m.LogWriter, errors.New("test error")}
-				So(errors.SingleError(Archive(m)), ShouldErrLike, "test error")
+				assert.Loosely(t, errors.SingleError(Archive(m)), should.ErrLike("test error"))
 			})
 
-			Convey(`For index writer errors.`, func() {
+			t.Run(`For index writer errors.`, func(t *ftt.Test) {
 				m.IndexWriter = &errWriter{m.IndexWriter, errors.New("test error")}
-				So(errors.SingleError(Archive(m)), ShouldErrLike, "test error")
+				assert.Loosely(t, errors.SingleError(Archive(m)), should.ErrLike("test error"))
 			})
 
-			Convey(`When all Writers fail.`, func() {
+			t.Run(`When all Writers fail.`, func(t *ftt.Test) {
 				m.LogWriter = &errWriter{m.LogWriter, errors.New("test error")}
 				m.IndexWriter = &errWriter{m.IndexWriter, errors.New("test error")}
-				So(Archive(m), ShouldNotBeNil)
+				assert.Loosely(t, Archive(m), should.NotBeNil)
 			})
 		})
 
-		Convey(`When building sparse index`, func() {
+		t.Run(`When building sparse index`, func(t *ftt.Test) {
 			ts.add(0, 1, 2, 3, 4, 5)
 
-			Convey(`Can build an index for every 3 StreamIndex.`, func() {
+			t.Run(`Can build an index for every 3 StreamIndex.`, func(t *ftt.Test) {
 				m.StreamIndexRange = 3
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 3, 5)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 3, 5)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
 					LogEntryCount:   6,
-				})
+				}))
 			})
 
-			Convey(`Can build an index for every 3 PrefixIndex.`, func() {
+			t.Run(`Can build an index for every 3 PrefixIndex.`, func(t *ftt.Test) {
 				m.PrefixIndexRange = 3
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 4, 5)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 4, 5)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
 					LogEntryCount:   6,
-				})
+				}))
 			})
 
-			Convey(`Can build an index for every 13 bytes.`, func() {
+			t.Run(`Can build an index for every 13 bytes.`, func(t *ftt.Test) {
 				ic.fixedSize = 5
 				m.ByteRange = 13
 				m.sizeFunc = func(pb proto.Message) int {
 					// Stub all LogEntry to be 5 bytes.
 					return 5
 				}
-				So(Archive(m), ShouldBeNil)
+				assert.Loosely(t, Archive(m), should.BeNil)
 
-				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 5)
-				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
+				ic.shouldContainIndexFor(t, &indexB, desc, &logB, 0, 2, 5)
+				assert.Loosely(t, indexParams(indexB.Bytes()), should.Resemble(&logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
 					LogEntryCount:   6,
-				})
+				}))
 			})
 		})
 
-		Convey(`Exports entries to Cloud Logs`, func() {
+		t.Run(`Exports entries to Cloud Logs`, func(t *ftt.Test) {
 			clogger := m.CloudLogger.(*testCLLogger)
 			line := func(msg, del string) *logpb.Text_Line {
 				return &logpb.Text_Line{Value: []byte(msg), Delimiter: del}
@@ -445,13 +413,13 @@ func TestArchive(t *testing.T) {
 			sha.Write([]byte(desc.Name))
 			streamIDHash := sha.Sum(nil)
 
-			Convey(`With nil LogEntry`, func() {
+			t.Run(`With nil LogEntry`, func(t *ftt.Test) {
 				ts.addLogEntry(nil)
-				So(Archive(m), ShouldErrLike, "nil LogEntry")
-				So(clogger.entry, ShouldHaveLength, 0)
+				assert.Loosely(t, Archive(m), should.ErrLike("nil LogEntry"))
+				assert.Loosely(t, clogger.entry, should.HaveLength(0))
 			})
 
-			Convey(`With multiple LogEntry(s)`, func() {
+			t.Run(`With multiple LogEntry(s)`, func(t *ftt.Test) {
 				ts.add(123, 456, 789)
 				ts.logs[0].GetText().Lines = []*logpb.Text_Line{
 					line("this", "\n"),
@@ -462,18 +430,18 @@ func TestArchive(t *testing.T) {
 					line("line.", "\n"),
 				}
 
-				So(Archive(m), ShouldBeNil)
-				So(clogger.entry, ShouldHaveLength, 3)
-				So(clogger.entry[0].Payload, ShouldEqual, "this\nis")
-				So(clogger.entry[1].Payload, ShouldEqual, "a complete")
-				So(clogger.entry[2].Payload, ShouldEqual, "line.")
+				assert.Loosely(t, Archive(m), should.BeNil)
+				assert.Loosely(t, clogger.entry, should.HaveLength(3))
+				assert.Loosely(t, clogger.entry[0].Payload, should.Equal("this\nis"))
+				assert.Loosely(t, clogger.entry[1].Payload, should.Equal("a complete"))
+				assert.Loosely(t, clogger.entry[2].Payload, should.Equal("line."))
 
-				So(clogger.entry[0].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
-				So(clogger.entry[1].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
-				So(clogger.entry[2].Trace, ShouldEqual, fmt.Sprintf("%x", streamIDHash))
+				assert.Loosely(t, clogger.entry[0].Trace, should.Equal(fmt.Sprintf("%x", streamIDHash)))
+				assert.Loosely(t, clogger.entry[1].Trace, should.Equal(fmt.Sprintf("%x", streamIDHash)))
+				assert.Loosely(t, clogger.entry[2].Trace, should.Equal(fmt.Sprintf("%x", streamIDHash)))
 			})
 
-			Convey("Skip, if sum(tags) is too big", func() {
+			t.Run("Skip, if sum(tags) is too big", func(t *ftt.Test) {
 				ts.add(123)
 				str := make([]byte, maxTagSum/2+100)
 				for i := 0; i < len(str); i++ {
@@ -482,8 +450,8 @@ func TestArchive(t *testing.T) {
 				desc.Tags = map[string]string{
 					string(str): string(str),
 				}
-				So(Archive(m), ShouldBeNil)
-				So(clogger.entry, ShouldHaveLength, 0)
+				assert.Loosely(t, Archive(m), should.BeNil)
+				assert.Loosely(t, clogger.entry, should.HaveLength(0))
 			})
 		})
 	})

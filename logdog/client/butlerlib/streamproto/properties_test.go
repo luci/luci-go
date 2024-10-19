@@ -18,68 +18,69 @@ import (
 	"encoding/json"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFlags(t *testing.T) {
-	Convey(`A Flags instance`, t, func() {
+	ftt.Run(`A Flags instance`, t, func(t *ftt.Test) {
 		f := Flags{
 			Name:        "my/stream",
 			ContentType: "foo/bar",
 		}
 
-		Convey(`Converts to LogStreamDescriptor.`, func() {
-			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+		t.Run(`Converts to LogStreamDescriptor.`, func(t *ftt.Test) {
+			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				ContentType: "foo/bar",
 				StreamType:  logpb.StreamType_TEXT,
-			})
+			}))
 		})
 	})
 }
 
 func TestFlagsJSON(t *testing.T) {
-	Convey(`A Flags instance`, t, func() {
+	ftt.Run(`A Flags instance`, t, func(t *ftt.Test) {
 		f := Flags{}
-		Convey(`Will decode a TEXT stream.`, func() {
-			t := `{"name": "my/stream", "contentType": "foo/bar", "type": "text"}`
-			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
+		t.Run(`Will decode a TEXT stream.`, func(t *ftt.Test) {
+			jdesc := `{"name": "my/stream", "contentType": "foo/bar", "type": "text"}`
+			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				ContentType: "foo/bar",
 				StreamType:  logpb.StreamType_TEXT,
-			})
+			}))
 		})
 
-		Convey(`Will fail to decode an invalid stream type.`, func() {
-			t := `{"name": "my/stream", "type": "XXX_whatisthis?"}`
-			So(json.Unmarshal([]byte(t), &f), ShouldNotBeNil)
+		t.Run(`Will fail to decode an invalid stream type.`, func(t *ftt.Test) {
+			jdesc := `{"name": "my/stream", "type": "XXX_whatisthis?"}`
+			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.NotBeNil)
 		})
 
-		Convey(`Will decode a BINARY stream.`, func() {
-			t := `{"name": "my/stream", "type": "binary"}`
-			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
+		t.Run(`Will decode a BINARY stream.`, func(t *ftt.Test) {
+			jdesc := `{"name": "my/stream", "type": "binary"}`
+			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				StreamType:  logpb.StreamType_BINARY,
 				ContentType: string(types.ContentTypeBinary),
-			})
+			}))
 		})
 
-		Convey(`Will decode a DATAGRAM stream.`, func() {
-			t := `{"name": "my/stream", "type": "datagram"}`
-			So(json.Unmarshal([]byte(t), &f), ShouldBeNil)
+		t.Run(`Will decode a DATAGRAM stream.`, func(t *ftt.Test) {
+			jdesc := `{"name": "my/stream", "type": "datagram"}`
+			assert.Loosely(t, json.Unmarshal([]byte(jdesc), &f), should.BeNil)
 
-			So(f.Descriptor(), ShouldResemble, &logpb.LogStreamDescriptor{
+			assert.Loosely(t, f.Descriptor(), should.Resemble(&logpb.LogStreamDescriptor{
 				Name:        "my/stream",
 				StreamType:  logpb.StreamType_DATAGRAM,
 				ContentType: string(types.ContentTypeLogdogDatagram),
-			})
+			}))
 		})
 	})
 }

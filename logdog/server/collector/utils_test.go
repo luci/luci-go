@@ -24,10 +24,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"testing"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/storage"
@@ -251,43 +256,23 @@ func (r *indexRange) String() string { return fmt.Sprintf("[%d..%d]", r.start, r
 
 // shouldHaveRegisteredStream asserts that a testCoordinator has
 // registered a stream (string) and its terminal index (int).
-func shouldHaveRegisteredStream(actual any, expected ...any) string {
-	tcc := actual.(*testCoordinator)
-
-	if len(expected) != 3 {
-		return "invalid number of expected arguments (should be 3)."
-	}
-	project := expected[0].(string)
-	path := expected[1].(string)
-	tidx := expected[2].(int)
-
-	cur, ok := tcc.streamForPath(project, path)
-	if !ok {
-		return fmt.Sprintf("stream %q is not registered", path)
-	}
-	if tidx >= 0 && cur < 0 {
-		return fmt.Sprintf("stream %q is expected to be terminated, but isn't.", path)
-	}
-	if cur >= 0 && tidx < 0 {
-		return fmt.Sprintf("stream %q is NOT expected to be terminated, but it is.", path)
-	}
-	return ""
+func shouldHaveRegisteredStream(t testing.TB, tc *testCoordinator, project, path string, tidx int) {
+	t.Helper()
+	cur, ok := tc.streamForPath(project, path)
+	assert.That(t, ok, should.BeTrue, truth.LineContext(), truth.Explain("stream %q is not registered", path))
+	assert.That(t, tidx >= 0 && cur < 0, should.BeFalse, truth.LineContext(), truth.Explain(
+		"stream %q is expected to be terminated, but isn't.", path))
+	assert.That(t, cur >= 0 && tidx < 0, should.BeFalse, truth.LineContext(), truth.Explain(
+		"stream %q is NOT expected to be terminated, but it is.", path))
 }
 
 // shoudNotHaveRegisteredStream asserts that a testCoordinator has not
 // registered a stream (string).
-func shouldNotHaveRegisteredStream(actual any, expected ...any) string {
-	tcc := actual.(*testCoordinator)
-	if len(expected) != 2 {
-		return "invalid number of expected arguments (should be 2)."
-	}
-	project := expected[0].(string)
-	path := expected[1].(string)
-
-	if _, ok := tcc.streamForPath(project, path); ok {
-		return fmt.Sprintf("stream %q is registered, but it should NOT be.", path)
-	}
-	return ""
+func shouldNotHaveRegisteredStream(t testing.TB, tc *testCoordinator, project, path string) {
+	t.Helper()
+	_, ok := tc.streamForPath(project, path)
+	assert.That(t, ok, should.BeFalse, truth.LineContext(), truth.Explain(
+		"stream %q is registered, but it should NOT be.", path))
 }
 
 // shouldHaveStoredStream asserts that a storage.Storage instance has contiguous
@@ -296,11 +281,8 @@ func shouldNotHaveRegisteredStream(actual any, expected ...any) string {
 // actual is the storage.Storage instance. expected is a stream name (string)
 // followed by a a series of records to assert. This can either be a specific
 // integer index or an intexRange marking a closed range of indices.
-func shouldHaveStoredStream(actual any, expected ...any) string {
-	st := actual.(storage.Storage)
-	project := expected[0].(string)
-	name := expected[1].(string)
-	expected = expected[2:]
+func shouldHaveStoredStream(t testing.TB, st storage.Storage, project, name string, expected ...any) {
+	t.Helper()
 
 	// Load all entries for this stream.
 	req := storage.GetRequest{
@@ -321,40 +303,30 @@ func shouldHaveStoredStream(actual any, expected ...any) string {
 	if ierr != nil {
 		err = ierr
 	}
-	if err != nil && err != storage.ErrDoesNotExist {
-		return fmt.Sprintf("error: %v", err)
+	if !errors.Is(err, storage.ErrDoesNotExist) {
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 	}
 
-	assertLogEntry := func(i int) string {
+	assertLogEntry := func(i int) {
+		t.Helper()
 		le := entries[i]
-		if le == nil {
-			return fmt.Sprintf("%d", i)
+		if !check.Loosely(t, le, should.NotBeNil, truth.LineContext(), truth.Explain("%d", i)) {
+			return
 		}
 		delete(entries, i)
 
-		if le.StreamIndex != uint64(i) {
-			return fmt.Sprintf("*%d", i)
-		}
-		return ""
+		check.That(t, le.StreamIndex, should.Equal(uint64(i)), truth.LineContext(), truth.Explain(
+			"*%d", i))
 	}
 
-	var failed []string
 	for _, exp := range expected {
 		switch e := exp.(type) {
 		case int:
-			if err := assertLogEntry(e); err != "" {
-				failed = append(failed, fmt.Sprintf("missing{%s}", err))
-			}
+			assertLogEntry(e)
 
 		case indexRange:
-			var errs []string
 			for i := e.start; i <= e.end; i++ {
-				if err := assertLogEntry(i); err != "" {
-					errs = append(errs, err)
-				}
-			}
-			if len(errs) > 0 {
-				failed = append(failed, fmt.Sprintf("%s{%s}", e.String(), strings.Join(errs, ",")))
+				assertLogEntry(i)
 			}
 
 		default:
@@ -374,13 +346,9 @@ func shouldHaveStoredStream(actual any, expected ...any) string {
 		for i, idx := range idxs {
 			extra[i] = fmt.Sprintf("%d", idx)
 		}
-		failed = append(failed, fmt.Sprintf("extra{%s}", strings.Join(extra, ",")))
+		t.Logf("extra{%s}", strings.Join(extra, ","))
+		t.Fail()
 	}
-
-	if len(failed) > 0 {
-		return strings.Join(failed, ", ")
-	}
-	return ""
 }
 
 func idFromPath(path string) string {

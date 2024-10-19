@@ -19,61 +19,61 @@ package streamserver
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func withTempDir(t *testing.T, fn func(string)) func() {
-	return func() {
-		tdir, err := ioutil.TempDir("", "butler_test")
-		if err != nil {
-			t.Fatalf("failed to create temporary directory: %s", err)
-		}
-		defer func() {
-			if err := os.RemoveAll(tdir); err != nil {
-				t.Errorf("failed to clean up temporary directory [%s]: %s", tdir, err)
-			}
-		}()
-		fn(tdir)
-	}
+// shortTempDir is like t.TempDir, except that it returns a directory path short
+// enough to work as the root for a unix domain socket. t.TempDir can return
+// a long path which fails on macOS.
+func shortTempDir(t testing.TB) string {
+	t.Helper()
+	tdir, err := os.MkdirTemp("", "butler_test")
+	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+	t.Cleanup(func() {
+		err := os.RemoveAll(tdir)
+		assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+	})
+	return tdir
 }
 
 func TestUNIXDomainSocketServer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A UNIX domain socket server`, t, func() {
+	ftt.Run(`A UNIX domain socket server`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		Convey(`Will create a temporary name if given an empty path`, func() {
+		t.Run(`Will create a temporary name if given an empty path`, func(t *ftt.Test) {
 			s, err := newStreamServer(ctx, "")
-			So(err, ShouldBeNil)
-			So(s.Address(), ShouldStartWith, "unix:"+os.TempDir())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.Address(), should.HavePrefix("unix:"+os.TempDir()))
 		})
 
-		Convey(`Will refuse to create if longer than maximum length.`, func() {
+		t.Run(`Will refuse to create if longer than maximum length.`, func(t *ftt.Test) {
 			_, err := newStreamServer(ctx, strings.Repeat("A", maxPOSIXNamedSocketLength+1))
-			So(err, ShouldErrLike, "path exceeds maximum length")
+			assert.Loosely(t, err, should.ErrLike("path exceeds maximum length"))
 		})
 
-		Convey(`When created and listening.`, withTempDir(t, func(tdir string) {
+		t.Run(`When created and listening.`, func(t *ftt.Test) {
+			tdir := shortTempDir(t)
 			svr, err := newStreamServer(ctx, filepath.Join(tdir, "butler.sock"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(svr.Listen(), ShouldBeNil)
+			assert.Loosely(t, svr.Listen(), should.BeNil)
 			defer svr.Close()
 
 			client, err := streamclient.New(svr.Address(), "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			testClientServer(svr, client)
-		}))
+			testClientServer(t, svr, client)
+		})
 	})
 }

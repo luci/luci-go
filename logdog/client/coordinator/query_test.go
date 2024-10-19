@@ -26,11 +26,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testQueryLogsService struct {
@@ -59,26 +62,25 @@ func gen(name string, state *logdog.LogStreamState) *logdog.QueryResponse_Stream
 	}
 }
 
-func shouldHaveLogStreams(actual any, expected ...any) string {
-	a := actual.([]*LogStream)
+func shouldHaveLogStreams(expected ...string) comparison.Func[[]*LogStream] {
+	return func(actual []*LogStream) *failure.Summary {
+		aList := make([]string, len(actual))
+		for i, ls := range actual {
+			aList[i] = string(ls.Path)
+		}
 
-	aList := make([]string, len(a))
-	for i, ls := range a {
-		aList[i] = string(ls.Path)
+		ret := should.Resemble(expected)(aList)
+		if ret != nil {
+			ret.Comparison.Name = "shouldHaveLogStreams"
+		}
+		return ret
 	}
-
-	eList := make([]string, len(expected))
-	for i, exp := range expected {
-		eList[i] = exp.(string)
-	}
-
-	return ShouldResemble(aList, eList)
 }
 
 func TestClientQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing Client`, t, func() {
+	ftt.Run(`A testing Client`, t, func(t *ftt.Test) {
 		now := testclock.TestTimeLocal
 		c := context.Background()
 
@@ -98,7 +100,7 @@ func TestClientQuery(t *testing.T) {
 			C: logdog.NewLogsPRPCClient(prpcClient),
 		}
 
-		Convey(`When making a query request`, func() {
+		t.Run(`When making a query request`, func(t *ftt.Test) {
 			const project = "myproj"
 			const path = "**/+/**"
 			q := QueryOptions{
@@ -121,7 +123,7 @@ func TestClientQuery(t *testing.T) {
 				return true
 			}
 
-			Convey(`Can accumulate results across queries.`, func() {
+			t.Run(`Can accumulate results across queries.`, func(t *ftt.Test) {
 				// This handler will return a single query per request, as well as a
 				// non-empty Next pointer for the next query element. It progresses
 				// "a" => "b" => "final" => "".
@@ -145,11 +147,11 @@ func TestClientQuery(t *testing.T) {
 					return &r, nil
 				}
 
-				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-				So(results, shouldHaveLogStreams, "test/+/a", "test/+/b", "test/+/final")
+				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+				assert.Loosely(t, results, shouldHaveLogStreams("test/+/a", "test/+/b", "test/+/final"))
 			})
 
-			Convey(`Will stop invoking the callback if it returns false.`, func() {
+			t.Run(`Will stop invoking the callback if it returns false.`, func(t *ftt.Test) {
 				// This handler will return three query results, "a", "b", and "c".
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return &logdog.QueryResponse{
@@ -166,11 +168,11 @@ func TestClientQuery(t *testing.T) {
 					results = append(results, s)
 					return len(results) < 3
 				}
-				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-				So(results, shouldHaveLogStreams, "test/+/a", "test/+/b", "test/+/c")
+				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+				assert.Loosely(t, results, shouldHaveLogStreams("test/+/a", "test/+/b", "test/+/c"))
 			})
 
-			Convey(`Will properly handle state and protobuf deserialization.`, func() {
+			t.Run(`Will properly handle state and protobuf deserialization.`, func(t *ftt.Test) {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return &logdog.QueryResponse{
 						Streams: []*logdog.QueryResponse_Stream{
@@ -181,55 +183,55 @@ func TestClientQuery(t *testing.T) {
 					}, nil
 				}
 
-				So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-				So(results, shouldHaveLogStreams, "test/+/a")
-				So(results[0], ShouldResemble, &LogStream{
+				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+				assert.Loosely(t, results, shouldHaveLogStreams("test/+/a"))
+				assert.Loosely(t, results[0], should.Resemble(&LogStream{
 					Path: "test/+/a",
 					Desc: logpb.LogStreamDescriptor{Prefix: "test", Name: "a"},
 					State: StreamState{
 						Created: now.UTC(),
 					},
-				})
+				}))
 			})
 
-			Convey(`Can query for stream types`, func() {
+			t.Run(`Can query for stream types`, func(t *ftt.Test) {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return &logdog.QueryResponse{}, nil
 				}
 
-				Convey(`Text`, func() {
+				t.Run(`Text`, func(t *ftt.Test) {
 					q.StreamType = Text
-					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT})
+					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}))
 				})
 
-				Convey(`Binary`, func() {
+				t.Run(`Binary`, func(t *ftt.Test) {
 					q.StreamType = Binary
-					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY})
+					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}))
 				})
 
-				Convey(`Datagram`, func() {
+				t.Run(`Datagram`, func(t *ftt.Test) {
 					q.StreamType = Datagram
-					So(client.Query(c, project, path, q, accumulate), ShouldBeNil)
-					So(svc.LR.StreamType, ShouldResemble, &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM})
+					assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.BeNil)
+					assert.Loosely(t, svc.LR.StreamType, should.Resemble(&logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}))
 				})
 			})
 
-			Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+			t.Run(`Will return ErrNoAccess if unauthenticated.`, func(t *ftt.Test) {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 				}
 
-				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)
+				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.Equal(ErrNoAccess))
 			})
 
-			Convey(`Will return ErrNoAccess if permission denied.`, func() {
+			t.Run(`Will return ErrNoAccess if permission denied.`, func(t *ftt.Test) {
 				svc.H = func(*logdog.QueryRequest) (*logdog.QueryResponse, error) {
 					return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 				}
 
-				So(client.Query(c, project, path, q, accumulate), ShouldEqual, ErrNoAccess)
+				assert.Loosely(t, client.Query(c, project, path, q, accumulate), should.Equal(ErrNoAccess))
 			})
 		})
 	})

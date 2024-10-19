@@ -23,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
@@ -84,19 +83,19 @@ func TestDatagramParser(t *testing.T) {
 			t.Run(`Yields the 3 datagrams as individual LogEntry.`, func(t *ftt.Test) {
 				le, err := p.nextEntry(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Datagram{
+				shouldMatchLogEntry(t, le, s.le(0, logpb.Datagram{
 					Data: []byte{0xca, 0xfe},
-				})))
+				}))
 
 				le, err = p.nextEntry(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(2*time.Second).le(1, logpb.Datagram{})))
+				shouldMatchLogEntry(t, le, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 				le, err = p.nextEntry(c)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(time.Second).le(2, logpb.Datagram{
+				shouldMatchLogEntry(t, le, s.add(time.Second).le(2, logpb.Datagram{
 					Data: []byte{0xd0, 0x65, 0x10, 0xbb, 0x12},
-				})))
+				}))
 			})
 
 			t.Run(`With a limit of 2`, func(t *ftt.Test) {
@@ -105,13 +104,13 @@ func TestDatagramParser(t *testing.T) {
 				t.Run(`When not truncating, only yields the first two datagrams.`, func(t *ftt.Test) {
 					le, err := p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Datagram{
+					shouldMatchLogEntry(t, le, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
-					})))
+					}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(2*time.Second).le(1, logpb.Datagram{})))
+					shouldMatchLogEntry(t, le, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
@@ -124,44 +123,44 @@ func TestDatagramParser(t *testing.T) {
 
 					le, err := p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.le(0, logpb.Datagram{
+					shouldMatchLogEntry(t, le, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
-					})))
+					}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(2*time.Second).le(1, logpb.Datagram{})))
+					shouldMatchLogEntry(t, le, s.add(2*time.Second).le(1, logpb.Datagram{}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(time.Second).le(2, logpb.Datagram{
+					shouldMatchLogEntry(t, le, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0xd0, 0x65},
 						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 0,
 						},
-					})))
+					}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(time.Second).le(2, logpb.Datagram{
+					shouldMatchLogEntry(t, le, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x10, 0xbb},
 						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 1,
 						},
-					})))
+					}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(time.Second).le(2, logpb.Datagram{
+					shouldMatchLogEntry(t, le, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x12},
 						Partial: &logpb.Datagram_Partial{
 							Size:  5,
 							Index: 2,
 							Last:  true,
 						},
-					})))
+					}))
 
 					le, err = p.nextEntry(c)
 					assert.Loosely(t, err, should.BeNil)

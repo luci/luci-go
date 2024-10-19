@@ -21,10 +21,14 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -82,84 +86,93 @@ func logEntryName(le *logpb.LogEntry) string {
 //	"+a": a terminal bundle entry keyed on "a".
 //	"a:1:2:3": a bundle entry keyed on "a" with three log entries, each keyed on
 //	         "1", "2", and "3" respectively.
-func shouldHaveBundleEntries(actual any, expected ...any) string {
-	bundle := actual.(*logpb.ButlerLogBundle)
-
-	var errors []string
-	fail := func(f string, args ...any) {
-		errors = append(errors, fmt.Sprintf(f, args...))
-	}
-
-	term := make(map[string]bool)
-	exp := make(map[string][]string)
-
-	// Parse expectation strings.
-	for _, e := range expected {
-		s := e.(string)
-		if len(s) == 0 {
-			continue
+func shouldHaveBundleEntries(expected ...string) comparison.Func[*logpb.ButlerLogBundle] {
+	return func(actual *logpb.ButlerLogBundle) *failure.Summary {
+		var errors []string
+		fail := func(f string, args ...any) {
+			errors = append(errors, fmt.Sprintf(f, args...))
 		}
 
-		t := false
-		if s[0] == '+' {
-			t = true
-			s = s[1:]
-		}
+		term := make(map[string]bool)
+		exp := make(map[string][]string)
 
-		parts := strings.Split(s, ":")
-		name := parts[0]
-		term[name] = t
-
-		if len(parts) > 1 {
-			exp[name] = append(exp[name], parts[1:]...)
-		}
-	}
-
-	entries := make(map[string]*logpb.ButlerLogBundle_Entry)
-	for _, be := range bundle.Entries {
-		entries[be.Desc.Name] = be
-	}
-	for name, t := range term {
-		be := entries[name]
-		if be == nil {
-			fail("No bundle entry for [%s]", name)
-			continue
-		}
-		delete(entries, name)
-
-		if t != be.Terminal {
-			fail("Bundle entry [%s] doesn't match expected terminal state (exp: %v != act: %v)",
-				name, t, be.Terminal)
-		}
-
-		logs := exp[name]
-		for i, l := range logs {
-			if i >= len(be.Logs) {
-				fail("Bundle entry [%s] missing log: %s", name, l)
+		// Parse expectation strings.
+		for _, s := range expected {
+			if len(s) == 0 {
 				continue
 			}
-			le := be.Logs[i]
 
-			if logEntryName(le) != l {
-				fail("Bundle entry [%s] log %d doesn't match expected (exp: %s != act: %s)",
-					name, i, l, logEntryName(le))
+			t := false
+			if s[0] == '+' {
+				t = true
+				s = s[1:]
+			}
+
+			parts := strings.Split(s, ":")
+			name := parts[0]
+			term[name] = t
+
+			if len(parts) > 1 {
+				exp[name] = append(exp[name], parts[1:]...)
+			}
+		}
+
+		entries := make(map[string]*logpb.ButlerLogBundle_Entry)
+		for _, be := range actual.Entries {
+			entries[be.Desc.Name] = be
+		}
+		for name, t := range term {
+			be := entries[name]
+			if be == nil {
+				fail("No bundle entry for [%s]", name)
 				continue
 			}
-		}
-		if len(be.Logs) > len(logs) {
-			for _, le := range be.Logs[len(logs):] {
-				fail("Bundle entry [%s] has extra log entry: %s", name, logEntryName(le))
+			delete(entries, name)
+
+			if t != be.Terminal {
+				fail("Bundle entry [%s] doesn't match expected terminal state (exp: %v != act: %v)",
+					name, t, be.Terminal)
+			}
+
+			logs := exp[name]
+			for i, l := range logs {
+				if i >= len(be.Logs) {
+					fail("Bundle entry [%s] missing log: %s", name, l)
+					continue
+				}
+				le := be.Logs[i]
+
+				if logEntryName(le) != l {
+					fail("Bundle entry [%s] log %d doesn't match expected (exp: %s != act: %s)",
+						name, i, l, logEntryName(le))
+					continue
+				}
+			}
+			if len(be.Logs) > len(logs) {
+				for _, le := range be.Logs[len(logs):] {
+					fail("Bundle entry [%s] has extra log entry: %s", name, logEntryName(le))
+				}
 			}
 		}
+		for k := range entries {
+			fail("Unexpected bundle entry present: [%s]", k)
+		}
+		if len(errors) == 0 {
+			return nil
+		}
+		ret := comparison.NewSummaryBuilder("shouldHaveBundleEntries").
+			Because("Encountered one or more errors")
+		ret.Findings = append(ret.Findings, &failure.Finding{
+			Name:  "Errors",
+			Value: errors,
+			Level: failure.FindingLogLevel_Error,
+		})
+		return ret.Summary
 	}
-	for k := range entries {
-		fail("Unexpected bundle entry present: [%s]", k)
-	}
-	return strings.Join(errors, "\n")
 }
 
 func TestBuilder(t *testing.T) {
-	Convey(`A builder`, t, func() {
+	ftt.Run(`A builder`, t, func(t *ftt.Test) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		b := &builder{
 			template: logpb.ButlerLogBundle{
@@ -168,45 +181,45 @@ func TestBuilder(t *testing.T) {
 		}
 		templateSize := protoSize(&b.template)
 
-		Convey(`Is not ready by default, and has no content.`, func() {
+		t.Run(`Is not ready by default, and has no content.`, func(t *ftt.Test) {
 			b.size = templateSize + 1
-			So(b.ready(), ShouldBeFalse)
-			So(b.hasContent(), ShouldBeFalse)
+			assert.Loosely(t, b.ready(), should.BeFalse)
+			assert.Loosely(t, b.hasContent(), should.BeFalse)
 
-			Convey(`When exceeding the desired size with content, is ready.`, func() {
+			t.Run(`When exceeding the desired size with content, is ready.`, func(t *ftt.Test) {
 				be, _ := parse("a")
 				b.size = 1
 				b.setStreamTerminal(be, 0)
-				So(b.ready(), ShouldBeTrue)
+				assert.Loosely(t, b.ready(), should.BeTrue)
 			})
 		})
 
-		Convey(`Has a bundleSize() and remaining value of the template.`, func() {
+		t.Run(`Has a bundleSize() and remaining value of the template.`, func(t *ftt.Test) {
 			b.size = 1024
 
-			So(b.bundleSize(), ShouldEqual, templateSize)
-			So(b.remaining(), ShouldEqual, 1024-templateSize)
+			assert.Loosely(t, b.bundleSize(), should.Equal(templateSize))
+			assert.Loosely(t, b.remaining(), should.Equal(1024-templateSize))
 		})
 
-		Convey(`With a size of 1024 and a 512-byte LogEntry, has content, but is not ready.`, func() {
+		t.Run(`With a size of 1024 and a 512-byte LogEntry, has content, but is not ready.`, func(t *ftt.Test) {
 			b.size = 1024
 			be, logs := parse("a:1@512")
 			b.add(be, logs[0])
-			So(b.hasContent(), ShouldBeTrue)
-			So(b.ready(), ShouldBeFalse)
+			assert.Loosely(t, b.hasContent(), should.BeTrue)
+			assert.Loosely(t, b.ready(), should.BeFalse)
 
-			Convey(`After adding another 512-byte LogEntry, is ready.`, func() {
+			t.Run(`After adding another 512-byte LogEntry, is ready.`, func(t *ftt.Test) {
 				be, logs := parse("a:2@512")
 				b.add(be, logs[0])
-				So(b.ready(), ShouldBeTrue)
+				assert.Loosely(t, b.ready(), should.BeTrue)
 			})
 		})
 
-		Convey(`Has content after adding a terminal entry.`, func() {
-			So(b.hasContent(), ShouldBeFalse)
+		t.Run(`Has content after adding a terminal entry.`, func(t *ftt.Test) {
+			assert.Loosely(t, b.hasContent(), should.BeFalse)
 			be, _ := parse("a")
 			b.setStreamTerminal(be, 1024)
-			So(b.hasContent(), ShouldBeTrue)
+			assert.Loosely(t, b.hasContent(), should.BeTrue)
 		})
 
 		for _, test := range []struct {
@@ -229,7 +242,7 @@ func TestBuilder(t *testing.T) {
 			{`Multiple large non-terminal streams.`,
 				[]string{"a:1@1024", "b:1@8192", "a:2@4096", "c:1"}, false, []string{"a:1:2", "b:1", "c:1"}},
 		} {
-			Convey(fmt.Sprintf(`Test Case: %q`, test.title), func() {
+			t.Run(fmt.Sprintf(`Test Case: %q`, test.title), func(t *ftt.Test) {
 				for _, s := range test.streams {
 					be, logs := parse(s)
 					for _, le := range logs {
@@ -241,16 +254,12 @@ func TestBuilder(t *testing.T) {
 					}
 				}
 
-				Convey(`Constructed bundle matches expected.`, func() {
-					islice := make([]any, len(test.expected))
-					for i, exp := range test.expected {
-						islice[i] = exp
-					}
-					So(b.bundle(), shouldHaveBundleEntries, islice...)
+				t.Run(`Constructed bundle matches expected.`, func(t *ftt.Test) {
+					assert.Loosely(t, b.bundle(), shouldHaveBundleEntries(test.expected...))
 				})
 
-				Convey(`Calculated size matches actual.`, func() {
-					So(b.bundleSize(), ShouldEqual, protoSize(b.bundle()))
+				t.Run(`Calculated size matches actual.`, func(t *ftt.Test) {
+					assert.Loosely(t, b.bundleSize(), should.Equal(protoSize(b.bundle())))
 				})
 			})
 		}

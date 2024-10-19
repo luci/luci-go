@@ -31,14 +31,15 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // TestCollector runs through a series of end-to-end Collector workflows and
 // ensures that the Collector behaves appropriately.
 func testCollectorImpl(t *testing.T, caching bool) {
-	Convey(fmt.Sprintf(`Using a test configuration with caching == %v`, caching), t, func() {
+	ftt.Run(fmt.Sprintf(`Using a test configuration with caching == %v`, caching), t, func(t *ftt.Test) {
 		c, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 
 		tcc := &testCoordinator{}
@@ -58,42 +59,42 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			coll.Coordinator = cc.NewCache(coll.Coordinator, 0, 0)
 		}
 
-		Convey(`Can process multiple single full streams from a Butler bundle.`, func() {
+		t.Run(`Can process multiple single full streams from a Butler bundle.`, func(t *ftt.Test) {
 			bb.addFullStream("foo/+/bar", 128)
 			bb.addFullStream("foo/+/baz", 256)
 
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/bar", 127)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/bar", indexRange{0, 127})
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar", 127)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/bar", indexRange{0, 127})
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/baz", 255)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/baz", indexRange{0, 255})
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/baz", 255)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/baz", indexRange{0, 255})
 		})
 
-		Convey(`Will return a transient error if a transient error happened while registering.`, func() {
+		t.Run(`Will return a transient error if a transient error happened while registering.`, func(t *ftt.Test) {
 			tcc.registerCallback = func(cc.LogStreamState) error { return errors.New("test error", transient.Tag) }
 
 			bb.addFullStream("foo/+/bar", 128)
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey(`Will return an error if a non-transient error happened while registering.`, func() {
+		t.Run(`Will return an error if a non-transient error happened while registering.`, func(t *ftt.Test) {
 			tcc.registerCallback = func(cc.LogStreamState) error { return errors.New("test error") }
 
 			bb.addFullStream("foo/+/bar", 128)
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
 		// This will happen when one registration request registers non-terminal,
 		// and a follow-on registration request registers with a terminal index. The
 		// latter registration request will idempotently succeed, but not accept the
 		// terminal index, so termination is still required.
-		Convey(`Will terminate a stream if a terminal registration returns a non-terminal response.`, func() {
+		t.Run(`Will terminate a stream if a terminal registration returns a non-terminal response.`, func(t *ftt.Test) {
 			terminateCalled := false
 			tcc.terminateCallback = func(cc.TerminateRequest) error {
 				terminateCalled = true
@@ -101,42 +102,42 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			}
 
 			bb.addStreamEntries("foo/+/bar", -1, 0, 1)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
 			bb.addStreamEntries("foo/+/bar", 3, 2, 3)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
-			So(terminateCalled, ShouldBeTrue)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
+			assert.Loosely(t, terminateCalled, should.BeTrue)
 		})
 
-		Convey(`Will return a transient error if a transient error happened while terminating.`, func() {
+		t.Run(`Will return a transient error if a transient error happened while terminating.`, func(t *ftt.Test) {
 			tcc.terminateCallback = func(cc.TerminateRequest) error { return errors.New("test error", transient.Tag) }
 
 			// Register independently from terminate so we don't bundle RPC.
 			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2, 3, 4)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
 			// Add terminal index.
 			bb.addStreamEntries("foo/+/bar", 5, 5)
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey(`Will return an error if a non-transient error happened while terminating.`, func() {
+		t.Run(`Will return an error if a non-transient error happened while terminating.`, func(t *ftt.Test) {
 			tcc.terminateCallback = func(cc.TerminateRequest) error { return errors.New("test error") }
 
 			// Register independently from terminate so we don't bundle RPC.
 			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2, 3, 4)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
 			// Add terminal index.
 			bb.addStreamEntries("foo/+/bar", 5, 5)
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will return a transient error if a transient error happened on storage.`, func() {
+		t.Run(`Will return a transient error if a transient error happened on storage.`, func(t *ftt.Test) {
 			// Single transient error.
 			count := int32(0)
 			st.err = func() error {
@@ -148,11 +149,11 @@ func testCollectorImpl(t *testing.T, caching bool) {
 
 			bb.addFullStream("foo/+/bar", 128)
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeTrue)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 		})
 
-		Convey(`Will drop invalid LogStreamDescriptor bundle entries and process the valid ones.`, func() {
+		t.Run(`Will drop invalid LogStreamDescriptor bundle entries and process the valid ones.`, func(t *ftt.Test) {
 			be := bb.genBundleEntry("foo/+/trash", 1337, 4, 5, 6, 7, 8)
 			bb.addBundleEntry(be)
 
@@ -160,29 +161,29 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			bb.addFullStream("foo/+/bar", 32)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldNotBeNil)
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/bar", 32)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/bar", indexRange{0, 31})
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar", 32)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/bar", indexRange{0, 31})
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/trash", 1337)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/trash", 4, 5, 6, 7, 8)
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/trash", 1337)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/trash", 4, 5, 6, 7, 8)
 		})
 
-		Convey(`Will drop streams with missing (invalid) secrets.`, func() {
+		t.Run(`Will drop streams with missing (invalid) secrets.`, func(t *ftt.Test) {
 			b := bb.genBase()
 			b.Secret = nil
 			bb.addFullStream("foo/+/bar", 4)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "invalid prefix secret")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("invalid prefix secret"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will drop messages with mismatching secrets.`, func() {
+		t.Run(`Will drop messages with mismatching secrets.`, func(t *ftt.Test) {
 			bb.addStreamEntries("foo/+/bar", -1, 0, 1, 2)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
 			// Push another bundle with a different secret.
 			b := bb.genBase()
@@ -191,78 +192,78 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			be.TerminalIndex = 1337
 			bb.addBundleEntry(be)
 			bb.addFullStream("foo/+/baz", 3)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/bar", -1)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/bar", indexRange{0, 2})
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar", -1)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/bar", indexRange{0, 2})
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/baz", 2)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/baz", indexRange{0, 2})
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/baz", 2)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/baz", indexRange{0, 2})
 		})
 
-		Convey(`With an empty project name, will drop the stream.`, func() {
+		t.Run(`With an empty project name, will drop the stream.`, func(t *ftt.Test) {
 			b := bb.genBase()
 			b.Project = ""
 			bb.addFullStream("foo/+/baz", 3)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "invalid bundle project name")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("invalid bundle project name"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will drop streams with invalid project names.`, func() {
+		t.Run(`Will drop streams with invalid project names.`, func(t *ftt.Test) {
 			b := bb.genBase()
 			b.Project = "!!!invalid name!!!"
-			So(config.ValidateProjectName(b.Project), ShouldNotBeNil)
+			assert.Loosely(t, config.ValidateProjectName(b.Project), should.NotBeNil)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "invalid bundle project name")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("invalid bundle project name"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will drop streams with empty bundle prefixes.`, func() {
+		t.Run(`Will drop streams with empty bundle prefixes.`, func(t *ftt.Test) {
 			b := bb.genBase()
 			b.Prefix = ""
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "invalid bundle prefix")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("invalid bundle prefix"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will drop streams with invalid bundle prefixes.`, func() {
+		t.Run(`Will drop streams with invalid bundle prefixes.`, func(t *ftt.Test) {
 			b := bb.genBase()
 			b.Prefix = "!!!invalid prefix!!!"
-			So(types.StreamName(b.Prefix).Validate(), ShouldNotBeNil)
+			assert.Loosely(t, types.StreamName(b.Prefix).Validate(), should.NotBeNil)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "invalid bundle prefix")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("invalid bundle prefix"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will drop streams whose descriptor prefix doesn't match its bundle's prefix.`, func() {
+		t.Run(`Will drop streams whose descriptor prefix doesn't match its bundle's prefix.`, func(t *ftt.Test) {
 			bb.addStreamEntries("baz/+/bar", 3, 0, 1, 2, 3, 4)
 
 			err := coll.Process(c, bb.bundle())
-			So(err, ShouldErrLike, "mismatched bundle and entry prefixes")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("mismatched bundle and entry prefixes"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey(`Will return no error if the data has a corrupt bundle header.`, func() {
-			So(coll.Process(c, []byte{0x00}), ShouldBeNil)
-			So(tcc, shouldNotHaveRegisteredStream, "test-project", "foo/+/bar")
+		t.Run(`Will return no error if the data has a corrupt bundle header.`, func(t *ftt.Test) {
+			assert.Loosely(t, coll.Process(c, []byte{0x00}), should.BeNil)
+			shouldNotHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar")
 		})
 
-		Convey(`Will drop bundles with unknown ProtoVersion string.`, func() {
+		t.Run(`Will drop bundles with unknown ProtoVersion string.`, func(t *ftt.Test) {
 			buf := bytes.Buffer{}
 			w := pubsubprotocol.Writer{ProtoVersion: "!!!invalid!!!"}
 			w.Write(&buf, &logpb.ButlerLogBundle{})
 
-			So(coll.Process(c, buf.Bytes()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, buf.Bytes()), should.BeNil)
 
-			So(tcc, shouldNotHaveRegisteredStream, "test-project", "foo/+/bar")
+			shouldNotHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar")
 		})
 
-		Convey(`Will not ingest records if the stream is archived.`, func() {
+		t.Run(`Will not ingest records if the stream is archived.`, func(t *ftt.Test) {
 			tcc.register(cc.LogStreamState{
 				Project:       "test-project",
 				Path:          "foo/+/bar",
@@ -272,13 +273,13 @@ func testCollectorImpl(t *testing.T, caching bool) {
 			})
 
 			bb.addStreamEntries("foo/+/bar", 3, 0, 1, 2, 3, 4)
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/bar", -1)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/bar")
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar", -1)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/bar")
 		})
 
-		Convey(`Will not ingest records if the stream is purged.`, func() {
+		t.Run(`Will not ingest records if the stream is purged.`, func(t *ftt.Test) {
 			tcc.register(cc.LogStreamState{
 				Project:       "test-project",
 				Path:          "foo/+/bar",
@@ -287,17 +288,17 @@ func testCollectorImpl(t *testing.T, caching bool) {
 				Purged:        true,
 			})
 
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 
-			So(tcc, shouldHaveRegisteredStream, "test-project", "foo/+/bar", -1)
-			So(st, shouldHaveStoredStream, "test-project", "foo/+/bar")
+			shouldHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar", -1)
+			shouldHaveStoredStream(t, st, "test-project", "foo/+/bar")
 		})
 
-		Convey(`Will not ingest a bundle with no bundle entries.`, func() {
-			So(coll.Process(c, bb.bundle()), ShouldBeNil)
+		t.Run(`Will not ingest a bundle with no bundle entries.`, func(t *ftt.Test) {
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.BeNil)
 		})
 
-		Convey(`Will not ingest a bundle whose log entries don't match their descriptor.`, func() {
+		t.Run(`Will not ingest a bundle whose log entries don't match their descriptor.`, func(t *ftt.Test) {
 			be := bb.genBundleEntry("foo/+/bar", 4, 0, 1, 2, 3, 4)
 
 			// Add a binary log entry. This does NOT match the text descriptor, and
@@ -312,9 +313,9 @@ func testCollectorImpl(t *testing.T, caching bool) {
 				},
 			})
 			bb.addBundleEntry(be)
-			So(coll.Process(c, bb.bundle()), ShouldErrLike, "invalid log entry")
+			assert.Loosely(t, coll.Process(c, bb.bundle()), should.ErrLike("invalid log entry"))
 
-			So(tcc, shouldNotHaveRegisteredStream, "test-project", "foo/+/bar")
+			shouldNotHaveRegisteredStream(t, tcc, "test-project", "foo/+/bar")
 		})
 	})
 }

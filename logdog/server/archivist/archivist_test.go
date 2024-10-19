@@ -27,6 +27,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/config"
@@ -48,10 +51,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // testServicesClient implements logdog.ServicesClient sufficient for testing
@@ -237,7 +236,7 @@ func (c *testCLClient) Logger(logID string, opts ...cl.LoggerOption) *cl.Logger 
 func TestHandleArchive(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing archive setup`, t, func() {
+	ftt.Run(`A testing archive setup`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 		c, _ = tsmon.WithDummyInMemory(c)
 		ms := tsmon.Store(c)
@@ -277,7 +276,7 @@ func TestHandleArchive(t *testing.T) {
 			},
 		}
 		c = cfgclient.Use(c, cfgmem.New(lucicfg))
-		So(srvcfg.Sync(c), ShouldBeNil)
+		assert.Loosely(t, srvcfg.Sync(c), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		// Utility function to add a log entry for "ls".
@@ -385,7 +384,7 @@ func TestHandleArchive(t *testing.T) {
 		// After checking, the values are set to zero. This allows us to use
 		// ShouldEqual without hardcoding specific archival sizes into the results.
 		hasStreams := func(log, index, data bool) bool {
-			So(archiveRequest, ShouldNotBeNil)
+			assert.Loosely(t, archiveRequest, should.NotBeNil)
 			if (log && archiveRequest.StreamSize <= 0) ||
 				(index && archiveRequest.IndexSize <= 0) {
 				return false
@@ -396,54 +395,54 @@ func TestHandleArchive(t *testing.T) {
 			return true
 		}
 
-		Convey(`Will return task and fail to archive if the specified stream state could not be loaded.`, func() {
+		t.Run(`Will return task and fail to archive if the specified stream state could not be loaded.`, func(t *ftt.Test) {
 			sc.lsCallback = func(*logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
 				return nil, errors.New("does not exist")
 			}
 
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "does not exist")
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("does not exist"))
 		})
 
-		Convey(`Will consume task and refrain from archiving if the stream is already archived.`, func() {
+		t.Run(`Will consume task and refrain from archiving if the stream is already archived.`, func(t *ftt.Test) {
 			stream.State.Archived = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-			So(archiveRequest, ShouldBeNil)
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+			assert.Loosely(t, archiveRequest, should.BeNil)
 		})
 
-		Convey(`Will consume task and refrain from archiving if the stream is purged.`, func() {
+		t.Run(`Will consume task and refrain from archiving if the stream is purged.`, func(t *ftt.Test) {
 			stream.State.Purged = true
 
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-			So(archiveRequest, ShouldBeNil)
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+			assert.Loosely(t, archiveRequest, should.BeNil)
 		})
 
-		Convey(`With terminal index "3"`, func() {
+		t.Run(`With terminal index "3"`, func(t *ftt.Test) {
 			stream.State.TerminalIndex = 3
 
-			Convey(`Will consume the task if the log stream has no entries.`, func() {
-				So(st.Count(project, desc.Path()), ShouldEqual, 0)
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(st.Count(project, desc.Path()), ShouldEqual, 0)
+			t.Run(`Will consume the task if the log stream has no entries.`, func(t *ftt.Test) {
+				assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 			})
 
-			Convey(`Will archive {0, 1, 2, 4} (incomplete).`, func() {
+			t.Run(`Will archive {0, 1, 2, 4} (incomplete).`, func(t *ftt.Test) {
 				addTestEntry(project, 0, 1, 2, 4)
-				So(st.Count(project, desc.Path()), ShouldEqual, 4)
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(st.Count(project, desc.Path()), ShouldEqual, 0)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(4))
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 			})
 
-			Convey(`Will successfully archive {0, 1, 2, 3, 4}, stopping at the terminal index.`, func() {
+			t.Run(`Will successfully archive {0, 1, 2, 3, 4}, stopping at the terminal index.`, func(t *ftt.Test) {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 
-				So(st.Count(project, desc.Path()), ShouldEqual, 5)
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(st.Count(project, desc.Path()), ShouldEqual, 0)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 
-				So(hasStreams(true, true, true), ShouldBeTrue)
+				assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
 
-				So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+				assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 					Project:       project,
 					Id:            task.Id,
 					LogEntryCount: 4,
@@ -451,88 +450,88 @@ func TestHandleArchive(t *testing.T) {
 
 					StreamUrl: gsURL(project, "logstream.entries"),
 					IndexUrl:  gsURL(project, "logstream.index"),
-				})
+				}))
 			})
 
-			Convey(`Will truncate long descriptor paths in GS filenames`, func() {
+			t.Run(`Will truncate long descriptor paths in GS filenames`, func(t *ftt.Test) {
 				desc.Name = strings.Repeat("very/long/prefix/", 200)
-				So(len(desc.Path()), ShouldBeGreaterThan, 2048)
+				assert.Loosely(t, len(desc.Path()), should.BeGreaterThan(2048))
 				reloadDesc()
 				addTestEntry(project, 0, 1)
 
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
 				// GS allows up to 1024 bytes long names.
-				So(len(archiveRequest.StreamUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
-				So(len(archiveRequest.IndexUrl[len("gs://archival/"):]), ShouldBeLessThan, 1024)
+				assert.Loosely(t, len(archiveRequest.StreamUrl[len("gs://archival/"):]), should.BeLessThan(1024))
+				assert.Loosely(t, len(archiveRequest.IndexUrl[len("gs://archival/"):]), should.BeLessThan(1024))
 
 				// While not essential, it's nice to put both files under the same
 				// GS "directory".
 				gsDirName := func(p string) string { return p[0:strings.LastIndex(p, "/")] }
-				So(gsDirName(archiveRequest.StreamUrl), ShouldEqual, gsDirName(archiveRequest.IndexUrl))
+				assert.Loosely(t, gsDirName(archiveRequest.StreamUrl), should.Equal(gsDirName(archiveRequest.IndexUrl)))
 			})
 
-			Convey(`When a transient archival error occurs, will not consume the task.`, func() {
+			t.Run(`When a transient archival error occurs, will not consume the task.`, func(t *ftt.Test) {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 				gsc.newWriterErr = func(*testGSWriter) error { return errors.New("test error", transient.Tag) }
 
-				So(st.Count(project, desc.Path()), ShouldEqual, 5)
-				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-				So(st.Count(project, desc.Path()), ShouldEqual, 5)
+				assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("test error"))
+				assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
 			})
 
-			Convey(`When a non-transient archival error occurs`, func() {
+			t.Run(`When a non-transient archival error occurs`, func(t *ftt.Test) {
 				addTestEntry(project, 0, 1, 2, 3, 4)
 				archiveErr := errors.New("archive failure error")
 				gsc.newWriterErr = func(*testGSWriter) error { return archiveErr }
 
-				Convey(`If remote report returns an error, do not consume the task.`, func() {
+				t.Run(`If remote report returns an error, do not consume the task.`, func(t *ftt.Test) {
 					archiveStreamErr = errors.New("test error", transient.Tag)
 
-					So(st.Count(project, desc.Path()), ShouldEqual, 5)
-					So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-					So(st.Count(project, desc.Path()), ShouldEqual, 5)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("test error"))
+					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
 
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
-					})
+					}))
 				})
 
-				Convey(`If remote report returns success, the task is consumed.`, func() {
-					So(st.Count(project, desc.Path()), ShouldEqual, 5)
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(st.Count(project, desc.Path()), ShouldEqual, 0)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+				t.Run(`If remote report returns success, the task is consumed.`, func(t *ftt.Test) {
+					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(5))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archive failure error",
-					})
+					}))
 				})
 
-				Convey(`If an empty error string is supplied, the generic error will be filled in.`, func() {
+				t.Run(`If an empty error string is supplied, the generic error will be filled in.`, func(t *ftt.Test) {
 					archiveErr = errors.New("")
 
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project: project,
 						Id:      task.Id,
 						Error:   "archival error",
-					})
+					}))
 				})
 			})
 		})
 
-		Convey(`When not enforcing stream completeness`, func() {
+		t.Run(`When not enforcing stream completeness`, func(t *ftt.Test) {
 			stream.Age = durationpb.New(expired)
 
-			Convey(`With no terminal index`, func() {
-				Convey(`Will successfully archive if there are no entries.`, func() {
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			t.Run(`With no terminal index`, func(t *ftt.Test) {
+				t.Run(`Will successfully archive if there are no entries.`, func(t *ftt.Test) {
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
-					So(hasStreams(true, true, false), ShouldBeTrue)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, hasStreams(true, true, false), should.BeTrue)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -540,18 +539,18 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-					})
+					}))
 				})
 
-				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func() {
+				t.Run(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index.`, func(t *ftt.Test) {
 					addTestEntry(project, 0, 1, 2, 4)
 
-					So(st.Count(project, desc.Path()), ShouldEqual, 4)
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(st.Count(project, desc.Path()), ShouldEqual, 0)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(4))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 
-					So(hasStreams(true, true, true), ShouldBeTrue)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 4,
@@ -559,18 +558,18 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-					})
+					}))
 				})
 			})
 
-			Convey(`With terminal index 3`, func() {
+			t.Run(`With terminal index 3`, func(t *ftt.Test) {
 				stream.State.TerminalIndex = 3
 
-				Convey(`Will successfully archive if there are no entries.`, func() {
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				t.Run(`Will successfully archive if there are no entries.`, func(t *ftt.Test) {
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
-					So(hasStreams(true, true, false), ShouldBeTrue)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, hasStreams(true, true, false), should.BeTrue)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 0,
@@ -578,18 +577,18 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-					})
+					}))
 				})
 
-				Convey(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index to 2.`, func() {
+				t.Run(`With {0, 1, 2, 4} (incomplete) will archive the stream and update its terminal index to 2.`, func(t *ftt.Test) {
 					addTestEntry(project, 0, 1, 2, 4)
 
-					So(st.Count(project, desc.Path()), ShouldEqual, 4)
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(st.Count(project, desc.Path()), ShouldEqual, 0)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.Equal(4))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, st.Count(project, desc.Path()), should.BeZero)
 
-					So(hasStreams(true, true, true), ShouldBeTrue)
-					So(archiveRequest, ShouldResembleProto, &logdog.ArchiveStreamRequest{
+					assert.Loosely(t, hasStreams(true, true, true), should.BeTrue)
+					assert.Loosely(t, archiveRequest, should.Resemble(&logdog.ArchiveStreamRequest{
 						Project:       project,
 						Id:            task.Id,
 						LogEntryCount: 3,
@@ -597,34 +596,34 @@ func TestHandleArchive(t *testing.T) {
 
 						StreamUrl: gsURL(project, "logstream.entries"),
 						IndexUrl:  gsURL(project, "logstream.index"),
-					})
+					}))
 				})
 			})
 		})
 
-		Convey(`With an empty project name, will fail and consume the task.`, func() {
+		t.Run(`With an empty project name, will fail and consume the task.`, func(t *ftt.Test) {
 			task.Project = ""
 
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 		})
 
-		Convey(`With a project name, of which config doesn't exist, will fail and consume the task`, func() {
+		t.Run(`With a project name, of which config doesn't exist, will fail and consume the task`, func(t *ftt.Test) {
 			task.Project = "valid-project-but-cfg-not-exist"
 
 			_, ok := lucicfg[config.Set("projects/"+task.Project)]
-			So(ok, ShouldBeFalse)
-			So(config.ValidateProjectName(task.Project), ShouldBeNil)
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, config.ValidateProjectName(task.Project), should.BeNil)
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 		})
 
-		Convey(`With an invalid project name, will fail and consume the task.`, func() {
+		t.Run(`With an invalid project name, will fail and consume the task.`, func(t *ftt.Test) {
 			task.Project = "!!! invalid project name !!!"
 
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 		})
 
 		// Simulate failures during the various stream generation operations.
-		Convey(`Stream generation failures`, func() {
+		t.Run(`Stream generation failures`, func(t *ftt.Test) {
 			stream.State.TerminalIndex = 3
 			addTestEntry(project, 0, 1, 2, 3)
 
@@ -689,65 +688,65 @@ func TestHandleArchive(t *testing.T) {
 						}
 					}},
 				} {
-					Convey(fmt.Sprintf(`Can handle %s for %s, and will not archive.`, testCase.name, failName), func() {
+					t.Run(fmt.Sprintf(`Can handle %s for %s, and will not archive.`, testCase.name, failName), func(t *ftt.Test) {
 						testCase.setup()
 
-						So(ar.archiveTaskImpl(c, task), ShouldErrLike, "test error")
-						So(archiveRequest, ShouldBeNil)
+						assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("test error"))
+						assert.Loosely(t, archiveRequest, should.BeNil)
 					})
 				}
 			}
 		})
 
-		Convey(`Will update metric`, func() {
+		t.Run(`Will update metric`, func(t *ftt.Test) {
 			fv := func(vs ...any) []any {
 				ret := []any{project}
 				return append(ret, vs...)
 			}
-			dSum := func(val any) any {
+			dSum := func(val any) float64 {
 				return val.(*distribution.Distribution).Sum()
 			}
 
-			Convey(`tsCount`, func() {
-				Convey(`With failure`, func() {
+			t.Run(`tsCount`, func(t *ftt.Test) {
+				t.Run(`With failure`, func(t *ftt.Test) {
 					sc.lsCallback = func(*logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
 						return nil, errors.New("beep")
 					}
-					So(ar.ArchiveTask(c, task), ShouldErrLike, "beep")
-					So(ms.Get(c, tsCount, time.Time{}, fv(false)), ShouldEqual, 1)
+					assert.Loosely(t, ar.ArchiveTask(c, task), should.ErrLike("beep"))
+					assert.Loosely(t, ms.Get(c, tsCount, time.Time{}, fv(false)), should.Equal(1))
 				})
-				Convey(`With success`, func() {
-					So(ar.ArchiveTask(c, task), ShouldBeNil)
-					So(ms.Get(c, tsCount, time.Time{}, fv(true)), ShouldEqual, 1)
+				t.Run(`With success`, func(t *ftt.Test) {
+					assert.Loosely(t, ar.ArchiveTask(c, task), should.BeNil)
+					assert.Loosely(t, ms.Get(c, tsCount, time.Time{}, fv(true)), should.Equal(1))
 				})
 			})
 
-			Convey(`All others`, func() {
+			t.Run(`All others`, func(t *ftt.Test) {
 				addTestEntry(project, 0, 1, 2, 3, 4)
-				So(ar.ArchiveTask(c, task), ShouldBeNil)
+				assert.Loosely(t, ar.ArchiveTask(c, task), should.BeNil)
 
 				st := logpb.StreamType_TEXT.String()
-				So(dSum(ms.Get(c, tsSize, time.Time{}, fv("entries", st))), ShouldEqual, 116)
-				So(dSum(ms.Get(c, tsSize, time.Time{}, fv("index", st))), ShouldEqual, 58)
-				So(ms.Get(c, tsTotalBytes, time.Time{}, fv("entries", st)), ShouldEqual, 116)
-				So(ms.Get(c, tsTotalBytes, time.Time{}, fv("index", st)), ShouldEqual, 58)
-				So(dSum(ms.Get(c, tsLogEntries, time.Time{}, fv(st))), ShouldEqual, 5)
-				So(ms.Get(c, tsTotalLogEntries, time.Time{}, fv(st)), ShouldEqual, 5)
+				assert.That(t, dSum(ms.Get(c, tsSize, time.Time{}, fv("entries", st))), should.Equal(116.))
+				assert.That(t, dSum(ms.Get(c, tsSize, time.Time{}, fv("index", st))), should.Equal(58.))
+				assert.Loosely(t, ms.Get(c, tsTotalBytes, time.Time{}, fv("entries", st)), should.Equal(116))
+				assert.Loosely(t, ms.Get(c, tsTotalBytes, time.Time{}, fv("index", st)), should.Equal(58))
+				assert.That(t, dSum(ms.Get(c, tsLogEntries, time.Time{}, fv(st))), should.Equal(5.))
+				assert.Loosely(t, ms.Get(c, tsTotalLogEntries, time.Time{}, fv(st)), should.Equal(5))
 			})
 		})
 
-		Convey(`Will construct CLClient if CloudLoggingProjectID is set.`, func() {
+		t.Run(`Will construct CLClient if CloudLoggingProjectID is set.`, func(t *ftt.Test) {
 			desc.StreamType = logpb.StreamType_TEXT
 			reloadDesc()
 
-			Convey(`w/ projectScope`, func() {
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(clc, ShouldNotBeNil)
-				So(clc.clProject, ShouldEqual, clProject)
-				So(clc.luciProject, ShouldEqual, project)
+			t.Run(`w/ projectScope`, func(t *ftt.Test) {
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, clc, should.NotBeNil)
+				assert.Loosely(t, clc.clProject, should.Equal(clProject))
+				assert.Loosely(t, clc.luciProject, should.Equal(project))
 			})
 
-			Convey(`w/ CommonLabels`, func() {
+			t.Run(`w/ CommonLabels`, func(t *ftt.Test) {
 				var opts []cl.LoggerOption
 				ar.CLClientFactory = func(ctx context.Context, lp, cp string, onError func(err error)) (CLClient, error) {
 					clc, err := clcFactory(c, lp, cp, func(err error) {})
@@ -769,55 +768,55 @@ func TestHandleArchive(t *testing.T) {
 					return nil
 				}
 
-				Convey(`w/ realm`, func() {
+				t.Run(`w/ realm`, func(t *ftt.Test) {
 					task.Realm = "project:bucket"
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(clc, ShouldNotBeNil)
-					So(findCommonLabels(opts), ShouldResemble, cl.CommonLabels(
-						map[string]string{"realm": "project:bucket"}))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, clc, should.NotBeNil)
+					assert.Loosely(t, findCommonLabels(opts), should.Resemble(cl.CommonLabels(
+						map[string]string{"realm": "project:bucket"})))
 				})
 
-				Convey(`w/o realm`, func() {
+				t.Run(`w/o realm`, func(t *ftt.Test) {
 					task.Realm = ""
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(clc, ShouldNotBeNil)
-					So(findCommonLabels(opts), ShouldResemble, cl.CommonLabels(
-						map[string]string{}))
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, clc, should.NotBeNil)
+					assert.Loosely(t, findCommonLabels(opts), should.Resemble(cl.CommonLabels(
+						map[string]string{})))
 				})
 			})
 		})
 
-		Convey(`Will not construct CLClient`, func() {
-			Convey(`if CloudLoggingProjectID is not set.`, func() {
+		t.Run(`Will not construct CLClient`, func(t *ftt.Test) {
+			t.Run(`if CloudLoggingProjectID is not set.`, func(t *ftt.Test) {
 				desc.StreamType = logpb.StreamType_TEXT
 				reloadDesc()
 
 				clProject = ""
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(clc, ShouldBeNil)
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, clc, should.BeNil)
 			})
 
-			Convey(`if StreamType is not TEXT.`, func() {
+			t.Run(`if StreamType is not TEXT.`, func(t *ftt.Test) {
 				desc.StreamType = logpb.StreamType_BINARY
 				reloadDesc()
 
 				clProject = ""
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(clc, ShouldBeNil)
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, clc, should.BeNil)
 			})
 		})
 
-		Convey(`Will close CLClient`, func() {
-			So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-			So(clc.isClosed, ShouldBeTrue)
+		t.Run(`Will close CLClient`, func(t *ftt.Test) {
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+			assert.Loosely(t, clc.isClosed, should.BeTrue)
 		})
 
-		Convey("Will validate CloudLoggingProjectID.", func() {
+		t.Run("Will validate CloudLoggingProjectID.", func(t *ftt.Test) {
 			clProject = "123-foo"
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "must start with a lowercase")
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("must start with a lowercase"))
 		})
 
-		Convey("Will ping", func() {
+		t.Run("Will ping", func(t *ftt.Test) {
 			ar.CLClientFactory = func(ctx context.Context, lp, cp string, onError func(err error)) (CLClient, error) {
 				clc, err := clcFactory(c, lp, cp, func(err error) {})
 				clc.(*testCLClient).pingFn = func(context.Context) error {
@@ -825,10 +824,10 @@ func TestHandleArchive(t *testing.T) {
 				}
 				return clc, err
 			}
-			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "failed to ping")
+			assert.Loosely(t, ar.archiveTaskImpl(c, task), should.ErrLike("failed to ping"))
 		})
 
-		Convey(`Will construct Cloud Logger`, func() {
+		t.Run(`Will construct Cloud Logger`, func(t *ftt.Test) {
 			// override the loggerFn to hook the params for the logger constructor.
 			var logID string
 			var opts []cl.LoggerOption
@@ -841,22 +840,22 @@ func TestHandleArchive(t *testing.T) {
 				return clc, err
 			}
 
-			Convey("With BufferedByteLimit", func() {
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(logID, ShouldEqual, "luci-logs")
-				So(opts[2], ShouldResemble, cl.BufferedByteLimit(CLBufferLimit*1024*1024))
+			t.Run("With BufferedByteLimit", func(t *ftt.Test) {
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+				assert.Loosely(t, logID, should.Equal("luci-logs"))
+				assert.Loosely(t, opts[2], should.Resemble(cl.BufferedByteLimit(CLBufferLimit*1024*1024)))
 			})
 
-			Convey("With MonitoredResource and labels", func() {
+			t.Run("With MonitoredResource and labels", func(t *ftt.Test) {
 				desc.Tags = map[string]string{"key1": "val1"}
 				reloadDesc()
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
+				assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
 
-				So(logID, ShouldEqual, "luci-logs")
-				So(opts[0], ShouldResemble, cl.CommonLabels(
+				assert.Loosely(t, logID, should.Equal("luci-logs"))
+				assert.Loosely(t, opts[0], should.Resemble(cl.CommonLabels(
 					map[string]string{"key1": "val1", "realm": "foo:bar"},
-				))
-				So(opts[1], ShouldResembleProto, cl.CommonResource(&mrpb.MonitoredResource{
+				)))
+				assert.Loosely(t, opts[1], should.Resemble(cl.CommonResource(&mrpb.MonitoredResource{
 					Type: "generic_task",
 					Labels: map[string]string{
 						"project_id": project,
@@ -864,32 +863,32 @@ func TestHandleArchive(t *testing.T) {
 						"namespace":  desc.Prefix,
 						"job":        "cloud-logging-export",
 					},
-				}))
+				})))
 			})
 
-			Convey("With luci.CloudLogExportID", func() {
-				Convey("Valid", func() {
+			t.Run("With luci.CloudLogExportID", func(t *ftt.Test) {
+				t.Run("Valid", func(t *ftt.Test) {
 					desc.Tags = map[string]string{"luci.CloudLogExportID": "try:pixel_1"}
 					reloadDesc()
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(logID, ShouldEqual, "try:pixel_1")
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, logID, should.Equal("try:pixel_1"))
 				})
 
-				Convey("Empty", func() {
+				t.Run("Empty", func(t *ftt.Test) {
 					desc.Tags = map[string]string{"luci.CloudLogExportID": ""}
 					reloadDesc()
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(logID, ShouldEqual, "luci-logs")
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, logID, should.Equal("luci-logs"))
 				})
 
-				Convey("Invalid chars", func() {
+				t.Run("Invalid chars", func(t *ftt.Test) {
 					desc.Tags = map[string]string{"luci.CloudLogExportID": "/try:pixel_1"}
 					reloadDesc()
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(logID, ShouldEqual, "luci-logs")
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, logID, should.Equal("luci-logs"))
 				})
 
-				Convey("Too long", func() {
+				t.Run("Too long", func(t *ftt.Test) {
 					longID := make([]rune, 512)
 					for i := 0; i < 512; i++ {
 						longID[i] = '1'
@@ -897,8 +896,8 @@ func TestHandleArchive(t *testing.T) {
 
 					desc.Tags = map[string]string{"luci.CloudLogExportID": string(longID)}
 					reloadDesc()
-					So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-					So(logID, ShouldEqual, "luci-logs")
+					assert.Loosely(t, ar.archiveTaskImpl(c, task), should.BeNil)
+					assert.Loosely(t, logID, should.Equal("luci-logs"))
 				})
 			})
 		})
@@ -906,7 +905,7 @@ func TestHandleArchive(t *testing.T) {
 }
 
 func TestStagingPaths(t *testing.T) {
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		sa := stagedArchival{
 			Settings: &Settings{
 				GSBase:        gs.MakePath("base-bucket", "base-dir"),
@@ -915,30 +914,30 @@ func TestStagingPaths(t *testing.T) {
 			project: "some-project",
 		}
 
-		Convey("Fits limits", func() {
+		t.Run("Fits limits", func(t *ftt.Test) {
 			sa.path = "some-prefix/+/a/b/c/d/e"
-			So(sa.makeStagingPaths(120), ShouldBeNil)
+			assert.Loosely(t, sa.makeStagingPaths(120), should.BeNil)
 
-			So(sa.stream.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.entries"))
-			So(sa.stream.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.entries"))
+			assert.Loosely(t, sa.stream.staged, should.Equal(gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.entries")))
+			assert.Loosely(t, sa.stream.final, should.Equal(gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.entries")))
 
-			So(sa.index.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.index"))
-			So(sa.index.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.index"))
+			assert.Loosely(t, sa.index.staged, should.Equal(gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/a/b/c/d/e/logstream.index")))
+			assert.Loosely(t, sa.index.final, should.Equal(gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/a/b/c/d/e/logstream.index")))
 		})
 
-		Convey("Gets truncated", func() {
+		t.Run("Gets truncated", func(t *ftt.Test) {
 			sa.path = "some-prefix/+/1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
-			So(sa.makeStagingPaths(120), ShouldBeNil)
+			assert.Loosely(t, sa.makeStagingPaths(120), should.BeNil)
 
-			So(sa.stream.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries"))
-			So(sa.stream.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries"))
+			assert.Loosely(t, sa.stream.staged, should.Equal(gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries")))
+			assert.Loosely(t, sa.stream.final, should.Equal(gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.entries")))
 
-			So(sa.index.staged, ShouldEqual, gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index"))
-			So(sa.index.final, ShouldEqual, gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index"))
+			assert.Loosely(t, sa.index.staged, should.Equal(gs.Path("gs://staging-bucket/staging-dir/some-project/p/lvAr3dzO3sXWufWt_4VTeV3-Me1qanKMnwLP90BacPQ/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index")))
+			assert.Loosely(t, sa.index.final, should.Equal(gs.Path("gs://base-bucket/base-dir/some-project/some-prefix/+/12-TRUNCATED-NatSoX9rqDX5JD2f/logstream.index")))
 
 			for _, p := range []stagingPaths{sa.stream, sa.index} {
-				So(len(p.staged.Filename()), ShouldBeLessThanOrEqualTo, 120)
-				So(len(p.final.Filename()), ShouldBeLessThanOrEqualTo, 120)
+				assert.Loosely(t, len(p.staged.Filename()), should.BeLessThanOrEqual(120))
+				assert.Loosely(t, len(p.final.Filename()), should.BeLessThanOrEqual(120))
 			}
 		})
 	})

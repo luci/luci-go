@@ -20,52 +20,54 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
 func TestStreamType(t *testing.T) {
-	Convey(`A StreamType flag`, t, func() {
+	ftt.Run(`A StreamType flag`, t, func(t *ftt.Test) {
 		value := StreamType(0)
 
 		fs := flag.NewFlagSet("Testing", flag.ContinueOnError)
 		fs.Var(&value, "stream-type", "StreamType test.")
 
-		Convey(`Can be loaded as a flag.`, func() {
+		t.Run(`Can be loaded as a flag.`, func(t *ftt.Test) {
 			err := fs.Parse([]string{"-stream-type", "datagram"})
-			So(err, ShouldBeNil)
-			So(value, ShouldEqual, logpb.StreamType_DATAGRAM)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, value, should.Equal(logpb.StreamType_DATAGRAM))
 		})
 
-		Convey(`Will unmmarshal from JSON.`, func() {
+		t.Run(`Will unmmarshal from JSON.`, func(t *ftt.Test) {
 			var s struct {
 				Value StreamType `json:"value"`
 			}
 
 			err := json.Unmarshal([]byte(`{"value": "text"}`), &s)
-			So(err, ShouldBeNil)
-			So(s.Value, ShouldEqual, logpb.StreamType_TEXT)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.Value, should.Equal(logpb.StreamType_TEXT))
 		})
 
-		Convey(`Will marshal to JSON.`, func() {
+		t.Run(`Will marshal to JSON.`, func(t *ftt.Test) {
 			var s struct {
 				Value StreamType `json:"value"`
 			}
 			s.Value = StreamType(logpb.StreamType_BINARY)
 
 			v, err := json.Marshal(&s)
-			So(err, ShouldBeNil)
-			So(string(v), ShouldResemble, `{"value":"binary"}`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(v), should.Match(`{"value":"binary"}`))
 		})
 
-		for _, t := range []logpb.StreamType{
+		for _, st := range []logpb.StreamType{
 			logpb.StreamType_TEXT,
 			logpb.StreamType_BINARY,
 			logpb.StreamType_DATAGRAM,
 		} {
-			Convey(fmt.Sprintf(`Stream type [%s] has a default content type.`, t), func() {
-				st := StreamType(t)
-				So(st.DefaultContentType(), ShouldNotEqual, "")
+			t.Run(fmt.Sprintf(`Stream type [%s] has a default content type.`, st), func(t *ftt.Test) {
+				sst := StreamType(st)
+				assert.Loosely(t, sst.DefaultContentType(), should.NotEqual(""))
 			})
 		}
 	})

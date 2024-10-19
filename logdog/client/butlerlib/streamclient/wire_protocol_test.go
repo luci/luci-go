@@ -28,10 +28,11 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // acceptOne runs a trivial socket server to listen for a single connection,
@@ -84,120 +85,120 @@ func init() {
 //
 // Because of the descrepancies between *nix and windows regarding the
 // ForProcess Option, testing that aspect is optional.
-func runWireProtocolTest(ctx context.Context, dataChan <-chan net.Conn, client *Client, forProcessTest bool) {
-	Convey(`in-process`, func() {
-		Convey(`text+binary`, func(c C) {
+func runWireProtocolTest(ctx context.Context, t *ftt.Test, dataChan <-chan net.Conn, client *Client, forProcessTest bool) {
+	t.Run(`in-process`, func(t *ftt.Test) {
+		t.Run(`text+binary`, func(t *ftt.Test) {
 			go func() {
 				stream, err := client.NewStream(ctx, "test")
-				c.So(err, ShouldBeNil)
+				assert.That(t, err, should.ErrLike(nil))
 				_, err = stream.Write([]byte("hello world!!"))
-				c.So(err, ShouldBeNil)
-				c.So(stream.Close(), ShouldBeNil)
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, stream.Close(), should.ErrLike(nil))
 			}()
 
 			var flags streamproto.Flags
 			conn := <-dataChan
 			defer conn.Close()
 
-			So(flags.FromHandshake(conn), ShouldBeNil)
-			So(flags, ShouldResemble, streamproto.Flags{
+			assert.That(t, flags.FromHandshake(conn), should.ErrLike(nil))
+			assert.That(t, flags, should.Match(streamproto.Flags{
 				Name:        "test",
 				ContentType: "text/plain; charset=utf-8",
 				Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
-			})
+			}))
 
 			body, err := io.ReadAll(conn)
-			So(err, ShouldBeNil)
-			So(body, ShouldResemble, []byte("hello world!!"))
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, body, should.Match([]byte("hello world!!")))
 		})
 
-		Convey(`datagram`, func(c C) {
+		t.Run(`datagram`, func(t *ftt.Test) {
 			go func() {
 				stream, err := client.NewDatagramStream(ctx, "test")
-				c.So(err, ShouldBeNil)
-				c.So(stream.WriteDatagram([]byte("hello world!!")), ShouldBeNil)
-				c.So(stream.WriteDatagram([]byte("how's the weather?")), ShouldBeNil)
-				c.So(stream.Close(), ShouldBeNil)
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, stream.WriteDatagram([]byte("hello world!!")), should.ErrLike(nil))
+				assert.That(t, stream.WriteDatagram([]byte("how's the weather?")), should.ErrLike(nil))
+				assert.That(t, stream.Close(), should.ErrLike(nil))
 			}()
 
 			var flags streamproto.Flags
 			conn := <-dataChan
 			defer conn.Close()
 
-			So(flags.FromHandshake(conn), ShouldBeNil)
-			So(flags, ShouldResemble, streamproto.Flags{
+			assert.That(t, flags.FromHandshake(conn), should.ErrLike(nil))
+			assert.That(t, flags, should.Match(streamproto.Flags{
 				Name:        "test",
 				ContentType: "application/x-logdog-datagram",
 				Type:        streamproto.StreamType(logpb.StreamType_DATAGRAM),
 				Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
-			})
+			}))
 
 			reader := recordio.NewReader(conn, 1024)
 			frame, err := reader.ReadFrameAll()
-			So(err, ShouldBeNil)
-			So(frame, ShouldResemble, []byte("hello world!!"))
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, frame, should.Match([]byte("hello world!!")))
 
 			frame, err = reader.ReadFrameAll()
-			So(err, ShouldBeNil)
-			So(frame, ShouldResemble, []byte("how's the weather?"))
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, frame, should.Match([]byte("how's the weather?")))
 		})
 
 		if forProcessTest {
-			Convey(`subprocess`, func(c C) {
+			t.Run(`subprocess`, func(t *ftt.Test) {
 				go func() {
 					stream, err := client.NewStream(ctx, "test", ForProcess())
-					c.So(err, ShouldBeNil)
-					c.So(stream, ShouldHaveSameTypeAs, (*os.File)(nil))
+					assert.That(t, err, should.ErrLike(nil))
+					assert.Loosely(t, stream, should.HaveType[*os.File])
 					defer stream.Close()
 
 					cmd := exec.Command(os.Args[0])
 					cmd.Env = append(os.Environ(), printQuitEnv+"=hello world!!")
 					cmd.Stdout = stream
-					c.So(cmd.Run(), ShouldBeNil)
+					assert.That(t, cmd.Run(), should.ErrLike(nil))
 				}()
 
 				var flags streamproto.Flags
 				conn := <-dataChan
 				defer conn.Close()
 
-				So(flags.FromHandshake(conn), ShouldBeNil)
-				So(flags, ShouldResemble, streamproto.Flags{
+				assert.That(t, flags.FromHandshake(conn), should.ErrLike(nil))
+				assert.That(t, flags, should.Match(streamproto.Flags{
 					Name:        "test",
 					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
-				})
+				}))
 
 				body, err := io.ReadAll(conn)
-				So(err, ShouldBeNil)
-				So(body, ShouldResemble, []byte("hello world!!"))
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, body, should.Match([]byte("hello world!!")))
 			})
 
-			Convey(`in-process use of "ForProcess" handle`, func(c C) {
+			t.Run(`in-process use of "ForProcess" handle`, func(t *ftt.Test) {
 				go func() {
 					stream, err := client.NewStream(ctx, "test", ForProcess())
-					c.So(err, ShouldBeNil)
+					assert.That(t, err, should.ErrLike(nil))
 					_, err = stream.Write([]byte("hello world!!"))
-					c.So(err, ShouldBeNil)
-					c.So(stream.Close(), ShouldBeNil)
+					assert.That(t, err, should.ErrLike(nil))
+					assert.That(t, stream.Close(), should.ErrLike(nil))
 				}()
 
 				var flags streamproto.Flags
 				conn := <-dataChan
 				defer conn.Close()
 
-				So(flags.FromHandshake(conn), ShouldBeNil)
-				So(flags, ShouldResemble, streamproto.Flags{
+				assert.That(t, flags.FromHandshake(conn), should.ErrLike(nil))
+				assert.That(t, flags, should.Match(streamproto.Flags{
 					Name:        "test",
 					ContentType: "text/plain; charset=utf-8",
 					Type:        streamproto.StreamType(logpb.StreamType_TEXT),
 					Timestamp:   clockflag.Time(testclock.TestRecentTimeUTC),
-				})
+				}))
 
 				body, err := io.ReadAll(conn)
-				So(err, ShouldBeNil)
-				So(body, ShouldResemble, []byte("hello world!!"))
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, body, should.Match([]byte("hello world!!")))
 			})
 		}
 	})

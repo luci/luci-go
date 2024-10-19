@@ -54,6 +54,6 @@ func TestNamedPipe(t *testing.T) {
 		client, err := New("net.pipe:"+name, "")
 		assert.Loosely(t, err, should.BeNil)
 
-		runWireProtocolTest(ctx, dataChan, client, true)
+		runWireProtocolTest(ctx, t, dataChan, client, true)
 	})
 }

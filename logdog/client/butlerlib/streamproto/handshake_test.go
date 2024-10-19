@@ -21,13 +21,15 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/clockflag"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestHandshakeProtocol(t *testing.T) {
-	Convey(`test WriteHandshake/FromHandshake`, t, func() {
+	ftt.Run(`test WriteHandshake/FromHandshake`, t, func(t *ftt.Test) {
 		buf := &bytes.Buffer{}
 		writeUvarint := func(val uint64) {
 			uvarBuf := make([]byte, binary.MaxVarintLen64)
@@ -36,46 +38,62 @@ func TestHandshakeProtocol(t *testing.T) {
 
 		f := &Flags{}
 
-		Convey(`Will fail if no handshake data is provided.`, func() {
-			So(f.FromHandshake(buf), ShouldErrLike, "reading magic number: EOF")
+		t.Run(`Will fail if no handshake data is provided.`, func(t *ftt.Test) {
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("reading magic number: EOF"))
 		})
 
-		Convey(`Will fail with an invalid handshake protocol.`, func() {
+		t.Run(`Will fail with an invalid handshake protocol.`, func(t *ftt.Test) {
 			buf.Write([]byte{0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA})
-			So(f.FromHandshake(buf), ShouldErrLike, "magic number mismatch")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("magic number mismatch"))
 		})
 
-		Convey(`Loading a handshake frame starting with an invalid size varint value must fail.`, func() {
+		t.Run(`Loading a handshake frame starting with an invalid size varint value must fail.`, func(t *ftt.Test) {
 			buf.Write(ProtocolFrameHeaderMagic)
 			buf.Write([]byte{
 				// invalid uvarint
 				0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x79,
 			})
-			So(f.FromHandshake(buf), ShouldErrLike, "overflows a 64-bit integer")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("overflows a 64-bit integer"))
 		})
 
-		Convey(`Loading a handshake frame larger than the maximum header size must fail.`, func() {
+		t.Run(`Loading a handshake frame larger than the maximum header size must fail.`, func(t *ftt.Test) {
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(maxFrameSize + 1)
-			So(f.FromHandshake(buf), ShouldErrLike, "frame size exceeds maximum")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("frame size exceeds maximum"))
 		})
 
-		Convey(`Loading an JSON object with just a name`, func() {
+		t.Run(`Loading an JSON object with just a name`, func(t *ftt.Test) {
 			data := `{"name": "test"}`
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(uint64(len(data)))
 			buf.Write([]byte(data))
 
-			So(f.FromHandshake(buf), ShouldBeNil)
-			So(f.Name, ShouldEqual, StreamNameFlag("test"))
+			assert.Loosely(t, f.FromHandshake(buf), should.BeNil)
+			assert.Loosely(t, f.Name, should.Equal(StreamNameFlag("test")))
 		})
 
-		Convey(`Loading a fully-specified configuration`, func() {
+		t.Run(`Loading a fully-specified configuration`, func(t *ftt.Test) {
 			date := "2015-05-07T01:29:51+00:00"
 			timestamp, err := time.ParseInLocation(time.RFC3339, date, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`manually written handshake`, func() {
+			check := func(t testing.TB) {
+				t.Helper()
+				assert.Loosely(t, f.FromHandshake(buf), should.BeNil, truth.LineContext())
+
+				assert.Loosely(t, f, should.Resemble(&Flags{
+					Name:        "test",
+					ContentType: "text/plain; charset=utf-8",
+					Timestamp:   clockflag.Time(timestamp),
+					Tags: map[string]string{
+						"baz": "qux",
+						"foo": "bar",
+					},
+				}), truth.LineContext())
+
+			}
+
+			t.Run(`manually written handshake`, func(t *ftt.Test) {
 				data := fmt.Sprintf(`{
 				"name": "test", "timestamp": %q,
 				"contentType": "text/plain; charset=utf-8",
@@ -84,8 +102,9 @@ func TestHandshakeProtocol(t *testing.T) {
 				buf.Write(ProtocolFrameHeaderMagic)
 				writeUvarint(uint64(len(data)))
 				buf.Write([]byte(data))
+				check(t)
 			})
-			Convey(`WriteHandshake`, func() {
+			t.Run(`WriteHandshake`, func(t *ftt.Test) {
 				f.Name = "test"
 				f.Timestamp = clockflag.Time(timestamp)
 				f.ContentType = "text/plain; charset=utf-8"
@@ -93,57 +112,46 @@ func TestHandshakeProtocol(t *testing.T) {
 					"foo": "bar",
 					"baz": "qux",
 				}
-				So(f.WriteHandshake(buf), ShouldBeNil)
+				assert.Loosely(t, f.WriteHandshake(buf), should.BeNil)
 				f = &Flags{}
-			})
-
-			So(f.FromHandshake(buf), ShouldBeNil)
-
-			So(f, ShouldResemble, &Flags{
-				Name:        "test",
-				ContentType: "text/plain; charset=utf-8",
-				Timestamp:   clockflag.Time(timestamp),
-				Tags: map[string]string{
-					"baz": "qux",
-					"foo": "bar",
-				},
+				check(t)
 			})
 		})
 
-		Convey(`Loading a (valid) JSON array should fail to load.`, func() {
+		t.Run(`Loading a (valid) JSON array should fail to load.`, func(t *ftt.Test) {
 			data := `["This is an array!"]`
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(uint64(len(data)))
 			buf.Write([]byte(data))
 
-			So(f.FromHandshake(buf), ShouldErrLike, "cannot unmarshal array")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("cannot unmarshal array"))
 		})
 
-		Convey(`Loading an empty JSON object with a larger-than-necessary header size should fail.`, func() {
+		t.Run(`Loading an empty JSON object with a larger-than-necessary header size should fail.`, func(t *ftt.Test) {
 			data := `{}`
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(uint64(len(data) + 10))
 			buf.Write([]byte(data))
 
-			So(f.FromHandshake(buf), ShouldErrLike, "handshake had 10 bytes of trailing data")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("handshake had 10 bytes of trailing data"))
 		})
 
-		Convey(`Loading a JSON with bad field contents should fail.`, func() {
+		t.Run(`Loading a JSON with bad field contents should fail.`, func(t *ftt.Test) {
 			data := `{"timestamp": "text-for-some-reason"}`
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(uint64(len(data)))
 			buf.Write([]byte(data))
 
-			So(f.FromHandshake(buf), ShouldErrLike, "cannot parse")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("cannot parse"))
 		})
 
-		Convey(`Loading an invalid JSON descriptor should fail.`, func() {
+		t.Run(`Loading an invalid JSON descriptor should fail.`, func(t *ftt.Test) {
 			data := `invalid`
 			buf.Write(ProtocolFrameHeaderMagic)
 			writeUvarint(uint64(len(data)))
 			buf.Write([]byte(data))
 
-			So(f.FromHandshake(buf), ShouldErrLike, "invalid character 'i'")
+			assert.Loosely(t, f.FromHandshake(buf), should.ErrLike("invalid character 'i'"))
 		})
 
 	})

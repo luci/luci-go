@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
@@ -220,7 +219,7 @@ func TestTextParser(t *testing.T) {
 						le, err := p.nextEntry(c)
 						assert.Loosely(t, err, should.BeNil)
 
-						assert.Loosely(t, le, convey.Adapt(shouldMatchLogEntry)(s.add(o.increment).le(o.seq, o.testLines())))
+						shouldMatchLogEntry(t, le, s.add(o.increment).le(o.seq, o.testLines()))
 					}
 
 					le, err := p.nextEntry(c)

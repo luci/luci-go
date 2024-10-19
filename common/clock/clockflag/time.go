@@ -48,6 +48,10 @@ func (t *Time) String() string {
 	return time.Time(*t).String()
 }
 
+func (t Time) Equal(o Time) bool {
+	return time.Time(t).Equal(time.Time(o))
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 //
 // Unmarshals a JSON entry into the underlying type. The entry is expected to

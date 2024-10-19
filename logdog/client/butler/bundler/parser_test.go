@@ -16,11 +16,14 @@ package bundler
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -46,15 +49,11 @@ func dstr(ts time.Time, s string) *testData {
 	return data(ts, []byte(s)...)
 }
 
-func shouldMatchLogEntry(actual any, expected ...any) string {
-	if actual == (*logpb.LogEntry)(nil) {
-		return fmt.Sprintf("actual should not be nil")
-	}
-	if len(expected) != 1 || expected[0] == (*logpb.LogEntry)(nil) {
-		return fmt.Sprintf("expected should not be nil")
-	}
-
-	return ShouldResemble(actual, expected[0])
+func shouldMatchLogEntry(t testing.TB, actual, expected *logpb.LogEntry) {
+	t.Helper()
+	assert.Loosely(t, actual, should.NotBeNil, truth.LineContext())
+	assert.Loosely(t, expected, should.NotBeNil, truth.LineContext())
+	assert.That(t, actual, should.Match(expected))
 }
 
 type parserTestStream struct {

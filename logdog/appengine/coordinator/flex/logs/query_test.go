@@ -37,44 +37,44 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func shouldHaveLogPaths(actual any, expected ...any) string {
-	resp := actual.(*logdog.QueryResponse)
-	paths := stringset.New(len(expected))
-	if len(resp.Streams) > 0 {
-		for _, s := range resp.Streams {
-			paths.Add(s.Path)
+func shouldHaveLogPaths(expected ...string) comparison.Func[*logdog.QueryResponse] {
+	return func(actual *logdog.QueryResponse) *failure.Summary {
+		paths := stringset.New(len(expected))
+		if len(actual.Streams) > 0 {
+			for _, s := range actual.Streams {
+				paths.Add(s.Path)
+			}
 		}
-	}
 
-	exp := stringset.New(len(expected))
-	for _, e := range expected {
-		switch t := e.(type) {
-		case []string:
-			exp.AddAll(t)
+		exp := stringset.NewFromSlice(expected...)
 
-		case string:
-			exp.Add(t)
-
-		case types.StreamPath:
-			exp.Add(string(t))
-
-		default:
-			panic(fmt.Errorf("unsupported expected type %T: %v", t, t))
+		diff := paths.Difference(exp)
+		if diff.Len() == 0 {
+			return nil
 		}
-	}
 
-	return ShouldBeEmpty(paths.Difference(exp))
+		return comparison.NewSummaryBuilder("shouldHaveLogPaths").
+			Actual(paths.ToSortedSlice()).
+			Expected(exp.ToSortedSlice()).
+			AddFindingf("Missing", "%#v", exp.ToSortedSlice()).
+			Because("Missing log paths").
+			Summary
+	}
 }
 
 func TestQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration, a Query request`, t, func() {
+	ftt.Run(`With a testing configuration, a Query request`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 		c, fb := featureBreaker.FilterRDS(c, nil)
 
@@ -139,13 +139,13 @@ func TestQuery(t *testing.T) {
 					case "archived":
 						tls.State.ArchiveStreamURL = "http://example.com"
 						tls.State.ArchivedTime = now
-						So(tls.State.ArchivalState().Archived(), ShouldBeTrue)
+						assert.Loosely(t, tls.State.ArchivalState().Archived(), should.BeTrue)
 						fallthrough // Archived streams are also terminated.
 
 					case "terminated":
 						tls.State.TerminalIndex = 1337
 						tls.State.TerminatedTime = now
-						So(tls.State.Terminated(), ShouldBeTrue)
+						assert.Loosely(t, tls.State.Terminated(), should.BeTrue)
 
 					case "datagram":
 						tls.Desc.StreamType = logpb.StreamType_DATAGRAM
@@ -187,29 +187,29 @@ func TestQuery(t *testing.T) {
 			invert(paths)
 		}
 
-		Convey(`An empty query will return an error.`, func() {
+		t.Run(`An empty query will return an error.`, func(t *ftt.Test) {
 			req.Path = ""
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid query `path`"))
 		})
 
-		Convey(`Handles non-existent project.`, func() {
+		t.Run(`Handles non-existent project.`, func(t *ftt.Test) {
 			req.Project = "does-not-exist"
 
-			Convey(`Anon`, func() {
+			t.Run(`Anon`, func(t *ftt.Test) {
 				env.ActAsAnon()
 				_, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCUnauthenticated)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)())
 			})
 
-			Convey(`User`, func() {
+			t.Run(`User`, func(t *ftt.Test) {
 				env.ActAsNobody()
 				_, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCPermissionDenied)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 			})
 		})
 
-		Convey(`Authorization rules`, func() {
+		t.Run(`Authorization rules`, func(t *ftt.Test) {
 			const (
 				User   = "user:caller@example.com"
 				Anon   = identity.AnonymousIdentity
@@ -245,9 +245,9 @@ func TestQuery(t *testing.T) {
 			}
 
 			for i, test := range cases {
-				Convey(fmt.Sprintf("Case #%d", i), func() {
+				t.Run(fmt.Sprintf("Case #%d", i), func(t *ftt.Test) {
 					tls := ct.MakeStream(c, project, test.realm, "prefix/+/foo")
-					So(tls.Put(c), ShouldBeNil)
+					assert.Loosely(t, tls.Put(c), should.BeNil)
 
 					// Note: this overrides mocks set by ActAsReader.
 					c := auth.WithState(c, &authtest.FakeState{
@@ -256,82 +256,82 @@ func TestQuery(t *testing.T) {
 					})
 
 					resp, err := svr.Query(c, &req)
-					So(status.Code(err), ShouldEqual, test.code)
+					assert.Loosely(t, status.Code(err), should.Equal(test.code))
 					if err == nil {
-						So(resp.Project, ShouldEqual, project)
+						assert.Loosely(t, resp.Project, should.Equal(project))
 						if test.realm != "" {
-							So(resp.Realm, ShouldEqual, test.realm)
+							assert.Loosely(t, resp.Realm, should.Equal(test.realm))
 						} else {
-							So(resp.Realm, ShouldEqual, realms.LegacyRealm)
+							assert.Loosely(t, resp.Realm, should.Equal(realms.LegacyRealm))
 						}
 					}
 				})
 			}
 		})
 
-		Convey(`An empty query will include purged streams if admin.`, func() {
+		t.Run(`An empty query will include purged streams if admin.`, func(t *ftt.Test) {
 			env.JoinAdmins()
 
 			req.Path = "meta/+/**"
 			resp, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(resp, shouldHaveLogPaths, prefixToAllStreamPaths["meta"])
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, resp, shouldHaveLogPaths(prefixToAllStreamPaths["meta"]...))
 		})
 
-		Convey(`A query with an invalid path will return BadRequest error.`, func() {
+		t.Run(`A query with an invalid path will return BadRequest error.`, func(t *ftt.Test) {
 			req.Path = "***"
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCInvalidArgument, "invalid query `path`")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid query `path`"))
 		})
 
-		Convey(`A query with an invalid Next cursor will return BadRequest error.`, func() {
+		t.Run(`A query with an invalid Next cursor will return BadRequest error.`, func(t *ftt.Test) {
 			req.Next = "invalid"
 			req.Path = "testing/+/**"
 			fb.BreakFeatures(errors.New("testing error"), "DecodeCursor")
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCInvalidArgument, "invalid `next` value")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid `next` value"))
 		})
 
-		Convey(`A datastore query error will return InternalServer error.`, func() {
+		t.Run(`A datastore query error will return InternalServer error.`, func(t *ftt.Test) {
 			req.Path = "testing/+/**"
 			fb.BreakFeatures(errors.New("testing error"), "Run")
 
 			_, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCInternal)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 		})
 
-		Convey(`When querying for "testing/+/baz"`, func() {
+		t.Run(`When querying for "testing/+/baz"`, func(t *ftt.Test) {
 			req.Path = "testing/+/baz"
 
 			tls := streams["testing/+/baz"]
-			Convey(`State is not returned.`, func() {
+			t.Run(`State is not returned.`, func(t *ftt.Test) {
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "testing/+/baz")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
-				So(resp.Streams, ShouldHaveLength, 1)
-				So(resp.Streams[0].State, ShouldBeNil)
-				So(resp.Streams[0].Desc, ShouldBeNil)
-				So(resp.Streams[0].DescProto, ShouldBeNil)
+				assert.Loosely(t, resp.Streams, should.HaveLength(1))
+				assert.Loosely(t, resp.Streams[0].State, should.BeNil)
+				assert.Loosely(t, resp.Streams[0].Desc, should.BeNil)
+				assert.Loosely(t, resp.Streams[0].DescProto, should.BeNil)
 			})
 
-			Convey(`When requesting state`, func() {
+			t.Run(`When requesting state`, func(t *ftt.Test) {
 				req.State = true
 
-				Convey(`When not requesting protobufs, returns a descriptor structure.`, func() {
+				t.Run(`When not requesting protobufs, returns a descriptor structure.`, func(t *ftt.Test) {
 					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogPaths, "testing/+/baz")
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
-					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResembleProto, tls.Desc)
-					So(resp.Streams[0].DescProto, ShouldBeNil)
+					assert.Loosely(t, resp.Streams, should.HaveLength(1))
+					assert.Loosely(t, resp.Streams[0].State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.Streams[0].Desc, should.Resemble(tls.Desc))
+					assert.Loosely(t, resp.Streams[0].DescProto, should.BeNil)
 				})
 
-				Convey(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func() {
+				t.Run(`When not requesting protobufs, and with a corrupt descriptor, returns InternalServer error.`, func(t *ftt.Test) {
 					tls.Stream.SetDSValidate(false)
 					tls.Stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
 					if err := tls.Put(c); err != nil {
@@ -340,27 +340,27 @@ func TestQuery(t *testing.T) {
 					ds.GetTestable(c).CatchupIndexes()
 
 					_, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCInternal)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 				})
 
-				Convey(`When requesting protobufs, returns the raw protobuf descriptor.`, func() {
+				t.Run(`When requesting protobufs, returns the raw protobuf descriptor.`, func(t *ftt.Test) {
 					req.Proto = true
 
 					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeNil)
-					So(resp, shouldHaveLogPaths, "testing/+/baz")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
-					So(resp.Streams, ShouldHaveLength, 1)
-					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResembleProto, tls.Desc)
+					assert.Loosely(t, resp.Streams, should.HaveLength(1))
+					assert.Loosely(t, resp.Streams[0].State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp.Streams[0].Desc, should.Resemble(tls.Desc))
 				})
 			})
 		})
 
-		Convey(`With a query limit of 3`, func() {
+		t.Run(`With a query limit of 3`, func(t *ftt.Test) {
 			svrBase.resultLimit = 3
 
-			Convey(`Can iteratively query to retrieve all stream paths.`, func() {
+			t.Run(`Can iteratively query to retrieve all stream paths.`, func(t *ftt.Test) {
 				var seen []string
 
 				req.Path = "testing/+/**"
@@ -371,7 +371,7 @@ func TestQuery(t *testing.T) {
 					req.Next = next
 
 					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 
 					for _, svr := range resp.Streams {
 						seen = append(seen, svr.Path)
@@ -385,115 +385,115 @@ func TestQuery(t *testing.T) {
 
 				sort.Strings(seen)
 				sort.Strings(streamPaths)
-				So(seen, ShouldResemble, streamPaths)
+				assert.Loosely(t, seen, should.Resemble(streamPaths))
 			})
 		})
 
-		Convey(`When querying for meta streams`, func() {
+		t.Run(`When querying for meta streams`, func(t *ftt.Test) {
 			req.Path = "meta/+/**"
 
-			Convey(`When purged=yes, returns BadRequest error.`, func() {
+			t.Run(`When purged=yes, returns BadRequest error.`, func(t *ftt.Test) {
 				req.Purged = logdog.QueryRequest_YES
 
 				_, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCInvalidArgument, "non-admin user cannot request purged log streams")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("non-admin user cannot request purged log streams"))
 			})
 
-			Convey(`When the user is an administrator`, func() {
+			t.Run(`When the user is an administrator`, func(t *ftt.Test) {
 				env.JoinAdmins()
 
-				Convey(`When purged=yes, returns [terminated/archived/purged, purged]`, func() {
+				t.Run(`When purged=yes, returns [terminated/archived/purged, purged]`, func(t *ftt.Test) {
 					req.Purged = logdog.QueryRequest_YES
 
 					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogPaths,
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogPaths(
 						"meta/+/terminated/archived/purged/foo",
 						"meta/+/purged/foo",
-					)
+					))
 				})
 
-				Convey(`When purged=no, returns [binary, datagram, archived, terminated]`, func() {
+				t.Run(`When purged=no, returns [binary, datagram, archived, terminated]`, func(t *ftt.Test) {
 					req.Purged = logdog.QueryRequest_NO
 
 					resp, err := svr.Query(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogPaths,
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogPaths(
 						"meta/+/binary/foo",
 						"meta/+/datagram/foo",
 						"meta/+/archived/foo",
 						"meta/+/terminated/foo",
-					)
+					))
 				})
 			})
 
-			Convey(`When querying for text streams, returns [archived, terminated]`, func() {
+			t.Run(`When querying for text streams, returns [archived, terminated]`, func(t *ftt.Test) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
 
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/+/archived/foo", "meta/+/terminated/foo")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/archived/foo", "meta/+/terminated/foo"))
 			})
 
-			Convey(`When querying for binary streams, returns [binary]`, func() {
+			t.Run(`When querying for binary streams, returns [binary]`, func(t *ftt.Test) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
 
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/+/binary/foo")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/binary/foo"))
 			})
 
-			Convey(`When querying for datagram streams, returns [datagram]`, func() {
+			t.Run(`When querying for datagram streams, returns [datagram]`, func(t *ftt.Test) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
 
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "meta/+/datagram/foo")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/datagram/foo"))
 			})
 
-			Convey(`When querying for an invalid stream type, returns a BadRequest error.`, func() {
+			t.Run(`When querying for an invalid stream type, returns a BadRequest error.`, func(t *ftt.Test) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: -1}
 
 				_, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
 		})
 
-		Convey(`When querying for content type "other", returns [other/+/baz, other/+/foo/bar].`, func() {
+		t.Run(`When querying for content type "other", returns [other/+/baz, other/+/foo/bar].`, func(t *ftt.Test) {
 			req.Path = "other/+/**"
 			req.ContentType = "other"
 
 			resp, err := svr.Query(c, &req)
-			So(err, ShouldBeRPCOK)
-			So(resp, shouldHaveLogPaths, "other/+/baz", "other/+/foo/bar")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, resp, shouldHaveLogPaths("other/+/baz", "other/+/foo/bar"))
 		})
 
-		Convey(`When querying for tags`, func() {
-			Convey(`Tag "baz", returns [testing/+/baz, testing/+/foo/bar/baz]`, func() {
+		t.Run(`When querying for tags`, func(t *ftt.Test) {
+			t.Run(`Tag "baz", returns [testing/+/baz, testing/+/foo/bar/baz]`, func(t *ftt.Test) {
 				req.Path = "testing/+/**"
 				req.Tags["baz"] = ""
 
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz", "testing/+/foo/bar/baz"))
 			})
 
-			Convey(`Tags "prefix=testing", "baz", returns [testing/+/baz, testing/+/foo/bar/baz]`, func() {
+			t.Run(`Tags "prefix=testing", "baz", returns [testing/+/baz, testing/+/foo/bar/baz]`, func(t *ftt.Test) {
 				req.Path = "testing/+/**"
 				req.Tags["baz"] = ""
 				req.Tags["prefix"] = "testing"
 
 				resp, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCOK)
-				So(resp, shouldHaveLogPaths, "testing/+/baz", "testing/+/foo/bar/baz")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz", "testing/+/foo/bar/baz"))
 			})
 
-			Convey(`When an invalid tag is specified, returns BadRequest error`, func() {
+			t.Run(`When an invalid tag is specified, returns BadRequest error`, func(t *ftt.Test) {
 				req.Path = "testing/+/**"
 				req.Tags["+++not a valid tag+++"] = ""
 
 				_, err := svr.Query(c, &req)
-				So(err, ShouldBeRPCInvalidArgument, "invalid tag constraint")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid tag constraint"))
 			})
 		})
 	})

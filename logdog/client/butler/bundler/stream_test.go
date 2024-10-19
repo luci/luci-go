@@ -22,8 +22,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 
@@ -186,7 +188,7 @@ func (p *testParser) firstChunkTime() (time.Time, bool) {
 }
 
 func TestStream(t *testing.T) {
-	Convey(`A testing stream config`, t, func() {
+	ftt.Run(`A testing stream config`, t, func(t *ftt.Test) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		tp := testParser{}
 		c := streamConfig{
@@ -200,44 +202,44 @@ func TestStream(t *testing.T) {
 			},
 		}
 
-		Convey(`With a 64-byte maximum buffer and 1 second maximum duration`, func() {
+		t.Run(`With a 64-byte maximum buffer and 1 second maximum duration`, func(t *ftt.Test) {
 			c.maximumBufferedBytes = 64
 			c.maximumBufferDuration = time.Second
 			s := newStream(c)
 
-			Convey(`Is not drained by default`, func() {
-				So(s.isDrained(), ShouldBeFalse)
+			t.Run(`Is not drained by default`, func(t *ftt.Test) {
+				assert.Loosely(t, s.isDrained(), should.BeFalse)
 			})
 
-			Convey(`With no data, has no expiration time.`, func() {
+			t.Run(`With no data, has no expiration time.`, func(t *ftt.Test) {
 				_, has := s.expireTime()
-				So(has, ShouldBeFalse)
+				assert.Loosely(t, has, should.BeFalse)
 			})
 
-			Convey(`Append will ignore a 0-byte chunk.`, func() {
+			t.Run(`Append will ignore a 0-byte chunk.`, func(t *ftt.Test) {
 				d := data(tc.Now())
-				So(s.Append(d), ShouldBeNil)
-				So(d.released, ShouldBeTrue)
+				assert.Loosely(t, s.Append(d), should.BeNil)
+				assert.Loosely(t, d.released, should.BeTrue)
 			})
 
-			Convey(`Append will add two 32-byte chunks.`, func() {
+			t.Run(`Append will add two 32-byte chunks.`, func(t *ftt.Test) {
 				content := bytes.Repeat([]byte{0xAA}, 32)
-				So(s.Append(data(tc.Now(), content...)), ShouldBeNil)
-				So(s.Append(data(tc.Now(), content...)), ShouldBeNil)
+				assert.Loosely(t, s.Append(data(tc.Now(), content...)), should.BeNil)
+				assert.Loosely(t, s.Append(data(tc.Now(), content...)), should.BeNil)
 			})
 
-			Convey(`Append will add a large chunk when there are no other Data blocks.`, func() {
+			t.Run(`Append will add a large chunk when there are no other Data blocks.`, func(t *ftt.Test) {
 				d := data(tc.Now(), bytes.Repeat([]byte{0xAA}, 128)...)
-				So(s.Append(d), ShouldBeNil)
+				assert.Loosely(t, s.Append(d), should.BeNil)
 
-				Convey(`Will use that data's timestamp as expiration time.`, func() {
-					t, has := s.expireTime()
-					So(has, ShouldBeTrue)
-					So(t.Equal(tc.Now().Add(time.Second)), ShouldBeTrue)
+				t.Run(`Will use that data's timestamp as expiration time.`, func(t *ftt.Test) {
+					ts, has := s.expireTime()
+					assert.Loosely(t, has, should.BeTrue)
+					assert.Loosely(t, ts, should.Match(tc.Now().Add(time.Second)))
 				})
 			})
 
-			Convey(`Append will block if the chunk exceeds the buffer size.`, func() {
+			t.Run(`Append will block if the chunk exceeds the buffer size.`, func(t *ftt.Test) {
 				signalC := make(chan struct{})
 				s.c.onAppend = func(appended bool) {
 					if !appended {
@@ -247,7 +249,7 @@ func TestStream(t *testing.T) {
 				}
 
 				// Add one chunk so we don't hit the "only byte" condition.
-				So(s.Append(data(tc.Now(), bytes.Repeat([]byte{0xAA}, 34)...)), ShouldBeNil)
+				assert.Loosely(t, s.Append(data(tc.Now(), bytes.Repeat([]byte{0xAA}, 34)...)), should.BeNil)
 
 				// Wait until we get the signal that Append() will block, then consume
 				// some data and unblock Append().
@@ -264,22 +266,22 @@ func TestStream(t *testing.T) {
 				}()
 
 				// Add one chunk so we don't hit the "only byte" condition.
-				So(s.Append(data(tc.Now(), bytes.Repeat([]byte{0xBB}, 32)...)), ShouldBeNil)
-				So(blocked, ShouldBeTrue)
+				assert.Loosely(t, s.Append(data(tc.Now(), bytes.Repeat([]byte{0xBB}, 32)...)), should.BeNil)
+				assert.Loosely(t, blocked, should.BeTrue)
 			})
 
-			Convey(`Append in an error state`, func() {
+			t.Run(`Append in an error state`, func(t *ftt.Test) {
 				terr := errors.New("test error")
 
-				Convey(`Will return the error state.`, func() {
+				t.Run(`Will return the error state.`, func(t *ftt.Test) {
 					s.appendErr = terr
 
 					d := data(tc.Now(), bytes.Repeat([]byte{0xAA}, 32)...)
-					So(s.Append(d), ShouldEqual, terr)
-					So(d.released, ShouldBeTrue)
+					assert.Loosely(t, s.Append(d), should.Equal(terr))
+					assert.Loosely(t, d.released, should.BeTrue)
 				})
 
-				Convey(`Will block if the chunk exceeds buffer size, and return error state.`, func() {
+				t.Run(`Will block if the chunk exceeds buffer size, and return error state.`, func(t *ftt.Test) {
 					signalC := make(chan struct{})
 					s.c.onAppend = func(appended bool) {
 						if !appended {
@@ -289,7 +291,7 @@ func TestStream(t *testing.T) {
 					}
 
 					// Add one chunk so we don't hit the "only byte" condition.
-					So(s.Append(data(tc.Now(), bytes.Repeat([]byte{0xAA}, 34)...)), ShouldBeNil)
+					assert.Loosely(t, s.Append(data(tc.Now(), bytes.Repeat([]byte{0xAA}, 34)...)), should.BeNil)
 
 					// Wait until we get the signal that Append() will block, then consume
 					// some data and unblock Append().
@@ -304,65 +306,65 @@ func TestStream(t *testing.T) {
 					// Add one chunk so we don't hit the "only byte" condition.
 					for _, sz := range []int{32, 1, 0} {
 						d := data(tc.Now(), bytes.Repeat([]byte{0xAA}, sz)...)
-						So(s.Append(d), ShouldEqual, terr)
-						So(d.released, ShouldBeTrue)
+						assert.Loosely(t, s.Append(d), should.Equal(terr))
+						assert.Loosely(t, d.released, should.BeTrue)
 					}
 				})
 			})
 		})
 
-		Convey(`When building bundle entries`, func() {
+		t.Run(`When building bundle entries`, func(t *ftt.Test) {
 			bb := &builder{
 				size: 1024,
 			}
 			s := newStream(c)
 
-			Convey(`Returns nil with no buffered data.`, func() {
-				So(s.nextBundleEntry(bb, false), ShouldBeFalse)
-				So(bb.bundle(), shouldHaveBundleEntries)
+			t.Run(`Returns nil with no buffered data.`, func(t *ftt.Test) {
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeFalse)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries())
 			})
 
-			Convey(`With a single record, returns that entry.`, func() {
+			t.Run(`With a single record, returns that entry.`, func(t *ftt.Test) {
 				tp.tags(tc.Now(), "a", "b")
 
-				So(s.nextBundleEntry(bb, false), ShouldBeTrue)
-				So(bb.bundle(), shouldHaveBundleEntries, "test:a:b")
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeTrue)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries("test:a:b"))
 			})
 
-			Convey(`When split is allowed, returns nil.`, func() {
+			t.Run(`When split is allowed, returns nil.`, func(t *ftt.Test) {
 				tp.tags(tc.Now(), "a", "b")
 				tp.setAllowSplit(true)
 				tp.tags(tc.Now(), "c")
 
-				So(s.nextBundleEntry(bb, false), ShouldBeTrue)
-				So(bb.bundle(), shouldHaveBundleEntries, "test:a:b")
-				So(s.nextBundleEntry(bb, false), ShouldBeFalse)
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeTrue)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries("test:a:b"))
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeFalse)
 
-				So(s.nextBundleEntry(bb, true), ShouldBeTrue)
-				So(bb.bundle(), shouldHaveBundleEntries, "test:a:b:c")
+				assert.Loosely(t, s.nextBundleEntry(bb, true), should.BeTrue)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries("test:a:b:c"))
 			})
 
-			Convey(`When an error occurs during stream parsing, drains stream.`, func() {
-				So(s.isDrained(), ShouldBeFalse)
+			t.Run(`When an error occurs during stream parsing, drains stream.`, func(t *ftt.Test) {
+				assert.Loosely(t, s.isDrained(), should.BeFalse)
 				tp.tags(tc.Now(), "a")
 				tp.addError(errTestInduced)
 				tp.tags(tc.Now(), "b")
 
-				So(s.nextBundleEntry(bb, false), ShouldBeTrue)
-				So(s.isDrained(), ShouldBeTrue)
-				So(bb.bundle(), shouldHaveBundleEntries, "+test:a")
-				So(s.nextBundleEntry(bb, false), ShouldBeFalse)
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeTrue)
+				assert.Loosely(t, s.isDrained(), should.BeTrue)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries("+test:a"))
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeFalse)
 			})
 
-			Convey(`With only an error, returns no bundle entry.`, func() {
-				So(s.isDrained(), ShouldBeFalse)
+			t.Run(`With only an error, returns no bundle entry.`, func(t *ftt.Test) {
+				assert.Loosely(t, s.isDrained(), should.BeFalse)
 				tp.addError(errTestInduced)
 				tp.tags(tc.Now(), "a")
 				tp.tags(tc.Now(), "b")
 
-				So(s.nextBundleEntry(bb, false), ShouldBeFalse)
-				So(bb.bundle(), shouldHaveBundleEntries)
-				So(s.isDrained(), ShouldBeTrue)
+				assert.Loosely(t, s.nextBundleEntry(bb, false), should.BeFalse)
+				assert.Loosely(t, bb.bundle(), shouldHaveBundleEntries())
+				assert.Loosely(t, s.isDrained(), should.BeTrue)
 			})
 		})
 	})
@@ -370,7 +372,7 @@ func TestStream(t *testing.T) {
 
 // TestStreamSmoke tests a Stream in an actual multi-goroutine workflow.
 func TestStreamSmoke(t *testing.T) {
-	Convey(`When running a smoke test`, t, func() {
+	ftt.Run(`When running a smoke test`, t, func(t *ftt.Test) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		tp := testParser{}
 		c := streamConfig{
@@ -459,7 +461,7 @@ func TestStreamSmoke(t *testing.T) {
 		<-collectDoneC
 		for i := 0; i < 512; i++ {
 			_, ok := gotIt[i]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 		}
 	})
 }

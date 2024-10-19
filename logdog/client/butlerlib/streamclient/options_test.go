@@ -19,73 +19,73 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey(`options`, t, func() {
+	ftt.Run(`options`, t, func(t *ftt.Test) {
 		scFake, client := NewUnregisteredFake("")
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeUTC)
 
-		Convey(`defaults`, func() {
+		t.Run(`defaults`, func(t *ftt.Test) {
 			_, err := client.NewStream(ctx, "test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defaultFlags := scFake.Data()["test"].GetFlags()
-			So(defaultFlags.ContentType, ShouldEqual, "text/plain; charset=utf-8")
-			So(defaultFlags.Timestamp.Time(), ShouldEqual, testclock.TestTimeUTC)
-			So(defaultFlags.Tags, ShouldBeEmpty)
+			assert.Loosely(t, defaultFlags.ContentType, should.Equal("text/plain; charset=utf-8"))
+			assert.Loosely(t, defaultFlags.Timestamp.Time(), should.Match(testclock.TestTimeUTC))
+			assert.Loosely(t, defaultFlags.Tags, should.BeEmpty)
 		})
 
-		Convey(`can change content type`, func() {
+		t.Run(`can change content type`, func(t *ftt.Test) {
 			_, err := client.NewStream(ctx, "test", WithContentType("narple"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			So(testFlags.ContentType, ShouldEqual, "narple")
+			assert.Loosely(t, testFlags.ContentType, should.Equal("narple"))
 		})
 
-		Convey(`can set initial timestamp`, func() {
+		t.Run(`can set initial timestamp`, func(t *ftt.Test) {
 			_, err := client.NewStream(ctx, "test", WithTimestamp(testclock.TestRecentTimeUTC))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			So(testFlags.Timestamp.Time(), ShouldEqual, testclock.TestRecentTimeUTC)
+			assert.Loosely(t, testFlags.Timestamp.Time(), should.Match(testclock.TestRecentTimeUTC))
 		})
 
-		Convey(`can set tags nicely`, func() {
+		t.Run(`can set tags nicely`, func(t *ftt.Test) {
 			_, err := client.NewStream(ctx, "test", WithTags(
 				"key1", "value",
 				"key2", "value",
 			))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			So(testFlags.Tags, ShouldResemble, streamproto.TagMap{
+			assert.Loosely(t, testFlags.Tags, should.Resemble(streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",
-			})
+			}))
 		})
 
-		Convey(`WithTags expects an even number of args`, func() {
-			So(func() {
+		t.Run(`WithTags expects an even number of args`, func(t *ftt.Test) {
+			assert.Loosely(t, func() {
 				WithTags("hi")
-			}, ShouldPanicLike, "even number of arguments")
+			}, should.PanicLike("even number of arguments"))
 		})
 
-		Convey(`can set tags practically`, func() {
+		t.Run(`can set tags practically`, func(t *ftt.Test) {
 			_, err := client.NewStream(ctx, "test", WithTagMap(map[string]string{
 				"key1": "value",
 				"key2": "value",
 			}))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			testFlags := scFake.Data()["test"].GetFlags()
-			So(testFlags.Tags, ShouldResemble, streamproto.TagMap{
+			assert.Loosely(t, testFlags.Tags, should.Resemble(streamproto.TagMap{
 				"key1": "value",
 				"key2": "value",
-			})
+			}))
 		})
 
 	})

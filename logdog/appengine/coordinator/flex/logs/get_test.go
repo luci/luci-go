@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -47,25 +48,28 @@ import (
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func shouldHaveLogs(actual any, expected ...any) string {
-	resp := actual.(*logdog.GetResponse)
+func shouldHaveLogs(expected ...int) comparison.Func[*logdog.GetResponse] {
+	return func(actual *logdog.GetResponse) *failure.Summary {
+		respLogs := make([]int, len(actual.Logs))
+		for i, le := range actual.Logs {
+			respLogs[i] = int(le.StreamIndex)
+		}
 
-	respLogs := make([]int, len(resp.Logs))
-	for i, le := range resp.Logs {
-		respLogs[i] = int(le.StreamIndex)
+		ret := should.Match(expected, cmpopts.EquateEmpty())(respLogs)
+		if ret != nil {
+			ret.Comparison.Name = "shouldHaveLogs"
+		}
+		return ret
 	}
-
-	expLogs := make([]int, len(expected))
-	for i, exp := range expected {
-		expLogs[i] = exp.(int)
-	}
-
-	return ShouldResemble(respLogs, expLogs)
 }
 
 // zeroRecords reads a recordio stream and clears all of the record data,
@@ -94,7 +98,7 @@ func zeroRecords(d []byte) {
 }
 
 func testGetImpl(t *testing.T, archived bool) {
-	Convey(fmt.Sprintf(`With a testing configuration, a Get request (archived=%v)`, archived), t, func() {
+	ftt.Run(fmt.Sprintf(`With a testing configuration, a Get request (archived=%v)`, archived), t, func(t *ftt.Test) {
 		c, env := ct.Install()
 
 		svr := New()
@@ -167,56 +171,56 @@ func testGetImpl(t *testing.T, archived bool) {
 			return int32(size)
 		}
 
-		Convey(`Testing Get requests (no logs)`, func() {
+		t.Run(`Testing Get requests (no logs)`, func(t *ftt.Test) {
 			req := logdog.GetRequest{
 				Project: project,
 				Path:    string(tls.Path),
 			}
 
-			Convey(`Will fail if the Path is not a stream path or a hash.`, func() {
+			t.Run(`Will fail if the Path is not a stream path or a hash.`, func(t *ftt.Test) {
 				req.Path = "not/a/full/stream/path"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldErrLike, "invalid path value")
+				assert.Loosely(t, err, should.ErrLike("invalid path value"))
 			})
 
-			Convey(`Will fail with Internal if the datastore Get() doesn't work.`, func() {
+			t.Run(`Will fail with Internal if the datastore Get() doesn't work.`, func(t *ftt.Test) {
 				c, fb := featureBreaker.FilterRDS(c, nil)
 				fb.BreakFeatures(errors.New("testing error"), "GetMulti")
 
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCInternal)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 			})
 
-			Convey(`Will fail with InvalidArgument if the project name is invalid.`, func() {
+			t.Run(`Will fail with InvalidArgument if the project name is invalid.`, func(t *ftt.Test) {
 				req.Project = "!!! invalid project name !!!"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCInvalidArgument)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 			})
 
-			Convey(`Will fail with NotFound if the log path does not exist (different path).`, func() {
+			t.Run(`Will fail with NotFound if the log path does not exist (different path).`, func(t *ftt.Test) {
 				req.Path = "testing/+/does/not/exist"
 				_, err := svr.Get(c, &req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey(`Will handle non-existent project.`, func() {
+			t.Run(`Will handle non-existent project.`, func(t *ftt.Test) {
 				req.Project = "does-not-exist"
 				req.Path = "testing/+/**"
 
-				Convey(`Anon`, func() {
+				t.Run(`Anon`, func(t *ftt.Test) {
 					env.ActAsAnon()
 					_, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCUnauthenticated)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)())
 				})
 
-				Convey(`User`, func() {
+				t.Run(`User`, func(t *ftt.Test) {
 					env.ActAsNobody()
 					_, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCPermissionDenied)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 				})
 			})
 
-			Convey(`Authorization rules`, func() {
+			t.Run(`Authorization rules`, func(t *ftt.Test) {
 				const (
 					User   = "user:caller@example.com"
 					Anon   = identity.AnonymousIdentity
@@ -252,7 +256,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				}
 
 				for i, test := range cases {
-					Convey(fmt.Sprintf("Case #%d", i), func() {
+					t.Run(fmt.Sprintf("Case #%d", i), func(t *ftt.Test) {
 						tls = ct.MakeStream(c, project, test.realm, types.StreamPath(req.Path))
 						putLogStream(c)
 
@@ -263,18 +267,18 @@ func testGetImpl(t *testing.T, archived bool) {
 						})
 
 						resp, err := svr.Get(c, &req)
-						So(status.Code(err), ShouldEqual, test.code)
+						assert.Loosely(t, status.Code(err), should.Equal(test.code))
 						if err == nil {
-							So(resp, shouldHaveLogs)
-							So(resp.Project, ShouldEqual, project)
-							So(resp.Realm, ShouldEqual, test.realm)
+							assert.Loosely(t, resp, shouldHaveLogs())
+							assert.Loosely(t, resp.Project, should.Equal(project))
+							assert.Loosely(t, resp.Realm, should.Equal(test.realm))
 						}
 					})
 				}
 			})
 		})
 
-		Convey(`When testing log data is added`, func() {
+		t.Run(`When testing log data is added`, func(t *ftt.Test) {
 			putLogData := func() {
 				if !archived {
 					// Add the logs to the in-memory temporary storage.
@@ -314,152 +318,152 @@ func testGetImpl(t *testing.T, archived bool) {
 					tls.State.ArchiveStreamURL = "gs://testbucket/stream"
 					tls.State.ArchiveIndexURL = "gs://testbucket/index"
 
-					So(tls.State.ArchivalState().Archived(), ShouldBeTrue)
+					assert.Loosely(t, tls.State.ArchivalState().Archived(), should.BeTrue)
 				}
 			}
 			putLogData()
 			putLogStream(c)
 
-			Convey(`Testing Get requests`, func() {
+			t.Run(`Testing Get requests`, func(t *ftt.Test) {
 				req := logdog.GetRequest{
 					Project: string(project),
 					Path:    string(tls.Path),
 				}
 
-				Convey(`When the log stream is purged`, func() {
+				t.Run(`When the log stream is purged`, func(t *ftt.Test) {
 					tls.Stream.Purged = true
 					putLogStream(c)
 
-					Convey(`Will return NotFound if the user is not an administrator.`, func() {
+					t.Run(`Will return NotFound if the user is not an administrator.`, func(t *ftt.Test) {
 						_, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCNotFound)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 					})
 
-					Convey(`Will process the request if the user is an administrator.`, func() {
+					t.Run(`Will process the request if the user is an administrator.`, func(t *ftt.Test) {
 						env.JoinAdmins()
 
 						resp, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCOK)
-						So(resp, shouldHaveLogs, 0, 1, 2)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 					})
 				})
 
-				Convey(`Will return empty if no records were requested.`, func() {
+				t.Run(`Will return empty if no records were requested.`, func(t *ftt.Test) {
 					req.LogCount = -1
 					req.State = false
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp.Logs, ShouldHaveLength, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp.Logs, should.HaveLength(0))
 				})
 
-				Convey(`Will successfully retrieve a stream path.`, func() {
+				t.Run(`Will successfully retrieve a stream path.`, func(t *ftt.Test) {
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 
-					Convey(`Will successfully retrieve the stream path again (caching).`, func() {
+					t.Run(`Will successfully retrieve the stream path again (caching).`, func(t *ftt.Test) {
 						resp, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCOK)
-						So(resp, shouldHaveLogs, 0, 1, 2)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 					})
 				})
 
-				Convey(`Will successfully retrieve a stream path offset at 4.`, func() {
+				t.Run(`Will successfully retrieve a stream path offset at 4.`, func(t *ftt.Test) {
 					req.Index = 4
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 4, 5)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(4, 5))
 				})
 
-				Convey(`Will retrieve no logs for contiguous offset 6.`, func() {
+				t.Run(`Will retrieve no logs for contiguous offset 6.`, func(t *ftt.Test) {
 					req.Index = 6
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(len(resp.Logs), ShouldEqual, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, len(resp.Logs), should.BeZero)
 				})
 
-				Convey(`Will retrieve log 7 for non-contiguous offset 6.`, func() {
+				t.Run(`Will retrieve log 7 for non-contiguous offset 6.`, func(t *ftt.Test) {
 					req.NonContiguous = true
 					req.Index = 6
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 7)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(7))
 				})
 
-				Convey(`With a byte limit of 1, will still return at least one log entry.`, func() {
+				t.Run(`With a byte limit of 1, will still return at least one log entry.`, func(t *ftt.Test) {
 					req.ByteCount = 1
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
-				Convey(`With a byte limit of sizeof(0), will return log entry 0.`, func() {
+				t.Run(`With a byte limit of sizeof(0), will return log entry 0.`, func(t *ftt.Test) {
 					req.ByteCount = frameSize(0)
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
-				Convey(`With a byte limit of sizeof(0)+1, will return log entry 0.`, func() {
+				t.Run(`With a byte limit of sizeof(0)+1, will return log entry 0.`, func(t *ftt.Test) {
 					req.ByteCount = frameSize(0) + 1
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
-				Convey(`With a byte limit of sizeof({0, 1}), will return log entries {0, 1}.`, func() {
+				t.Run(`With a byte limit of sizeof({0, 1}), will return log entries {0, 1}.`, func(t *ftt.Test) {
 					req.ByteCount = frameSize(0, 1)
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1))
 				})
 
-				Convey(`With a byte limit of sizeof({0, 1, 2}), will return log entries {0, 1, 2}.`, func() {
+				t.Run(`With a byte limit of sizeof({0, 1, 2}), will return log entries {0, 1, 2}.`, func(t *ftt.Test) {
 					req.ByteCount = frameSize(0, 1, 2)
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
-				Convey(`With a byte limit of sizeof({0, 1, 2})+1, will return log entries {0, 1, 2}.`, func() {
+				t.Run(`With a byte limit of sizeof({0, 1, 2})+1, will return log entries {0, 1, 2}.`, func(t *ftt.Test) {
 					req.ByteCount = frameSize(0, 1, 2) + 1
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
-				Convey(`When requesting state`, func() {
+				t.Run(`When requesting state`, func(t *ftt.Test) {
 					req.State = true
 					req.LogCount = -1
 
-					Convey(`Will successfully retrieve stream state.`, func() {
+					t.Run(`Will successfully retrieve stream state.`, func(t *ftt.Test) {
 						resp, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCOK)
-						So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-						So(len(resp.Logs), ShouldEqual, 0)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+						assert.Loosely(t, len(resp.Logs), should.BeZero)
 					})
 
-					Convey(`Will return Internal if the protobuf descriptor data is corrupt.`, func() {
+					t.Run(`Will return Internal if the protobuf descriptor data is corrupt.`, func(t *ftt.Test) {
 						tls.Stream.SetDSValidate(false)
 						tls.Stream.Descriptor = []byte{0x00} // Invalid protobuf, zero tag.
 						putLogStream(c)
 
 						_, err := svr.Get(c, &req)
-						So(err, ShouldBeRPCInternal)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 					})
 				})
 
-				Convey(`When requesting a signed URL`, func() {
+				t.Run(`When requesting a signed URL`, func(t *ftt.Test) {
 					const duration = 10 * time.Hour
 					req.LogCount = -1
 
@@ -471,27 +475,27 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.GetSignedUrls = &sr
 
 					if archived {
-						Convey(`Will successfully retrieve the URL.`, func() {
+						t.Run(`Will successfully retrieve the URL.`, func(t *ftt.Test) {
 							resp, err := svr.Get(c, &req)
-							So(err, ShouldBeNil)
-							So(resp.Logs, ShouldHaveLength, 0)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, resp.Logs, should.HaveLength(0))
 
-							So(resp.SignedUrls, ShouldNotBeNil)
-							So(resp.SignedUrls.Stream, ShouldEndWith, "&signed=true")
-							So(resp.SignedUrls.Index, ShouldEndWith, "&signed=true")
-							So(resp.SignedUrls.Expiration.AsTime(), ShouldResemble, clock.Now(c).Add(duration))
+							assert.Loosely(t, resp.SignedUrls, should.NotBeNil)
+							assert.Loosely(t, resp.SignedUrls.Stream, should.HaveSuffix("&signed=true"))
+							assert.Loosely(t, resp.SignedUrls.Index, should.HaveSuffix("&signed=true"))
+							assert.Loosely(t, resp.SignedUrls.Expiration.AsTime(), should.Resemble(clock.Now(c).Add(duration)))
 						})
 					} else {
-						Convey(`Will succeed, but return no URL.`, func() {
+						t.Run(`Will succeed, but return no URL.`, func(t *ftt.Test) {
 							resp, err := svr.Get(c, &req)
-							So(err, ShouldBeNil)
-							So(resp.Logs, ShouldHaveLength, 0)
-							So(resp.SignedUrls, ShouldBeNil)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, resp.Logs, should.HaveLength(0))
+							assert.Loosely(t, resp.SignedUrls, should.BeNil)
 						})
 					}
 				})
 
-				Convey(`Will return Internal if the protobuf log entry data is corrupt.`, func() {
+				t.Run(`Will return Internal if the protobuf log entry data is corrupt.`, func(t *ftt.Test) {
 					if archived {
 						// Corrupt the archive datastream.
 						stream := env.GSClient.Get("gs://testbucket/stream")
@@ -512,19 +516,19 @@ func testGetImpl(t *testing.T, archived bool) {
 					}
 
 					_, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCInternal)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 				})
 
-				Convey(`Will successfully retrieve both logs and stream state.`, func() {
+				t.Run(`Will successfully retrieve both logs and stream state.`, func(t *ftt.Test) {
 					req.State = true
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp, shouldHaveLogs, 0, 1, 2)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
-				Convey(`Will return Internal if the Storage is not working.`, func() {
+				t.Run(`Will return Internal if the Storage is not working.`, func(t *ftt.Test) {
 					if archived {
 						env.GSClient["error"] = []byte("test error")
 					} else {
@@ -532,85 +536,85 @@ func testGetImpl(t *testing.T, archived bool) {
 					}
 
 					_, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCInternal)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 				})
 
-				Convey(`Will enforce a maximum count of 2.`, func() {
+				t.Run(`Will enforce a maximum count of 2.`, func(t *ftt.Test) {
 					req.LogCount = 2
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1))
 				})
 
-				Convey(`When requesting protobufs`, func() {
+				t.Run(`When requesting protobufs`, func(t *ftt.Test) {
 					req.State = true
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 
 					// Confirm that this has protobufs.
-					So(len(resp.Logs), ShouldEqual, 3)
-					So(resp.Logs[0], ShouldNotBeNil)
+					assert.Loosely(t, len(resp.Logs), should.Equal(3))
+					assert.Loosely(t, resp.Logs[0], should.NotBeNil)
 
 					// Confirm that there is a descriptor protobuf.
-					So(resp.Desc, ShouldResembleProto, tls.Desc)
+					assert.Loosely(t, resp.Desc, should.Resemble(tls.Desc))
 
 					// Confirm that the state was returned.
-					So(resp.State, ShouldNotBeNil)
+					assert.Loosely(t, resp.State, should.NotBeNil)
 				})
 
-				Convey(`Will successfully retrieve all records if non-contiguous is allowed.`, func() {
+				t.Run(`Will successfully retrieve all records if non-contiguous is allowed.`, func(t *ftt.Test) {
 					req.NonContiguous = true
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0, 1, 2, 4, 5, 7)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2, 4, 5, 7))
 				})
 
-				Convey(`When newlines are not requested, does not include delimiters.`, func() {
+				t.Run(`When newlines are not requested, does not include delimiters.`, func(t *ftt.Test) {
 					req.LogCount = 1
 
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 0)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(0))
 
-					So(resp.Logs[0].GetText(), ShouldResemble, &logpb.Text{
+					assert.Loosely(t, resp.Logs[0].GetText(), should.Resemble(&logpb.Text{
 						Lines: []*logpb.Text_Line{
 							{Value: []byte("log entry #0"), Delimiter: "\n"},
 							{Value: []byte("another line of text"), Delimiter: ""},
 						},
-					})
+					}))
 				})
 
-				Convey(`Will get a Binary LogEntry`, func() {
+				t.Run(`Will get a Binary LogEntry`, func(t *ftt.Test) {
 					req.Index = 4
 					req.LogCount = 1
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 4)
-					So(resp.Logs[0].GetBinary(), ShouldResemble, &logpb.Binary{
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(4))
+					assert.Loosely(t, resp.Logs[0].GetBinary(), should.Resemble(&logpb.Binary{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
-					})
+					}))
 				})
 
-				Convey(`Will get a Datagram LogEntry`, func() {
+				t.Run(`Will get a Datagram LogEntry`, func(t *ftt.Test) {
 					req.Index = 5
 					req.LogCount = 1
 					resp, err := svr.Get(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, 5)
-					So(resp.Logs[0].GetDatagram(), ShouldResemble, &logpb.Datagram{
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(5))
+					assert.Loosely(t, resp.Logs[0].GetDatagram(), should.Resemble(&logpb.Datagram{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
 						Partial: &logpb.Datagram_Partial{
 							Index: 2,
 							Size:  1024,
 							Last:  false,
 						},
-					})
+					}))
 				})
 			})
 
-			Convey(`Testing tail requests`, func() {
+			t.Run(`Testing tail requests`, func(t *ftt.Test) {
 				req := logdog.TailRequest{
 					Project: string(project),
 					Path:    string(tls.Path),
@@ -624,27 +628,27 @@ func testGetImpl(t *testing.T, archived bool) {
 					tailIndex = 2
 				}
 
-				Convey(`Will successfully retrieve a stream path.`, func() {
+				t.Run(`Will successfully retrieve a stream path.`, func(t *ftt.Test) {
 					resp, err := svr.Tail(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, shouldHaveLogs, tailIndex)
-					So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
+					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 
 					// For non-archival: 1 miss and 1 put, for the tail row.
 					// For archival: 1 miss and 1 put, for the index.
-					So(env.StorageCache.Stats(), ShouldResemble, ct.StorageCacheStats{Puts: 1, Misses: 1})
+					assert.Loosely(t, env.StorageCache.Stats(), should.Resemble(ct.StorageCacheStats{Puts: 1, Misses: 1}))
 
-					Convey(`Will retrieve the stream path again (caching).`, func() {
+					t.Run(`Will retrieve the stream path again (caching).`, func(t *ftt.Test) {
 						env.StorageCache.Clear()
 
 						resp, err := svr.Tail(c, &req)
-						So(err, ShouldBeRPCOK)
-						So(resp, shouldHaveLogs, tailIndex)
-						So(resp.State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
+						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 
 						// For non-archival: 1 hit, for the tail row.
 						// For archival: 1 hit, for the index.
-						So(env.StorageCache.Stats(), ShouldResemble, ct.StorageCacheStats{Hits: 1})
+						assert.Loosely(t, env.StorageCache.Stats(), should.Resemble(ct.StorageCacheStats{Hits: 1}))
 					})
 				})
 			})

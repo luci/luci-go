@@ -20,43 +20,59 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/failure"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
-func shouldHaveLogPaths(actual any, expected ...any) string {
-	names := stringset.New(len(expected))
-	switch t := actual.(type) {
-	case error:
-		return t.Error()
+func shouldHaveLogPaths(expected ...string) comparison.Func[any] {
+	const cmpName = "shouldHaveLogPaths"
 
-	case []*LogStream:
-		for _, ls := range t {
-			names.Add(string(ls.Path()))
+	return func(actual any) *failure.Summary {
+		ret := comparison.NewSummaryBuilder(cmpName, actual)
+		names := stringset.New(len(expected))
+
+		switch t := actual.(type) {
+		case error:
+			return ret.
+				AddFindingf("Error", t.Error()).
+				Because("Encountered Error").
+				Summary
+
+		case []*LogStream:
+			for _, ls := range t {
+				names.Add(string(ls.Path()))
+			}
+
+		default:
+			return ret.
+				Because("Unsupported type").
+				Summary
 		}
 
-	default:
-		return fmt.Sprintf("unknown 'actual' type: %T", t)
-	}
-
-	exp := stringset.New(len(expected))
-	for _, v := range expected {
-		s, ok := v.(string)
-		if !ok {
-			panic("non-string stream name specified")
+		exp := stringset.NewFromSlice(expected...)
+		diff := names.Difference(exp)
+		if len(diff) == 0 {
+			return nil
 		}
-		exp.Add(s)
+		return ret.
+			Actual(names.ToSortedSlice()).
+			Expected(exp.ToSortedSlice()).
+			AddFindingf("Diff", "%#v", diff.ToSortedSlice()).
+			Because("Actual was missing some Expected paths").
+			Summary
 	}
-	return ShouldBeEmpty(names.Difference(exp))
 }
 
 func updateLogStreamID(ls *LogStream) {
@@ -66,7 +82,7 @@ func updateLogStreamID(ls *LogStream) {
 func TestLogStream(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing log stream`, t, func() {
+	ftt.Run(`A testing log stream`, t, func(t *ftt.Test) {
 		c, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 		c = memory.Use(c)
 		ds.GetTestable(c).AutoIndex(true)
@@ -95,50 +111,50 @@ func TestLogStream(t *testing.T) {
 			},
 		}
 
-		Convey(`Can populate the LogStream with descriptor state.`, func() {
-			So(ls.LoadDescriptor(desc), ShouldBeNil)
-			So(ls.Validate(), ShouldBeNil)
+		t.Run(`Can populate the LogStream with descriptor state.`, func(t *ftt.Test) {
+			assert.Loosely(t, ls.LoadDescriptor(desc), should.BeNil)
+			assert.Loosely(t, ls.Validate(), should.BeNil)
 
-			Convey(`Will not validate`, func() {
-				Convey(`Without a valid Prefix`, func() {
+			t.Run(`Will not validate`, func(t *ftt.Test) {
+				t.Run(`Without a valid Prefix`, func(t *ftt.Test) {
 					ls.Prefix = "!!!not a valid prefix!!!"
 					updateLogStreamID(&ls)
 
-					So(ls.Validate(), ShouldErrLike, "invalid prefix")
+					assert.Loosely(t, ls.Validate(), should.ErrLike("invalid prefix"))
 				})
-				Convey(`Without a valid Name`, func() {
+				t.Run(`Without a valid Name`, func(t *ftt.Test) {
 					ls.Name = "!!!not a valid name!!!"
 					updateLogStreamID(&ls)
 
-					So(ls.Validate(), ShouldErrLike, "invalid name")
+					assert.Loosely(t, ls.Validate(), should.ErrLike("invalid name"))
 				})
-				Convey(`Without a valid created time`, func() {
+				t.Run(`Without a valid created time`, func(t *ftt.Test) {
 					ls.Created = time.Time{}
-					So(ls.Validate(), ShouldErrLike, "created time is not set")
+					assert.Loosely(t, ls.Validate(), should.ErrLike("created time is not set"))
 				})
-				Convey(`With an invalid descriptor protobuf`, func() {
+				t.Run(`With an invalid descriptor protobuf`, func(t *ftt.Test) {
 					ls.Descriptor = []byte{0x00} // Invalid tag, "0".
-					So(ls.Validate(), ShouldErrLike, "could not unmarshal descriptor")
+					assert.Loosely(t, ls.Validate(), should.ErrLike("could not unmarshal descriptor"))
 				})
 			})
 
-			Convey(`Can write the LogStream to the Datastore.`, func() {
-				So(ds.Put(c, &ls), ShouldBeNil)
+			t.Run(`Can write the LogStream to the Datastore.`, func(t *ftt.Test) {
+				assert.Loosely(t, ds.Put(c, &ls), should.BeNil)
 
-				Convey(`Can read the LogStream back from the Datastore.`, func() {
+				t.Run(`Can read the LogStream back from the Datastore.`, func(t *ftt.Test) {
 					ls2 := LogStream{ID: ls.ID}
-					So(ds.Get(c, &ls2), ShouldBeNil)
-					So(ls2, ShouldResemble, ls)
+					assert.Loosely(t, ds.Get(c, &ls2), should.BeNil)
+					assert.Loosely(t, ls2, should.Resemble(ls))
 				})
 			})
 		})
 
-		Convey(`Will refuse to populate from an invalid descriptor.`, func() {
+		t.Run(`Will refuse to populate from an invalid descriptor.`, func(t *ftt.Test) {
 			desc.StreamType = -1
-			So(ls.LoadDescriptor(desc), ShouldErrLike, "invalid descriptor")
+			assert.Loosely(t, ls.LoadDescriptor(desc), should.ErrLike("invalid descriptor"))
 		})
 
-		Convey(`Writing multiple LogStream entries`, func() {
+		t.Run(`Writing multiple LogStream entries`, func(t *ftt.Test) {
 			times := map[string]*timestamppb.Timestamp{}
 			streamPaths := []string{
 				"testing/+/foo/bar",
@@ -164,7 +180,7 @@ func TestLogStream(t *testing.T) {
 				if err := lsCopy.LoadDescriptor(descCopy); err != nil {
 					panic(fmt.Errorf("in %#v: %s", descCopy, err))
 				}
-				So(ds.Put(c, &lsCopy), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, &lsCopy), should.BeNil)
 
 				times[name] = timestamppb.New(lsCopy.Created)
 			}
@@ -175,63 +191,63 @@ func TestLogStream(t *testing.T) {
 					streams = append(streams, ls)
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				return streams
 			}
 
-			Convey(`When querying LogStream`, func() {
-				Convey(`LogStream path queries`, func() {
-					Convey(`A query for "foo/bar" should return "foo/bar".`, func() {
+			t.Run(`When querying LogStream`, func(t *ftt.Test) {
+				t.Run(`LogStream path queries`, func(t *ftt.Test) {
+					t.Run(`A query for "foo/bar" should return "foo/bar".`, func(t *ftt.Test) {
 						q, err := NewLogStreamQuery("testing/+/foo/bar")
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(getAll(q), shouldHaveLogPaths, "testing/+/foo/bar")
+						assert.Loosely(t, getAll(q), shouldHaveLogPaths("testing/+/foo/bar"))
 					})
 
-					Convey(`A query for "foo/bar/*" should return "foo/bar/baz".`, func() {
+					t.Run(`A query for "foo/bar/*" should return "foo/bar/baz".`, func(t *ftt.Test) {
 						q, err := NewLogStreamQuery("testing/+/foo/bar/*")
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(getAll(q), shouldHaveLogPaths, "testing/+/foo/bar/baz")
+						assert.Loosely(t, getAll(q), shouldHaveLogPaths("testing/+/foo/bar/baz"))
 					})
 
-					Convey(`A query for "foo/**" should return "foo/bar/baz" and "foo/bar".`, func() {
+					t.Run(`A query for "foo/**" should return "foo/bar/baz" and "foo/bar".`, func(t *ftt.Test) {
 						q, err := NewLogStreamQuery("testing/+/foo/**")
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(getAll(q), shouldHaveLogPaths,
-							"testing/+/foo/bar/baz", "testing/+/foo/bar")
+						assert.Loosely(t, getAll(q), shouldHaveLogPaths(
+							"testing/+/foo/bar/baz", "testing/+/foo/bar"))
 					})
 
-					Convey(`A query for "cat/**/dog" should return "cat/dog" and "cat/bird/dog".`, func() {
+					t.Run(`A query for "cat/**/dog" should return "cat/dog" and "cat/bird/dog".`, func(t *ftt.Test) {
 						q, err := NewLogStreamQuery("testing/+/cat/**/dog")
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
-						So(getAll(q), shouldHaveLogPaths,
+						assert.Loosely(t, getAll(q), shouldHaveLogPaths(
 							"testing/+/cat/bird/dog",
 							"testing/+/cat/dog",
-						)
+						))
 					})
 				})
 
-				Convey(`A timestamp inequality query for all records returns them in reverse order.`, func() {
+				t.Run(`A timestamp inequality query for all records returns them in reverse order.`, func(t *ftt.Test) {
 					// Reverse "streamPaths".
-					si := make([]any, len(streamPaths))
+					si := make([]string, len(streamPaths))
 					for i := 0; i < len(streamPaths); i++ {
-						si[i] = any(streamPaths[len(streamPaths)-i-1])
+						si[i] = streamPaths[len(streamPaths)-i-1]
 					}
 
 					q, err := NewLogStreamQuery("testing")
-					So(err, ShouldBeNil)
-					So(getAll(q), shouldHaveLogPaths, si...)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, getAll(q), shouldHaveLogPaths(si...))
 				})
 
-				Convey(`A query for "cat/**/dog" should return "cat/bird/dog" and "cat/dog".`, func() {
+				t.Run(`A query for "cat/**/dog" should return "cat/bird/dog" and "cat/dog".`, func(t *ftt.Test) {
 					q, err := NewLogStreamQuery("testing/+/cat/**/dog")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
-					So(getAll(q), shouldHaveLogPaths,
-						"testing/+/cat/bird/dog", "testing/+/cat/dog")
+					assert.Loosely(t, getAll(q), shouldHaveLogPaths(
+						"testing/+/cat/bird/dog", "testing/+/cat/dog"))
 				})
 
 			})
@@ -245,12 +261,12 @@ func TestNewLogStreamGlob(t *testing.T) {
 	mkLS := func(path string, now time.Time) *LogStream {
 		prefix, name := types.StreamPath(path).Split()
 		ret := &LogStream{Created: now, ExpireAt: now.Add(LogStreamExpiry)}
-		So(ret.LoadDescriptor(&logpb.LogStreamDescriptor{
+		assert.Loosely(t, ret.LoadDescriptor(&logpb.LogStreamDescriptor{
 			Prefix:      string(prefix),
 			Name:        string(name),
 			ContentType: string(types.ContentTypeText),
 			Timestamp:   timestamppb.New(now),
-		}), ShouldBeNil)
+		}), should.BeNil)
 		updateLogStreamID(ret)
 		return ret
 	}
@@ -266,144 +282,144 @@ func TestNewLogStreamGlob(t *testing.T) {
 			logStreams[i] = mkLS(path, now)
 			now = now.Add(time.Second)
 		}
-		So(ds.Put(ctx, logStreams), ShouldBeNil)
+		assert.Loosely(t, ds.Put(ctx, logStreams), should.BeNil)
 
 		var streams []*LogStream
 		err := q.Run(ctx, func(ls *LogStream, _ ds.CursorCB) error {
 			streams = append(streams, ls)
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		return streams
 	}
 
-	Convey(`A testing query`, t, func() {
-		Convey(`Will construct a non-globbing query as Prefix/Name equality.`, func() {
+	ftt.Run(`A testing query`, t, func(t *ftt.Test) {
+		t.Run(`Will construct a non-globbing query as Prefix/Name equality.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("foo/bar/+/baz/qux")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"foo/bar/+/baz/qux",
 
 				"foo/bar/+/baz/qux/other",
 				"foo/bar/+/baz",
 				"other/prefix/+/baz/qux",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"foo/bar/+/baz/qux",
-			)
+			))
 		})
 
-		Convey(`Will refuse to query an invalid Prefix/Name.`, func() {
+		t.Run(`Will refuse to query an invalid Prefix/Name.`, func(t *ftt.Test) {
 			_, err := NewLogStreamQuery("////+/baz/qux")
-			So(err, ShouldErrLike, "prefix invalid")
+			assert.Loosely(t, err, should.ErrLike("prefix invalid"))
 
 			_, err = NewLogStreamQuery("foo/bar/+//////")
-			So(err, ShouldErrLike, "name invalid")
+			assert.Loosely(t, err, should.ErrLike("name invalid"))
 		})
 
-		Convey(`Returns error on empty prefix.`, func() {
+		t.Run(`Returns error on empty prefix.`, func(t *ftt.Test) {
 			_, err := NewLogStreamQuery("/+/baz/qux")
-			So(err, ShouldErrLike, "prefix invalid: empty")
+			assert.Loosely(t, err, should.ErrLike("prefix invalid: empty"))
 		})
 
-		Convey(`Treats empty name like **.`, func() {
+		t.Run(`Treats empty name like **.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("baz/qux")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"baz/qux/+/narp",
 				"baz/qux/+/blats/stuff",
 				"baz/qux/+/nerds/cool_pants",
 
 				"other/prefix/+/baz/qux",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"baz/qux/+/nerds/cool_pants",
 				"baz/qux/+/blats/stuff",
 				"baz/qux/+/narp",
-			)
+			))
 		})
 
-		Convey(`Properly escapes non-* metachars.`, func() {
+		t.Run(`Properly escapes non-* metachars.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("baz/qux/+/hi..../**")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"baz/qux/+/hi....",
 				"baz/qux/+/hi..../some_stuff",
 
 				"baz/qux/+/hiblat",
 				"baz/qux/+/hiblat/some_stuff",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"baz/qux/+/hi..../some_stuff",
 				"baz/qux/+/hi....",
-			)
+			))
 		})
 
-		Convey(`Will glob out single Name components.`, func() {
+		t.Run(`Will glob out single Name components.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("pfx/+/foo/*/*/bar/*/baz/qux/*")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"pfx/+/foo/a/b/bar/c/baz/qux/d",
 
 				"pfx/+/foo/bar/baz/qux",
 				"pfx/+/foo/a/extra/b/bar/c/baz/qux/d",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"pfx/+/foo/a/b/bar/c/baz/qux/d",
-			)
+			))
 		})
 
-		Convey(`Will handle end-of-query globbing.`, func() {
+		t.Run(`Will handle end-of-query globbing.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("pfx/+/foo/*/bar/**")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"pfx/+/foo/a/bar",
 				"pfx/+/foo/a/bar/stuff",
 				"pfx/+/foo/a/bar/even/more/stuff",
 
 				"pfx/+/foo/a/extra/bar",
 				"pfx/+/nope/a/bar",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"pfx/+/foo/a/bar/even/more/stuff",
 				"pfx/+/foo/a/bar/stuff",
 				"pfx/+/foo/a/bar",
-			)
+			))
 		})
 
-		Convey(`Will handle beginning-of-query globbing.`, func() {
+		t.Run(`Will handle beginning-of-query globbing.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("pfx/+/**/foo/*/bar")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"pfx/+/extra/foo/a/bar",
 				"pfx/+/even/more/extra/foo/a/bar",
 				"pfx/+/foo/a/bar",
 
 				"pfx/+/foo/a/bar/extra",
 				"pfx/+/foo/bar",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"pfx/+/foo/a/bar",
 				"pfx/+/even/more/extra/foo/a/bar",
 				"pfx/+/extra/foo/a/bar",
-			)
+			))
 		})
 
-		Convey(`Can handle middle-of-query globbing.`, func() {
+		t.Run(`Can handle middle-of-query globbing.`, func(t *ftt.Test) {
 			q, err := NewLogStreamQuery("pfx/+/*/foo/*/**/bar/*/baz/*")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(getAllMatches(q,
+			assert.Loosely(t, getAllMatches(q,
 				"pfx/+/a/foo/b/stuff/bar/c/baz/d",
 				"pfx/+/a/foo/b/lots/of/stuff/bar/c/baz/d",
 				"pfx/+/a/foo/b/bar/c/baz/d",
 
 				"pfx/+/foo/a/bar/b/baz/c",
-			), shouldHaveLogPaths,
+			), shouldHaveLogPaths(
 				"pfx/+/a/foo/b/bar/c/baz/d",
 				"pfx/+/a/foo/b/lots/of/stuff/bar/c/baz/d",
 				"pfx/+/a/foo/b/stuff/bar/c/baz/d",
-			)
+			))
 		})
 	})
 }

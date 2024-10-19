@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/clock"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
@@ -38,7 +40,7 @@ import (
 func TestRegisterStream(t *testing.T) {
 	t.Parallel()
 
-	Convey(`With a testing configuration`, t, func() {
+	ftt.Run(`With a testing configuration`, t, func(t *ftt.Test) {
 		c, env := ct.Install()
 		env.AddProject(c, "proj-foo")
 
@@ -52,14 +54,14 @@ func TestRegisterStream(t *testing.T) {
 		ts.CreatePullQueue(RawArchiveQueueName(0))
 		ts.CreatePullQueue(RawArchiveQueueName(1))
 
-		Convey(`Returns Forbidden error if not a service.`, func() {
+		t.Run(`Returns Forbidden error if not a service.`, func(t *ftt.Test) {
 			env.ActAsNobody()
 
 			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey(`When registering a testing log sream, "testing/+/foo/bar"`, func() {
+		t.Run(`When registering a testing log sream, "testing/+/foo/bar"`, func(t *ftt.Test) {
 			tls := ct.MakeStream(c, "proj-foo", "some-realm", "testing/+/foo/bar")
 
 			req := logdog.RegisterStreamRequest{
@@ -70,12 +72,12 @@ func TestRegisterStream(t *testing.T) {
 				TerminalIndex: -1,
 			}
 
-			Convey(`Returns FailedPrecondition when the Prefix is not registered.`, func() {
+			t.Run(`Returns FailedPrecondition when the Prefix is not registered.`, func(t *ftt.Test) {
 				_, err := svr.RegisterStream(c, &req)
-				So(err, ShouldBeRPCFailedPrecondition)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)())
 			})
 
-			Convey(`When the Prefix is registered`, func() {
+			t.Run(`When the Prefix is registered`, func(t *ftt.Test) {
 				tls.WithProjectNamespace(c, func(c context.Context) {
 					if err := ds.Put(c, tls.Prefix); err != nil {
 						panic(err)
@@ -91,50 +93,50 @@ func TestRegisterStream(t *testing.T) {
 					},
 				}
 
-				Convey(`Can register the stream.`, func() {
+				t.Run(`Can register the stream.`, func(t *ftt.Test) {
 					created := ds.RoundTime(env.Clock.Now())
 
 					resp, err := svr.RegisterStream(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, ShouldResembleProto, expResp)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, should.Resemble(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
-					So(tls.Get(c), ShouldBeNil)
+					assert.Loosely(t, tls.Get(c), should.BeNil)
 
 					// Registers the log stream.
-					So(tls.Stream.Created, ShouldResemble, created)
-					So(tls.Stream.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamExpiry))
+					assert.Loosely(t, tls.Stream.Created, should.Resemble(created))
+					assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamExpiry)))
 
 					// Registers the log stream state.
-					So(tls.State.Created, ShouldResemble, created)
-					So(tls.State.Updated, ShouldResemble, created)
-					So(tls.State.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamStateExpiry))
-					So(tls.State.Secret, ShouldResemble, req.Secret)
-					So(tls.State.TerminalIndex, ShouldEqual, -1)
-					So(tls.State.Terminated(), ShouldBeFalse)
+					assert.Loosely(t, tls.State.Created, should.Resemble(created))
+					assert.Loosely(t, tls.State.Updated, should.Resemble(created))
+					assert.Loosely(t, tls.State.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamStateExpiry)))
+					assert.Loosely(t, tls.State.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.State.TerminalIndex, should.Equal(-1))
+					assert.Loosely(t, tls.State.Terminated(), should.BeFalse)
 					// Pessimistic archival is scheduled.
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+					assert.Loosely(t, tls.State.ArchivalState(), should.Equal(coordinator.ArchiveTasked))
 
 					// Should also register the log stream Prefix.
-					So(tls.Prefix.Created, ShouldResemble, created)
-					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
+					assert.Loosely(t, tls.Prefix.Created, should.Resemble(created))
+					assert.Loosely(t, tls.Prefix.Secret, should.Resemble(req.Secret))
 
-					Convey(`Can register the stream again (idempotent).`, func() {
+					t.Run(`Can register the stream again (idempotent).`, func(t *ftt.Test) {
 						env.Clock.Set(created.Add(10 * time.Minute))
 
 						resp, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCOK)
-						So(resp, ShouldResembleProto, expResp)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, resp, should.Resemble(expResp))
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
-							So(ds.Get(c, tls.Stream, tls.State), ShouldBeNil)
+							assert.Loosely(t, ds.Get(c, tls.Stream, tls.State), should.BeNil)
 						})
-						So(tls.State.Created, ShouldResemble, created)
-						So(tls.State.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamStateExpiry))
-						So(tls.Stream.Created, ShouldResemble, created)
-						So(tls.Stream.ExpireAt, ShouldResemble, created.Add(coordinator.LogStreamExpiry))
+						assert.Loosely(t, tls.State.Created, should.Resemble(created))
+						assert.Loosely(t, tls.State.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamStateExpiry)))
+						assert.Loosely(t, tls.Stream.Created, should.Resemble(created))
+						assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(created.Add(coordinator.LogStreamExpiry)))
 
-						Convey(`Skips archival completely after 3 weeks`, func() {
+						t.Run(`Skips archival completely after 3 weeks`, func(t *ftt.Test) {
 							// Three weeks and an hour later
 							threeWeeks := (time.Hour * 24 * 7 * 3) + time.Hour
 							env.Clock.Set(created.Add(threeWeeks))
@@ -144,20 +146,21 @@ func TestRegisterStream(t *testing.T) {
 							})
 
 							tls.WithProjectNamespace(c, func(c context.Context) {
-								So(ds.Get(c, tls.State), ShouldBeNil)
+								assert.Loosely(t, ds.Get(c, tls.State), should.BeNil)
 							})
-							SkipSo(tls.State.ArchivedTime.After(created.Add(threeWeeks)), ShouldBeTrue)
+							// XXX: why is this skipped?
+							// assert.That(t, tls.State.ArchivedTime, should.HappenAfter(created.Add(threeWeeks)))
 						})
 					})
 
-					Convey(`Will not re-register if secrets don't match.`, func() {
+					t.Run(`Will not re-register if secrets don't match.`, func(t *ftt.Test) {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "invalid secret")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid secret"))
 					})
 				})
 
-				Convey(`Can register a terminal stream.`, func() {
+				t.Run(`Can register a terminal stream.`, func(t *ftt.Test) {
 					// Make it so that any 2s sleep timers progress.
 					env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 						env.Clock.Add(3 * time.Second)
@@ -168,109 +171,109 @@ func TestRegisterStream(t *testing.T) {
 					expResp.State.TerminalIndex = 1337
 
 					resp, err := svr.RegisterStream(c, &req)
-					So(err, ShouldBeRPCOK)
-					So(resp, ShouldResembleProto, expResp)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, resp, should.Resemble(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
-					So(tls.Get(c), ShouldBeNil)
+					assert.Loosely(t, tls.Get(c), should.BeNil)
 
 					// Registers the log stream.
-					So(tls.Stream.Created, ShouldResemble, streamCreated)
-					So(tls.Stream.ExpireAt, ShouldResemble, streamCreated.Add(coordinator.LogStreamExpiry))
+					assert.Loosely(t, tls.Stream.Created, should.Resemble(streamCreated))
+					assert.Loosely(t, tls.Stream.ExpireAt, should.Resemble(streamCreated.Add(coordinator.LogStreamExpiry)))
 
 					// Registers the log stream state.
-					So(tls.State.Created, ShouldResemble, streamCreated)
-					So(tls.State.ExpireAt, ShouldResemble, streamCreated.Add(coordinator.LogStreamStateExpiry))
+					assert.Loosely(t, tls.State.Created, should.Resemble(streamCreated))
+					assert.Loosely(t, tls.State.ExpireAt, should.Resemble(streamCreated.Add(coordinator.LogStreamStateExpiry)))
 					// Tasking for archival should happen after creation.
-					So(tls.State.Updated.Before(streamCreated), ShouldBeFalse)
-					So(tls.State.Secret, ShouldResemble, req.Secret)
-					So(tls.State.TerminalIndex, ShouldEqual, 1337)
-					So(tls.State.TerminatedTime, ShouldResemble, streamCreated)
-					So(tls.State.Terminated(), ShouldBeTrue)
-					So(tls.State.ArchivalState(), ShouldEqual, coordinator.ArchiveTasked)
+					assert.Loosely(t, tls.State.Updated.Before(streamCreated), should.BeFalse)
+					assert.Loosely(t, tls.State.Secret, should.Resemble(req.Secret))
+					assert.Loosely(t, tls.State.TerminalIndex, should.Equal(1337))
+					assert.Loosely(t, tls.State.TerminatedTime, should.Resemble(streamCreated))
+					assert.Loosely(t, tls.State.Terminated(), should.BeTrue)
+					assert.Loosely(t, tls.State.ArchivalState(), should.Equal(coordinator.ArchiveTasked))
 
 					// Should also register the log stream Prefix.
-					So(tls.Prefix.Created, ShouldResemble, prefixCreated)
-					So(tls.Prefix.Secret, ShouldResemble, req.Secret)
+					assert.Loosely(t, tls.Prefix.Created, should.Resemble(prefixCreated))
+					assert.Loosely(t, tls.Prefix.Secret, should.Resemble(req.Secret))
 
 					// When we advance to our settle delay, an archival task is scheduled.
 					env.Clock.Add(10 * time.Minute)
 				})
 
-				Convey(`Will schedule the correct archival expiration delay`, func() {
-					Convey(`When there is no project config delay.`, func() {
+				t.Run(`Will schedule the correct archival expiration delay`, func(t *ftt.Test) {
+					t.Run(`When there is no project config delay.`, func(t *ftt.Test) {
 						// Make it so that any 2s sleep timers progress.
 						env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 							env.Clock.Add(3 * time.Second)
 						})
 
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCOK)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 						ds.GetTestable(c).CatchupIndexes()
 					})
 
-					Convey(`When there is no service or project config delay.`, func() {
+					t.Run(`When there is no service or project config delay.`, func(t *ftt.Test) {
 						// Make it so that any 2s sleep timers progress.
 						env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
 							env.Clock.Add(3 * time.Second)
 						})
 
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCOK)
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 						ds.GetTestable(c).CatchupIndexes()
 					})
 				})
 
-				Convey(`Returns internal server error if the datastore Get() fails.`, func() {
+				t.Run(`Returns internal server error if the datastore Get() fails.`, func(t *ftt.Test) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
 					_, err := svr.RegisterStream(c, &req)
-					So(err, ShouldBeRPCInternal)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 				})
 
-				Convey(`Returns internal server error if the Prefix Put() fails.`, func() {
+				t.Run(`Returns internal server error if the Prefix Put() fails.`, func(t *ftt.Test) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
 					_, err := svr.RegisterStream(c, &req)
-					So(err, ShouldBeRPCInternal)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
 				})
 
-				Convey(`Registration failure cases`, func() {
-					Convey(`Will not register a stream if its prefix has expired.`, func() {
+				t.Run(`Registration failure cases`, func(t *ftt.Test) {
+					t.Run(`Will not register a stream if its prefix has expired.`, func(t *ftt.Test) {
 						env.Clock.Set(tls.Prefix.Expiration)
 
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCFailedPrecondition, "prefix has expired")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("prefix has expired"))
 					})
 
-					Convey(`Will not register a stream without a protobuf version.`, func() {
+					t.Run(`Will not register a stream without a protobuf version.`, func(t *ftt.Test) {
 						req.ProtoVersion = ""
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Unrecognized protobuf version"))
 					})
 
-					Convey(`Will not register a stream with an unknown protobuf version.`, func() {
+					t.Run(`Will not register a stream with an unknown protobuf version.`, func(t *ftt.Test) {
 						req.ProtoVersion = "unknown"
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Unrecognized protobuf version")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Unrecognized protobuf version"))
 					})
 
-					Convey(`Will not register with an empty descriptor.`, func() {
+					t.Run(`Will not register with an empty descriptor.`, func(t *ftt.Test) {
 						req.Desc = nil
 
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid log stream descriptor"))
 					})
 
-					Convey(`Will not register if the descriptor doesn't validate.`, func() {
+					t.Run(`Will not register if the descriptor doesn't validate.`, func(t *ftt.Test) {
 						tls.Desc.ContentType = ""
-						So(tls.Desc.Validate(true), ShouldNotBeNil)
+						assert.Loosely(t, tls.Desc.Validate(true), should.NotBeNil)
 						req.Desc = tls.DescBytes()
 
 						_, err := svr.RegisterStream(c, &req)
-						So(err, ShouldBeRPCInvalidArgument, "Invalid log stream descriptor")
+						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid log stream descriptor"))
 					})
 				})
 			})

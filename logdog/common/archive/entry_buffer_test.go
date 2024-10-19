@@ -25,16 +25,17 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
 	//. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEntryBuffer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`entryBuffer`, t, func() {
+	ftt.Run(`entryBuffer`, t, func(t *ftt.Test) {
 		maxPayload := 15
 		desc := &logpb.LogStreamDescriptor{
 			Prefix:    "test",
@@ -92,10 +93,10 @@ func TestEntryBuffer(t *testing.T) {
 			for _, e := range ces {
 				actual = append(actual, e.Payload.(string))
 			}
-			So(actual, ShouldResemble, payloads)
+			assert.Loosely(t, actual, should.Resemble(payloads))
 		}
 
-		Convey("Sets the entry timestamp based on the stream timestamp", func() {
+		t.Run("Sets the entry timestamp based on the stream timestamp", func(t *ftt.Test) {
 			es := []*logpb.LogEntry{
 				genEntry("line-123\n"),
 				genEntry("line-4567\n"),
@@ -104,32 +105,32 @@ func TestEntryBuffer(t *testing.T) {
 			es[1].TimeOffset = durationpb.New(2 * time.Second)
 			ces := toCLEs(es...)
 
-			So(ces, ShouldHaveLength, 2)
-			So(ces[0].Timestamp, ShouldEqual, desc.Timestamp.AsTime().Add(1*time.Second))
-			So(ces[1].Timestamp, ShouldEqual, desc.Timestamp.AsTime().Add(2*time.Second))
+			assert.Loosely(t, ces, should.HaveLength(2))
+			assert.Loosely(t, ces[0].Timestamp, should.Match(desc.Timestamp.AsTime().Add(1*time.Second)))
+			assert.Loosely(t, ces[1].Timestamp, should.Match(desc.Timestamp.AsTime().Add(2*time.Second)))
 		})
 
-		Convey("Sets the trace with the stream ID", func() {
+		t.Run("Sets the trace with the stream ID", func(t *ftt.Test) {
 			ces := toCLEs(
 				genEntry("line-123\n"),
 				genEntry("line-456\n"),
 			)
 			for _, e := range ces {
-				So(e.Trace, ShouldResemble, eb.streamID)
+				assert.Loosely(t, e.Trace, should.Resemble(eb.streamID))
 			}
 		})
 
-		Convey("Sets entries with unique InsertIDs", func() {
+		t.Run("Sets entries with unique InsertIDs", func(t *ftt.Test) {
 			ces := toCLEs(
 				genEntry("line-1\n", "line-2\n", "line-3\n"),
 				genEntry("line-4\n"),
 			)
 			for i, e := range ces {
-				So(e.InsertID, ShouldResemble, fmt.Sprintf("%s/%d", eb.streamID, i))
+				assert.Loosely(t, e.InsertID, should.Resemble(fmt.Sprintf("%s/%d", eb.streamID, i)))
 			}
 		})
 
-		Convey("Handles empty lines", func() {
+		t.Run("Handles empty lines", func(t *ftt.Test) {
 			ces := toCLEs(
 				genEntry("\n"),
 				genEntry("\n"),
@@ -150,7 +151,7 @@ func TestEntryBuffer(t *testing.T) {
 			checkPayloads(ces, "line")
 		})
 
-		Convey("Merges lines without a trailing delimiter", func() {
+		t.Run("Merges lines without a trailing delimiter", func(t *ftt.Test) {
 			// tests with complete lines.
 			ces := toCLEs(
 				genEntry("line-1\n", "line-2\n"),
@@ -206,7 +207,7 @@ func TestEntryBuffer(t *testing.T) {
 			checkPayloads(ces, "it", "has all", "the lines")
 		})
 
-		Convey("Truncates lines", func() {
+		t.Run("Truncates lines", func(t *ftt.Test) {
 			// tests with complete lines
 			ces := toCLEs(
 				genEntry("this is tooooooooo long\n"),

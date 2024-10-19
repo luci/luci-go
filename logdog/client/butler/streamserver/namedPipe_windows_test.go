@@ -55,7 +55,7 @@ func TestWindowsNamedPipeServer(t *testing.T) {
 			client, err := streamclient.New(svr.Address(), "")
 			assert.Loosely(t, err, should.BeNil)
 
-			testClientServer(svr, client)
+			testClientServer(t, svr, client)
 		})
 	})
 }

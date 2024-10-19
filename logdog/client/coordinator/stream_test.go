@@ -24,13 +24,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func genLog(idx int64, id string) *logpb.LogEntry {
@@ -75,15 +74,6 @@ func genDG(idx int64, content ...string) []*logpb.LogEntry {
 	return logs
 }
 
-func assertLogStream(a, b *LogStream) {
-	// Compare proto parts separately.
-	So(&a.Desc, ShouldResembleProto, &b.Desc)
-	a.Desc = logpb.LogStreamDescriptor{}
-	b.Desc = logpb.LogStreamDescriptor{}
-	// The rest is handled by ShouldResemble.
-	So(a, ShouldResemble, b)
-}
-
 // testStreamLogsService implements just the Get and Tail endpoints,
 // instrumented for testing.
 type testStreamLogsService struct {
@@ -117,7 +107,7 @@ func (s *testStreamLogsService) Tail(c context.Context, req *logdog.TailRequest)
 func TestStreamGet(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A testing Client`, t, func() {
+	ftt.Run(`A testing Client`, t, func(t *ftt.Test) {
 		c := context.Background()
 		now := testclock.TestTimeUTC
 
@@ -137,11 +127,11 @@ func TestStreamGet(t *testing.T) {
 			C: logdog.NewLogsPRPCClient(prpcClient),
 		}
 
-		Convey(`Can bind a Stream`, func() {
+		t.Run(`Can bind a Stream`, func(t *ftt.Test) {
 			s := client.Stream("myproj", "test/+/a")
 
-			Convey(`Test Get`, func() {
-				Convey(`A default Get query will return logs and no state.`, func() {
+			t.Run(`Test Get`, func(t *ftt.Test) {
+				t.Run(`A default Get query will return logs and no state.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
@@ -152,35 +142,35 @@ func TestStreamGet(t *testing.T) {
 					}
 
 					l, err := s.Get(c)
-					So(err, ShouldBeNil)
-					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "ohai"), genLog(1338, "kthxbye")}))
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
-					})
+					}))
 				})
 
-				Convey(`Will form a proper Get logs query.`, func() {
+				t.Run(`Will form a proper Get logs query.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{}, nil
 					}
 
 					l, err := s.Get(c, NonContiguous(), Index(1))
-					So(err, ShouldBeNil)
-					So(l, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.BeNil)
 
 					// Validate the correct parameters were sent.
-					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
 						Project:       "myproj",
 						Path:          "test/+/a",
 						NonContiguous: true,
 						Index:         1,
-					})
+					}))
 				})
 
-				Convey(`Will request a specific number of logs if a constraint is supplied.`, func() {
+				t.Run(`Will request a specific number of logs if a constraint is supplied.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
@@ -190,19 +180,19 @@ func TestStreamGet(t *testing.T) {
 					}
 
 					l, err := s.Get(c, LimitCount(64), LimitBytes(32))
-					So(err, ShouldBeNil)
-					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "ohai")})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "ohai")}))
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
 						Project:   "myproj",
 						Path:      "test/+/a",
 						LogCount:  64,
 						ByteCount: 32,
-					})
+					}))
 				})
 
-				Convey(`Can decode a full protobuf and state.`, func() {
+				t.Run(`Can decode a full protobuf and state.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Logs: []*logpb.LogEntry{
@@ -226,9 +216,9 @@ func TestStreamGet(t *testing.T) {
 
 					var ls LogStream
 					l, err := s.Get(c, WithState(&ls))
-					So(err, ShouldBeNil)
-					So(l, ShouldResembleProto, []*logpb.LogEntry{genLog(1337, "kthxbye")})
-					assertLogStream(&ls, &LogStream{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.Resemble([]*logpb.LogEntry{genLog(1337, "kthxbye")}))
+					assert.That(t, &ls, should.Match(&LogStream{
 						Path: "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
 							Prefix:     "test",
@@ -242,39 +232,39 @@ func TestStreamGet(t *testing.T) {
 							ArchiveStreamURL: "stream",
 							ArchiveDataURL:   "data",
 						},
-					})
+					}))
 				})
 
-				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
+				t.Run(`Will return ErrNoSuchStream if the stream is not found.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.Get(c)
-					So(err, ShouldEqual, ErrNoSuchStream)
+					assert.Loosely(t, err, should.Equal(ErrNoSuchStream))
 				})
 
-				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+				t.Run(`Will return ErrNoAccess if unauthenticated.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.Get(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 
-				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+				t.Run(`Will return ErrNoAccess if permission is denied.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.Get(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 			})
 
-			Convey(`Test State`, func() {
-				Convey(`Will request just the state if asked.`, func() {
+			t.Run(`Test State`, func(t *ftt.Test) {
+				t.Run(`Will request just the state if asked.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Project: "myproj",
@@ -290,8 +280,8 @@ func TestStreamGet(t *testing.T) {
 					}
 
 					l, err := s.State(c)
-					So(err, ShouldBeNil)
-					assertLogStream(l, &LogStream{
+					assert.Loosely(t, err, should.BeNil)
+					assert.That(t, l, should.Match(&LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -302,47 +292,47 @@ func TestStreamGet(t *testing.T) {
 						State: StreamState{
 							Created: now.UTC(),
 						},
-					})
+					}))
 
 					// Validate the HTTP request that we made.
-					So(svc.GR, ShouldResembleProto, &logdog.GetRequest{
+					assert.Loosely(t, svc.GR, should.Resemble(&logdog.GetRequest{
 						Project:  "myproj",
 						Path:     "test/+/a",
 						LogCount: -1,
 						State:    true,
-					})
+					}))
 				})
 
-				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
+				t.Run(`Will return ErrNoSuchStream if the stream is not found.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.State(c)
-					So(err, ShouldEqual, ErrNoSuchStream)
+					assert.Loosely(t, err, should.Equal(ErrNoSuchStream))
 				})
 
-				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+				t.Run(`Will return ErrNoAccess if unauthenticated.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.State(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 
-				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+				t.Run(`Will return ErrNoAccess if permission is denied.`, func(t *ftt.Test) {
 					svc.GH = func(*logdog.GetRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.State(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 			})
 
-			Convey(`Test Tail`, func() {
-				Convey(`Will form a proper Tail query.`, func() {
+			t.Run(`Test Tail`, func(t *ftt.Test) {
+				t.Run(`Will form a proper Tail query.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Project: "myproj",
@@ -362,18 +352,18 @@ func TestStreamGet(t *testing.T) {
 
 					var ls LogStream
 					l, err := s.Tail(c, WithState(&ls))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					// Validate the HTTP request that we made.
-					So(svc.TR, ShouldResembleProto, &logdog.TailRequest{
+					assert.Loosely(t, svc.TR, should.Resemble(&logdog.TailRequest{
 						Project: "myproj",
 						Path:    "test/+/a",
 						State:   true,
-					})
+					}))
 
 					// Validate that the log and state were returned.
-					So(l, ShouldResembleProto, genLog(1337, "kthxbye"))
-					assertLogStream(&ls, &LogStream{
+					assert.Loosely(t, l, should.Resemble(genLog(1337, "kthxbye")))
+					assert.That(t, &ls, should.Match(&LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -384,10 +374,10 @@ func TestStreamGet(t *testing.T) {
 						State: StreamState{
 							Created: now,
 						},
-					})
+					}))
 				})
 
-				Convey(`Will return nil with state if no logs are returned from the endpoint.`, func() {
+				t.Run(`Will return nil with state if no logs are returned from the endpoint.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							Project: "myproj",
@@ -404,9 +394,9 @@ func TestStreamGet(t *testing.T) {
 
 					var ls LogStream
 					l, err := s.Tail(c, WithState(&ls))
-					So(err, ShouldBeNil)
-					So(l, ShouldBeNil)
-					assertLogStream(&ls, &LogStream{
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, l, should.BeNil)
+					assert.That(t, &ls, should.Match(&LogStream{
 						Project: "myproj",
 						Path:    "test/+/a",
 						Desc: logpb.LogStreamDescriptor{
@@ -417,10 +407,10 @@ func TestStreamGet(t *testing.T) {
 						State: StreamState{
 							Created: now,
 						},
-					})
+					}))
 				})
 
-				Convey(`Will error if multiple logs are returned from the endpoint.`, func() {
+				t.Run(`Will error if multiple logs are returned from the endpoint.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return &logdog.GetResponse{
 							State: &logdog.LogStreamState{
@@ -434,37 +424,37 @@ func TestStreamGet(t *testing.T) {
 					}
 
 					_, err := s.Tail(c)
-					So(err, ShouldErrLike, "tail call returned 2 logs")
+					assert.Loosely(t, err, should.ErrLike("tail call returned 2 logs"))
 				})
 
-				Convey(`Will return ErrNoSuchStream if the stream is not found.`, func() {
+				t.Run(`Will return ErrNoSuchStream if the stream is not found.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.NotFound, "not found")
 					}
 
 					_, err := s.Tail(c)
-					So(err, ShouldEqual, ErrNoSuchStream)
+					assert.Loosely(t, err, should.Equal(ErrNoSuchStream))
 				})
 
-				Convey(`Will return ErrNoAccess if unauthenticated.`, func() {
+				t.Run(`Will return ErrNoAccess if unauthenticated.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.Unauthenticated, "unauthenticated")
 					}
 
 					_, err := s.Tail(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 
-				Convey(`Will return ErrNoAccess if permission is denied.`, func() {
+				t.Run(`Will return ErrNoAccess if permission is denied.`, func(t *ftt.Test) {
 					svc.TH = func(*logdog.TailRequest) (*logdog.GetResponse, error) {
 						return nil, status.Error(codes.PermissionDenied, "boom")
 					}
 
 					_, err := s.Tail(c)
-					So(err, ShouldEqual, ErrNoAccess)
+					assert.Loosely(t, err, should.Equal(ErrNoAccess))
 				})
 
-				Convey(`When requesting complete streams`, func() {
+				t.Run(`When requesting complete streams`, func(t *ftt.Test) {
 					var allLogs []*logpb.LogEntry
 					allLogs = append(allLogs, genDG(1337, "foo", "bar", "baz", "kthxbye")...)
 					allLogs = append(allLogs, genDG(1341, "qux", "ohai")...)
@@ -510,15 +500,15 @@ func TestStreamGet(t *testing.T) {
 						}, nil
 					}
 
-					Convey(`With a non-partial datagram, returns that datagram.`, func() {
+					t.Run(`With a non-partial datagram, returns that datagram.`, func(t *ftt.Test) {
 						le, err := s.Tail(c, Complete())
-						So(err, ShouldBeNil)
-						So(le.StreamIndex, ShouldEqual, 1343)
-						So(le.GetDatagram().Partial, ShouldBeNil)
-						So(le.GetDatagram().Data, ShouldResemble, []byte("complete"))
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, le.StreamIndex, should.Equal[uint64](1343))
+						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("complete")))
 					})
 
-					Convey(`Can assemble a set of one partial datagram.`, func() {
+					t.Run(`Can assemble a set of one partial datagram.`, func(t *ftt.Test) {
 						// This is weird, since this doesn't need to be partial at all, but
 						// we should handle it gracefully.
 						dg := tailLog.GetDatagram()
@@ -529,34 +519,34 @@ func TestStreamGet(t *testing.T) {
 						}
 
 						le, err := s.Tail(c, Complete())
-						So(err, ShouldBeNil)
-						So(le.StreamIndex, ShouldEqual, 1343)
-						So(le.GetDatagram().Partial, ShouldBeNil)
-						So(le.GetDatagram().Data, ShouldResemble, []byte("complete"))
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, le.StreamIndex, should.Equal[uint64](1343))
+						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("complete")))
 					})
 
-					Convey(`Can assemble a set of two partial datagrams.`, func() {
+					t.Run(`Can assemble a set of two partial datagrams.`, func(t *ftt.Test) {
 						tailLog = allLogs[5]
 
 						le, err := s.Tail(c, Complete())
-						So(err, ShouldBeNil)
-						So(le.StreamIndex, ShouldEqual, 1341)
-						So(le.GetDatagram().Partial, ShouldBeNil)
-						So(le.GetDatagram().Data, ShouldResemble, []byte("quxohai"))
+						assert.Loosely(t, err, should.BeNil)
+						assert.That(t, le.StreamIndex, should.Equal[uint64](1341))
+						assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+						assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("quxohai")))
 					})
 
-					Convey(`With a set of three partial datagrams.`, func() {
+					t.Run(`With a set of three partial datagrams.`, func(t *ftt.Test) {
 						tailLog = allLogs[3]
 
-						Convey(`Will return a fully reassembled datagram.`, func() {
+						t.Run(`Will return a fully reassembled datagram.`, func(t *ftt.Test) {
 							var ls LogStream
 							le, err := s.Tail(c, WithState(&ls), Complete())
-							So(err, ShouldBeNil)
-							So(le.StreamIndex, ShouldEqual, 1337)
-							So(le.GetDatagram().Partial, ShouldBeNil)
-							So(le.GetDatagram().Data, ShouldResemble, []byte("foobarbazkthxbye"))
+							assert.Loosely(t, err, should.BeNil)
+							assert.That(t, le.StreamIndex, should.Equal[uint64](1337))
+							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("foobarbazkthxbye")))
 
-							assertLogStream(&ls, &LogStream{
+							assert.That(t, &ls, should.Match(&LogStream{
 								Path: "test/+/a",
 								Desc: logpb.LogStreamDescriptor{
 									Prefix:     "test",
@@ -566,55 +556,55 @@ func TestStreamGet(t *testing.T) {
 								State: StreamState{
 									Created: now,
 								},
-							})
+							}))
 						})
 
-						Convey(`Will return an error if the Get fails.`, func() {
+						t.Run(`Will return an error if the Get fails.`, func(t *ftt.Test) {
 							svc.GH = func(req *logdog.GetRequest) (*logdog.GetResponse, error) {
 								return nil, status.Errorf(codes.InvalidArgument, "test error")
 							}
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "failed to get intermediate logs")
-							So(err, ShouldErrLike, "test error")
+							assert.Loosely(t, err, should.ErrLike("failed to get intermediate logs"))
+							assert.Loosely(t, err, should.ErrLike("test error"))
 						})
 
-						Convey(`Will return an error if the Get returns fewer logs than requested.`, func() {
+						t.Run(`Will return an error if the Get returns fewer logs than requested.`, func(t *ftt.Test) {
 							allLogs = allLogs[0:1]
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "incomplete intermediate logs results")
+							assert.Loosely(t, err, should.ErrLike("incomplete intermediate logs results"))
 						})
 
-						Convey(`Will return an error if Get returns non-datagram logs.`, func() {
+						t.Run(`Will return an error if Get returns non-datagram logs.`, func(t *ftt.Test) {
 							allLogs[1].Content = nil
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "is not a datagram")
+							assert.Loosely(t, err, should.ErrLike("is not a datagram"))
 						})
 
-						Convey(`Will return an error if Get returns non-partial datagram logs.`, func() {
+						t.Run(`Will return an error if Get returns non-partial datagram logs.`, func(t *ftt.Test) {
 							allLogs[1].GetDatagram().Partial = nil
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "is not partial")
+							assert.Loosely(t, err, should.ErrLike("is not partial"))
 						})
 
-						Convey(`Will return an error if Get returns non-contiguous partial datagrams.`, func() {
+						t.Run(`Will return an error if Get returns non-contiguous partial datagrams.`, func(t *ftt.Test) {
 							allLogs[1].GetDatagram().Partial.Index = 2
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "does not have a contiguous index")
+							assert.Loosely(t, err, should.ErrLike("does not have a contiguous index"))
 						})
 
-						Convey(`Will return an error if the chunks declare different sizes.`, func() {
+						t.Run(`Will return an error if the chunks declare different sizes.`, func(t *ftt.Test) {
 							allLogs[1].GetDatagram().Partial.Size = 0
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "inconsistent datagram size")
+							assert.Loosely(t, err, should.ErrLike("inconsistent datagram size"))
 						})
 
-						Convey(`Will return an error if the reassembled length exceeds the declared size.`, func() {
+						t.Run(`Will return an error if the reassembled length exceeds the declared size.`, func(t *ftt.Test) {
 							for _, le := range allLogs {
 								if p := le.GetDatagram().Partial; p != nil {
 									p.Size = 0
@@ -622,10 +612,10 @@ func TestStreamGet(t *testing.T) {
 							}
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "appending chunk data would exceed the declared size")
+							assert.Loosely(t, err, should.ErrLike("appending chunk data would exceed the declared size"))
 						})
 
-						Convey(`Will return an error if the reassembled length doesn't match the declared size.`, func() {
+						t.Run(`Will return an error if the reassembled length doesn't match the declared size.`, func(t *ftt.Test) {
 							for _, le := range allLogs {
 								if p := le.GetDatagram().Partial; p != nil {
 									p.Size = 1024 * 1024
@@ -633,29 +623,29 @@ func TestStreamGet(t *testing.T) {
 							}
 
 							_, err := s.Tail(c, Complete())
-							So(err, ShouldErrLike, "differs from declared length")
+							assert.Loosely(t, err, should.ErrLike("differs from declared length"))
 						})
 					})
 
-					Convey(`When Tail returns a mid-partial datagram.`, func() {
+					t.Run(`When Tail returns a mid-partial datagram.`, func(t *ftt.Test) {
 						tailLog = allLogs[4]
 
-						Convey(`If the previous datagram is partial, will return it reassembled.`, func() {
+						t.Run(`If the previous datagram is partial, will return it reassembled.`, func(t *ftt.Test) {
 							le, err := s.Tail(c, Complete())
-							So(err, ShouldBeNil)
-							So(le.StreamIndex, ShouldEqual, 1337)
-							So(le.GetDatagram().Partial, ShouldBeNil)
-							So(le.GetDatagram().Data, ShouldResemble, []byte("foobarbazkthxbye"))
+							assert.Loosely(t, err, should.BeNil)
+							assert.That(t, le.StreamIndex, should.Equal[uint64](1337))
+							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("foobarbazkthxbye")))
 						})
 
-						Convey(`If the previous datagram is not partial, will return it.`, func() {
+						t.Run(`If the previous datagram is not partial, will return it.`, func(t *ftt.Test) {
 							allLogs[3].GetDatagram().Partial = nil
 
 							le, err := s.Tail(c, Complete())
-							So(err, ShouldBeNil)
-							So(le.StreamIndex, ShouldEqual, 1340)
-							So(le.GetDatagram().Partial, ShouldBeNil)
-							So(le.GetDatagram().Data, ShouldResemble, []byte("kthxbye"))
+							assert.Loosely(t, err, should.BeNil)
+							assert.That(t, le.StreamIndex, should.Equal[uint64](1340))
+							assert.Loosely(t, le.GetDatagram().Partial, should.BeNil)
+							assert.Loosely(t, le.GetDatagram().Data, should.Resemble([]byte("kthxbye")))
 						})
 					})
 				})

@@ -25,12 +25,15 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 
 	"github.com/golang/protobuf/ptypes"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testAddr string
@@ -92,7 +95,7 @@ func (c *testListenerConn) Close() error { return nil }
 func TestListenerStreamServer(t *testing.T) {
 	t.Parallel()
 
-	Convey(`A stream server using a testing Listener`, t, func() {
+	ftt.Run(`A stream server using a testing Listener`, t, func(t *ftt.Test) {
 		var tl *testListener
 		s := &StreamServer{
 			log:     logging.Get(context.Background()),
@@ -108,20 +111,20 @@ func TestListenerStreamServer(t *testing.T) {
 
 		f := &streamproto.Flags{}
 
-		Convey(`Will panic if closed without listening.`, func() {
-			So(func() { s.Close() }, ShouldPanic)
+		t.Run(`Will panic if closed without listening.`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { s.Close() }, should.Panic)
 		})
 
-		Convey(`Will fail to Listen if the Listener could not be created.`, func() {
+		t.Run(`Will fail to Listen if the Listener could not be created.`, func(t *ftt.Test) {
 			s.gen = func() (listener, error) {
 				return nil, errors.New("test error")
 			}
-			So(s.Listen(), ShouldNotBeNil)
+			assert.Loosely(t, s.Listen(), should.NotBeNil)
 		})
 
-		Convey(`Can Listen for connections.`, func() {
+		t.Run(`Can Listen for connections.`, func(t *ftt.Test) {
 			shouldClose := true
-			So(s.Listen(), ShouldBeNil)
+			assert.Loosely(t, s.Listen(), should.BeNil)
 			defer func() {
 				if shouldClose {
 					s.Close()
@@ -130,32 +133,32 @@ func TestListenerStreamServer(t *testing.T) {
 
 			tc := &testListenerConn{}
 
-			Convey(`Can close, and will panic if double-closed.`, func() {
+			t.Run(`Can close, and will panic if double-closed.`, func(t *ftt.Test) {
 				s.Close()
 				shouldClose = false
 
-				So(func() { s.Close() }, ShouldPanic)
+				assert.Loosely(t, func() { s.Close() }, should.Panic)
 			})
 
-			Convey(`Client with an invalid handshake is rejected.`, func() {
+			t.Run(`Client with an invalid handshake is rejected.`, func(t *ftt.Test) {
 				s.discardC = make(chan *streamClient)
 				tc.Write([]byte(`NOT A HANDSHAKE MAGIC`))
 
 				tl.connect(tc)
-				So(<-s.discardC, ShouldNotBeNil)
+				assert.Loosely(t, <-s.discardC, should.NotBeNil)
 			})
 
-			Convey(`Client handshake panics are contained and rejected.`, func() {
+			t.Run(`Client handshake panics are contained and rejected.`, func(t *ftt.Test) {
 				s.discardC = make(chan *streamClient)
 
 				tc.panicOnRead = true
 				f.WriteHandshake(tc)
 
 				tl.connect(tc)
-				So(<-s.discardC, ShouldNotBeNil)
+				assert.Loosely(t, <-s.discardC, should.NotBeNil)
 			})
 
-			Convey(`Can receive stream data.`, func() {
+			t.Run(`Can receive stream data.`, func(t *ftt.Test) {
 				f.Name = "test"
 				f.ContentType = "application/octet-stream"
 				f.WriteHandshake(tc)
@@ -165,16 +168,16 @@ func TestListenerStreamServer(t *testing.T) {
 				// Retrieve the ensuing stream.
 				tl.connect(tc)
 				stream, props := s.Next()
-				So(stream, ShouldNotBeNil)
+				assert.Loosely(t, stream, should.NotBeNil)
 				defer stream.Close()
-				So(props, ShouldNotBeNil)
+				assert.Loosely(t, props, should.NotBeNil)
 
 				// Consume all of the data in the stream.
 				recvData, _ := io.ReadAll(stream)
-				So(recvData, ShouldResemble, content)
+				assert.Loosely(t, recvData, should.Resemble(content))
 			})
 
-			Convey(`Will exit Next if closed.`, func() {
+			t.Run(`Will exit Next if closed.`, func(t *ftt.Test) {
 				streamC := make(chan *streamParams)
 				defer close(streamC)
 
@@ -193,11 +196,11 @@ func TestListenerStreamServer(t *testing.T) {
 
 				// Next must exit with nil.
 				bundle := <-streamC
-				So(bundle.rc, ShouldBeNil)
-				So(bundle.descriptor, ShouldBeNil)
+				assert.Loosely(t, bundle.rc, should.BeNil)
+				assert.Loosely(t, bundle.descriptor, should.BeNil)
 			})
 
-			Convey(`Will refrain from outputting clients whose handshakes finish after the server is closed.`, func() {
+			t.Run(`Will refrain from outputting clients whose handshakes finish after the server is closed.`, func(t *ftt.Test) {
 				s.discardC = make(chan *streamClient, 1)
 
 				f.Name = "test"
@@ -210,7 +213,7 @@ func TestListenerStreamServer(t *testing.T) {
 				s.Close()
 				shouldClose = false
 
-				So(<-s.discardC, ShouldNotBeNil)
+				assert.Loosely(t, <-s.discardC, should.NotBeNil)
 			})
 
 		})
@@ -221,7 +224,8 @@ func TestListenerStreamServer(t *testing.T) {
 // server.
 //
 // svr must be in listening state when this is called.
-func testClientServer(svr *StreamServer, client *streamclient.Client) {
+func testClientServer(t testing.TB, svr *StreamServer, client *streamclient.Client) {
+	t.Helper()
 	ctx, _ := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
 	data := []byte("ohaithere")
 
@@ -251,17 +255,17 @@ func testClientServer(svr *StreamServer, client *streamclient.Client) {
 	defer rc.Close()
 
 	stamp, err := ptypes.TimestampProto(testclock.TestTimeLocal)
-	So(err, ShouldBeNil)
-	So(desc, ShouldResemble, &logpb.LogStreamDescriptor{
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, desc, should.Resemble(&logpb.LogStreamDescriptor{
 		Name:        "foo/bar",
 		ContentType: "text/plain; charset=utf-8",
 		Timestamp:   stamp,
-	})
+	}), truth.LineContext())
 
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(rc)
-	So(err, ShouldBeNil)
-	So(buf.Bytes(), ShouldResemble, data)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, buf.Bytes(), should.Resemble(data), truth.LineContext())
 
-	So(<-clientDoneC, ShouldBeNil)
+	assert.Loosely(t, <-clientDoneC, should.BeNil, truth.LineContext())
 }
