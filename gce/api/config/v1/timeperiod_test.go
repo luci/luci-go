@@ -20,72 +20,75 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTimePeriod(t *testing.T) {
 	t.Parallel()
 
-	Convey("normalize", t, func() {
-		Convey("invalid", func() {
+	ftt.Run("normalize", t, func(t *ftt.Test) {
+		t.Run("invalid", func(t *ftt.Test) {
 			tp := &TimePeriod{
 				Time: &TimePeriod_Duration{
 					Duration: "-1h",
 				},
 			}
-			So(tp.Normalize(), ShouldErrLike, "invalid duration")
+			assert.Loosely(t, tp.Normalize(), should.ErrLike("invalid duration"))
 		})
 
-		Convey("valid", func() {
-			Convey("empty", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				tp := &TimePeriod{}
-				So(tp.Normalize(), ShouldBeNil)
-				So(tp.Time, ShouldBeNil)
+				assert.Loosely(t, tp.Normalize(), should.BeNil)
+				assert.Loosely(t, tp.Time, should.BeNil)
 			})
 
-			Convey("normalizes", func() {
-				Convey("zero", func() {
+			t.Run("normalizes", func(t *ftt.Test) {
+				t.Run("zero", func(t *ftt.Test) {
 					tp := &TimePeriod{
 						Time: &TimePeriod_Duration{
 							Duration: "0h",
 						},
 					}
-					So(tp.Normalize(), ShouldBeNil)
-					So(tp.Time, ShouldHaveSameTypeAs, &TimePeriod_Seconds{})
-					So(tp.Time.(*TimePeriod_Seconds).Seconds, ShouldEqual, 0)
+					assert.Loosely(t, tp.Normalize(), should.BeNil)
+					assert.Loosely(t, tp.Time, should.HaveType[*TimePeriod_Seconds])
+					assert.Loosely(t, tp.Time.(*TimePeriod_Seconds).Seconds, should.BeZero)
 				})
 
-				Convey("nonzero", func() {
+				t.Run("nonzero", func(t *ftt.Test) {
 					tp := &TimePeriod{
 						Time: &TimePeriod_Duration{
 							Duration: "1h",
 						},
 					}
-					So(tp.Normalize(), ShouldBeNil)
-					So(tp.Time, ShouldHaveSameTypeAs, &TimePeriod_Seconds{})
-					So(tp.Time.(*TimePeriod_Seconds).Seconds, ShouldEqual, 3600)
+					assert.Loosely(t, tp.Normalize(), should.BeNil)
+					assert.Loosely(t, tp.Time, should.HaveType[*TimePeriod_Seconds])
+					assert.Loosely(t, tp.Time.(*TimePeriod_Seconds).Seconds, should.Equal(3600))
 				})
 			})
 
-			Convey("normalized", func() {
+			t.Run("normalized", func(t *ftt.Test) {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Seconds{
 						Seconds: 3600,
 					},
 				}
-				So(tp.Normalize(), ShouldBeNil)
-				So(tp.Time, ShouldHaveSameTypeAs, &TimePeriod_Seconds{})
-				So(tp.Time.(*TimePeriod_Seconds).Seconds, ShouldEqual, 3600)
+				assert.Loosely(t, tp.Normalize(), should.BeNil)
+				assert.Loosely(t, tp.Time, should.HaveType[*TimePeriod_Seconds])
+				assert.Loosely(t, tp.Time.(*TimePeriod_Seconds).Seconds, should.Equal(3600))
 			})
 		})
 	})
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("duration", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("duration", func(t *ftt.Test) {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Duration{
 						Duration: "1yr",
@@ -93,10 +96,10 @@ func TestTimePeriod(t *testing.T) {
 				}
 				tp.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldErrLike, "duration must match regex")
+				assert.Loosely(t, errs, should.ErrLike("duration must match regex"))
 			})
 
-			Convey("seconds", func() {
+			t.Run("seconds", func(t *ftt.Test) {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Seconds{
 						Seconds: -1,
@@ -104,35 +107,35 @@ func TestTimePeriod(t *testing.T) {
 				}
 				tp.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "seconds must be non-negative")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("seconds must be non-negative"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("empty", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				tp := &TimePeriod{}
 				tp.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 
-			Convey("duration", func() {
+			t.Run("duration", func(t *ftt.Test) {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Duration{
 						Duration: "1h",
 					},
 				}
 				tp.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 
-			Convey("seconds", func() {
+			t.Run("seconds", func(t *ftt.Test) {
 				tp := &TimePeriod{
 					Time: &TimePeriod_Seconds{
 						Seconds: 3600,
 					},
 				}
 				tp.Validate(c)
-				So(c.Finalize(), ShouldBeNil)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 		})
 	})

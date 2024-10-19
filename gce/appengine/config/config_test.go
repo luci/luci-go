@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -27,23 +30,20 @@ import (
 	gce "go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeref(t *testing.T) {
 	t.Parallel()
 
-	Convey("deref", t, func() {
-		Convey("empty", func() {
+	ftt.Run("deref", t, func(t *ftt.Test) {
+		t.Run("empty", func(t *ftt.Test) {
 			c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 			cfg := &Config{}
-			So(deref(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
+			assert.Loosely(t, deref(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.GetVms(), should.HaveLength(0))
 		})
 
-		Convey("missing", func() {
+		t.Run("missing", func(t *ftt.Test) {
 			c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 			cfg := &Config{
 				VMs: &gce.Configs{
@@ -62,10 +62,10 @@ func TestDeref(t *testing.T) {
 					},
 				},
 			}
-			So(deref(c, cfg), ShouldErrLike, "failed to fetch")
+			assert.Loosely(t, deref(c, cfg), should.ErrLike("failed to fetch"))
 		})
 
-		Convey("revision", func() {
+		t.Run("revision", func(t *ftt.Test) {
 			c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 				"services/${appid}": map[string]string{
 					"file": "val",
@@ -89,15 +89,15 @@ func TestDeref(t *testing.T) {
 					},
 				},
 			}
-			So(deref(c, cfg), ShouldErrLike, "config revision mismatch")
-			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+			assert.Loosely(t, deref(c, cfg), should.ErrLike("config revision mismatch"))
+			assert.Loosely(t, cfg.VMs.Vms[0].Attributes.Metadata, should.ContainMatch(&gce.Metadata{
 				Metadata: &gce.Metadata_FromFile{
 					FromFile: "key:file",
 				},
-			})
+			}))
 		})
 
-		Convey("dereferences", func() {
+		t.Run("dereferences", func(t *ftt.Test) {
 			c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 				"services/${appid}": map[string]string{
 					"metadata/file": "val2",
@@ -126,17 +126,17 @@ func TestDeref(t *testing.T) {
 					},
 				},
 			}
-			So(deref(c, cfg), ShouldBeNil)
-			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+			assert.Loosely(t, deref(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.Vms[0].Attributes.Metadata, should.ContainMatch(&gce.Metadata{
 				Metadata: &gce.Metadata_FromText{
 					FromText: "key:val1",
 				},
-			})
-			So(cfg.VMs.Vms[0].Attributes.Metadata, ShouldContain, &gce.Metadata{
+			}))
+			assert.Loosely(t, cfg.VMs.Vms[0].Attributes.Metadata, should.ContainMatch(&gce.Metadata{
 				Metadata: &gce.Metadata_FromText{
 					FromText: "key:val2",
 				},
-			})
+			}))
 		})
 	})
 }
@@ -144,49 +144,49 @@ func TestDeref(t *testing.T) {
 func TestFetch(t *testing.T) {
 	t.Parallel()
 
-	Convey("fetch", t, func() {
-		Convey("invalid", func() {
-			Convey("projects", func() {
+	ftt.Run("fetch", t, func(t *ftt.Test) {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("projects", func(t *ftt.Test) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 					"services/${appid}": map[string]string{
 						projectsFile: "invalid",
 					},
 				}))
 				_, err := fetch(c)
-				So(err, ShouldErrLike, "failed to load")
+				assert.Loosely(t, err, should.ErrLike("failed to load"))
 			})
 
-			Convey("vms", func() {
+			t.Run("vms", func(t *ftt.Test) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 					"services/${appid}": map[string]string{
 						vmsFile: "invalid",
 					},
 				}))
 				_, err := fetch(c)
-				So(err, ShouldErrLike, "failed to load")
+				assert.Loosely(t, err, should.ErrLike("failed to load"))
 			})
 		})
 
-		Convey("empty", func() {
-			Convey("missing", func() {
+		t.Run("empty", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(nil))
 				cfg, err := fetch(c)
-				So(err, ShouldBeNil)
-				So(cfg.Projects, ShouldResemble, &projects.Configs{})
-				So(cfg.VMs, ShouldResemble, &gce.Configs{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
 			})
 
-			Convey("implicit", func() {
+			t.Run("implicit", func(t *ftt.Test) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 					"services/${appid}": {},
 				}))
 				cfg, err := fetch(c)
-				So(err, ShouldBeNil)
-				So(cfg.Projects, ShouldResemble, &projects.Configs{})
-				So(cfg.VMs, ShouldResemble, &gce.Configs{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
 			})
 
-			Convey("explicit", func() {
+			t.Run("explicit", func(t *ftt.Test) {
 				c := cfgclient.Use(gae.Use(context.Background()), memory.New(map[config.Set]memory.Files{
 					"services/${appid}": {
 						projectsFile: "",
@@ -194,9 +194,9 @@ func TestFetch(t *testing.T) {
 					},
 				}))
 				cfg, err := fetch(c)
-				So(err, ShouldBeNil)
-				So(cfg.Projects, ShouldResembleProto, &projects.Configs{})
-				So(cfg.VMs, ShouldResembleProto, &gce.Configs{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg.Projects, should.Resemble(&projects.Configs{}))
+				assert.Loosely(t, cfg.VMs, should.Resemble(&gce.Configs{}))
 			})
 		})
 	})
@@ -205,16 +205,16 @@ func TestFetch(t *testing.T) {
 func TestNormalize(t *testing.T) {
 	t.Parallel()
 
-	Convey("normalize", t, func() {
+	ftt.Run("normalize", t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			cfg := &Config{}
-			So(normalize(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms(), ShouldHaveLength, 0)
+			assert.Loosely(t, normalize(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.GetVms(), should.HaveLength(0))
 		})
 
-		Convey("amount", func() {
+		t.Run("amount", func(t *ftt.Test) {
 			cfg := &Config{
 				VMs: &gce.Configs{
 					Vms: []*gce.Config{
@@ -234,11 +234,11 @@ func TestNormalize(t *testing.T) {
 					},
 				},
 			}
-			So(normalize(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms()[0].Amount.Change[0].Length.GetSeconds(), ShouldEqual, 3600)
+			assert.Loosely(t, normalize(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.GetVms()[0].Amount.Change[0].Length.GetSeconds(), should.Equal(3600))
 		})
 
-		Convey("lifetime", func() {
+		t.Run("lifetime", func(t *ftt.Test) {
 			cfg := &Config{
 				VMs: &gce.Configs{
 					Vms: []*gce.Config{
@@ -252,11 +252,11 @@ func TestNormalize(t *testing.T) {
 					},
 				},
 			}
-			So(normalize(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms()[0].Lifetime.GetSeconds(), ShouldEqual, 3600)
+			assert.Loosely(t, normalize(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.GetVms()[0].Lifetime.GetSeconds(), should.Equal(3600))
 		})
 
-		Convey("revision", func() {
+		t.Run("revision", func(t *ftt.Test) {
 			cfg := &Config{
 				revision: "revision",
 				Projects: &projects.Configs{
@@ -270,12 +270,12 @@ func TestNormalize(t *testing.T) {
 					},
 				},
 			}
-			So(normalize(c, cfg), ShouldBeNil)
-			So(cfg.Projects.GetProject()[0].Revision, ShouldEqual, "revision")
-			So(cfg.VMs.GetVms()[0].Revision, ShouldEqual, "revision")
+			assert.Loosely(t, normalize(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.Projects.GetProject()[0].Revision, should.Equal("revision"))
+			assert.Loosely(t, cfg.VMs.GetVms()[0].Revision, should.Equal("revision"))
 		})
 
-		Convey("timeout", func() {
+		t.Run("timeout", func(t *ftt.Test) {
 			cfg := &Config{
 				VMs: &gce.Configs{
 					Vms: []*gce.Config{
@@ -289,8 +289,8 @@ func TestNormalize(t *testing.T) {
 					},
 				},
 			}
-			So(normalize(c, cfg), ShouldBeNil)
-			So(cfg.VMs.GetVms()[0].Timeout.GetSeconds(), ShouldEqual, 3600)
+			assert.Loosely(t, normalize(c, cfg), should.BeNil)
+			assert.Loosely(t, cfg.VMs.GetVms()[0].Timeout.GetSeconds(), should.Equal(3600))
 		})
 	})
 }
@@ -298,32 +298,32 @@ func TestNormalize(t *testing.T) {
 func TestSyncPrjs(t *testing.T) {
 	t.Parallel()
 
-	Convey("syncPrjs", t, func() {
+	ftt.Run("syncPrjs", t, func(t *ftt.Test) {
 		srv := &rpc.Projects{}
 		c := withProjServer(context.Background(), srv)
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			prjs := []*projects.Config{}
-			So(syncPrjs(c, prjs), ShouldBeNil)
+			assert.Loosely(t, syncPrjs(c, prjs), should.BeNil)
 			rsp, err := srv.List(c, &projects.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Projects, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Projects, should.BeEmpty)
 		})
 
-		Convey("creates", func() {
+		t.Run("creates", func(t *ftt.Test) {
 			prjs := []*projects.Config{
 				{
 					Project: "project",
 				},
 			}
-			So(syncPrjs(c, prjs), ShouldBeNil)
+			assert.Loosely(t, syncPrjs(c, prjs), should.BeNil)
 			rsp, err := srv.List(c, &projects.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Projects, ShouldHaveLength, 1)
-			So(rsp.Projects[0].Project, ShouldEqual, "project")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Projects, should.HaveLength(1))
+			assert.Loosely(t, rsp.Projects[0].Project, should.Equal("project"))
 		})
 
-		Convey("updates", func() {
+		t.Run("updates", func(t *ftt.Test) {
 			srv.Ensure(c, &projects.EnsureRequest{
 				Id: "project",
 				Project: &projects.Config{
@@ -344,31 +344,31 @@ func TestSyncPrjs(t *testing.T) {
 					Revision: "revision-2",
 				},
 			}
-			So(syncPrjs(c, prjs), ShouldBeNil)
+			assert.Loosely(t, syncPrjs(c, prjs), should.BeNil)
 			rsp, err := srv.List(c, &projects.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Projects, ShouldHaveLength, 1)
-			So(rsp.Projects, ShouldContain, &projects.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Projects, should.HaveLength(1))
+			assert.Loosely(t, rsp.Projects, should.ContainMatch(&projects.Config{
 				Project: "project",
 				Region: []string{
 					"region2",
 					"region3",
 				},
 				Revision: "revision-2",
-			})
+			}))
 		})
 
-		Convey("deletes", func() {
+		t.Run("deletes", func(t *ftt.Test) {
 			srv.Ensure(c, &projects.EnsureRequest{
 				Id: "project",
 				Project: &projects.Config{
 					Project: "project",
 				},
 			})
-			So(syncPrjs(c, nil), ShouldBeNil)
+			assert.Loosely(t, syncPrjs(c, nil), should.BeNil)
 			rsp, err := srv.List(c, &projects.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Projects, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Projects, should.BeEmpty)
 		})
 	})
 }
@@ -376,32 +376,32 @@ func TestSyncPrjs(t *testing.T) {
 func TestSyncVMs(t *testing.T) {
 	t.Parallel()
 
-	Convey("syncVMs", t, func() {
+	ftt.Run("syncVMs", t, func(t *ftt.Test) {
 		srv := &rpc.Config{}
 		c := withVMsServer(context.Background(), srv)
 
-		Convey("nil", func() {
+		t.Run("nil", func(t *ftt.Test) {
 			vms := []*gce.Config{}
-			So(syncVMs(c, vms), ShouldBeNil)
+			assert.Loosely(t, syncVMs(c, vms), should.BeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Configs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Configs, should.BeEmpty)
 		})
 
-		Convey("creates", func() {
+		t.Run("creates", func(t *ftt.Test) {
 			vms := []*gce.Config{
 				{
 					Prefix: "prefix",
 				},
 			}
-			So(syncVMs(c, vms), ShouldBeNil)
+			assert.Loosely(t, syncVMs(c, vms), should.BeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Configs, ShouldHaveLength, 1)
-			So(rsp.Configs[0].Prefix, ShouldEqual, "prefix")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Configs, should.HaveLength(1))
+			assert.Loosely(t, rsp.Configs[0].Prefix, should.Equal("prefix"))
 		})
 
-		Convey("updates", func() {
+		t.Run("updates", func(t *ftt.Test) {
 			srv.Ensure(c, &gce.EnsureRequest{
 				Id: "prefix",
 				Config: &gce.Config{
@@ -423,31 +423,31 @@ func TestSyncVMs(t *testing.T) {
 					Revision: "revision-2",
 				},
 			}
-			So(syncVMs(c, vms), ShouldBeNil)
+			assert.Loosely(t, syncVMs(c, vms), should.BeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Configs, ShouldHaveLength, 1)
-			So(rsp.Configs, ShouldContain, &gce.Config{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Configs, should.HaveLength(1))
+			assert.Loosely(t, rsp.Configs, should.ContainMatch(&gce.Config{
 				Amount: &gce.Amount{
 					Min: 2,
 					Max: 3,
 				},
 				Prefix:   "prefix",
 				Revision: "revision-2",
-			})
+			}))
 		})
 
-		Convey("deletes", func() {
+		t.Run("deletes", func(t *ftt.Test) {
 			srv.Ensure(c, &gce.EnsureRequest{
 				Id: "prefix",
 				Config: &gce.Config{
 					Prefix: "prefix",
 				},
 			})
-			So(syncVMs(c, nil), ShouldBeNil)
+			assert.Loosely(t, syncVMs(c, nil), should.BeNil)
 			rsp, err := srv.List(c, &gce.ListRequest{})
-			So(err, ShouldBeNil)
-			So(rsp.Configs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp.Configs, should.BeEmpty)
 		})
 	})
 }
@@ -455,11 +455,11 @@ func TestSyncVMs(t *testing.T) {
 func TestValidate(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate", t, func() {
+	ftt.Run("validate", t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey("invalid", func() {
-			Convey("projects", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("projects", func(t *ftt.Test) {
 				cfg := &Config{
 					Projects: &projects.Configs{
 						Project: []*projects.Config{
@@ -467,10 +467,10 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				So(validate(c, cfg), ShouldErrLike, "is required")
+				assert.Loosely(t, validate(c, cfg), should.ErrLike("is required"))
 			})
 
-			Convey("vms", func() {
+			t.Run("vms", func(t *ftt.Test) {
 				cfg := &Config{
 					VMs: &gce.Configs{
 						Vms: []*gce.Config{
@@ -478,15 +478,15 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				}
-				So(validate(c, cfg), ShouldErrLike, "is required")
+				assert.Loosely(t, validate(c, cfg), should.ErrLike("is required"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("empty", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				cfg := &Config{}
 				err := validate(c, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -495,23 +495,23 @@ func TestValidate(t *testing.T) {
 func TestValidateProjectsConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate projects.cfg", t, func() {
+	ftt.Run("validate projects.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{
 			Context: context.Background(),
 		}
 		configSet := "services/${appid}"
 		path := "projects.cfg"
 
-		Convey("bad proto", func() {
+		t.Run("bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "bad" `)
-			So(validateProjectsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid ProjectsCfg proto message")
+			assert.Loosely(t, validateProjectsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid ProjectsCfg proto message"))
 		})
 
-		Convey("valid proto", func() {
+		t.Run("valid proto", func(t *ftt.Test) {
 			content := []byte(` `)
-			So(validateProjectsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateProjectsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 	})
 }
@@ -519,20 +519,20 @@ func TestValidateProjectsConfig(t *testing.T) {
 func TestValidateVMsConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("validate vms.cfg", t, func() {
+	ftt.Run("validate vms.cfg", t, func(t *ftt.Test) {
 		vctx := &validation.Context{
 			Context: context.Background(),
 		}
 		configSet := "services/${appid}"
 		path := "vms.cfg"
 
-		Convey("bad proto", func() {
+		t.Run("bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "bad" `)
-			So(validateVMsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize().Error(), ShouldContainSubstring, "invalid VMsCfg proto message")
+			assert.Loosely(t, validateVMsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("invalid VMsCfg proto message"))
 		})
 
-		Convey("valid proto", func() {
+		t.Run("valid proto", func(t *ftt.Test) {
 			content := []byte(`
 				vms {
 					amount {
@@ -557,8 +557,8 @@ func TestValidateVMsConfig(t *testing.T) {
 					prefix: "chrome-trusty"
 				}
 			`)
-			So(validateVMsCfg(vctx, configSet, path, content), ShouldBeNil)
-			So(vctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, validateVMsCfg(vctx, configSet, path, content), should.BeNil)
+			assert.Loosely(t, vctx.Finalize(), should.BeNil)
 		})
 	})
 }

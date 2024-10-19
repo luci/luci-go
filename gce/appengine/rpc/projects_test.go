@@ -18,142 +18,142 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/projects/v1"
 	"go.chromium.org/luci/gce/appengine/model"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjects(t *testing.T) {
 	t.Parallel()
 
-	Convey("Projects", t, func() {
+	ftt.Run("Projects", t, func(t *ftt.Test) {
 		srv := &Projects{}
 		c := memory.Use(context.Background())
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("List", func() {
-			Convey("invalid", func() {
-				Convey("page token", func() {
+		t.Run("List", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("page token", func(t *ftt.Test) {
 					req := &projects.ListRequest{
 						PageToken: "token",
 					}
 					_, err := srv.List(c, req)
-					So(err, ShouldErrLike, "invalid page token")
+					assert.Loosely(t, err, should.ErrLike("invalid page token"))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("nil", func() {
-					Convey("none", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
 						rsp, err := srv.List(c, nil)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Projects, should.BeEmpty)
 					})
 
-					Convey("one", func() {
+					t.Run("one", func(t *ftt.Test) {
 						p := &model.Project{
 							ID: "id",
 						}
-						So(datastore.Put(c, p), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(c, p), should.BeNil)
 
 						rsp, err := srv.List(c, nil)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 					})
 				})
 
-				Convey("empty", func() {
-					Convey("none", func() {
+				t.Run("empty", func(t *ftt.Test) {
+					t.Run("none", func(t *ftt.Test) {
 						req := &projects.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Projects, should.BeEmpty)
 					})
 
-					Convey("one", func() {
+					t.Run("one", func(t *ftt.Test) {
 						p := &model.Project{
 							ID: "id",
 						}
-						So(datastore.Put(c, p), ShouldBeNil)
+						assert.Loosely(t, datastore.Put(c, p), should.BeNil)
 
 						req := &projects.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 					})
 				})
 
-				Convey("pages", func() {
-					So(datastore.Put(c, &model.Project{ID: "id1"}), ShouldBeNil)
-					So(datastore.Put(c, &model.Project{ID: "id2"}), ShouldBeNil)
-					So(datastore.Put(c, &model.Project{ID: "id3"}), ShouldBeNil)
+				t.Run("pages", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Project{ID: "id1"}), should.BeNil)
+					assert.Loosely(t, datastore.Put(c, &model.Project{ID: "id2"}), should.BeNil)
+					assert.Loosely(t, datastore.Put(c, &model.Project{ID: "id3"}), should.BeNil)
 
-					Convey("default", func() {
+					t.Run("default", func(t *ftt.Test) {
 						req := &projects.ListRequest{}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.Projects, ShouldNotBeEmpty)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.Projects, should.NotBeEmpty)
 					})
 
-					Convey("one", func() {
+					t.Run("one", func(t *ftt.Test) {
 						req := &projects.ListRequest{
 							PageSize: 1,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 					})
 
-					Convey("two", func() {
+					t.Run("two", func(t *ftt.Test) {
 						req := &projects.ListRequest{
 							PageSize: 2,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldNotBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 2)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.NotBeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(2))
 
 						req.PageToken = rsp.NextPageToken
 						rsp, err = srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 1)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(1))
 					})
 
-					Convey("many", func() {
+					t.Run("many", func(t *ftt.Test) {
 						req := &projects.ListRequest{
 							PageSize: 200,
 						}
 						rsp, err := srv.List(c, req)
-						So(err, ShouldBeNil)
-						So(rsp.NextPageToken, ShouldBeEmpty)
-						So(rsp.Projects, ShouldHaveLength, 3)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, rsp.NextPageToken, should.BeEmpty)
+						assert.Loosely(t, rsp.Projects, should.HaveLength(3))
 					})
 				})
 			})
 		})
 
-		Convey("Ensure", func() {
-			Convey("Binary", func() {
+		t.Run("Ensure", func(t *ftt.Test) {
+			t.Run("Binary", func(t *ftt.Test) {
 				req := &projects.EnsureRequest{
 					Id: "id",
 					Project: &projects.Config{
@@ -166,16 +166,15 @@ func TestProjects(t *testing.T) {
 					},
 				}
 				cfg, err := srv.Ensure(c, req)
-				So(err, ShouldBeNil)
-				So(cfg, ShouldNotBeEmpty)
-				So(cfg, ShouldResembleProto, &projects.Config{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cfg, should.Resemble(&projects.Config{
 					Project: "project",
 					Region: []string{
 						"region1",
 						"region2",
 					},
 					Revision: "revision-1",
-				})
+				}))
 			})
 		})
 	})

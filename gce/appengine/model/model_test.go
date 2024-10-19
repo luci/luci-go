@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	computealpha "google.golang.org/api/compute/v0.alpha"
@@ -29,18 +32,16 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	Convey("Config", t, func() {
+	ftt.Run("Config", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		cfg := &Config{ID: "id"}
 		err := datastore.Get(c, cfg)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		err = datastore.Put(c, &Config{
 			ID: "id",
@@ -56,11 +57,11 @@ func TestConfig(t *testing.T) {
 				Prefix: "prefix",
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Get(c, cfg)
-		So(err, ShouldBeNil)
-		So(cmp.Diff(cfg, &Config{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cmp.Diff(cfg, &Config{
 			ID: "id",
 			Config: &config.Config{
 				Attributes: &config.VM{
@@ -73,18 +74,18 @@ func TestConfig(t *testing.T) {
 				},
 				Prefix: "prefix",
 			},
-		}, cmpopts.IgnoreUnexported(*cfg), protocmp.Transform()), ShouldBeEmpty)
+		}, cmpopts.IgnoreUnexported(*cfg), protocmp.Transform()), should.BeEmpty)
 	})
 }
 
 func TestProject(t *testing.T) {
 	t.Parallel()
 
-	Convey("Project", t, func() {
+	ftt.Run("Project", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		p := &Project{ID: "id"}
 		err := datastore.Get(c, p)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		err = datastore.Put(c, &Project{
 			ID: "id",
@@ -100,12 +101,12 @@ func TestProject(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		err = datastore.Get(c, p)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(p.Config, ShouldResembleProto, &projects.Config{
+		assert.Loosely(t, p.Config, should.Resemble(&projects.Config{
 			Metric: []string{
 				"metric-1",
 				"metric-2",
@@ -115,20 +116,20 @@ func TestProject(t *testing.T) {
 				"region-1",
 				"region-2",
 			},
-		})
+		}))
 	})
 }
 
 func TestVM(t *testing.T) {
 	t.Parallel()
 
-	Convey("VM", t, func() {
+	ftt.Run("VM", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		v := &VM{
 			ID: "id",
 		}
 		err := datastore.Get(c, v)
-		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		err = datastore.Put(c, &VM{
 			ID: "id",
@@ -136,20 +137,20 @@ func TestVM(t *testing.T) {
 				Project: "project",
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(datastore.Get(c, v), ShouldBeNil)
+		assert.Loosely(t, datastore.Get(c, v), should.BeNil)
 
-		So(cmp.Diff(v, &VM{
+		assert.Loosely(t, cmp.Diff(v, &VM{
 			ID: "id",
 			Attributes: config.VM{
 				Project: "project",
 			},
-		}, cmpopts.IgnoreUnexported(VM{}), protocmp.Transform()), ShouldBeEmpty)
+		}, cmpopts.IgnoreUnexported(VM{}), protocmp.Transform()), should.BeEmpty)
 
-		Convey("IndexAttributes", func() {
+		t.Run("IndexAttributes", func(t *ftt.Test) {
 			v.IndexAttributes()
-			So(v.AttributesIndexed, ShouldBeEmpty)
+			assert.Loosely(t, v.AttributesIndexed, should.BeEmpty)
 
 			v := &VM{
 				ID: "id",
@@ -165,59 +166,59 @@ func TestVM(t *testing.T) {
 				},
 			}
 			v.IndexAttributes()
-			So(v.AttributesIndexed, ShouldResemble, []string{"disk.image:image-1", "disk.image:image-2"})
+			assert.Loosely(t, v.AttributesIndexed, should.Resemble([]string{"disk.image:image-1", "disk.image:image-2"}))
 		})
 	})
 
-	Convey("getConfidentialInstanceConfig", t, func() {
-		Convey("zero", func() {
-			Convey("empty", func() {
+	ftt.Run("getConfidentialInstanceConfig", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{}
 				c := v.getConfidentialInstanceConfig()
-				So(c, ShouldBeNil)
+				assert.Loosely(t, c, should.BeNil)
 				s := v.getScheduling()
-				So(s, ShouldBeNil)
+				assert.Loosely(t, s, should.BeNil)
 			})
 		})
-		Convey("EnableConfidentialCompute", func() {
+		t.Run("EnableConfidentialCompute", func(t *ftt.Test) {
 			v := &VM{
 				Attributes: config.VM{
 					EnableConfidentialCompute: true,
 				},
 			}
 			c := v.getConfidentialInstanceConfig()
-			So(c, ShouldResemble, &compute.ConfidentialInstanceConfig{
+			assert.Loosely(t, c, should.Resemble(&compute.ConfidentialInstanceConfig{
 				EnableConfidentialCompute: true,
-			})
+			}))
 			s := v.getScheduling()
-			So(s, ShouldResemble, &compute.Scheduling{
+			assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
 				NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 				OnHostMaintenance: "TERMINATE",
-			})
+			}))
 		})
 	})
 
-	Convey("getDisks", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("getDisks", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 0)
+				assert.Loosely(t, d, should.HaveLength(0))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Disk: []*config.Disk{},
 					},
 				}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 0)
+				assert.Loosely(t, d, should.HaveLength(0))
 			})
 		})
 
-		Convey("non-zero", func() {
-			Convey("empty", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Disk: []*config.Disk{
@@ -226,13 +227,13 @@ func TestVM(t *testing.T) {
 					},
 				}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 1)
-				So(d[0].AutoDelete, ShouldBeTrue)
-				So(d[0].Boot, ShouldBeTrue)
-				So(d[0].InitializeParams.DiskSizeGb, ShouldEqual, 0)
+				assert.Loosely(t, d, should.HaveLength(1))
+				assert.Loosely(t, d[0].AutoDelete, should.BeTrue)
+				assert.Loosely(t, d[0].Boot, should.BeTrue)
+				assert.Loosely(t, d[0].InitializeParams.DiskSizeGb, should.BeZero)
 			})
 
-			Convey("non-empty", func() {
+			t.Run("non-empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Disk: []*config.Disk{
@@ -243,11 +244,11 @@ func TestVM(t *testing.T) {
 					},
 				}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 1)
-				So(d[0].InitializeParams.SourceImage, ShouldEqual, "image")
+				assert.Loosely(t, d, should.HaveLength(1))
+				assert.Loosely(t, d[0].InitializeParams.SourceImage, should.Equal("image"))
 			})
 
-			Convey("multi", func() {
+			t.Run("multi", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Disk: []*config.Disk{
@@ -257,12 +258,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 2)
-				So(d[0].Boot, ShouldBeTrue)
-				So(d[1].Boot, ShouldBeFalse)
+				assert.Loosely(t, d, should.HaveLength(2))
+				assert.Loosely(t, d[0].Boot, should.BeTrue)
+				assert.Loosely(t, d[1].Boot, should.BeFalse)
 			})
 
-			Convey("scratch", func() {
+			t.Run("scratch", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Disk: []*config.Disk{
@@ -279,33 +280,33 @@ func TestVM(t *testing.T) {
 					},
 				}
 				d := v.getDisks()
-				So(d, ShouldHaveLength, 3)
-				So(d[0].Type, ShouldEqual, "")
-				So(d[1].Type, ShouldEqual, "SCRATCH")
-				So(d[2].Type, ShouldEqual, "")
+				assert.Loosely(t, d, should.HaveLength(3))
+				assert.Loosely(t, d[0].Type, should.BeEmpty)
+				assert.Loosely(t, d[1].Type, should.Equal("SCRATCH"))
+				assert.Loosely(t, d[2].Type, should.BeEmpty)
 			})
 		})
 	})
 
-	Convey("getMetadata", t, func() {
-		Convey("nil", func() {
+	ftt.Run("getMetadata", t, func(t *ftt.Test) {
+		t.Run("nil", func(t *ftt.Test) {
 			v := &VM{}
 			m := v.getMetadata()
-			So(m, ShouldBeNil)
+			assert.Loosely(t, m, should.BeNil)
 		})
 
-		Convey("empty", func() {
+		t.Run("empty", func(t *ftt.Test) {
 			v := &VM{
 				Attributes: config.VM{
 					Metadata: []*config.Metadata{},
 				},
 			}
 			m := v.getMetadata()
-			So(m, ShouldBeNil)
+			assert.Loosely(t, m, should.BeNil)
 		})
 
-		Convey("non-empty", func() {
-			Convey("empty-nil", func() {
+		t.Run("non-empty", func(t *ftt.Test) {
+			t.Run("empty-nil", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -314,12 +315,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "")
-				So(m.Items[0].Value, ShouldBeNil)
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.BeEmpty)
+				assert.Loosely(t, m.Items[0].Value, should.BeNil)
 			})
 
-			Convey("key-nil", func() {
+			t.Run("key-nil", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -332,12 +333,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "key")
-				So(m.Items[0].Value, ShouldBeNil)
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.Equal("key"))
+				assert.Loosely(t, m.Items[0].Value, should.BeNil)
 			})
 
-			Convey("key-empty", func() {
+			t.Run("key-empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -350,12 +351,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "key")
-				So(*m.Items[0].Value, ShouldEqual, "")
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.Equal("key"))
+				assert.Loosely(t, *m.Items[0].Value, should.BeEmpty)
 			})
 
-			Convey("key-value", func() {
+			t.Run("key-value", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -368,12 +369,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "key")
-				So(*m.Items[0].Value, ShouldEqual, "value")
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.Equal("key"))
+				assert.Loosely(t, *m.Items[0].Value, should.Equal("value"))
 			})
 
-			Convey("empty-value", func() {
+			t.Run("empty-value", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -386,12 +387,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "")
-				So(*m.Items[0].Value, ShouldEqual, "value")
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.BeEmpty)
+				assert.Loosely(t, *m.Items[0].Value, should.Equal("value"))
 			})
 
-			Convey("from file", func() {
+			t.Run("from file", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -404,12 +405,12 @@ func TestVM(t *testing.T) {
 					},
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "")
-				So(m.Items[0].Value, ShouldBeNil)
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.BeEmpty)
+				assert.Loosely(t, m.Items[0].Value, should.BeNil)
 			})
 
-			Convey("empty with dut", func() {
+			t.Run("empty with dut", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{},
@@ -417,12 +418,12 @@ func TestVM(t *testing.T) {
 					DUT: "dut-1",
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 1)
-				So(m.Items[0].Key, ShouldEqual, "dut")
-				So(*m.Items[0].Value, ShouldEqual, "dut-1")
+				assert.Loosely(t, m.Items, should.HaveLength(1))
+				assert.Loosely(t, m.Items[0].Key, should.Equal("dut"))
+				assert.Loosely(t, *m.Items[0].Value, should.Equal("dut-1"))
 			})
 
-			Convey("non-empty with dut", func() {
+			t.Run("non-empty with dut", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Metadata: []*config.Metadata{
@@ -436,36 +437,36 @@ func TestVM(t *testing.T) {
 					DUT: "dut-1",
 				}
 				m := v.getMetadata()
-				So(m.Items, ShouldHaveLength, 2)
-				So(m.Items[0].Key, ShouldEqual, "key")
-				So(*m.Items[0].Value, ShouldEqual, "file")
-				So(m.Items[1].Key, ShouldEqual, "dut")
-				So(*m.Items[1].Value, ShouldEqual, "dut-1")
+				assert.Loosely(t, m.Items, should.HaveLength(2))
+				assert.Loosely(t, m.Items[0].Key, should.Equal("key"))
+				assert.Loosely(t, *m.Items[0].Value, should.Equal("file"))
+				assert.Loosely(t, m.Items[1].Key, should.Equal("dut"))
+				assert.Loosely(t, *m.Items[1].Value, should.Equal("dut-1"))
 			})
 		})
 	})
 
-	Convey("getNetworkInterfaces", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("getNetworkInterfaces", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
 				n := v.getNetworkInterfaces()
-				So(n, ShouldHaveLength, 0)
+				assert.Loosely(t, n, should.HaveLength(0))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						NetworkInterface: []*config.NetworkInterface{},
 					},
 				}
 				n := v.getNetworkInterfaces()
-				So(n, ShouldHaveLength, 0)
+				assert.Loosely(t, n, should.HaveLength(0))
 			})
 		})
 
-		Convey("non-zero", func() {
-			Convey("empty", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						NetworkInterface: []*config.NetworkInterface{
@@ -474,13 +475,13 @@ func TestVM(t *testing.T) {
 					},
 				}
 				n := v.getNetworkInterfaces()
-				So(n, ShouldHaveLength, 1)
-				So(n[0].AccessConfigs, ShouldHaveLength, 0)
-				So(n[0].Network, ShouldEqual, "")
+				assert.Loosely(t, n, should.HaveLength(1))
+				assert.Loosely(t, n[0].AccessConfigs, should.HaveLength(0))
+				assert.Loosely(t, n[0].Network, should.BeEmpty)
 			})
 
-			Convey("non-empty", func() {
-				Convey("network and subnetwork", func() {
+			t.Run("non-empty", func(t *ftt.Test) {
+				t.Run("network and subnetwork", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							NetworkInterface: []*config.NetworkInterface{
@@ -493,13 +494,13 @@ func TestVM(t *testing.T) {
 						},
 					}
 					n := v.getNetworkInterfaces()
-					So(n, ShouldHaveLength, 1)
-					So(n[0].AccessConfigs, ShouldBeNil)
-					So(n[0].Network, ShouldEqual, "network")
-					So(n[0].Subnetwork, ShouldEqual, "subnetwork")
+					assert.Loosely(t, n, should.HaveLength(1))
+					assert.Loosely(t, n[0].AccessConfigs, should.BeNil)
+					assert.Loosely(t, n[0].Network, should.Equal("network"))
+					assert.Loosely(t, n[0].Subnetwork, should.Equal("subnetwork"))
 				})
 
-				Convey("network", func() {
+				t.Run("network", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							NetworkInterface: []*config.NetworkInterface{
@@ -511,12 +512,12 @@ func TestVM(t *testing.T) {
 						},
 					}
 					n := v.getNetworkInterfaces()
-					So(n, ShouldHaveLength, 1)
-					So(n[0].AccessConfigs, ShouldBeNil)
-					So(n[0].Network, ShouldEqual, "network")
+					assert.Loosely(t, n, should.HaveLength(1))
+					assert.Loosely(t, n[0].AccessConfigs, should.BeNil)
+					assert.Loosely(t, n[0].Network, should.Equal("network"))
 				})
 
-				Convey("subnetwork", func() {
+				t.Run("subnetwork", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							NetworkInterface: []*config.NetworkInterface{
@@ -528,12 +529,12 @@ func TestVM(t *testing.T) {
 						},
 					}
 					n := v.getNetworkInterfaces()
-					So(n, ShouldHaveLength, 1)
-					So(n[0].AccessConfigs, ShouldBeNil)
-					So(n[0].Subnetwork, ShouldEqual, "subnetwork")
+					assert.Loosely(t, n, should.HaveLength(1))
+					assert.Loosely(t, n[0].AccessConfigs, should.BeNil)
+					assert.Loosely(t, n[0].Subnetwork, should.Equal("subnetwork"))
 				})
 
-				Convey("access configs", func() {
+				t.Run("access configs", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							NetworkInterface: []*config.NetworkInterface{
@@ -548,35 +549,35 @@ func TestVM(t *testing.T) {
 						},
 					}
 					n := v.getNetworkInterfaces()
-					So(n, ShouldHaveLength, 1)
-					So(n[0].AccessConfigs, ShouldHaveLength, 1)
-					So(n[0].AccessConfigs[0].Type, ShouldEqual, "ONE_TO_ONE_NAT")
+					assert.Loosely(t, n, should.HaveLength(1))
+					assert.Loosely(t, n[0].AccessConfigs, should.HaveLength(1))
+					assert.Loosely(t, n[0].AccessConfigs[0].Type, should.Equal("ONE_TO_ONE_NAT"))
 				})
 			})
 		})
 	})
 
-	Convey("getServiceAccounts", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("getServiceAccounts", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
 				s := v.getServiceAccounts()
-				So(s, ShouldHaveLength, 0)
+				assert.Loosely(t, s, should.HaveLength(0))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						ServiceAccount: []*config.ServiceAccount{},
 					},
 				}
 				s := v.getServiceAccounts()
-				So(s, ShouldHaveLength, 0)
+				assert.Loosely(t, s, should.HaveLength(0))
 			})
 		})
 
-		Convey("non-zero", func() {
-			Convey("empty", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						ServiceAccount: []*config.ServiceAccount{
@@ -585,13 +586,13 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getServiceAccounts()
-				So(s, ShouldHaveLength, 1)
-				So(s[0].Email, ShouldEqual, "")
-				So(s[0].Scopes, ShouldHaveLength, 0)
+				assert.Loosely(t, s, should.HaveLength(1))
+				assert.Loosely(t, s[0].Email, should.BeEmpty)
+				assert.Loosely(t, s[0].Scopes, should.HaveLength(0))
 			})
 
-			Convey("non-empty", func() {
-				Convey("email", func() {
+			t.Run("non-empty", func(t *ftt.Test) {
+				t.Run("email", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							ServiceAccount: []*config.ServiceAccount{
@@ -603,12 +604,12 @@ func TestVM(t *testing.T) {
 						},
 					}
 					s := v.getServiceAccounts()
-					So(s, ShouldHaveLength, 1)
-					So(s[0].Email, ShouldEqual, "email")
-					So(s[0].Scopes, ShouldHaveLength, 0)
+					assert.Loosely(t, s, should.HaveLength(1))
+					assert.Loosely(t, s[0].Email, should.Equal("email"))
+					assert.Loosely(t, s[0].Scopes, should.HaveLength(0))
 				})
 
-				Convey("scopes", func() {
+				t.Run("scopes", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							ServiceAccount: []*config.ServiceAccount{
@@ -621,25 +622,25 @@ func TestVM(t *testing.T) {
 						},
 					}
 					s := v.getServiceAccounts()
-					So(s, ShouldHaveLength, 1)
-					So(s[0].Email, ShouldEqual, "")
-					So(s[0].Scopes, ShouldHaveLength, 1)
-					So(s[0].Scopes[0], ShouldEqual, "scope")
+					assert.Loosely(t, s, should.HaveLength(1))
+					assert.Loosely(t, s[0].Email, should.BeEmpty)
+					assert.Loosely(t, s[0].Scopes, should.HaveLength(1))
+					assert.Loosely(t, s[0].Scopes[0], should.Equal("scope"))
 				})
 			})
 		})
 
 	})
 
-	Convey("getScheduling", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("getScheduling", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
 				s := v.getScheduling()
-				So(s, ShouldBeNil)
+				assert.Loosely(t, s, should.BeNil)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Scheduling: &config.Scheduling{
@@ -648,33 +649,33 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				So(s, ShouldBeNil)
+				assert.Loosely(t, s, should.BeNil)
 			})
-			Convey("empty & Confidential", func() {
+			t.Run("empty & Confidential", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						EnableConfidentialCompute: true,
 					},
 				}
 				s := v.getScheduling()
-				So(s, ShouldResemble, &compute.Scheduling{
+				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
-				})
+				}))
 			})
-			Convey("empty & Terminatable", func() {
+			t.Run("empty & Terminatable", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						TerminateOnMaintenance: true,
 					},
 				}
 				s := v.getScheduling()
-				So(s, ShouldResemble, &compute.Scheduling{
+				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
-				})
+				}))
 			})
-			Convey("empty & Confidential & Terminatable", func() {
+			t.Run("empty & Confidential & Terminatable", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						EnableConfidentialCompute: true,
@@ -682,15 +683,15 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				So(s, ShouldResemble, &compute.Scheduling{
+				assert.Loosely(t, s, should.Resemble(&compute.Scheduling{
 					NodeAffinities:    []*compute.SchedulingNodeAffinity{},
 					OnHostMaintenance: "TERMINATE",
-				})
+				}))
 			})
 		})
 
-		Convey("non-zero", func() {
-			Convey("empty", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Scheduling: &config.Scheduling{
@@ -701,15 +702,15 @@ func TestVM(t *testing.T) {
 					},
 				}
 				s := v.getScheduling()
-				So(s, ShouldNotBeNil)
-				So(s.NodeAffinities, ShouldHaveLength, 1)
-				So(s.NodeAffinities[0].Key, ShouldEqual, "")
-				So(s.NodeAffinities[0].Operator, ShouldEqual, "OPERATOR_UNSPECIFIED")
-				So(s.NodeAffinities[0].Values, ShouldHaveLength, 0)
+				assert.Loosely(t, s, should.NotBeNil)
+				assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+				assert.Loosely(t, s.NodeAffinities[0].Key, should.BeEmpty)
+				assert.Loosely(t, s.NodeAffinities[0].Operator, should.Equal("OPERATOR_UNSPECIFIED"))
+				assert.Loosely(t, s.NodeAffinities[0].Values, should.HaveLength(0))
 			})
 
-			Convey("non-empty", func() {
-				Convey("key", func() {
+			t.Run("non-empty", func(t *ftt.Test) {
+				t.Run("key", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							Scheduling: &config.Scheduling{
@@ -722,10 +723,10 @@ func TestVM(t *testing.T) {
 						},
 					}
 					s := v.getScheduling()
-					So(s.NodeAffinities, ShouldHaveLength, 1)
-					So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
+					assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+					assert.Loosely(t, s.NodeAffinities[0].Key, should.Equal("node-affinity-key"))
 				})
-				Convey("operator", func() {
+				t.Run("operator", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							Scheduling: &config.Scheduling{
@@ -738,10 +739,10 @@ func TestVM(t *testing.T) {
 						},
 					}
 					s := v.getScheduling()
-					So(s.NodeAffinities, ShouldHaveLength, 1)
-					So(s.NodeAffinities[0].Operator, ShouldEqual, "IN")
+					assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+					assert.Loosely(t, s.NodeAffinities[0].Operator, should.Equal("IN"))
 				})
-				Convey("values", func() {
+				t.Run("values", func(t *ftt.Test) {
 					v := &VM{
 						Attributes: config.VM{
 							Scheduling: &config.Scheduling{
@@ -754,15 +755,15 @@ func TestVM(t *testing.T) {
 						},
 					}
 					s := v.getScheduling()
-					So(s.NodeAffinities, ShouldHaveLength, 1)
-					So(s.NodeAffinities[0].Values, ShouldHaveLength, 1)
-					So(s.NodeAffinities[0].Values[0], ShouldEqual, "node-affinity-value")
+					assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+					assert.Loosely(t, s.NodeAffinities[0].Values, should.HaveLength(1))
+					assert.Loosely(t, s.NodeAffinities[0].Values[0], should.Equal("node-affinity-value"))
 				})
-				Convey("not-empty other cases", func() {
+				t.Run("not-empty other cases", func(t *ftt.Test) {
 					inScheduling := &config.Scheduling{
 						NodeAffinity: []*config.NodeAffinity{{Key: "node-affinity-key"}},
 					}
-					Convey("Confidential", func() {
+					t.Run("Confidential", func(t *ftt.Test) {
 						v := &VM{
 							Attributes: config.VM{
 								Scheduling:                inScheduling,
@@ -770,11 +771,11 @@ func TestVM(t *testing.T) {
 							},
 						}
 						s := v.getScheduling()
-						So(s.NodeAffinities, ShouldHaveLength, 1)
-						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
-						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+						assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+						assert.Loosely(t, s.NodeAffinities[0].Key, should.Equal("node-affinity-key"))
+						assert.Loosely(t, s.OnHostMaintenance, should.Equal("TERMINATE"))
 					})
-					Convey("Terminatable", func() {
+					t.Run("Terminatable", func(t *ftt.Test) {
 						v := &VM{
 							Attributes: config.VM{
 								Scheduling:             inScheduling,
@@ -782,11 +783,11 @@ func TestVM(t *testing.T) {
 							},
 						}
 						s := v.getScheduling()
-						So(s.NodeAffinities, ShouldHaveLength, 1)
-						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
-						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+						assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+						assert.Loosely(t, s.NodeAffinities[0].Key, should.Equal("node-affinity-key"))
+						assert.Loosely(t, s.OnHostMaintenance, should.Equal("TERMINATE"))
 					})
-					Convey("Confidential & Terminatable", func() {
+					t.Run("Confidential & Terminatable", func(t *ftt.Test) {
 						v := &VM{
 							Attributes: config.VM{
 								Scheduling:                inScheduling,
@@ -795,86 +796,86 @@ func TestVM(t *testing.T) {
 							},
 						}
 						s := v.getScheduling()
-						So(s.NodeAffinities, ShouldHaveLength, 1)
-						So(s.NodeAffinities[0].Key, ShouldEqual, "node-affinity-key")
-						So(s.OnHostMaintenance, ShouldEqual, "TERMINATE")
+						assert.Loosely(t, s.NodeAffinities, should.HaveLength(1))
+						assert.Loosely(t, s.NodeAffinities[0].Key, should.Equal("node-affinity-key"))
+						assert.Loosely(t, s.OnHostMaintenance, should.Equal("TERMINATE"))
 					})
 				})
 			})
 		})
 	})
 
-	Convey("getShieldedInstanceConfig", t, func() {
-		Convey("zero", func() {
-			Convey("empty", func() {
+	ftt.Run("getShieldedInstanceConfig", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{}
 				c := v.getShieldedInstanceConfig()
-				So(c, ShouldBeNil)
+				assert.Loosely(t, c, should.BeNil)
 			})
 		})
-		Convey("non-zero", func() {
-			Convey("disableIntegrityMonitoring", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
+			t.Run("disableIntegrityMonitoring", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						DisableIntegrityMonitoring: true,
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: false,
 					EnableSecureBoot:          false,
 					EnableVtpm:                true,
-				})
+				}))
 			})
-			Convey("enableSecureBoot", func() {
+			t.Run("enableSecureBoot", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						EnableSecureBoot: true,
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: true,
 					EnableSecureBoot:          true,
 					EnableVtpm:                true,
-				})
+				}))
 			})
-			Convey("disablevTPM", func() {
+			t.Run("disablevTPM", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						DisableVtpm: true,
 					},
 				}
 				c := v.getShieldedInstanceConfig()
-				So(c, ShouldResemble, &compute.ShieldedInstanceConfig{
+				assert.Loosely(t, c, should.Resemble(&compute.ShieldedInstanceConfig{
 					EnableIntegrityMonitoring: true,
 					EnableSecureBoot:          false,
 					EnableVtpm:                false,
-				})
+				}))
 			})
 		})
 	})
 
-	Convey("getTags", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("getTags", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
-				t := v.getTags()
-				So(t, ShouldBeNil)
+				tags := v.getTags()
+				assert.Loosely(t, tags, should.BeNil)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Tag: []string{},
 					},
 				}
-				t := v.getTags()
-				So(t, ShouldBeNil)
+				tags := v.getTags()
+				assert.Loosely(t, tags, should.BeNil)
 			})
 		})
 
-		Convey("non-zero", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
 			v := &VM{
 				Attributes: config.VM{
 					Tag: []string{
@@ -882,62 +883,62 @@ func TestVM(t *testing.T) {
 					},
 				},
 			}
-			t := v.getTags()
-			So(t.Items, ShouldHaveLength, 1)
-			So(t.Items[0], ShouldEqual, "tag")
+			tags := v.getTags()
+			assert.Loosely(t, tags.Items, should.HaveLength(1))
+			assert.Loosely(t, tags.Items[0], should.Equal("tag"))
 		})
 	})
 
-	Convey("GetLabels", t, func() {
-		Convey("zero", func() {
-			Convey("nil", func() {
+	ftt.Run("GetLabels", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				v := &VM{}
 				l := v.getLabels()
-				So(l, ShouldBeEmpty)
+				assert.Loosely(t, l, should.BeEmpty)
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				v := &VM{
 					Attributes: config.VM{
 						Label: map[string]string{},
 					},
 				}
 				l := v.getLabels()
-				So(l, ShouldBeEmpty)
+				assert.Loosely(t, l, should.BeEmpty)
 			})
 		})
 
-		Convey("non-zero", func() {
+		t.Run("non-zero", func(t *ftt.Test) {
 			v := &VM{
 				Attributes: config.VM{
 					Label: map[string]string{"key1": "value1"},
 				},
 			}
 			l := v.getLabels()
-			So(l, ShouldHaveLength, 1)
-			So(l, ShouldContainKey, "key1")
-			So(l["key1"], ShouldEqual, "value1")
+			assert.Loosely(t, l, should.HaveLength(1))
+			assert.Loosely(t, l, should.ContainKey("key1"))
+			assert.Loosely(t, l["key1"], should.Equal("value1"))
 		})
 	})
 
-	Convey("GetInstance", t, func() {
-		Convey("empty", func() {
+	ftt.Run("GetInstance", t, func(t *ftt.Test) {
+		t.Run("empty", func(t *ftt.Test) {
 			v := &VM{}
 			i := v.GetInstance().Stable
-			So(i.Disks, ShouldHaveLength, 0)
-			So(i.MachineType, ShouldEqual, "")
-			So(i.Metadata, ShouldBeNil)
-			So(i.MinCpuPlatform, ShouldEqual, "")
-			So(i.NetworkInterfaces, ShouldHaveLength, 0)
-			So(i.Scheduling, ShouldBeNil)
-			So(i.ServiceAccounts, ShouldBeNil)
-			So(i.ShieldedInstanceConfig, ShouldBeNil)
-			So(i.Tags, ShouldBeNil)
-			So(i.Labels, ShouldBeNil)
-			So(i.ForceSendFields, ShouldBeNil)
+			assert.Loosely(t, i.Disks, should.HaveLength(0))
+			assert.Loosely(t, i.MachineType, should.BeEmpty)
+			assert.Loosely(t, i.Metadata, should.BeNil)
+			assert.Loosely(t, i.MinCpuPlatform, should.BeEmpty)
+			assert.Loosely(t, i.NetworkInterfaces, should.HaveLength(0))
+			assert.Loosely(t, i.Scheduling, should.BeNil)
+			assert.Loosely(t, i.ServiceAccounts, should.BeNil)
+			assert.Loosely(t, i.ShieldedInstanceConfig, should.BeNil)
+			assert.Loosely(t, i.Tags, should.BeNil)
+			assert.Loosely(t, i.Labels, should.BeNil)
+			assert.Loosely(t, i.ForceSendFields, should.BeNil)
 		})
 
-		Convey("non-empty", func() {
+		t.Run("non-empty", func(t *ftt.Test) {
 			v := &VM{
 				Attributes: config.VM{
 					Disk: []*config.Disk{
@@ -973,19 +974,19 @@ func TestVM(t *testing.T) {
 				},
 			}
 			i := v.GetInstance().Stable
-			So(i.Disks, ShouldHaveLength, 1)
-			So(i.MachineType, ShouldEqual, "type")
-			So(i.Metadata, ShouldBeNil)
-			So(i.MinCpuPlatform, ShouldEqual, "plat")
-			So(i.NetworkInterfaces, ShouldHaveLength, 1)
-			So(i.ServiceAccounts, ShouldBeNil)
-			So(i.Scheduling, ShouldNotBeNil)
-			So(i.Scheduling.NodeAffinities, ShouldHaveLength, 1)
-			So(i.ShieldedInstanceConfig, ShouldNotBeNil)
-			So(i.Tags, ShouldBeNil)
-			So(i.Labels, ShouldBeNil)
-			So(i.ForceSendFields, ShouldNotBeNil)
-			So(i.NullFields, ShouldNotBeNil)
+			assert.Loosely(t, i.Disks, should.HaveLength(1))
+			assert.Loosely(t, i.MachineType, should.Equal("type"))
+			assert.Loosely(t, i.Metadata, should.BeNil)
+			assert.Loosely(t, i.MinCpuPlatform, should.Equal("plat"))
+			assert.Loosely(t, i.NetworkInterfaces, should.HaveLength(1))
+			assert.Loosely(t, i.ServiceAccounts, should.BeNil)
+			assert.Loosely(t, i.Scheduling, should.NotBeNil)
+			assert.Loosely(t, i.Scheduling.NodeAffinities, should.HaveLength(1))
+			assert.Loosely(t, i.ShieldedInstanceConfig, should.NotBeNil)
+			assert.Loosely(t, i.Tags, should.BeNil)
+			assert.Loosely(t, i.Labels, should.BeNil)
+			assert.Loosely(t, i.ForceSendFields, should.NotBeNil)
+			assert.Loosely(t, i.NullFields, should.NotBeNil)
 		})
 	})
 }

@@ -36,8 +36,9 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var someTimeAgo = timestamppb.New(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC))
@@ -45,7 +46,7 @@ var someTimeAgo = timestamppb.New(time.Date(2022, 1, 1, 1, 1, 1, 0, time.UTC))
 func TestDeleteBot(t *testing.T) {
 	t.Parallel()
 
-	Convey("deleteBot", t, func() {
+	ftt.Run("deleteBot", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 
@@ -57,95 +58,95 @@ func TestDeleteBot(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := deleteBot(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
+				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := deleteBot(c, &tasks.DeleteBot{})
-				So(err, ShouldErrLike, "ID is required")
+				assert.Loosely(t, err, should.ErrLike("ID is required"))
 			})
 
-			Convey("hostname", func() {
+			t.Run("hostname", func(t *ftt.Test) {
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "hostname is required")
+				assert.Loosely(t, err, should.ErrLike("hostname is required"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("missing", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				swr.err = status.Errorf(codes.Internal, "boom")
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldErrLike, "failed to delete bot")
+				assert.Loosely(t, err, should.ErrLike("failed to delete bot"))
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldBeNil)
-				So(v.Created, ShouldEqual, 1)
-				So(v.Hostname, ShouldEqual, "name")
-				So(v.URL, ShouldEqual, "url")
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Created, should.Equal(1))
+				assert.Loosely(t, v.Hostname, should.Equal("name"))
+				assert.Loosely(t, v.URL, should.Equal("url"))
 			})
 
-			Convey("deleted", func() {
+			t.Run("deleted", func(t *ftt.Test) {
 				swr.err = status.Errorf(codes.NotFound, "not found")
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 			})
 
-			Convey("deletes", func() {
+			t.Run("deletes", func(t *ftt.Test) {
 				swr.deleteBotResponse = &swarmingpb.DeleteResponse{}
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Created:  1,
 					Hostname: "name",
 					Lifetime: 1,
 					URL:      "url",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := deleteBot(c, &tasks.DeleteBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+				assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 			})
 		})
 	})
@@ -154,36 +155,36 @@ func TestDeleteBot(t *testing.T) {
 func TestDeleteVM(t *testing.T) {
 	t.Parallel()
 
-	Convey("deleteVM", t, func() {
+	ftt.Run("deleteVM", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
-		Convey("deletes", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("deletes", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "id",
 				Hostname: "name",
-			}), ShouldBeNil)
-			So(deleteVM(c, "id", "name"), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, deleteVM(c, "id", "name"), should.BeNil)
 			v := &model.VM{
 				ID: "id",
 			}
-			So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("deleted", func() {
-			So(deleteVM(c, "id", "name"), ShouldBeNil)
+		t.Run("deleted", func(t *ftt.Test) {
+			assert.Loosely(t, deleteVM(c, "id", "name"), should.BeNil)
 		})
 
-		Convey("replaced", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("replaced", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "id",
 				Hostname: "name-2",
-			}), ShouldBeNil)
-			So(deleteVM(c, "id", "name-1"), ShouldBeNil)
+			}), should.BeNil)
+			assert.Loosely(t, deleteVM(c, "id", "name-1"), should.BeNil)
 			v := &model.VM{
 				ID: "id",
 			}
-			So(datastore.Get(c, v), ShouldBeNil)
-			So(v.Hostname, ShouldEqual, "name-2")
+			assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+			assert.Loosely(t, v.Hostname, should.Equal("name-2"))
 		})
 	})
 }
@@ -191,7 +192,7 @@ func TestDeleteVM(t *testing.T) {
 func TestManageBot(t *testing.T) {
 	t.Parallel()
 
-	Convey("manageBot", t, func() {
+	ftt.Run("manageBot", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 
@@ -203,222 +204,222 @@ func TestManageBot(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := manageBot(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
+				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := manageBot(c, &tasks.ManageBot{})
-				So(err, ShouldErrLike, "ID is required")
+				assert.Loosely(t, err, should.ErrLike("ID is required"))
 			})
 		})
 
-		Convey("valid", func() {
-			So(datastore.Put(c, &model.Config{
+		t.Run("valid", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "config",
 				Config: &config.Config{
 					CurrentAmount: 1,
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
-			Convey("deleted", func() {
+			t.Run("deleted", func(t *ftt.Test) {
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("creating", func() {
-				So(datastore.Put(c, &model.VM{
+			t.Run("creating", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id",
 					Config: "config",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				swr.err = status.Errorf(codes.InvalidArgument, "unexpected error")
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:     "id",
 					Config: "config",
 					URL:    "url",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := manageBot(c, &tasks.ManageBot{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "failed to fetch bot")
+				assert.Loosely(t, err, should.ErrLike("failed to fetch bot"))
 			})
 
-			Convey("missing", func() {
-				Convey("deadline", func() {
+			t.Run("missing", func(t *ftt.Test) {
+				t.Run("deadline", func(t *ftt.Test) {
 					swr.err = status.Errorf(codes.NotFound, "not found")
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Lifetime: 1,
 						URL:      "url",
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
 				})
 
-				Convey("drained & new bots", func() {
+				t.Run("drained & new bots", func(t *ftt.Test) {
 					swr.err = status.Errorf(codes.NotFound, "not found")
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 100,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					// For now, won't destroy a instance if it's set to drained or newly created but
 					// hasn't connected to swarming yet
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
 				})
 
-				Convey("timeout", func() {
+				t.Run("timeout", func(t *ftt.Test) {
 					swr.err = status.Errorf(codes.NotFound, "not found")
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Created:  1,
 						Hostname: "name",
 						Timeout:  1,
 						URL:      "url",
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 				})
 
-				Convey("wait", func() {
+				t.Run("wait", func(t *ftt.Test) {
 					swr.err = status.Errorf(codes.NotFound, "not found")
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 
-			Convey("found", func() {
-				Convey("deleted", func() {
+			t.Run("found", func(t *ftt.Test) {
+				t.Run("deleted", func(t *ftt.Test) {
 					swr.getBotResponse = &swarmingpb.BotInfo{
 						BotId:   "id",
 						Deleted: true,
 					}
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
 						Created: time.Now().Unix() - 10000,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
 				})
-				Convey("deleted but newly created", func() {
+				t.Run("deleted but newly created", func(t *ftt.Test) {
 					swr.getBotResponse = &swarmingpb.BotInfo{
 						BotId:   "id",
 						Deleted: true,
 					}
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 10,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					// Won't destroy the instance if it's a newly created VM
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
 				})
 
-				Convey("dead", func() {
+				t.Run("dead", func(t *ftt.Test) {
 					swr.getBotResponse = &swarmingpb.BotInfo{
 						BotId:       "id",
 						FirstSeenTs: someTimeAgo,
 						IsDead:      true,
 					}
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
 						Created: time.Now().Unix() - 10000,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-					So(tqt.GetScheduledTasks()[0].Payload, ShouldHaveSameTypeAs, &tasks.DestroyInstance{})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
+					assert.Loosely(t, tqt.GetScheduledTasks()[0].Payload, should.HaveType[*tasks.DestroyInstance])
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
 				})
 
-				Convey("dead but newly created", func() {
+				t.Run("dead but newly created", func(t *ftt.Test) {
 					swr.getBotResponse = &swarmingpb.BotInfo{
 						BotId:       "id",
 						FirstSeenTs: someTimeAgo,
 						IsDead:      true,
 					}
-					So(datastore.Put(c, &model.VM{
+					assert.Loosely(t, datastore.Put(c, &model.VM{
 						ID:       "id",
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
 						Created:  time.Now().Unix() - 10,
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					// won't destroy the instance if it's a newly created VM
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
 				})
 			})
 		})
@@ -428,7 +429,7 @@ func TestManageBot(t *testing.T) {
 func TestTerminateBot(t *testing.T) {
 	t.Parallel()
 
-	Convey("terminateBot", t, func() {
+	ftt.Run("terminateBot", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 
@@ -440,91 +441,91 @@ func TestTerminateBot(t *testing.T) {
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("invalid", func() {
-			Convey("nil", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := terminateBot(c, nil)
-				So(err, ShouldErrLike, "unexpected payload")
+				assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 			})
 
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := terminateBot(c, &tasks.TerminateBot{})
-				So(err, ShouldErrLike, "ID is required")
+				assert.Loosely(t, err, should.ErrLike("ID is required"))
 			})
 
-			Convey("hostname", func() {
+			t.Run("hostname", func(t *ftt.Test) {
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "hostname is required")
+				assert.Loosely(t, err, should.ErrLike("hostname is required"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("missing", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("missing", func(t *ftt.Test) {
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey("replaced", func() {
-				So(datastore.Put(c, &model.VM{
+			t.Run("replaced", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "new",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "old",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldBeNil)
-				So(v.Hostname, ShouldEqual, "new")
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Hostname, should.Equal("new"))
 			})
 
-			Convey("error", func() {
+			t.Run("error", func(t *ftt.Test) {
 				swr.err = status.Errorf(codes.Internal, "internal error")
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				err := terminateBot(c, &tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
 				})
-				So(err, ShouldErrLike, "terminate bot \"name\"")
+				assert.Loosely(t, err, should.ErrLike("terminate bot \"name\""))
 				v := &model.VM{
 					ID: "id",
 				}
-				So(datastore.Get(c, v), ShouldBeNil)
-				So(v.Hostname, ShouldEqual, "name")
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Hostname, should.Equal("name"))
 			})
 
-			Convey("terminates", func() {
+			t.Run("terminates", func(t *ftt.Test) {
 				c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC)
 				swr.terminateBotResponse = &swarmingpb.TerminateResponse{}
-				So(datastore.Put(c, &model.VM{
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "id",
 					Hostname: "name",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				terminateTask := tasks.TerminateBot{
 					Id:       "id",
 					Hostname: "name",
 				}
-				So(terminateBot(c, &terminateTask), ShouldBeNil)
-				So(swr.calls, ShouldEqual, 1)
+				assert.Loosely(t, terminateBot(c, &terminateTask), should.BeNil)
+				assert.Loosely(t, swr.calls, should.Equal(1))
 
-				Convey("wait 1 hour before sending another terminate task", func() {
+				t.Run("wait 1 hour before sending another terminate task", func(t *ftt.Test) {
 					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour-time.Second))
-					So(terminateBot(c, &terminateTask), ShouldBeNil)
-					So(swr.calls, ShouldEqual, 1)
+					assert.Loosely(t, terminateBot(c, &terminateTask), should.BeNil)
+					assert.Loosely(t, swr.calls, should.Equal(1))
 
 					c, _ = testclock.UseTime(c, testclock.TestRecentTimeUTC.Add(time.Hour))
-					So(terminateBot(c, &terminateTask), ShouldBeNil)
-					So(swr.calls, ShouldEqual, 2)
+					assert.Loosely(t, terminateBot(c, &terminateTask), should.BeNil)
+					assert.Loosely(t, swr.calls, should.Equal(2))
 				})
 			})
 		})
@@ -534,7 +535,7 @@ func TestTerminateBot(t *testing.T) {
 func TestInspectSwarming(t *testing.T) {
 	t.Parallel()
 
-	Convey("inspectSwarmingAsync", t, func() {
+	ftt.Run("inspectSwarmingAsync", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		c := withDispatcher(memory.Use(context.Background()), dsp)
@@ -542,44 +543,44 @@ func TestInspectSwarming(t *testing.T) {
 		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("none", func() {
+		t.Run("none", func(t *ftt.Test) {
 			err := inspectSwarmingAsync(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(0))
 		})
 
-		Convey("one", func() {
-			So(datastore.Put(c, &model.Config{
+		t.Run("one", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "config-1",
 				Config: &config.Config{
 					Swarming: "https://gce-swarming.appspot.com",
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			err := inspectSwarmingAsync(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 		})
 
-		Convey("two", func() {
-			So(datastore.Put(c, &model.Config{
+		t.Run("two", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "config-1",
 				Config: &config.Config{
 					Swarming: "https://gce-swarming.appspot.com",
 				},
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.Config{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.Config{
 				ID: "config-2",
 				Config: &config.Config{
 					Swarming: "https://vmleaser-swarming.appspot.com",
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			err := inspectSwarmingAsync(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 		})
 	})
 
-	Convey("inspectSwarming", t, func() {
+	ftt.Run("inspectSwarming", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 
@@ -592,35 +593,35 @@ func TestInspectSwarming(t *testing.T) {
 		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("BadInputs", func() {
-			Convey("nil", func() {
+		t.Run("BadInputs", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := inspectSwarming(c, nil)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := inspectSwarming(c, &tasks.InspectSwarming{})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
 
-		Convey("Swarming error", func() {
+		t.Run("Swarming error", func(t *ftt.Test) {
 			swr.err = status.Errorf(codes.Internal, "internal server error")
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
-		Convey("Ignore non-gce bot", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("Ignore non-gce bot", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-1",
 				Hostname: "vm-1-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-2",
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
 				Cursor: "",
 				Items: []*swarmingpb.BotInfo{
@@ -642,21 +643,21 @@ func TestInspectSwarming(t *testing.T) {
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// ignoring vm-3-abcd as we didn't see it in datastore
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 		})
-		Convey("Delete dead or deleted bots", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("Delete dead or deleted bots", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-1",
 				Hostname: "vm-1-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-2",
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
 				Cursor: "",
 				Items: []*swarmingpb.BotInfo{
@@ -675,25 +676,25 @@ func TestInspectSwarming(t *testing.T) {
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 		})
-		Convey("HappyPath-1", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("HappyPath-1", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-1",
 				Hostname: "vm-1-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-2",
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-3",
 				Hostname: "vm-3-abcd",
 				Swarming: "https://vmleaser-swarming.appspot.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
 				Cursor: "",
 				Items: []*swarmingpb.BotInfo{
@@ -710,25 +711,25 @@ func TestInspectSwarming(t *testing.T) {
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 		})
-		Convey("HappyPath-2", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("HappyPath-2", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-1",
 				Hostname: "vm-1-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-2",
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-3",
 				Hostname: "vm-3-abcd",
 				Swarming: "https://vmleaser-swarming.appspot.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
 				Cursor: "",
 				Items: []*swarmingpb.BotInfo{
@@ -741,25 +742,25 @@ func TestInspectSwarming(t *testing.T) {
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://vmleaser-swarming.appspot.com",
 			})
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 		})
-		Convey("HappyPath-3-pagination", func() {
-			So(datastore.Put(c, &model.VM{
+		t.Run("HappyPath-3-pagination", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-1",
 				Hostname: "vm-1-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-2",
 				Hostname: "vm-2-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
-			So(datastore.Put(c, &model.VM{
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
 				ID:       "vm-3",
 				Hostname: "vm-3-abcd",
 				Swarming: "https://gce-swarming.appspot.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
 				Cursor: "cursor",
 				Items: []*swarmingpb.BotInfo{
@@ -776,9 +777,9 @@ func TestInspectSwarming(t *testing.T) {
 			err := inspectSwarming(c, &tasks.InspectSwarming{
 				Swarming: "https://gce-swarming.appspot.com",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// One DeleteStaleSwarmingBots tasks and one inspectSwarming task with cursor
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 		})
 
 	})
@@ -787,7 +788,7 @@ func TestInspectSwarming(t *testing.T) {
 func TestDeleteStaleSwarmingBot(t *testing.T) {
 	t.Parallel()
 
-	Convey("deleteStaleSwarmingBot", t, func() {
+	ftt.Run("deleteStaleSwarmingBot", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 
@@ -800,69 +801,69 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 		tqt.CreateQueues()
 		datastore.GetTestable(c).Consistent(true)
 
-		Convey("BadInputs", func() {
-			Convey("nil", func() {
+		t.Run("BadInputs", func(t *ftt.Test) {
+			t.Run("nil", func(t *ftt.Test) {
 				err := deleteStaleSwarmingBot(c, nil)
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("empty", func() {
+			t.Run("empty", func(t *ftt.Test) {
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
-			Convey("missing timestamp", func() {
+			t.Run("missing timestamp", func(t *ftt.Test) {
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id: "id-1",
 				})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 			})
 		})
-		Convey("VM issues", func() {
-			Convey("Missing VM", func() {
+		t.Run("VM issues", func(t *ftt.Test) {
+			t.Run("Missing VM", func(t *ftt.Test) {
 				// Don't err if the VM is missing, prob deleted already
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "id-1",
 					FirstSeenTs: "onceUponATime",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("Missing URL in VM", func() {
-				So(datastore.Put(c, &model.VM{
+			t.Run("Missing URL in VM", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "vm-3",
 					Hostname: "vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				// Don't err if the URL in VM is missing
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "id-1",
 					FirstSeenTs: "onceUponATime",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey("Swarming Issues", func() {
-			Convey("Failed to fetch", func() {
-				So(datastore.Put(c, &model.VM{
+		t.Run("Swarming Issues", func(t *ftt.Test) {
+			t.Run("Failed to fetch", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "vm-3",
 					Hostname: "vm-3-abcd",
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				swr.err = status.Errorf(codes.NotFound, "not found")
 				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
 					Id:          "id-1",
 					FirstSeenTs: "onceUponATime",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey("Happy paths", func() {
-			Convey("Bot terminated", func() {
-				So(datastore.Put(c, &model.VM{
+		t.Run("Happy paths", func(t *ftt.Test) {
+			t.Run("Bot terminated", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "vm-3",
 					Hostname: "vm-3-abcd",
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
-				}), ShouldBeNil)
+				}), should.BeNil)
 				swr.getBotResponse = &swarmingpb.BotInfo{
 					BotId:       "vm-3-abcd",
 					FirstSeenTs: someTimeAgo,
@@ -876,18 +877,18 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Id:          "vm-3",
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
-			Convey("Bot retirement", func() {
-				So(datastore.Put(c, &model.VM{
+			t.Run("Bot retirement", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "vm-3",
 					Hostname: "vm-3-abcd",
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
 					Lifetime: 99,
 					Created:  time.Now().Unix() - 100,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				swr.getBotResponse = &swarmingpb.BotInfo{
 					BotId:       "vm-3-abcd",
 					FirstSeenTs: someTimeAgo,
@@ -899,11 +900,11 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Id:          "vm-3",
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
-			Convey("Bot drained", func() {
-				So(datastore.Put(c, &model.VM{
+			t.Run("Bot drained", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
 					ID:       "vm-3",
 					Hostname: "vm-3-abcd",
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
@@ -911,7 +912,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Lifetime: 100000000,
 					Created:  time.Now().Unix(),
 					Drained:  true,
-				}), ShouldBeNil)
+				}), should.BeNil)
 				swr.getBotResponse = &swarmingpb.BotInfo{
 					BotId:       "vm-3-abcd",
 					FirstSeenTs: someTimeAgo,
@@ -923,8 +924,8 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					Id:          "vm-3",
 					FirstSeenTs: "2019-03-13T00:12:29.882948",
 				})
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(1))
 			})
 		})
 

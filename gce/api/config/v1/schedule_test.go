@@ -23,41 +23,44 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSchedule(t *testing.T) {
 	t.Parallel()
 
-	Convey("isSameDay", t, func() {
-		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_SUNDAY), ShouldBeTrue)
-		So(isSameDay(time.Monday, dayofweek.DayOfWeek_MONDAY), ShouldBeTrue)
-		So(isSameDay(time.Friday, dayofweek.DayOfWeek_FRIDAY), ShouldBeTrue)
-		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_MONDAY), ShouldBeFalse)
-		So(isSameDay(time.Monday, dayofweek.DayOfWeek_SUNDAY), ShouldBeFalse)
-		So(isSameDay(time.Sunday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
-		So(isSameDay(time.Monday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
-		So(isSameDay(time.Friday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), ShouldBeFalse)
+	ftt.Run("isSameDay", t, func(t *ftt.Test) {
+		assert.Loosely(t, isSameDay(time.Sunday, dayofweek.DayOfWeek_SUNDAY), should.BeTrue)
+		assert.Loosely(t, isSameDay(time.Monday, dayofweek.DayOfWeek_MONDAY), should.BeTrue)
+		assert.Loosely(t, isSameDay(time.Friday, dayofweek.DayOfWeek_FRIDAY), should.BeTrue)
+		assert.Loosely(t, isSameDay(time.Sunday, dayofweek.DayOfWeek_MONDAY), should.BeFalse)
+		assert.Loosely(t, isSameDay(time.Monday, dayofweek.DayOfWeek_SUNDAY), should.BeFalse)
+		assert.Loosely(t, isSameDay(time.Sunday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), should.BeFalse)
+		assert.Loosely(t, isSameDay(time.Monday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), should.BeFalse)
+		assert.Loosely(t, isSameDay(time.Friday, dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED), should.BeFalse)
 	})
 
-	Convey("mostRecentStart", t, func() {
+	ftt.Run("mostRecentStart", t, func(t *ftt.Test) {
 		now := time.Time{}.Add(time.Hour * 12)
-		So(now.Weekday(), ShouldEqual, time.Monday)
-		So(now.Hour(), ShouldEqual, 12)
+		assert.Loosely(t, now.Weekday(), should.Equal(time.Monday))
+		assert.Loosely(t, now.Hour(), should.Equal(12))
 
-		Convey("invalid", func() {
-			Convey("day", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("day", func(t *ftt.Test) {
 				s := &Schedule{
 					Start: &TimeOfDay{
 						Time: "1:00",
 					},
 				}
 				_, err := s.mostRecentStart(now)
-				So(err, ShouldErrLike, "day must be specified")
+				assert.Loosely(t, err, should.ErrLike("day must be specified"))
 			})
 
-			Convey("location", func() {
+			t.Run("location", func(t *ftt.Test) {
 				s := &Schedule{
 					Start: &TimeOfDay{
 						Day:      dayofweek.DayOfWeek_MONDAY,
@@ -66,10 +69,10 @@ func TestSchedule(t *testing.T) {
 					},
 				}
 				_, err := s.mostRecentStart(now)
-				So(err, ShouldErrLike, "invalid location")
+				assert.Loosely(t, err, should.ErrLike("invalid location"))
 			})
 
-			Convey("time", func() {
+			t.Run("time", func(t *ftt.Test) {
 				s := &Schedule{
 					Start: &TimeOfDay{
 						Day:  dayofweek.DayOfWeek_MONDAY,
@@ -77,124 +80,124 @@ func TestSchedule(t *testing.T) {
 					},
 				}
 				_, err := s.mostRecentStart(now)
-				So(err, ShouldErrLike, "time must not exceed")
+				assert.Loosely(t, err, should.ErrLike("time must not exceed"))
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("past", func() {
-				Convey("different day", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("past", func(t *ftt.Test) {
+				t.Run("different day", func(t *ftt.Test) {
 					s := &Schedule{
 						Start: &TimeOfDay{
 							Day:  dayofweek.DayOfWeek_SUNDAY,
 							Time: "23:00",
 						},
 					}
-					t, err := s.mostRecentStart(now)
-					So(err, ShouldBeNil)
-					So(t.Weekday(), ShouldEqual, time.Sunday)
-					So(t.Before(now), ShouldBeTrue)
+					ts, err := s.mostRecentStart(now)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ts.Weekday(), should.Equal(time.Sunday))
+					assert.Loosely(t, ts.Before(now), should.BeTrue)
 				})
 
-				Convey("same day", func() {
+				t.Run("same day", func(t *ftt.Test) {
 					s := &Schedule{
 						Start: &TimeOfDay{
 							Day:  dayofweek.DayOfWeek_MONDAY,
 							Time: "11:00",
 						},
 					}
-					t, err := s.mostRecentStart(now)
-					So(err, ShouldBeNil)
-					So(t.Weekday(), ShouldEqual, time.Monday)
-					So(t.Before(now), ShouldBeTrue)
+					ts, err := s.mostRecentStart(now)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ts.Weekday(), should.Equal(time.Monday))
+					assert.Loosely(t, ts.Before(now), should.BeTrue)
 				})
 			})
 
-			Convey("present", func() {
+			t.Run("present", func(t *ftt.Test) {
 				s := &Schedule{
 					Start: &TimeOfDay{
 						Day:  dayofweek.DayOfWeek_MONDAY,
 						Time: "12:00",
 					},
 				}
-				t, err := s.mostRecentStart(now)
-				So(err, ShouldBeNil)
-				So(t.Weekday(), ShouldEqual, time.Monday)
-				So(t.Equal(now), ShouldBeTrue)
+				ts, err := s.mostRecentStart(now)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, ts.Weekday(), should.Equal(time.Monday))
+				assert.Loosely(t, ts.Equal(now), should.BeTrue)
 			})
 
-			Convey("future", func() {
-				Convey("same day", func() {
+			t.Run("future", func(t *ftt.Test) {
+				t.Run("same day", func(t *ftt.Test) {
 					s := &Schedule{
 						Start: &TimeOfDay{
 							Day:  dayofweek.DayOfWeek_MONDAY,
 							Time: "13:00",
 						},
 					}
-					t, err := s.mostRecentStart(now)
-					So(err, ShouldBeNil)
-					So(t.Weekday(), ShouldEqual, time.Monday)
-					So(t.Before(now), ShouldBeTrue)
+					ts, err := s.mostRecentStart(now)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ts.Weekday(), should.Equal(time.Monday))
+					assert.Loosely(t, ts.Before(now), should.BeTrue)
 				})
 
-				Convey("different day", func() {
+				t.Run("different day", func(t *ftt.Test) {
 					s := &Schedule{
 						Start: &TimeOfDay{
 							Day:  dayofweek.DayOfWeek_TUESDAY,
 							Time: "1:00",
 						},
 					}
-					t, err := s.mostRecentStart(now)
-					So(err, ShouldBeNil)
-					So(t.Weekday(), ShouldEqual, time.Tuesday)
-					So(t.Before(now), ShouldBeTrue)
+					ts, err := s.mostRecentStart(now)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, ts.Weekday(), should.Equal(time.Tuesday))
+					assert.Loosely(t, ts.Before(now), should.BeTrue)
 				})
 			})
 		})
 	})
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				s := &Schedule{}
 				s.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "duration or seconds is required")
-				So(errs, ShouldContainErr, "time must match regex")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration or seconds is required"))
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("time must match regex"))
 			})
 
-			Convey("min", func() {
+			t.Run("min", func(t *ftt.Test) {
 				s := &Schedule{
 					Min: -1,
 				}
 				s.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "minimum amount must be non-negative")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must be non-negative"))
 			})
 
-			Convey("max", func() {
+			t.Run("max", func(t *ftt.Test) {
 				s := &Schedule{
 					Max: -1,
 				}
 				s.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "maximum amount must be non-negative")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("maximum amount must be non-negative"))
 			})
 
-			Convey("min > max", func() {
+			t.Run("min > max", func(t *ftt.Test) {
 				s := &Schedule{
 					Min: 2,
 					Max: 1,
 				}
 				s.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "minimum amount must not exceed maximum amount")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must not exceed maximum amount"))
 			})
 		})
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			s := &Schedule{
 				Min: 1,
 				Max: 2,
@@ -209,7 +212,7 @@ func TestSchedule(t *testing.T) {
 				},
 			}
 			s.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})
 }

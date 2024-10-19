@@ -23,140 +23,143 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTimeOfDay(t *testing.T) {
 	t.Parallel()
 
-	Convey("toTime", t, func() {
-		Convey("invalid", func() {
-			Convey("location", func() {
-				t := &TimeOfDay{
+	ftt.Run("toTime", t, func(t *ftt.Test) {
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("location", func(t *ftt.Test) {
+				tod := &TimeOfDay{
 					Location: "location",
 					Time:     "1:23",
 				}
-				_, err := t.toTime()
-				So(err, ShouldErrLike, "invalid location")
+				_, err := tod.toTime()
+				assert.Loosely(t, err, should.ErrLike("invalid location"))
 			})
 
-			Convey("time", func() {
-				Convey("mismatch", func() {
-					t := &TimeOfDay{
+			t.Run("time", func(t *ftt.Test) {
+				t.Run("mismatch", func(t *ftt.Test) {
+					tod := &TimeOfDay{
 						Time: "1/1/1970",
 					}
-					_, err := t.toTime()
-					So(err, ShouldErrLike, "time must match regex")
+					_, err := tod.toTime()
+					assert.Loosely(t, err, should.ErrLike("time must match regex"))
 				})
 
-				Convey("overflow", func() {
-					Convey("hour", func() {
-						t := &TimeOfDay{
+				t.Run("overflow", func(t *ftt.Test) {
+					t.Run("hour", func(t *ftt.Test) {
+						tod := &TimeOfDay{
 							Time: "24:00",
 						}
-						_, err := t.toTime()
-						So(err, ShouldErrLike, "time must not exceed")
+						_, err := tod.toTime()
+						assert.Loosely(t, err, should.ErrLike("time must not exceed"))
 					})
 
-					Convey("minute", func() {
-						t := &TimeOfDay{
+					t.Run("minute", func(t *ftt.Test) {
+						tod := &TimeOfDay{
 							Time: "00:60",
 						}
-						_, err := t.toTime()
-						So(err, ShouldErrLike, "time must not exceed")
+						_, err := tod.toTime()
+						assert.Loosely(t, err, should.ErrLike("time must not exceed"))
 					})
 				})
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("location", func() {
-				Convey("implicit", func() {
-					t := &TimeOfDay{
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("location", func(t *ftt.Test) {
+				t.Run("implicit", func(t *ftt.Test) {
+					tod := &TimeOfDay{
 						Time: "1:23",
 					}
-					rel, err := t.toTime()
-					So(err, ShouldBeNil)
-					So(rel.Location(), ShouldEqual, time.UTC)
+					rel, err := tod.toTime()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rel.Location(), should.Equal(time.UTC))
 				})
 
-				Convey("explicit", func() {
-					t := &TimeOfDay{
+				t.Run("explicit", func(t *ftt.Test) {
+					tod := &TimeOfDay{
 						Location: "America/Los_Angeles",
 						Time:     "1:23",
 					}
-					rel, err := t.toTime()
-					So(err, ShouldBeNil)
-					So(rel.Location().String(), ShouldEqual, "America/Los_Angeles")
+					rel, err := tod.toTime()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rel.Location().String(), should.Equal("America/Los_Angeles"))
 				})
 			})
 
-			Convey("time", func() {
-				Convey("UTC", func() {
-					t := &TimeOfDay{
+			t.Run("time", func(t *ftt.Test) {
+				t.Run("UTC", func(t *ftt.Test) {
+					tod := &TimeOfDay{
 						Time: "1:23",
 					}
-					rel, err := t.toTime()
-					So(err, ShouldBeNil)
-					So(rel.Hour(), ShouldEqual, 1)
-					So(rel.Minute(), ShouldEqual, 23)
-					So(rel.UTC().Hour(), ShouldEqual, 1)
+					rel, err := tod.toTime()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rel.Hour(), should.Equal(1))
+					assert.Loosely(t, rel.Minute(), should.Equal(23))
+					assert.Loosely(t, rel.UTC().Hour(), should.Equal(1))
 				})
 
-				Convey("MTV", func() {
-					t := &TimeOfDay{
+				t.Run("MTV", func(t *ftt.Test) {
+					tod := &TimeOfDay{
 						Location: "America/Los_Angeles",
 						Time:     "1:23",
 					}
-					rel, err := t.toTime()
-					So(err, ShouldBeNil)
-					So(rel.Hour(), ShouldEqual, 1)
-					So(rel.Minute(), ShouldEqual, 23)
-					So(rel.UTC().Hour(), ShouldNotEqual, 1)
+					rel, err := tod.toTime()
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, rel.Hour(), should.Equal(1))
+					assert.Loosely(t, rel.Minute(), should.Equal(23))
+					assert.Loosely(t, rel.UTC().Hour(), should.NotEqual(1))
 				})
 			})
 		})
 	})
 
-	Convey("Validate", t, func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 
-		Convey("invalid", func() {
-			Convey("empty", func() {
-				t := &TimeOfDay{}
-				t.Validate(c)
+		t.Run("invalid", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				tod := &TimeOfDay{}
+				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "time must match regex")
-				So(errs, ShouldContainErr, "day must be specified")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("time must match regex"))
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("day must be specified"))
 			})
 
-			Convey("day", func() {
-				t := &TimeOfDay{
+			t.Run("day", func(t *ftt.Test) {
+				tod := &TimeOfDay{
 					Day: dayofweek.DayOfWeek_DAY_OF_WEEK_UNSPECIFIED,
 				}
-				t.Validate(c)
+				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "day must be specified")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("day must be specified"))
 			})
 
-			Convey("location", func() {
-				t := &TimeOfDay{
+			t.Run("location", func(t *ftt.Test) {
+				tod := &TimeOfDay{
 					Location: "location",
 				}
-				t.Validate(c)
+				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				So(errs, ShouldContainErr, "invalid location")
+				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("invalid location"))
 			})
 		})
 
-		Convey("valid", func() {
-			t := &TimeOfDay{
+		t.Run("valid", func(t *ftt.Test) {
+			tod := &TimeOfDay{
 				Day:  dayofweek.DayOfWeek_MONDAY,
 				Time: "1:23",
 			}
-			t.Validate(c)
-			So(c.Finalize(), ShouldBeNil)
+			tod.Validate(c)
+			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})
 }

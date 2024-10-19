@@ -31,6 +31,9 @@ import (
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -42,105 +45,103 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueues(t *testing.T) {
 	t.Parallel()
 
-	Convey("queues", t, func() {
+	ftt.Run("queues", t, func(t *ftt.Test) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		rt := &roundtripper.JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		c := withCompute(withDispatcher(memory.Use(context.Background()), dsp), ComputeService{Stable: gce})
 		datastore.GetTestable(c).AutoIndex(true)
 		datastore.GetTestable(c).Consistent(true)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("countVMs", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("countVMs", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					err := countVMs(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
+					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					err := countVMs(c, &tasks.CountVMs{})
-					So(err, ShouldErrLike, "ID is required")
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				err := countVMs(c, &tasks.CountVMs{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("createVM", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("createVM", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					err := createVM(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
+					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{})
-					So(err, ShouldErrLike, "is required")
+					assert.Loosely(t, err, should.ErrLike("is required"))
 				})
 
-				Convey("ID", func() {
+				t.Run("ID", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{
 						Config: "config",
 					})
-					So(err, ShouldErrLike, "ID is required")
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
 				})
 
-				Convey("config", func() {
+				t.Run("config", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "config is required")
+					assert.Loosely(t, err, should.ErrLike("config is required"))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("nil", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{
 						Id:     "id",
 						Index:  2,
 						Config: "config",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Index, ShouldEqual, 2)
-					So(v.Config, ShouldEqual, "config")
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, v.Index, should.Equal(2))
+					assert.Loosely(t, v.Config, should.Equal("config"))
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{
 						Id:         "id",
 						Attributes: &config.VM{},
 						Index:      2,
 						Config:     "config",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(v.Index, ShouldEqual, 2)
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, v.Index, should.Equal(2))
 				})
 
-				Convey("non-empty", func() {
+				t.Run("non-empty", func(t *ftt.Test) {
 					c = mathrand.Set(c, rand.New(rand.NewSource(1)))
 					err := createVM(c, &tasks.CreateVM{
 						Id: "id",
@@ -156,12 +157,12 @@ func TestQueues(t *testing.T) {
 						Config:           "config",
 						Prefix:           "prefix",
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(cmp.Diff(v, &model.VM{
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, cmp.Diff(v, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Disk: []*config.Disk{
@@ -178,10 +179,10 @@ func TestQueues(t *testing.T) {
 						Hostname:       "prefix-2-fpll",
 						Index:          2,
 						Prefix:         "prefix",
-					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
+					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), should.BeEmpty)
 				})
 
-				Convey("not updated", func() {
+				t.Run("not updated", func(t *ftt.Test) {
 					datastore.Put(c, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
@@ -197,21 +198,21 @@ func TestQueues(t *testing.T) {
 						Config: "config",
 						Index:  2,
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(cmp.Diff(v, &model.VM{
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, cmp.Diff(v, &model.VM{
 						ID: "id",
 						Attributes: config.VM{
 							Zone: "zone",
 						},
 						Drained: true,
-					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), ShouldBeEmpty)
+					}, cmpopts.IgnoreUnexported(*v), protocmp.Transform()), should.BeEmpty)
 				})
 
-				Convey("sets zone", func() {
+				t.Run("sets zone", func(t *ftt.Test) {
 					err := createVM(c, &tasks.CreateVM{
 						Id: "id",
 						Attributes: &config.VM{
@@ -226,12 +227,12 @@ func TestQueues(t *testing.T) {
 						Config: "config",
 						Index:  2,
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					v := &model.VM{
 						ID: "id",
 					}
-					So(datastore.Get(c, v), ShouldBeNil)
-					So(&v.Attributes, ShouldResembleProto, &config.VM{
+					assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+					assert.Loosely(t, &v.Attributes, should.Resemble(&config.VM{
 						Disk: []*config.Disk{
 							{
 								Type: "zone/type",
@@ -239,24 +240,24 @@ func TestQueues(t *testing.T) {
 						},
 						MachineType: "zone/type",
 						Zone:        "zone",
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("drainVM", func() {
-			Convey("invalid", func() {
-				Convey("config", func() {
+		t.Run("drainVM", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("config", func(t *ftt.Test) {
 					err := drainVM(c, &model.VM{
 						ID: "id",
 					})
-					So(err, ShouldErrLike, "failed to fetch config")
+					assert.Loosely(t, err, should.ErrLike("failed to fetch config"))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("config", func() {
-					Convey("drained", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("config", func(t *ftt.Test) {
+					t.Run("drained", func(t *ftt.Test) {
 						datastore.Put(c, &model.Config{
 							ID: "config",
 							Config: &config.Config{
@@ -268,27 +269,27 @@ func TestQueues(t *testing.T) {
 							Config:  "config",
 							Drained: true,
 						}
-						So(datastore.Put(c, v), ShouldBeNil)
-						So(drainVM(c, v), ShouldBeNil)
-						So(v.Drained, ShouldBeTrue)
-						So(datastore.Get(c, v), ShouldBeNil)
-						So(v.Drained, ShouldBeTrue)
+						assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+						assert.Loosely(t, drainVM(c, v), should.BeNil)
+						assert.Loosely(t, v.Drained, should.BeTrue)
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Drained, should.BeTrue)
 					})
 
-					Convey("deleted", func() {
+					t.Run("deleted", func(t *ftt.Test) {
 						v := &model.VM{
 							ID:     "id",
 							Config: "config",
 						}
-						So(datastore.Put(c, v), ShouldBeNil)
-						So(drainVM(c, v), ShouldBeNil)
-						So(v.Drained, ShouldBeTrue)
-						So(datastore.Get(c, v), ShouldBeNil)
-						So(v.Drained, ShouldBeTrue)
+						assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+						assert.Loosely(t, drainVM(c, v), should.BeNil)
+						assert.Loosely(t, v.Drained, should.BeTrue)
+						assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+						assert.Loosely(t, v.Drained, should.BeTrue)
 					})
 
-					Convey("amount", func() {
-						Convey("unspecified", func() {
+					t.Run("amount", func(t *ftt.Test) {
+						t.Run("unspecified", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 							})
@@ -296,15 +297,15 @@ func TestQueues(t *testing.T) {
 								ID:     "id",
 								Config: "config",
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
-							So(err, ShouldBeNil)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
 						})
 
-						Convey("lesser", func() {
+						t.Run("lesser", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: &config.Config{
@@ -316,14 +317,14 @@ func TestQueues(t *testing.T) {
 								Config: "config",
 								Index:  2,
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
 						})
 
-						Convey("equal", func() {
+						t.Run("equal", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: &config.Config{
@@ -335,14 +336,14 @@ func TestQueues(t *testing.T) {
 								Config: "config",
 								Index:  2,
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
 						})
 
-						Convey("greater", func() {
+						t.Run("greater", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: &config.Config{
@@ -354,16 +355,16 @@ func TestQueues(t *testing.T) {
 								Config: "config",
 								Index:  2,
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeFalse)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeFalse)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeFalse)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeFalse)
 						})
 					})
 
-					Convey("DUTs", func() {
-						Convey("DUT is in config", func() {
+					t.Run("DUTs", func(t *ftt.Test) {
+						t.Run("DUT is in config", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: &config.Config{
@@ -379,14 +380,14 @@ func TestQueues(t *testing.T) {
 								Config: "config",
 								DUT:    "dut1",
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeFalse)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeFalse)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeFalse)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeFalse)
 						})
 
-						Convey("DUT is not in config", func() {
+						t.Run("DUT is not in config", func(t *ftt.Test) {
 							datastore.Put(c, &model.Config{
 								ID: "config",
 								Config: &config.Config{
@@ -402,57 +403,57 @@ func TestQueues(t *testing.T) {
 								Config: "config",
 								DUT:    "dut4",
 							}
-							So(datastore.Put(c, v), ShouldBeNil)
-							So(drainVM(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
-							So(datastore.Get(c, v), ShouldBeNil)
-							So(v.Drained, ShouldBeTrue)
+							assert.Loosely(t, datastore.Put(c, v), should.BeNil)
+							assert.Loosely(t, drainVM(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
+							assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+							assert.Loosely(t, v.Drained, should.BeTrue)
 						})
 					})
 				})
 
-				Convey("deleted", func() {
+				t.Run("deleted", func(t *ftt.Test) {
 					v := &model.VM{
 						ID:     "id",
 						Config: "config",
 					}
-					So(drainVM(c, v), ShouldBeNil)
-					So(v.Drained, ShouldBeTrue)
-					So(datastore.Get(c, v), ShouldEqual, datastore.ErrNoSuchEntity)
+					assert.Loosely(t, drainVM(c, v), should.BeNil)
+					assert.Loosely(t, v.Drained, should.BeTrue)
+					assert.Loosely(t, datastore.Get(c, v), should.Equal(datastore.ErrNoSuchEntity))
 				})
 			})
 		})
 
-		Convey("expandConfig", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("expandConfig", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					err := expandConfig(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					err := expandConfig(c, &tasks.ExpandConfig{})
-					So(err, ShouldErrLike, "ID is required")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("missing", func() {
+				t.Run("missing", func(t *ftt.Test) {
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "failed to fetch config")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("failed to fetch config"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 					cfg := &model.Config{
 						ID: "id",
 					}
-					So(datastore.Get(c, cfg), ShouldEqual, datastore.ErrNoSuchEntity)
+					assert.Loosely(t, datastore.Get(c, cfg), should.Equal(datastore.ErrNoSuchEntity))
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("none", func() {
-					So(datastore.Put(c, &model.Config{
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("none", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Attributes: &config.VM{
@@ -460,21 +461,21 @@ func TestQueues(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 					cfg := &model.Config{
 						ID: "id",
 					}
-					So(datastore.Get(c, cfg), ShouldBeNil)
-					So(cfg.Config.CurrentAmount, ShouldEqual, 0)
+					assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
+					assert.Loosely(t, cfg.Config.CurrentAmount, should.BeZero)
 				})
 
-				Convey("DUTs have priority", func() {
-					So(datastore.Put(c, &model.Config{
+				t.Run("DUTs have priority", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Attributes: &config.VM{
@@ -491,25 +492,25 @@ func TestQueues(t *testing.T) {
 								"dut3": {},
 							},
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 					err := expandConfig(c, &tasks.ExpandConfig{
 						Id: "id",
 					})
-					So(err, ShouldBeNil)
-					So(tqt.GetScheduledTasks(), ShouldHaveLength, 3)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(3))
 					cfg := &model.Config{
 						ID: "id",
 					}
-					So(datastore.Get(c, cfg), ShouldBeNil)
-					So(cfg.Config.Duts, ShouldResembleProto, map[string]*emptypb.Empty{
+					assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
+					assert.Loosely(t, cfg.Config.Duts, should.Resemble(map[string]*emptypb.Empty{
 						"dut1": {},
 						"dut2": {},
 						"dut3": {},
-					})
+					}))
 				})
 
-				Convey("schedule", func() {
-					So(datastore.Put(c, &model.Config{
+				t.Run("schedule", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.Config{
 						ID: "id",
 						Config: &config.Config{
 							Attributes: &config.VM{
@@ -536,47 +537,47 @@ func TestQueues(t *testing.T) {
 							},
 							Prefix: "prefix",
 						},
-					}), ShouldBeNil)
+					}), should.BeNil)
 
-					Convey("default", func() {
+					t.Run("default", func(t *ftt.Test) {
 						now := time.Time{}
-						So(now.Weekday(), ShouldEqual, time.Monday)
+						assert.Loosely(t, now.Weekday(), should.Equal(time.Monday))
 						c, _ = testclock.UseTime(c, now)
 						err := expandConfig(c, &tasks.ExpandConfig{
 							Id: "id",
 						})
-						So(err, ShouldBeNil)
-						So(tqt.GetScheduledTasks(), ShouldHaveLength, 2)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(2))
 						cfg := &model.Config{
 							ID: "id",
 						}
-						So(datastore.Get(c, cfg), ShouldBeNil)
-						So(cfg.Config.CurrentAmount, ShouldEqual, 2)
+						assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
+						assert.Loosely(t, cfg.Config.CurrentAmount, should.Equal(2))
 					})
 
-					Convey("scheduled", func() {
+					t.Run("scheduled", func(t *ftt.Test) {
 						now := time.Time{}.Add(time.Hour)
-						So(now.Weekday(), ShouldEqual, time.Monday)
-						So(now.Hour(), ShouldEqual, 1)
+						assert.Loosely(t, now.Weekday(), should.Equal(time.Monday))
+						assert.Loosely(t, now.Hour(), should.Equal(1))
 						c, _ = testclock.UseTime(c, now)
 						err := expandConfig(c, &tasks.ExpandConfig{
 							Id: "id",
 						})
-						So(err, ShouldBeNil)
-						So(tqt.GetScheduledTasks(), ShouldHaveLength, 5)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, tqt.GetScheduledTasks(), should.HaveLength(5))
 						cfg := &model.Config{
 							ID: "id",
 						}
-						So(datastore.Get(c, cfg), ShouldBeNil)
-						So(cfg.Config.CurrentAmount, ShouldEqual, 5)
+						assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
+						assert.Loosely(t, cfg.Config.CurrentAmount, should.Equal(5))
 					})
 				})
 			})
 		})
 
-		Convey("createTasksPerAmount", func() {
-			Convey("invalid", func() {
-				Convey("config.Duts is not empty", func() {
+		t.Run("createTasksPerAmount", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("config.Duts is not empty", func(t *ftt.Test) {
 					vms := []*model.VM{}
 					m := &model.Config{
 						ID: "id",
@@ -593,14 +594,14 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerAmount(c, vms, m, n)
-					So(err, ShouldErrLike, "config.Duts should be empty")
-					So(t, ShouldBeEmpty)
+					tsks, err := createTasksPerAmount(c, vms, m, n)
+					assert.Loosely(t, err, should.ErrLike("config.Duts should be empty"))
+					assert.Loosely(t, tsks, should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
-				Convey("default", func() {
+			t.Run("valid", func(t *ftt.Test) {
+				t.Run("default", func(t *ftt.Test) {
 					vms := []*model.VM{}
 					m := &model.Config{
 						ID: "id",
@@ -613,12 +614,12 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerAmount(c, vms, m, n)
-					So(err, ShouldBeNil)
-					So(len(t), ShouldEqual, 3)
+					tsks, err := createTasksPerAmount(c, vms, m, n)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(tsks), should.Equal(3))
 				})
 
-				Convey("default - skip existing vms", func() {
+				t.Run("default - skip existing vms", func(t *ftt.Test) {
 					vms := []*model.VM{
 						{
 							ID:     "prefix-1",
@@ -637,12 +638,12 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerAmount(c, vms, m, n)
-					So(err, ShouldBeNil)
-					So(t, ShouldHaveLength, 2)
+					tsks, err := createTasksPerAmount(c, vms, m, n)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tsks, should.HaveLength(2))
 				})
 
-				Convey("default - skip all vms", func() {
+				t.Run("default - skip all vms", func(t *ftt.Test) {
 					vms := []*model.VM{
 						{
 							ID:     "prefix-0",
@@ -671,16 +672,16 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerAmount(c, vms, m, n)
-					So(err, ShouldBeNil)
-					So(t, ShouldHaveLength, 0)
+					tsks, err := createTasksPerAmount(c, vms, m, n)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tsks, should.HaveLength(0))
 				})
 			})
 		})
 
-		Convey("createTasksPerDUT", func() {
-			Convey("invalid", func() {
-				Convey("config.Duts is nil", func() {
+		t.Run("createTasksPerDUT", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("config.Duts is nil", func(t *ftt.Test) {
 					vms := []*model.VM{}
 					m := &model.Config{
 						ID: "id",
@@ -692,11 +693,11 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerDUT(c, vms, m, n)
-					So(err, ShouldErrLike, "config.DUTs cannot be empty")
-					So(t, ShouldBeEmpty)
+					tsks, err := createTasksPerDUT(c, vms, m, n)
+					assert.Loosely(t, err, should.ErrLike("config.DUTs cannot be empty"))
+					assert.Loosely(t, tsks, should.BeEmpty)
 				})
-				Convey("config.Duts is empty", func() {
+				t.Run("config.Duts is empty", func(t *ftt.Test) {
 					vms := []*model.VM{}
 					m := &model.Config{
 						ID: "id",
@@ -709,15 +710,15 @@ func TestQueues(t *testing.T) {
 						},
 					}
 					n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-					t, err := createTasksPerDUT(c, vms, m, n)
-					So(err, ShouldErrLike, "config.DUTs cannot be empty")
-					So(t, ShouldBeEmpty)
+					tsks, err := createTasksPerDUT(c, vms, m, n)
+					assert.Loosely(t, err, should.ErrLike("config.DUTs cannot be empty"))
+					assert.Loosely(t, tsks, should.BeEmpty)
 				})
 			})
 		})
 
-		Convey("valid", func() {
-			Convey("default", func() {
+		t.Run("valid", func(t *ftt.Test) {
+			t.Run("default", func(t *ftt.Test) {
 				vms := []*model.VM{}
 				m := &model.Config{
 					ID: "id",
@@ -734,12 +735,12 @@ func TestQueues(t *testing.T) {
 					},
 				}
 				n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-				t, err := createTasksPerDUT(c, vms, m, n)
-				So(err, ShouldBeNil)
-				So(len(t), ShouldEqual, 3)
+				tsks, err := createTasksPerDUT(c, vms, m, n)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(tsks), should.Equal(3))
 			})
 
-			Convey("dispatched task contain DUT info", func() {
+			t.Run("dispatched task contain DUT info", func(t *ftt.Test) {
 				vms := []*model.VM{}
 				m := &model.Config{
 					ID: "id",
@@ -754,37 +755,37 @@ func TestQueues(t *testing.T) {
 					},
 				}
 				n := &timestamppb.Timestamp{Seconds: time.Now().Unix()}
-				t, err := createTasksPerDUT(c, vms, m, n)
-				So(err, ShouldBeNil)
-				vm := t[0].Payload.(*tasks.CreateVM)
-				So(vm.DUT, ShouldEqual, "dut1")
+				tsks, err := createTasksPerDUT(c, vms, m, n)
+				assert.Loosely(t, err, should.BeNil)
+				vm := tsks[0].Payload.(*tasks.CreateVM)
+				assert.Loosely(t, vm.DUT, should.Equal("dut1"))
 			})
 		})
 
-		Convey("reportQuota", func() {
-			Convey("invalid", func() {
-				Convey("nil", func() {
+		t.Run("reportQuota", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
 					err := reportQuota(c, nil)
-					So(err, ShouldErrLike, "unexpected payload")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("unexpected payload"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("empty", func() {
+				t.Run("empty", func(t *ftt.Test) {
 					err := reportQuota(c, &tasks.ReportQuota{})
-					So(err, ShouldErrLike, "ID is required")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("ID is required"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 
-				Convey("missing", func() {
+				t.Run("missing", func(t *ftt.Test) {
 					err := reportQuota(c, &tasks.ReportQuota{
 						Id: "id",
 					})
-					So(err, ShouldErrLike, "failed to fetch project")
-					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+					assert.Loosely(t, err, should.ErrLike("failed to fetch project"))
+					assert.Loosely(t, tqt.GetScheduledTasks(), should.BeEmpty)
 				})
 			})
 
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				rt.Handler = func(req any) (int, any) {
 					return http.StatusOK, &compute.RegionList{
 						Items: []*compute.Region{
@@ -820,11 +821,11 @@ func TestQueues(t *testing.T) {
 				err := reportQuota(c, &tasks.ReportQuota{
 					Id: "id",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey("abbreviate", func() {
+		t.Run("abbreviate", func(t *ftt.Test) {
 			cases := []struct {
 				input string
 				limit int
@@ -857,8 +858,8 @@ func TestQueues(t *testing.T) {
 				},
 			}
 			for _, c := range cases {
-				Convey(c.input, func() {
-					So(abbreviate(c.input, c.limit), ShouldEqual, c.want)
+				t.Run(c.input, func(t *ftt.Test) {
+					assert.Loosely(t, abbreviate(c.input, c.limit), should.Equal(c.want))
 				})
 			}
 		})
