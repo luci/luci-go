@@ -16,45 +16,28 @@ package lucictx
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"sync"
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/signals"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // shouldWaitForNotDone tests if the context's .Done() channel is still blocked.
-func shouldWaitForNotDone(actual any, expected ...any) string {
-	if len(expected) > 0 {
-		return fmt.Sprintf("shouldWaitForNotDone requires 0 values, got %d", len(expected))
-	}
-
-	if actual == nil {
-		return ShouldNotBeNil(actual)
-	}
-
-	ctx, ok := actual.(context.Context)
-	if !ok {
-		return ShouldHaveSameTypeAs(actual, context.Context(nil))
-	}
-
-	if ctx == nil {
-		return ShouldNotBeNil(actual)
-	}
-
+func shouldWaitForNotDone(ctx context.Context, t testing.TB) {
+	t.Helper()
 	select {
 	case <-ctx.Done():
-		return "Expected context NOT to be Done(), but it was."
+		t.Fatal("Expected context NOT to be Done(), but it was.")
+
 	case <-time.After(100 * time.Millisecond):
-		return ""
 	}
 }
 
@@ -78,10 +61,10 @@ func mockGenerateInterrupt() {
 	}
 }
 
-func assertEmptySignals() {
+func clearSignalSet() {
 	mockSigMu.Lock()
 	defer mockSigMu.Unlock()
-	So(mockSigSet, ShouldBeEmpty)
+	mockSigSet = make(map[chan<- os.Signal]struct{})
 }
 
 func init() {
@@ -115,38 +98,38 @@ func TestDeadline(t *testing.T) {
 	// not Parallel because this uses the global mock signalNotify.
 	// t.Parallel()
 
-	Convey(`TrackSoftDeadline`, t, func() {
+	ftt.Run(`TrackSoftDeadline`, t, func(t *ftt.Test) {
 		t0 := testclock.TestTimeUTC
 		ctx, tc := testclock.UseTime(context.Background(), t0)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		defer assertEmptySignals()
+		defer clearSignalSet()
 
 		// we explicitly remove the section to make these tests work correctly when
 		// run in a context using LUCI_CONTEXT.
 		ctx = Set(ctx, "deadline", nil)
 
-		Convey(`Empty context`, func() {
+		t.Run(`Empty context`, func(t *ftt.Test) {
 			ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
-			So(ok, ShouldBeFalse)
-			So(deadline.IsZero(), ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, deadline.IsZero(), should.BeTrue)
 
 			// however, Interrupt/SIGTERM handler is still installed
 			mockGenerateInterrupt()
 
 			// soft deadline will happen, but context.Done won't.
-			So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
-			So(ac, shouldWaitForNotDone)
+			assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(InterruptEvent))
+			shouldWaitForNotDone(ac, t)
 
 			// Advance the clock by 25s, and presto
 			tc.Add(25 * time.Second)
 			<-ac.Done()
 		})
 
-		Convey(`deadline context`, func() {
+		t.Run(`deadline context`, func(t *ftt.Test) {
 			ctx, cancel := clock.WithDeadline(ctx, t0.Add(100*time.Second))
 			defer cancel()
 
@@ -154,25 +137,25 @@ func TestDeadline(t *testing.T) {
 			defer shutdown()
 
 			hardDeadline, ok := ac.Deadline()
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			// hard deadline is still 95s because we the presumed grace period for the
 			// context was 30s, but we reserved 5s for cleanup. Thus, this should end
 			// 5s before the overall deadline,
-			So(hardDeadline, ShouldEqual, t0.Add(95*time.Second))
+			assert.Loosely(t, hardDeadline, should.Match(t0.Add(95*time.Second)))
 			got := GetDeadline(ac)
 
 			expect := &Deadline{GracePeriod: 25}
 			// SoftDeadline is always GracePeriod earlier than the hard (context)
 			// deadline.
 			expect.SetSoftDeadline(t0.Add(70 * time.Second))
-			So(got, ShouldResembleProto, expect)
+			assert.Loosely(t, got, should.Resemble(expect))
 			shutdown()
 			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(25 * time.Second)
 			<-ac.Done()
 		})
 
-		Convey(`deadline context reserve`, func() {
+		t.Run(`deadline context reserve`, func(t *ftt.Test) {
 			ctx, cancel := clock.WithDeadline(ctx, t0.Add(95*time.Second))
 			defer cancel()
 
@@ -180,23 +163,23 @@ func TestDeadline(t *testing.T) {
 			defer shutdown()
 
 			deadline, ok := ac.Deadline()
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			// hard deadline is 95s because we reserved 5s.
-			So(deadline, ShouldEqual, t0.Add(95*time.Second))
+			assert.Loosely(t, deadline, should.Match(t0.Add(95*time.Second)))
 			got := GetDeadline(ac)
 
 			expect := &Deadline{GracePeriod: 30}
 			// SoftDeadline is always GracePeriod earlier than the hard (context)
 			// deadline.
 			expect.SetSoftDeadline(t0.Add(65 * time.Second))
-			So(got, ShouldResembleProto, expect)
+			assert.Loosely(t, got, should.Resemble(expect))
 			shutdown()
 			<-SoftDeadlineDone(ac) // force monitor to make timer before we increment the clock
 			tc.Add(30 * time.Second)
 			<-ac.Done()
 		})
 
-		Convey(`Deadline in LUCI_CONTEXT`, func() {
+		t.Run(`Deadline in LUCI_CONTEXT`, func(t *ftt.Test) {
 			externalSoftDeadline := t0.Add(100 * time.Second)
 
 			// Note, LUCI_CONTEXT asserts that non-zero SoftDeadlines must be enforced
@@ -216,54 +199,54 @@ func TestDeadline(t *testing.T) {
 
 			ctx := SetDeadline(ctx, dl)
 
-			Convey(`no deadline in context`, func() {
+			t.Run(`no deadline in context`, func(t *ftt.Test) {
 				ac, shutdown := TrackSoftDeadline(ctx, 5*time.Second)
 				defer shutdown()
 
 				softDeadline := GetDeadline(ac).SoftDeadlineTime()
-				So(softDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline)
+				assert.Loosely(t, softDeadline, should.HappenWithin(time.Millisecond, externalSoftDeadline))
 
 				hardDeadline, ok := ac.Deadline()
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, ok, should.BeTrue)
 				// hard deadline is soft deadline + adjusted grace period.
 				// Cleanup reservation of 5s means that the adjusted grace period is
 				// 35s.
-				So(hardDeadline, ShouldHappenWithin, time.Millisecond, externalSoftDeadline.Add(35*time.Second))
+				assert.Loosely(t, hardDeadline, should.HappenWithin(time.Millisecond, externalSoftDeadline.Add(35*time.Second)))
 
-				Convey(`natural expiration`, func() {
+				t.Run(`natural expiration`, func(t *ftt.Test) {
 					tc.Add(100 * time.Second)
-					So(<-SoftDeadlineDone(ac), ShouldEqual, TimeoutEvent)
-					So(ac, shouldWaitForNotDone)
+					assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(TimeoutEvent))
+					shouldWaitForNotDone(ac, t)
 
 					tc.Add(35 * time.Second)
 					<-ac.Done()
 
 					// We should have ended right around the deadline; there's some slop
 					// in the clock package though, and this doesn't seem to be zero.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, hardDeadline)
+					assert.Loosely(t, tc.Now(), should.HappenWithin(time.Millisecond, hardDeadline))
 				})
 
-				Convey(`signal`, func() {
+				t.Run(`signal`, func(t *ftt.Test) {
 					mockGenerateInterrupt()
-					So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
+					assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(InterruptEvent))
 
-					So(ac, shouldWaitForNotDone)
+					shouldWaitForNotDone(ac, t)
 
 					tc.Add(35 * time.Second)
 					<-ac.Done()
 
 					// should still have 65s before the soft deadline
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, softDeadline.Add(-65*time.Second))
+					assert.Loosely(t, tc.Now(), should.HappenWithin(time.Millisecond, softDeadline.Add(-65*time.Second)))
 				})
 
-				Convey(`cancel context`, func() {
+				t.Run(`cancel context`, func(t *ftt.Test) {
 					cancel()
-					So(<-SoftDeadlineDone(ac), ShouldEqual, ClosureEvent)
+					assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(ClosureEvent))
 					<-ac.Done()
 				})
 			})
 
-			Convey(`earlier deadline in context`, func() {
+			t.Run(`earlier deadline in context`, func(t *ftt.Test) {
 				ctx, cancel := clock.WithDeadline(ctx, externalSoftDeadline.Add(-50*time.Second))
 				defer cancel()
 
@@ -271,33 +254,33 @@ func TestDeadline(t *testing.T) {
 				defer shutdown()
 
 				hardDeadline, ok := ac.Deadline()
-				So(ok, ShouldBeTrue)
-				So(hardDeadline, ShouldEqual, externalSoftDeadline.Add(-55*time.Second))
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, hardDeadline, should.Match(externalSoftDeadline.Add(-55*time.Second)))
 
-				Convey(`natural expiration`, func() {
+				t.Run(`natural expiration`, func(t *ftt.Test) {
 					tc.Add(10 * time.Second)
-					So(<-SoftDeadlineDone(ac), ShouldEqual, TimeoutEvent)
-					So(ac, shouldWaitForNotDone)
+					assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(TimeoutEvent))
+					shouldWaitForNotDone(ac, t)
 
 					tc.Add(35 * time.Second)
 					<-ac.Done()
 
 					// We should have ended right around the deadline; there's some slop
 					// in the clock package though, and this doesn't seem to be zero.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, hardDeadline)
+					assert.Loosely(t, tc.Now(), should.HappenWithin(time.Millisecond, hardDeadline))
 				})
 
-				Convey(`signal`, func() {
+				t.Run(`signal`, func(t *ftt.Test) {
 					mockGenerateInterrupt()
-					So(<-SoftDeadlineDone(ac), ShouldEqual, InterruptEvent)
+					assert.Loosely(t, <-SoftDeadlineDone(ac), should.Equal(InterruptEvent))
 
-					So(ac, shouldWaitForNotDone)
+					shouldWaitForNotDone(ac, t)
 
 					tc.Add(35 * time.Second)
 					<-ac.Done()
 
 					// Should have about 10s of time left before the deadline.
-					So(tc.Now(), ShouldHappenWithin, time.Millisecond, hardDeadline.Add(-10*time.Second))
+					assert.Loosely(t, tc.Now(), should.HappenWithin(time.Millisecond, hardDeadline.Add(-10*time.Second)))
 				})
 			})
 
