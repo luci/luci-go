@@ -21,124 +21,125 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/luci_notify/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
-	Convey("Validate", t, func() {
-		Convey("valid", func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			err := Validate(NewAlertBuilder().Build())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("Bug", func() {
-			Convey("must not be negative", func() {
+		t.Run("Bug", func(t *ftt.Test) {
+			t.Run("must not be negative", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithBug(-1).Build())
-				So(err, ShouldErrLike, "bug: must be zero or positive")
+				assert.Loosely(t, err, should.ErrLike("bug: must be zero or positive"))
 			})
-			Convey("zero is valid", func() {
+			t.Run("zero is valid", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithBug(0).Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey("GerritCL", func() {
-			Convey("must not be negative", func() {
+		t.Run("GerritCL", func(t *ftt.Test) {
+			t.Run("must not be negative", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithGerritCL(-1).Build())
-				So(err, ShouldErrLike, "gerrit_cl: must be zero or positive")
+				assert.Loosely(t, err, should.ErrLike("gerrit_cl: must be zero or positive"))
 			})
-			Convey("zero is valid", func() {
+			t.Run("zero is valid", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithGerritCL(0).Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey("SilenceUntil", func() {
-			Convey("must not be negative", func() {
+		t.Run("SilenceUntil", func(t *ftt.Test) {
+			t.Run("must not be negative", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithSilenceUntil(-1).Build())
-				So(err, ShouldErrLike, "silence_until: must be zero or positive")
+				assert.Loosely(t, err, should.ErrLike("silence_until: must be zero or positive"))
 			})
-			Convey("zero is valid", func() {
+			t.Run("zero is valid", func(t *ftt.Test) {
 				err := Validate(NewAlertBuilder().WithSilenceUntil(0).Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 }
 
 func TestStatusTable(t *testing.T) {
-	Convey("Put", t, func() {
+	ftt.Run("Put", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		alert := NewAlertBuilder().WithBug(10).WithGerritCL(15).Build()
 
 		m, err := Put(alert)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 		alert.ModifyTime = ts.UTC()
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fetched, err := ReadBatch(span.Single(ctx), []string{alert.AlertKey})
-		So(err, ShouldBeNil)
-		So(fetched, ShouldEqual, []*Alert{alert})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fetched, should.Resemble([]*Alert{alert}))
 	})
-	Convey("Put deletes when all info is zero", t, func() {
+	ftt.Run("Put deletes when all info is zero", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		alert := NewAlertBuilder().CreateInDB(ctx)
+		alert := NewAlertBuilder().CreateInDB(ctx, t)
 
 		m, err := Put(alert)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 		alert.ModifyTime = ts.UTC()
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		// When we read a non-existent entry, a fake entry will be returned, so the only
 		// way to tell it was actually deleted is a zero timestamp.
 		fetched, err := ReadBatch(span.Single(ctx), []string{alert.AlertKey})
-		So(err, ShouldBeNil)
-		So(len(fetched), ShouldEqual, 1)
-		So(fetched[0].ModifyTime, ShouldEqual, time.Time{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(fetched), should.Equal(1))
+		assert.Loosely(t, fetched[0].ModifyTime, should.Match(time.Time{}))
 	})
 
-	Convey("ReadBatch", t, func() {
-		Convey("Single", func() {
+	ftt.Run("ReadBatch", t, func(t *ftt.Test) {
+		t.Run("Single", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
-			alert := NewAlertBuilder().CreateInDB(ctx)
+			alert := NewAlertBuilder().CreateInDB(ctx, t)
 
 			fetched, err := ReadBatch(span.Single(ctx), []string{alert.AlertKey})
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldEqual, []*Alert{alert})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Resemble([]*Alert{alert}))
 		})
 
-		Convey("NotPresent returns empty fields", func() {
+		t.Run("NotPresent returns empty fields", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
-			_ = NewAlertBuilder().CreateInDB(ctx)
+			_ = NewAlertBuilder().CreateInDB(ctx, t)
 
 			fetched, err := ReadBatch(span.Single(ctx), []string{"not-present"})
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldEqual, []*Alert{{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Resemble([]*Alert{{
 				AlertKey:     "not-present",
 				Bug:          0,
 				GerritCL:     0,
 				SilenceUntil: 0,
 				ModifyTime:   time.Time{},
-			}})
+			}}))
 		})
-		Convey("Multiple returned in order", func() {
+		t.Run("Multiple returned in order", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
-			alert1 := NewAlertBuilder().WithAlertKey("alert1").WithBug(1).CreateInDB(ctx)
-			alert2 := NewAlertBuilder().WithAlertKey("alert2").WithBug(2).CreateInDB(ctx)
+			alert1 := NewAlertBuilder().WithAlertKey("alert1").WithBug(1).CreateInDB(ctx, t)
+			alert2 := NewAlertBuilder().WithAlertKey("alert2").WithBug(2).CreateInDB(ctx, t)
 
 			forwards, err := ReadBatch(span.Single(ctx), []string{"alert1", "alert2"})
 			backwards, err2 := ReadBatch(span.Single(ctx), []string{"alert2", "alert1"})
 
-			So(err, ShouldBeNil)
-			So(err2, ShouldBeNil)
-			So(forwards, ShouldEqual, []*Alert{alert1, alert2})
-			So(backwards, ShouldEqual, []*Alert{alert2, alert1})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, err2, should.BeNil)
+			assert.Loosely(t, forwards, should.Resemble([]*Alert{alert1, alert2}))
+			assert.Loosely(t, backwards, should.Resemble([]*Alert{alert2, alert1}))
 		})
 	})
 }
@@ -187,7 +188,8 @@ func (b *AlertBuilder) Build() *Alert {
 	return &s
 }
 
-func (b *AlertBuilder) CreateInDB(ctx context.Context) *Alert {
+func (b *AlertBuilder) CreateInDB(ctx context.Context, t testing.TB) *Alert {
+	t.Helper()
 	s := b.Build()
 	row := map[string]any{
 		"AlertKey":     s.AlertKey,
@@ -198,7 +200,7 @@ func (b *AlertBuilder) CreateInDB(ctx context.Context) *Alert {
 	}
 	m := spanner.InsertOrUpdateMap("Alerts", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	if s.ModifyTime == spanner.CommitTimestamp {
 		s.ModifyTime = ts.UTC()
 	}

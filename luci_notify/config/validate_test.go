@@ -19,33 +19,32 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test Environment for validateProjectConfig`, t, func() {
+	ftt.Run(`Test Environment for validateProjectConfig`, t, func(t *ftt.Test) {
 		testValidation := func(env, config, expectFormat string, expectArgs ...any) {
-			Convey(env, func() {
+			t.Run(env, func(t *ftt.Test) {
 				cfg, err := testutil.ParseProjectConfig(config)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx := &validation.Context{Context: context.Background()}
 				validateProjectConfig(ctx, cfg)
 				err = ctx.Finalize()
 				if expectFormat == "" {
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					return
 				}
 				expect := fmt.Sprintf(expectFormat, expectArgs...)
-				So(err, assertions.ShouldErrLike, expect)
+				assert.Loosely(t, err, should.ErrLike(expect))
 			})
 		}
 		testValidation(`empty`, ``, "")
@@ -267,40 +266,40 @@ func TestValidation(t *testing.T) {
 			"", "")
 	})
 
-	Convey(`Test Environment for validateSettings`, t, func() {
+	ftt.Run(`Test Environment for validateSettings`, t, func(t *ftt.Test) {
 		testValidation := func(env, config, expectFormat string, expectArgs ...any) {
-			Convey(env, func() {
+			t.Run(env, func(t *ftt.Test) {
 				cfg, err := testutil.ParseSettings(config)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx := &validation.Context{Context: context.Background()}
 				ctx.SetFile("settings.cfg")
 				validateSettings(ctx, cfg)
 				err = ctx.Finalize()
 				if expectFormat == "" {
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					return
 				}
 				expect := fmt.Sprintf(expectFormat, expectArgs...)
-				So(err, assertions.ShouldErrLike, expect)
+				assert.Loosely(t, err, should.ErrLike(expect))
 			})
 		}
 		testValidation(`bad hostname`, `luci_tree_status_host: "9mNRn29%^^%#"`, invalidFieldError, "luci_tree_status_host")
 		testValidation(`good`, `luci_tree_status_host: "luci-tree-status.example.com"`, "")
 	})
 
-	Convey("email template filename validation", t, func() {
+	ftt.Run("email template filename validation", t, func(t *ftt.Test) {
 		c := common.SetAppIDForTest(context.Background(), "luci-notify")
 		ctx := &validation.Context{Context: c}
 		validFileContent := []byte("a\n\nb")
 
-		Convey("valid", func() {
+		t.Run("valid", func(t *ftt.Test) {
 			validateEmailTemplateFile(ctx, "projects/x", "luci-notify/email-templates/a.template", validFileContent)
-			So(ctx.Finalize(), ShouldBeNil)
+			assert.Loosely(t, ctx.Finalize(), should.BeNil)
 		})
 
-		Convey("invalid char", func() {
+		t.Run("invalid char", func(t *ftt.Test) {
 			validateEmailTemplateFile(ctx, "projects/x", "luci-notify/email-templates/A.template", validFileContent)
-			So(ctx.Finalize(), ShouldErrLike, "does not match")
+			assert.Loosely(t, ctx.Finalize(), should.ErrLike("does not match"))
 		})
 	})
 }

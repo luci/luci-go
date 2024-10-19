@@ -28,6 +28,10 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
@@ -35,14 +39,12 @@ import (
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNotify(t *testing.T) {
 	t.Parallel()
 
-	Convey("ShouldNotify", t, func() {
+	ftt.Run("ShouldNotify", t, func(t *ftt.Test) {
 		n := &notifypb.Notification{}
 		n.OnOccurrence = []buildbucketpb.Status{}
 		n.OnNewStatus = []buildbucketpb.Status{}
@@ -64,134 +66,135 @@ func TestNotify(t *testing.T) {
 			return should
 		}
 
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, success)
 
-			So(s(unspecified, successfulBuild), ShouldBeTrue)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(success, successfulBuild), ShouldBeTrue)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeTrue)
 		})
 
-		Convey("Failure", func() {
+		t.Run("Failure", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, failure)
 
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeTrue)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(success, successfulBuild), ShouldBeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
 		})
 
-		Convey("InfraFailure", func() {
+		t.Run("InfraFailure", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, infraFailure)
 
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(s(success, successfulBuild), ShouldBeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
 		})
 
-		Convey("Failure and InfraFailure", func() {
+		t.Run("Failure and InfraFailure", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, failure, infraFailure)
 
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeTrue)
-			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(s(success, successfulBuild), ShouldBeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
 		})
 
-		Convey("New Failure", func() {
+		t.Run("New Failure", func(t *ftt.Test) {
 			n.OnNewStatus = append(n.OnNewStatus, failure)
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, successfulBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeFalse)
-			So(s(infraFailure, successfulBuild), ShouldBeFalse)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("New InfraFailure", func() {
+		t.Run("New InfraFailure", func(t *ftt.Test) {
 			n.OnNewStatus = append(n.OnNewStatus, infraFailure)
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeFalse)
-			So(s(success, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, successfulBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeTrue)
-			So(s(infraFailure, successfulBuild), ShouldBeFalse)
-			So(s(infraFailure, failedBuild), ShouldBeFalse)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("New Failure and new InfraFailure", func() {
+		t.Run("New Failure and new InfraFailure", func(t *ftt.Test) {
 			n.OnNewStatus = append(n.OnNewStatus, failure, infraFailure)
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, successfulBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeTrue)
-			So(s(infraFailure, successfulBuild), ShouldBeFalse)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("InfraFailure and new Failure and new Success", func() {
+		t.Run("InfraFailure and new Failure and new Success", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, infraFailure)
 			n.OnNewStatus = append(n.OnNewStatus, failure, success)
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, successfulBuild), ShouldBeTrue)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeTrue)
-			So(s(infraFailure, successfulBuild), ShouldBeTrue)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeTrue)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeTrue)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeTrue)
 		})
 
-		Convey("Failure with step regex", func() {
+		t.Run("Failure with step regex", func(t *ftt.Test) {
 			n.OnOccurrence = append(n.OnOccurrence, failure)
 			n.FailedStepRegexp = "yes"
 			n.FailedStepRegexpExclude = "no"
 
-			shouldHaveStep := func(oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build, stepName string) {
-				should, steps := ShouldNotify(context.Background(), n, oldStatus, newBuild)
+			shouldHaveStep := func(t testing.TB, oldStatus buildbucketpb.Status, newBuild *buildbucketpb.Build, stepName string) {
+				t.Helper()
+				matched, steps := ShouldNotify(context.Background(), n, oldStatus, newBuild)
 
-				So(should, ShouldBeTrue)
-				So(steps, ShouldHaveLength, 1)
-				So(steps[0].Name, ShouldEqual, stepName)
+				assert.Loosely(t, matched, should.BeTrue, truth.LineContext())
+				assert.Loosely(t, steps, should.HaveLength(1), truth.LineContext())
+				assert.Loosely(t, steps[0].Name, should.Equal(stepName), truth.LineContext())
 			}
 
-			So(s(success, failedBuild), ShouldBeFalse)
-			shouldHaveStep(success, &buildbucketpb.Build{
+			assert.Loosely(t, s(success, failedBuild), should.BeFalse)
+			shouldHaveStep(t, success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -200,7 +203,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 			}, "yes")
-			So(s(success, &buildbucketpb.Build{
+			assert.Loosely(t, s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -208,9 +211,9 @@ func TestNotify(t *testing.T) {
 						Status: success,
 					},
 				},
-			}), ShouldBeFalse)
+			}), should.BeFalse)
 
-			So(s(success, &buildbucketpb.Build{
+			assert.Loosely(t, s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -218,8 +221,8 @@ func TestNotify(t *testing.T) {
 						Status: failure,
 					},
 				},
-			}), ShouldBeFalse)
-			So(s(success, &buildbucketpb.Build{
+			}), should.BeFalse)
+			assert.Loosely(t, s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -231,8 +234,8 @@ func TestNotify(t *testing.T) {
 						Status: failure,
 					},
 				},
-			}), ShouldBeFalse)
-			shouldHaveStep(success, &buildbucketpb.Build{
+			}), should.BeFalse)
+			shouldHaveStep(t, success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -245,7 +248,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 			}, "yes")
-			So(s(success, &buildbucketpb.Build{
+			assert.Loosely(t, s(success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -253,8 +256,8 @@ func TestNotify(t *testing.T) {
 						Status: failure,
 					},
 				},
-			}), ShouldBeFalse)
-			shouldHaveStep(success, &buildbucketpb.Build{
+			}), should.BeFalse)
+			shouldHaveStep(t, success, &buildbucketpb.Build{
 				Status: failure,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -269,76 +272,76 @@ func TestNotify(t *testing.T) {
 			}, "yes")
 		})
 
-		Convey("OnSuccess deprecated", func() {
+		t.Run("OnSuccess deprecated", func(t *ftt.Test) {
 			n.OnSuccess = true
 
-			So(s(success, successfulBuild), ShouldBeTrue)
-			So(s(success, failedBuild), ShouldBeFalse)
-			So(s(success, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, successfulBuild), ShouldBeTrue)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeFalse)
-			So(s(infraFailure, successfulBuild), ShouldBeTrue)
-			So(s(infraFailure, failedBuild), ShouldBeFalse)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeTrue)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(success, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("OnFailure deprecated", func() {
+		t.Run("OnFailure deprecated", func(t *ftt.Test) {
 			n.OnFailure = true
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, successfulBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeTrue)
-			So(s(failure, infraFailedBuild), ShouldBeFalse)
-			So(s(infraFailure, successfulBuild), ShouldBeFalse)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeTrue)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("OnChange deprecated", func() {
+		t.Run("OnChange deprecated", func(t *ftt.Test) {
 			n.OnChange = true
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeTrue)
-			So(s(failure, successfulBuild), ShouldBeTrue)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeTrue)
-			So(s(infraFailure, successfulBuild), ShouldBeTrue)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeFalse)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 
-		Convey("OnNewFailure deprecated", func() {
+		t.Run("OnNewFailure deprecated", func(t *ftt.Test) {
 			n.OnNewFailure = true
 
-			So(s(success, successfulBuild), ShouldBeFalse)
-			So(s(success, failedBuild), ShouldBeTrue)
-			So(s(success, infraFailedBuild), ShouldBeFalse)
-			So(s(failure, successfulBuild), ShouldBeFalse)
-			So(s(failure, failedBuild), ShouldBeFalse)
-			So(s(failure, infraFailedBuild), ShouldBeFalse)
-			So(s(infraFailure, successfulBuild), ShouldBeFalse)
-			So(s(infraFailure, failedBuild), ShouldBeTrue)
-			So(s(infraFailure, infraFailedBuild), ShouldBeFalse)
-			So(s(unspecified, successfulBuild), ShouldBeFalse)
-			So(s(unspecified, failedBuild), ShouldBeTrue)
-			So(s(unspecified, infraFailedBuild), ShouldBeFalse)
+			assert.Loosely(t, s(success, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(success, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(success, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, failedBuild), should.BeFalse)
+			assert.Loosely(t, s(failure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(infraFailure, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(infraFailure, infraFailedBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, successfulBuild), should.BeFalse)
+			assert.Loosely(t, s(unspecified, failedBuild), should.BeTrue)
+			assert.Loosely(t, s(unspecified, infraFailedBuild), should.BeFalse)
 		})
 	})
 
-	Convey("Notify", t, func() {
+	ftt.Run("Notify", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify")
 		c = caching.WithEmptyProcessCache(c)
@@ -380,10 +383,10 @@ func TestNotify(t *testing.T) {
 				BodyHTMLTemplate:    "Body {{ stepNames .MatchingFailedSteps }}",
 			},
 		}
-		So(datastore.Put(c, project, templates), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, project, templates), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		Convey("createEmailTasks", func() {
+		t.Run("createEmailTasks", func(t *ftt.Test) {
 			emailNotify := []EmailNotify{
 				{
 					Email: "jane@example.com",
@@ -411,31 +414,31 @@ func TestNotify(t *testing.T) {
 				Build:               &build.Build,
 				OldStatus:           buildbucketpb.Status_SUCCESS,
 			})
-			So(err, ShouldBeNil)
-			So(tasks, ShouldHaveLength, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks, should.HaveLength(4))
 
-			t := tasks["54-default-jane@example.com"]
-			So(t.Recipients, ShouldResemble, []string{"jane@example.com"})
-			So(t.Subject, ShouldEqual, "Build 54 completed")
-			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
+			task := tasks["54-default-jane@example.com"]
+			assert.Loosely(t, task.Recipients, should.Resemble([]string{"jane@example.com"}))
+			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
+			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
-			t = tasks["54-default-john@example.com"]
-			So(t.Recipients, ShouldResemble, []string{"john@example.com"})
-			So(t.Subject, ShouldEqual, "Build 54 completed")
-			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS")
+			task = tasks["54-default-john@example.com"]
+			assert.Loosely(t, task.Recipients, should.Resemble([]string{"john@example.com"}))
+			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed"))
+			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS"))
 
-			t = tasks["54-non-default-don@example.com"]
-			So(t.Recipients, ShouldResemble, []string{"don@example.com"})
-			So(t.Subject, ShouldEqual, "Build 54 completed from non-default template")
-			So(decompress(t.BodyGzip), ShouldEqual, "Build 54 completed with status SUCCESS from non-default template")
+			task = tasks["54-non-default-don@example.com"]
+			assert.Loosely(t, task.Recipients, should.Resemble([]string{"don@example.com"}))
+			assert.Loosely(t, task.Subject, should.Equal("Build 54 completed from non-default template"))
+			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Build 54 completed with status SUCCESS from non-default template"))
 
-			t = tasks["54-with-steps-juan@example.com"]
-			So(t.Recipients, ShouldResemble, []string{"juan@example.com"})
-			So(t.Subject, ShouldEqual, `Subject "step name"`)
-			So(decompress(t.BodyGzip), ShouldEqual, "Body &#34;step name&#34;")
+			task = tasks["54-with-steps-juan@example.com"]
+			assert.Loosely(t, task.Recipients, should.Resemble([]string{"juan@example.com"}))
+			assert.Loosely(t, task.Subject, should.Equal(`Subject "step name"`))
+			assert.Loosely(t, decompress(t, task.BodyGzip), should.Equal("Body &#34;step name&#34;"))
 		})
 
-		Convey("createEmailTasks with dup notifies", func() {
+		t.Run("createEmailTasks with dup notifies", func(t *ftt.Test) {
 			emailNotify := []EmailNotify{
 				{
 					Email: "jane@example.com",
@@ -449,14 +452,14 @@ func TestNotify(t *testing.T) {
 				Build:               &build.Build,
 				OldStatus:           buildbucketpb.Status_SUCCESS,
 			})
-			So(err, ShouldBeNil)
-			So(tasks, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks, should.HaveLength(1))
 		})
 	})
 }
 
 func TestComputeRecipients(t *testing.T) {
-	Convey("ComputeRecipients", t, func() {
+	ftt.Run("ComputeRecipients", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = common.SetAppIDForTest(c, "luci-notify")
 		c = caching.WithEmptyProcessCache(c)
@@ -491,7 +494,7 @@ func TestComputeRecipients(t *testing.T) {
 			}
 		}
 
-		Convey("ComputeRecipients fetches all sheriffs", func() {
+		t.Run("ComputeRecipients fetches all sheriffs", func(t *ftt.Test) {
 			n := []ToNotify{
 				{
 					Notification: &notifypb.Notification{
@@ -518,7 +521,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			So(emails, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -543,10 +546,10 @@ func TestComputeRecipients(t *testing.T) {
 					Email:    "sheriff6@google.com",
 					Template: "sheriff_ios_template",
 				},
-			})
+			}))
 		})
 
-		Convey("ComputeRecipients drops missing", func() {
+		t.Run("ComputeRecipients drops missing", func(t *ftt.Test) {
 			n := []ToNotify{
 				{
 					Notification: &notifypb.Notification{
@@ -573,7 +576,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			So(emails, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -590,10 +593,10 @@ func TestComputeRecipients(t *testing.T) {
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
 				},
-			})
+			}))
 		})
 
-		Convey("ComputeRecipients includes static emails", func() {
+		t.Run("ComputeRecipients includes static emails", func(t *ftt.Test) {
 			n := []ToNotify{
 				{
 					Notification: &notifypb.Notification{
@@ -620,7 +623,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			So(emails, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -641,10 +644,10 @@ func TestComputeRecipients(t *testing.T) {
 					Email:    "someone@google.com",
 					Template: "other_template",
 				},
-			})
+			}))
 		})
 
-		Convey("ComputeRecipients drops bad JSON", func() {
+		t.Run("ComputeRecipients drops bad JSON", func(t *ftt.Test) {
 			n := []ToNotify{
 				{
 					Notification: &notifypb.Notification{
@@ -671,7 +674,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			So(emails, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
 				{
 					Email:    "sheriff1@google.com",
 					Template: "sheriff_template",
@@ -688,10 +691,10 @@ func TestComputeRecipients(t *testing.T) {
 					Email:    "sheriff4@google.com",
 					Template: "sheriff_template",
 				},
-			})
+			}))
 		})
 
-		Convey("ComputeRecipients propagates MatchingSteps", func() {
+		t.Run("ComputeRecipients propagates MatchingSteps", func(t *ftt.Test) {
 			sheriffSteps := []*buildbucketpb.Step{
 				{
 					Name: "sheriff step",
@@ -730,7 +733,7 @@ func TestComputeRecipients(t *testing.T) {
 				return emails[i].Email < emails[j].Email
 			})
 
-			So(emails, ShouldResemble, []EmailNotify{
+			assert.Loosely(t, emails, should.Resemble([]EmailNotify{
 				{
 					Email:         "sheriff1@google.com",
 					Template:      "sheriff_template",
@@ -756,15 +759,16 @@ func TestComputeRecipients(t *testing.T) {
 					Template:      "other_template",
 					MatchingSteps: otherSteps,
 				},
-			})
+			}))
 		})
 	})
 }
 
-func decompress(gzipped []byte) string {
+func decompress(t testing.TB, gzipped []byte) string {
+	t.Helper()
 	r, err := gzip.NewReader(bytes.NewReader(gzipped))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	buf, err := io.ReadAll(r)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return string(buf)
 }

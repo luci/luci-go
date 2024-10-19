@@ -33,12 +33,16 @@ import (
 	"go.chromium.org/luci/luci_notify/internal/alerts"
 	"go.chromium.org/luci/luci_notify/internal/testutil"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAlerts(t *testing.T) {
-	Convey("With an Alerts server", t, func() {
+	ftt.Run("With an Alerts server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
@@ -48,8 +52,8 @@ func TestAlerts(t *testing.T) {
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		server := NewAlertsServer()
-		Convey("BatchGetAlerts", func() {
-			Convey("Anonymous rejected", func() {
+		t.Run("BatchGetAlerts", func(t *ftt.Test) {
+			t.Run("Anonymous rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().anonymous().setInContext(ctx)
 
 				request := &pb.BatchGetAlertsRequest{
@@ -57,10 +61,10 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("No read access rejected", func() {
+			t.Run("No read access rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().setInContext(ctx)
 
 				request := &pb.BatchGetAlertsRequest{
@@ -68,10 +72,10 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-notify-access")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-notify-access"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Read when no info present returns fallback", func() {
+			t.Run("Read when no info present returns fallback", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().setInContext(ctx)
 
 				request := &pb.BatchGetAlertsRequest{
@@ -79,24 +83,24 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(len(response.Alerts), ShouldEqual, 1)
-				So(response.Alerts[0].Name, ShouldEqual, "alerts/1234")
-				So(response.Alerts[0].Bug, ShouldEqual, 0)
-				So(response.Alerts[0].SilenceUntil, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(response.Alerts), should.Equal(1))
+				assert.Loosely(t, response.Alerts[0].Name, should.Equal("alerts/1234"))
+				assert.Loosely(t, response.Alerts[0].Bug, should.BeZero)
+				assert.Loosely(t, response.Alerts[0].SilenceUntil, should.BeZero)
 			})
-			Convey("Read by name", func() {
+			t.Run("Read by name", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().setInContext(ctx)
-				first := NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx)
-				second := NewAlertBuilder().WithAlertKey("2").WithBug(2).CreateInDB(ctx)
+				first := NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx, t)
+				second := NewAlertBuilder().WithAlertKey("2").WithBug(2).CreateInDB(ctx, t)
 
 				request := &pb.BatchGetAlertsRequest{
 					Names: []string{"alerts/1", "alerts/2"},
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.BatchGetAlertsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.BatchGetAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/1",
@@ -113,9 +117,9 @@ func TestAlerts(t *testing.T) {
 							Etag:         second.Etag(),
 						},
 					},
-				})
+				}))
 			})
-			Convey("Read of invalid id", func() {
+			t.Run("Read of invalid id", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().setInContext(ctx)
 
 				request := &pb.BatchGetAlertsRequest{
@@ -123,8 +127,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.BatchGetAlertsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.BatchGetAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/non-existing",
@@ -134,12 +138,12 @@ func TestAlerts(t *testing.T) {
 							Etag:         (&alerts.Alert{}).Etag(),
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("BatchUpdateAlerts", func() {
-			Convey("Anonymous rejected", func() {
+		t.Run("BatchUpdateAlerts", func(t *ftt.Test) {
+			t.Run("Anonymous rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().anonymous().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -152,10 +156,10 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("No access rejected", func() {
+			t.Run("No access rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -168,10 +172,10 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-notify-access")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-notify-access"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("No write access rejected", func() {
+			t.Run("No write access rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -184,10 +188,10 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "you do not have permission to update alerts")
-				So(response, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("you do not have permission to update alerts"))
+				assert.Loosely(t, response, should.BeNil)
 			})
-			Convey("Successful Create", func() {
+			t.Run("Successful Create", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -202,8 +206,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response, ShouldResembleProto, &pb.BatchUpdateAlertsResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Resemble(&pb.BatchUpdateAlertsResponse{
 					Alerts: []*pb.Alert{
 						{
 							Name:         "alerts/1",
@@ -213,20 +217,20 @@ func TestAlerts(t *testing.T) {
 							Etag:         (&alerts.Alert{Bug: 1, SilenceUntil: 2}).Etag(),
 						},
 					},
-				})
-				So(time.Since(response.Alerts[0].ModifyTime.AsTime()), ShouldBeLessThan, time.Minute)
+				}))
+				assert.Loosely(t, time.Since(response.Alerts[0].ModifyTime.AsTime()), should.BeLessThan(time.Minute))
 
 				// Check it was actually written to the DB.
 				s, err := alerts.ReadBatch(span.Single(ctx), []string{"1"})
-				So(err, ShouldBeNil)
-				So(s, ShouldResemble, []*alerts.Alert{{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, s, should.Resemble([]*alerts.Alert{{
 					AlertKey:     "1",
 					Bug:          1,
 					SilenceUntil: 2,
 					ModifyTime:   response.Alerts[0].ModifyTime.AsTime(),
-				}})
+				}}))
 			})
-			Convey("Invalid Name", func() {
+			t.Run("Invalid Name", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -240,9 +244,9 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "name: expected format:")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format:"))
 			})
-			Convey("invalid bug", func() {
+			t.Run("invalid bug", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -256,9 +260,9 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "bug: must be zero or positive")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bug: must be zero or positive"))
 			})
-			Convey("invalid silence_until", func() {
+			t.Run("invalid silence_until", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -272,13 +276,13 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "silence_until: must be zero or positive")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("silence_until: must be zero or positive"))
 			})
-			Convey("Time ignored", func() {
+			t.Run("Time ignored", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
 
 				oldTime, err := time.Parse(time.RFC3339, "2000-01-01T13:57:02Z")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				oldTimePB := timestamppb.New(oldTime)
 
 				request := &pb.BatchUpdateAlertsRequest{
@@ -293,12 +297,12 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(time.Since(response.Alerts[0].ModifyTime.AsTime()), ShouldBeLessThan, time.Minute)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, time.Since(response.Alerts[0].ModifyTime.AsTime()), should.BeLessThan(time.Minute))
 			})
-			Convey("With correct Etag", func() {
+			t.Run("With correct Etag", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
-				alert := NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx)
+				alert := NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx, t)
 
 				request := &pb.BatchUpdateAlertsRequest{
 					Requests: []*pb.UpdateAlertRequest{
@@ -312,12 +316,12 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(response.Alerts[0].Bug, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response.Alerts[0].Bug, should.Equal(2))
 			})
-			Convey("With wrong Etag", func() {
+			t.Run("With wrong Etag", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
-				_ = NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx)
+				_ = NewAlertBuilder().WithAlertKey("1").WithBug(1).CreateInDB(ctx, t)
 
 				request := &pb.BatchUpdateAlertsRequest{
 					Requests: []*pb.UpdateAlertRequest{
@@ -330,7 +334,7 @@ func TestAlerts(t *testing.T) {
 						}},
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
-				So(err, ShouldBeRPCAborted, "etag")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAborted)("etag"))
 			})
 		})
 	})
@@ -401,7 +405,7 @@ func (b *AlertBuilder) Build() *alerts.Alert {
 	return &s
 }
 
-func (b *AlertBuilder) CreateInDB(ctx context.Context) *alerts.Alert {
+func (b *AlertBuilder) CreateInDB(ctx context.Context, t testing.TB) *alerts.Alert {
 	s := b.Build()
 	row := map[string]any{
 		"AlertKey":     s.AlertKey,
@@ -411,7 +415,7 @@ func (b *AlertBuilder) CreateInDB(ctx context.Context) *alerts.Alert {
 	}
 	m := spanner.InsertOrUpdateMap("Alerts", row)
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	if s.ModifyTime == spanner.CommitTimestamp {
 		s.ModifyTime = ts.UTC()
 	}

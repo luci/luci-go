@@ -23,6 +23,9 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
@@ -31,15 +34,12 @@ import (
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigIngestion(t *testing.T) {
 	t.Parallel()
 
-	Convey(`updateProjects`, t, func() {
+	ftt.Run(`updateProjects`, t, func(t *ftt.Test) {
 		c := mem_ds.Use(context.Background())
 		c = logging.SetLevel(c, logging.Debug)
 		c = common.SetAppIDForTest(c, "luci-notify")
@@ -97,32 +97,32 @@ func TestConfigIngestion(t *testing.T) {
 		c = cfgclient.Use(c, memory.New(cfg))
 
 		err := updateProjects(c)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		datastore.GetTestable(c).CatchupIndexes()
 
 		var projects []*Project
-		So(datastore.GetAll(c, datastore.NewQuery("Project"), &projects), ShouldBeNil)
-		So(len(projects), ShouldEqual, 2)
-		So(projects[0].Name, ShouldEqual, "chromium")
-		So(projects[0].TreeClosingEnabled, ShouldBeFalse)
-		So(projects[1].Name, ShouldEqual, "v8")
-		So(projects[1].TreeClosingEnabled, ShouldBeTrue)
+		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Project"), &projects), should.BeNil)
+		assert.Loosely(t, len(projects), should.Equal(2))
+		assert.Loosely(t, projects[0].Name, should.Equal("chromium"))
+		assert.Loosely(t, projects[0].TreeClosingEnabled, should.BeFalse)
+		assert.Loosely(t, projects[1].Name, should.Equal("v8"))
+		assert.Loosely(t, projects[1].TreeClosingEnabled, should.BeTrue)
 
 		var builders []*Builder
-		So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)
+		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), should.BeNil)
 
 		// Can't test 'builders' using ShouldResembleProto, as the base object
 		// isn't a proto, it just contains one. Can't test it using
 		// ShouldResemble either, as it has a bug where it doesn't terminate
 		// for protos. So we have to manually pull out the elements of the
 		// array and test the different parts individually.
-		So(builders, ShouldHaveLength, 2)
+		assert.Loosely(t, builders, should.HaveLength(2))
 		b := builders[0]
-		So(b.ProjectKey, ShouldResemble, datastore.MakeKey(c, "Project", "chromium"))
-		So(b.ID, ShouldEqual, "ci/linux")
-		So(b.Repository, ShouldEqual, "https://chromium.googlesource.com/chromium/src")
-		So(&b.Notifications, ShouldResembleProto, &notifypb.Notifications{
+		assert.Loosely(t, b.ProjectKey, should.Resemble(datastore.MakeKey(c, "Project", "chromium")))
+		assert.Loosely(t, b.ID, should.Equal("ci/linux"))
+		assert.Loosely(t, b.Repository, should.Equal("https://chromium.googlesource.com/chromium/src"))
+		assert.Loosely(t, &b.Notifications, should.Resemble(&notifypb.Notifications{
 			Notifications: []*notifypb.Notification{
 				{
 					OnOccurrence: []buildbucketpb.Status{
@@ -133,12 +133,12 @@ func TestConfigIngestion(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
 		b = builders[1]
-		So(b.ProjectKey, ShouldResemble, datastore.MakeKey(c, "Project", "v8"))
-		So(b.ID, ShouldEqual, "ci/win")
-		So(&b.Notifications, ShouldResembleProto, &notifypb.Notifications{
+		assert.Loosely(t, b.ProjectKey, should.Resemble(datastore.MakeKey(c, "Project", "v8")))
+		assert.Loosely(t, b.ID, should.Equal("ci/win"))
+		assert.Loosely(t, &b.Notifications, should.Resemble(&notifypb.Notifications{
 			Notifications: []*notifypb.Notification{
 				{
 					OnNewStatus: []buildbucketpb.Status{
@@ -151,11 +151,11 @@ func TestConfigIngestion(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 
 		var emailTemplates []*EmailTemplate
-		So(datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), ShouldBeNil)
-		So(emailTemplates, ShouldResemble, []*EmailTemplate{
+		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), should.BeNil)
+		assert.Loosely(t, emailTemplates, should.Resemble([]*EmailTemplate{
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "chromium"),
 				Name:                "a",
@@ -184,26 +184,26 @@ func TestConfigIngestion(t *testing.T) {
 				BodyHTMLTemplate:    "v8",
 				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/b.template",
 			},
-		})
+		}))
 
 		var treeClosers []*TreeCloser
-		So(datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), ShouldBeNil)
+		assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), should.BeNil)
 
 		// As above, can't use ShouldResemble or ShouldResembleProto directly.
-		So(treeClosers, ShouldHaveLength, 1)
-		t := treeClosers[0]
-		So(t.BuilderKey, ShouldResemble, datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux"))
-		So(t.TreeName, ShouldEqual, "chromium")
-		So(t.Status, ShouldEqual, Open)
-		So(&t.TreeCloser, ShouldResembleProto, &notifypb.TreeCloser{
+		assert.Loosely(t, treeClosers, should.HaveLength(1))
+		tc := treeClosers[0]
+		assert.Loosely(t, tc.BuilderKey, should.Resemble(datastore.MakeKey(c, "Project", "chromium", "Builder", "ci/linux")))
+		assert.Loosely(t, tc.TreeName, should.Equal("chromium"))
+		assert.Loosely(t, tc.Status, should.Equal(Open))
+		assert.Loosely(t, &tc.TreeCloser, should.Resemble(&notifypb.TreeCloser{
 			TreeStatusHost:          "chromium-status.appspot.com",
 			FailedStepRegexp:        "test",
 			FailedStepRegexpExclude: "experimental_test",
-		})
+		}))
 
 		// Regression test for a bug where we would incorrectly delete entities
 		// that are still live in the config.
-		Convey("Entities remain after no-op update", func() {
+		t.Run("Entities remain after no-op update", func(t *ftt.Test) {
 			// Add a space - this won't change the contents of the config, but
 			// it will update the hash, hence forcing a reingestion of the same
 			// config, which should be a no-op.
@@ -212,24 +212,24 @@ func TestConfigIngestion(t *testing.T) {
 			c := cfgclient.Use(c, memory.New(cfg))
 
 			err := updateProjects(c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
 
 			var builders []*Builder
-			So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)
-			So(builders, ShouldHaveLength, 2)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), should.BeNil)
+			assert.Loosely(t, builders, should.HaveLength(2))
 
 			var emailTemplates []*EmailTemplate
-			So(datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), ShouldBeNil)
-			So(emailTemplates, ShouldHaveLength, 4)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate"), &emailTemplates), should.BeNil)
+			assert.Loosely(t, emailTemplates, should.HaveLength(4))
 
 			var treeClosers []*TreeCloser
-			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), ShouldBeNil)
-			So(treeClosers, ShouldHaveLength, 1)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser"), &treeClosers), should.BeNil)
+			assert.Loosely(t, treeClosers, should.HaveLength(1))
 		})
 
-		Convey("preserve updated fields", func() {
+		t.Run("preserve updated fields", func(t *ftt.Test) {
 			// Update the Chromium builder in the datastore, simulating that some request was handled.
 			chromiumBuilder := builders[0]
 			chromiumBuilder.Status = buildbucketpb.Status_FAILURE
@@ -243,13 +243,13 @@ func TestConfigIngestion(t *testing.T) {
 					},
 				},
 			}
-			So(datastore.Put(c, chromiumBuilder), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, chromiumBuilder), should.BeNil)
 
 			// Similar with the TreeCloser
 			treeCloser := treeClosers[0]
 			treeCloser.Status = Closed
 			treeCloser.Timestamp = time.Now().UTC()
-			So(datastore.Put(c, treeCloser), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, treeCloser), should.BeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
 
@@ -257,29 +257,29 @@ func TestConfigIngestion(t *testing.T) {
 			cfg["projects/chromium"]["luci-notify.cfg"] += " "
 			c := cfgclient.Use(c, memory.New(cfg))
 
-			So(updateProjects(c), ShouldBeNil)
+			assert.Loosely(t, updateProjects(c), should.BeNil)
 
 			chromium := &Project{Name: "chromium"}
 			chromiumKey := datastore.KeyForObj(c, chromium)
 
 			var newBuilders []*Builder
-			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromiumKey), &newBuilders), ShouldBeNil)
-			So(newBuilders, ShouldHaveLength, 1)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromiumKey), &newBuilders), should.BeNil)
+			assert.Loosely(t, newBuilders, should.HaveLength(1))
 			// Check the fields we care about explicitly, because generated proto structs may have
 			// size caches which are updated.
-			So(newBuilders[0].Status, ShouldEqual, chromiumBuilder.Status)
-			So(newBuilders[0].Revision, ShouldResemble, chromiumBuilder.Revision)
-			So(newBuilders[0].GitilesCommits, ShouldResembleProto, chromiumBuilder.GitilesCommits)
+			assert.Loosely(t, newBuilders[0].Status, should.Equal(chromiumBuilder.Status))
+			assert.Loosely(t, newBuilders[0].Revision, should.Resemble(chromiumBuilder.Revision))
+			assert.Loosely(t, newBuilders[0].GitilesCommits, should.Resemble(chromiumBuilder.GitilesCommits))
 
 			var newTreeClosers []*TreeCloser
-			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), ShouldBeNil)
-			So(newTreeClosers, ShouldHaveLength, 1)
-			So(newTreeClosers[0].Status, ShouldEqual, treeCloser.Status)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromiumKey), &newTreeClosers), should.BeNil)
+			assert.Loosely(t, newTreeClosers, should.HaveLength(1))
+			assert.Loosely(t, newTreeClosers[0].Status, should.Equal(treeCloser.Status))
 			// The returned Timestamp field is rounded to the microsecond, as datastore only stores times to µs precision.
 			µs, _ := time.ParseDuration("1µs")
-			So(newTreeClosers[0].Timestamp, ShouldEqual, treeCloser.Timestamp.Round(µs))
+			assert.Loosely(t, newTreeClosers[0].Timestamp, should.Match(treeCloser.Timestamp.Round(µs)))
 		})
-		Convey("Large project", func() {
+		t.Run("Large project", func(t *ftt.Test) {
 			const configTemplate = `notifiers {
 				name: "%v-notifier"
 				notifications {
@@ -311,58 +311,58 @@ func TestConfigIngestion(t *testing.T) {
 			}
 			c := cfgclient.Use(c, memory.New(cfg))
 
-			So(updateProjects(c), ShouldBeNil)
+			assert.Loosely(t, updateProjects(c), should.BeNil)
 
 			chromeos := &Project{Name: "chromeos"}
 			chromeosKey := datastore.KeyForObj(c, chromeos)
 
-			So(datastore.Get(c, chromeos), ShouldBeNil)
-			So(chromeos.Name, ShouldEqual, "chromeos")
-			So(chromeos.TreeClosingEnabled, ShouldBeTrue)
+			assert.Loosely(t, datastore.Get(c, chromeos), should.BeNil)
+			assert.Loosely(t, chromeos.Name, should.Equal("chromeos"))
+			assert.Loosely(t, chromeos.TreeClosingEnabled, should.BeTrue)
 
 			var builders []*Builder
-			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromeosKey), &builders), ShouldBeNil)
-			So(len(builders), ShouldEqual, 1000)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromeosKey), &builders), should.BeNil)
+			assert.Loosely(t, len(builders), should.Equal(1000))
 
 			var treeClosers []*TreeCloser
-			So(datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromeosKey), &treeClosers), ShouldBeNil)
-			So(len(treeClosers), ShouldEqual, 1000)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("TreeCloser").Ancestor(chromeosKey), &treeClosers), should.BeNil)
+			assert.Loosely(t, len(treeClosers), should.Equal(1000))
 		})
-		Convey("delete project", func() {
+		t.Run("delete project", func(t *ftt.Test) {
 			delete(cfg, "projects/v8")
-			So(updateProjects(c), ShouldBeNil)
+			assert.Loosely(t, updateProjects(c), should.BeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
 
 			v8 := &Project{Name: "v8"}
-			So(datastore.Get(c, v8), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, v8), should.Equal(datastore.ErrNoSuchEntity))
 			v8Key := datastore.KeyForObj(c, v8)
 
 			var builders []*Builder
-			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(v8Key), &builders), ShouldBeNil)
-			So(builders, ShouldBeEmpty)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(v8Key), &builders), should.BeNil)
+			assert.Loosely(t, builders, should.BeEmpty)
 
 			var emailTemplates []*EmailTemplate
-			So(datastore.GetAll(c, datastore.NewQuery("EmailTemplate").Ancestor(v8Key), &emailTemplates), ShouldBeNil)
-			So(emailTemplates, ShouldBeEmpty)
+			assert.Loosely(t, datastore.GetAll(c, datastore.NewQuery("EmailTemplate").Ancestor(v8Key), &emailTemplates), should.BeNil)
+			assert.Loosely(t, emailTemplates, should.BeEmpty)
 		})
 
-		Convey("rename email template", func() {
+		t.Run("rename email template", func(t *ftt.Test) {
 			oldName := "luci-notify/email-templates/a.template"
 			newName := "luci-notify/email-templates/c.template"
 			chromiumCfg := cfg["projects/chromium"]
 			chromiumCfg[newName] = chromiumCfg[oldName]
 			delete(chromiumCfg, oldName)
 
-			So(updateProjects(c), ShouldBeNil)
+			assert.Loosely(t, updateProjects(c), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			var emailTemplates []*EmailTemplate
 			q := datastore.NewQuery("EmailTemplate").Ancestor(datastore.MakeKey(c, "Project", "chromium"))
-			So(datastore.GetAll(c, q, &emailTemplates), ShouldBeNil)
-			So(len(emailTemplates), ShouldEqual, 2)
-			So(emailTemplates[0].Name, ShouldEqual, "b")
-			So(emailTemplates[1].Name, ShouldEqual, "c")
+			assert.Loosely(t, datastore.GetAll(c, q, &emailTemplates), should.BeNil)
+			assert.Loosely(t, len(emailTemplates), should.Equal(2))
+			assert.Loosely(t, emailTemplates[0].Name, should.Equal("b"))
+			assert.Loosely(t, emailTemplates[1].Name, should.Equal("c"))
 		})
 	})
 }
