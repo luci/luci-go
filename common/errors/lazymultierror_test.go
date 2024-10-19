@@ -19,7 +19,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -34,14 +33,12 @@ func TestLazyMultiError(t *testing.T) {
 
 		e := errors.New("sup")
 		lme.Assign(6, e)
-		assert.Loosely(t, lme.Get(), should.Match(
-			[]error{nil, nil, nil, nil, nil, nil, e, nil, nil, nil},
-			cmpopts.EquateErrors()))
+		assert.Loosely(t, lme.Get(), should.ErrLike(
+			MultiError{nil, nil, nil, nil, nil, nil, e, nil, nil, nil}))
 
 		lme.Assign(2, e)
-		assert.Loosely(t, lme.Get(), should.Match(
-			[]error{nil, nil, e, nil, nil, nil, e, nil, nil, nil},
-			cmpopts.EquateErrors()))
+		assert.Loosely(t, lme.Get(), should.ErrLike(
+			MultiError{nil, nil, e, nil, nil, nil, e, nil, nil, nil}))
 
 		assert.Loosely(t, func() { lme.Assign(20, e) }, should.Panic)
 
@@ -74,13 +71,13 @@ func TestLazyMultiError(t *testing.T) {
 					}(i)
 				}
 				wg.Wait()
-				me := make([]error, 64)
+				me := make(MultiError, 64)
 				for i := range me {
 					if i&1 == 1 {
 						me[i] = wow
 					}
 				}
-				assert.Loosely(t, lme.Get(), should.Match(me, cmpopts.EquateErrors()))
+				assert.Loosely(t, lme.Get(), should.ErrLike(me))
 			})
 			t.Run("all", func(t *ftt.Test) {
 				wow := errors.New("wow")
@@ -93,11 +90,11 @@ func TestLazyMultiError(t *testing.T) {
 					}(i)
 				}
 				wg.Wait()
-				me := make([]error, 64)
+				me := make(MultiError, 64)
 				for i := range me {
 					me[i] = wow
 				}
-				assert.Loosely(t, lme.Get(), should.Match(me, cmpopts.EquateErrors()))
+				assert.Loosely(t, lme.Get(), should.ErrLike(me))
 			})
 		})
 	})

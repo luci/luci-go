@@ -21,9 +21,10 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type counterFilter struct {
@@ -70,7 +71,7 @@ func (rc *counterFilterInst) DeleteMulti(keys []*Key, cb DeleteMultiCB) error {
 func TestQueryBatch(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing datastore with a data set installed", t, func() {
+	ftt.Run("A testing datastore with a data set installed", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 
 		fds := fakeDatastore{
@@ -122,34 +123,34 @@ func TestQueryBatch(t *testing.T) {
 					return out, err
 				}
 
-				Convey(fmt.Sprintf(`Batching with size %d installed`, batchSize), func() {
+				t.Run(fmt.Sprintf(`Batching with size %d installed`, batchSize), func(t *ftt.Test) {
 					q := NewQuery("")
 
-					Convey(`Can retrieve all of the items.`, func() {
+					t.Run(`Can retrieve all of the items.`, func(t *ftt.Test) {
 						got, err := getAllBatch(c, batchSize, q)
-						So(err, ShouldBeNil)
-						So(got, ShouldResemble, all)
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, got, should.Resemble(all))
 
 						// One call for every sub-query, plus one to hit Stop.
 						runCalls := (int32(len(all)) / batchSize) + 1
-						So(cf.run, ShouldEqual, runCalls)
+						assert.Loosely(t, cf.run, should.Equal(runCalls))
 					})
 
-					Convey(`With a limit of 128, will retrieve 128 items.`, func() {
+					t.Run(`With a limit of 128, will retrieve 128 items.`, func(t *ftt.Test) {
 						const limit = 128
 						q = q.Limit(int32(limit))
 
 						got, err := getAllBatch(c, batchSize, q)
-						So(err, ShouldBeNil)
-						So(got, ShouldResemble, all[:limit])
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, got, should.Resemble(all[:limit]))
 
-						So(cf.run, ShouldEqual, expectedBatchRunCalls(batchSize, limit))
+						assert.Loosely(t, cf.run, should.Equal(expectedBatchRunCalls(batchSize, limit)))
 					})
 				})
 			}
 		}
 
-		Convey(`Test iterative Run with cursors.`, func() {
+		t.Run(`Test iterative Run with cursors.`, func(t *ftt.Test) {
 			// This test will have a naive outer loop that fetches pages in large
 			// increments using cursors. The outer loop will use the Batcher
 			// internally, which will fetch smaller page sizes.
@@ -197,13 +198,13 @@ func TestQueryBatch(t *testing.T) {
 				return nil
 			}
 
-			So(testIterativeRun(3, 2, 1), ShouldBeNil)
-			So(testIterativeRun(3, 5, 2), ShouldBeNil)
-			So(testIterativeRun(3, 1000, 250), ShouldBeNil)
+			assert.Loosely(t, testIterativeRun(3, 2, 1), should.BeNil)
+			assert.Loosely(t, testIterativeRun(3, 5, 2), should.BeNil)
+			assert.Loosely(t, testIterativeRun(3, 1000, 250), should.BeNil)
 
 			// We'll use fetch/batch sizes that are not direct multiples of each other
 			// so we can test some incongruent boundaries.
-			So(testIterativeRun(3, 900, 250), ShouldBeNil)
+			assert.Loosely(t, testIterativeRun(3, 900, 250), should.BeNil)
 		})
 	})
 }
@@ -218,7 +219,7 @@ func TestBatchFilter(t *testing.T) {
 		Value int64
 	}
 
-	Convey("A testing datastore", t, func() {
+	ftt.Run("A testing datastore", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 
 		fds := fakeDatastore{}
@@ -236,8 +237,8 @@ func TestBatchFilter(t *testing.T) {
 		}
 
 		for _, sz := range []int32{11, 10, 7, 5, 2} {
-			Convey(fmt.Sprintf("With maximunm Put size %d", sz), func(convey C) {
-				fds.convey = convey
+			t.Run(fmt.Sprintf("With maximunm Put size %d", sz), func(t *ftt.Test) {
+				fds.t = t
 				fds.constraints.MaxGetSize = 10
 				fds.constraints.MaxPutSize = 10
 				fds.constraints.MaxDeleteSize = 10
@@ -247,29 +248,29 @@ func TestBatchFilter(t *testing.T) {
 					css[i] = &IndexEntity{Value: int64(i + 1)}
 				}
 
-				So(Put(c, css), ShouldBeNil)
-				So(cf.put, ShouldEqual, expectedRounds(fds.constraints.MaxPutSize, len(css)))
+				assert.Loosely(t, Put(c, css), should.BeNil)
+				assert.Loosely(t, cf.put, should.Equal(expectedRounds(fds.constraints.MaxPutSize, len(css))))
 
 				for i, ent := range css {
-					So(ent.Key, ShouldNotBeNil)
-					So(ent.Key.IntID(), ShouldEqual, i+1)
+					assert.Loosely(t, ent.Key, should.NotBeNil)
+					assert.Loosely(t, ent.Key.IntID(), should.Equal(i+1))
 				}
 
-				Convey(`Get`, func() {
+				t.Run(`Get`, func(t *ftt.Test) {
 					// Clear Value and Get, populating Value from Key.IntID.
 					for _, ent := range css {
 						ent.Value = 0
 					}
 
-					So(Get(c, css), ShouldBeNil)
-					So(cf.get, ShouldEqual, expectedRounds(fds.constraints.MaxGetSize, len(css)))
+					assert.Loosely(t, Get(c, css), should.BeNil)
+					assert.Loosely(t, cf.get, should.Equal(expectedRounds(fds.constraints.MaxGetSize, len(css))))
 
 					for i, ent := range css {
-						So(ent.Value, ShouldEqual, i+1)
+						assert.Loosely(t, ent.Value, should.Equal(i+1))
 					}
 				})
 
-				Convey(`Delete`, func() {
+				t.Run(`Delete`, func(t *ftt.Test) {
 					// Record which entities get deleted.
 					var lock sync.Mutex
 					deleted := make(map[int64]struct{}, len(css))
@@ -279,14 +280,14 @@ func TestBatchFilter(t *testing.T) {
 						deleted[k.IntID()] = struct{}{}
 					}
 
-					So(Delete(c, css), ShouldBeNil)
-					So(cf.delete, ShouldEqual, expectedRounds(fds.constraints.MaxDeleteSize, len(css)))
+					assert.Loosely(t, Delete(c, css), should.BeNil)
+					assert.Loosely(t, cf.delete, should.Equal(expectedRounds(fds.constraints.MaxDeleteSize, len(css))))
 
 					// Confirm that all entities have been deleted.
-					So(len(deleted), ShouldEqual, len(css))
+					assert.Loosely(t, len(deleted), should.Equal(len(css)))
 					for i := range css {
 						_, ok := deleted[int64(i+1)]
-						So(ok, ShouldBeTrue)
+						assert.Loosely(t, ok, should.BeTrue)
 					}
 				})
 			})

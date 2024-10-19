@@ -28,8 +28,10 @@ import (
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/gae/service/user"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func shouldHaveSuccessesAndErrors(actual any, expected ...any) string {
@@ -57,128 +59,128 @@ func die(err error) {
 func TestCount(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Count filter", t, func() {
+	ftt.Run("Test Count filter", t, func(t *ftt.Test) {
 		c, fb := featureBreaker.FilterRDS(memory.Use(context.Background()), nil)
 		c, ctr := FilterRDS(c)
 
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		vals := []ds.PropertyMap{{
 			"Val":  ds.MkProperty(100),
 			"$key": ds.MkPropertyNI(ds.NewKey(c, "Kind", "", 1, nil)),
 		}}
 
-		Convey("Calling a ds function should reflect in counter", func() {
-			So(ds.Put(c, vals), ShouldBeNil)
-			So(ctr.PutMulti.Successes(), ShouldEqual, 1)
+		t.Run("Calling a ds function should reflect in counter", func(t *ftt.Test) {
+			assert.Loosely(t, ds.Put(c, vals), should.BeNil)
+			assert.Loosely(t, ctr.PutMulti.Successes(), should.Equal(1))
 
-			Convey("effects are cumulative", func() {
-				So(ds.Put(c, vals), ShouldBeNil)
-				So(ctr.PutMulti.Successes(), ShouldEqual, 2)
+			t.Run("effects are cumulative", func(t *ftt.Test) {
+				assert.Loosely(t, ds.Put(c, vals), should.BeNil)
+				assert.Loosely(t, ctr.PutMulti.Successes(), should.Equal(2))
 
-				Convey("even within transactions", func() {
+				t.Run("even within transactions", func(t *ftt.Test) {
 					die(ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.Put(c, append(vals, vals[0])), ShouldBeNil)
+						assert.Loosely(t, ds.Put(c, append(vals, vals[0])), should.BeNil)
 						return nil
 					}, nil))
 				})
 			})
 		})
 
-		Convey("errors count against errors", func() {
+		t.Run("errors count against errors", func(t *ftt.Test) {
 			fb.BreakFeatures(nil, "GetMulti")
 
-			So(ds.Get(c, vals), ShouldErrLike, `"GetMulti" is broken`)
-			So(ctr.GetMulti.Errors(), ShouldEqual, 1)
+			assert.Loosely(t, ds.Get(c, vals), should.ErrLike(`"GetMulti" is broken`))
+			assert.Loosely(t, ctr.GetMulti.Errors(), should.Equal(1))
 
 			fb.UnbreakFeatures("GetMulti")
 
-			So(ds.Put(c, vals), ShouldBeNil)
+			assert.Loosely(t, ds.Put(c, vals), should.BeNil)
 
 			die(ds.Get(c, vals))
-			So(ctr.GetMulti.Errors(), ShouldEqual, 1)
-			So(ctr.GetMulti.Successes(), ShouldEqual, 1)
-			So(ctr.GetMulti.Total(), ShouldEqual, 2)
+			assert.Loosely(t, ctr.GetMulti.Errors(), should.Equal(1))
+			assert.Loosely(t, ctr.GetMulti.Successes(), should.Equal(1))
+			assert.Loosely(t, ctr.GetMulti.Total(), should.Equal(2))
 		})
 
-		Convey(`datastore.Stop does not count as an error for queries`, func() {
+		t.Run(`datastore.Stop does not count as an error for queries`, func(t *ftt.Test) {
 			fb.BreakFeatures(ds.Stop, "Run")
 
-			So(ds.Run(c, ds.NewQuery("foof"), func(_ ds.PropertyMap) error {
+			assert.Loosely(t, ds.Run(c, ds.NewQuery("foof"), func(_ ds.PropertyMap) error {
 				return nil
-			}), ShouldBeNil)
-			So(ctr.Run.Successes(), ShouldEqual, 1)
-			So(ctr.Run.Errors(), ShouldEqual, 0)
-			So(ctr.Run.Total(), ShouldEqual, 1)
+			}), should.BeNil)
+			assert.Loosely(t, ctr.Run.Successes(), should.Equal(1))
+			assert.Loosely(t, ctr.Run.Errors(), should.BeZero)
+			assert.Loosely(t, ctr.Run.Total(), should.Equal(1))
 		})
 	})
 
-	Convey("works for memcache", t, func() {
+	ftt.Run("works for memcache", t, func(t *ftt.Test) {
 		c, ctr := FilterMC(memory.Use(context.Background()))
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		die(memcache.Set(c, memcache.NewItem(c, "hello").SetValue([]byte("sup"))))
 
 		_, err := memcache.GetKey(c, "Wat")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
 
 		_, err = memcache.GetKey(c, "hello")
 		die(err)
 
-		So(ctr.SetMulti, shouldHaveSuccessesAndErrors, 1, 0)
-		So(ctr.GetMulti, shouldHaveSuccessesAndErrors, 2, 0)
-		So(ctr.NewItem, shouldHaveSuccessesAndErrors, 3, 0)
+		assert.Loosely(t, ctr.SetMulti, convey.Adapt(shouldHaveSuccessesAndErrors)(1, 0))
+		assert.Loosely(t, ctr.GetMulti, convey.Adapt(shouldHaveSuccessesAndErrors)(2, 0))
+		assert.Loosely(t, ctr.NewItem, convey.Adapt(shouldHaveSuccessesAndErrors)(3, 0))
 	})
 
-	Convey("works for taskqueue", t, func() {
+	ftt.Run("works for taskqueue", t, func(t *ftt.Test) {
 		c, ctr := FilterTQ(memory.Use(context.Background()))
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		die(taskqueue.Add(c, "", &taskqueue.Task{Name: "wat"}))
-		So(taskqueue.Add(c, "DNE_QUEUE", &taskqueue.Task{Name: "wat"}),
-			ShouldErrLike, "UNKNOWN_QUEUE")
+		assert.Loosely(t, taskqueue.Add(c, "DNE_QUEUE", &taskqueue.Task{Name: "wat"}),
+			should.ErrLike("UNKNOWN_QUEUE"))
 
-		So(ctr.AddMulti, shouldHaveSuccessesAndErrors, 1, 1)
+		assert.Loosely(t, ctr.AddMulti, convey.Adapt(shouldHaveSuccessesAndErrors)(1, 1))
 	})
 
-	Convey("works for global info", t, func() {
+	ftt.Run("works for global info", t, func(t *ftt.Test) {
 		c, fb := featureBreaker.FilterGI(memory.Use(context.Background()), nil)
 		c, ctr := FilterGI(c)
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		_, err := info.Namespace(c, "foo")
 		die(err)
 		fb.BreakFeatures(nil, "Namespace")
 		_, err = info.Namespace(c, "boom")
-		So(err, ShouldErrLike, `"Namespace" is broken`)
+		assert.Loosely(t, err, should.ErrLike(`"Namespace" is broken`))
 
-		So(ctr.Namespace, shouldHaveSuccessesAndErrors, 1, 1)
+		assert.Loosely(t, ctr.Namespace, convey.Adapt(shouldHaveSuccessesAndErrors)(1, 1))
 	})
 
-	Convey("works for user", t, func() {
+	ftt.Run("works for user", t, func(t *ftt.Test) {
 		c, fb := featureBreaker.FilterUser(memory.Use(context.Background()), nil)
 		c, ctr := FilterUser(c)
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		_, err := user.CurrentOAuth(c, "foo")
 		die(err)
 		fb.BreakFeatures(nil, "CurrentOAuth")
 		_, err = user.CurrentOAuth(c, "foo")
-		So(err, ShouldErrLike, `"CurrentOAuth" is broken`)
+		assert.Loosely(t, err, should.ErrLike(`"CurrentOAuth" is broken`))
 
-		So(ctr.CurrentOAuth, shouldHaveSuccessesAndErrors, 1, 1)
+		assert.Loosely(t, ctr.CurrentOAuth, convey.Adapt(shouldHaveSuccessesAndErrors)(1, 1))
 	})
 
-	Convey("works for mail", t, func() {
+	ftt.Run("works for mail", t, func(t *ftt.Test) {
 		c, fb := featureBreaker.FilterMail(memory.Use(context.Background()), nil)
 		c, ctr := FilterMail(c)
-		So(c, ShouldNotBeNil)
-		So(ctr, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
+		assert.Loosely(t, ctr, should.NotBeNil)
 
 		err := mail.Send(c, &mail.Message{
 			Sender: "admin@example.com",
@@ -193,9 +195,9 @@ func TestCount(t *testing.T) {
 			To:     []string{"coolDood@example.com"},
 			Body:   "hi",
 		})
-		So(err, ShouldErrLike, `"Send" is broken`)
+		assert.Loosely(t, err, should.ErrLike(`"Send" is broken`))
 
-		So(ctr.Send, shouldHaveSuccessesAndErrors, 1, 1)
+		assert.Loosely(t, ctr.Send, convey.Adapt(shouldHaveSuccessesAndErrors)(1, 1))
 	})
 }
 

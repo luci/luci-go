@@ -21,10 +21,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/comparison"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/blobstore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(Property{}))
+}
 
 type mybool bool
 type mystring string
@@ -33,97 +41,97 @@ type myfloat float32
 func TestProperties(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Property", t, func() {
-		Convey("Construction", func() {
-			Convey("empty", func() {
+	ftt.Run("Test Property", t, func(t *ftt.Test) {
+		t.Run("Construction", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				pv := Property{}
-				So(pv.Value(), ShouldBeNil)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTNull")
+				assert.Loosely(t, pv.Value(), should.BeNil)
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 			})
-			Convey("set", func() {
+			t.Run("set", func(t *ftt.Test) {
 				pv := MkPropertyNI(100)
-				So(pv.Value(), ShouldHaveSameTypeAs, int64(100))
-				So(pv.Value(), ShouldEqual, 100)
-				So(pv.IndexSetting(), ShouldEqual, NoIndex)
-				So(pv.Type().String(), ShouldEqual, "PTInt")
+				assert.Loosely(t, pv.Value(), should.HaveType[int64])
+				assert.Loosely(t, pv.Value(), should.Equal(100))
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(NoIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTInt"))
 
-				So(pv.SetValue(nil, ShouldIndex), ShouldBeNil)
-				So(pv.Value(), ShouldBeNil)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTNull")
+				assert.Loosely(t, pv.SetValue(nil, ShouldIndex), should.BeNil)
+				assert.Loosely(t, pv.Value(), should.BeNil)
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 			})
-			Convey("derived types", func() {
-				Convey("int", func() {
+			t.Run("derived types", func(t *ftt.Test) {
+				t.Run("int", func(t *ftt.Test) {
 					pv := MkProperty(19)
-					So(pv.Value(), ShouldHaveSameTypeAs, int64(19))
-					So(pv.Value(), ShouldEqual, 19)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTInt")
+					assert.Loosely(t, pv.Value(), should.HaveType[int64])
+					assert.Loosely(t, pv.Value(), should.Equal(19))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTInt"))
 				})
-				Convey("int32", func() {
+				t.Run("int32", func(t *ftt.Test) {
 					pv := MkProperty(int32(32))
-					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
-					So(pv.Value(), ShouldEqual, 32)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTInt")
+					assert.Loosely(t, pv.Value(), should.HaveType[int64])
+					assert.Loosely(t, pv.Value(), should.Equal(32))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTInt"))
 				})
-				Convey("uint32", func() {
+				t.Run("uint32", func(t *ftt.Test) {
 					pv := MkProperty(uint32(32))
-					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
-					So(pv.Value(), ShouldEqual, 32)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTInt")
+					assert.Loosely(t, pv.Value(), should.HaveType[int64])
+					assert.Loosely(t, pv.Value(), should.Equal(32))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTInt"))
 				})
-				Convey("byte", func() {
+				t.Run("byte", func(t *ftt.Test) {
 					pv := MkProperty(byte(32))
-					So(pv.Value(), ShouldHaveSameTypeAs, int64(32))
-					So(pv.Value(), ShouldEqual, 32)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTInt")
+					assert.Loosely(t, pv.Value(), should.HaveType[int64])
+					assert.Loosely(t, pv.Value(), should.Equal(32))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTInt"))
 				})
-				Convey("bool (true)", func() {
+				t.Run("bool (true)", func(t *ftt.Test) {
 					pv := MkProperty(mybool(true))
-					So(pv.Value(), ShouldBeTrue)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTBool")
+					assert.Loosely(t, pv.Value(), should.BeTrue)
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTBool"))
 				})
-				Convey("string", func() {
+				t.Run("string", func(t *ftt.Test) {
 					pv := MkProperty(mystring("sup"))
-					So(pv.Value(), ShouldEqual, "sup")
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTString")
+					assert.Loosely(t, pv.Value(), should.Equal("sup"))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTString"))
 				})
-				Convey("blobstore.Key is distinquished", func() {
+				t.Run("blobstore.Key is distinquished", func(t *ftt.Test) {
 					pv := MkProperty(blobstore.Key("sup"))
-					So(pv.Value(), ShouldEqual, blobstore.Key("sup"))
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTBlobKey")
+					assert.Loosely(t, pv.Value(), should.Equal(blobstore.Key("sup")))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTBlobKey"))
 				})
-				Convey("datastore Key is distinguished", func() {
+				t.Run("datastore Key is distinguished", func(t *ftt.Test) {
 					k := MkKeyContext("appid", "ns").MakeKey("kind", "1")
 					pv := MkProperty(k)
-					So(pv.Value(), ShouldHaveSameTypeAs, k)
-					So(pv.Value().(*Key).Equal(k), ShouldBeTrue)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTKey")
+					assert.Loosely(t, pv.Value(), should.HaveType[*Key])
+					assert.Loosely(t, pv.Value().(*Key).Equal(k), should.BeTrue)
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTKey"))
 
 					pv = MkProperty((*Key)(nil))
-					So(pv.Value(), ShouldBeNil)
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTNull")
+					assert.Loosely(t, pv.Value(), should.BeNil)
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 				})
-				Convey("float", func() {
+				t.Run("float", func(t *ftt.Test) {
 					pv := Property{}
-					So(pv.SetValue(myfloat(19.7), ShouldIndex), ShouldBeNil)
-					So(pv.Value(), ShouldHaveSameTypeAs, float64(19.7))
-					So(pv.Value(), ShouldEqual, float32(19.7))
-					So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-					So(pv.Type().String(), ShouldEqual, "PTFloat")
+					assert.Loosely(t, pv.SetValue(myfloat(19.7), ShouldIndex), should.BeNil)
+					assert.Loosely(t, pv.Value(), should.HaveType[float64])
+					assert.Loosely(t, pv.Value(), should.AlmostEqual(19.7, 0.000001))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTFloat"))
 				})
-				Convey("property map", func() {
+				t.Run("property map", func(t *ftt.Test) {
 					pv := Property{}
-					So(pv.SetValue(PropertyMap{
+					assert.Loosely(t, pv.SetValue(PropertyMap{
 						"key": Property{
 							indexSetting: true,
 							propType:     PTString,
@@ -140,8 +148,8 @@ func TestProperties(t *testing.T) {
 								},
 							},
 						},
-					}, NoIndex), ShouldBeNil)
-					So(pv.Value(), ShouldResemble, PropertyMap{
+					}, NoIndex), should.BeNil)
+					assert.Loosely(t, pv.Value(), should.Resemble(PropertyMap{
 						"key": Property{
 							indexSetting: true,
 							propType:     PTString,
@@ -158,82 +166,82 @@ func TestProperties(t *testing.T) {
 								},
 							},
 						},
-					})
-					So(pv.IndexSetting(), ShouldEqual, NoIndex)
-					So(pv.Type().String(), ShouldEqual, "PTPropertyMap")
+					}))
+					assert.Loosely(t, pv.IndexSetting(), should.Equal(NoIndex))
+					assert.Loosely(t, pv.Type().String(), should.Equal("PTPropertyMap"))
 				})
 			})
-			Convey("bad type", func() {
+			t.Run("bad type", func(t *ftt.Test) {
 				pv := Property{}
 				err := pv.SetValue(complex(100, 29), ShouldIndex)
-				So(err.Error(), ShouldContainSubstring, "has bad type complex")
-				So(pv.Value(), ShouldBeNil)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTNull")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("has bad type complex"))
+				assert.Loosely(t, pv.Value(), should.BeNil)
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 			})
-			Convey("invalid GeoPoint", func() {
+			t.Run("invalid GeoPoint", func(t *ftt.Test) {
 				pv := Property{}
 				err := pv.SetValue(GeoPoint{-1000, 0}, ShouldIndex)
-				So(err.Error(), ShouldContainSubstring, "invalid GeoPoint value")
-				So(pv.Value(), ShouldBeNil)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTNull")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("invalid GeoPoint value"))
+				assert.Loosely(t, pv.Value(), should.BeNil)
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 			})
-			Convey("invalid time", func() {
+			t.Run("invalid time", func(t *ftt.Test) {
 				pv := Property{}
 				loc, err := time.LoadLocation("America/Los_Angeles")
-				So(err, ShouldBeNil)
-				t := time.Date(1970, 1, 1, 0, 0, 0, 0, loc)
+				assert.Loosely(t, err, should.BeNil)
+				ts := time.Date(1970, 1, 1, 0, 0, 0, 0, loc)
 
-				err = pv.SetValue(t, ShouldIndex)
-				So(err.Error(), ShouldContainSubstring, "time value has wrong Location")
+				err = pv.SetValue(ts, ShouldIndex)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("time value has wrong Location"))
 
 				err = pv.SetValue(time.Unix(math.MaxInt64, 0).UTC(), ShouldIndex)
-				So(err.Error(), ShouldContainSubstring, "time value out of range")
-				So(pv.Value(), ShouldBeNil)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTNull")
+				assert.Loosely(t, err.Error(), should.ContainSubstring("time value out of range"))
+				assert.Loosely(t, pv.Value(), should.BeNil)
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTNull"))
 			})
-			Convey("time gets rounded", func() {
+			t.Run("time gets rounded", func(t *ftt.Test) {
 				pv := Property{}
 				now := time.Now().In(time.UTC)
 				now = now.Round(time.Microsecond).Add(time.Nanosecond * 313)
-				So(pv.SetValue(now, ShouldIndex), ShouldBeNil)
-				So(pv.Value(), ShouldHappenBefore, now)
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTTime")
+				assert.Loosely(t, pv.SetValue(now, ShouldIndex), should.BeNil)
+				assert.Loosely(t, pv.Value(), should.HappenBefore(now))
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTTime"))
 			})
-			Convey("zero time", func() {
+			t.Run("zero time", func(t *ftt.Test) {
 				now := time.Time{}
-				So(now.IsZero(), ShouldBeTrue)
+				assert.Loosely(t, now.IsZero(), should.BeTrue)
 
 				pv := Property{}
-				So(pv.SetValue(now, ShouldIndex), ShouldBeNil)
-				So(pv.Value(), ShouldResemble, now)
+				assert.Loosely(t, pv.SetValue(now, ShouldIndex), should.BeNil)
+				assert.Loosely(t, pv.Value(), should.Resemble(now))
 				v, err := pv.Project(PTInt)
-				So(err, ShouldBeNil)
-				So(v, ShouldEqual, 0)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v, should.BeZero)
 
-				So(pv.SetValue(0, ShouldIndex), ShouldBeNil)
-				So(pv.Value(), ShouldEqual, 0)
+				assert.Loosely(t, pv.SetValue(0, ShouldIndex), should.BeNil)
+				assert.Loosely(t, pv.Value(), should.BeZero)
 				v, err = pv.Project(PTTime)
-				So(err, ShouldBeNil)
-				So(v.(time.Time).IsZero(), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.(time.Time).IsZero(), should.BeTrue)
 			})
-			Convey("[]byte allows IndexSetting", func() {
+			t.Run("[]byte allows IndexSetting", func(t *ftt.Test) {
 				pv := Property{}
-				So(pv.SetValue([]byte("hello"), ShouldIndex), ShouldBeNil)
-				So(pv.Value(), ShouldResemble, []byte("hello"))
-				So(pv.IndexSetting(), ShouldEqual, ShouldIndex)
-				So(pv.Type().String(), ShouldEqual, "PTBytes")
+				assert.Loosely(t, pv.SetValue([]byte("hello"), ShouldIndex), should.BeNil)
+				assert.Loosely(t, pv.Value(), should.Resemble([]byte("hello")))
+				assert.Loosely(t, pv.IndexSetting(), should.Equal(ShouldIndex))
+				assert.Loosely(t, pv.Type().String(), should.Equal("PTBytes"))
 			})
 		})
 
-		Convey("Comparison", func() {
-			Convey(`A []byte property should equal a string property with the same value.`, func() {
+		t.Run("Comparison", func(t *ftt.Test) {
+			t.Run(`A []byte property should equal a string property with the same value.`, func(t *ftt.Test) {
 				a := MkProperty([]byte("ohaithere"))
 				b := MkProperty("ohaithere")
-				So(a.Equal(&b), ShouldBeTrue)
+				assert.Loosely(t, a.Equal(&b), should.BeTrue)
 			})
 		})
 	})
@@ -242,65 +250,65 @@ func TestProperties(t *testing.T) {
 func TestDSPropertyMapImpl(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test PropertyMap", t, func() {
-		Convey("load/save err conditions", func() {
-			Convey("empty", func() {
+	ftt.Run("Test PropertyMap", t, func(t *ftt.Test) {
+		t.Run("load/save err conditions", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
 				pm := PropertyMap{}
 				err := pm.Load(PropertyMap{"hello": Property{}})
-				So(err, ShouldBeNil)
-				So(pm, ShouldResemble, PropertyMap{"hello": Property{}})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, pm, should.Resemble(PropertyMap{"hello": Property{}}))
 
 				npm, _ := pm.Save(false)
-				So(npm, ShouldResemble, pm)
+				assert.Loosely(t, npm, should.Resemble(pm))
 			})
-			Convey("meta", func() {
-				Convey("working", func() {
+			t.Run("meta", func(t *ftt.Test) {
+				t.Run("working", func(t *ftt.Test) {
 					pm := PropertyMap{"": MkProperty("trap!")}
 					_, ok := pm.GetMeta("foo")
-					So(ok, ShouldBeFalse)
+					assert.Loosely(t, ok, should.BeFalse)
 
-					So(pm.SetMeta("foo", 100), ShouldBeTrue)
+					assert.Loosely(t, pm.SetMeta("foo", 100), should.BeTrue)
 
 					v, ok := pm.GetMeta("foo")
-					So(ok, ShouldBeTrue)
-					So(v, ShouldEqual, 100)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, v, should.Equal(100))
 
-					So(GetMetaDefault(pm, "foo", 100), ShouldEqual, 100)
+					assert.Loosely(t, GetMetaDefault(pm, "foo", 100), should.Equal(100))
 
-					So(GetMetaDefault(pm, "bar", 100), ShouldEqual, 100)
+					assert.Loosely(t, GetMetaDefault(pm, "bar", 100), should.Equal(100))
 
 					npm, err := pm.Save(false)
-					So(err, ShouldBeNil)
-					So(len(npm), ShouldEqual, 0)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, len(npm), should.BeZero)
 				})
 
-				Convey("too many values picks the first one", func() {
+				t.Run("too many values picks the first one", func(t *ftt.Test) {
 					pm := PropertyMap{
 						"$thing": PropertySlice{MkProperty(100), MkProperty(200)},
 					}
 					v, ok := pm.GetMeta("thing")
-					So(ok, ShouldBeTrue)
-					So(v, ShouldEqual, 100)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, v, should.Equal(100))
 				})
 
-				Convey("errors", func() {
+				t.Run("errors", func(t *ftt.Test) {
 
-					Convey("weird value", func() {
+					t.Run("weird value", func(t *ftt.Test) {
 						pm := PropertyMap{}
-						So(pm.SetMeta("sup", complex(100, 20)), ShouldBeFalse)
+						assert.Loosely(t, pm.SetMeta("sup", complex(100, 20)), should.BeFalse)
 					})
 				})
 			})
 		})
-		Convey("disable indexing on entire map", func() {
+		t.Run("disable indexing on entire map", func(t *ftt.Test) {
 			pm := PropertyMap{
 				"single": MkProperty("foo"),
 				"slice":  PropertySlice{MkProperty(100), MkProperty(200)},
 			}
 			pm.TurnOffIdx()
-			So(pm["single"].Slice()[0].indexSetting, ShouldEqual, NoIndex)
-			So(pm["slice"].Slice()[0].indexSetting, ShouldEqual, NoIndex)
-			So(pm["slice"].Slice()[1].indexSetting, ShouldEqual, NoIndex)
+			assert.Loosely(t, pm["single"].Slice()[0].indexSetting, should.Equal(NoIndex))
+			assert.Loosely(t, pm["slice"].Slice()[0].indexSetting, should.Equal(NoIndex))
+			assert.Loosely(t, pm["slice"].Slice()[1].indexSetting, should.Equal(NoIndex))
 		})
 	})
 }
@@ -317,29 +325,29 @@ func TestByteSequences(t *testing.T) {
 	}
 
 	testCases := map[string][]struct {
-		assertion func(any, ...any) string
+		assertion func(expect int) comparison.Func[int]
 		cmpS      string
 	}{
 		"": {
-			{ShouldEqual, ""},
-			{ShouldBeLessThan, "foo"},
+			{should.Equal[int], ""},
+			{should.BeLessThan[int], "foo"},
 		},
 		"bar": {
-			{ShouldEqual, "bar"},
-			{ShouldBeGreaterThan, "ba"},
+			{should.Equal[int], "bar"},
+			{should.BeGreaterThan[int], "ba"},
 		},
 		"ba": {
-			{ShouldBeLessThan, "bar"},
-			{ShouldBeLessThan, "z"},
+			{should.BeLessThan[int], "bar"},
+			{should.BeLessThan[int], "z"},
 		},
 		"foo": {
-			{ShouldBeGreaterThan, ""},
+			{should.BeGreaterThan[int], ""},
 		},
 		"bz": {
-			{ShouldBeGreaterThan, "bar"},
+			{should.BeGreaterThan[int], "bar"},
 		},
 		"qux": {
-			{ShouldBeGreaterThan, "bar"},
+			{should.BeGreaterThan[int], "bar"},
 		},
 	}
 
@@ -349,28 +357,28 @@ func TestByteSequences(t *testing.T) {
 	}
 	sort.Strings(keys)
 
-	Convey(`When testing byte sequences`, t, func() {
+	ftt.Run(`When testing byte sequences`, t, func(t *ftt.Test) {
 		for _, s := range keys {
 			for _, c := range conversions {
-				Convey(fmt.Sprintf(`A %s sequence with test data %q`, c.desc, s), func() {
+				t.Run(fmt.Sprintf(`A %s sequence with test data %q`, c.desc, s), func(t *ftt.Test) {
 					bs, effectiveValue := c.conv(s)
 
-					Convey(`Basic stuff works.`, func() {
-						So(bs.len(), ShouldEqual, len(s))
+					t.Run(`Basic stuff works.`, func(t *ftt.Test) {
+						assert.Loosely(t, bs.len(), should.Equal(len(s)))
 						for i, c := range s {
-							So(bs.get(i), ShouldEqual, c)
+							assert.Loosely(t, bs.get(i), should.Equal(c))
 						}
-						So(bs.value(), ShouldResemble, effectiveValue)
-						So(bs.string(), ShouldEqual, s)
-						So(bs.bytes(), ShouldResemble, []byte(s))
+						assert.Loosely(t, bs.value(), should.Resemble(effectiveValue))
+						assert.Loosely(t, bs.string(), should.Equal(s))
+						assert.Loosely(t, bs.bytes(), should.Resemble([]byte(s)))
 					})
 
 					// Test comparison with other byteSequence types.
 					for _, tc := range testCases[s] {
 						for _, c := range conversions {
-							Convey(fmt.Sprintf(`Compares properly with %s %q`, c.desc, tc.cmpS), func() {
+							t.Run(fmt.Sprintf(`Compares properly with %s %q`, c.desc, tc.cmpS), func(t *ftt.Test) {
 								cmpBS, _ := c.conv(tc.cmpS)
-								So(cmpByteSequence(bs, cmpBS), tc.assertion, 0)
+								assert.Loosely(t, cmpByteSequence(bs, cmpBS), tc.assertion(0))
 							})
 						}
 					}

@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -191,7 +190,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				b := LoadRunsFromIDs(r404.ID)
 
 				runsA, errs := b.Do(ctx)
-				assert.Loosely(t, errs, should.Match([]error{datastore.ErrNoSuchEntity}, cmpopts.EquateErrors()))
+				assert.Loosely(t, errs, should.ErrLike(errors.MultiError{datastore.ErrNoSuchEntity}))
 				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
@@ -202,7 +201,8 @@ func TestLoadRunsBuilder(t *testing.T) {
 				b := LoadRunsFromIDs(r201.ID, r404.ID, r202.ID, r405.ID, r4.ID)
 
 				runsA, errs := b.Do(ctx)
-				assert.Loosely(t, errs, should.Match([]error{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil}, cmpopts.EquateErrors()))
+				assert.Loosely(t, errs, should.ErrLike(
+					errors.MultiError{nil, datastore.ErrNoSuchEntity, nil, datastore.ErrNoSuchEntity, nil}))
 				assert.Loosely(t, runsA, should.Resemble([]*Run{
 					r201,
 					{ID: r404.ID},

@@ -24,15 +24,23 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/registry"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
+
+func init() {
+	registry.RegisterCmpOption(cmp.AllowUnexported(ds.Property{}))
+}
 
 func mkProperties(index bool, forceMulti bool, vals ...any) ds.PropertyData {
 	indexSetting := ds.ShouldIndex
@@ -69,13 +77,13 @@ Actual:   (%T, %v)`, nil, nil, actual, actual)
 func TestBoundDatastore(t *testing.T) {
 	t.Parallel()
 
-	Convey("boundDatastore", t, func() {
+	ftt.Run("boundDatastore", t, func(t *ftt.Test) {
 		kc := ds.KeyContext{
 			AppID:     "app-id",
 			Namespace: "ns",
 		}
 
-		Convey("*datastore.Entity", func() {
+		t.Run("*datastore.Entity", func(t *ftt.Test) {
 			ent := &datastore.Entity{
 				Key: &datastore.Key{
 					ID:        1,
@@ -188,20 +196,20 @@ func TestBoundDatastore(t *testing.T) {
 				"time":    ds.MkProperty(ds.RoundTime(testclock.TestRecentTimeUTC)),
 			}
 
-			Convey("gaeEntityToNative", func() {
-				So(gaeEntityToNative(kc, pm), ShouldResemble, ent)
+			t.Run("gaeEntityToNative", func(t *ftt.Test) {
+				assert.Loosely(t, gaeEntityToNative(kc, pm), should.Resemble(ent))
 			})
 
-			Convey("nativeEntityToGAE", func() {
-				So(nativeEntityToGAE(kc, ent), ShouldResemble, pm)
+			t.Run("nativeEntityToGAE", func(t *ftt.Test) {
+				assert.Loosely(t, nativeEntityToGAE(kc, ent), should.Resemble(pm))
 			})
 
-			Convey("gaeEntityToNative, nativeEntityToGAE", func() {
-				So(nativeEntityToGAE(kc, gaeEntityToNative(kc, pm)), ShouldResemble, pm)
+			t.Run("gaeEntityToNative, nativeEntityToGAE", func(t *ftt.Test) {
+				assert.Loosely(t, nativeEntityToGAE(kc, gaeEntityToNative(kc, pm)), should.Resemble(pm))
 			})
 
-			Convey("nativeEntityToGAE, gaeEntityToNative", func() {
-				So(gaeEntityToNative(kc, nativeEntityToGAE(kc, ent)), ShouldResemble, ent)
+			t.Run("nativeEntityToGAE, gaeEntityToNative", func(t *ftt.Test) {
+				assert.Loosely(t, gaeEntityToNative(kc, nativeEntityToGAE(kc, ent)), should.Resemble(ent))
 			})
 		})
 	})
@@ -227,10 +235,10 @@ func TestDatastore(t *testing.T) {
 		return
 	}
 
-	Convey(fmt.Sprintf(`A cloud installation using datastore emulator %q`, emulatorHost), t, func() {
+	ftt.Run(fmt.Sprintf(`A cloud installation using datastore emulator %q`, emulatorHost), t, func(t *ftt.Test) {
 		c := context.Background()
 		client, err := datastore.NewClient(c, "luci-gae-test")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer client.Close()
 
 		testTime := ds.RoundTime(time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC))
@@ -239,7 +247,7 @@ func TestDatastore(t *testing.T) {
 		cfg := ConfigLite{ProjectID: "luci-gae-test", DS: client}
 		c = cfg.Use(c)
 
-		Convey(`Supports namespaces`, func() {
+		t.Run(`Supports namespaces`, func(t *ftt.Test) {
 			namespaces := []string{"foo", "bar", "baz"}
 
 			// Clear all used entities from all namespaces.
@@ -250,7 +258,7 @@ func TestDatastore(t *testing.T) {
 				for i := range keys {
 					keys[i] = ds.MakeKey(nsCtx, "Test", i+1)
 				}
-				So(errors.Filter(ds.Delete(nsCtx, keys), ds.ErrNoSuchEntity), ShouldBeNil)
+				assert.Loosely(t, errors.Filter(ds.Delete(nsCtx, keys), ds.ErrNoSuchEntity), should.BeNil)
 			}
 
 			// Put one entity per namespace.
@@ -258,7 +266,7 @@ func TestDatastore(t *testing.T) {
 				nsCtx := info.MustNamespace(c, ns)
 
 				pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp(i + 1), "Value": mkp(i)}
-				So(ds.Put(nsCtx, pmap), ShouldBeNil)
+				assert.Loosely(t, ds.Put(nsCtx, pmap), should.BeNil)
 			}
 
 			// Make sure that entity only exists in that namespace.
@@ -270,15 +278,15 @@ func TestDatastore(t *testing.T) {
 					err := ds.Get(nsCtx, pmap)
 
 					if namespaces[i] == ns {
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 					} else {
-						So(err, ShouldEqual, ds.ErrNoSuchEntity)
+						assert.Loosely(t, err, should.Equal(ds.ErrNoSuchEntity))
 					}
 				}
 			}
 		})
 
-		Convey(`In a clean random testing namespace`, func() {
+		t.Run(`In a clean random testing namespace`, func(t *ftt.Test) {
 			// Enter a namespace for this round of tests.
 			randNamespace := make([]byte, 32)
 			if _, err := rand.Read(randNamespace); err != nil {
@@ -289,41 +297,41 @@ func TestDatastore(t *testing.T) {
 			// Execute a kindless query to clear the namespace.
 			q := ds.NewQuery("").KeysOnly(true)
 			var allKeys []*ds.Key
-			So(ds.GetAll(c, q, &allKeys), ShouldBeNil)
-			So(ds.Delete(c, allKeys), ShouldBeNil)
+			assert.Loosely(t, ds.GetAll(c, q, &allKeys), should.BeNil)
+			assert.Loosely(t, ds.Delete(c, allKeys), should.BeNil)
 
-			Convey(`Can allocate an ID range`, func() {
+			t.Run(`Can allocate an ID range`, func(t *ftt.Test) {
 				var keys []*ds.Key
 				keys = append(keys, ds.NewIncompleteKeys(c, 10, "Bar", ds.MakeKey(c, "Foo", 12))...)
 				keys = append(keys, ds.NewIncompleteKeys(c, 10, "Baz", ds.MakeKey(c, "Foo", 12))...)
 
 				seen := map[string]struct{}{}
-				So(ds.AllocateIDs(c, keys), ShouldBeNil)
+				assert.Loosely(t, ds.AllocateIDs(c, keys), should.BeNil)
 				for _, k := range keys {
-					So(k.IsIncomplete(), ShouldBeFalse)
+					assert.Loosely(t, k.IsIncomplete(), should.BeFalse)
 					seen[k.String()] = struct{}{}
 				}
 
-				So(ds.AllocateIDs(c, keys), ShouldBeNil)
+				assert.Loosely(t, ds.AllocateIDs(c, keys), should.BeNil)
 				for _, k := range keys {
-					So(k.IsIncomplete(), ShouldBeFalse)
+					assert.Loosely(t, k.IsIncomplete(), should.BeFalse)
 
 					_, ok := seen[k.String()]
-					So(ok, ShouldBeFalse)
+					assert.Loosely(t, ok, should.BeFalse)
 				}
 			})
 
-			Convey(`Can get, put, and delete entities`, func() {
+			t.Run(`Can get, put, and delete entities`, func(t *ftt.Test) {
 				// Put: "foo", "bar", "baz".
 				put := []ds.PropertyMap{
 					{"$kind": mkp("test"), "$id": mkp("foo"), "Value": mkp(1337)},
 					{"$kind": mkp("test"), "$id": mkp("bar"), "Value": mkp(42)},
 					{"$kind": mkp("test"), "$id": mkp("baz"), "Value": mkp(0xd065)},
 				}
-				So(ds.Put(c, put), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, put), should.BeNil)
 
 				// Delete: "bar".
-				So(ds.Delete(c, ds.MakeKey(c, "test", "bar")), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "test", "bar")), should.BeNil)
 
 				// Get: "foo", "bar", "baz"
 				get := []ds.PropertyMap{
@@ -333,20 +341,20 @@ func TestDatastore(t *testing.T) {
 				}
 
 				err := ds.Get(c, get)
-				So(err, ShouldHaveSameTypeAs, errors.MultiError(nil))
+				assert.Loosely(t, err, should.HaveType[errors.MultiError])
 
 				merr := err.(errors.MultiError)
-				So(len(merr), ShouldEqual, 3)
-				So(merr[0], ShouldBeNil)
-				So(merr[1], ShouldEqual, ds.ErrNoSuchEntity)
-				So(merr[2], ShouldBeNil)
+				assert.Loosely(t, len(merr), should.Equal(3))
+				assert.Loosely(t, merr[0], should.BeNil)
+				assert.Loosely(t, merr[1], should.Equal(ds.ErrNoSuchEntity))
+				assert.Loosely(t, merr[2], should.BeNil)
 
 				// put[1] will not be retrieved (delete)
 				put[1] = get[1]
-				So(get, ShouldResemble, put)
+				assert.Loosely(t, get, should.Resemble(put))
 			})
 
-			Convey(`Can put and get all supported entity fields.`, func() {
+			t.Run(`Can put and get all supported entity fields.`, func(t *ftt.Test) {
 				put := ds.PropertyMap{
 					"$id":   mkpNI("foo"),
 					"$kind": mkpNI("FooType"),
@@ -380,17 +388,17 @@ func TestDatastore(t *testing.T) {
 						ds.PropertyMap{"prop": mkp(3)},
 					),
 				}
-				So(ds.Put(c, put), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, put), should.BeNil)
 
 				get := ds.PropertyMap{
 					"$id":   mkpNI("foo"),
 					"$kind": mkpNI("FooType"),
 				}
-				So(ds.Get(c, get), ShouldBeNil)
-				So(get, ShouldResemble, put)
+				assert.Loosely(t, ds.Get(c, get), should.BeNil)
+				assert.Loosely(t, get, should.Resemble(put))
 			})
 
-			Convey(`Can Get empty []byte slice as nil`, func() {
+			t.Run(`Can Get empty []byte slice as nil`, func(t *ftt.Test) {
 				put := ds.PropertyMap{
 					"$id":   mkpNI("foo"),
 					"$kind": mkpNI("FooType"),
@@ -404,13 +412,13 @@ func TestDatastore(t *testing.T) {
 				exp := put.Clone()
 				exp["Nilly"] = mkp([]byte(nil))
 
-				So(ds.Put(c, put), ShouldBeNil)
-				So(ds.Get(c, get), ShouldBeNil)
-				So(get, ShouldResemble, exp)
+				assert.Loosely(t, ds.Put(c, put), should.BeNil)
+				assert.Loosely(t, ds.Get(c, get), should.BeNil)
+				assert.Loosely(t, get, should.Resemble(exp))
 			})
 
-			Convey(`With several entities installed`, func() {
-				So(ds.Put(c, []ds.PropertyMap{
+			t.Run(`With several entities installed`, func(t *ftt.Test) {
+				assert.Loosely(t, ds.Put(c, []ds.PropertyMap{
 					{"$kind": mkp("Test"), "$id": mkp("foo"), "FooBar": mkp(true)},
 					{"$kind": mkp("Test"), "$id": mkp("bar"), "FooBar": mkp(true)},
 					{"$kind": mkp("Test"), "$id": mkp("baz")},
@@ -420,7 +428,7 @@ func TestDatastore(t *testing.T) {
 					// Entities for checking IN query.
 					{"$kind": mkp("AAA"), "$id": mkp("e1"), "Slice": mkp("a", "b")},
 					{"$kind": mkp("AAA"), "$id": mkp("e2"), "Slice": mkp("a", "c")},
-				}), ShouldBeNil)
+				}), should.BeNil)
 
 				withAllMeta := func(pm ds.PropertyMap) ds.PropertyMap {
 					prop := pm["$key"].(ds.Property)
@@ -433,55 +441,57 @@ func TestDatastore(t *testing.T) {
 
 				q := ds.NewQuery("Test")
 
-				Convey(`Can query for entities with FooBar == true.`, func() {
+				t.Run(`Can query for entities with FooBar == true.`, func(t *ftt.Test) {
 					var results []ds.PropertyMap
 					q = q.Eq("FooBar", true)
-					So(ds.GetAll(c, q, &results), ShouldBeNil)
+					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					So(results, ShouldResemble, []ds.PropertyMap{
+					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "bar")), "FooBar": mkp(true)}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
-					})
+					}))
 				})
 
-				Convey(`Can query for entities whose __key__ > "baz".`, func() {
+				t.Run(`Can query for entities whose __key__ > "baz".`, func(t *ftt.Test) {
 					var results []ds.PropertyMap
 					q = q.Gt("__key__", ds.MakeKey(c, "Test", "baz"))
-					So(ds.GetAll(c, q, &results), ShouldBeNil)
+					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					So(results, ShouldResemble, []ds.PropertyMap{
+					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "foo")), "FooBar": mkp(true)}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "qux"))}),
-					})
+					}))
 				})
 
-				Convey(`Can query for entities whose ancestor is "baz".`, func() {
+				t.Run(`Can query for entities whose ancestor is "baz".`, func(t *ftt.Test) {
 					var results []ds.PropertyMap
 					q := ds.NewQuery("Test").Ancestor(ds.MakeKey(c, "Test", "baz"))
-					So(ds.GetAll(c, q, &results), ShouldBeNil)
+					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
 
-					So(results, ShouldResemble, []ds.PropertyMap{
+					assert.Loosely(t, results, should.Resemble([]ds.PropertyMap{
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quux"))}),
 						withAllMeta(ds.PropertyMap{"$key": mkpNI(ds.MakeKey(c, "Test", "baz", "Test", "quuz"))}),
-					})
+					}))
 				})
 
-				// TODO(vadimsh): Unfortunately Cloud Datastore emulator doesn't
-				// support IN queries, see https://cloud.google.com/datastore/docs/tools/datastore-emulator#known_issues
-				SkipConvey(`Can use IN in queries`, func() {
+				t.Run(`Can use IN in queries`, func(t *ftt.Test) {
+					// TODO(vadimsh): Unfortunately Cloud Datastore emulator doesn't
+					// support IN queries, see https://cloud.google.com/datastore/docs/tools/datastore-emulator#known_issues
+					t.Skip("Cloud Datastore emulator doesn't support IN queries")
+
 					var results []*ds.Key
 					q := ds.NewQuery("AAA").In("Slice", "b", "c").KeysOnly(true)
-					So(ds.GetAll(c, q, &results), ShouldBeNil)
-					So(results, ShouldResemble, []*ds.Key{
+					assert.Loosely(t, ds.GetAll(c, q, &results), should.BeNil)
+					assert.Loosely(t, results, should.Resemble([]*ds.Key{
 						ds.MakeKey(c, "AAA", "e1"),
 						ds.MakeKey(c, "AAA", "e2"),
-					})
+					}))
 				})
 
-				Convey(`Can transactionally get and put.`, func() {
+				t.Run(`Can transactionally get and put.`, func(t *ftt.Test) {
 					err := ds.RunInTransaction(c, func(c context.Context) error {
 						pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux")}
 						if err := ds.Get(c, pmap); err != nil {
@@ -491,22 +501,22 @@ func TestDatastore(t *testing.T) {
 						pmap["ExtraField"] = mkp("Present!")
 						return ds.Put(c, pmap)
 					}, nil)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux")}
 					err = ds.RunInTransaction(c, func(c context.Context) error {
 						return ds.Get(c, pmap)
 					}, nil)
-					So(err, ShouldBeNil)
-					So(pmap, ShouldResemble, ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux"), "ExtraField": mkp("Present!")})
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, pmap, should.Resemble(ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("qux"), "ExtraField": mkp("Present!")}))
 				})
 
-				Convey(`Can fail in a transaction with no effect.`, func() {
+				t.Run(`Can fail in a transaction with no effect.`, func(t *ftt.Test) {
 					testError := errors.New("test error")
 
 					noTxnPM := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("no txn")}
 					err := ds.RunInTransaction(c, func(c context.Context) error {
-						So(ds.CurrentTransaction(c), ShouldNotBeNil)
+						assert.Loosely(t, ds.CurrentTransaction(c), should.NotBeNil)
 
 						pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("quux")}
 						if err := ds.Put(c, pmap); err != nil {
@@ -520,17 +530,17 @@ func TestDatastore(t *testing.T) {
 						}
 						return testError
 					}, nil)
-					So(err, ShouldEqual, testError)
+					assert.Loosely(t, err, should.Equal(testError))
 
 					// Confirm that noTxnPM was added.
-					So(ds.CurrentTransaction(c), shouldBeUntypedNil)
-					So(ds.Get(c, noTxnPM), ShouldBeNil)
+					assert.Loosely(t, ds.CurrentTransaction(c), convey.Adapt(shouldBeUntypedNil)())
+					assert.Loosely(t, ds.Get(c, noTxnPM), should.BeNil)
 
 					pmap := ds.PropertyMap{"$kind": mkp("Test"), "$id": mkp("quux")}
 					err = ds.RunInTransaction(c, func(c context.Context) error {
 						return ds.Get(c, pmap)
 					}, nil)
-					So(err, ShouldEqual, ds.ErrNoSuchEntity)
+					assert.Loosely(t, err, should.Equal(ds.ErrNoSuchEntity))
 				})
 			})
 		})

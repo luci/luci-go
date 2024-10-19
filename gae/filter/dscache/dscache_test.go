@@ -26,13 +26,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	mc "go.chromium.org/luci/gae/service/memcache"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type object struct {
@@ -91,7 +92,7 @@ func TestDSCache(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("Test dscache", t, func() {
+	ftt.Run("Test dscache", t, func(t *ftt.Test) {
 		c := mathrand.Set(context.Background(), rand.New(rand.NewSource(1)))
 		clk := testclock.New(zeroTime)
 		c = clock.Set(c, clk)
@@ -101,14 +102,14 @@ func TestDSCache(t *testing.T) {
 
 		numMemcacheItems := func() uint64 {
 			stats, err := mc.Stats(c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return stats.Items
 		}
 
 		c = FilterRDS(c, nil)
 		c = AddShardFunctions(c, shardObjFn, noCacheObjFn)
 
-		Convey("basically works", func() {
+		t.Run("basically works", func(t *ftt.Test) {
 			pm := ds.PropertyMap{
 				"BigData": ds.MkProperty([]byte("")),
 				"Value":   ds.MkProperty("hi"),
@@ -120,59 +121,59 @@ func TestDSCache(t *testing.T) {
 			encoded := append([]byte{0}, ds.Serialize.ToBytes(pm)...)
 
 			o := object{ID: 1, Value: "hi", Nested: nested{ID: "ho", Value: 123}}
-			So(ds.Put(c, &o), ShouldBeNil)
+			assert.Loosely(t, ds.Put(c, &o), should.BeNil)
 
 			expected := o
 			expected.Nested.Kind = "NestedKind"
 
 			o = object{ID: 1}
-			So(ds.Get(underCtx, &o), ShouldBeNil)
-			So(o, ShouldResemble, expected)
+			assert.Loosely(t, ds.Get(underCtx, &o), should.BeNil)
+			assert.Loosely(t, o, should.Resemble(expected))
 
 			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
-			So(err, ShouldEqual, mc.ErrCacheMiss)
+			assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 
 			o = object{ID: 1}
-			So(ds.Get(c, &o), ShouldBeNil)
-			So(o, ShouldResemble, expected)
+			assert.Loosely(t, ds.Get(c, &o), should.BeNil)
+			assert.Loosely(t, o, should.Resemble(expected))
 
 			itm, err = mc.GetKey(c, itm.Key())
-			So(err, ShouldBeNil)
-			So(itm.Value(), ShouldResemble, encoded)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, itm.Value(), should.Resemble(encoded))
 
-			Convey("now we don't need the datastore!", func() {
+			t.Run("now we don't need the datastore!", func(t *ftt.Test) {
 				o := object{ID: 1}
 
 				// delete it, bypassing the cache filter. Don't do this in production
 				// unless you want a crappy cache.
-				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), should.BeNil)
 
 				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
-				So(err, ShouldBeNil)
-				So(itm.Value(), ShouldResemble, encoded)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Value(), should.Resemble(encoded))
 
-				So(ds.Get(c, &o), ShouldBeNil)
-				So(o, ShouldResemble, expected)
+				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
+				assert.Loosely(t, o, should.Resemble(expected))
 			})
 
-			Convey("deleting it properly records that fact, however", func() {
+			t.Run("deleting it properly records that fact, however", func(t *ftt.Test) {
 				o := object{ID: 1}
-				So(ds.Delete(c, ds.KeyForObj(c, &o)), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(c, ds.KeyForObj(c, &o)), should.BeNil)
 
 				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
-				So(err, ShouldEqual, mc.ErrCacheMiss)
-				So(ds.Get(c, &o), ShouldEqual, ds.ErrNoSuchEntity)
+				assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
+				assert.Loosely(t, ds.Get(c, &o), should.Equal(ds.ErrNoSuchEntity))
 
 				itm, err = mc.GetKey(c, itm.Key())
-				So(err, ShouldBeNil)
-				So(itm.Value(), ShouldResemble, []byte{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Value(), should.Resemble([]byte{}))
 
 				// this one hits memcache
-				So(ds.Get(c, &o), ShouldEqual, ds.ErrNoSuchEntity)
+				assert.Loosely(t, ds.Get(c, &o), should.Equal(ds.ErrNoSuchEntity))
 			})
 		})
 
-		Convey("compression works", func() {
+		t.Run("compression works", func(t *ftt.Test) {
 			o := object{ID: 2, Value: `¯\_(ツ)_/¯`}
 			data := make([]byte, CompressionThreshold+1)
 			for i := range data {
@@ -181,101 +182,101 @@ func TestDSCache(t *testing.T) {
 			}
 			o.BigData = data
 
-			So(ds.Put(c, &o), ShouldBeNil)
-			So(ds.Get(c, &o), ShouldBeNil)
+			assert.Loosely(t, ds.Put(c, &o), should.BeNil)
+			assert.Loosely(t, ds.Get(c, &o), should.BeNil)
 
 			itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &o)))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			algo := compressionZlib
 			if UseZstd {
 				algo = compressionZstd
 			}
-			So(itm.Value()[0], ShouldEqual, algo)
-			So(len(itm.Value()), ShouldBeLessThan, len(data))
+			assert.Loosely(t, itm.Value()[0], should.Equal(algo))
+			assert.Loosely(t, len(itm.Value()), should.BeLessThan(len(data)))
 
-			Convey("uses compressed cache entry", func() {
+			t.Run("uses compressed cache entry", func(t *ftt.Test) {
 				// ensure the next Get comes from the cache
-				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), ShouldBeNil)
+				assert.Loosely(t, ds.Delete(underCtx, ds.KeyForObj(underCtx, &o)), should.BeNil)
 
 				o = object{ID: 2}
-				So(ds.Get(c, &o), ShouldBeNil)
-				So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
-				So(o.BigData, ShouldResemble, data)
+				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal(`¯\_(ツ)_/¯`))
+				assert.Loosely(t, o.BigData, should.Resemble(data))
 			})
 
-			Convey("skips unknown compression algo", func() {
+			t.Run("skips unknown compression algo", func(t *ftt.Test) {
 				blob := append([]byte(nil), itm.Value()...)
 				blob[0] = 123 // unknown algo
 				itm.SetValue(blob)
 
-				So(mc.Set(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Set(c, itm), should.BeNil)
 
 				// Should fallback to fetching from datastore.
 				o = object{ID: 2}
-				So(ds.Get(c, &o), ShouldBeNil)
-				So(o.Value, ShouldEqual, `¯\_(ツ)_/¯`)
-				So(o.BigData, ShouldResemble, data)
+				assert.Loosely(t, ds.Get(c, &o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal(`¯\_(ツ)_/¯`))
+				assert.Loosely(t, o.BigData, should.Resemble(data))
 			})
 		})
 
-		Convey("transactions", func() {
-			Convey("work", func() {
+		t.Run("transactions", func(t *ftt.Test) {
+			t.Run("work", func(t *ftt.Test) {
 				// populate an object @ ID1
-				So(ds.Put(c, &object{ID: 1, Value: "something"}), ShouldBeNil)
-				So(ds.Get(c, &object{ID: 1}), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, &object{ID: 1, Value: "something"}), should.BeNil)
+				assert.Loosely(t, ds.Get(c, &object{ID: 1}), should.BeNil)
 
-				So(ds.Put(c, &object{ID: 2, Value: "nurbs"}), ShouldBeNil)
-				So(ds.Get(c, &object{ID: 2}), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, &object{ID: 2, Value: "nurbs"}), should.BeNil)
+				assert.Loosely(t, ds.Get(c, &object{ID: 2}), should.BeNil)
 
 				// memcache now has the wrong value (simulated race)
-				So(ds.Put(underCtx, &object{ID: 1, Value: "else"}), ShouldBeNil)
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.Put(underCtx, &object{ID: 1, Value: "else"}), should.BeNil)
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					o := &object{ID: 1}
-					So(ds.Get(c, o), ShouldBeNil)
-					So(o.Value, ShouldEqual, "else")
+					assert.Loosely(t, ds.Get(c, o), should.BeNil)
+					assert.Loosely(t, o.Value, should.Equal("else"))
 					o.Value = "txn"
-					So(ds.Put(c, o), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, o), should.BeNil)
 
-					So(ds.Delete(c, ds.KeyForObj(c, &object{ID: 2})), ShouldBeNil)
+					assert.Loosely(t, ds.Delete(c, ds.KeyForObj(c, &object{ID: 2})), should.BeNil)
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				_, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 1})))
-				So(err, ShouldEqual, mc.ErrCacheMiss)
+				assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 				_, err = mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &object{ID: 2})))
-				So(err, ShouldEqual, mc.ErrCacheMiss)
+				assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 				o := &object{ID: 1}
-				So(ds.Get(c, o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "txn")
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal("txn"))
 			})
 
-			Convey("errors don't invalidate", func() {
+			t.Run("errors don't invalidate", func(t *ftt.Test) {
 				// populate an object @ ID1
-				So(ds.Put(c, &object{ID: 1, Value: "something"}), ShouldBeNil)
-				So(ds.Get(c, &object{ID: 1}), ShouldBeNil)
-				So(numMemcacheItems(), ShouldEqual, 1)
+				assert.Loosely(t, ds.Put(c, &object{ID: 1, Value: "something"}), should.BeNil)
+				assert.Loosely(t, ds.Get(c, &object{ID: 1}), should.BeNil)
+				assert.That(t, numMemcacheItems(), should.Equal[uint64](1))
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					o := &object{ID: 1}
-					So(ds.Get(c, o), ShouldBeNil)
-					So(o.Value, ShouldEqual, "something")
+					assert.Loosely(t, ds.Get(c, o), should.BeNil)
+					assert.Loosely(t, o.Value, should.Equal("something"))
 					o.Value = "txn"
-					So(ds.Put(c, o), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, o), should.BeNil)
 					return errors.New("OH NOES")
-				}, nil).Error(), ShouldContainSubstring, "OH NOES")
+				}, nil).Error(), should.ContainSubstring("OH NOES"))
 
 				// memcache still has the original
-				So(numMemcacheItems(), ShouldEqual, 1)
-				So(ds.Delete(underCtx, ds.KeyForObj(underCtx, &object{ID: 1})), ShouldBeNil)
+				assert.That(t, numMemcacheItems(), should.Equal[uint64](1))
+				assert.Loosely(t, ds.Delete(underCtx, ds.KeyForObj(underCtx, &object{ID: 1})), should.BeNil)
 				o := &object{ID: 1}
-				So(ds.Get(c, o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "something")
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal("something"))
 			})
 		})
 
-		Convey("control", func() {
-			Convey("per-model bypass", func() {
+		t.Run("control", func(t *ftt.Test) {
+			t.Run("per-model bypass", func(t *ftt.Test) {
 				type model struct {
 					ID         string    `gae:"$id"`
 					UseDSCache ds.Toggle `gae:"$dscache.enable,false"`
@@ -288,32 +289,32 @@ func TestDSCache(t *testing.T) {
 					{ID: "there", Value: "else", UseDSCache: ds.On},
 				}
 
-				So(ds.Put(c, itms), ShouldBeNil)
-				So(ds.Get(c, itms), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, itms), should.BeNil)
+				assert.Loosely(t, ds.Get(c, itms), should.BeNil)
 
-				So(numMemcacheItems(), ShouldEqual, 1)
+				assert.That(t, numMemcacheItems(), should.Equal[uint64](1))
 			})
 
-			Convey("per-key shard count", func() {
+			t.Run("per-key shard count", func(t *ftt.Test) {
 				s := &shardObj{ID: 4, Value: "hi"}
-				So(ds.Put(c, s), ShouldBeNil)
-				So(ds.Get(c, s), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, s), should.BeNil)
+				assert.Loosely(t, ds.Get(c, s), should.BeNil)
 
-				So(numMemcacheItems(), ShouldEqual, 1)
+				assert.That(t, numMemcacheItems(), should.Equal[uint64](1))
 				for i := 0; i < 20; i++ {
-					So(ds.Get(c, s), ShouldBeNil)
+					assert.Loosely(t, ds.Get(c, s), should.BeNil)
 				}
-				So(numMemcacheItems(), ShouldEqual, 4)
+				assert.That(t, numMemcacheItems(), should.Equal[uint64](4))
 			})
 
-			Convey("per-key cache disablement", func() {
+			t.Run("per-key cache disablement", func(t *ftt.Test) {
 				n := &noCacheObj{ID: "nurbs", Value: true}
-				So(ds.Put(c, n), ShouldBeNil)
-				So(ds.Get(c, n), ShouldBeNil)
-				So(numMemcacheItems(), ShouldEqual, 0)
+				assert.Loosely(t, ds.Put(c, n), should.BeNil)
+				assert.Loosely(t, ds.Get(c, n), should.BeNil)
+				assert.Loosely(t, numMemcacheItems(), should.BeZero)
 			})
 
-			Convey("per-model expiration", func() {
+			t.Run("per-model expiration", func(t *ftt.Test) {
 				type model struct {
 					ID         int64 `gae:"$id"`
 					DSCacheExp int64 `gae:"$dscache.expiration,7"`
@@ -321,127 +322,127 @@ func TestDSCache(t *testing.T) {
 					Value string
 				}
 
-				So(ds.Put(c, &model{ID: 1, Value: "mooo"}), ShouldBeNil)
-				So(ds.Get(c, &model{ID: 1}), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, &model{ID: 1, Value: "mooo"}), should.BeNil)
+				assert.Loosely(t, ds.Get(c, &model{ID: 1}), should.BeNil)
 
 				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, &model{ID: 1})))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				clk.Add(10 * time.Second)
 				_, err = mc.GetKey(c, itm.Key())
-				So(err, ShouldEqual, mc.ErrCacheMiss)
+				assert.Loosely(t, err, should.Equal(mc.ErrCacheMiss))
 			})
 		})
 
-		Convey("screw cases", func() {
-			Convey("memcache contains bogus value (simulated failed AddMulti)", func() {
+		t.Run("screw cases", func(t *ftt.Test) {
+			t.Run("memcache contains bogus value (simulated failed AddMulti)", func(t *ftt.Test) {
 				o := &object{ID: 1, Value: "spleen"}
-				So(ds.Put(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, o), should.BeNil)
 
 				sekret := []byte("I am a banana")
 				itm := mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).SetValue(sekret)
-				So(mc.Set(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Set(c, itm), should.BeNil)
 
 				o = &object{ID: 1}
-				So(ds.Get(c, o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "spleen")
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal("spleen"))
 
 				itm, err := mc.GetKey(c, itm.Key())
-				So(err, ShouldBeNil)
-				So(itm.Flags(), ShouldEqual, itemFlagUnknown)
-				So(itm.Value(), ShouldResemble, sekret)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagUnknown))
+				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
 			})
 
-			Convey("memcache contains bogus value (corrupt entry)", func() {
+			t.Run("memcache contains bogus value (corrupt entry)", func(t *ftt.Test) {
 				o := &object{ID: 1, Value: "spleen"}
-				So(ds.Put(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, o), should.BeNil)
 
 				sekret := []byte("I am a banana")
 				itm := (mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).
 					SetValue(sekret).
 					SetFlags(itemFlagHasData))
-				So(mc.Set(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Set(c, itm), should.BeNil)
 
 				o = &object{ID: 1}
-				So(ds.Get(c, o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "spleen")
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal("spleen"))
 
 				itm, err := mc.GetKey(c, itm.Key())
-				So(err, ShouldBeNil)
-				So(itm.Flags(), ShouldEqual, itemFlagHasData)
-				So(itm.Value(), ShouldResemble, sekret)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasData))
+				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
 			})
 
-			Convey("other entity has the lock", func() {
+			t.Run("other entity has the lock", func(t *ftt.Test) {
 				o := &object{ID: 1, Value: "spleen"}
-				So(ds.Put(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, o), should.BeNil)
 
 				sekret := []byte("r@vmarod!#)%9T")
 				itm := (mc.NewItem(c, makeMemcacheKey(0, ds.KeyForObj(c, o))).
 					SetValue(sekret).
 					SetFlags(itemFlagHasLock))
-				So(mc.Set(c, itm), ShouldBeNil)
+				assert.Loosely(t, mc.Set(c, itm), should.BeNil)
 
 				o = &object{ID: 1}
-				So(ds.Get(c, o), ShouldBeNil)
-				So(o.Value, ShouldEqual, "spleen")
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
+				assert.Loosely(t, o.Value, should.Equal("spleen"))
 
 				itm, err := mc.GetKey(c, itm.Key())
-				So(err, ShouldBeNil)
-				So(itm.Flags(), ShouldEqual, itemFlagHasLock)
-				So(itm.Value(), ShouldResemble, sekret)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasLock))
+				assert.Loosely(t, itm.Value(), should.Resemble(sekret))
 			})
 
-			Convey("massive entities can't be cached", func() {
+			t.Run("massive entities can't be cached", func(t *ftt.Test) {
 				o := &object{ID: 1, Value: "spleen"}
 				mr := mathrand.Get(c)
 				numRounds := (internalValueSizeLimit / 8) * 2
 				buf := bytes.Buffer{}
 				for i := 0; i < numRounds; i++ {
-					So(binary.Write(&buf, binary.LittleEndian, mr.Int63()), ShouldBeNil)
+					assert.Loosely(t, binary.Write(&buf, binary.LittleEndian, mr.Int63()), should.BeNil)
 				}
 				o.BigData = buf.Bytes()
-				So(ds.Put(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, o), should.BeNil)
 
 				o.BigData = nil
-				So(ds.Get(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
 
 				itm, err := mc.GetKey(c, makeMemcacheKey(0, ds.KeyForObj(c, o)))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Is locked until the next put, forcing all access to the datastore.
-				So(itm.Value(), ShouldResemble, []byte{})
-				So(itm.Flags(), ShouldEqual, itemFlagHasLock)
+				assert.Loosely(t, itm.Value(), should.Resemble([]byte{}))
+				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasLock))
 
 				o.BigData = []byte("hi :)")
-				So(ds.Put(c, o), ShouldBeNil)
-				So(ds.Get(c, o), ShouldBeNil)
+				assert.Loosely(t, ds.Put(c, o), should.BeNil)
+				assert.Loosely(t, ds.Get(c, o), should.BeNil)
 
 				itm, err = mc.GetKey(c, itm.Key())
-				So(err, ShouldBeNil)
-				So(itm.Flags(), ShouldEqual, itemFlagHasData)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, itm.Flags(), should.Equal(itemFlagHasData))
 			})
 
-			Convey("failure on Setting memcache locks is a hard stop", func() {
+			t.Run("failure on Setting memcache locks is a hard stop", func(t *ftt.Test) {
 				c, fb := featureBreaker.FilterMC(c, nil)
 				fb.BreakFeatures(nil, "SetMulti")
-				So(ds.Put(c, &object{ID: 1}).Error(), ShouldContainSubstring, "SetMulti")
+				assert.Loosely(t, ds.Put(c, &object{ID: 1}).Error(), should.ContainSubstring("SetMulti"))
 			})
 
-			Convey("failure on Setting memcache locks in a transaction is a hard stop", func() {
+			t.Run("failure on Setting memcache locks in a transaction is a hard stop", func(t *ftt.Test) {
 				c, fb := featureBreaker.FilterMC(c, nil)
 				fb.BreakFeatures(nil, "SetMulti")
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, &object{ID: 1}), ShouldBeNil)
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, &object{ID: 1}), should.BeNil)
 					// no problems here... memcache operations happen after the function
 					// body quits.
 					return nil
-				}, nil).Error(), ShouldContainSubstring, "SetMulti")
+				}, nil).Error(), should.ContainSubstring("SetMulti"))
 			})
 
-			Convey("verify numShards caps at MaxShards", func() {
+			t.Run("verify numShards caps at MaxShards", func(t *ftt.Test) {
 				sc := supportContext{shardsForKey: []ShardFunction{shardObjFn}}
-				So(sc.numShards(ds.KeyForObj(c, &shardObj{ID: 9001})), ShouldEqual, MaxShards)
+				assert.Loosely(t, sc.numShards(ds.KeyForObj(c, &shardObj{ID: 9001})), should.Equal(MaxShards))
 			})
 		})
 	})

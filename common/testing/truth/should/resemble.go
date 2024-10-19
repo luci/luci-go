@@ -242,10 +242,23 @@ func NotMatch[T any](expected T, opts ...cmp.Option) comparison.Func[T] {
 	return notMatchImpl("should.NotMatch", expected, opts)
 }
 
+func typedDiff(cmpName string, expected, actual any, opts []cmp.Option) (diff string, fail *failure.Summary) {
+	diff, ok := typed.DiffSafe(expected, actual, opts...)
+	if !ok {
+		return "", comparison.NewSummaryBuilder(cmpName, expected).
+			Because("typed.Diff failed: %s", diff).
+			Summary
+	}
+	return diff, nil
+}
+
 // matchImpl is the implementation of Match and Resemble.
 func matchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.Func[T] {
 	return func(actual T) *failure.Summary {
-		diff := typed.Diff(expected, actual, opts...)
+		diff, fail := typedDiff(cmpName, expected, actual, opts)
+		if fail != nil {
+			return fail
+		}
 
 		if diff == "" {
 			return nil
@@ -262,7 +275,10 @@ func matchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.
 // notMatchImpl is the implementation of Match and Resemble.
 func notMatchImpl[T any](cmpName string, expected T, opts []cmp.Option) comparison.Func[T] {
 	return func(actual T) *failure.Summary {
-		diff := typed.Diff(expected, actual, opts...)
+		diff, fail := typedDiff(cmpName, expected, actual, opts)
+		if fail != nil {
+			return fail
+		}
 
 		if diff != "" {
 			return nil

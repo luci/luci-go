@@ -17,20 +17,20 @@ package txnBuf
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math/rand"
 	"testing"
 
 	"go.chromium.org/luci/common/data/cmpbin"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type Foo struct {
@@ -42,60 +42,32 @@ type Foo struct {
 	Sort    []string
 }
 
-func toIntSlice(stuff []any) []int64 {
-	vals, ok := stuff[0].([]int64)
-	if !ok {
-		vals = make([]int64, len(stuff))
-		for i := range vals {
-			vals[i] = int64(stuff[i].(int))
-		}
-	}
-	return vals
-}
+func fooShouldHaveValues(c context.Context, t testing.TB, id int64, values []int64, valueNI []byte) {
+	t.Helper()
 
-func toInt64(thing any) int64 {
-	switch x := thing.(type) {
-	case int:
-		return int64(x)
-	case int64:
-		return x
-	default:
-		panic(fmt.Errorf("wat r it? %v", x))
+	f := &Foo{ID: id}
+	err := ds.Get(c, f)
+
+	if len(values) == 0 && len(valueNI) == 0 {
+		assert.That(t, err, should.ErrLike(ds.ErrNoSuchEntity), truth.LineContext())
+	} else {
+		if len(values) > 0 {
+			assert.That(t, f.Value, should.Match(values), truth.LineContext())
+		}
+		if len(valueNI) > 0 {
+			assert.That(t, f.ValueNI, should.Match(valueNI), truth.LineContext())
+		}
 	}
 }
 
-func fooShouldHave(c context.Context) func(any, ...any) string {
-	return func(id any, values ...any) string {
-		f := &Foo{ID: toInt64(id)}
-		err := ds.Get(c, f)
-		if len(values) == 0 {
-			return ShouldEqual(err, ds.ErrNoSuchEntity)
-		}
+func setFooTo(c context.Context, t testing.TB, id int64, values []int64, valueNI []byte) {
+	t.Helper()
 
-		ret := ShouldBeNil(err)
-		if ret == "" {
-			if data, ok := values[0].([]byte); ok {
-				ret = ShouldResemble(f.ValueNI, data)
-			} else {
-				ret = ShouldResemble(f.Value, toIntSlice(values))
-			}
-		}
-		return ret
-	}
-}
-
-func fooSetTo(c context.Context) func(any, ...any) string {
-	return func(id any, values ...any) string {
-		f := &Foo{ID: toInt64(id)}
-		if len(values) == 0 {
-			return ShouldBeNil(ds.Delete(c, ds.KeyForObj(c, f)))
-		}
-		if data, ok := values[0].([]byte); ok {
-			f.ValueNI = data
-		} else {
-			f.Value = toIntSlice(values)
-		}
-		return ShouldBeNil(ds.Put(c, f))
+	f := &Foo{ID: id, Value: values, ValueNI: valueNI}
+	if len(values) == 0 && len(valueNI) == 0 {
+		assert.That(t, ds.Delete(c, ds.KeyForObj(c, f)), should.ErrLike(nil), truth.LineContext())
+	} else {
+		assert.That(t, ds.Put(c, f), should.ErrLike(nil), truth.LineContext())
 	}
 }
 
@@ -161,47 +133,46 @@ func mkds(data []*Foo) (under, over *count.DSCounter, c context.Context) {
 func TestTransactionBuffers(t *testing.T) {
 	t.Parallel()
 
-	Convey("Get/Put/Delete", t, func() {
+	ftt.Run("Get/Put/Delete", t, func(t *ftt.Test) {
 		under, over, c := mkds(dataMultiRoot)
 		ds.GetTestable(c).SetTransactionRetryCount(1)
 
-		So(under.PutMulti.Total(), ShouldEqual, 0)
-		So(over.PutMulti.Total(), ShouldEqual, 0)
+		assert.Loosely(t, under.PutMulti.Total(), should.BeZero)
+		assert.Loosely(t, over.PutMulti.Total(), should.BeZero)
 
-		Convey("Good", func() {
-			Convey("read-only", func() {
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(4, fooShouldHave(c), dataMultiRoot[3].Value)
+		t.Run("Good", func(t *ftt.Test) {
+			t.Run("read-only", func(t *ftt.Test) {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					fooShouldHaveValues(c, t, 4, dataMultiRoot[3].Value, nil)
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("single-level read/write", func() {
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(4, fooShouldHave(c), dataMultiRoot[3].Value)
+			t.Run("single-level read/write", func(t *ftt.Test) {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					fooShouldHaveValues(c, t, 4, dataMultiRoot[3].Value, nil)
 
-					So(4, fooSetTo(c), 1, 2, 3, 4)
-
-					So(3, fooSetTo(c), 1, 2, 3, 4)
+					setFooTo(c, t, 4, []int64{1, 2, 3, 4}, nil)
+					setFooTo(c, t, 3, []int64{1, 2, 3, 4}, nil)
 
 					// look! it remembers :)
-					So(4, fooShouldHave(c), 1, 2, 3, 4)
+					fooShouldHaveValues(c, t, 4, []int64{1, 2, 3, 4}, nil)
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				// 2 because we are simulating a transaction failure
-				So(under.PutMulti.Total(), ShouldEqual, 2)
+				assert.Loosely(t, under.PutMulti.Total(), should.Equal(2))
 
-				So(3, fooShouldHave(c), 1, 2, 3, 4)
-				So(4, fooShouldHave(c), 1, 2, 3, 4)
+				fooShouldHaveValues(c, t, 3, []int64{1, 2, 3, 4}, nil)
+				fooShouldHaveValues(c, t, 4, []int64{1, 2, 3, 4}, nil)
 			})
 
-			Convey("multi-level read/write", func() {
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(3, fooShouldHave(c), dataMultiRoot[2].Value)
+			t.Run("multi-level read/write", func(t *ftt.Test) {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					fooShouldHaveValues(c, t, 3, dataMultiRoot[2].Value, nil)
 
-					So(3, fooSetTo(c), 1, 2, 3, 4)
-					So(7, fooSetTo(c))
+					setFooTo(c, t, 3, []int64{1, 2, 3, 4}, nil)
+					setFooTo(c, t, 7, nil, nil)
 
 					vals := []*Foo{
 						{ID: 793},
@@ -209,104 +180,104 @@ func TestTransactionBuffers(t *testing.T) {
 						{ID: 3},
 						{ID: 4},
 					}
-					So(ds.Get(c, vals), ShouldResemble, errors.NewMultiError(
+					assert.Loosely(t, ds.Get(c, vals), should.ErrLike(errors.NewMultiError(
 						ds.ErrNoSuchEntity,
 						ds.ErrNoSuchEntity,
 						nil,
 						nil,
-					))
+					)))
 
-					So(vals[0].Value, ShouldBeNil)
-					So(vals[1].Value, ShouldBeNil)
-					So(vals[2].Value, ShouldResemble, []int64{1, 2, 3, 4})
-					So(vals[3].Value, ShouldResemble, dataSingleRoot[3].Value)
+					assert.Loosely(t, vals[0].Value, should.BeNil)
+					assert.Loosely(t, vals[1].Value, should.BeNil)
+					assert.Loosely(t, vals[2].Value, should.Resemble([]int64{1, 2, 3, 4}))
+					assert.Loosely(t, vals[3].Value, should.Resemble(dataSingleRoot[3].Value))
 
 					// inner, failing, transaction
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						// we can see stuff written in the outer txn
-						So(7, fooShouldHave(c))
-						So(3, fooShouldHave(c), 1, 2, 3, 4)
+						fooShouldHaveValues(c, t, 7, nil, nil)
+						fooShouldHaveValues(c, t, 3, []int64{1, 2, 3, 4}, nil)
 
-						So(3, fooSetTo(c), 10, 20, 30, 40)
+						setFooTo(c, t, 3, []int64{10, 20, 30, 40}, nil)
 
 						// disaster strikes!
 						return errors.New("whaaaa")
-					}, nil), ShouldErrLike, "whaaaa")
+					}, nil), should.ErrLike("whaaaa"))
 
-					So(3, fooShouldHave(c), 1, 2, 3, 4)
+					fooShouldHaveValues(c, t, 3, []int64{1, 2, 3, 4}, nil)
 
 					// inner, successful, transaction
-					So(ds.RunInTransaction(c, func(c context.Context) error {
-						So(3, fooShouldHave(c), 1, 2, 3, 4)
-						So(3, fooSetTo(c), 10, 20, 30, 40)
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+						fooShouldHaveValues(c, t, 3, []int64{1, 2, 3, 4}, nil)
+						setFooTo(c, t, 3, []int64{10, 20, 30, 40}, nil)
 						return nil
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 
 					// now we see it
-					So(3, fooShouldHave(c), 10, 20, 30, 40)
+					fooShouldHaveValues(c, t, 3, []int64{10, 20, 30, 40}, nil)
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				// 2 because we are simulating a transaction failure
-				So(under.PutMulti.Total(), ShouldEqual, 2)
-				So(under.DeleteMulti.Total(), ShouldEqual, 2)
+				assert.Loosely(t, under.PutMulti.Total(), should.Equal(2))
+				assert.Loosely(t, under.DeleteMulti.Total(), should.Equal(2))
 
-				So(over.PutMulti.Total(), ShouldEqual, 8)
+				assert.Loosely(t, over.PutMulti.Total(), should.Equal(8))
 
-				So(7, fooShouldHave(c))
-				So(3, fooShouldHave(c), 10, 20, 30, 40)
+				fooShouldHaveValues(c, t, 7, nil, nil)
+				fooShouldHaveValues(c, t, 3, []int64{10, 20, 30, 40}, nil)
 			})
 
-			Convey("can allocate IDs from an inner transaction", func() {
+			t.Run("can allocate IDs from an inner transaction", func(t *ftt.Test) {
 				nums := []int64{4, 8, 15, 16, 23, 42}
 				k := (*ds.Key)(nil)
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						f := &Foo{Value: nums}
-						So(ds.Put(c, f), ShouldBeNil)
+						assert.Loosely(t, ds.Put(c, f), should.BeNil)
 						k = ds.KeyForObj(c, f)
 						return nil
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 
-					So(k.IntID(), fooShouldHave(c), nums)
+					fooShouldHaveValues(c, t, k.IntID(), nums, nil)
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
-				So(k.IntID(), fooShouldHave(c), nums)
+				fooShouldHaveValues(c, t, k.IntID(), nums, nil)
 			})
 
 		})
 
-		Convey("Bad", func() {
+		t.Run("Bad", func(t *ftt.Test) {
 
-			Convey("too many roots", func() {
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+			t.Run("too many roots", func(t *ftt.Test) {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					for i := 1; i < 26; i++ {
 						f := &Foo{ID: int64(i)}
-						So(ds.Get(c, f), ShouldBeNil)
-						So(f, ShouldResemble, dataMultiRoot[i-1])
+						assert.Loosely(t, ds.Get(c, f), should.BeNil)
+						assert.Loosely(t, f, should.Resemble(dataMultiRoot[i-1]))
 					}
 
 					f := &Foo{ID: 7}
 					f.Value = []int64{9}
-					So(ds.Put(c, f), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, f), should.BeNil)
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				f := &Foo{ID: 7}
-				So(ds.Get(c, f), ShouldBeNil)
-				So(f.Value, ShouldResemble, []int64{9})
+				assert.Loosely(t, ds.Get(c, f), should.BeNil)
+				assert.Loosely(t, f.Value, should.Resemble([]int64{9}))
 			})
 
-			Convey("buffered errors never reach the datastore", func() {
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, &Foo{ID: 1, Value: []int64{1, 2, 3, 4}}), ShouldBeNil)
+			t.Run("buffered errors never reach the datastore", func(t *ftt.Test) {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Value: []int64{1, 2, 3, 4}}), should.BeNil)
 					return errors.New("boop")
-				}, nil), ShouldErrLike, "boop")
-				So(under.PutMulti.Total(), ShouldEqual, 0)
-				So(over.PutMulti.Successes(), ShouldEqual, 1)
+				}, nil), should.ErrLike("boop"))
+				assert.Loosely(t, under.PutMulti.Total(), should.BeZero)
+				assert.Loosely(t, over.PutMulti.Successes(), should.Equal(1))
 			})
 
 		})
@@ -317,64 +288,64 @@ func TestTransactionBuffers(t *testing.T) {
 func TestHuge(t *testing.T) {
 	t.Parallel()
 
-	Convey("testing datastore enforces thresholds", t, func() {
+	ftt.Run("testing datastore enforces thresholds", t, func(t *ftt.Test) {
 		_, _, c := mkds(dataMultiRoot)
 
-		Convey("exceeding inner txn size threshold still allows outer", func() {
-			So(ds.RunInTransaction(c, func(c context.Context) error {
-				So(18, fooSetTo(c), hugeField)
+		t.Run("exceeding inner txn size threshold still allows outer", func(t *ftt.Test) {
+			assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+				setFooTo(c, t, 18, nil, hugeField)
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, hugeData), ShouldBeNil)
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, hugeData), should.BeNil)
 					return nil
-				}, nil), ShouldErrLike, ErrTransactionTooLarge)
+				}, nil), should.ErrLike(ErrTransactionTooLarge))
 
 				return nil
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 
-			So(18, fooShouldHave(c), hugeField)
+			fooShouldHaveValues(c, t, 18, nil, hugeField)
 		})
 
-		Convey("exceeding inner txn count threshold still allows outer", func() {
-			So(ds.RunInTransaction(c, func(c context.Context) error {
-				So(18, fooSetTo(c), hugeField)
+		t.Run("exceeding inner txn count threshold still allows outer", func(t *ftt.Test) {
+			assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+				setFooTo(c, t, 18, nil, hugeField)
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					p := ds.MakeKey(c, "mom", 1)
 
 					// This will exceed the budget, since we've already done one write in
 					// the parent.
 					for i := 1; i <= DefaultWriteCountBudget; i++ {
-						So(ds.Put(c, &Foo{ID: int64(i), Parent: p}), ShouldBeNil)
+						assert.Loosely(t, ds.Put(c, &Foo{ID: int64(i), Parent: p}), should.BeNil)
 					}
 					return nil
-				}, nil), ShouldErrLike, ErrTransactionTooLarge)
+				}, nil), should.ErrLike(ErrTransactionTooLarge))
 
 				return nil
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 
-			So(18, fooShouldHave(c), hugeField)
+			fooShouldHaveValues(c, t, 18, nil, hugeField)
 		})
 
-		Convey("exceeding threshold in the parent, then retreating in the child is okay", func() {
-			So(ds.RunInTransaction(c, func(c context.Context) error {
-				So(ds.Put(c, hugeData), ShouldBeNil)
-				So(18, fooSetTo(c), hugeField)
+		t.Run("exceeding threshold in the parent, then retreating in the child is okay", func(t *ftt.Test) {
+			assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.Put(c, hugeData), should.BeNil)
+				setFooTo(c, t, 18, nil, hugeField)
 
 				// We're over threshold! But the child will delete most of this and
 				// bring us back to normal.
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					keys := make([]*ds.Key, len(hugeData))
 					for i, d := range hugeData {
 						keys[i] = ds.KeyForObj(c, d)
 					}
 					return ds.Delete(c, keys)
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				return nil
-			}, nil), ShouldBeNil)
+			}, nil), should.BeNil)
 
-			So(18, fooShouldHave(c), hugeField)
+			fooShouldHaveValues(c, t, 18, nil, hugeField)
 		})
 	})
 }
@@ -382,11 +353,11 @@ func TestHuge(t *testing.T) {
 func TestQuerySupport(t *testing.T) {
 	t.Parallel()
 
-	Convey("Queries", t, func() {
-		Convey("Good", func() {
+	ftt.Run("Queries", t, func(t *ftt.Test) {
+		t.Run("Good", func(t *ftt.Test) {
 			q := ds.NewQuery("Foo").Ancestor(root)
 
-			Convey("normal", func() {
+			t.Run("normal", func(t *ftt.Test) {
 				_, _, c := mkds(dataSingleRoot)
 				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
@@ -396,38 +367,38 @@ func TestQuerySupport(t *testing.T) {
 					},
 				})
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Lt("Value", 400000000000000000)
 
 					vals := []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 15)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(15))
 
 					count, err := ds.Count(c, q)
-					So(err, ShouldBeNil)
-					So(count, ShouldEqual, 15)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, count, should.Equal(15))
 
 					f := &Foo{ID: 1, Parent: root}
-					So(ds.Get(c, f), ShouldBeNil)
+					assert.Loosely(t, ds.Get(c, f), should.BeNil)
 					f.Value = append(f.Value, 100)
-					So(ds.Put(c, f), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, f), should.BeNil)
 
 					// Wowee, zowee, merged queries!
 					vals2 := []*Foo{}
-					So(ds.GetAll(c, q, &vals2), ShouldBeNil)
-					So(len(vals2), ShouldEqual, 16)
-					So(vals2[0], ShouldResemble, f)
+					assert.Loosely(t, ds.GetAll(c, q, &vals2), should.BeNil)
+					assert.Loosely(t, len(vals2), should.Equal(16))
+					assert.Loosely(t, vals2[0], should.Resemble(f))
 
 					vals2 = []*Foo{}
-					So(ds.GetAll(c, q.Limit(2).Offset(1), &vals2), ShouldBeNil)
-					So(len(vals2), ShouldEqual, 2)
-					So(vals2, ShouldResemble, vals[:2])
+					assert.Loosely(t, ds.GetAll(c, q.Limit(2).Offset(1), &vals2), should.BeNil)
+					assert.Loosely(t, len(vals2), should.Equal(2))
+					assert.Loosely(t, vals2, should.Resemble(vals[:2]))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("keysOnly", func() {
+			t.Run("keysOnly", func(t *ftt.Test) {
 				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
@@ -435,36 +406,36 @@ func TestQuerySupport(t *testing.T) {
 					{ID: 5, Parent: root, Value: []int64{1, 70, 101}},
 				})
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Eq("Value", 1).KeysOnly(true)
 					vals := []*ds.Key{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 3)
-					So(vals[2], ShouldResemble, ds.MakeKey(c, "Parent", 1, "Foo", 5))
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(3))
+					assert.Loosely(t, vals[2], should.Resemble(ds.MakeKey(c, "Parent", 1, "Foo", 5)))
 
 					// can remove keys
-					So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), ShouldBeNil)
+					assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), should.BeNil)
 					vals = []*ds.Key{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 2)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(2))
 
 					// and add new ones
-					So(ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{1, 7, 100}}), ShouldBeNil)
-					So(ds.Put(c, &Foo{ID: 7, Parent: root, Value: []int64{20, 1}}), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{1, 7, 100}}), should.BeNil)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 7, Parent: root, Value: []int64{20, 1}}), should.BeNil)
 					vals = []*ds.Key{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 4)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(4))
 
-					So(vals[0].IntID(), ShouldEqual, 1)
-					So(vals[1].IntID(), ShouldEqual, 4)
-					So(vals[2].IntID(), ShouldEqual, 5)
-					So(vals[3].IntID(), ShouldEqual, 7)
+					assert.Loosely(t, vals[0].IntID(), should.Equal(1))
+					assert.Loosely(t, vals[1].IntID(), should.Equal(4))
+					assert.Loosely(t, vals[2].IntID(), should.Equal(5))
+					assert.Loosely(t, vals[3].IntID(), should.Equal(7))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("project", func() {
+			t.Run("project", func(t *ftt.Test) {
 				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
@@ -480,16 +451,16 @@ func TestQuerySupport(t *testing.T) {
 					},
 				})
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					count, err := ds.Count(c, q.Project("Value"))
-					So(err, ShouldBeNil)
-					So(count, ShouldEqual, 24)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, count, should.Equal(24))
 
 					q = q.Project("Value").Offset(4).Limit(10)
 
 					vals := []ds.PropertyMap{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 10)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(10))
 
 					expect := []struct {
 						id  int64
@@ -508,17 +479,17 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
 
 					// should remove 4 entries, but there are plenty more to fill
-					So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), ShouldBeNil)
+					assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 2)), should.BeNil)
 
 					vals = []ds.PropertyMap{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 10)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(10))
 
 					expect = []struct {
 						id  int64
@@ -539,16 +510,16 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
 
-					So(ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{3, 9}}), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, &Foo{ID: 1, Parent: root, Value: []int64{3, 9}}), should.BeNil)
 
 					vals = []ds.PropertyMap{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 10)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(10))
 
 					expect = []struct {
 						id  int64
@@ -569,17 +540,17 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
 					}
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 			})
 
-			Convey("project+distinct", func() {
+			t.Run("project+distinct", func(t *ftt.Test) {
 				_, _, c := mkds([]*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
@@ -595,12 +566,12 @@ func TestQuerySupport(t *testing.T) {
 					},
 				})
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					q = q.Project("Value").Distinct(true)
 
 					vals := []ds.PropertyMap{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 13)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(13))
 
 					expect := []struct {
 						id  int64
@@ -622,16 +593,16 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
-						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 					}
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("overwrite", func() {
+			t.Run("overwrite", func(t *ftt.Test) {
 				data := []*Foo{
 					{ID: 2, Parent: root, Value: []int64{1, 2, 3, 4, 5, 6, 7}},
 					{ID: 3, Parent: root, Value: []int64{3, 4, 5, 6, 7, 8, 9}},
@@ -643,37 +614,37 @@ func TestQuerySupport(t *testing.T) {
 
 				q = q.Eq("Value", 2, 3)
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					vals := []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 2)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(2))
 
-					So(vals[0], ShouldResemble, data[0])
-					So(vals[1], ShouldResemble, data[2])
+					assert.Loosely(t, vals[0], should.Resemble(data[0]))
+					assert.Loosely(t, vals[1], should.Resemble(data[2]))
 
 					foo2 := &Foo{ID: 2, Parent: root, Value: []int64{2, 3}}
-					So(ds.Put(c, foo2), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, foo2), should.BeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 2)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(2))
 
-					So(vals[0], ShouldResemble, foo2)
-					So(vals[1], ShouldResemble, data[2])
+					assert.Loosely(t, vals[0], should.Resemble(foo2))
+					assert.Loosely(t, vals[1], should.Resemble(data[2]))
 
 					foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
-					So(ds.Put(c, foo1), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, foo1), should.BeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 3)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(3))
 
-					So(vals[0], ShouldResemble, foo1)
-					So(vals[1], ShouldResemble, foo2)
-					So(vals[2], ShouldResemble, data[2])
+					assert.Loosely(t, vals[0], should.Resemble(foo1))
+					assert.Loosely(t, vals[1], should.Resemble(foo2))
+					assert.Loosely(t, vals[2], should.Resemble(data[2]))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
 			projectData := []*Foo{
@@ -683,7 +654,7 @@ func TestQuerySupport(t *testing.T) {
 				{ID: 5, Parent: root, Value: []int64{1, 70, 101}, Sort: []string{"c"}},
 			}
 
-			Convey("project+extra orders", func() {
+			t.Run("project+extra orders", func(t *ftt.Test) {
 
 				_, _, c := mkds(projectData)
 				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
@@ -696,13 +667,13 @@ func TestQuerySupport(t *testing.T) {
 				})
 
 				q = q.Project("Value").Order("-Sort", "-Value").Distinct(true)
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, &Foo{
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, &Foo{
 						ID: 1, Parent: root, Value: []int64{0, 1, 1000},
-						Sort: []string{"zz"}}), ShouldBeNil)
+						Sort: []string{"zz"}}), should.BeNil)
 
 					vals := []ds.PropertyMap{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
 
 					expect := []struct {
 						id  int64
@@ -726,16 +697,16 @@ func TestQuerySupport(t *testing.T) {
 					}
 
 					for i, pm := range vals {
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, expect[i].val)
-						So(ds.GetMetaDefault(pm, "key", nil), ShouldResemble,
-							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id))
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(expect[i].val))
+						assert.Loosely(t, ds.GetMetaDefault(pm, "key", nil), should.Resemble(
+							ds.MakeKey(c, "Parent", 1, "Foo", expect[i].id)))
 					}
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("buffered entity sorts before ineq, but after first parent entity", func() {
+			t.Run("buffered entity sorts before ineq, but after first parent entity", func(t *ftt.Test) {
 				// If we got this wrong, we'd see Foo,3 come before Foo,2. This might
 				// happen because we calculate the comparison string for each entity
 				// based on the whole entity, but we forgot to limit the comparison
@@ -755,22 +726,22 @@ func TestQuerySupport(t *testing.T) {
 
 				q = q.Gt("Value", 2).Limit(2)
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					foo1 := &Foo{ID: 3, Parent: root, Value: []int64{0, 2, 3, 4}}
-					So(ds.Put(c, foo1), ShouldBeNil)
+					assert.Loosely(t, ds.Put(c, foo1), should.BeNil)
 
 					vals := []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 2)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(2))
 
-					So(vals[0], ShouldResemble, data[0])
-					So(vals[1], ShouldResemble, foo1)
+					assert.Loosely(t, vals[0], should.Resemble(data[0]))
+					assert.Loosely(t, vals[1], should.Resemble(foo1))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("keysOnly+extra orders", func() {
+			t.Run("keysOnly+extra orders", func(t *ftt.Test) {
 				_, _, c := mkds(projectData)
 				ds.GetTestable(c).AddIndexes(&ds.IndexDefinition{
 					Kind:     "Foo",
@@ -782,90 +753,90 @@ func TestQuerySupport(t *testing.T) {
 
 				q = q.Order("Sort").KeysOnly(true)
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, &Foo{
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, &Foo{
 						ID: 1, Parent: root, Value: []int64{0, 1, 1000},
-						Sort: []string{"x", "zz"}}), ShouldBeNil)
+						Sort: []string{"x", "zz"}}), should.BeNil)
 
-					So(ds.Put(c, &Foo{
+					assert.Loosely(t, ds.Put(c, &Foo{
 						ID: 2, Parent: root, Value: []int64{0, 1, 1000},
-						Sort: []string{"zz", "zzz", "zzzz"}}), ShouldBeNil)
+						Sort: []string{"zz", "zzz", "zzzz"}}), should.BeNil)
 
 					vals := []*ds.Key{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(len(vals), ShouldEqual, 5)
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, len(vals), should.Equal(5))
 
 					kc := ds.GetKeyContext(c)
-					So(vals, ShouldResemble, []*ds.Key{
+					assert.Loosely(t, vals, should.Resemble([]*ds.Key{
 						kc.MakeKey("Parent", 1, "Foo", 4),
 						kc.MakeKey("Parent", 1, "Foo", 3),
 						kc.MakeKey("Parent", 1, "Foo", 5),
 						kc.MakeKey("Parent", 1, "Foo", 1),
 						kc.MakeKey("Parent", 1, "Foo", 2),
-					})
+					}))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 			})
 
-			Convey("query accross nested transactions", func() {
+			t.Run("query accross nested transactions", func(t *ftt.Test) {
 				_, _, c := mkds(projectData)
 				q = q.Eq("Value", 2, 3)
 
 				foo1 := &Foo{ID: 1, Parent: root, Value: []int64{2, 3}}
 				foo7 := &Foo{ID: 7, Parent: root, Value: []int64{2, 3}}
 
-				So(ds.RunInTransaction(c, func(c context.Context) error {
-					So(ds.Put(c, foo1), ShouldBeNil)
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.Put(c, foo1), should.BeNil)
 
 					vals := []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], projectData[2]})
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], projectData[2]}))
 
-					So(ds.RunInTransaction(c, func(c context.Context) error {
+					assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 						vals := []*Foo{}
-						So(ds.GetAll(c, q, &vals), ShouldBeNil)
-						So(vals, ShouldResemble, []*Foo{foo1, projectData[0], projectData[2]})
+						assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+						assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], projectData[2]}))
 
-						So(ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 4)), ShouldBeNil)
-						So(ds.Put(c, foo7), ShouldBeNil)
+						assert.Loosely(t, ds.Delete(c, ds.MakeKey(c, "Parent", 1, "Foo", 4)), should.BeNil)
+						assert.Loosely(t, ds.Put(c, foo7), should.BeNil)
 
 						vals = []*Foo{}
-						So(ds.GetAll(c, q, &vals), ShouldBeNil)
-						So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
+						assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+						assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
 
 						return nil
-					}, nil), ShouldBeNil)
+					}, nil), should.BeNil)
 
 					vals = []*Foo{}
-					So(ds.GetAll(c, q, &vals), ShouldBeNil)
-					So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
+					assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+					assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
 
 					return nil
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
 				vals := []*Foo{}
-				So(ds.GetAll(c, q, &vals), ShouldBeNil)
-				So(vals, ShouldResemble, []*Foo{foo1, projectData[0], foo7})
+				assert.Loosely(t, ds.GetAll(c, q, &vals), should.BeNil)
+				assert.Loosely(t, vals, should.Resemble([]*Foo{foo1, projectData[0], foo7}))
 
 			})
 
-			Convey("start transaction from inside query", func() {
+			t.Run("start transaction from inside query", func(t *ftt.Test) {
 				_, _, c := mkds(projectData)
-				So(ds.RunInTransaction(c, func(c context.Context) error {
+				assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 					q := ds.NewQuery("Foo").Ancestor(root)
 					return ds.Run(c, q, func(pm ds.PropertyMap) {
-						So(ds.RunInTransaction(c, func(c context.Context) error {
+						assert.Loosely(t, ds.RunInTransaction(c, func(c context.Context) error {
 							pm["Value"] = append(pm.Slice("Value"), ds.MkProperty("wat"))
 							return ds.Put(c, pm)
-						}, nil), ShouldBeNil)
+						}, nil), should.BeNil)
 					})
-				}, nil), ShouldBeNil)
+				}, nil), should.BeNil)
 
-				So(ds.Run(c, ds.NewQuery("Foo"), func(pm ds.PropertyMap) {
+				assert.Loosely(t, ds.Run(c, ds.NewQuery("Foo"), func(pm ds.PropertyMap) {
 					val := pm.Slice("Value")
-					So(val[len(val)-1].Value(), ShouldResemble, "wat")
-				}), ShouldBeNil)
+					assert.Loosely(t, val[len(val)-1].Value(), should.Match("wat"))
+				}), should.BeNil)
 			})
 
 		})
@@ -875,14 +846,14 @@ func TestQuerySupport(t *testing.T) {
 }
 
 func TestRegressions(t *testing.T) {
-	Convey("Regression tests", t, func() {
-		Convey("can remove namespace from txnBuf filter", func() {
+	ftt.Run("Regression tests", t, func(t *ftt.Test) {
+		t.Run("can remove namespace from txnBuf filter", func(t *ftt.Test) {
 			c := info.MustNamespace(memory.Use(context.Background()), "foobar")
-			So(info.GetNamespace(c), ShouldEqual, "foobar")
+			assert.Loosely(t, info.GetNamespace(c), should.Equal("foobar"))
 			ds.RunInTransaction(FilterRDS(c), func(c context.Context) error {
-				So(info.GetNamespace(c), ShouldEqual, "foobar")
+				assert.Loosely(t, info.GetNamespace(c), should.Equal("foobar"))
 				c = ds.WithoutTransaction(info.MustNamespace(c, ""))
-				So(info.GetNamespace(c), ShouldEqual, "")
+				assert.Loosely(t, info.GetNamespace(c), should.BeEmpty)
 				return nil
 			}, nil)
 		})

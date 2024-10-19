@@ -97,7 +97,7 @@ func TestFieldEntry(t *testing.T) {
 			copy(sorted, fes)
 			sort.Sort(sorted)
 
-			assert.Loosely(t, sorted, should.Match(
+			assert.That(t, sorted, should.Match(
 				fieldEntrySlice{fes[1], fes[2], fes[0]},
 				cmpopts.EquateErrors()))
 		})
@@ -125,8 +125,7 @@ func TestFields(t *testing.T) {
 				"foo": "bar",
 				"baz": "qux",
 			}
-			assert.Loosely(t, fm.Copy(other), should.Match(
-				other, cmpopts.EquateErrors()))
+			assert.Loosely(t, fm.Copy(other), should.Match(other))
 		})
 	})
 

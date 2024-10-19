@@ -15,6 +15,7 @@
 package errors
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -27,6 +28,35 @@ type MultiError []error
 // This will make MultiError works with errors.Is or errors.As from stdlib.
 func (m MultiError) Unwrap() []error {
 	return m
+}
+
+// Is implements errors.Is.
+//
+// This implementation does not interfere with errors.Is, but DOES allow
+// matching, especially in tests, when matching a MultiError pattern against
+// another MultiError whose size matches exactly and whose contents recursively
+// match with `errors.Is`.
+//
+// This is necessary because the stdlib `errors.Is` will call `Unwrap() []error`
+// on the source `err`, but NOT the target `err`, meaning that without this
+// method, MultiError can NEVER be the right hand side of a successful
+// `errors.Is` call.
+//
+// If this returns false, `errors.Is` will continue its typical algorithm.
+func (m MultiError) Is(other error) bool {
+	omerr, ok := other.(MultiError)
+	if !ok {
+		return false
+	}
+	if len(omerr) != len(m) {
+		return false
+	}
+	for i, mine := range m {
+		if !errors.Is(mine, omerr[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 // MaybeAdd will add `err` to `m` if `err` is not nil.

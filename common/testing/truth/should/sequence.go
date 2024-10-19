@@ -19,7 +19,6 @@ import (
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
-	"go.chromium.org/luci/common/testing/typed"
 )
 
 // BeIn returns a Comparison which checks to see if `actual` is equal to any of
@@ -45,13 +44,18 @@ func BeIn[T comparable](collection ...T) comparison.Func[T] {
 //
 // Comparison is done via the same mechanism as should.Match.
 func MatchIn[T comparable](collection []T, opts ...cmp.Option) comparison.Func[T] {
+	const cmpName = "should.MatchIn"
 	return func(actual T) *failure.Summary {
 		for _, obj := range collection {
-			if typed.Diff(actual, obj, opts...) == "" {
+			diff, fail := typedDiff(cmpName, actual, obj, opts)
+			if fail != nil {
+				return fail
+			}
+			if diff == "" {
 				return nil
 			}
 		}
-		return comparison.NewSummaryBuilder("should.MatchIn", actual).
+		return comparison.NewSummaryBuilder(cmpName, actual).
 			AddFindingf("Item", "%#v", actual).
 			AddFindingf("Collection", "%#v", collection).
 			Summary
@@ -97,13 +101,18 @@ func Contain[T comparable](target T) comparison.Func[[]T] {
 //
 // Comparison is done via the same algorithm as Match.
 func ContainMatch[T comparable](target T, opts ...cmp.Option) comparison.Func[[]T] {
+	const cmpName = "should.ContainMatch"
 	return func(actual []T) *failure.Summary {
 		for _, item := range actual {
-			if typed.Diff(item, target, opts...) == "" {
+			diff, fail := typedDiff(cmpName, item, target, opts)
+			if fail != nil {
+				return fail
+			}
+			if diff == "" {
 				return nil
 			}
 		}
-		return comparison.NewSummaryBuilder("should.ContainMatch", actual).
+		return comparison.NewSummaryBuilder(cmpName, actual).
 			AddFindingf("Collection", "%#v", actual).
 			AddFindingf("Item", "%#v", target).
 			Summary

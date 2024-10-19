@@ -19,7 +19,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -59,7 +58,7 @@ func TestFanOutIn(t *testing.T) {
 				}
 			}
 		})
-		assert.Loosely(t, err, should.Match([]error{terr}, cmpopts.EquateErrors()))
+		assert.Loosely(t, err, should.ErrLike(errors.MultiError{terr}))
 	})
 }
 

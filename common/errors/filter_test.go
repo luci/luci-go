@@ -17,7 +17,6 @@ package errors
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -35,8 +34,8 @@ func TestFilter(t *testing.T) {
 		assert.Loosely(t, Filter(aerr, nil), should.Equal(aerr))
 		assert.Loosely(t, Filter(aerr, nil, aerr, berr), should.BeNil)
 		assert.Loosely(t, Filter(aerr, berr), should.Equal(aerr))
-		assert.Loosely(t, Filter(MultiError{aerr, berr}, berr), should.Match(
-			[]error{aerr, nil}, cmpopts.EquateErrors()))
+		assert.Loosely(t, Filter(MultiError{aerr, berr}, berr), should.ErrLike(
+			MultiError{aerr, nil}))
 		assert.Loosely(t, Filter(MultiError{aerr, aerr}, aerr), should.BeNil)
 		assert.Loosely(t, Filter(MultiError{MultiError{aerr, aerr}, aerr}, aerr), should.BeNil)
 	})

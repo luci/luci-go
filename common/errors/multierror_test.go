@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -127,7 +126,7 @@ func TestFlatten(t *testing.T) {
 			oneErr := errors.New("1")
 			twoErr := errors.New("2")
 			assert.Loosely(t, Flatten(MultiError{nil, oneErr, nil, MultiError{nil, twoErr, nil}}),
-				should.Match([]error{oneErr, twoErr}, cmpopts.EquateErrors()))
+				should.ErrLike(MultiError{oneErr, twoErr}))
 		})
 
 		t.Run("Doesn't unwrap", func(t *ftt.Test) {
@@ -136,7 +135,7 @@ func TestFlatten(t *testing.T) {
 			merr, yup := Flatten(MultiError{nil, ann, nil, MultiError{nil, twoErr, nil}}).(MultiError)
 			assert.Loosely(t, yup, should.BeTrue)
 			assert.Loosely(t, len(merr), should.Equal(2))
-			assert.Loosely(t, merr, should.Match([]error{ann, twoErr}, cmpopts.EquateErrors()))
+			assert.Loosely(t, merr, should.ErrLike(MultiError{ann, twoErr}))
 		})
 	})
 }

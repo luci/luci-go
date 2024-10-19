@@ -66,7 +66,12 @@ func (sb *SummaryBuilder) SmartCmpDiff(actual, expected any, extraCmpOpts ...cmp
 	}
 
 	if hasLong || slices.Equal(added[0].Value, added[1].Value) {
-		sb.AddCmpDiff(typed.Diff(actual, expected, extraCmpOpts...))
+		diff, ok := typed.DiffSafe(actual, expected, extraCmpOpts...)
+		if !ok {
+			sb.AddFindingf("typed.Diff error", "%s", diff)
+		} else {
+			sb.AddCmpDiff(diff)
+		}
 	}
 
 	return sb

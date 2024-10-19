@@ -31,12 +31,12 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/blobstore"
 	pb "go.chromium.org/luci/gae/service/datastore/internal/protos/datastore"
 	"go.chromium.org/luci/gae/service/datastore/internal/testprotos"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -421,6 +421,8 @@ type Doubler struct {
 	S string
 	I int64
 	B bool
+
+	t testing.TB
 }
 
 func (d *Doubler) Load(props PropertyMap) error {
@@ -438,10 +440,10 @@ func (d *Doubler) Save(withMeta bool) (PropertyMap, error) {
 		switch v := prop.Value().(type) {
 		case string:
 			// + means string concatenation.
-			So(prop.SetValue(v+v, prop.IndexSetting()), ShouldBeNil)
+			assert.Loosely(d.t, prop.SetValue(v+v, prop.IndexSetting()), should.BeNil)
 		case int64:
 			// + means integer addition.
-			So(prop.SetValue(v+v, prop.IndexSetting()), ShouldBeNil)
+			assert.Loosely(d.t, prop.SetValue(v+v, prop.IndexSetting()), should.BeNil)
 		}
 	}
 
@@ -2492,29 +2494,29 @@ func TestRoundTrip(t *testing.T) {
 		return
 	}
 
-	Convey("Test round-trip", t, func() {
+	ftt.Run("Test round-trip", t, func(t *ftt.Test) {
 		for _, tc := range testCases {
 			tc := tc
-			Convey(tc.desc, func() {
+			t.Run(tc.desc, func(t *ftt.Test) {
 				pls, ok := tc.src.(PropertyLoadSaver)
 				if !ok {
 					var err error
 					pls, err = getPLSErr(tc.src)
 					if tc.plsErr != "" {
-						So(err, ShouldErrLike, tc.plsErr)
+						assert.Loosely(t, err, should.ErrLike(tc.plsErr))
 						return
 					}
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
-				So(pls, ShouldNotBeNil)
+				assert.Loosely(t, pls, should.NotBeNil)
 
 				savedProps, err := pls.Save(false)
 				if tc.saveErr != "" {
-					So(err, ShouldErrLike, tc.saveErr)
+					assert.Loosely(t, err, should.ErrLike(tc.saveErr))
 					return
 				}
-				So(err, ShouldBeNil)
-				So(savedProps, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, savedProps, should.NotBeNil)
 
 				var got any
 				if _, ok := tc.want.(PropertyMap); ok {
@@ -2530,22 +2532,22 @@ func TestRoundTrip(t *testing.T) {
 						var err error
 						pls, err = getPLSErr(got)
 						if tc.plsLoadErr != "" {
-							So(err, ShouldErrLike, tc.plsLoadErr)
+							assert.Loosely(t, err, should.ErrLike(tc.plsLoadErr))
 							return
 						}
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 					}
 				}
 
-				So(pls, ShouldNotBeNil)
+				assert.Loosely(t, pls, should.NotBeNil)
 
 				err = pls.Load(savedProps)
 				if tc.loadErr != "" {
-					So(err, ShouldErrLike, tc.loadErr)
+					assert.Loosely(t, err, should.ErrLike(tc.loadErr))
 					return
 				}
 				// Second load should not change anything.
-				So(pls.Load(savedProps), ShouldBeNil)
+				assert.Loosely(t, pls.Load(savedProps), should.BeNil)
 				if tc.want == nil {
 					return
 				}
@@ -2553,14 +2555,14 @@ func TestRoundTrip(t *testing.T) {
 				if gotT, ok := got.(*T); ok {
 					// Round tripping a time.Time can result in a different time.Location: Local instead of UTC.
 					// We therefore test equality explicitly, instead of relying on reflect.DeepEqual.
-					So(gotT.T.Equal(tc.want.(*T).T), ShouldBeTrue)
+					assert.Loosely(t, gotT.T.Equal(tc.want.(*T).T), should.BeTrue)
 					return
 				}
 				if _, ok := tc.want.(protoEmbedder); ok {
-					So(got, ShouldResembleProto, tc.want)
+					assert.Loosely(t, got, should.Resemble(tc.want))
 					return
 				}
-				So(got, ShouldResemble, tc.want)
+				assert.Loosely(t, got, should.Resemble(tc.want))
 			})
 		}
 	})
@@ -2569,123 +2571,123 @@ func TestRoundTrip(t *testing.T) {
 func TestMeta(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test meta fields", t, func() {
-		Convey("Can retrieve from struct", func() {
+	ftt.Run("Test meta fields", t, func(t *ftt.Test) {
+		t.Run("Can retrieve from struct", func(t *ftt.Test) {
 			o := &N0{ID: 100}
 			mgs := getMGS(o)
 			val, ok := mgs.GetMeta("id")
-			So(ok, ShouldBeTrue)
-			So(val, ShouldEqual, 100)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Equal(100))
 
 			val, ok = mgs.GetMeta("kind")
-			So(ok, ShouldBeTrue)
-			So(val, ShouldEqual, "whatnow")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Equal("whatnow"))
 
-			So(GetMetaDefault(mgs, "kind", "zappo"), ShouldEqual, "whatnow")
-			So(GetMetaDefault(mgs, "id", "stringID"), ShouldEqual, "stringID")
-			So(GetMetaDefault(mgs, "id", 6), ShouldEqual, 100)
+			assert.Loosely(t, GetMetaDefault(mgs, "kind", "zappo"), should.Equal("whatnow"))
+			assert.Loosely(t, GetMetaDefault(mgs, "id", "stringID"), should.Equal("stringID"))
+			assert.Loosely(t, GetMetaDefault(mgs, "id", 6), should.Equal(100))
 		})
 
-		Convey("Getting something not there is an error", func() {
+		t.Run("Getting something not there is an error", func(t *ftt.Test) {
 			o := &N0{ID: 100}
 			mgs := getMGS(o)
 			_, ok := mgs.GetMeta("wat")
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey("Default works for missing fields", func() {
+		t.Run("Default works for missing fields", func(t *ftt.Test) {
 			o := &N0{ID: 100}
 			mgs := getMGS(o)
-			So(GetMetaDefault(mgs, "whozit", 10), ShouldEqual, 10)
+			assert.Loosely(t, GetMetaDefault(mgs, "whozit", 10), should.Equal(10))
 		})
 
-		Convey("getting mgs for bad struct is an error", func() {
-			So(func() { getMGS(&Recursive{}) }, ShouldPanicLike,
-				`field "R" is recursively defined`)
+		t.Run("getting mgs for bad struct is an error", func(t *ftt.Test) {
+			assert.Loosely(t, func() { getMGS(&Recursive{}) }, should.PanicLike(
+				`field "R" is recursively defined`))
 		})
 
-		Convey("can assign values to exported meta fields", func() {
+		t.Run("can assign values to exported meta fields", func(t *ftt.Test) {
 			o := &N0{ID: 100}
 			mgs := getMGS(o)
-			So(mgs.SetMeta("id", int64(200)), ShouldBeTrue)
-			So(o.ID, ShouldEqual, 200)
+			assert.Loosely(t, mgs.SetMeta("id", int64(200)), should.BeTrue)
+			assert.Loosely(t, o.ID, should.Equal(200))
 		})
 
-		Convey("assigning to unsassiagnable fields returns !ok", func() {
+		t.Run("assigning to unsassiagnable fields returns !ok", func(t *ftt.Test) {
 			o := &N0{ID: 100}
 			mgs := getMGS(o)
-			So(mgs.SetMeta("kind", "hi"), ShouldBeFalse)
-			So(mgs.SetMeta("noob", "hi"), ShouldBeFalse)
+			assert.Loosely(t, mgs.SetMeta("kind", "hi"), should.BeFalse)
+			assert.Loosely(t, mgs.SetMeta("noob", "hi"), should.BeFalse)
 		})
 
-		Convey("getting unexported meta", func() {
+		t.Run("getting unexported meta", func(t *ftt.Test) {
 			o := &N0{ID: 100, _kind: "Override"}
 			mgs := getMGS(o)
 			val, ok := mgs.GetMeta("kind")
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			// TODO(vadimsh): This is potentially a bug.
-			So(val, ShouldResemble, "whatnow")
+			assert.Loosely(t, val, should.Match("whatnow"))
 		})
 
-		Convey("protos get/set", func() {
+		t.Run("protos get/set", func(t *ftt.Test) {
 			p := &WithProtoMeta{}
-			So(getMGS(p).SetMeta("what", []byte{
+			assert.Loosely(t, getMGS(p).SetMeta("what", []byte{
 				protoBinOptZSTD,
 				40, 181, 47, 253, 4, 0, 49, 0, 0, 10, 4, 97, 97, 97, 97, 115, 247, 182, 146}),
-				ShouldBeTrue)
-			So(p.Msg.GetStr(), ShouldEqual, "aaaa")
+				should.BeTrue)
+			assert.Loosely(t, p.Msg.GetStr(), should.Equal("aaaa"))
 			val, ok := getMGS(p).GetMeta("what")
-			So(ok, ShouldBeTrue)
-			So(val, ShouldResemble, []byte{protoBinOptNoCompress, 10, 4, 97, 97, 97, 97})
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Resemble([]byte{protoBinOptNoCompress, 10, 4, 97, 97, 97, 97}))
 		})
 
-		Convey("unsigned int meta fields work", func() {
+		t.Run("unsigned int meta fields work", func(t *ftt.Test) {
 			o := &N3{}
 			mgs := getMGS(o)
 			v, ok := mgs.GetMeta("id")
-			So(v, ShouldEqual, int64(200))
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, v, should.Equal(int64(200)))
+			assert.Loosely(t, ok, should.BeTrue)
 
-			So(mgs.SetMeta("id", 20), ShouldBeTrue)
-			So(o.ID, ShouldEqual, 20)
+			assert.Loosely(t, mgs.SetMeta("id", 20), should.BeTrue)
+			assert.Loosely(t, o.ID, should.Equal(20))
 
-			So(mgs.SetMeta("id", math.MaxInt64), ShouldBeFalse)
-			So(o.ID, ShouldEqual, 20)
+			assert.Loosely(t, mgs.SetMeta("id", math.MaxInt64), should.BeFalse)
+			assert.Loosely(t, o.ID, should.Equal(20))
 
-			So(mgs.SetMeta("id", math.MaxUint32), ShouldBeTrue)
-			So(o.ID, ShouldEqual, math.MaxUint32)
+			assert.Loosely(t, mgs.SetMeta("id", math.MaxUint32), should.BeTrue)
+			assert.Loosely(t, o.ID, should.Equal(math.MaxUint32))
 		})
 	})
 
-	Convey("StructPLS Miscellaneous", t, func() {
-		Convey("a simple struct has a default $kind", func() {
-			So(GetPLS(&Simple{}).GetAllMeta(), ShouldResemble, PropertyMap{
+	ftt.Run("StructPLS Miscellaneous", t, func(t *ftt.Test) {
+		t.Run("a simple struct has a default $kind", func(t *ftt.Test) {
+			assert.Loosely(t, GetPLS(&Simple{}).GetAllMeta(), should.Resemble(PropertyMap{
 				"$kind": mpNI("Simple"),
-			})
+			}))
 		})
 
-		Convey("multiple overlapping fields is an error", func() {
+		t.Run("multiple overlapping fields is an error", func(t *ftt.Test) {
 			o := &BadMeta{}
-			So(func() { GetPLS(o) }, ShouldPanicLike, "multiple times")
+			assert.Loosely(t, func() { GetPLS(o) }, should.PanicLike("multiple times"))
 		})
 
-		Convey("empty property names are invalid", func() {
-			So(validPropertyName(""), ShouldBeFalse)
+		t.Run("empty property names are invalid", func(t *ftt.Test) {
+			assert.Loosely(t, validPropertyName(""), should.BeFalse)
 		})
 
-		Convey("attempting to get a PLS for a non *struct is an error", func() {
+		t.Run("attempting to get a PLS for a non *struct is an error", func(t *ftt.Test) {
 			s := []string{}
-			So(func() { GetPLS(&s) }, ShouldPanicLike,
-				"cannot GetPLS(*[]string): not a pointer-to-struct")
+			assert.Loosely(t, func() { GetPLS(&s) }, should.PanicLike(
+				"cannot GetPLS(*[]string): not a pointer-to-struct"))
 		})
 
-		Convey("attempting to get a PLS for a nil pointer-to-struct is an error", func() {
+		t.Run("attempting to get a PLS for a nil pointer-to-struct is an error", func(t *ftt.Test) {
 			var s *Simple
-			So(func() { GetPLS(s) }, ShouldPanicLike,
-				"cannot GetPLS(*datastore.Simple): pointer is nil")
+			assert.Loosely(t, func() { GetPLS(s) }, should.PanicLike(
+				"cannot GetPLS(*datastore.Simple): pointer is nil"))
 		})
 
-		Convey("convertible meta default types", func() {
+		t.Run("convertible meta default types", func(t *ftt.Test) {
 			type OKDefaults struct {
 				When   string `gae:"$when,tomorrow"`
 				Amount int64  `gae:"$amt,100"`
@@ -2695,62 +2697,62 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(okd)
 
 			v, ok := mgs.GetMeta("when")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "tomorrow")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("tomorrow"))
 
 			v, ok = mgs.GetMeta("amt")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(100))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(100)))
 
-			So(okd.DoIt, ShouldEqual, Auto)
+			assert.Loosely(t, okd.DoIt, should.Equal(Auto))
 			v, ok = mgs.GetMeta("doit")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.BeTrue)
 
-			So(mgs.SetMeta("doit", false), ShouldBeTrue)
+			assert.Loosely(t, mgs.SetMeta("doit", false), should.BeTrue)
 			v, ok = mgs.GetMeta("doit")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldBeFalse)
-			So(okd.DoIt, ShouldEqual, Off)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.BeFalse)
+			assert.Loosely(t, okd.DoIt, should.Equal(Off))
 
-			So(mgs.SetMeta("doit", true), ShouldBeTrue)
+			assert.Loosely(t, mgs.SetMeta("doit", true), should.BeTrue)
 			v, ok = mgs.GetMeta("doit")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldBeTrue)
-			So(okd.DoIt, ShouldEqual, On)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.BeTrue)
+			assert.Loosely(t, okd.DoIt, should.Equal(On))
 
-			Convey("Toggle fields REQUIRE a default", func() {
+			t.Run("Toggle fields REQUIRE a default", func(t *ftt.Test) {
 				type BadToggle struct {
 					Bad Toggle `gae:"$wut"`
 				}
-				So(func() { GetPLS(&BadToggle{}) }, ShouldPanicLike, "bad/missing default")
+				assert.Loosely(t, func() { GetPLS(&BadToggle{}) }, should.PanicLike("bad/missing default"))
 			})
 		})
 
-		Convey("meta fields can be saved", func() {
+		t.Run("meta fields can be saved", func(t *ftt.Test) {
 			type OKDefaults struct {
 				When   string `gae:"$when,tomorrow"`
 				Amount int64  `gae:"$amt,100"`
 			}
 			pls := GetPLS(&OKDefaults{})
 			pm, err := pls.Save(true)
-			So(err, ShouldBeNil)
-			So(pm, ShouldResemble, PropertyMap{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pm, should.Resemble(PropertyMap{
 				"$when": mpNI("tomorrow"),
 				"$amt":  mpNI(100),
 				"$kind": mpNI("OKDefaults"),
-			})
+			}))
 
 			v, ok := pm.GetMeta("when")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "tomorrow")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("tomorrow"))
 
 			v, ok = pm.GetMeta("amt")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(100))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(100)))
 		})
 
-		Convey("default are optional", func() {
+		t.Run("default are optional", func(t *ftt.Test) {
 			type OverrideDefault struct {
 				Val int64 `gae:"$val"`
 			}
@@ -2758,11 +2760,11 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 
 			v, ok := mgs.GetMeta("val")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(0))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(0)))
 		})
 
-		Convey("overridable defaults", func() {
+		t.Run("overridable defaults", func(t *ftt.Test) {
 			type OverrideDefault struct {
 				Val int64 `gae:"$val,100"`
 			}
@@ -2770,37 +2772,37 @@ func TestMeta(t *testing.T) {
 			mgs := getMGS(o)
 
 			v, ok := mgs.GetMeta("val")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(100))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(100)))
 
 			o.Val = 10
 			v, ok = mgs.GetMeta("val")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(10))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(10)))
 		})
 
-		Convey("underflow", func() {
+		t.Run("underflow", func(t *ftt.Test) {
 			type UnderflowMeta struct {
 				ID int16 `gae:"$id"`
 			}
 			um := &UnderflowMeta{}
 			mgs := getMGS(um)
-			So(mgs.SetMeta("id", -20), ShouldBeTrue)
-			So(mgs.SetMeta("id", math.MinInt64), ShouldBeFalse)
+			assert.Loosely(t, mgs.SetMeta("id", -20), should.BeTrue)
+			assert.Loosely(t, mgs.SetMeta("id", math.MinInt64), should.BeFalse)
 		})
 
-		Convey("negative default", func() {
+		t.Run("negative default", func(t *ftt.Test) {
 			type UnderflowMeta struct {
 				ID int16 `gae:"$id,-30"`
 			}
 			um := &UnderflowMeta{}
 			mgs := getMGS(um)
 			val, ok := mgs.GetMeta("id")
-			So(ok, ShouldBeTrue)
-			So(val, ShouldEqual, -30)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Equal(-30))
 		})
 
-		Convey("Derived metadata fields", func() {
+		t.Run("Derived metadata fields", func(t *ftt.Test) {
 			type DerivedString string
 			type DerivedInt int16
 			type DerivedStruct struct {
@@ -2810,91 +2812,91 @@ func TestMeta(t *testing.T) {
 			o := &DerivedStruct{"hello", 10}
 			mgs := getMGS(o)
 			v, ok := mgs.GetMeta("id")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, "hello")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal("hello"))
 
 			v, ok = mgs.GetMeta("foo")
-			So(ok, ShouldBeTrue)
-			So(v, ShouldEqual, int64(10))
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, v, should.Equal(int64(10)))
 
-			So(mgs.SetMeta("id", "nerds"), ShouldBeTrue)
-			So(mgs.SetMeta("foo", 20), ShouldBeTrue)
-			So(o.ID, ShouldEqual, DerivedString("nerds"))
-			So(o.Foo, ShouldEqual, DerivedInt(20))
+			assert.Loosely(t, mgs.SetMeta("id", "nerds"), should.BeTrue)
+			assert.Loosely(t, mgs.SetMeta("foo", 20), should.BeTrue)
+			assert.Loosely(t, o.ID, should.Equal(DerivedString("nerds")))
+			assert.Loosely(t, o.Foo, should.Equal(DerivedInt(20)))
 		})
 
-		Convey("Bad default meta type", func() {
+		t.Run("Bad default meta type", func(t *ftt.Test) {
 			type BadDefault struct {
 				Val time.Time `gae:"$meta,tomorrow"`
 			}
-			So(func() { GetPLS(&BadDefault{}) }, ShouldPanicLike, "bad type")
+			assert.Loosely(t, func() { GetPLS(&BadDefault{}) }, should.PanicLike("bad type"))
 		})
 
-		Convey("MetaGetterSetter implementation (IDParser)", func() {
+		t.Run("MetaGetterSetter implementation (IDParser)", func(t *ftt.Test) {
 			idp := &IDParser{parent: "moo", id: 100}
 			mgs := getMGS(idp)
-			So(GetMetaDefault(mgs, "id", ""), ShouldEqual, "moo|100")
+			assert.Loosely(t, GetMetaDefault(mgs, "id", ""), should.Equal("moo|100"))
 
-			So(GetMetaDefault(mgs, "kind", ""), ShouldEqual, "CoolKind")
+			assert.Loosely(t, GetMetaDefault(mgs, "kind", ""), should.Equal("CoolKind"))
 
-			So(mgs.SetMeta("kind", "Something"), ShouldBeFalse)
-			So(mgs.SetMeta("id", "happy|27"), ShouldBeTrue)
+			assert.Loosely(t, mgs.SetMeta("kind", "Something"), should.BeFalse)
+			assert.Loosely(t, mgs.SetMeta("id", "happy|27"), should.BeTrue)
 
-			So(idp.parent, ShouldEqual, "happy")
-			So(idp.id, ShouldEqual, 27)
+			assert.Loosely(t, idp.parent, should.Equal("happy"))
+			assert.Loosely(t, idp.id, should.Equal(27))
 
-			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
+			assert.Loosely(t, mgs.GetAllMeta(), should.Resemble(PropertyMap{
 				"$id":   mpNI("happy|27"),
 				"$kind": mpNI("CoolKind"),
-			})
+			}))
 		})
 
-		Convey("MetaGetterSetter implementation (KindOverride)", func() {
+		t.Run("MetaGetterSetter implementation (KindOverride)", func(t *ftt.Test) {
 			ko := &KindOverride{ID: 20}
 			mgs := getMGS(ko)
-			So(GetMetaDefault(mgs, "kind", ""), ShouldEqual, "KindOverride")
+			assert.Loosely(t, GetMetaDefault(mgs, "kind", ""), should.Equal("KindOverride"))
 
 			ko.customKind = "something"
-			So(GetMetaDefault(mgs, "kind", ""), ShouldEqual, "something")
+			assert.Loosely(t, GetMetaDefault(mgs, "kind", ""), should.Equal("something"))
 
-			So(mgs.SetMeta("kind", "Nerp"), ShouldBeTrue)
-			So(ko.customKind, ShouldEqual, "Nerp")
+			assert.Loosely(t, mgs.SetMeta("kind", "Nerp"), should.BeTrue)
+			assert.Loosely(t, ko.customKind, should.Equal("Nerp"))
 
-			So(mgs.SetMeta("kind", "KindOverride"), ShouldBeTrue)
-			So(ko.customKind, ShouldEqual, "")
+			assert.Loosely(t, mgs.SetMeta("kind", "KindOverride"), should.BeTrue)
+			assert.Loosely(t, ko.customKind, should.BeEmpty)
 
-			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
+			assert.Loosely(t, mgs.GetAllMeta(), should.Resemble(PropertyMap{
 				"$id":   mpNI(20),
 				"$kind": mpNI("KindOverride"),
-			})
+			}))
 			ko.customKind = "wut"
-			So(mgs.GetAllMeta(), ShouldResemble, PropertyMap{
+			assert.Loosely(t, mgs.GetAllMeta(), should.Resemble(PropertyMap{
 				"$id":   mpNI(20),
 				"$kind": mpNI("wut"),
-			})
+			}))
 
 			props, err := GetPLS(ko).Save(true)
-			So(err, ShouldBeNil)
-			So(props, ShouldResemble, PropertyMap{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, props, should.Resemble(PropertyMap{
 				"$id":   mpNI(20),
 				"$kind": mpNI("wut"),
-			})
+			}))
 		})
 
-		Convey("Embeddable Metadata structs", func() {
+		t.Run("Embeddable Metadata structs", func(t *ftt.Test) {
 			ide := &IDEmbedder{EmbeddedID{"hello", 10}}
 			pls := GetPLS(ide)
 			val, ok := pls.GetMeta("id")
-			So(ok, ShouldBeTrue)
-			So(val, ShouldEqual, "hello|10")
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, val, should.Equal("hello|10"))
 
-			So(pls.SetMeta("id", "sup|1337"), ShouldBeTrue)
-			So(ide.EmbeddedID, ShouldResemble, EmbeddedID{"sup", 1337})
+			assert.Loosely(t, pls.SetMeta("id", "sup|1337"), should.BeTrue)
+			assert.Loosely(t, ide.EmbeddedID, should.Resemble(EmbeddedID{"sup", 1337}))
 
-			So(pls.GetAllMeta(), ShouldResemble, PropertyMap{
+			assert.Loosely(t, pls.GetAllMeta(), should.Resemble(PropertyMap{
 				"$id":   mpNI("sup|1337"),
 				"$kind": mpNI("IDEmbedder"),
-			})
+			}))
 		})
 	})
 }

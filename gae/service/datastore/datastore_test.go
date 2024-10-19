@@ -32,8 +32,9 @@ import (
 
 	"go.chromium.org/luci/gae/service/info"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var (
@@ -49,7 +50,7 @@ type fakeDatastore struct {
 	onDelete     func(*Key)
 	entities     int32
 	constraints  Constraints
-	convey       C
+	t            testing.TB
 }
 
 func (f *fakeDatastore) factory() RawFactory {
@@ -126,11 +127,6 @@ func (f *fakeDatastore) Run(fq *FinalizedQuery, cb RawRunCB) error {
 }
 
 func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) error {
-	so := So
-	if f.convey != nil {
-		so = f.convey.So
-	}
-
 	if keys[0].Kind() == "FailAll" {
 		return errFailAll
 	}
@@ -141,7 +137,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 			err = errFail
 		} else {
 			if assertExtra {
-				so(vals[i].Slice("Extra"), ShouldResemble, PropertySlice{MkProperty("whoa")})
+				assert.That(f.t, vals[i].Slice("Extra"), should.Resemble(PropertySlice{MkProperty("whoa")}))
 			}
 
 			if k.Kind() == "Index" {
@@ -149,7 +145,7 @@ func (f *fakeDatastore) PutMulti(keys []*Key, vals []PropertyMap, cb NewKeyCB) e
 				// that Value field.
 				k = k.KeyContext().NewKey(k.Kind(), "", vals[i]["Value"].Slice()[0].Value().(int64), k.Parent())
 			} else {
-				so(vals[i].Slice("Value"), ShouldResemble, PropertySlice{MkProperty(i)})
+				assert.That(f.t, vals[i].Slice("Value"), should.Resemble(PropertySlice{MkProperty(i)}))
 				if k.IsIncomplete() {
 					k = k.KeyContext().NewKey(k.Kind(), "", int64(i+1), k.Parent())
 				}
@@ -252,6 +248,8 @@ type FakePLS struct {
 	Value     int64
 	gotLoaded bool
 
+	t testing.TB
+
 	failGetMeta bool
 	failLoad    bool
 	failProblem bool
@@ -280,13 +278,13 @@ func (f *FakePLS) Save(withMeta bool) (PropertyMap, error) {
 	}
 	if withMeta {
 		id, _ := f.GetMeta("id")
-		So(ret.SetMeta("id", id), ShouldBeTrue)
+		assert.Loosely(f.t, ret.SetMeta("id", id), should.BeTrue)
 		if f.Kind == "" {
-			So(ret.SetMeta("kind", "FakePLS"), ShouldBeTrue)
+			assert.Loosely(f.t, ret.SetMeta("kind", "FakePLS"), should.BeTrue)
 		} else {
-			So(ret.SetMeta("kind", f.Kind), ShouldBeTrue)
+			assert.Loosely(f.t, ret.SetMeta("kind", f.Kind), should.BeTrue)
 		}
-		So(ret.SetMeta("assertExtra", true), ShouldBeTrue)
+		assert.Loosely(f.t, ret.SetMeta("assertExtra", true), should.BeTrue)
 	}
 	return ret, nil
 }
@@ -396,79 +394,79 @@ var _ MetaGetterSetter = (*MGSWithNoKind)(nil)
 func TestKeyForObj(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test interface.KeyForObj", t, func() {
+	ftt.Run("Test interface.KeyForObj", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
 		k := MakeKey(c, "Hello", "world")
 
-		Convey("good", func() {
-			Convey("struct containing $key", func() {
+		t.Run("good", func(t *ftt.Test) {
+			t.Run("struct containing $key", func(t *ftt.Test) {
 				type keyStruct struct {
 					Key *Key `gae:"$key"`
 				}
 
 				ks := &keyStruct{k}
-				So(KeyForObj(c, ks), ShouldEqual, k)
+				assert.Loosely(t, KeyForObj(c, ks), should.Equal(k))
 			})
 
-			Convey("struct containing default $id and $kind", func() {
+			t.Run("struct containing default $id and $kind", func(t *ftt.Test) {
 				type idStruct struct {
 					id  string `gae:"$id,wut"`
 					knd string `gae:"$kind,SuperKind"`
 				}
 
-				So(KeyForObj(c, &idStruct{}).String(), ShouldEqual, `s~aid:ns:/SuperKind,"wut"`)
+				assert.Loosely(t, KeyForObj(c, &idStruct{}).String(), should.Equal(`s~aid:ns:/SuperKind,"wut"`))
 			})
 
-			Convey("struct containing $id and $parent", func() {
-				So(KeyForObj(c, &CommonStruct{ID: 4}).String(), ShouldEqual, `s~aid:ns:/CommonStruct,4`)
+			t.Run("struct containing $id and $parent", func(t *ftt.Test) {
+				assert.Loosely(t, KeyForObj(c, &CommonStruct{ID: 4}).String(), should.Equal(`s~aid:ns:/CommonStruct,4`))
 
-				So(KeyForObj(c, &CommonStruct{ID: 4, Parent: k}).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,4`)
+				assert.Loosely(t, KeyForObj(c, &CommonStruct{ID: 4, Parent: k}).String(), should.Equal(`s~aid:ns:/Hello,"world"/CommonStruct,4`))
 			})
 
-			Convey("a propmap with $key", func() {
+			t.Run("a propmap with $key", func(t *ftt.Test) {
 				pm := PropertyMap{}
-				So(pm.SetMeta("key", k), ShouldBeTrue)
-				So(KeyForObj(c, pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"`)
+				assert.Loosely(t, pm.SetMeta("key", k), should.BeTrue)
+				assert.Loosely(t, KeyForObj(c, pm).String(), should.Equal(`s~aid:ns:/Hello,"world"`))
 			})
 
-			Convey("a propmap with $id, $kind, $parent", func() {
+			t.Run("a propmap with $id, $kind, $parent", func(t *ftt.Test) {
 				pm := PropertyMap{}
-				So(pm.SetMeta("id", 100), ShouldBeTrue)
-				So(pm.SetMeta("kind", "Sup"), ShouldBeTrue)
-				So(KeyForObj(c, pm).String(), ShouldEqual, `s~aid:ns:/Sup,100`)
+				assert.Loosely(t, pm.SetMeta("id", 100), should.BeTrue)
+				assert.Loosely(t, pm.SetMeta("kind", "Sup"), should.BeTrue)
+				assert.Loosely(t, KeyForObj(c, pm).String(), should.Equal(`s~aid:ns:/Sup,100`))
 
-				So(pm.SetMeta("parent", k), ShouldBeTrue)
-				So(KeyForObj(c, pm).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/Sup,100`)
+				assert.Loosely(t, pm.SetMeta("parent", k), should.BeTrue)
+				assert.Loosely(t, KeyForObj(c, pm).String(), should.Equal(`s~aid:ns:/Hello,"world"/Sup,100`))
 			})
 
-			Convey("a pls with $id, $parent", func() {
+			t.Run("a pls with $id, $parent", func(t *ftt.Test) {
 				pls := GetPLS(&CommonStruct{ID: 1})
-				So(KeyForObj(c, pls).String(), ShouldEqual, `s~aid:ns:/CommonStruct,1`)
+				assert.Loosely(t, KeyForObj(c, pls).String(), should.Equal(`s~aid:ns:/CommonStruct,1`))
 
-				So(pls.SetMeta("parent", k), ShouldBeTrue)
-				So(KeyForObj(c, pls).String(), ShouldEqual, `s~aid:ns:/Hello,"world"/CommonStruct,1`)
+				assert.Loosely(t, pls.SetMeta("parent", k), should.BeTrue)
+				assert.Loosely(t, KeyForObj(c, pls).String(), should.Equal(`s~aid:ns:/Hello,"world"/CommonStruct,1`))
 			})
 		})
 
-		Convey("bad", func() {
-			Convey("a propmap without $kind", func() {
+		t.Run("bad", func(t *ftt.Test) {
+			t.Run("a propmap without $kind", func(t *ftt.Test) {
 				pm := PropertyMap{}
-				So(pm.SetMeta("id", 100), ShouldBeTrue)
-				So(func() { KeyForObj(c, pm) }, ShouldPanic)
+				assert.Loosely(t, pm.SetMeta("id", 100), should.BeTrue)
+				assert.Loosely(t, func() { KeyForObj(c, pm) }, should.Panic)
 			})
 
-			Convey("a bad object", func() {
+			t.Run("a bad object", func(t *ftt.Test) {
 				type BadObj struct {
 					ID int64 `gae:"$id"`
 
 					NonSerializableField complex64
 				}
 
-				So(func() { KeyForObj(c, &BadObj{ID: 1}) }, ShouldPanicLike,
-					`field "NonSerializableField" has invalid type: complex64`)
+				assert.Loosely(t, func() { KeyForObj(c, &BadObj{ID: 1}) }, should.PanicLike(
+					`field "NonSerializableField" has invalid type: complex64`))
 			})
 		})
 	})
@@ -477,41 +475,41 @@ func TestKeyForObj(t *testing.T) {
 func TestPopulateKey(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test PopulateKey", t, func() {
+	ftt.Run("Test PopulateKey", t, func(t *ftt.Test) {
 		kc := MkKeyContext("app", "namespace")
 		k := kc.NewKey("kind", "", 1337, nil)
 
-		Convey("Can set the key of a common struct.", func() {
+		t.Run("Can set the key of a common struct.", func(t *ftt.Test) {
 			var cs CommonStruct
 
-			So(PopulateKey(&cs, k), ShouldBeTrue)
-			So(cs.ID, ShouldEqual, 1337)
+			assert.Loosely(t, PopulateKey(&cs, k), should.BeTrue)
+			assert.Loosely(t, cs.ID, should.Equal(1337))
 		})
 
-		Convey("Can set the parent key of a const id struct.", func() {
+		t.Run("Can set the parent key of a const id struct.", func(t *ftt.Test) {
 			var s ConstIDStruct
 			k2 := kc.NewKey("Bar", "bar", 0, k)
 			PopulateKey(&s, k2)
-			So(s.Parent, ShouldResemble, k)
+			assert.Loosely(t, s.Parent, should.Resemble(k))
 		})
 
-		Convey("Will not set the value of a singleton struct.", func() {
+		t.Run("Will not set the value of a singleton struct.", func(t *ftt.Test) {
 			var ss SingletonStruct
 
-			So(PopulateKey(&ss, k), ShouldBeFalse)
-			So(ss.id, ShouldEqual, 0)
+			assert.Loosely(t, PopulateKey(&ss, k), should.BeFalse)
+			assert.Loosely(t, ss.id, should.BeZero)
 		})
 
-		Convey("Will panic when setting the key of a bad struct.", func() {
+		t.Run("Will panic when setting the key of a bad struct.", func(t *ftt.Test) {
 			var bs badStruct
 
-			So(func() { PopulateKey(&bs, k) }, ShouldPanic)
+			assert.Loosely(t, func() { PopulateKey(&bs, k) }, should.Panic)
 		})
 
-		Convey("Will panic when setting the key of a broken PLS struct.", func() {
+		t.Run("Will panic when setting the key of a broken PLS struct.", func(t *ftt.Test) {
 			var broken permaBad
 
-			So(func() { PopulateKey(&broken, k) }, ShouldPanic)
+			assert.Loosely(t, func() { PopulateKey(&broken, k) }, should.Panic)
 		})
 	})
 }
@@ -519,62 +517,63 @@ func TestPopulateKey(t *testing.T) {
 func TestAllocateIDs(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing environment", t, func() {
+	ftt.Run("A testing environment", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
-		Convey("Testing AllocateIDs", func() {
-			Convey("Will return nil if no entities are supplied.", func() {
-				So(AllocateIDs(c), ShouldBeNil)
+		t.Run("Testing AllocateIDs", func(t *ftt.Test) {
+			t.Run("Will return nil if no entities are supplied.", func(t *ftt.Test) {
+				assert.Loosely(t, AllocateIDs(c), should.BeNil)
 			})
 
-			Convey("single struct", func() {
+			t.Run("single struct", func(t *ftt.Test) {
 				cs := CommonStruct{Value: 1}
-				So(AllocateIDs(c, &cs), ShouldBeNil)
-				So(cs.ID, ShouldEqual, 1)
+				assert.Loosely(t, AllocateIDs(c, &cs), should.BeNil)
+				assert.Loosely(t, cs.ID, should.Equal(1))
 			})
 
-			Convey("struct slice", func() {
+			t.Run("struct slice", func(t *ftt.Test) {
 				csSlice := []*CommonStruct{{Value: 1}, {Value: 2}}
-				So(AllocateIDs(c, csSlice), ShouldBeNil)
-				So(csSlice, ShouldResemble, []*CommonStruct{{ID: 1, Value: 1}, {ID: 2, Value: 2}})
+				assert.Loosely(t, AllocateIDs(c, csSlice), should.BeNil)
+				assert.Loosely(t, csSlice, should.Resemble([]*CommonStruct{{ID: 1, Value: 1}, {ID: 2, Value: 2}}))
 			})
 
-			Convey("single key will fail", func() {
+			t.Run("single key will fail", func(t *ftt.Test) {
 				singleKey := MakeKey(c, "FooParent", "BarParent", "Foo", "Bar")
-				So(func() { AllocateIDs(c, singleKey) }, ShouldPanicLike,
-					"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
+				assert.Loosely(t, func() { AllocateIDs(c, singleKey) }, should.PanicLike(
+					"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof"))
 			})
 
-			Convey("key slice", func() {
+			t.Run("key slice", func(t *ftt.Test) {
 				k0 := MakeKey(c, "Foo", "Bar")
 				k1 := MakeKey(c, "Baz", "Qux")
 				keySlice := []*Key{k0, k1}
-				So(AllocateIDs(c, keySlice), ShouldBeNil)
-				So(keySlice[0].Equal(MakeKey(c, "Foo", 1)), ShouldBeTrue)
-				So(keySlice[1].Equal(MakeKey(c, "Baz", 2)), ShouldBeTrue)
+				assert.Loosely(t, AllocateIDs(c, keySlice), should.BeNil)
+				assert.Loosely(t, keySlice[0].Equal(MakeKey(c, "Foo", 1)), should.BeTrue)
+				assert.Loosely(t, keySlice[1].Equal(MakeKey(c, "Baz", 2)), should.BeTrue)
 
 				// The original keys should not have changed.
-				So(k0.Equal(MakeKey(c, "Foo", "Bar")), ShouldBeTrue)
-				So(k1.Equal(MakeKey(c, "Baz", "Qux")), ShouldBeTrue)
+				assert.Loosely(t, k0.Equal(MakeKey(c, "Foo", "Bar")), should.BeTrue)
+				assert.Loosely(t, k1.Equal(MakeKey(c, "Baz", "Qux")), should.BeTrue)
 			})
 
-			Convey("fail all key slice", func() {
+			t.Run("fail all key slice", func(t *ftt.Test) {
 				keySlice := []*Key{MakeKey(c, "FailAll", "oops"), MakeKey(c, "Baz", "Qux")}
-				So(AllocateIDs(c, keySlice), ShouldEqual, errFailAll)
-				So(keySlice[0].StringID(), ShouldEqual, "oops")
-				So(keySlice[1].StringID(), ShouldEqual, "Qux")
+				assert.Loosely(t, AllocateIDs(c, keySlice), should.Equal(errFailAll))
+				assert.Loosely(t, keySlice[0].StringID(), should.Equal("oops"))
+				assert.Loosely(t, keySlice[1].StringID(), should.Equal("Qux"))
 			})
 
-			Convey("fail key slice", func() {
+			t.Run("fail key slice", func(t *ftt.Test) {
 				keySlice := []*Key{MakeKey(c, "Fail", "oops"), MakeKey(c, "Baz", "Qux")}
-				So(AllocateIDs(c, keySlice), ShouldResemble, errors.MultiError{errFail, nil})
-				So(keySlice[0].StringID(), ShouldEqual, "oops")
-				So(keySlice[1].IntID(), ShouldEqual, 2)
+				assert.Loosely(t, AllocateIDs(c, keySlice), should.ErrLike(
+					errors.MultiError{errFail, nil}))
+				assert.Loosely(t, keySlice[0].StringID(), should.Equal("oops"))
+				assert.Loosely(t, keySlice[1].IntID(), should.Equal(2))
 			})
 
-			Convey("vararg with errors", func() {
+			t.Run("vararg with errors", func(t *ftt.Test) {
 				successSlice := []CommonStruct{{Value: 0}, {Value: 1}}
 				failSlice := []FakePLS{{Kind: "Fail"}, {Value: 3}}
 				emptySlice := []CommonStruct(nil)
@@ -584,15 +583,16 @@ func TestAllocateIDs(t *testing.T) {
 				fpls := FakePLS{StringID: "ohai", Value: 6}
 
 				err := AllocateIDs(c, successSlice, failSlice, emptySlice, &cs0, &cs1, keySlice, &fpls)
-				So(err, ShouldResemble, errors.MultiError{
-					nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil, nil})
-				So(successSlice[0].ID, ShouldEqual, 1)
-				So(successSlice[1].ID, ShouldEqual, 2)
-				So(failSlice[1].IntID, ShouldEqual, 4)
-				So(cs0.ID, ShouldEqual, 5)
-				So(keySlice[0].Equal(MakeKey(c, "Foo", 7)), ShouldBeTrue)
-				So(keySlice[1].Equal(MakeKey(c, "Baz", 8)), ShouldBeTrue)
-				So(fpls.IntID, ShouldEqual, 9)
+				assert.Loosely(t, err, should.ErrLike(errors.MultiError{
+					nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil, nil},
+				))
+				assert.Loosely(t, successSlice[0].ID, should.Equal(1))
+				assert.Loosely(t, successSlice[1].ID, should.Equal(2))
+				assert.Loosely(t, failSlice[1].IntID, should.Equal(4))
+				assert.Loosely(t, cs0.ID, should.Equal(5))
+				assert.Loosely(t, keySlice[0].Equal(MakeKey(c, "Foo", 7)), should.BeTrue)
+				assert.Loosely(t, keySlice[1].Equal(MakeKey(c, "Baz", 8)), should.BeTrue)
+				assert.Loosely(t, fpls.IntID, should.Equal(9))
 			})
 		})
 	})
@@ -601,76 +601,76 @@ func TestAllocateIDs(t *testing.T) {
 func TestPut(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing environment", t, func() {
+	ftt.Run("A testing environment", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
-		Convey("Testing Put", func() {
-			Convey("bad", func() {
-				Convey("static can't serialize", func() {
+		t.Run("Testing Put", func(t *ftt.Test) {
+			t.Run("bad", func(t *ftt.Test) {
+				t.Run("static can't serialize", func(t *ftt.Test) {
 					bss := []badStruct{{}, {}}
-					So(func() { Put(c, bss) }, ShouldPanicLike,
-						`field "Compy" has invalid type`)
+					assert.Loosely(t, func() { Put(c, bss) }, should.PanicLike(
+						`field "Compy" has invalid type`))
 				})
 
-				Convey("static ptr can't serialize", func() {
+				t.Run("static ptr can't serialize", func(t *ftt.Test) {
 					bss := []*badStruct{{}, {}}
-					So(func() { Put(c, bss) }, ShouldPanicLike,
-						`field "Compy" has invalid type: complex64`)
+					assert.Loosely(t, func() { Put(c, bss) }, should.PanicLike(
+						`field "Compy" has invalid type: complex64`))
 				})
 
-				Convey("static bad type", func() {
-					So(func() { Put(c, 100) }, ShouldPanicLike,
-						"invalid input type (int): not a PLS, pointer-to-struct, or slice thereof")
+				t.Run("static bad type", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Put(c, 100) }, should.PanicLike(
+						"invalid input type (int): not a PLS, pointer-to-struct, or slice thereof"))
 				})
 
-				Convey("static bad type (slice of bad type)", func() {
-					So(func() { Put(c, []int{}) }, ShouldPanicLike,
-						"invalid input type ([]int): not a PLS, pointer-to-struct, or slice thereof")
+				t.Run("static bad type (slice of bad type)", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Put(c, []int{}) }, should.PanicLike(
+						"invalid input type ([]int): not a PLS, pointer-to-struct, or slice thereof"))
 				})
 
-				Convey("dynamic can't serialize", func() {
+				t.Run("dynamic can't serialize", func(t *ftt.Test) {
 					fplss := []FakePLS{{failSave: true}, {}}
-					So(Put(c, fplss), ShouldErrLike, "FakePLS.Save")
+					assert.Loosely(t, Put(c, fplss), should.ErrLike("FakePLS.Save"))
 				})
 
-				Convey("can't get keys", func() {
+				t.Run("can't get keys", func(t *ftt.Test) {
 					fplss := []FakePLS{{failGetMeta: true}, {}}
-					So(Put(c, fplss), ShouldErrLike, "unable to extract $kind")
+					assert.Loosely(t, Put(c, fplss), should.ErrLike("unable to extract $kind"))
 				})
 
-				Convey("get single error for RPC failure", func() {
+				t.Run("get single error for RPC failure", func(t *ftt.Test) {
 					fplss := []FakePLS{{Kind: "FailAll"}, {}}
-					So(Put(c, fplss), ShouldEqual, errFailAll)
+					assert.Loosely(t, Put(c, fplss), should.Equal(errFailAll))
 				})
 
-				Convey("get multi error for individual failures", func() {
+				t.Run("get multi error for individual failures", func(t *ftt.Test) {
 					fplss := []FakePLS{{}, {Kind: "Fail"}}
-					So(Put(c, fplss), ShouldResemble, errors.MultiError{nil, errFail})
+					assert.Loosely(t, Put(c, fplss), should.ErrLike(errors.MultiError{nil, errFail}))
 				})
 
-				Convey("get with *Key is an error", func() {
-					So(func() { Get(c, &Key{}) }, ShouldPanicLike,
-						"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof")
+				t.Run("get with *Key is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Get(c, &Key{}) }, should.PanicLike(
+						"invalid input type (*datastore.Key): not a PLS, pointer-to-struct, or slice thereof"))
 				})
 
-				Convey("struct with no $kind is an error", func() {
+				t.Run("struct with no $kind is an error", func(t *ftt.Test) {
 					s := MGSWithNoKind{}
-					So(Put(c, &s), ShouldErrLike, "unable to extract $kind")
+					assert.Loosely(t, Put(c, &s), should.ErrLike("unable to extract $kind"))
 				})
 
-				Convey("struct with invalid but non-nil key is an error", func() {
+				t.Run("struct with invalid but non-nil key is an error", func(t *ftt.Test) {
 					type BadParent struct {
 						ID     int64 `gae:"$id"`
 						Parent *Key  `gae:"$parent"`
 					}
 					// having an Incomplete parent makes an invalid key
 					bp := &BadParent{ID: 1, Parent: MakeKey(c, "Something", 0)}
-					So(IsErrInvalidKey(Put(c, bp)), ShouldBeTrue)
+					assert.Loosely(t, IsErrInvalidKey(Put(c, bp)), should.BeTrue)
 				})
 
-				Convey("vararg with errors", func() {
+				t.Run("vararg with errors", func(t *ftt.Test) {
 					successSlice := []CommonStruct{{Value: 0}, {Value: 1}}
 					failSlice := []FakePLS{{Kind: "Fail"}, {Value: 3}}
 					emptySlice := []CommonStruct(nil)
@@ -679,16 +679,16 @@ func TestPut(t *testing.T) {
 					fpls := FakePLS{StringID: "ohai", Value: 6}
 
 					err := Put(c, successSlice, failSlice, emptySlice, &cs0, &failPLS, &fpls)
-					So(err, ShouldResemble, errors.MultiError{
-						nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil})
-					So(successSlice[0].ID, ShouldEqual, 1)
-					So(successSlice[1].ID, ShouldEqual, 2)
-					So(cs0.ID, ShouldEqual, 5)
+					assert.Loosely(t, err, should.ErrLike(errors.MultiError{
+						nil, errors.MultiError{errFail, nil}, nil, nil, errFail, nil}))
+					assert.Loosely(t, successSlice[0].ID, should.Equal(1))
+					assert.Loosely(t, successSlice[1].ID, should.Equal(2))
+					assert.Loosely(t, cs0.ID, should.Equal(5))
 				})
 			})
 
-			Convey("ok", func() {
-				Convey("[]S", func() {
+			t.Run("ok", func(t *ftt.Test) {
+				t.Run("[]S", func(t *ftt.Test) {
 					css := make([]CommonStruct, 7)
 					for i := range css {
 						if i == 4 {
@@ -696,17 +696,17 @@ func TestPut(t *testing.T) {
 						}
 						css[i].Value = int64(i)
 					}
-					So(Put(c, css), ShouldBeNil)
+					assert.Loosely(t, Put(c, css), should.BeNil)
 					for i, cs := range css {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(cs.ID, ShouldEqual, expect)
+						assert.Loosely(t, cs.ID, should.Equal(expect))
 					}
 				})
 
-				Convey("[]*S", func() {
+				t.Run("[]*S", func(t *ftt.Test) {
 					css := make([]*CommonStruct, 7)
 					for i := range css {
 						css[i] = &CommonStruct{Value: int64(i)}
@@ -714,21 +714,21 @@ func TestPut(t *testing.T) {
 							css[i].ID = 200
 						}
 					}
-					So(Put(c, css), ShouldBeNil)
+					assert.Loosely(t, Put(c, css), should.BeNil)
 					for i, cs := range css {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(cs.ID, ShouldEqual, expect)
+						assert.Loosely(t, cs.ID, should.Equal(expect))
 					}
 
 					s := &CommonStruct{}
-					So(Put(c, s), ShouldBeNil)
-					So(s.ID, ShouldEqual, 1)
+					assert.Loosely(t, Put(c, s), should.BeNil)
+					assert.Loosely(t, s.ID, should.Equal(1))
 				})
 
-				Convey("[]P", func() {
+				t.Run("[]P", func(t *ftt.Test) {
 					fplss := make([]FakePLS, 7)
 					for i := range fplss {
 						fplss[i].Value = int64(i)
@@ -736,21 +736,21 @@ func TestPut(t *testing.T) {
 							fplss[i].IntID = int64(200)
 						}
 					}
-					So(Put(c, fplss), ShouldBeNil)
+					assert.Loosely(t, Put(c, fplss), should.BeNil)
 					for i, fpls := range fplss {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(fpls.IntID, ShouldEqual, expect)
+						assert.Loosely(t, fpls.IntID, should.Equal(expect))
 					}
 
 					pm := PropertyMap{"Value": MkProperty(0), "$kind": MkPropertyNI("Pmap")}
-					So(Put(c, pm), ShouldBeNil)
-					So(KeyForObj(c, pm).IntID(), ShouldEqual, 1)
+					assert.Loosely(t, Put(c, pm), should.BeNil)
+					assert.Loosely(t, KeyForObj(c, pm).IntID(), should.Equal(1))
 				})
 
-				Convey("[]P (map)", func() {
+				t.Run("[]P (map)", func(t *ftt.Test) {
 					pms := make([]PropertyMap, 7)
 					for i := range pms {
 						pms[i] = PropertyMap{
@@ -758,20 +758,20 @@ func TestPut(t *testing.T) {
 							"Value": MkProperty(i),
 						}
 						if i == 4 {
-							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
+							assert.Loosely(t, pms[i].SetMeta("id", int64(200)), should.BeTrue)
 						}
 					}
-					So(Put(c, pms), ShouldBeNil)
+					assert.Loosely(t, Put(c, pms), should.BeNil)
 					for i, pm := range pms {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(KeyForObj(c, pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
+						assert.Loosely(t, KeyForObj(c, pm).String(), should.Equal(fmt.Sprintf("s~aid:ns:/Pmap,%d", expect)))
 					}
 				})
 
-				Convey("[]*P", func() {
+				t.Run("[]*P", func(t *ftt.Test) {
 					fplss := make([]*FakePLS, 7)
 					for i := range fplss {
 						fplss[i] = &FakePLS{Value: int64(i)}
@@ -779,17 +779,17 @@ func TestPut(t *testing.T) {
 							fplss[i].IntID = int64(200)
 						}
 					}
-					So(Put(c, fplss), ShouldBeNil)
+					assert.Loosely(t, Put(c, fplss), should.BeNil)
 					for i, fpls := range fplss {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(fpls.IntID, ShouldEqual, expect)
+						assert.Loosely(t, fpls.IntID, should.Equal(expect))
 					}
 				})
 
-				Convey("[]*P (map)", func() {
+				t.Run("[]*P (map)", func(t *ftt.Test) {
 					pms := make([]*PropertyMap, 7)
 					for i := range pms {
 						pms[i] = &PropertyMap{
@@ -797,43 +797,43 @@ func TestPut(t *testing.T) {
 							"Value": MkProperty(i),
 						}
 						if i == 4 {
-							So(pms[i].SetMeta("id", int64(200)), ShouldBeTrue)
+							assert.Loosely(t, pms[i].SetMeta("id", int64(200)), should.BeTrue)
 						}
 					}
-					So(Put(c, pms), ShouldBeNil)
+					assert.Loosely(t, Put(c, pms), should.BeNil)
 					for i, pm := range pms {
 						expect := int64(i + 1)
 						if i == 4 {
 							expect = 200
 						}
-						So(KeyForObj(c, *pm).String(), ShouldEqual, fmt.Sprintf("s~aid:ns:/Pmap,%d", expect))
+						assert.Loosely(t, KeyForObj(c, *pm).String(), should.Equal(fmt.Sprintf("s~aid:ns:/Pmap,%d", expect)))
 					}
 				})
 
-				Convey("[]I", func() {
+				t.Run("[]I", func(t *ftt.Test) {
 					ifs := []any{
 						&CommonStruct{Value: 0},
 						&FakePLS{Value: 1},
 						PropertyMap{"Value": MkProperty(2), "$kind": MkPropertyNI("Pmap")},
 						&PropertyMap{"Value": MkProperty(3), "$kind": MkPropertyNI("Pmap")},
 					}
-					So(Put(c, ifs), ShouldBeNil)
+					assert.Loosely(t, Put(c, ifs), should.BeNil)
 					for i := range ifs {
 						switch i {
 						case 0:
-							So(ifs[i].(*CommonStruct).ID, ShouldEqual, 1)
+							assert.Loosely(t, ifs[i].(*CommonStruct).ID, should.Equal(1))
 						case 1:
 							fpls := ifs[i].(*FakePLS)
-							So(fpls.IntID, ShouldEqual, 2)
+							assert.Loosely(t, fpls.IntID, should.Equal(2))
 						case 2:
-							So(KeyForObj(c, ifs[i].(PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,3")
+							assert.Loosely(t, KeyForObj(c, ifs[i].(PropertyMap)).String(), should.Equal("s~aid:ns:/Pmap,3"))
 						case 3:
-							So(KeyForObj(c, *ifs[i].(*PropertyMap)).String(), ShouldEqual, "s~aid:ns:/Pmap,4")
+							assert.Loosely(t, KeyForObj(c, *ifs[i].(*PropertyMap)).String(), should.Equal("s~aid:ns:/Pmap,4"))
 						}
 					}
 				})
 
-				Convey("vararg (flat)", func() {
+				t.Run("vararg (flat)", func(t *ftt.Test) {
 					sa := CommonStruct{
 						Parent: MakeKey(c, "Foo", "foo"),
 						Value:  0,
@@ -848,11 +848,11 @@ func TestPut(t *testing.T) {
 					}
 
 					err := Put(c, &sa, &sb, &sc)
-					So(err, ShouldResemble, nil)
+					assert.Loosely(t, err, should.BeNil)
 
-					So(sa.ID, ShouldEqual, 1)
-					So(sb._id, ShouldEqual, 1)
-					So(sc._id, ShouldEqual, 0) // Could not be set, private.
+					assert.Loosely(t, sa.ID, should.Equal(1))
+					assert.Loosely(t, sb._id, should.Equal(1))
+					assert.Loosely(t, sc._id, should.BeZero) // Could not be set, private.
 				})
 			})
 		})
@@ -862,53 +862,53 @@ func TestPut(t *testing.T) {
 func TestExists(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing environment", t, func() {
+	ftt.Run("A testing environment", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
 		k := MakeKey(c, "Hello", "world")
 
-		Convey("Exists", func() {
+		t.Run("Exists", func(t *ftt.Test) {
 			// Single key.
 			er, err := Exists(c, k)
-			So(err, ShouldBeNil)
-			So(er.All(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Single key failure.
 			_, err = Exists(c, MakeKey(c, "Fail", "boom"))
-			So(err, ShouldEqual, errFail)
+			assert.Loosely(t, err, should.Equal(errFail))
 
 			// Single slice of keys.
 			er, err = Exists(c, []*Key{k, MakeKey(c, "hello", "other")})
-			So(err, ShouldBeNil)
-			So(er.All(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Single slice of keys failure.
 			er, err = Exists(c, []*Key{k, MakeKey(c, "Fail", "boom")})
-			So(err, ShouldResemble, errors.MultiError{nil, errFail})
-			So(er.Get(0, 0), ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike(errors.MultiError{nil, errFail}))
+			assert.Loosely(t, er.Get(0, 0), should.BeTrue)
 
 			// Single key missing.
 			er, err = Exists(c, MakeKey(c, "DNE", "nope"))
-			So(err, ShouldBeNil)
-			So(er.Any(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.Any(), should.BeFalse)
 
 			// Multi-arg keys with one missing.
 			er, err = Exists(c, k, MakeKey(c, "DNE", "other"))
-			So(err, ShouldBeNil)
-			So(er.Get(0), ShouldBeTrue)
-			So(er.Get(1), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.Get(0), should.BeTrue)
+			assert.Loosely(t, er.Get(1), should.BeFalse)
 
 			// Multi-arg keys with two missing.
 			er, err = Exists(c, MakeKey(c, "DNE", "nope"), MakeKey(c, "DNE", "other"))
-			So(err, ShouldBeNil)
-			So(er.Any(), ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.Any(), should.BeFalse)
 
 			// Single struct pointer.
 			er, err = Exists(c, &CommonStruct{ID: 1})
-			So(err, ShouldBeNil)
-			So(er.All(), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.All(), should.BeTrue)
 
 			// Multi-arg mixed key/struct/slices.
 			er, err = Exists(c,
@@ -916,12 +916,12 @@ func TestExists(t *testing.T) {
 				[]*CommonStruct(nil),
 				[]*Key{MakeKey(c, "DNE", "nope"), MakeKey(c, "hello", "ohai")},
 			)
-			So(err, ShouldBeNil)
-			So(er.Get(0), ShouldBeTrue)
-			So(er.Get(1), ShouldBeTrue)
-			So(er.Get(2), ShouldBeFalse)
-			So(er.Get(2, 0), ShouldBeFalse)
-			So(er.Get(2, 1), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, er.Get(0), should.BeTrue)
+			assert.Loosely(t, er.Get(1), should.BeTrue)
+			assert.Loosely(t, er.Get(2), should.BeFalse)
+			assert.Loosely(t, er.Get(2, 0), should.BeFalse)
+			assert.Loosely(t, er.Get(2, 1), should.BeTrue)
 		})
 	})
 }
@@ -929,60 +929,65 @@ func TestExists(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing environment", t, func() {
+	ftt.Run("A testing environment", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
-		Convey("Testing Delete", func() {
-			Convey("bad", func() {
-				Convey("get single error for RPC failure", func() {
+		t.Run("Testing Delete", func(t *ftt.Test) {
+			t.Run("bad", func(t *ftt.Test) {
+				t.Run("get single error for RPC failure", func(t *ftt.Test) {
 					keys := []*Key{
 						MakeKey(c, "s~aid", "ns", "FailAll", 1),
 						MakeKey(c, "s~aid", "ns", "Ok", 1),
 					}
-					So(Delete(c, keys), ShouldEqual, errFailAll)
+					assert.Loosely(t, Delete(c, keys), should.Equal(errFailAll))
 				})
 
-				Convey("get multi error for individual failure", func() {
+				t.Run("get multi error for individual failure", func(t *ftt.Test) {
 					keys := []*Key{
 						MakeKey(c, "Ok", 1),
 						MakeKey(c, "Fail", 2),
 					}
-					So(Delete(c, keys), ShouldResemble, errors.MultiError{nil, errFail})
+					assert.Loosely(t, Delete(c, keys), should.ErrLike(errors.MultiError{
+						nil, errFail,
+					}))
 				})
 
-				Convey("put with non-modifyable type is an error", func() {
+				t.Run("put with non-modifyable type is an error", func(t *ftt.Test) {
 					cs := CommonStruct{}
-					So(func() { Put(c, cs) }, ShouldPanicLike,
-						"invalid input type (datastore.CommonStruct): not a pointer")
+					assert.Loosely(t, func() { Put(c, cs) }, should.PanicLike(
+						"invalid input type (datastore.CommonStruct): not a pointer"))
 				})
 
-				Convey("get single error when deleting a single", func() {
+				t.Run("get single error when deleting a single", func(t *ftt.Test) {
 					k := MakeKey(c, "Fail", 1)
-					So(Delete(c, k), ShouldEqual, errFail)
+					assert.Loosely(t, Delete(c, k), should.Equal(errFail))
 				})
 			})
 
-			Convey("good", func() {
+			t.Run("good", func(t *ftt.Test) {
 				// Single struct pointer.
-				So(Delete(c, &CommonStruct{ID: 1}), ShouldBeNil)
+				assert.Loosely(t, Delete(c, &CommonStruct{ID: 1}), should.BeNil)
 
 				// Single key.
-				So(Delete(c, MakeKey(c, "hello", "ohai")), ShouldBeNil)
+				assert.Loosely(t, Delete(c, MakeKey(c, "hello", "ohai")), should.BeNil)
 
 				// Single struct DNE.
-				So(Delete(c, &CommonStruct{ID: noSuchEntityID}), ShouldEqual, ErrNoSuchEntity)
+				assert.Loosely(t, Delete(c, &CommonStruct{ID: noSuchEntityID}), should.Equal(ErrNoSuchEntity))
 
 				// Single key DNE.
-				So(Delete(c, MakeKey(c, "DNE", "nope")), ShouldEqual, ErrNoSuchEntity)
+				assert.Loosely(t, Delete(c, MakeKey(c, "DNE", "nope")), should.Equal(ErrNoSuchEntity))
 
 				// Mixed key/struct/slices.
 				err := Delete(c,
 					&CommonStruct{ID: 1},
 					[]*Key{MakeKey(c, "hello", "ohai"), MakeKey(c, "DNE", "nope")},
 				)
-				So(err, ShouldResemble, errors.MultiError{nil, errors.MultiError{nil, ErrNoSuchEntity}})
+				assert.That(t, err, should.ErrLike(errors.MultiError{
+					nil,
+					errors.MultiError{nil, ErrNoSuchEntity},
+				}))
 			})
 		})
 	})
@@ -991,81 +996,82 @@ func TestDelete(t *testing.T) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	Convey("A testing environment", t, func() {
+	ftt.Run("A testing environment", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
 
-		Convey("Testing Get", func() {
-			Convey("bad", func() {
-				Convey("static can't serialize", func() {
+		t.Run("Testing Get", func(t *ftt.Test) {
+			t.Run("bad", func(t *ftt.Test) {
+				t.Run("static can't serialize", func(t *ftt.Test) {
 					toGet := []badStruct{{}, {}}
-					So(func() { Get(c, toGet) }, ShouldPanicLike,
-						`field "Compy" has invalid type: complex64`)
+					assert.Loosely(t, func() { Get(c, toGet) }, should.PanicLike(
+						`field "Compy" has invalid type: complex64`))
 				})
 
-				Convey("can't get keys", func() {
+				t.Run("can't get keys", func(t *ftt.Test) {
 					fplss := []FakePLS{{failGetMeta: true}, {}}
-					So(Get(c, fplss), ShouldErrLike, "unable to extract $kind")
+					assert.Loosely(t, Get(c, fplss), should.ErrLike("unable to extract $kind"))
 				})
 
-				Convey("get single error for RPC failure", func() {
+				t.Run("get single error for RPC failure", func(t *ftt.Test) {
 					fplss := []FakePLS{
 						{IntID: 1, Kind: "FailAll"},
 						{IntID: 2},
 					}
-					So(Get(c, fplss), ShouldEqual, errFailAll)
+					assert.Loosely(t, Get(c, fplss), should.Equal(errFailAll))
 				})
 
-				Convey("get multi error for individual failures", func() {
+				t.Run("get multi error for individual failures", func(t *ftt.Test) {
 					fplss := []FakePLS{{IntID: 1}, {IntID: 2, Kind: "Fail"}}
-					So(Get(c, fplss), ShouldResemble, errors.MultiError{nil, errFail})
+					assert.Loosely(t, Get(c, fplss), should.ErrLike(
+						errors.MultiError{nil, errFail}))
 				})
 
-				Convey("get with non-modifiable type is an error", func() {
+				t.Run("get with non-modifiable type is an error", func(t *ftt.Test) {
 					cs := CommonStruct{}
-					So(func() { Get(c, cs) }, ShouldPanicLike,
-						"invalid input type (datastore.CommonStruct): not a pointer")
+					assert.Loosely(t, func() { Get(c, cs) }, should.PanicLike(
+						"invalid input type (datastore.CommonStruct): not a pointer"))
 				})
 
-				Convey("get with nil is an error", func() {
-					So(func() { Get(c, nil) }, ShouldPanicLike,
-						"cannot use nil as single argument")
+				t.Run("get with nil is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Get(c, nil) }, should.PanicLike(
+						"cannot use nil as single argument"))
 				})
 
-				Convey("get with typed nil is an error", func() {
-					So(func() { Get(c, (*CommonStruct)(nil)) }, ShouldPanicLike,
-						"cannot use typed nil as single argument")
+				t.Run("get with typed nil is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Get(c, (*CommonStruct)(nil)) }, should.PanicLike(
+						"cannot use typed nil as single argument"))
 				})
 
-				Convey("get with nil inside a slice is an error", func() {
-					So(func() { Get(c, []any{&CommonStruct{}, nil}) }, ShouldPanicLike,
-						"invalid input slice: has nil at index 1")
+				t.Run("get with nil inside a slice is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Get(c, []any{&CommonStruct{}, nil}) }, should.PanicLike(
+						"invalid input slice: has nil at index 1"))
 				})
 
-				Convey("get with typed nil inside a slice is an error", func() {
-					So(func() { Get(c, []any{&CommonStruct{}, (*CommonStruct)(nil)}) }, ShouldPanicLike,
-						"invalid input slice: has nil at index 1")
+				t.Run("get with typed nil inside a slice is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { Get(c, []any{&CommonStruct{}, (*CommonStruct)(nil)}) }, should.PanicLike(
+						"invalid input slice: has nil at index 1"))
 				})
 
-				Convey("get with nil inside a struct slice is an error", func() {
-					So(func() { _ = Get(c, []*CommonStruct{{}, nil}) }, ShouldPanicLike,
-						"invalid input slice: has nil at index 1")
+				t.Run("get with nil inside a struct slice is an error", func(t *ftt.Test) {
+					assert.Loosely(t, func() { _ = Get(c, []*CommonStruct{{}, nil}) }, should.PanicLike(
+						"invalid input slice: has nil at index 1"))
 				})
 
-				Convey("get with ptr-to-nonstruct is an error", func() {
+				t.Run("get with ptr-to-nonstruct is an error", func(t *ftt.Test) {
 					val := 100
-					So(func() { Get(c, &val) }, ShouldPanicLike,
-						"invalid input type (*int): not a PLS, pointer-to-struct, or slice thereof")
+					assert.Loosely(t, func() { Get(c, &val) }, should.PanicLike(
+						"invalid input type (*int): not a PLS, pointer-to-struct, or slice thereof"))
 				})
 
-				Convey("failure to save metadata is no problem though", func() {
+				t.Run("failure to save metadata is no problem though", func(t *ftt.Test) {
 					// It just won't save the key
 					cs := &FakePLS{IntID: 10, failSetMeta: true}
-					So(Get(c, cs), ShouldBeNil)
+					assert.Loosely(t, Get(c, cs), should.BeNil)
 				})
 
-				Convey("vararg with errors", func() {
+				t.Run("vararg with errors", func(t *ftt.Test) {
 					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
 					failSlice := []CommonStruct{{ID: noSuchEntityID}, {ID: 3}}
 					emptySlice := []CommonStruct(nil)
@@ -1074,15 +1080,15 @@ func TestGet(t *testing.T) {
 					fpls := FakePLS{StringID: "ohai"}
 
 					err := Get(c, successSlice, failSlice, emptySlice, &cs0, &failPLS, &fpls)
-					So(err, ShouldResemble, errors.MultiError{
-						nil, errors.MultiError{ErrNoSuchEntity, nil}, nil, nil, ErrNoSuchEntity, nil})
-					So(successSlice[0].Value, ShouldEqual, 1)
-					So(successSlice[1].Value, ShouldEqual, 2)
-					So(cs0.Value, ShouldEqual, 5)
-					So(fpls.Value, ShouldEqual, 7)
+					assert.Loosely(t, err, should.ErrLike(errors.MultiError{
+						nil, errors.MultiError{ErrNoSuchEntity, nil}, nil, nil, ErrNoSuchEntity, nil}))
+					assert.Loosely(t, successSlice[0].Value, should.Equal(1))
+					assert.Loosely(t, successSlice[1].Value, should.Equal(2))
+					assert.Loosely(t, cs0.Value, should.Equal(5))
+					assert.Loosely(t, fpls.Value, should.Equal(7))
 				})
 
-				Convey("mix of invalid key, type, and doesn't exist", func() {
+				t.Run("mix of invalid key, type, and doesn't exist", func(t *ftt.Test) {
 					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
 					type badKind struct {
 						ID    int64  `gae:"$id"`
@@ -1100,59 +1106,59 @@ func TestGet(t *testing.T) {
 					badKeySlice := []any{&idStruct{Value: "hi"}, &CommonStruct{}}
 
 					err := Get(c, successSlice, badPMSlice, badKeySlice)
-					So(err, ShouldHaveSameTypeAs, errors.MultiError{})
+					assert.Loosely(t, err, should.HaveType[errors.MultiError])
 
 					merr := err.(errors.MultiError)
-					So(merr, ShouldHaveLength, 3)
+					assert.Loosely(t, merr, should.HaveLength(3))
 
-					So(merr[0], ShouldBeNil)
-					So(successSlice[0], ShouldResemble, CommonStruct{ID: 1, Value: 1})
-					So(successSlice[1], ShouldResemble, CommonStruct{ID: 2, Value: 2})
+					assert.Loosely(t, merr[0], should.BeNil)
+					assert.Loosely(t, successSlice[0], should.Resemble(CommonStruct{ID: 1, Value: 1}))
+					assert.Loosely(t, successSlice[1], should.Resemble(CommonStruct{ID: 2, Value: 2}))
 
-					So(merr[1], ShouldHaveSameTypeAs, errors.MultiError{})
+					assert.Loosely(t, merr[1], should.HaveType[errors.MultiError])
 					merr1 := merr[1].(errors.MultiError)
-					So(merr1, ShouldHaveLength, 2)
-					So(merr1[0], ShouldErrLike, "unable to extract $kind")
-					So(merr1[1], ShouldErrLike, "FakePLS.Load")
+					assert.Loosely(t, merr1, should.HaveLength(2))
+					assert.Loosely(t, merr1[0], should.ErrLike("unable to extract $kind"))
+					assert.Loosely(t, merr1[1], should.ErrLike("FakePLS.Load"))
 
-					So(merr[2], ShouldHaveSameTypeAs, errors.MultiError{})
+					assert.Loosely(t, merr[2], should.HaveType[errors.MultiError])
 					merr2 := merr[2].(errors.MultiError)
-					So(merr2, ShouldHaveLength, 2)
-					So(merr2[0], ShouldErrLike, "invalid key")
-					So(merr2[1], ShouldErrLike, "invalid key")
+					assert.Loosely(t, merr2, should.HaveLength(2))
+					assert.Loosely(t, merr2[0], should.ErrLike("invalid key"))
+					assert.Loosely(t, merr2[1], should.ErrLike("invalid key"))
 				})
 			})
 
-			Convey("ok", func() {
-				Convey("Get", func() {
+			t.Run("ok", func(t *ftt.Test) {
+				t.Run("Get", func(t *ftt.Test) {
 					cs := &CommonStruct{ID: 1}
-					So(Get(c, cs), ShouldBeNil)
-					So(cs.Value, ShouldEqual, 1)
+					assert.Loosely(t, Get(c, cs), should.BeNil)
+					assert.Loosely(t, cs.Value, should.Equal(1))
 				})
 
-				Convey("Raw access too", func() {
+				t.Run("Raw access too", func(t *ftt.Test) {
 					rds := Raw(c)
 					keys := []*Key{MakeKey(c, "Kind", 1)}
-					So(rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
-						So(err, ShouldBeNil)
-						So(pm.Slice("Value")[0].Value(), ShouldEqual, 1)
-					}), ShouldBeNil)
+					assert.Loosely(t, rds.GetMulti(keys, nil, func(_ int, pm PropertyMap, err error) {
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(1))
+					}), should.BeNil)
 				})
 
-				Convey("but general failure to save is fine on a Get", func() {
+				t.Run("but general failure to save is fine on a Get", func(t *ftt.Test) {
 					cs := &FakePLS{failSave: true, IntID: 7}
-					So(Get(c, cs), ShouldBeNil)
+					assert.Loosely(t, Get(c, cs), should.BeNil)
 				})
 
-				Convey("vararg", func() {
+				t.Run("vararg", func(t *ftt.Test) {
 					successSlice := []CommonStruct{{ID: 1}, {ID: 2}}
 					cs := CommonStruct{ID: 3}
 
 					err := Get(c, successSlice, &cs)
-					So(err, ShouldBeNil)
-					So(successSlice[0].Value, ShouldEqual, 1)
-					So(successSlice[1].Value, ShouldEqual, 2)
-					So(cs.Value, ShouldEqual, 3)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, successSlice[0].Value, should.Equal(1))
+					assert.Loosely(t, successSlice[1].Value, should.Equal(2))
+					assert.Loosely(t, cs.Value, should.Equal(3))
 				})
 			})
 		})
@@ -1162,7 +1168,7 @@ func TestGet(t *testing.T) {
 func TestGetAll(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test GetAll", t, func() {
+	ftt.Run("Test GetAll", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
@@ -1170,122 +1176,122 @@ func TestGetAll(t *testing.T) {
 		fds.entities = 5
 		q := NewQuery("")
 
-		Convey("bad", func() {
-			Convey("nil target", func() {
-				So(func() { GetAll(c, q, (*[]PropertyMap)(nil)) }, ShouldPanicLike,
-					"invalid GetAll dst: <nil>")
+		t.Run("bad", func(t *ftt.Test) {
+			t.Run("nil target", func(t *ftt.Test) {
+				assert.Loosely(t, func() { GetAll(c, q, (*[]PropertyMap)(nil)) }, should.PanicLike(
+					"invalid GetAll dst: <nil>"))
 			})
 
-			Convey("bad type", func() {
+			t.Run("bad type", func(t *ftt.Test) {
 				output := 100
-				So(func() { GetAll(c, q, &output) }, ShouldPanicLike,
-					"invalid argument type: expected slice, got int")
+				assert.Loosely(t, func() { GetAll(c, q, &output) }, should.PanicLike(
+					"invalid argument type: expected slice, got int"))
 			})
 
-			Convey("bad type (non pointer)", func() {
-				So(func() { GetAll(c, q, "moo") }, ShouldPanicLike,
-					"invalid GetAll dst: must have a ptr-to-slice")
+			t.Run("bad type (non pointer)", func(t *ftt.Test) {
+				assert.Loosely(t, func() { GetAll(c, q, "moo") }, should.PanicLike(
+					"invalid GetAll dst: must have a ptr-to-slice"))
 			})
 
-			Convey("bad type (underspecified)", func() {
+			t.Run("bad type (underspecified)", func(t *ftt.Test) {
 				output := []PropertyLoadSaver(nil)
-				So(func() { GetAll(c, q, &output) }, ShouldPanicLike,
-					"invalid GetAll dst (non-concrete element type): *[]datastore.PropertyLoadSaver")
+				assert.Loosely(t, func() { GetAll(c, q, &output) }, should.PanicLike(
+					"invalid GetAll dst (non-concrete element type): *[]datastore.PropertyLoadSaver"))
 			})
 		})
 
-		Convey("ok", func() {
-			Convey("*[]S", func() {
+		t.Run("ok", func(t *ftt.Test) {
+			t.Run("*[]S", func(t *ftt.Test) {
 				output := []CommonStruct(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
-					So(o.ID, ShouldEqual, i+1)
-					So(o.Value, ShouldEqual, i)
+					assert.Loosely(t, o.ID, should.Equal(i+1))
+					assert.Loosely(t, o.Value, should.Equal(i))
 				}
 			})
 
-			Convey("*[]*S", func() {
+			t.Run("*[]*S", func(t *ftt.Test) {
 				output := []*CommonStruct(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
-					So(o.ID, ShouldEqual, i+1)
-					So(o.Value, ShouldEqual, i)
+					assert.Loosely(t, o.ID, should.Equal(i+1))
+					assert.Loosely(t, o.Value, should.Equal(i))
 				}
 			})
 
-			Convey("*[]P", func() {
+			t.Run("*[]P", func(t *ftt.Test) {
 				output := []FakePLS(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
-					So(o.gotLoaded, ShouldBeTrue)
-					So(o.IntID, ShouldEqual, i+1)
-					So(o.Value, ShouldEqual, i)
+					assert.Loosely(t, o.gotLoaded, should.BeTrue)
+					assert.Loosely(t, o.IntID, should.Equal(i+1))
+					assert.Loosely(t, o.Value, should.Equal(i))
 				}
 			})
 
-			Convey("*[]P (map)", func() {
+			t.Run("*[]P (map)", func(t *ftt.Test) {
 				output := []PropertyMap(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
 					k, ok := o.GetMeta("key")
-					So(ok, ShouldBeTrue)
-					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(o.Slice("Value")[0].Value().(int64), ShouldEqual, i)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
+					assert.Loosely(t, o.Slice("Value")[0].Value().(int64), should.Equal(i))
 				}
 			})
 
-			Convey("*[]P (chan)", func() {
+			t.Run("*[]P (chan)", func(t *ftt.Test) {
 				output := []plsChan(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(output, ShouldHaveLength, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, output, should.HaveLength(5))
 				for _, o := range output {
-					So(KeyForObj(c, o).StringID(), ShouldEqual, "whyDoIExist")
+					assert.Loosely(t, KeyForObj(c, o).StringID(), should.Equal("whyDoIExist"))
 				}
 			})
 
-			Convey("*[]*P", func() {
+			t.Run("*[]*P", func(t *ftt.Test) {
 				output := []*FakePLS(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, o := range output {
-					So(o.gotLoaded, ShouldBeTrue)
-					So(o.IntID, ShouldEqual, i+1)
-					So(o.Value, ShouldEqual, i)
+					assert.Loosely(t, o.gotLoaded, should.BeTrue)
+					assert.Loosely(t, o.IntID, should.Equal(i+1))
+					assert.Loosely(t, o.Value, should.Equal(i))
 				}
 			})
 
-			Convey("*[]*P (map)", func() {
+			t.Run("*[]*P (map)", func(t *ftt.Test) {
 				output := []*PropertyMap(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, op := range output {
 					o := *op
 					k, ok := o.GetMeta("key")
-					So(ok, ShouldBeTrue)
-					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(o.Slice("Value")[0].Value().(int64), ShouldEqual, i)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
+					assert.Loosely(t, o.Slice("Value")[0].Value().(int64), should.Equal(i))
 				}
 			})
 
-			Convey("*[]*P (chan)", func() {
+			t.Run("*[]*P (chan)", func(t *ftt.Test) {
 				output := []*plsChan(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(output, ShouldHaveLength, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, output, should.HaveLength(5))
 				for _, o := range output {
-					So(KeyForObj(c, o).StringID(), ShouldEqual, "whyDoIExist")
+					assert.Loosely(t, KeyForObj(c, o).StringID(), should.Equal("whyDoIExist"))
 				}
 			})
 
-			Convey("*[]*Key", func() {
+			t.Run("*[]*Key", func(t *ftt.Test) {
 				output := []*Key(nil)
-				So(GetAll(c, q, &output), ShouldBeNil)
-				So(len(output), ShouldEqual, 5)
+				assert.Loosely(t, GetAll(c, q, &output), should.BeNil)
+				assert.Loosely(t, len(output), should.Equal(5))
 				for i, k := range output {
-					So(k.IntID(), ShouldEqual, i+1)
+					assert.Loosely(t, k.IntID(), should.Equal(i+1))
 				}
 			})
 
@@ -1296,7 +1302,7 @@ func TestGetAll(t *testing.T) {
 func TestRun(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test Run", t, func() {
+	ftt.Run("Test Run", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		c = SetRawFactory(c, fds.factory())
@@ -1304,110 +1310,110 @@ func TestRun(t *testing.T) {
 		fds.entities = 5
 		q := NewQuery("kind")
 
-		Convey("bad", func() {
+		t.Run("bad", func(t *ftt.Test) {
 			assertBadTypePanics := func(cb any) {
-				So(func() { Run(c, q, cb) }, ShouldPanicLike,
-					"cb does not match the required callback signature")
+				assert.Loosely(t, func() { Run(c, q, cb) }, should.PanicLike(
+					"cb does not match the required callback signature"))
 			}
 
-			Convey("not a function", func() {
+			t.Run("not a function", func(t *ftt.Test) {
 				assertBadTypePanics("I am a potato")
 			})
 
-			Convey("nil", func() {
+			t.Run("nil", func(t *ftt.Test) {
 				assertBadTypePanics(nil)
 			})
 
-			Convey("interface", func() {
+			t.Run("interface", func(t *ftt.Test) {
 				assertBadTypePanics(func(pls PropertyLoadSaver) {})
 			})
 
-			Convey("bad proto type", func() {
+			t.Run("bad proto type", func(t *ftt.Test) {
 				cb := func(v int) {
 					panic("never here!")
 				}
-				So(func() { Run(c, q, cb) }, ShouldPanicLike,
-					"invalid argument type: int is not a PLS or pointer-to-struct")
+				assert.Loosely(t, func() { Run(c, q, cb) }, should.PanicLike(
+					"invalid argument type: int is not a PLS or pointer-to-struct"))
 			})
 
-			Convey("wrong # args", func() {
+			t.Run("wrong # args", func(t *ftt.Test) {
 				assertBadTypePanics(func(v CommonStruct, _ CursorCB, _ int) {
 					panic("never here!")
 				})
 			})
 
-			Convey("wrong ret type", func() {
+			t.Run("wrong ret type", func(t *ftt.Test) {
 				assertBadTypePanics(func(v CommonStruct) bool {
 					panic("never here!")
 				})
 			})
 
-			Convey("wrong # rets", func() {
+			t.Run("wrong # rets", func(t *ftt.Test) {
 				assertBadTypePanics(func(v CommonStruct) (int, error) {
 					panic("never here!")
 				})
 			})
 
-			Convey("bad 2nd arg", func() {
+			t.Run("bad 2nd arg", func(t *ftt.Test) {
 				assertBadTypePanics(func(v CommonStruct, _ Cursor) error {
 					panic("never here!")
 				})
 			})
 
-			Convey("early abort on error", func() {
+			t.Run("early abort on error", func(t *ftt.Test) {
 				q = q.Eq("@err_single", "Query fail").Eq("@err_single_idx", 3)
 				i := 0
-				So(Run(c, q, func(c CommonStruct) {
+				assert.Loosely(t, Run(c, q, func(c CommonStruct) {
 					i++
-				}), ShouldErrLike, "Query fail")
-				So(i, ShouldEqual, 3)
+				}), should.ErrLike("Query fail"))
+				assert.Loosely(t, i, should.Equal(3))
 			})
 
-			Convey("return error on serialization failure", func() {
-				So(Run(c, q, func(_ permaBad) {
+			t.Run("return error on serialization failure", func(t *ftt.Test) {
+				assert.Loosely(t, Run(c, q, func(_ permaBad) {
 					panic("never here")
-				}).Error(), ShouldEqual, "permaBad")
+				}).Error(), should.Equal("permaBad"))
 			})
 		})
 
-		Convey("ok", func() {
-			Convey("can return error to stop", func() {
+		t.Run("ok", func(t *ftt.Test) {
+			t.Run("can return error to stop", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(c CommonStruct) error {
+				assert.Loosely(t, Run(c, q, func(c CommonStruct) error {
 					i++
 					return Stop
-				}), ShouldBeNil)
-				So(i, ShouldEqual, 1)
+				}), should.BeNil)
+				assert.Loosely(t, i, should.Equal(1))
 
 				i = 0
-				So(Run(c, q, func(c CommonStruct, _ CursorCB) error {
+				assert.Loosely(t, Run(c, q, func(c CommonStruct, _ CursorCB) error {
 					i++
 					return fmt.Errorf("my error")
-				}), ShouldErrLike, "my error")
-				So(i, ShouldEqual, 1)
+				}), should.ErrLike("my error"))
+				assert.Loosely(t, i, should.Equal(1))
 			})
 
-			Convey("Can optionally get cursor function", func() {
+			t.Run("Can optionally get cursor function", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(c CommonStruct, ccb CursorCB) {
+				assert.Loosely(t, Run(c, q, func(c CommonStruct, ccb CursorCB) {
 					i++
 					curs, err := ccb()
-					So(err, ShouldBeNil)
-					So(curs.String(), ShouldEqual, fakeCursor(i).String())
-				}), ShouldBeNil)
-				So(i, ShouldEqual, 5)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, curs.String(), should.Equal(fakeCursor(i).String()))
+				}), should.BeNil)
+				assert.Loosely(t, i, should.Equal(5))
 			})
 
-			Convey("*S", func() {
+			t.Run("*S", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(cs *CommonStruct) {
-					So(cs.ID, ShouldEqual, i+1)
-					So(cs.Value, ShouldEqual, i)
+				assert.Loosely(t, Run(c, q, func(cs *CommonStruct) {
+					assert.Loosely(t, cs.ID, should.Equal(i+1))
+					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("*P", func() {
+			t.Run("*P", func(t *ftt.Test) {
 				fds.keyForResult = func(i int32, kctx KeyContext) *Key {
 					if i == 10 {
 						return kctx.MakeKey("Kind", "eleven")
@@ -1416,77 +1422,77 @@ func TestRun(t *testing.T) {
 				}
 
 				i := 0
-				So(Run(c, q.Limit(12), func(fpls *FakePLS) {
-					So(fpls.gotLoaded, ShouldBeTrue)
+				assert.Loosely(t, Run(c, q.Limit(12), func(fpls *FakePLS) {
+					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
 					if i == 10 {
-						So(fpls.StringID, ShouldEqual, "eleven")
+						assert.Loosely(t, fpls.StringID, should.Equal("eleven"))
 					} else {
-						So(fpls.IntID, ShouldEqual, i+1)
+						assert.Loosely(t, fpls.IntID, should.Equal(i+1))
 					}
-					So(fpls.Value, ShouldEqual, i)
+					assert.Loosely(t, fpls.Value, should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("*P (map)", func() {
+			t.Run("*P (map)", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(pm *PropertyMap) {
+				assert.Loosely(t, Run(c, q, func(pm *PropertyMap) {
 					k, ok := pm.GetMeta("key")
-					So(ok, ShouldBeTrue)
-					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So((*pm).Slice("Value")[0].Value(), ShouldEqual, i)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
+					assert.Loosely(t, (*pm).Slice("Value")[0].Value(), should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("*P (chan)", func() {
-				So(Run(c, q, func(ch *plsChan) {
-					So(KeyForObj(c, ch).StringID(), ShouldEqual, "whyDoIExist")
-				}), ShouldBeNil)
+			t.Run("*P (chan)", func(t *ftt.Test) {
+				assert.Loosely(t, Run(c, q, func(ch *plsChan) {
+					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
+				}), should.BeNil)
 			})
 
-			Convey("S", func() {
+			t.Run("S", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(cs CommonStruct) {
-					So(cs.ID, ShouldEqual, i+1)
-					So(cs.Value, ShouldEqual, i)
+				assert.Loosely(t, Run(c, q, func(cs CommonStruct) {
+					assert.Loosely(t, cs.ID, should.Equal(i+1))
+					assert.Loosely(t, cs.Value, should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("P", func() {
+			t.Run("P", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(fpls FakePLS) {
-					So(fpls.gotLoaded, ShouldBeTrue)
-					So(fpls.IntID, ShouldEqual, i+1)
-					So(fpls.Value, ShouldEqual, i)
+				assert.Loosely(t, Run(c, q, func(fpls FakePLS) {
+					assert.Loosely(t, fpls.gotLoaded, should.BeTrue)
+					assert.Loosely(t, fpls.IntID, should.Equal(i+1))
+					assert.Loosely(t, fpls.Value, should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("P (map)", func() {
+			t.Run("P (map)", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(pm PropertyMap) {
+				assert.Loosely(t, Run(c, q, func(pm PropertyMap) {
 					k, ok := pm.GetMeta("key")
-					So(ok, ShouldBeTrue)
-					So(k.(*Key).IntID(), ShouldEqual, i+1)
-					So(pm.Slice("Value")[0].Value(), ShouldEqual, i)
+					assert.Loosely(t, ok, should.BeTrue)
+					assert.Loosely(t, k.(*Key).IntID(), should.Equal(i+1))
+					assert.Loosely(t, pm.Slice("Value")[0].Value(), should.Equal(i))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
-			Convey("P (chan)", func() {
-				So(Run(c, q, func(ch plsChan) {
-					So(KeyForObj(c, ch).StringID(), ShouldEqual, "whyDoIExist")
-				}), ShouldBeNil)
+			t.Run("P (chan)", func(t *ftt.Test) {
+				assert.Loosely(t, Run(c, q, func(ch plsChan) {
+					assert.Loosely(t, KeyForObj(c, ch).StringID(), should.Equal("whyDoIExist"))
+				}), should.BeNil)
 			})
 
-			Convey("Key", func() {
+			t.Run("Key", func(t *ftt.Test) {
 				i := 0
-				So(Run(c, q, func(k *Key) {
-					So(k.IntID(), ShouldEqual, i+1)
+				assert.Loosely(t, Run(c, q, func(k *Key) {
+					assert.Loosely(t, k.IntID(), should.Equal(i+1))
 					i++
-				}), ShouldBeNil)
+				}), should.BeNil)
 			})
 
 		})
@@ -1530,17 +1536,17 @@ func (d *fixedDataDatastore) Constraints() Constraints { return Constraints{} }
 func TestSchemaChange(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test changing schemas", t, func() {
+	ftt.Run("Test changing schemas", t, func(t *ftt.Test) {
 		fds := fixedDataDatastore{}
 		c := info.Set(context.Background(), fakeInfo{})
 		c = SetRaw(c, &fds)
 
-		Convey("Can add fields", func() {
+		t.Run("Can add fields", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key": mpNI(MakeKey(c, "Val", 10)),
 				"Val":  mp(100),
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 
 			type Val struct {
 				ID int64 `gae:"$id"`
@@ -1549,31 +1555,31 @@ func TestSchemaChange(t *testing.T) {
 				TwoVal int64 // whoa, TWO vals! amazing
 			}
 			tv := &Val{ID: 10, TwoVal: 2}
-			So(Get(c, tv), ShouldBeNil)
-			So(tv, ShouldResemble, &Val{ID: 10, Val: 100, TwoVal: 0 /*was reset*/})
+			assert.Loosely(t, Get(c, tv), should.BeNil)
+			assert.Loosely(t, tv, should.Resemble(&Val{ID: 10, Val: 100, TwoVal: 0 /*was reset*/}))
 		})
 
-		Convey("Removing fields", func() {
+		t.Run("Removing fields", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key":   mpNI(MakeKey(c, "Val", 10)),
 				"Val":    mp(100),
 				"TwoVal": mp(200),
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 
-			Convey("is normally an error", func() {
+			t.Run("is normally an error", func(t *ftt.Test) {
 				type Val struct {
 					ID int64 `gae:"$id"`
 
 					Val int64
 				}
 				tv := &Val{ID: 10}
-				So(Get(c, tv), ShouldErrLike,
-					`gae: cannot load field "TwoVal" into a "datastore.Val`)
-				So(tv, ShouldResemble, &Val{ID: 10, Val: 100})
+				assert.Loosely(t, Get(c, tv), should.ErrLike(
+					`gae: cannot load field "TwoVal" into a "datastore.Val`))
+				assert.Loosely(t, tv, should.Resemble(&Val{ID: 10, Val: 100}))
 			})
 
-			Convey("Unless you have an ,extra field!", func() {
+			t.Run("Unless you have an ,extra field!", func(t *ftt.Test) {
 				type Val struct {
 					ID int64 `gae:"$id"`
 
@@ -1581,18 +1587,18 @@ func TestSchemaChange(t *testing.T) {
 					Extra PropertyMap `gae:",extra"`
 				}
 				tv := &Val{ID: 10}
-				So(Get(c, tv), ShouldBeNil)
-				So(tv, ShouldResemble, &Val{
+				assert.Loosely(t, Get(c, tv), should.BeNil)
+				assert.Loosely(t, tv, should.Resemble(&Val{
 					ID:  10,
 					Val: 100,
 					Extra: PropertyMap{
 						"TwoVal": PropertySlice{mp(200)},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey("Can round-trip extra fields", func() {
+		t.Run("Can round-trip extra fields", func(t *ftt.Test) {
 			type Expando struct {
 				ID int64 `gae:"$id"`
 
@@ -1603,27 +1609,27 @@ func TestSchemaChange(t *testing.T) {
 				"Hello": mp("Hello"),
 				"World": mp(true),
 			}}
-			So(Put(c, ex), ShouldBeNil)
+			assert.Loosely(t, Put(c, ex), should.BeNil)
 
 			ex = &Expando{ID: 10}
-			So(Get(c, ex), ShouldBeNil)
-			So(ex, ShouldResemble, &Expando{
+			assert.Loosely(t, Get(c, ex), should.BeNil)
+			assert.Loosely(t, ex, should.Resemble(&Expando{
 				ID:        10,
 				Something: 17,
 				Extra: PropertyMap{
 					"Hello": PropertySlice{mp("Hello")},
 					"World": PropertySlice{mp(true)},
 				},
-			})
+			}))
 		})
 
-		Convey("Can read-but-not-write", func() {
+		t.Run("Can read-but-not-write", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key":   mpNI(MakeKey(c, "Convert", 10)),
 				"Val":    mp(100),
 				"TwoVal": mp(200),
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 			type Convert struct {
 				ID int64 `gae:"$id"`
 
@@ -1632,27 +1638,27 @@ func TestSchemaChange(t *testing.T) {
 				Extra  PropertyMap `gae:"-,extra"`
 			}
 			cnv := &Convert{ID: 10}
-			So(Get(c, cnv), ShouldBeNil)
-			So(cnv, ShouldResemble, &Convert{
+			assert.Loosely(t, Get(c, cnv), should.BeNil)
+			assert.Loosely(t, cnv, should.Resemble(&Convert{
 				ID: 10, Val: 100, NewVal: 0, Extra: PropertyMap{"TwoVal": PropertySlice{mp(200)}},
-			})
+			}))
 			cnv.NewVal = cnv.Extra.Slice("TwoVal")[0].Value().(int64)
-			So(Put(c, cnv), ShouldBeNil)
+			assert.Loosely(t, Put(c, cnv), should.BeNil)
 
 			cnv = &Convert{ID: 10}
-			So(Get(c, cnv), ShouldBeNil)
-			So(cnv, ShouldResemble, &Convert{
+			assert.Loosely(t, Get(c, cnv), should.BeNil)
+			assert.Loosely(t, cnv, should.Resemble(&Convert{
 				ID: 10, Val: 100, NewVal: 200, Extra: nil,
-			})
+			}))
 		})
 
-		Convey("Can black hole", func() {
+		t.Run("Can black hole", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key":   mpNI(MakeKey(c, "BlackHole", 10)),
 				"Val":    mp(100),
 				"TwoVal": mp(200),
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 			type BlackHole struct {
 				ID int64 `gae:"$id"`
 
@@ -1660,16 +1666,16 @@ func TestSchemaChange(t *testing.T) {
 				blackHole PropertyMap `gae:"-,extra"`
 			}
 			b := &BlackHole{ID: 10}
-			So(Get(c, b), ShouldBeNil)
-			So(b, ShouldResemble, &BlackHole{ID: 10})
+			assert.Loosely(t, Get(c, b), should.BeNil)
+			assert.Loosely(t, b, should.Resemble(&BlackHole{ID: 10}))
 		})
 
-		Convey("Can change field types", func() {
+		t.Run("Can change field types", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key": mpNI(MakeKey(c, "IntChange", 10)),
 				"Val":  mp(100),
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 
 			type IntChange struct {
 				ID    int64 `gae:"$id"`
@@ -1677,17 +1683,17 @@ func TestSchemaChange(t *testing.T) {
 				Extra PropertyMap `gae:"-,extra"`
 			}
 			i := &IntChange{ID: 10}
-			So(Get(c, i), ShouldBeNil)
-			So(i, ShouldResemble, &IntChange{ID: 10, Extra: PropertyMap{"Val": PropertySlice{mp(100)}}})
+			assert.Loosely(t, Get(c, i), should.BeNil)
+			assert.Loosely(t, i, should.Resemble(&IntChange{ID: 10, Extra: PropertyMap{"Val": PropertySlice{mp(100)}}}))
 			i.Val = fmt.Sprint(i.Extra.Slice("Val")[0].Value())
-			So(Put(c, i), ShouldBeNil)
+			assert.Loosely(t, Put(c, i), should.BeNil)
 
 			i = &IntChange{ID: 10}
-			So(Get(c, i), ShouldBeNil)
-			So(i, ShouldResemble, &IntChange{ID: 10, Val: "100"})
+			assert.Loosely(t, Get(c, i), should.BeNil)
+			assert.Loosely(t, i, should.Resemble(&IntChange{ID: 10, Val: "100"}))
 		})
 
-		Convey("Native fields have priority over Extra fields", func() {
+		t.Run("Native fields have priority over Extra fields", func(t *ftt.Test) {
 			type Dup struct {
 				ID    int64 `gae:"$id"`
 				Val   int64
@@ -1697,21 +1703,21 @@ func TestSchemaChange(t *testing.T) {
 				"Val":   PropertySlice{mp(200)},
 				"Other": PropertySlice{mp("other")},
 			}}
-			So(Put(c, d), ShouldBeNil)
+			assert.Loosely(t, Put(c, d), should.BeNil)
 
 			d = &Dup{ID: 10}
-			So(Get(c, d), ShouldBeNil)
-			So(d, ShouldResemble, &Dup{
+			assert.Loosely(t, Get(c, d), should.BeNil)
+			assert.Loosely(t, d, should.Resemble(&Dup{
 				ID: 10, Val: 100, Extra: PropertyMap{"Other": PropertySlice{mp("other")}},
-			})
+			}))
 		})
 
-		Convey("Can change repeated field to non-repeating field", func() {
+		t.Run("Can change repeated field to non-repeating field", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key": mpNI(MakeKey(c, "NonRepeating", 10)),
 				"Val":  PropertySlice{mp(100), mp(200), mp(400)},
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 
 			type NonRepeating struct {
 				ID    int64 `gae:"$id"`
@@ -1719,22 +1725,22 @@ func TestSchemaChange(t *testing.T) {
 				Extra PropertyMap `gae:",extra"`
 			}
 			n := &NonRepeating{ID: 10}
-			So(Get(c, n), ShouldBeNil)
-			So(n, ShouldResemble, &NonRepeating{
+			assert.Loosely(t, Get(c, n), should.BeNil)
+			assert.Loosely(t, n, should.Resemble(&NonRepeating{
 				ID: 10, Val: 0, Extra: PropertyMap{
 					"Val": PropertySlice{mp(100), mp(200), mp(400)},
 				},
-			})
+			}))
 		})
 
-		Convey("Deals correctly with recursive types", func() {
+		t.Run("Deals correctly with recursive types", func(t *ftt.Test) {
 			initial := PropertyMap{
 				"$key": mpNI(MakeKey(c, "Outer", 10)),
 				"I.A":  PropertySlice{mp(1), mp(2), mp(4)},
 				"I.B":  PropertySlice{mp(10), mp(20), mp(40)},
 				"I.C":  PropertySlice{mp(100), mp(200), mp(400)},
 			}
-			So(Put(c, initial), ShouldBeNil)
+			assert.Loosely(t, Put(c, initial), should.BeNil)
 			type Inner struct {
 				A int64
 				B int64
@@ -1746,8 +1752,8 @@ func TestSchemaChange(t *testing.T) {
 				Extra PropertyMap `gae:",extra"`
 			}
 			o := &Outer{ID: 10}
-			So(Get(c, o), ShouldBeNil)
-			So(o, ShouldResemble, &Outer{
+			assert.Loosely(t, Get(c, o), should.BeNil)
+			assert.Loosely(t, o, should.Resemble(&Outer{
 				ID: 10,
 				I: []Inner{
 					{1, 10},
@@ -1757,33 +1763,33 @@ func TestSchemaChange(t *testing.T) {
 				Extra: PropertyMap{
 					"I.C": PropertySlice{mp(100), mp(200), mp(400)},
 				},
-			})
+			}))
 		})
 
-		Convey("Problems", func() {
-			Convey("multiple extra fields", func() {
+		t.Run("Problems", func(t *ftt.Test) {
+			t.Run("multiple extra fields", func(t *ftt.Test) {
 				type Bad struct {
 					A PropertyMap `gae:",extra"`
 					B PropertyMap `gae:",extra"`
 				}
-				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
-					"multiple fields tagged as 'extra'")
+				assert.Loosely(t, func() { GetPLS(&Bad{}) }, should.PanicLike(
+					"multiple fields tagged as 'extra'"))
 			})
 
-			Convey("extra field with name", func() {
+			t.Run("extra field with name", func(t *ftt.Test) {
 				type Bad struct {
 					A PropertyMap `gae:"wut,extra"`
 				}
-				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
-					"struct 'extra' field has invalid name wut")
+				assert.Loosely(t, func() { GetPLS(&Bad{}) }, should.PanicLike(
+					"struct 'extra' field has invalid name wut"))
 			})
 
-			Convey("extra field with bad type", func() {
+			t.Run("extra field with bad type", func(t *ftt.Test) {
 				type Bad struct {
 					A int64 `gae:",extra"`
 				}
-				So(func() { GetPLS(&Bad{}) }, ShouldPanicLike,
-					"struct 'extra' field has invalid type int64")
+				assert.Loosely(t, func() { GetPLS(&Bad{}) }, should.PanicLike(
+					"struct 'extra' field has invalid type int64"))
 			})
 		})
 	})
@@ -1792,7 +1798,7 @@ func TestSchemaChange(t *testing.T) {
 func TestParseIndexYAML(t *testing.T) {
 	t.Parallel()
 
-	Convey("parses properly formatted YAML", t, func() {
+	ftt.Run("parses properly formatted YAML", t, func(t *ftt.Test) {
 		yaml := `
 indexes:
 
@@ -1819,7 +1825,7 @@ indexes:
     direction: asc
 `
 		ids, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := []*IndexDefinition{
 			{
@@ -1865,12 +1871,12 @@ indexes:
 				},
 			},
 		}
-		So(ids, ShouldResemble, expected)
+		assert.Loosely(t, ids, should.Resemble(expected))
 	})
 
-	Convey("returns non-nil error for incorrectly formatted YAML", t, func() {
+	ftt.Run("returns non-nil error for incorrectly formatted YAML", t, func(t *ftt.Test) {
 
-		Convey("missing top level `indexes` key", func() {
+		t.Run("missing top level `indexes` key", func(t *ftt.Test) {
 			yaml := `
 - kind: Cat
   properties:
@@ -1879,10 +1885,10 @@ indexes:
     direction: desc
 `
 			_, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("missing `name` key in property", func() {
+		t.Run("missing `name` key in property", func(t *ftt.Test) {
 			yaml := `
 indexes:
 
@@ -1893,7 +1899,7 @@ indexes:
   - direction: desc
 `
 			_, err := ParseIndexYAML(bytes.NewBuffer([]byte(yaml)))
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
@@ -1901,7 +1907,7 @@ indexes:
 func TestFindAndParseIndexYAML(t *testing.T) {
 	t.Parallel()
 
-	Convey("returns parsed index definitions for existing index YAML files", t, func() {
+	ftt.Run("returns parsed index definitions for existing index YAML files", t, func(t *ftt.Test) {
 		// YAML content to write temporarily to disk
 		yaml1 := `
 indexes:
@@ -1934,7 +1940,7 @@ indexes:
 		}
 		sameLevelDir := filepath.Dir(path)
 
-		Convey("picks YAML file at same level as test file instead of higher level YAML file", func() {
+		t.Run("picks YAML file at same level as test file instead of higher level YAML file", func(t *ftt.Test) {
 			writePath1 := filepath.Join(sameLevelDir, "index.yml")
 			writePath2 := filepath.Join(filepath.Dir(sameLevelDir), "index.yaml")
 
@@ -1951,11 +1957,11 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML(".")
-			So(err, ShouldBeNil)
-			So(ids[0].Kind, ShouldEqual, "Test Same Level")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids[0].Kind, should.Equal("Test Same Level"))
 		})
 
-		Convey("finds YAML file two levels up given an empty relative path", func() {
+		t.Run("finds YAML file two levels up given an empty relative path", func(t *ftt.Test) {
 			writePath := filepath.Join(filepath.Dir(filepath.Dir(sameLevelDir)), "index.yaml")
 
 			setup := func() {
@@ -1969,11 +1975,11 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML("")
-			So(err, ShouldBeNil)
-			So(ids[1].Kind, ShouldEqual, "Test Foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 
-		Convey("finds YAML file given a relative path", func() {
+		t.Run("finds YAML file given a relative path", func(t *ftt.Test) {
 			writeDir, err := ioutil.TempDir(filepath.Dir(sameLevelDir), "temp-test-datastore-")
 			if err != nil {
 				panic(err)
@@ -1991,11 +1997,11 @@ indexes:
 			setup()
 			defer cleanup()
 			ids, err := FindAndParseIndexYAML(filepath.Join("..", filepath.Base(writeDir)))
-			So(err, ShouldBeNil)
-			So(ids[1].Kind, ShouldEqual, "Test Foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 
-		Convey("finds YAML file given an absolute path", func() {
+		t.Run("finds YAML file given an absolute path", func(t *ftt.Test) {
 			writePath := filepath.Join(sameLevelDir, "index.yaml")
 
 			setup := func() {
@@ -2015,8 +2021,8 @@ indexes:
 			}
 
 			ids, err := FindAndParseIndexYAML(abs)
-			So(err, ShouldBeNil)
-			So(ids[1].Kind, ShouldEqual, "Test Foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids[1].Kind, should.Equal("Test Foo"))
 		})
 	})
 }
@@ -2024,22 +2030,22 @@ indexes:
 func TestIteratorHeap(t *testing.T) {
 	t.Parallel()
 
-	Convey("iteratorHeap", t, func() {
+	ftt.Run("iteratorHeap", t, func(t *ftt.Test) {
 		h := &iteratorHeap{}
 
 		heap.Init(h)
 		heap.Push(h, &queryIterator{currentItemOrderCache: "bb"})
 		heap.Push(h, &queryIterator{currentItemOrderCache: "aa"})
-		So(h.Len(), ShouldEqual, 2)
+		assert.Loosely(t, h.Len(), should.Equal(2))
 
 		var res []*queryIterator
 		for h.Len() > 0 {
 			res = append(res, heap.Pop(h).(*queryIterator))
 		}
-		So(res, ShouldResemble, []*queryIterator{
+		assert.Loosely(t, res, should.Resemble([]*queryIterator{
 			{currentItemOrderCache: "aa"},
 			{currentItemOrderCache: "bb"},
-		})
+		}))
 	})
 }
 
@@ -2151,13 +2157,13 @@ func (f *fakeDatastore2) Run(fq *FinalizedQuery, cb RawRunCB) error {
 
 func TestRunMulti(t *testing.T) {
 	t.Parallel()
-	Convey("Test RunMulti", t, func() {
+	ftt.Run("Test RunMulti", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds2 := fakeDatastore2{}
 		c = SetRawFactory(c, fds2.factory())
 
-		Convey("ok", func() {
-			Convey("default - key ascending", func() {
+		t.Run("ok", func(t *ftt.Test) {
+			t.Run("default - key ascending", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2167,11 +2173,11 @@ func TestRunMulti(t *testing.T) {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
 			})
 
-			Convey("values field descending", func() {
+			t.Run("values field descending", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa").Order("-val"),
 					NewQuery("Foo").Eq("values", "cc").Order("-val"),
@@ -2181,11 +2187,11 @@ func TestRunMulti(t *testing.T) {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo3, foo2, foo1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo3, foo2, foo1}))
 			})
 
-			Convey("users send stop signal", func() {
+			t.Run("users send stop signal", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2198,11 +2204,11 @@ func TestRunMulti(t *testing.T) {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1, foo2})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2}))
 			})
 
-			Convey("not found", func() {
+			t.Run("not found", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("no_exist", "aa"),
 					NewQuery("Foo").Eq("no_exist", "bb"),
@@ -2212,11 +2218,11 @@ func TestRunMulti(t *testing.T) {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldErrLike, nil)
-				So(foos, ShouldBeNil)
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, foos, should.BeNil)
 			})
 
-			Convey("default - key ascending, With Cursor", func() {
+			t.Run("default - key ascending, With Cursor", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2239,18 +2245,18 @@ func TestRunMulti(t *testing.T) {
 					}
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1}))
 				// Get the remaining entity
 				err = RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
 			})
 
-			Convey("Query order - key ascending, With Cursor", func() {
+			t.Run("Query order - key ascending, With Cursor", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2278,18 +2284,18 @@ func TestRunMulti(t *testing.T) {
 					}
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1}))
 				// Get the remaining entities
 				err = RunMulti(c, queries1, func(foo *Foo, cb CursorCB) error {
 					foos = append(foos, foo)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(foos, ShouldResemble, []*Foo{foo1, foo2, foo3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2, foo3}))
 			})
 
-			Convey("Query cardinality - key ascending, With Cursor", func() {
+			t.Run("Query cardinality - key ascending, With Cursor", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2313,16 +2319,16 @@ func TestRunMulti(t *testing.T) {
 					}
 					return nil
 				})
-				So(foos, ShouldResemble, []*Foo{foo1, foo2})
-				So(IsMultiCursor(cur), ShouldBeTrue)
-				So(IsMultiCursorString(cur.String()), ShouldBeTrue)
+				assert.Loosely(t, foos, should.Resemble([]*Foo{foo1, foo2}))
+				assert.Loosely(t, IsMultiCursor(cur), should.BeTrue)
+				assert.Loosely(t, IsMultiCursorString(cur.String()), should.BeTrue)
 				// Update the queries1 with the cursor
 				_, err = ApplyCursors(c, queries1, cur)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, "Length mismatch. Cannot apply this cursor to the queries")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, should.ErrLike("Length mismatch. Cannot apply this cursor to the queries"))
 			})
 
-			Convey("fake cursor fail", func() {
+			t.Run("fake cursor fail", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo").Eq("values", "aa"),
 					NewQuery("Foo").Eq("values", "cc"),
@@ -2331,13 +2337,13 @@ func TestRunMulti(t *testing.T) {
 				cur := fakeCursor(100)
 				// Update the queries1 with the cursor
 				_, err := ApplyCursors(c, queries, cur)
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, "Failed to decode cursor")
-				So(IsMultiCursor(cur), ShouldBeFalse)
-				So(IsMultiCursorString(cur.String()), ShouldBeFalse)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, should.ErrLike("Failed to decode cursor"))
+				assert.Loosely(t, IsMultiCursor(cur), should.BeFalse)
+				assert.Loosely(t, IsMultiCursorString(cur.String()), should.BeFalse)
 			})
 
-			Convey("Query of different kinds", func() {
+			t.Run("Query of different kinds", func(t *ftt.Test) {
 				queries := []*Query{
 					NewQuery("Foo"),
 					NewQuery("Foo1"),
@@ -2345,12 +2351,12 @@ func TestRunMulti(t *testing.T) {
 				err := RunMulti(c, queries, func(foo *Foo, cb CursorCB) error {
 					return nil
 				})
-				So(err, ShouldNotBeNil)
-				So(err, ShouldErrLike, "should query the same kind")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err, should.ErrLike("should query the same kind"))
 			})
 		})
 
-		Convey("errors in one running query", func() {
+		t.Run("errors in one running query", func(t *ftt.Test) {
 			queries := []*Query{
 				NewQuery("Foo").Eq("values", "aa"),
 				NewQuery("Foo").Eq("@err_single", "error"),
@@ -2360,7 +2366,7 @@ func TestRunMulti(t *testing.T) {
 				foos = append(foos, foo)
 				return nil
 			})
-			So(err, ShouldErrLike, "errors in fakeDatastore")
+			assert.Loosely(t, err, should.ErrLike("errors in fakeDatastore"))
 		})
 	})
 }
@@ -2368,7 +2374,7 @@ func TestRunMulti(t *testing.T) {
 func TestCountMulti(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test CountMulti", t, func() {
+	ftt.Run("Test CountMulti", t, func(t *ftt.Test) {
 		c := info.Set(context.Background(), fakeInfo{})
 		fds2 := fakeDatastore2{}
 		c = SetRawFactory(c, fds2.factory())
@@ -2376,7 +2382,7 @@ func TestCountMulti(t *testing.T) {
 			NewQuery("Foo").Eq("values", "aa"),
 			NewQuery("Foo").Eq("values", "cc"),
 		})
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 3)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, count, should.Equal(3))
 	})
 }

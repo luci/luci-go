@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func ShouldEqualKey(actual any, expected ...any) string {
@@ -43,70 +45,70 @@ func TestKeyEncode(t *testing.T) {
 		kc.MakeKey("parent", 10, "renerd", "moo"),
 	}
 
-	Convey("Key Round trip", t, func() {
+	ftt.Run("Key Round trip", t, func(t *ftt.Test) {
 		for _, k := range keys {
 			k := k
-			Convey(k.String(), func() {
+			t.Run(k.String(), func(t *ftt.Test) {
 				enc := k.Encode()
 				dec, err := NewKeyEncoded(enc)
-				So(err, ShouldBeNil)
-				So(dec, ShouldNotBeNil)
-				So(dec, ShouldEqualKey, k)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, dec, should.NotBeNil)
+				assert.Loosely(t, dec, convey.Adapt(ShouldEqualKey)(k))
 
 				dec2, err := NewKeyEncoded(enc)
-				So(err, ShouldBeNil)
-				So(dec2, ShouldEqualKey, dec)
-				So(dec2, ShouldEqualKey, k)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, dec2, convey.Adapt(ShouldEqualKey)(dec))
+				assert.Loosely(t, dec2, convey.Adapt(ShouldEqualKey)(k))
 			})
 
-			Convey(k.String()+" (json)", func() {
+			t.Run(k.String()+" (json)", func(t *ftt.Test) {
 				data, err := k.MarshalJSON()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				dec := &Key{}
-				So(dec.UnmarshalJSON(data), ShouldBeNil)
-				So(dec, ShouldEqualKey, k)
+				assert.Loosely(t, dec.UnmarshalJSON(data), should.BeNil)
+				assert.Loosely(t, dec, convey.Adapt(ShouldEqualKey)(k))
 			})
 		}
 	})
 
-	Convey("NewKey", t, func() {
-		Convey("single", func() {
+	ftt.Run("NewKey", t, func(t *ftt.Test) {
+		t.Run("single", func(t *ftt.Test) {
 			k := MkKeyContext("appid", "ns").NewKey("kind", "", 1, nil)
-			So(k, ShouldEqualKey, keys[0])
+			assert.Loosely(t, k, convey.Adapt(ShouldEqualKey)(keys[0]))
 		})
 
-		Convey("empty", func() {
-			So(MkKeyContext("appid", "ns").NewKeyToks(nil), ShouldBeNil)
+		t.Run("empty", func(t *ftt.Test) {
+			assert.Loosely(t, MkKeyContext("appid", "ns").NewKeyToks(nil), should.BeNil)
 		})
 
-		Convey("nest", func() {
+		t.Run("nest", func(t *ftt.Test) {
 			kc := MkKeyContext("appid", "ns")
 			k := kc.NewKey("renerd", "moo", 0, kc.NewKey("parent", "", 10, nil))
-			So(k, ShouldEqualKey, keys[2])
+			assert.Loosely(t, k, convey.Adapt(ShouldEqualKey)(keys[2]))
 		})
 	})
 
-	Convey("Key bad encoding", t, func() {
-		Convey("extra junk before", func() {
+	ftt.Run("Key bad encoding", t, func(t *ftt.Test) {
+		t.Run("extra junk before", func(t *ftt.Test) {
 			enc := keys[2].Encode()
 			_, err := NewKeyEncoded("/" + enc)
-			So(err, ShouldErrLike, "illegal base64")
+			assert.Loosely(t, err, should.ErrLike("illegal base64"))
 		})
 
-		Convey("extra junk after", func() {
+		t.Run("extra junk after", func(t *ftt.Test) {
 			enc := keys[2].Encode()
 			_, err := NewKeyEncoded(enc[:len(enc)-1])
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("json encoding includes quotes", func() {
+		t.Run("json encoding includes quotes", func(t *ftt.Test) {
 			data, err := keys[0].MarshalJSON()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			dec := &Key{}
 			err = dec.UnmarshalJSON(append(data, '!'))
-			So(err, ShouldErrLike, "bad JSON key")
+			assert.Loosely(t, err, should.ErrLike("bad JSON key"))
 		})
 	})
 }
@@ -114,16 +116,16 @@ func TestKeyEncode(t *testing.T) {
 func TestKeyValidity(t *testing.T) {
 	t.Parallel()
 
-	Convey("keys validity", t, func() {
+	ftt.Run("keys validity", t, func(t *ftt.Test) {
 		kc := MkKeyContext("aid", "ns")
 
-		Convey("incomplete", func() {
-			So(kc.MakeKey("kind", 1).IsIncomplete(), ShouldBeFalse)
-			So(kc.MakeKey("kind", 0).IsIncomplete(), ShouldBeTrue)
+		t.Run("incomplete", func(t *ftt.Test) {
+			assert.Loosely(t, kc.MakeKey("kind", 1).IsIncomplete(), should.BeFalse)
+			assert.Loosely(t, kc.MakeKey("kind", 0).IsIncomplete(), should.BeTrue)
 		})
 
-		Convey("invalid", func() {
-			So(kc.MakeKey("hat", "face", "__kind__", 1).Valid(true, kc), ShouldBeTrue)
+		t.Run("invalid", func(t *ftt.Test) {
+			assert.Loosely(t, kc.MakeKey("hat", "face", "__kind__", 1).Valid(true, kc), should.BeTrue)
 
 			bads := []*Key{
 				MkKeyContext("aid", "ns").NewKeyToks([]KeyTok{{"Kind", 1, "1"}}),
@@ -133,15 +135,15 @@ func TestKeyValidity(t *testing.T) {
 				kc.MakeKey("hat", 0, "kind", 1),
 			}
 			for _, k := range bads {
-				Convey(k.String(), func() {
-					So(k.Valid(false, kc), ShouldBeFalse)
+				t.Run(k.String(), func(t *ftt.Test) {
+					assert.Loosely(t, k.Valid(false, kc), should.BeFalse)
 				})
 			}
 		})
 
-		Convey("partially valid", func() {
-			So(kc.MakeKey("kind", "").PartialValid(kc), ShouldBeTrue)
-			So(kc.MakeKey("kind", "", "child", "").PartialValid(kc), ShouldBeFalse)
+		t.Run("partially valid", func(t *ftt.Test) {
+			assert.Loosely(t, kc.MakeKey("kind", "").PartialValid(kc), should.BeTrue)
+			assert.Loosely(t, kc.MakeKey("kind", "", "child", "").PartialValid(kc), should.BeFalse)
 		})
 	})
 }
@@ -149,32 +151,32 @@ func TestKeyValidity(t *testing.T) {
 func TestMiscKey(t *testing.T) {
 	t.Parallel()
 
-	Convey("KeyRoot", t, func() {
+	ftt.Run("KeyRoot", t, func(t *ftt.Test) {
 		kc := MkKeyContext("appid", "ns")
 
 		k := kc.MakeKey("parent", 10, "renerd", "moo")
 		r := kc.MakeKey("parent", 10)
-		So(k.Root(), ShouldEqualKey, r)
+		assert.Loosely(t, k.Root(), convey.Adapt(ShouldEqualKey)(r))
 	})
 
-	Convey("KeysEqual", t, func() {
+	ftt.Run("KeysEqual", t, func(t *ftt.Test) {
 		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("knd", 1)
 		k2 := kc.MakeKey("knd", 1)
-		So(k1.Equal(k2), ShouldBeTrue)
+		assert.Loosely(t, k1.Equal(k2), should.BeTrue)
 		k3 := kc.MakeKey("knd", 2)
-		So(k1.Equal(k3), ShouldBeFalse)
+		assert.Loosely(t, k1.Equal(k3), should.BeFalse)
 	})
 
-	Convey("KeyString", t, func() {
+	ftt.Run("KeyString", t, func(t *ftt.Test) {
 		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("knd", 1, "other", "wat")
-		So(k1.String(), ShouldEqual, "a:n:/knd,1/other,\"wat\"")
+		assert.Loosely(t, k1.String(), should.Equal("a:n:/knd,1/other,\"wat\""))
 	})
 
-	Convey("HasAncestor", t, func() {
+	ftt.Run("HasAncestor", t, func(t *ftt.Test) {
 		kc := MkKeyContext("a", "n")
 
 		k1 := kc.MakeKey("kind", 1)
@@ -183,30 +185,30 @@ func TestMiscKey(t *testing.T) {
 		k4 := MkKeyContext("something", "n").MakeKey("kind", 1)
 		k5 := kc.MakeKey("kind", 1, "other", "meep")
 
-		So(k1.HasAncestor(k1), ShouldBeTrue)
-		So(k1.HasAncestor(k2), ShouldBeFalse)
-		So(k2.HasAncestor(k5), ShouldBeFalse)
-		So(k5.HasAncestor(k2), ShouldBeFalse)
-		So(k2.HasAncestor(k1), ShouldBeTrue)
-		So(k3.HasAncestor(k2), ShouldBeTrue)
-		So(k3.HasAncestor(k1), ShouldBeTrue)
-		So(k3.HasAncestor(k4), ShouldBeFalse)
+		assert.Loosely(t, k1.HasAncestor(k1), should.BeTrue)
+		assert.Loosely(t, k1.HasAncestor(k2), should.BeFalse)
+		assert.Loosely(t, k2.HasAncestor(k5), should.BeFalse)
+		assert.Loosely(t, k5.HasAncestor(k2), should.BeFalse)
+		assert.Loosely(t, k2.HasAncestor(k1), should.BeTrue)
+		assert.Loosely(t, k3.HasAncestor(k2), should.BeTrue)
+		assert.Loosely(t, k3.HasAncestor(k1), should.BeTrue)
+		assert.Loosely(t, k3.HasAncestor(k4), should.BeFalse)
 	})
 
-	Convey("*GenericKey supports json encoding", t, func() {
+	ftt.Run("*GenericKey supports json encoding", t, func(t *ftt.Test) {
 		type TestStruct struct {
 			Key *Key
 		}
-		t := &TestStruct{
+		ts := &TestStruct{
 			MkKeyContext("aid", "ns").NewKey("kind", "id", 0,
 				MkKeyContext("aid", "ns").NewKey("parent", "", 1, nil),
 			)}
-		d, err := json.Marshal(t)
-		So(err, ShouldBeNil)
+		d, err := json.Marshal(ts)
+		assert.Loosely(t, err, should.BeNil)
 		t2 := &TestStruct{}
 		err = json.Unmarshal(d, t2)
-		So(err, ShouldBeNil)
-		So(t.Key, ShouldEqualKey, t2.Key)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ts.Key, convey.Adapt(ShouldEqualKey)(t2.Key))
 	})
 }
 
@@ -237,15 +239,15 @@ func shouldNotBeLess(actual any, expected ...any) string {
 func TestKeySort(t *testing.T) {
 	t.Parallel()
 
-	Convey("KeyTok.Less() works", t, func() {
-		So((KeyTok{"a", 0, "1"}).Less(KeyTok{"b", 0, "2"}), ShouldBeTrue)
-		So((KeyTok{"b", 0, "1"}).Less(KeyTok{"a", 0, "2"}), ShouldBeFalse)
-		So((KeyTok{"kind", 0, "1"}).Less(KeyTok{"kind", 0, "2"}), ShouldBeTrue)
-		So((KeyTok{"kind", 1, ""}).Less(KeyTok{"kind", 2, ""}), ShouldBeTrue)
-		So((KeyTok{"kind", 1, ""}).Less(KeyTok{"kind", 0, "1"}), ShouldBeTrue)
+	ftt.Run("KeyTok.Less() works", t, func(t *ftt.Test) {
+		assert.Loosely(t, (KeyTok{"a", 0, "1"}).Less(KeyTok{"b", 0, "2"}), should.BeTrue)
+		assert.Loosely(t, (KeyTok{"b", 0, "1"}).Less(KeyTok{"a", 0, "2"}), should.BeFalse)
+		assert.Loosely(t, (KeyTok{"kind", 0, "1"}).Less(KeyTok{"kind", 0, "2"}), should.BeTrue)
+		assert.Loosely(t, (KeyTok{"kind", 1, ""}).Less(KeyTok{"kind", 2, ""}), should.BeTrue)
+		assert.Loosely(t, (KeyTok{"kind", 1, ""}).Less(KeyTok{"kind", 0, "1"}), should.BeTrue)
 	})
 
-	Convey("Key comparison works", t, func() {
+	ftt.Run("Key comparison works", t, func(t *ftt.Test) {
 		s := []*Key{
 			MkKeyContext("A", "").MakeKey("kind", 1),
 			MkKeyContext("A", "n").MakeKey("kind", 1),
@@ -261,10 +263,10 @@ func TestKeySort(t *testing.T) {
 		}
 
 		for i := 1; i < len(s); i++ {
-			So(s[i-1], shouldBeLess, s[i])
-			So(s[i-1], shouldNotBeEqual, s[i])
-			So(s[i], shouldNotBeEqual, s[i-1])
-			So(s[i], shouldNotBeLess, s[i-1])
+			assert.Loosely(t, s[i-1], convey.Adapt(shouldBeLess)(s[i]))
+			assert.Loosely(t, s[i-1], convey.Adapt(shouldNotBeEqual)(s[i]))
+			assert.Loosely(t, s[i], convey.Adapt(shouldNotBeEqual)(s[i-1]))
+			assert.Loosely(t, s[i], convey.Adapt(shouldNotBeLess)(s[i-1]))
 		}
 	})
 }

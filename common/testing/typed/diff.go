@@ -23,18 +23,43 @@ import (
 	"go.chromium.org/luci/common/testing/registry"
 )
 
-// Diff is just like cmp.Diff but it forces got and want to have the same type
-// and includes protocmp.Transform().
+// DiffSafe is just like cmp.Diff but it forces got and want to have the same
+// type and includes protocmp.Transform().
 //
 // This will result in more informative compile-time errors.
 // protocmp.Transform() is necessary for any protocol buffer comparison, and it
 // correctly does nothing if the arguments that we pass in are hereditarily
 // non-protobufs. So, for developer convenience, let's just always add it.
 //
+// Unlike a raw `cmp.Diff`, this will not panic but will instead return any
+// discovered error as a string value with ok == false.
+//
 // if you want to extend the defaults, take a look at:
 // - "go.chromium.org/luci/common/testing/registry"
-func Diff[T any](want T, got T, opts ...cmp.Option) string {
-	return cmp.Diff(want, got, slices.Concat(opts, registry.GetCmpOptions())...)
+func DiffSafe[T any](want T, got T, opts ...cmp.Option) (ret string, ok bool) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			ok = false
+			if err, isErr := rec.(error); isErr {
+				ret = err.Error()
+			} else if err, isStr := rec.(string); isStr {
+				ret = err
+			} else {
+				panic(rec)
+			}
+		}
+	}()
+
+	ok = true
+	ret = cmp.Diff(want, got, slices.Concat(opts, registry.GetCmpOptions())...)
+	return
+}
+
+// Diff is the same as DiffSafe except that both failures and actual diff are
+// returned in `ret` without any way to distinguish them.
+func Diff[T any](want T, got T, opts ...cmp.Option) (ret string) {
+	ret, _ = DiffSafe(want, got, opts...)
+	return
 }
 
 // Got supports the got-before-want style, it can be used as:
@@ -70,4 +95,9 @@ func (builder *diffBuilder[T]) Options(options ...cmp.Option) *diffBuilder[T] {
 // Diff produces a diff from a diffbuilder.
 func (builder *diffBuilder[T]) Diff() string {
 	return Diff(builder.want, builder.got, builder.options...)
+}
+
+// DiffSafe produces a safe diff (with `ok`) from a diffbuilder.
+func (builder *diffBuilder[T]) DiffSafe() (string, bool) {
+	return DiffSafe(builder.want, builder.got, builder.options...)
 }

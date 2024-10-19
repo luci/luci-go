@@ -19,17 +19,18 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestReadOnly(t *testing.T) {
 	t.Parallel()
 
-	Convey("Test datastore filter", t, func() {
+	ftt.Run("Test datastore filter", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		type Tester struct {
@@ -51,64 +52,64 @@ func TestReadOnly(t *testing.T) {
 			ro = k.Kind() != "MutableTester"
 			return
 		})
-		So(c, ShouldNotBeNil)
+		assert.Loosely(t, c, should.NotBeNil)
 
-		Convey("Get works.", func() {
+		t.Run("Get works.", func(t *ftt.Test) {
 			v := Tester{ID: 1}
-			So(ds.Get(c, &v), ShouldBeNil)
-			So(v.Value, ShouldEqual, "exists 1")
+			assert.Loosely(t, ds.Get(c, &v), should.BeNil)
+			assert.Loosely(t, v.Value, should.Equal("exists 1"))
 		})
 
-		Convey("Count works.", func() {
+		t.Run("Count works.", func(t *ftt.Test) {
 			q := ds.NewQuery("Tester")
 			cnt, err := ds.Count(c, q)
-			So(err, ShouldBeNil)
-			So(cnt, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cnt, should.Equal(1))
 		})
 
-		Convey("Put fails with read-only error", func() {
+		t.Run("Put fails with read-only error", func(t *ftt.Test) {
 			err := ds.Put(c, &Tester{ID: 1}, &MutableTester{ID: 1, Value: "new"})
-			So(err, ShouldResemble, errors.MultiError{
+			assert.Loosely(t, err, should.ErrLike(errors.MultiError{
 				ErrReadOnly,
 				nil,
-			})
+			}))
 			// The second put actually worked.
 			v := MutableTester{ID: 1}
-			So(ds.Get(c, &v), ShouldBeNil)
-			So(v.Value, ShouldEqual, "new")
+			assert.Loosely(t, ds.Get(c, &v), should.BeNil)
+			assert.Loosely(t, v.Value, should.Equal("new"))
 		})
 
-		Convey("Delete fails with read-only error", func() {
+		t.Run("Delete fails with read-only error", func(t *ftt.Test) {
 			err := ds.Delete(c, &Tester{ID: 1}, &MutableTester{ID: 1})
-			So(err, ShouldResemble, errors.MultiError{
+			assert.Loosely(t, err, should.ErrLike(errors.MultiError{
 				ErrReadOnly,
 				nil,
-			})
+			}))
 		})
 
-		Convey("AllocateIDs fails with read-only error", func() {
+		t.Run("AllocateIDs fails with read-only error", func(t *ftt.Test) {
 			t1 := Tester{}
 			t2 := MutableTester{ID: -1}
 			err := ds.AllocateIDs(c, &t1, &t2)
-			So(err, ShouldResemble, errors.MultiError{
+			assert.Loosely(t, err, should.ErrLike(errors.MultiError{
 				ErrReadOnly,
 				nil,
-			})
-			So(t2.ID, ShouldEqual, 0) // allocated
+			}))
+			assert.Loosely(t, t2.ID, should.BeZero) // allocated
 		})
 
-		Convey("In a transaction", func() {
-			Convey("Get works.", func() {
+		t.Run("In a transaction", func(t *ftt.Test) {
+			t.Run("Get works.", func(t *ftt.Test) {
 				v := Tester{ID: 1}
 
 				err := ds.RunInTransaction(c, func(c context.Context) error {
 					return ds.Get(c, &v)
 				}, nil)
-				So(err, ShouldBeNil)
-				So(v.Value, ShouldEqual, "exists 1")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.Value, should.Equal("exists 1"))
 			})
 
-			Convey("Count works.", func() {
+			t.Run("Count works.", func(t *ftt.Test) {
 				// (Need ancestor filter for transaction query)
 				q := ds.NewQuery("Tester").Ancestor(ds.KeyForObj(c, &Tester{ID: 1}))
 
@@ -117,30 +118,30 @@ func TestReadOnly(t *testing.T) {
 					cnt, err = ds.Count(c, q)
 					return
 				}, nil)
-				So(err, ShouldBeNil)
-				So(cnt, ShouldEqual, 1)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cnt, should.Equal(1))
 			})
 
-			Convey("Put fails with read-only error", func() {
+			t.Run("Put fails with read-only error", func(t *ftt.Test) {
 				err := ds.RunInTransaction(c, func(c context.Context) error {
 					return ds.Put(c, &Tester{ID: 1})
 				}, nil)
-				So(err, ShouldEqual, ErrReadOnly)
+				assert.Loosely(t, err, should.Equal(ErrReadOnly))
 			})
 
-			Convey("Delete fails with read-only error", func() {
+			t.Run("Delete fails with read-only error", func(t *ftt.Test) {
 				err := ds.RunInTransaction(c, func(c context.Context) error {
 					return ds.Delete(c, &Tester{ID: 1})
 				}, nil)
-				So(err, ShouldEqual, ErrReadOnly)
+				assert.Loosely(t, err, should.Equal(ErrReadOnly))
 			})
 
-			Convey("AllocateIDs fails with read-only error", func() {
+			t.Run("AllocateIDs fails with read-only error", func(t *ftt.Test) {
 				err := ds.RunInTransaction(c, func(c context.Context) error {
 					return ds.AllocateIDs(c, make([]Tester, 10))
 				}, nil)
-				So(err, ShouldNotBeNil)
-				So(errors.SingleError(err), ShouldEqual, ErrReadOnly)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, errors.SingleError(err), should.Equal(ErrReadOnly))
 			})
 		})
 	})

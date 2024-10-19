@@ -44,14 +44,12 @@ func TestMatch(t *testing.T) {
 			Properties: props,
 		}})(&buildbucketpb.Build{Id: 12345}), "Diff"))
 
-	t.Run("unexported fields", func(t *testing.T) {
-		type myStruct struct {
-			private string
-		}
-		mustPanicLike(t, "unexported field", func() {
-			Match(myStruct{"hi"})(myStruct{"hi"})
-		})
-	})
+	type myStruct struct {
+		private string
+	}
+	t.Run("unexported fields",
+		shouldFail(Match(myStruct{"hi"})(myStruct{"hi"}),
+			"unexported field"))
 }
 
 func TestNotMatch(t *testing.T) {
@@ -74,14 +72,12 @@ func TestNotMatch(t *testing.T) {
 			Properties: props,
 		}})(&buildbucketpb.Build{Id: 12345})))
 
-	t.Run("unexported fields", func(t *testing.T) {
-		type myStruct struct {
-			private string
-		}
-		mustPanicLike(t, "unexported field", func() {
-			NotMatch(myStruct{"hi"})(myStruct{"hi"})
-		})
-	})
+	type myStruct struct {
+		private string
+	}
+	t.Run("unexported fields",
+		shouldFail(NotMatch(myStruct{"hi"})(myStruct{"hi"}),
+			"unexported field"))
 }
 
 func TestResemble(t *testing.T) {

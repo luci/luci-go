@@ -24,8 +24,10 @@ import (
 
 	"go.chromium.org/luci/gae/service/blobstore"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func init() {
@@ -119,15 +121,15 @@ func TestPropertyMapSerialization(t *testing.T) {
 		},
 	}
 
-	Convey("PropertyMap serialization", t, func() {
-		Convey("round trip", func() {
+	ftt.Run("PropertyMap serialization", t, func(t *ftt.Test) {
+		t.Run("round trip", func(t *ftt.Test) {
 			for _, tc := range tests {
 				tc := tc
-				Convey(tc.name, func() {
+				t.Run(tc.name, func(t *ftt.Test) {
 					data := SerializeKC.ToBytes(tc.props)
 					dec, err := Deserialize.PropertyMap(mkBuf(data))
-					So(err, ShouldBeNil)
-					So(dec, ShouldResemble, tc.props)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dec, should.Resemble(tc.props))
 				})
 			}
 		})
@@ -167,85 +169,85 @@ func wui(w io.ByteWriter, i uint64) int {
 func TestSerializationReadMisc(t *testing.T) {
 	t.Parallel()
 
-	Convey("Misc Serialization tests", t, func() {
-		Convey("GeoPoint", func() {
+	ftt.Run("Misc Serialization tests", t, func(t *ftt.Test) {
+		t.Run("GeoPoint", func(t *ftt.Test) {
 			buf := mkBuf(nil)
 			wf(buf, 10)
 			wf(buf, 20)
-			So(string(Serialize.ToBytes(GeoPoint{Lat: 10, Lng: 20})), ShouldEqual, buf.String())
+			assert.Loosely(t, string(Serialize.ToBytes(GeoPoint{Lat: 10, Lng: 20})), should.Equal(buf.String()))
 		})
 
-		Convey("IndexColumn", func() {
+		t.Run("IndexColumn", func(t *ftt.Test) {
 			buf := mkBuf(nil)
 			die(buf.WriteByte(1))
 			ws(buf, "hi")
-			So(string(Serialize.ToBytes(IndexColumn{Property: "hi", Descending: true})),
-				ShouldEqual, buf.String())
+			assert.Loosely(t, string(Serialize.ToBytes(IndexColumn{Property: "hi", Descending: true})),
+				should.Equal(buf.String()))
 		})
 
-		Convey("KeyTok", func() {
+		t.Run("KeyTok", func(t *ftt.Test) {
 			buf := mkBuf(nil)
 			ws(buf, "foo")
 			die(buf.WriteByte(byte(PTInt)))
 			wi(buf, 20)
-			So(string(Serialize.ToBytes(KeyTok{Kind: "foo", IntID: 20})),
-				ShouldEqual, buf.String())
+			assert.Loosely(t, string(Serialize.ToBytes(KeyTok{Kind: "foo", IntID: 20})),
+				should.Equal(buf.String()))
 		})
 
-		Convey("Property", func() {
+		t.Run("Property", func(t *ftt.Test) {
 			buf := mkBuf(nil)
 			die(buf.WriteByte(0x80 | byte(PTString)))
 			ws(buf, "nerp")
-			So(string(Serialize.ToBytes(mp("nerp"))),
-				ShouldEqual, buf.String())
+			assert.Loosely(t, string(Serialize.ToBytes(mp("nerp"))),
+				should.Equal(buf.String()))
 		})
 
-		Convey("Time", func() {
+		t.Run("Time", func(t *ftt.Test) {
 			tp := mp(time.Now().UTC())
-			So(string(Serialize.ToBytes(tp.Value())), ShouldEqual, string(Serialize.ToBytes(tp)[1:]))
+			assert.Loosely(t, string(Serialize.ToBytes(tp.Value())), should.Equal(string(Serialize.ToBytes(tp)[1:])))
 		})
 
-		Convey("Zero time", func() {
+		t.Run("Zero time", func(t *ftt.Test) {
 			buf := mkBuf(nil)
-			So(Serialize.Time(buf, time.Time{}), ShouldBeNil)
-			t, err := Deserialize.Time(mkBuf(buf.Bytes()))
-			So(err, ShouldBeNil)
-			So(t.Equal(time.Time{}), ShouldBeTrue)
+			assert.Loosely(t, Serialize.Time(buf, time.Time{}), should.BeNil)
+			ts, err := Deserialize.Time(mkBuf(buf.Bytes()))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ts.Equal(time.Time{}), should.BeTrue)
 		})
 
-		Convey("ReadKey", func() {
-			Convey("good cases", func() {
+		t.Run("ReadKey", func(t *ftt.Test) {
+			t.Run("good cases", func(t *ftt.Test) {
 				dwc := Deserializer{MkKeyContext("spam", "nerd")}
 
-				Convey("w/ ctx decodes normally w/ ctx", func() {
+				t.Run("w/ ctx decodes normally w/ ctx", func(t *ftt.Test) {
 					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := SerializeKC.ToBytes(k)
 					dk, err := Deserialize.Key(mkBuf(data))
-					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, k)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dk, convey.Adapt(ShouldEqualKey)(k))
 				})
-				Convey("w/ ctx decodes normally w/o ctx", func() {
+				t.Run("w/ ctx decodes normally w/o ctx", func(t *ftt.Test) {
 					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := SerializeKC.ToBytes(k)
 					dk, err := dwc.Key(mkBuf(data))
-					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dk, convey.Adapt(ShouldEqualKey)(mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10)))
 				})
-				Convey("w/o ctx decodes normally w/ ctx", func() {
+				t.Run("w/o ctx decodes normally w/ ctx", func(t *ftt.Test) {
 					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := Serialize.ToBytes(k)
 					dk, err := Deserialize.Key(mkBuf(data))
-					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKeyCtx("", "", "knd", "yo", "other", 10))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dk, convey.Adapt(ShouldEqualKey)(mkKeyCtx("", "", "knd", "yo", "other", 10)))
 				})
-				Convey("w/o ctx decodes normally w/o ctx", func() {
+				t.Run("w/o ctx decodes normally w/o ctx", func(t *ftt.Test) {
 					k := mkKeyCtx("aid", "ns", "knd", "yo", "other", 10)
 					data := Serialize.ToBytes(k)
 					dk, err := dwc.Key(mkBuf(data))
-					So(err, ShouldBeNil)
-					So(dk, ShouldEqualKey, mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10))
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dk, convey.Adapt(ShouldEqualKey)(mkKeyCtx("spam", "nerd", "knd", "yo", "other", 10)))
 				})
-				Convey("IntIDs always sort before StringIDs", func() {
+				t.Run("IntIDs always sort before StringIDs", func(t *ftt.Test) {
 					// -1 writes as almost all 1's in the first byte under cmpbin, even
 					// though it's technically not a valid key.
 					k := mkKeyCtx("aid", "ns", "knd", -1)
@@ -254,42 +256,42 @@ func TestSerializationReadMisc(t *testing.T) {
 					k = mkKeyCtx("aid", "ns", "knd", "hat")
 					data2 := Serialize.ToBytes(k)
 
-					So(string(data), ShouldBeLessThan, string(data2))
+					assert.Loosely(t, string(data), should.BeLessThan(string(data2)))
 				})
 			})
 
-			Convey("err cases", func() {
+			t.Run("err cases", func(t *ftt.Test) {
 				buf := mkBuf(nil)
 
-				Convey("nil", func() {
+				t.Run("nil", func(t *ftt.Test) {
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("str", func() {
+				t.Run("str", func(t *ftt.Test) {
 					_, err := buf.WriteString("sup")
 					die(err)
 					_, err = Deserialize.Key(buf)
-					So(err, ShouldErrLike, "expected actualCtx")
+					assert.Loosely(t, err, should.ErrLike("expected actualCtx"))
 				})
-				Convey("truncated 1", func() {
+				t.Run("truncated 1", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("truncated 2", func() {
+				t.Run("truncated 2", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("truncated 3", func() {
+				t.Run("truncated 3", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("huge key", func() {
+				t.Run("huge key", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
@@ -299,26 +301,26 @@ func TestSerializationReadMisc(t *testing.T) {
 					}
 					die(buf.WriteByte(0))
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldErrLike, "huge key")
+					assert.Loosely(t, err, should.ErrLike("huge key"))
 				})
-				Convey("insufficient tokens", func() {
+				t.Run("insufficient tokens", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
 					wui(buf, 2)
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("partial token 1", func() {
+				t.Run("partial token 1", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
 					die(buf.WriteByte(1))
 					ws(buf, "hi")
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("partial token 2", func() {
+				t.Run("partial token 2", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
@@ -326,9 +328,9 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "hi")
 					die(buf.WriteByte(byte(PTString)))
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
-				Convey("bad token (invalid type)", func() {
+				t.Run("bad token (invalid type)", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
@@ -336,9 +338,9 @@ func TestSerializationReadMisc(t *testing.T) {
 					ws(buf, "hi")
 					die(buf.WriteByte(byte(PTBlobKey)))
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldErrLike, "invalid type PTBlobKey")
+					assert.Loosely(t, err, should.ErrLike("invalid type PTBlobKey"))
 				})
-				Convey("bad token (invalid IntID)", func() {
+				t.Run("bad token (invalid IntID)", func(t *ftt.Test) {
 					die(buf.WriteByte(1)) // actualCtx == 1
 					ws(buf, "aid")
 					ws(buf, "ns")
@@ -347,145 +349,145 @@ func TestSerializationReadMisc(t *testing.T) {
 					die(buf.WriteByte(byte(PTInt)))
 					wi(buf, -2)
 					_, err := Deserialize.Key(buf)
-					So(err, ShouldErrLike, "zero/negative")
+					assert.Loosely(t, err, should.ErrLike("zero/negative"))
 				})
 			})
 		})
 
-		Convey("ReadGeoPoint", func() {
+		t.Run("ReadGeoPoint", func(t *ftt.Test) {
 			buf := mkBuf(nil)
-			Convey("trunc 1", func() {
+			t.Run("trunc 1", func(t *ftt.Test) {
 				_, err := Deserialize.GeoPoint(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("trunc 2", func() {
+			t.Run("trunc 2", func(t *ftt.Test) {
 				wf(buf, 100)
 				_, err := Deserialize.GeoPoint(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				wf(buf, 100)
 				wf(buf, 1000)
 				_, err := Deserialize.GeoPoint(buf)
-				So(err, ShouldErrLike, "invalid GeoPoint")
+				assert.Loosely(t, err, should.ErrLike("invalid GeoPoint"))
 			})
 		})
 
-		Convey("WriteTime", func() {
-			Convey("in non-UTC!", func() {
+		t.Run("WriteTime", func(t *ftt.Test) {
+			t.Run("in non-UTC!", func(t *ftt.Test) {
 				pst, err := time.LoadLocation("America/Los_Angeles")
-				So(err, ShouldBeNil)
-				So(func() {
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, func() {
 					die(Serialize.Time(mkBuf(nil), time.Now().In(pst)))
-				}, ShouldPanic)
+				}, should.Panic)
 			})
 		})
 
-		Convey("ReadTime", func() {
-			Convey("trunc 1", func() {
+		t.Run("ReadTime", func(t *ftt.Test) {
+			t.Run("trunc 1", func(t *ftt.Test) {
 				_, err := Deserialize.Time(mkBuf(nil))
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
 		})
 
-		Convey("ReadProperty", func() {
+		t.Run("ReadProperty", func(t *ftt.Test) {
 			buf := mkBuf(nil)
-			Convey("trunc 1", func() {
+			t.Run("trunc 1", func(t *ftt.Test) {
 				p, err := Deserialize.Property(buf)
-				So(err, ShouldEqual, io.EOF)
-				So(p.Type(), ShouldEqual, PTNull)
-				So(p.Value(), ShouldBeNil)
+				assert.Loosely(t, err, should.Equal(io.EOF))
+				assert.Loosely(t, p.Type(), should.Equal(PTNull))
+				assert.Loosely(t, p.Value(), should.BeNil)
 			})
-			Convey("trunc (PTBytes)", func() {
+			t.Run("trunc (PTBytes)", func(t *ftt.Test) {
 				die(buf.WriteByte(byte(PTBytes)))
 				_, err := Deserialize.Property(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("trunc (PTBlobKey)", func() {
+			t.Run("trunc (PTBlobKey)", func(t *ftt.Test) {
 				die(buf.WriteByte(byte(PTBlobKey)))
 				_, err := Deserialize.Property(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("invalid type", func() {
+			t.Run("invalid type", func(t *ftt.Test) {
 				die(buf.WriteByte(byte(PTUnknown + 1)))
 				_, err := Deserialize.Property(buf)
-				So(err, ShouldErrLike, "unknown type!")
+				assert.Loosely(t, err, should.ErrLike("unknown type!"))
 			})
 		})
 
-		Convey("ReadPropertyMap", func() {
+		t.Run("ReadPropertyMap", func(t *ftt.Test) {
 			buf := mkBuf(nil)
-			Convey("trunc 1", func() {
+			t.Run("trunc 1", func(t *ftt.Test) {
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("too many rows", func() {
+			t.Run("too many rows", func(t *ftt.Test) {
 				wui(buf, 1000000)
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldErrLike, "huge number of rows")
+				assert.Loosely(t, err, should.ErrLike("huge number of rows"))
 			})
-			Convey("trunc 2", func() {
+			t.Run("trunc 2", func(t *ftt.Test) {
 				wui(buf, 10)
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("trunc 3", func() {
+			t.Run("trunc 3", func(t *ftt.Test) {
 				wui(buf, 10)
 				ws(buf, "ohai")
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
-			Convey("too many values", func() {
+			t.Run("too many values", func(t *ftt.Test) {
 				wui(buf, 10)
 				ws(buf, "ohai")
 				wui(buf, 100000)
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldErrLike, "huge number of properties")
+				assert.Loosely(t, err, should.ErrLike("huge number of properties"))
 			})
-			Convey("trunc 4", func() {
+			t.Run("trunc 4", func(t *ftt.Test) {
 				wui(buf, 10)
 				ws(buf, "ohai")
 				wui(buf, 10)
 				_, err := Deserialize.PropertyMap(buf)
-				So(err, ShouldEqual, io.EOF)
+				assert.Loosely(t, err, should.Equal(io.EOF))
 			})
 		})
 
-		Convey("IndexDefinition", func() {
+		t.Run("IndexDefinition", func(t *ftt.Test) {
 			id := IndexDefinition{Kind: "kind"}
 			data := Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err := Deserialize.IndexDefinition(mkBuf(data))
-			So(err, ShouldBeNil)
-			So(newID.Flip(), ShouldResemble, id.Normalize())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
 
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "prop"})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
-			So(err, ShouldBeNil)
-			So(newID.Flip(), ShouldResemble, id.Normalize())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
 
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "other", Descending: true})
 			id.Ancestor = true
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
-			So(err, ShouldBeNil)
-			So(newID.Flip(), ShouldResemble, id.Normalize())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
 
 			// invalid
 			id.SortBy = append(id.SortBy, IndexColumn{Property: "", Descending: true})
 			data = Serialize.ToBytes(*id.PrepForIdxTable())
 			newID, err = Deserialize.IndexDefinition(mkBuf(data))
-			So(err, ShouldBeNil)
-			So(newID.Flip(), ShouldResemble, id.Normalize())
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, newID.Flip(), should.Resemble(id.Normalize()))
 
-			Convey("too many", func() {
+			t.Run("too many", func(t *ftt.Test) {
 				id := IndexDefinition{Kind: "wat"}
 				for i := 0; i < maxIndexColumns+1; i++ {
 					id.SortBy = append(id.SortBy, IndexColumn{Property: "Hi", Descending: true})
 				}
 				data := Serialize.ToBytes(*id.PrepForIdxTable())
 				newID, err = Deserialize.IndexDefinition(mkBuf(data))
-				So(err, ShouldErrLike, "over 64 sort orders")
+				assert.Loosely(t, err, should.ErrLike("over 64 sort orders"))
 			})
 		})
 	})
@@ -500,7 +502,7 @@ func TestIndexedProperties(t *testing.T) {
 	innerKey2 := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "innerKey", 2)
 	innerKey3 := mkKeyCtx("dev~app", "ns", "parentKind", "sid", "innerKey", 3)
 
-	Convey("TestIndexedProperties", t, func() {
+	ftt.Run("TestIndexedProperties", t, func(t *ftt.Test) {
 		pm := PropertyMap{
 			"wat":  PropertySlice{mpNI("thing"), mp("hat"), mp(100)},
 			"nerd": mp(103.7),
@@ -534,12 +536,12 @@ func TestIndexedProperties(t *testing.T) {
 			},
 		}
 
-		Convey("IndexedProperties", func() {
+		t.Run("IndexedProperties", func(t *ftt.Test) {
 			sip := Serialize.IndexedProperties(fakeKey, pm)
-			So(len(sip), ShouldEqual, 8)
+			assert.Loosely(t, len(sip), should.Equal(8))
 			sip.Sort()
 
-			So(sip, ShouldResemble, IndexedProperties{
+			assert.Loosely(t, sip, should.Resemble(IndexedProperties{
 				"wat": {
 					Serialize.ToBytes(mp(100)),
 					Serialize.ToBytes(mp("hat")),
@@ -572,20 +574,20 @@ func TestIndexedProperties(t *testing.T) {
 					Serialize.ToBytes(mp(fakeKey.Parent())),
 					Serialize.ToBytes(mp(fakeKey)),
 				},
-			})
+			}))
 		})
 
-		Convey("IndexedPropertiesForIndicies", func() {
+		t.Run("IndexedPropertiesForIndicies", func(t *ftt.Test) {
 			sip := Serialize.IndexedPropertiesForIndicies(fakeKey, pm, []IndexColumn{
 				{Property: "wat"},
 				{Property: "wat", Descending: true},
 				{Property: "unknown"},
 				{Property: "nested.__key__"},
 			})
-			So(len(sip), ShouldEqual, 4)
+			assert.Loosely(t, len(sip), should.Equal(4))
 			sip.Sort()
 
-			So(sip, ShouldResemble, IndexedProperties{
+			assert.Loosely(t, sip, should.Resemble(IndexedProperties{
 				"wat": {
 					Serialize.ToBytes(mp(100)),
 					Serialize.ToBytes(mp("hat")),
@@ -601,7 +603,7 @@ func TestIndexedProperties(t *testing.T) {
 					Serialize.ToBytes(mp(fakeKey.Parent())),
 					Serialize.ToBytes(mp(fakeKey)),
 				},
-			})
+			}))
 		})
 	})
 }

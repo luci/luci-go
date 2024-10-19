@@ -19,7 +19,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -169,10 +168,10 @@ func TestWorkPool(t *testing.T) {
 					assert.Loosely(c, started[1], should.BeTrue)
 					assert.Loosely(c, <-gogo, should.Equal(2))
 				})
-				assert.Loosely(c, err, should.Match([]error{
+				assert.Loosely(c, err, should.ErrLike(errors.MultiError{
 					// Make sure they return in the right order.
 					e1, e2,
-				}, cmpopts.EquateErrors()))
+				}))
 			})
 		})
 	})

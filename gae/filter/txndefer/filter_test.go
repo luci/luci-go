@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func ExampleFilterRDS() {
@@ -43,27 +44,27 @@ func ExampleFilterRDS() {
 func TestFilter(t *testing.T) {
 	t.Parallel()
 
-	Convey("With filter", t, func() {
+	ftt.Run("With filter", t, func(t *ftt.Test) {
 		ctx := FilterRDS(memory.Use(context.Background()))
 
-		Convey("Successful txn", func() {
+		t.Run("Successful txn", func(t *ftt.Test) {
 			ctx := context.WithValue(ctx, "123", "random extra value")
 			called := false
 
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				Defer(ctx, func(ctx context.Context) {
-					So(datastore.CurrentTransaction(ctx), ShouldBeNil)
-					So(ctx.Value("123"), ShouldEqual, "random extra value")
+					assert.Loosely(t, datastore.CurrentTransaction(ctx), should.BeNil)
+					assert.Loosely(t, ctx.Value("123"), should.Equal("random extra value"))
 					called = true
 				})
 				return nil
 			}, nil)
 
-			So(err, ShouldBeNil)
-			So(called, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, called, should.BeTrue)
 		})
 
-		Convey("Fatal txn error", func() {
+		t.Run("Fatal txn error", func(t *ftt.Test) {
 			called := false
 
 			datastore.RunInTransaction(ctx, func(ctx context.Context) error {
@@ -71,10 +72,10 @@ func TestFilter(t *testing.T) {
 				return errors.New("boom")
 			}, nil)
 
-			So(called, ShouldBeFalse)
+			assert.Loosely(t, called, should.BeFalse)
 		})
 
-		Convey("Txn retries", func() {
+		t.Run("Txn retries", func(t *ftt.Test) {
 			attempt := 0
 			calls := 0
 
@@ -87,9 +88,9 @@ func TestFilter(t *testing.T) {
 				return nil
 			}, nil)
 
-			So(err, ShouldBeNil)
-			So(attempt, ShouldEqual, 3)
-			So(calls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, attempt, should.Equal(3))
+			assert.Loosely(t, calls, should.Equal(1))
 		})
 	})
 }

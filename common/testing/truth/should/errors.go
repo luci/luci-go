@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
@@ -92,7 +90,8 @@ func ErrLikeError(target error) comparison.Func[error] {
 		}
 		return comparison.NewSummaryBuilder(cmpName, target).
 			Because("Actual does not contain the expected error.").
-			SmartCmpDiff(actual, target, cmpopts.EquateErrors()).
+			Actual(actual).
+			Expected(target).
 			Summary
 	}
 }

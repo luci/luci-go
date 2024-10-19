@@ -18,10 +18,12 @@ import (
 	"math"
 	"testing"
 
-	"go.chromium.org/luci/common/sync/parallel"
+	"google.golang.org/appengine/datastore"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const (
@@ -31,8 +33,8 @@ const (
 )
 
 func TestDatastoreQueries(t *testing.T) {
-	Convey("Datastore Query suport", t, func() {
-		Convey("can create good queries", func() {
+	ftt.Run("Datastore Query suport", t, func(t *ftt.Test) {
+		t.Run("can create good queries", func(t *ftt.Test) {
 			q := NewQuery("Foo").Gt("farnsworth", 20).KeysOnly(true).Limit(10).Offset(39)
 
 			start := fakeCursor(1337)
@@ -40,22 +42,22 @@ func TestDatastoreQueries(t *testing.T) {
 			end := fakeCursor(24601)
 
 			q = q.Start(start).End(end)
-			So(q, ShouldNotBeNil)
+			assert.Loosely(t, q, should.NotBeNil)
 			fq, err := q.Finalize()
-			So(fq, ShouldNotBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, fq, should.NotBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("ensures orders make sense", func() {
+		t.Run("ensures orders make sense", func(t *ftt.Test) {
 			q := NewQuery("Cool")
 			q = q.Eq("cat", 19).Eq("bob", 10).Order("bob", "bob")
 
-			Convey("removes dups and equality orders", func() {
+			t.Run("removes dups and equality orders", func(t *ftt.Test) {
 				q = q.Order("wat")
 				fq, err := q.Finalize()
-				So(err, ShouldBeNil)
-				So(fq.Orders(), ShouldResemble, []IndexColumn{
-					{Property: "wat"}, {Property: "__key__"}})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, fq.Orders(), should.Resemble([]IndexColumn{
+					{Property: "wat"}, {Property: "__key__"}}))
 			})
 		})
 
@@ -63,321 +65,321 @@ func TestDatastoreQueries(t *testing.T) {
 }
 
 func TestDatastoreQueriesLess(t *testing.T) {
-	Convey("Datastore Query ordering", t, func() {
-		Convey("Compare kind", func() {
+	ftt.Run("Datastore Query ordering", t, func(t *ftt.Test) {
+		t.Run("Compare kind", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo1")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q2 := NewQuery("Foo")
 
-			So(q.Less(q2), ShouldBeFalse)
-			So(q2.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q2), should.BeFalse)
+			assert.Loosely(t, q2.Less(q), should.BeFalse)
 		})
-		Convey("Compare firestore mode", func() {
+		t.Run("Compare firestore mode", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").FirestoreMode(true)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.FirestoreMode(true)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare eventual consistency", func() {
+		t.Run("Compare eventual consistency", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").EventualConsistency(true)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.EventualConsistency(true)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare keys only", func() {
+		t.Run("Compare keys only", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").KeysOnly(true)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.KeysOnly(true)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare distinct", func() {
+		t.Run("Compare distinct", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Distinct(true)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Distinct(true)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare limit", func() {
+		t.Run("Compare limit", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Limit(20)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Limit(20)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare offset", func() {
+		t.Run("Compare offset", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Offset(20)
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Offset(20)
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
-		Convey("Compare order", func() {
+		t.Run("Compare order", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Order("conrad")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Order("turanga")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 
 			q = q.ClearOrder().Order("conrad", "turanga")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 		})
-		Convey("Compare projection", func() {
+		t.Run("Compare projection", func(t *ftt.Test) {
 			q := NewQuery("Foo")
 			q1 := NewQuery("Foo").Project("conrad")
 
 			// [] vs ["conrad"]
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Project("turanga")
 
 			// ["turanga"] vs ["conrad"]
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 
 			q1 = q1.Project("turanga")
 
 			// ["turanga"] vs ["conrad", "turanga"]
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			q = q.Project("zoidberg")
 
 			// ["turanga", "zoidberg"] vs ["conrad", "turanga"]
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 		})
-		Convey("Compare equality", func() {
+		t.Run("Compare equality", func(t *ftt.Test) {
 			// "... turanga == 10 ..." compare "... turanga == 24 ..."
 			q := NewQuery("Foo").Eq("turanga", "10")
 			q1 := NewQuery("Foo").Eq("turanga", "24")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga == 10 ..." compare "... turanga == 10 ..."
 			q = NewQuery("Foo").Eq("turanga", "10")
 			q1 = NewQuery("Foo").Eq("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga == 10 ..." compare "... zoidberg == 10 ..."
 			q = NewQuery("Foo").Eq("turanga", "10")
 			q1 = NewQuery("Foo").Eq("zoidberg", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 
 			// "... turanga == 10 && turanga == 20 ..." compare "... turanga == 10 ..."
 			q = NewQuery("Foo").Eq("turanga", "10", "20")
 			q1 = NewQuery("Foo").Eq("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 
 			// "... turanga == 10 ..." compare "..."
 			q = NewQuery("Foo").Eq("turanga", "10")
 			q1 = NewQuery("Foo")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeTrue)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeTrue)
 		})
-		Convey("Compare In filter", func() {
+		t.Run("Compare In filter", func(t *ftt.Test) {
 			// Equal. Order of filter and values doesn't matter.
 			q1 := NewQuery("Foo").In("p2", "x", "y").In("p1", "a", "b")
 			q2 := NewQuery("Foo").In("p1", "a", "b").In("p2", "y", "x")
-			So(q1.Less(q2), ShouldBeFalse)
-			So(q2.Less(q1), ShouldBeFalse)
+			assert.Loosely(t, q1.Less(q2), should.BeFalse)
+			assert.Loosely(t, q2.Less(q1), should.BeFalse)
 
 			q1 = NewQuery("Foo").In("prop", "a")
 			q2 = NewQuery("Foo").In("prop", "b")
-			So(q1.Less(q2), ShouldBeTrue)
-			So(q2.Less(q1), ShouldBeFalse)
+			assert.Loosely(t, q1.Less(q2), should.BeTrue)
+			assert.Loosely(t, q2.Less(q1), should.BeFalse)
 
 			q1 = NewQuery("Foo").In("prop", "a")
 			q2 = NewQuery("Foo").In("prop", "a", "b")
-			So(q1.Less(q2), ShouldBeTrue)
-			So(q2.Less(q1), ShouldBeFalse)
+			assert.Loosely(t, q1.Less(q2), should.BeTrue)
+			assert.Loosely(t, q2.Less(q1), should.BeFalse)
 
 			q1 = NewQuery("Foo").In("prop", "a")
 			q2 = NewQuery("Foo").In("prop", "a").In("prop", "b")
-			So(q1.Less(q2), ShouldBeTrue)
-			So(q2.Less(q1), ShouldBeFalse)
+			assert.Loosely(t, q1.Less(q2), should.BeTrue)
+			assert.Loosely(t, q2.Less(q1), should.BeFalse)
 
 			q1 = NewQuery("Foo").In("prop", "a")
 			q2 = NewQuery("Foo").In("prop", "a").In("another", "a")
-			So(q1.Less(q2), ShouldBeTrue)
-			So(q2.Less(q1), ShouldBeFalse)
+			assert.Loosely(t, q1.Less(q2), should.BeTrue)
+			assert.Loosely(t, q2.Less(q1), should.BeFalse)
 		})
-		Convey("Compare inequality", func() {
+		t.Run("Compare inequality", func(t *ftt.Test) {
 			// "... turanga < 10 ..." compare "... turanga < 24 ..."
 			q := NewQuery("Foo").Lt("turanga", "10")
 			q1 := NewQuery("Foo").Lt("turanga", "24")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga < 10 ..." compare "... turanga < 10 ..."
 			q = NewQuery("Foo").Lt("turanga", "10")
 			q1 = NewQuery("Foo").Lt("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga < 10 ..." compare "... zoidberg < 10 ..."
 			q = NewQuery("Foo").Lt("turanga", "10")
 			q1 = NewQuery("Foo").Lt("zoidberg", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga <= 10 ..." compare "... turanga <= 24 ..."
 			q = NewQuery("Foo").Lte("turanga", "10")
 			q1 = NewQuery("Foo").Lte("turanga", "24")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga <= 10 ..." compare "... turanga <= 10 ..."
 			q = NewQuery("Foo").Lte("turanga", "10")
 			q1 = NewQuery("Foo").Lte("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga <= 10 ..." compare "... zoidberg <= 10 ..."
 			q = NewQuery("Foo").Lte("turanga", "10")
 			q1 = NewQuery("Foo").Lte("zoidberg", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga < 10 ..." compare "... turanga <= 10 ..."
 			q = NewQuery("Foo").Lt("turanga", "10")
 			q1 = NewQuery("Foo").Lte("turanga", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga < 10 ..." compare "... turanga > 10 ..."
 			q = NewQuery("Foo").Lt("turanga", "10")
 			q1 = NewQuery("Foo").Gt("turanga", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga <= 10 ..." compare "... turanga >= 10 ..."
 			q = NewQuery("Foo").Lte("turanga", "10")
 			q1 = NewQuery("Foo").Gte("turanga", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga > 10 ..." compare "... turanga > 24 ..."
 			q = NewQuery("Foo").Gt("turanga", "10")
 			q1 = NewQuery("Foo").Gt("turanga", "24")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga > 10 ..." compare "... turanga > 10 ..."
 			q = NewQuery("Foo").Gt("turanga", "10")
 			q1 = NewQuery("Foo").Gt("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga > 10 ..." compare "... zoidberg > 10 ..."
 			q = NewQuery("Foo").Gt("turanga", "10")
 			q1 = NewQuery("Foo").Gt("zoidberg", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga >= 10 ..." compare "... zoidberg >= 24 ..."
 			q = NewQuery("Foo").Gte("turanga", "10")
 			q1 = NewQuery("Foo").Gte("turanga", "24")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga >= 10 ..." compare "... turanga >= 10 ..."
 			q = NewQuery("Foo").Gte("turanga", "10")
 			q1 = NewQuery("Foo").Gte("turanga", "10")
 
-			So(q.Less(q1), ShouldBeFalse)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeFalse)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga >= 10 ..." compare "... zoidberg >= 10 ..."
 			q = NewQuery("Foo").Gte("turanga", "10")
 			q1 = NewQuery("Foo").Gte("zoidberg", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 
 			// "... turanga > 10 ..." compare "... turanga >= 10 ..."
 			q = NewQuery("Foo").Gt("turanga", "10")
 			q1 = NewQuery("Foo").Gte("turanga", "10")
 
-			So(q.Less(q1), ShouldBeTrue)
-			So(q1.Less(q), ShouldBeFalse)
+			assert.Loosely(t, q.Less(q1), should.BeTrue)
+			assert.Loosely(t, q1.Less(q), should.BeFalse)
 		})
 
-		Convey("Composite comparison", func() {
+		t.Run("Composite comparison", func(t *ftt.Test) {
 			a := NewQuery("Foo").Project("conrad").Distinct(false)
 			b := NewQuery("Foo").Project("conrad").Distinct(true)
-			So(a.Less(b), ShouldBeTrue)
-			So(b.Less(a), ShouldBeFalse)
+			assert.Loosely(t, a.Less(b), should.BeTrue)
+			assert.Loosely(t, b.Less(a), should.BeFalse)
 
 			a = NewQuery("Foo").Eq("Prop", "val").Offset(100)
 			b = NewQuery("Foo").Eq("Prop", "val").Offset(200)
-			So(a.Less(b), ShouldBeTrue)
-			So(b.Less(a), ShouldBeFalse)
+			assert.Loosely(t, a.Less(b), should.BeTrue)
+			assert.Loosely(t, b.Less(a), should.BeFalse)
 		})
 	})
 }
@@ -394,7 +396,7 @@ type queryTest struct {
 
 	// assertion is the error to expect after prepping the query, or nil if the
 	// error should be nil.
-	assertion func(err error)
+	assertion func(t testing.TB, err error)
 
 	// equivalentQuery is another query which ShouldResemble q. This is useful to
 	// see the effects of redundancy pruning on e.g. filters.
@@ -413,14 +415,14 @@ func mkKey(elems ...any) *Key {
 	return MkKeyContext("s~aid", "ns").MakeKey(elems...)
 }
 
-func errString(v string) func(error) {
-	return func(err error) {
-		So(err, ShouldErrLike, v)
+func errString(v string) func(testing.TB, error) {
+	return func(t testing.TB, err error) {
+		assert.Loosely(t, err, should.ErrLike(v))
 	}
 }
 
-func shouldBeErrInvalidKey(err error) {
-	So(IsErrInvalidKey(err), ShouldBeTrue)
+func shouldBeErrInvalidKey(t testing.TB, err error) {
+	assert.Loosely(t, err, should.ErrLike(datastore.ErrInvalidKey))
 }
 
 var queryTests = []queryTest{
@@ -666,19 +668,25 @@ var queryTests = []queryTest{
 	{"can build an empty query",
 		nq().Lt("hello", 10).Gt("hello", 50),
 		"",
-		func(err error) { So(err, ShouldEqual, ErrNullQuery) },
+		func(t testing.TB, err error) {
+			assert.Loosely(t, err, should.Equal(ErrNullQuery))
+		},
 		nil},
 
 	{"can build an empty query (in)",
 		nq().In("prop"),
 		"",
-		func(err error) { So(err, ShouldEqual, ErrNullQuery) },
+		func(t testing.TB, err error) {
+			assert.Loosely(t, err, should.Equal(ErrNullQuery))
+		},
 		nil},
 
 	{"reject pseudofield $id",
 		nq().Lt("$id", 10),
 		"",
-		func(err error) { So(err, ShouldErrLike, "rejecting field") },
+		func(t testing.TB, err error) {
+			assert.Loosely(t, err, should.ErrLike("rejecting field"))
+		},
 		nil},
 
 	{"IN filters",
@@ -690,30 +698,30 @@ var queryTests = []queryTest{
 func TestQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("queries have tons of condition checking", t, func() {
+	ftt.Run("queries have tons of condition checking", t, func(t *ftt.Test) {
 		for _, tc := range queryTests {
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				fq, err := tc.q.Finalize()
 				if err == nil {
 					err = fq.Valid(MkKeyContext("s~aid", "ns"))
 				}
 				if tc.assertion != nil {
-					tc.assertion(err)
+					tc.assertion(t, err)
 				} else {
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				}
 
 				if tc.gql != "" {
-					So(fq.GQL(), ShouldEqual, tc.gql)
+					assert.Loosely(t, fq.GQL(), should.Equal(tc.gql))
 				}
 
 				if tc.equivalentQuery != nil {
 					fq2, err := tc.equivalentQuery.Finalize()
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					fq.original = nil
 					fq2.original = nil
-					So(fq, ShouldResemble, fq2)
+					assert.Loosely(t, fq, should.Resemble(fq2))
 				}
 			})
 		}
@@ -723,7 +731,7 @@ func TestQueries(t *testing.T) {
 func TestQueryConcurrencySafety(t *testing.T) {
 	t.Parallel()
 
-	Convey("query and derivative query finalization is goroutine-safe", t, func() {
+	ftt.Run("query and derivative query finalization is goroutine-safe", t, func(t *ftt.Test) {
 		const rounds = 10
 
 		q := NewQuery("Foo")
@@ -752,6 +760,6 @@ func TestQueryConcurrencySafety(t *testing.T) {
 				}
 			}
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

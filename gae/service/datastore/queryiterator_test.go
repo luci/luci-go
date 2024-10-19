@@ -26,15 +26,16 @@ import (
 
 	"go.chromium.org/luci/gae/service/info"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDatastoreQueryIterator(t *testing.T) {
 	t.Parallel()
 
-	Convey("queryIterator", t, func() {
-		Convey("normal", func() {
+	ftt.Run("queryIterator", t, func(t *ftt.Test) {
+		t.Run("normal", func(t *ftt.Test) {
 			qi := queryIterator{
 				order: []IndexColumn{
 					{Property: "field1", Descending: true},
@@ -60,20 +61,20 @@ func TestDatastoreQueryIterator(t *testing.T) {
 				qi.itemCh <- &rawQueryResult{}
 			}()
 			done, err := qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeFalse)
-			So(qi.currentQueryResult, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeFalse)
+			assert.Loosely(t, qi.currentQueryResult, should.NotBeNil)
 
-			Convey("CurrentItemKey", func() {
+			t.Run("CurrentItemKey", func(t *ftt.Test) {
 				itemKey := qi.CurrentItemKey()
 				expectedKey := MkKeyContext("s~aid", "ns").MakeKey("testKind", 1)
 				e := string(Serialize.ToBytes(expectedKey))
-				So(itemKey, ShouldEqual, e)
+				assert.Loosely(t, itemKey, should.Equal(e))
 			})
 
-			Convey("CurrentItemOrder", func() {
+			t.Run("CurrentItemOrder", func(t *ftt.Test) {
 				itemOrder := qi.CurrentItemOrder()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				invBuf := cmpbin.Invertible(&bytes.Buffer{})
 				invBuf.SetInvert(true)
@@ -82,10 +83,10 @@ func TestDatastoreQueryIterator(t *testing.T) {
 				Serialize.Property(invBuf, MkProperty("aa1"))
 				Serialize.Key(invBuf, key)
 
-				So(itemOrder, ShouldEqual, invBuf.String())
+				assert.Loosely(t, itemOrder, should.Equal(invBuf.String()))
 			})
 
-			Convey("CurrentItem", func() {
+			t.Run("CurrentItem", func(t *ftt.Test) {
 				key, data := qi.CurrentItem()
 				expectedPM := PropertyMap{
 					"field1": PropertySlice{
@@ -94,23 +95,23 @@ func TestDatastoreQueryIterator(t *testing.T) {
 					},
 					"field2": MkProperty("aa1"),
 				}
-				So(key, ShouldResemble, key)
-				So(data, ShouldResemble, expectedPM)
+				assert.Loosely(t, key, should.Resemble(key))
+				assert.Loosely(t, data, should.Resemble(expectedPM))
 			})
 
 			// end of results
 			done, err = qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeTrue)
 		})
 
-		Convey("invalid queryIterator", func() {
+		t.Run("invalid queryIterator", func(t *ftt.Test) {
 			qi := queryIterator{}
-			So(func() { qi.Next() }, ShouldPanicWith,
-				"item channel for queryIterator is not properly initiated")
+			assert.Loosely(t, func() { qi.Next() }, should.PanicLikeString(
+				"item channel for queryIterator is not properly initiated"))
 		})
 
-		Convey("empty query results", func() {
+		t.Run("empty query results", func(t *ftt.Test) {
 			qi := &queryIterator{
 				order:  []IndexColumn{},
 				itemCh: make(chan *rawQueryResult),
@@ -123,14 +124,14 @@ func TestDatastoreQueryIterator(t *testing.T) {
 			}()
 
 			done, err := qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeTrue)
-			So(qi.CurrentItemKey(), ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeTrue)
+			assert.Loosely(t, qi.CurrentItemKey(), should.BeEmpty)
 			itemOrder := qi.CurrentItemOrder()
-			So(itemOrder, ShouldEqual, "")
+			assert.Loosely(t, itemOrder, should.BeEmpty)
 			key, data := qi.CurrentItem()
-			So(key, ShouldBeNil)
-			So(data, ShouldResemble, PropertyMap{})
+			assert.Loosely(t, key, should.BeNil)
+			assert.Loosely(t, data, should.Resemble(PropertyMap{}))
 		})
 	})
 }
@@ -138,7 +139,7 @@ func TestDatastoreQueryIterator(t *testing.T) {
 func TestStartQueryIterator(t *testing.T) {
 	t.Parallel()
 
-	Convey("start queryIterator", t, func() {
+	ftt.Run("start queryIterator", t, func(t *ftt.Test) {
 		ctx := info.Set(context.Background(), fakeInfo{})
 		fds := fakeDatastore{}
 		ctx = SetRawFactory(ctx, fds.factory())
@@ -149,40 +150,40 @@ func TestStartQueryIterator(t *testing.T) {
 
 		eg, ectx := errgroup.WithContext(ctx)
 
-		Convey("found", func() {
+		t.Run("found", func(t *ftt.Test) {
 			fq, err := dq.Finalize()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			qi := startQueryIterator(ectx, eg, fq)
 
 			done, err := qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeFalse)
-			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 1))
-			So(qi.currentQueryResult.data, ShouldResemble,
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeFalse)
+			assert.Loosely(t, qi.currentQueryResult.key, should.Resemble(MakeKey(ctx, "Kind", 1)))
+			assert.Loosely(t, qi.currentQueryResult.data, should.Resemble(
 				PropertyMap{
 					"Value": MkProperty(0),
-				})
+				}))
 
 			done, err = qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeFalse)
-			So(qi.currentQueryResult.key, ShouldResemble, MakeKey(ctx, "Kind", 2))
-			So(qi.currentQueryResult.data, ShouldResemble,
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeFalse)
+			assert.Loosely(t, qi.currentQueryResult.key, should.Resemble(MakeKey(ctx, "Kind", 2)))
+			assert.Loosely(t, qi.currentQueryResult.data, should.Resemble(
 				PropertyMap{
 					"Value": MkProperty(1),
-				})
-			So(qi.currentItemOrderCache, ShouldEqual, "")
+				}))
+			assert.Loosely(t, qi.currentItemOrderCache, should.BeEmpty)
 			order := qi.CurrentItemOrder()
-			So(qi.currentItemOrderCache, ShouldEqual, order)
+			assert.Loosely(t, qi.currentItemOrderCache, should.Equal(order))
 
 			done, err = qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeTrue)
 		})
 
-		Convey("cancel", func() {
+		t.Run("cancel", func(t *ftt.Test) {
 			fq, err := dq.Finalize()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			qi := startQueryIterator(ectx, eg, fq)
 
 			cancel()
@@ -193,41 +194,41 @@ func TestStartQueryIterator(t *testing.T) {
 			// 2) qi.Next() retrieves at most one rawQueryResult and then returns a Stop signal.
 			done, err := qi.Next()
 			if !done {
-				So(qi.currentQueryResult, ShouldResemble, &rawQueryResult{
+				assert.Loosely(t, qi.currentQueryResult, should.Resemble(&rawQueryResult{
 					key: MakeKey(ctx, "Kind", 1),
 					data: PropertyMap{
 						"Value": MkProperty(0),
 					},
-				})
+				}))
 				done, err = qi.Next()
-				So(err, ShouldEqual, context.Canceled)
-				So(done, ShouldBeTrue)
+				assert.Loosely(t, err, should.Equal(context.Canceled))
+				assert.Loosely(t, done, should.BeTrue)
 			} else {
-				So(err, ShouldEqual, context.Canceled)
-				So(done, ShouldBeTrue)
+				assert.Loosely(t, err, should.Equal(context.Canceled))
+				assert.Loosely(t, done, should.BeTrue)
 			}
 		})
 
-		Convey("not found", func() {
+		t.Run("not found", func(t *ftt.Test) {
 			fds.entities = 0
 			fq, err := dq.Finalize()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			qi := startQueryIterator(ectx, eg, fq)
 
 			done, err := qi.Next()
-			So(err, ShouldBeNil)
-			So(done, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, done, should.BeTrue)
 		})
 
-		Convey("errors from raw datastore", func() {
+		t.Run("errors from raw datastore", func(t *ftt.Test) {
 			dq = dq.Eq("@err_single", "Query fail").Eq("@err_single_idx", 0)
 			fq, err := dq.Finalize()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			qi := startQueryIterator(ectx, eg, fq)
 
 			done, err := qi.Next()
-			So(err, ShouldErrLike, "Query fail")
-			So(done, ShouldBeTrue)
+			assert.Loosely(t, err, should.ErrLike("Query fail"))
+			assert.Loosely(t, done, should.BeTrue)
 		})
 	})
 }

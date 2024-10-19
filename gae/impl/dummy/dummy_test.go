@@ -18,6 +18,9 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	dsS "go.chromium.org/luci/gae/service/datastore"
 	infoS "go.chromium.org/luci/gae/service/info"
 	mailS "go.chromium.org/luci/gae/service/mail"
@@ -25,102 +28,98 @@ import (
 	modS "go.chromium.org/luci/gae/service/module"
 	tqS "go.chromium.org/luci/gae/service/taskqueue"
 	userS "go.chromium.org/luci/gae/service/user"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestContextAccess(t *testing.T) {
 	t.Parallel()
 
 	// p is a function which recovers an error and then immediately panics with
-	// the contained string. It's defer'd in each test so that we can use the
-	// ShouldPanicWith assertion (which does an == comparison and not
-	// a reflect.DeepEquals comparison).
+	// the contained string which lets us use should.PanicLikeString.
 	p := func() { panic(recover().(error).Error()) }
 
-	Convey("Context Access", t, func() {
+	ftt.Run("Context Access", t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey("blank", func() {
-			So(dsS.Raw(c), ShouldBeNil)
-			So(mcS.Raw(c), ShouldBeNil)
-			So(tqS.Raw(c), ShouldBeNil)
-			So(infoS.Raw(c), ShouldBeNil)
+		t.Run("blank", func(t *ftt.Test) {
+			assert.Loosely(t, dsS.Raw(c), should.BeNil)
+			assert.Loosely(t, mcS.Raw(c), should.BeNil)
+			assert.Loosely(t, tqS.Raw(c), should.BeNil)
+			assert.Loosely(t, infoS.Raw(c), should.BeNil)
 		})
 
 		// needed for everything else
 		c = infoS.Set(c, Info())
 
-		Convey("Info", func() {
-			So(infoS.Raw(c), ShouldNotBeNil)
-			So(func() {
+		t.Run("Info", func(t *ftt.Test) {
+			assert.Loosely(t, infoS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				infoS.Raw(c).Datacenter()
-			}, ShouldPanicWith, "dummy: method Info.Datacenter is not implemented")
+			}, should.PanicLikeString("dummy: method Info.Datacenter is not implemented"))
 
-			Convey("ModuleHostname", func() {
+			t.Run("ModuleHostname", func(t *ftt.Test) {
 				host, err := infoS.ModuleHostname(c, "", "", "")
-				So(err, ShouldBeNil)
-				So(host, ShouldEqual, "version.module.dummy-appid.example.com")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, host, should.Equal("version.module.dummy-appid.example.com"))
 
 				host, err = infoS.ModuleHostname(c, "wut", "10", "")
-				So(err, ShouldBeNil)
-				So(host, ShouldEqual, "10.wut.dummy-appid.example.com")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, host, should.Equal("10.wut.dummy-appid.example.com"))
 			})
 		})
 
-		Convey("Datastore", func() {
+		t.Run("Datastore", func(t *ftt.Test) {
 			c = dsS.SetRaw(c, Datastore())
-			So(dsS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, dsS.Raw(c), should.NotBeNil)
+			assert.Loosely(t, func() {
 				defer p()
 				_, _ = dsS.Raw(c).DecodeCursor("wut")
-			}, ShouldPanicWith, "dummy: method Datastore.DecodeCursor is not implemented")
+			}, should.PanicLikeString("dummy: method Datastore.DecodeCursor is not implemented"))
 		})
 
-		Convey("Memcache", func() {
+		t.Run("Memcache", func(t *ftt.Test) {
 			c = mcS.SetRaw(c, Memcache())
-			So(mcS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, mcS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				_ = mcS.Add(c, nil)
-			}, ShouldPanicWith, "dummy: method Memcache.AddMulti is not implemented")
+			}, should.PanicLikeString("dummy: method Memcache.AddMulti is not implemented"))
 		})
 
-		Convey("TaskQueue", func() {
+		t.Run("TaskQueue", func(t *ftt.Test) {
 			c = tqS.SetRaw(c, TaskQueue())
-			So(tqS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, tqS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				_ = tqS.Purge(c, "")
-			}, ShouldPanicWith, "dummy: method TaskQueue.Purge is not implemented")
+			}, should.PanicLikeString("dummy: method TaskQueue.Purge is not implemented"))
 		})
 
-		Convey("User", func() {
+		t.Run("User", func(t *ftt.Test) {
 			c = userS.Set(c, User())
-			So(userS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, userS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				_ = userS.IsAdmin(c)
-			}, ShouldPanicWith, "dummy: method User.IsAdmin is not implemented")
+			}, should.PanicLikeString("dummy: method User.IsAdmin is not implemented"))
 		})
 
-		Convey("Mail", func() {
+		t.Run("Mail", func(t *ftt.Test) {
 			c = mailS.Set(c, Mail())
-			So(mailS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, mailS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				_ = mailS.Send(c, nil)
-			}, ShouldPanicWith, "dummy: method Mail.Send is not implemented")
+			}, should.PanicLikeString("dummy: method Mail.Send is not implemented"))
 		})
 
-		Convey("Module", func() {
+		t.Run("Module", func(t *ftt.Test) {
 			c = modS.Set(c, Module())
-			So(modS.Raw(c), ShouldNotBeNil)
-			So(func() {
+			assert.Loosely(t, modS.Raw(c), should.NotBeNilInterface)
+			assert.Loosely(t, func() {
 				defer p()
 				modS.List(c)
-			}, ShouldPanicWith, "dummy: method Module.List is not implemented")
+			}, should.PanicLikeString("dummy: method Module.List is not implemented"))
 		})
 	})
 }
