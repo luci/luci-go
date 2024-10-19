@@ -34,4 +34,6 @@ import (
 	_ "go.chromium.org/luci/tools/cmd/apigen"
 	_ "go.chromium.org/luci/tools/cmd/assets"
 	_ "go.chromium.org/luci/tools/cmd/bqschemaupdater"
+
+	_ "honnef.co/go/tools/cmd/staticcheck"
 )

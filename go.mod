@@ -111,6 +111,7 @@ require (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/yaml.v2 v2.4.0
+	honnef.co/go/tools v0.1.3
 )
 
 require (
@@ -123,6 +124,7 @@ require (
 	cloud.google.com/go/monitoring v1.21.1 // indirect
 	cloud.google.com/go/trace v1.11.1 // indirect
 	dario.cat/mergo v1.0.0 // indirect
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.48.1 // indirect
