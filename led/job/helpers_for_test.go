@@ -19,16 +19,18 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	api "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 type testCase struct {
 	name string
-	fn   func(*Definition)
+	fn   func(*ftt.Test, *Definition)
 
 	// These control if the test is disabled for one of the test types.
 	skipBB bool
@@ -94,11 +96,6 @@ func testSWJob(sliceExps ...time.Duration) *Definition {
 	return ret
 }
 
-func must(value any, err error) any {
-	So(err, ShouldBeNil)
-	return value
-}
-
 // runCases runs some 'edit' tests for the given operation name (e.g. a method
 // of the Editor interface).
 //
@@ -109,26 +106,41 @@ func must(value any, err error) any {
 // If a given test function would like to add type-specific verification, it
 // should switch on the type of the Definition.
 func runCases(t *testing.T, opName string, tests []testCase) {
-	Convey(opName, t, func() {
-		Convey(`bb`, func() {
+	ftt.Run(opName, t, func(t *ftt.Test) {
+		t.Run(`bb`, func(t *ftt.Test) {
 			for _, tc := range tests {
-				ConveyIf(!tc.skipBB, tc.name, func() {
-					tc.fn(testBBJob(tc.v2Build))
+				t.Run(tc.name, func(t *ftt.Test) {
+					if tc.skipBB {
+						t.Skip("skipBB")
+					}
+					tc.fn(t, testBBJob(tc.v2Build))
 				})
 			}
 		})
-		Convey(`sw (empty)`, func() {
+		t.Run(`sw (empty)`, func(t *ftt.Test) {
 			for _, tc := range tests {
-				ConveyIf(!(tc.skipSW || tc.skipSWEmpty), tc.name, func() {
-					tc.fn(testSWJob())
+				t.Run(tc.name, func(t *ftt.Test) {
+					if tc.skipSW {
+						t.Skip("skipSW")
+					}
+					if tc.skipSWEmpty {
+						t.Skip("skipSWEmpty")
+					}
+					tc.fn(t, testSWJob())
 				})
 			}
 		})
-		Convey(`sw (slices)`, func() {
+		t.Run(`sw (slices)`, func(t *ftt.Test) {
 			for _, tc := range tests {
-				ConveyIf(!(tc.skipSW || tc.skipSWSlices), tc.name, func() {
+				t.Run(tc.name, func(t *ftt.Test) {
+					if tc.skipSW {
+						t.Skip("skipSW")
+					}
+					if tc.skipSWSlices {
+						t.Skip("skipSWSlices")
+					}
 					// Make a swarming job which expires in 600 seconds.
-					tc.fn(testSWJob(
+					tc.fn(t, testSWJob(
 						swSlice1Exp,
 						swSlice2Exp-swSlice1Exp,
 						swSlice3Exp-swSlice2Exp,
@@ -139,31 +151,28 @@ func runCases(t *testing.T, opName string, tests []testCase) {
 	})
 }
 
-func ConveyIf(cond bool, items ...any) {
-	if cond {
-		Convey(items...)
-	} else {
-		SkipConvey(items...)
-	}
+func MustEdit(t testing.TB, jd *Definition, cb func(Editor)) {
+	t.Helper()
+	assert.Loosely(t, jd.Edit(cb), should.BeNil, truth.LineContext())
 }
 
-func SoEdit(jd *Definition, cb func(Editor)) {
-	So(jd.Edit(cb), ShouldBeNil)
+func MustHLEdit(t testing.TB, jd *Definition, cb func(HighLevelEditor)) {
+	t.Helper()
+	assert.Loosely(t, jd.HighLevelEdit(cb), should.BeNil, truth.LineContext())
 }
 
-func SoHLEdit(jd *Definition, cb func(HighLevelEditor)) {
-	So(jd.HighLevelEdit(cb), ShouldBeNil)
-}
-
-func mustGetDimensions(jd *Definition) ExpiringDimensions {
+func mustGetDimensions(t testing.TB, jd *Definition) ExpiringDimensions {
+	t.Helper()
 	ret, err := jd.Info().Dimensions()
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return ret
 }
 
 // baselineDims sets some baseline dimensions on jd and returns the
 // ExpiringDimensions which Info().GetDimensions() should now return.
-func baselineDims(jd *Definition) ExpiringDimensions {
+func baselineDims(t testing.TB, jd *Definition) ExpiringDimensions {
+	t.Helper()
+
 	toSet := ExpiringDimensions{
 		"key": []ExpiringValue{
 			{Value: "B", Expiration: swSlice2Exp},
@@ -174,7 +183,7 @@ func baselineDims(jd *Definition) ExpiringDimensions {
 		},
 	}
 
-	SoEdit(jd, func(je Editor) {
+	MustEdit(t, jd, func(je Editor) {
 		// set in a non-sorted order
 		je.SetDimensions(toSet)
 	})

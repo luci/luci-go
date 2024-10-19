@@ -24,12 +24,12 @@ import (
 	"go.chromium.org/luci/buildbucket/cmd/bbagent/bbinput"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/led/job/experiments"
 	"go.chromium.org/luci/luciexe/exe"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const phonyTagExperiment = "luci.test.add_phony_tag_experiment"
@@ -44,32 +44,32 @@ func init() {
 func TestFlattenToSwarming(t *testing.T) {
 	t.Parallel()
 
-	Convey(`FlattenToSwarming`, t, func() {
+	ftt.Run(`FlattenToSwarming`, t, func(t *ftt.Test) {
 		fixture, err := os.ReadFile("jobcreate/testdata/bbagent_cas.job.json")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx := cryptorand.MockForTest(context.Background(), 4)
 
 		bbJob := &Definition{}
-		So(protojson.Unmarshal(fixture, bbJob), ShouldBeNil)
+		assert.Loosely(t, protojson.Unmarshal(fixture, bbJob), should.BeNil)
 		bb := bbJob.GetBuildbucket()
 		totalExpiration := bb.BbagentArgs.Build.SchedulingTimeout.Seconds
 
-		Convey(`bbagent`, func() {
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
+		t.Run(`bbagent`, func(t *ftt.Test) {
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.BeNil)
 
 			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.Tags, ShouldResemble, []string{
+			assert.Loosely(t, sw, should.NotBeNil)
+			assert.Loosely(t, sw.Task.Tags, should.Resemble([]string{
 				"allow_milo:1",
 				"log_location:logdog://luci-logdog-dev.appspot.com/infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898/+/build.proto",
-			})
+			}))
 
-			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
+			assert.Loosely(t, sw.Task.TaskSlices, should.HaveLength(2))
 
 			slice0 := sw.Task.TaskSlices[0]
-			So(slice0.ExpirationSecs, ShouldEqual, 240)
-			So(slice0.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+			assert.Loosely(t, slice0.ExpirationSecs, should.Equal(240))
+			assert.Loosely(t, slice0.Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 				{
 					Key:   "caches",
 					Value: "builder_1d1f048016f3dc7294e1abddfd758182bc95619cec2a87d01a3f24517b4e2814_v2",
@@ -77,23 +77,23 @@ func TestFlattenToSwarming(t *testing.T) {
 				{Key: "cpu", Value: "x86-64"},
 				{Key: "os", Value: "Ubuntu"},
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 
-			So(slice0.Properties.Command[:3], ShouldResemble, []string{
+			assert.Loosely(t, slice0.Properties.Command[:3], should.Resemble([]string{
 				"bbagent${EXECUTABLE_SUFFIX}", "--output",
 				"${ISOLATED_OUTDIR}/build.proto.json",
-			})
+			}))
 			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(bbArgs.PayloadPath, ShouldResemble, "kitchen-checkout")
-			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
+			assert.Loosely(t, bbArgs.PayloadPath, should.Match("kitchen-checkout"))
+			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Resemble([]string{"luciexe"}))
 
 			props := ledProperties{}
 			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
 				"$recipe_engine/led": &props,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedProps := ledProperties{
 				LedRunID: "infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
@@ -102,48 +102,48 @@ func TestFlattenToSwarming(t *testing.T) {
 					"HEAD",
 				},
 			}
-			So(props, ShouldResemble, expectedProps)
+			assert.Loosely(t, props, should.Resemble(expectedProps))
 
 			// Added `kitchen-checkout` as the last CipdInputs entry.
-			So(slice0.Properties.CipdInput.Packages, ShouldHaveLength, 17) // see bbagent.job.json
-			So(slice0.Properties.CipdInput.Packages[16], ShouldResembleProto, &swarmingpb.CipdPackage{
+			assert.Loosely(t, slice0.Properties.CipdInput.Packages, should.HaveLength(17)) // see bbagent.job.json
+			assert.Loosely(t, slice0.Properties.CipdInput.Packages[16], should.Resemble(&swarmingpb.CipdPackage{
 				Path:        "kitchen-checkout",
 				PackageName: expectedProps.CIPDInput.Package,
 				Version:     expectedProps.CIPDInput.Version,
-			})
+			}))
 
 			slice1 := sw.Task.TaskSlices[1]
-			So(slice1.ExpirationSecs, ShouldEqual, 21360)
-			So(slice1.Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+			assert.Loosely(t, slice1.ExpirationSecs, should.Equal(21360))
+			assert.Loosely(t, slice1.Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 				{Key: "cpu", Value: "x86-64"},
 				{Key: "os", Value: "Ubuntu"},
 				{Key: "pool", Value: "Chrome"},
-			})
+			}))
 
-			So(slice0.ExpirationSecs+slice1.ExpirationSecs, ShouldEqual, totalExpiration)
+			assert.Loosely(t, slice0.ExpirationSecs+slice1.ExpirationSecs, should.Equal(totalExpiration))
 		})
 
-		Convey(`kitchen`, func() {
+		t.Run(`kitchen`, func(t *ftt.Test) {
 			bb.LegacyKitchen = true
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldErrLike,
-				"kitchen job Definitions not supported")
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.ErrLike(
+				"kitchen job Definitions not supported"))
 		})
 
-		Convey(`explicit max expiration`, func() {
+		t.Run(`explicit max expiration`, func(t *ftt.Test) {
 			// set a dimension to expire after end of current task
-			editDims(bbJob, "final=value@40000")
+			editDims(t, bbJob, "final=value@40000")
 
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.BeNil)
 
 			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
+			assert.Loosely(t, sw, should.NotBeNil)
+			assert.Loosely(t, sw.Task.TaskSlices, should.HaveLength(2))
 
-			So(sw.Task.TaskSlices[0].ExpirationSecs, ShouldEqual, 240)
-			So(sw.Task.TaskSlices[1].ExpirationSecs, ShouldEqual, 40000-240)
+			assert.Loosely(t, sw.Task.TaskSlices[0].ExpirationSecs, should.Equal(240))
+			assert.Loosely(t, sw.Task.TaskSlices[1].ExpirationSecs, should.Equal(40000-240))
 		})
 
-		Convey(`no expiring dims`, func() {
+		t.Run(`no expiring dims`, func(t *ftt.Test) {
 			bb := bbJob.GetBuildbucket()
 			for _, dim := range bb.GetBbagentArgs().Build.Infra.Swarming.TaskDimensions {
 				dim.Expiration = nil
@@ -152,17 +152,17 @@ func TestFlattenToSwarming(t *testing.T) {
 				cache.WaitForWarmCache = nil
 			}
 
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.BeNil)
 
 			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.TaskSlices, ShouldHaveLength, 1)
+			assert.Loosely(t, sw, should.NotBeNil)
+			assert.Loosely(t, sw.Task.TaskSlices, should.HaveLength(1))
 
-			So(sw.Task.TaskSlices[0].ExpirationSecs, ShouldEqual, 21600)
+			assert.Loosely(t, sw.Task.TaskSlices[0].ExpirationSecs, should.Equal(21600))
 		})
 
-		Convey(`CasUserPayload recipe`, func() {
-			SoHLEdit(bbJob, func(je HighLevelEditor) {
+		t.Run(`CasUserPayload recipe`, func(t *ftt.Test) {
+			MustHLEdit(t, bbJob, func(je HighLevelEditor) {
 				je.TaskPayloadSource("", "")
 				je.CASTaskPayload("some/path", &swarmingpb.CASReference{
 					CasInstance: "projects/chromium-swarm-dev/instances/default_instance",
@@ -173,33 +173,33 @@ func TestFlattenToSwarming(t *testing.T) {
 				})
 			})
 
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.BeNil)
 
 			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.TaskSlices, ShouldHaveLength, 2)
+			assert.Loosely(t, sw, should.NotBeNil)
+			assert.Loosely(t, sw.Task.TaskSlices, should.HaveLength(2))
 
 			slice0 := sw.Task.TaskSlices[0]
 			for _, pkg := range slice0.Properties.CipdInput.Packages {
 				// there shouldn't be any recipe package any more
-				So(pkg.Version, ShouldNotEqual, "HEAD")
+				assert.Loosely(t, pkg.Version, should.NotEqual("HEAD"))
 			}
 
-			So(slice0.Properties.Command[:3], ShouldResemble, []string{
+			assert.Loosely(t, slice0.Properties.Command[:3], should.Resemble([]string{
 				"bbagent${EXECUTABLE_SUFFIX}", "--output",
 				"${ISOLATED_OUTDIR}/build.proto.json",
-			})
+			}))
 			bbArgs, err := bbinput.Parse(slice0.Properties.Command[3])
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(bbArgs.PayloadPath, ShouldResemble, "some/path")
-			So(bbArgs.Build.Exe.Cmd, ShouldResemble, []string{"luciexe"})
+			assert.Loosely(t, bbArgs.PayloadPath, should.Match("some/path"))
+			assert.Loosely(t, bbArgs.Build.Exe.Cmd, should.Resemble([]string{"luciexe"}))
 
 			props := ledProperties{}
 			err = exe.ParseProperties(bbArgs.Build.Input.Properties, map[string]any{
 				"$recipe_engine/led": &props,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expectedProps := ledProperties{
 				LedRunID: "infra/led/username/1dd4751f899d743d0780c9644375aae211327818655f3d20f84abef6a9df0898",
 				RbeCasInput: &swarmingpb.CASReference{
@@ -210,21 +210,21 @@ func TestFlattenToSwarming(t *testing.T) {
 					},
 				},
 			}
-			So(props, ShouldResemble, expectedProps)
+			assert.Loosely(t, props, should.Resemble(expectedProps))
 		})
-		Convey(`With experiments`, func() {
-			SoHLEdit(bbJob, func(je HighLevelEditor) {
+		t.Run(`With experiments`, func(t *ftt.Test) {
+			MustHLEdit(t, bbJob, func(je HighLevelEditor) {
 				je.Experiments(map[string]bool{
 					phonyTagExperiment:             true, // see init() above
 					"should_be_skipped_as_unknown": true,
 				})
 			})
 
-			So(bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), ShouldBeNil)
+			assert.Loosely(t, bbJob.FlattenToSwarming(ctx, "username", "parent_task_id", NoKitchenSupport(), "off"), should.BeNil)
 
 			sw := bbJob.GetSwarming()
-			So(sw, ShouldNotBeNil)
-			So(sw.Task.Tags[len(sw.Task.Tags)-1], ShouldEqual, "phony_tag:experiment")
+			assert.Loosely(t, sw, should.NotBeNil)
+			assert.Loosely(t, sw.Task.Tags[len(sw.Task.Tags)-1], should.Equal("phony_tag:experiment"))
 		})
 	})
 

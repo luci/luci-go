@@ -17,8 +17,9 @@ package job
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEditCIPDPkgs(t *testing.T) {
@@ -27,18 +28,20 @@ func TestEditCIPDPkgs(t *testing.T) {
 	runCases(t, "EditCIPDPkgs", []testCase{
 		{
 			name: "nil",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.CIPDPkgs(nil)
 				})
-				So(must(jd.Info().CIPDPkgs()), ShouldBeEmpty)
+				pkgs, err := jd.Info().CIPDPkgs()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, pkgs, should.BeEmpty)
 			},
 		},
 
 		{
 			name: "add",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.CIPDPkgs(CIPDPkgs{
 						"subdir:some/pkg":       "version",
 						"other_subdir:some/pkg": "different_version",
@@ -47,29 +50,33 @@ func TestEditCIPDPkgs(t *testing.T) {
 					})
 				})
 				if sw := jd.GetSwarming(); sw != nil && len(sw.GetTask().GetTaskSlices()) == 0 {
-					So(must(jd.Info().CIPDPkgs()), ShouldBeEmpty)
+					pkgs, err := jd.Info().CIPDPkgs()
+					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.Loosely(t, pkgs, should.BeEmpty)
 				} else {
-					So(must(jd.Info().CIPDPkgs()), ShouldResemble, CIPDPkgs{
+					pkgs, err := jd.Info().CIPDPkgs()
+					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.Loosely(t, pkgs, should.Resemble(CIPDPkgs{
 						"subdir:some/pkg":       "version",
 						"other_subdir:some/pkg": "different_version",
 						"some/other/pkg":        "latest",
 						"more/other/pkg":        "whatever",
-					})
+					}))
 				}
 			},
 		},
 
 		{
 			name: "delete",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.CIPDPkgs(CIPDPkgs{
 						"subdir:some/pkg":       "version",
 						"other_subdir:some/pkg": "different_version",
 						"some/other/pkg":        "latest",
 					})
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.CIPDPkgs(CIPDPkgs{
 						"subdir:some/pkg": "",
 						"some/other/pkg":  "",
@@ -77,25 +84,29 @@ func TestEditCIPDPkgs(t *testing.T) {
 				})
 
 				if sw := jd.GetSwarming(); sw != nil && len(sw.GetTask().GetTaskSlices()) == 0 {
-					So(must(jd.Info().CIPDPkgs()), ShouldBeEmpty)
+					pkgs, err := jd.Info().CIPDPkgs()
+					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.Loosely(t, pkgs, should.BeEmpty)
 				} else {
-					So(must(jd.Info().CIPDPkgs()), ShouldResemble, CIPDPkgs{
+					pkgs, err := jd.Info().CIPDPkgs()
+					assert.Loosely(t, err, should.ErrLike(nil))
+					assert.Loosely(t, pkgs, should.Resemble(CIPDPkgs{
 						"other_subdir:some/pkg": "different_version",
-					})
+					}))
 				}
 			},
 		},
 
 		{
 			name: "edit v2 build",
-			fn: func(jd *Definition) {
+			fn: func(t *ftt.Test, jd *Definition) {
 				if b := jd.GetBuildbucket(); b != nil && b.BbagentDownloadCIPDPkgs() {
 					err := jd.Edit(func(je Editor) {
 						je.CIPDPkgs(CIPDPkgs{
 							"subdir:some/pkg": "version",
 						})
 					})
-					So(err, ShouldErrLike, "not supported for Buildbucket v2 builds")
+					assert.Loosely(t, err, should.ErrLike("not supported for Buildbucket v2 builds"))
 					return
 				}
 			},

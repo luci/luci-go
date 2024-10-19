@@ -28,28 +28,31 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var train = flag.Bool("train", false, "If set, write testdata/*out.json")
 
-func readTestFixture(fixtureBaseName string) *job.Definition {
+func readTestFixture(t testing.TB, fixtureBaseName string) *job.Definition {
+	t.Helper()
+
 	data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", fixtureBaseName))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	req := &swarmingpb.NewTaskRequest{}
-	So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
+	assert.Loosely(t, json.NewDecoder(bytes.NewReader(data)).Decode(req), should.BeNil, truth.LineContext())
 
 	jd, err := FromNewTaskRequest(
 		context.Background(), req,
 		"test_name", "swarming.example.com",
 		job.NoKitchenSupport(), 10, nil, nil, nil)
-	So(err, ShouldBeNil)
-	So(jd, ShouldNotBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, jd, should.NotBeNil, truth.LineContext())
 
 	outFile := fmt.Sprintf("testdata/%s.job.json", fixtureBaseName)
 	marshaler := &jsonpb.Marshaler{
@@ -58,18 +61,18 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 	}
 	if *train {
 		oFile, err := os.Create(outFile)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		defer oFile.Close()
 
-		So(marshaler.Marshal(oFile, jd), ShouldBeNil)
+		assert.Loosely(t, marshaler.Marshal(oFile, jd), should.BeNil, truth.LineContext())
 	} else {
 		current, err := os.ReadFile(outFile)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		actual, err := marshaler.MarshalToString(jd)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
-		So(actual, ShouldEqual, string(current))
+		assert.Loosely(t, actual, should.Equal(string(current)), truth.LineContext())
 	}
 
 	return jd
@@ -78,25 +81,25 @@ func readTestFixture(fixtureBaseName string) *job.Definition {
 func TestCreateSwarmRaw(t *testing.T) {
 	t.Parallel()
 
-	Convey(`consume non-buildbucket swarming task with RBE-CAS prop`, t, func() {
-		jd := readTestFixture("raw_cas")
+	ftt.Run(`consume non-buildbucket swarming task with RBE-CAS prop`, t, func(t *ftt.Test) {
+		jd := readTestFixture(t, "raw_cas")
 
-		So(jd.GetSwarming(), ShouldNotBeNil)
-		So(jd.Info().SwarmingHostname(), ShouldEqual, "swarming.example.com")
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+		assert.Loosely(t, jd.GetSwarming(), should.NotBeNil)
+		assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("swarming.example.com"))
+		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
 	})
 
-	Convey(`consume non-buildbucket swarming task with resultdb enabling`, t, func() {
-		jd := readTestFixture("raw_cas")
-		Convey(`realm unset`, func() {
-			So(jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), ShouldErrLike,
-				"ResultDB cannot be enabled on raw swarming tasks if the realm field is unset")
-			So(jd.GetSwarming().GetTask().GetResultdb().GetEnable(), ShouldBeFalse)
+	ftt.Run(`consume non-buildbucket swarming task with resultdb enabling`, t, func(t *ftt.Test) {
+		jd := readTestFixture(t, "raw_cas")
+		t.Run(`realm unset`, func(t *ftt.Test) {
+			assert.Loosely(t, jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), should.ErrLike(
+				"ResultDB cannot be enabled on raw swarming tasks if the realm field is unset"))
+			assert.Loosely(t, jd.GetSwarming().GetTask().GetResultdb().GetEnable(), should.BeFalse)
 		})
-		Convey(`realm set`, func() {
+		t.Run(`realm set`, func(t *ftt.Test) {
 			jd.GetSwarming().GetTask().Realm = "some:realm"
-			So(jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), ShouldBeNil)
-			So(jd.GetSwarming().GetTask().GetResultdb().GetEnable(), ShouldBeTrue)
+			assert.Loosely(t, jd.FlattenToSwarming(context.Background(), "username", "parent_task_id", job.NoKitchenSupport(), "on"), should.BeNil)
+			assert.Loosely(t, jd.GetSwarming().GetTask().GetResultdb().GetEnable(), should.BeTrue)
 		})
 	})
 }
@@ -104,15 +107,15 @@ func TestCreateSwarmRaw(t *testing.T) {
 func TestCreateBBagent(t *testing.T) {
 	t.Parallel()
 
-	Convey(`consume bbagent buildbucket swarming task with RBE-CAS prop`, t, func() {
-		jd := readTestFixture("bbagent_cas")
+	ftt.Run(`consume bbagent buildbucket swarming task with RBE-CAS prop`, t, func(t *ftt.Test) {
+		jd := readTestFixture(t, "bbagent_cas")
 
-		So(jd.GetBuildbucket(), ShouldNotBeNil)
-		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
+		assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("chromium-swarm-dev.appspot.com"))
+		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
 	})
 
-	Convey(`consume bbagent buildbucket swarming task with build`, t, func() {
+	ftt.Run(`consume bbagent buildbucket swarming task with build`, t, func(t *ftt.Test) {
 		bld := &bbpb.Build{
 			Builder: &bbpb.BuilderID{
 				Project: "project",
@@ -146,10 +149,10 @@ func TestCreateBBagent(t *testing.T) {
 			},
 		}
 		data, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", "bbagent_cas"))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		req := &swarmingpb.NewTaskRequest{}
-		So(json.NewDecoder(bytes.NewReader(data)).Decode(req), ShouldBeNil)
+		assert.Loosely(t, json.NewDecoder(bytes.NewReader(data)).Decode(req), should.BeNil)
 		req.TaskSlices[0].Properties.Command = []string{
 			"bbagent${EXECUTABLE_SUFFIX}",
 			"-host",
@@ -161,24 +164,24 @@ func TestCreateBBagent(t *testing.T) {
 			context.Background(), req,
 			"test_name", "swarming.example.com",
 			job.NoKitchenSupport(), 10, bld, []string{"k:v"}, nil)
-		So(err, ShouldBeNil)
-		So(jd, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, jd, should.NotBeNil)
 
-		So(jd.GetBuildbucket(), ShouldNotBeNil)
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
-		So(jd.GetBuildbucket().BbagentArgs, ShouldResembleProto, &bbpb.BBAgentArgs{
+		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
+		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
+		assert.Loosely(t, jd.GetBuildbucket().BbagentArgs, should.Resemble(&bbpb.BBAgentArgs{
 			PayloadPath:            bld.Infra.Bbagent.PayloadPath,
 			CacheDir:               bld.Infra.Bbagent.CacheDir,
 			KnownPublicGerritHosts: bld.Infra.Bbagent.KnownPublicGerritHosts,
 			Build:                  bld,
-		})
+		}))
 	})
 
-	Convey(`consume bbagent buildbucket swarming task led job`, t, func() {
-		jd := readTestFixture("bbagent_led")
+	ftt.Run(`consume bbagent buildbucket swarming task led job`, t, func(t *ftt.Test) {
+		jd := readTestFixture(t, "bbagent_led")
 
-		So(jd.GetBuildbucket(), ShouldNotBeNil)
-		So(jd.Info().SwarmingHostname(), ShouldEqual, "chromium-swarm-dev.appspot.com")
-		So(jd.Info().TaskName(), ShouldEqual, "led: test_name")
+		assert.Loosely(t, jd.GetBuildbucket(), should.NotBeNil)
+		assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("chromium-swarm-dev.appspot.com"))
+		assert.Loosely(t, jd.Info().TaskName(), should.Equal("led: test_name"))
 	})
 }

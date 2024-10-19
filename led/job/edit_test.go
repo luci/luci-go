@@ -17,11 +17,11 @@ package job
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
-
 	"go.chromium.org/luci/buildbucket"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
@@ -31,7 +31,7 @@ func TestClearCurrentIsolated(t *testing.T) {
 	runCases(t, `ClearCurrentIsolated`, []testCase{
 		{
 			name: "basic with rbe-cas input",
-			fn: func(jd *Definition) {
+			fn: func(t *ftt.Test, jd *Definition) {
 				if jd.GetSwarming() != nil {
 					jd.GetSwarming().CasUserPayload = &swarmingpb.CASReference{
 						CasInstance: "instance",
@@ -53,17 +53,17 @@ func TestClearCurrentIsolated(t *testing.T) {
 						},
 					}
 				}
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.ClearCurrentIsolated()
 				})
 
 				for _, slc := range jd.GetSwarming().GetTask().GetTaskSlices() {
-					So(slc.Properties.CasInputRoot, ShouldBeNil)
+					assert.Loosely(t, slc.Properties.CasInputRoot, should.BeNil)
 				}
 
 				iso, err := jd.Info().CurrentIsolated()
-				So(err, ShouldBeNil)
-				So(iso, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, iso, should.BeNil)
 			},
 		},
 	})
@@ -75,70 +75,78 @@ func TestEnv(t *testing.T) {
 	runCases(t, `Env`, []testCase{
 		{
 			name: "empty",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(nil)
 				})
-				So(must(jd.Info().Env()), ShouldBeEmpty)
+				env, err := jd.Info().Env()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.BeEmpty)
 			},
 		},
 
 		{
 			name:        "new",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(map[string]string{
 						"KEY": "VALUE",
 						"DEL": "", // noop
 					})
 				})
-				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+				env, err := jd.Info().Env()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.Resemble(map[string]string{
 					"KEY": "VALUE",
-				})
+				}))
 			},
 		},
 
 		{
 			name:        "add",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(map[string]string{
 						"KEY": "VALUE",
 					})
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(map[string]string{
 						"OTHER": "NEW_VAL",
 						"DEL":   "", // noop
 					})
 				})
-				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+				env, err := jd.Info().Env()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.Resemble(map[string]string{
 					"KEY":   "VALUE",
 					"OTHER": "NEW_VAL",
-				})
+				}))
 			},
 		},
 
 		{
 			name:        "del",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(map[string]string{
 						"KEY": "VALUE",
 					})
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Env(map[string]string{
 						"OTHER": "NEW_VAL",
 						"KEY":   "", // delete
 					})
 				})
-				So(must(jd.Info().Env()), ShouldResemble, map[string]string{
+				env, err := jd.Info().Env()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.Resemble(map[string]string{
 					"OTHER": "NEW_VAL",
-				})
+				}))
 			},
 		},
 	})
@@ -150,33 +158,33 @@ func TestPriority(t *testing.T) {
 	runCases(t, `Priority`, []testCase{
 		{
 			name: "negative",
-			fn: func(jd *Definition) {
-				So(jd.Edit(func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				assert.Loosely(t, jd.Edit(func(je Editor) {
 					je.Priority(-1)
-				}), ShouldErrLike, "negative Priority")
+				}), should.ErrLike("negative Priority"))
 			},
 		},
 
 		{
 			name: "set",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Priority(100)
 				})
-				So(jd.Info().Priority(), ShouldEqual, 100)
+				assert.Loosely(t, jd.Info().Priority(), should.Equal(100))
 			},
 		},
 
 		{
 			name: "reset",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Priority(100)
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Priority(200)
 				})
-				So(jd.Info().Priority(), ShouldEqual, 200)
+				assert.Loosely(t, jd.Info().Priority(), should.Equal(200))
 			},
 		},
 	})
@@ -188,33 +196,33 @@ func TestSwarmingHostname(t *testing.T) {
 	runCases(t, `SwarmingHostname`, []testCase{
 		{
 			name: "empty",
-			fn: func(jd *Definition) {
-				So(jd.Edit(func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				assert.Loosely(t, jd.Edit(func(je Editor) {
 					je.SwarmingHostname("")
-				}), ShouldErrLike, "empty SwarmingHostname")
+				}), should.ErrLike("empty SwarmingHostname"))
 			},
 		},
 
 		{
 			name: "set",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SwarmingHostname("example.com")
 				})
-				So(jd.Info().SwarmingHostname(), ShouldEqual, "example.com")
+				assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("example.com"))
 			},
 		},
 
 		{
 			name: "reset",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SwarmingHostname("example.com")
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SwarmingHostname("other.example.com")
 				})
-				So(jd.Info().SwarmingHostname(), ShouldEqual, "other.example.com")
+				assert.Loosely(t, jd.Info().SwarmingHostname(), should.Equal("other.example.com"))
 			},
 		},
 	})
@@ -226,22 +234,22 @@ func TestTaskName(t *testing.T) {
 	runCases(t, `TaskName`, []testCase{
 		{
 			name: "set",
-			fn: func(jd *Definition) {
+			fn: func(t *ftt.Test, jd *Definition) {
 				if jd.GetBuildbucket() == nil && jd.GetSwarming().GetTask() == nil {
-					So(jd.Info().TaskName(), ShouldResemble, "")
+					assert.Loosely(t, jd.Info().TaskName(), should.BeBlank)
 				} else {
-					So(jd.Info().TaskName(), ShouldResemble, "default-task-name")
+					assert.Loosely(t, jd.Info().TaskName(), should.Match("default-task-name"))
 				}
 
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.TaskName("")
 				})
-				So(jd.Info().TaskName(), ShouldResemble, "")
+				assert.Loosely(t, jd.Info().TaskName(), should.BeBlank)
 
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.TaskName("something")
 				})
-				So(jd.Info().TaskName(), ShouldResemble, "something")
+				assert.Loosely(t, jd.Info().TaskName(), should.Match("something"))
 			},
 		},
 	})
@@ -253,40 +261,46 @@ func TestPrefixPathEnv(t *testing.T) {
 	runCases(t, `PrefixPathEnv`, []testCase{
 		{
 			name: "empty",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.PrefixPathEnv(nil)
 				})
-				So(must(jd.Info().PrefixPathEnv()), ShouldBeEmpty)
+				env, err := jd.Info().PrefixPathEnv()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.BeEmpty)
 			},
 		},
 
 		{
 			name:        "add",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.PrefixPathEnv([]string{"some/path", "other/path"})
 				})
-				So(must(jd.Info().PrefixPathEnv()), ShouldResemble, []string{
+				env, err := jd.Info().PrefixPathEnv()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.Resemble([]string{
 					"some/path", "other/path",
-				})
+				}))
 			},
 		},
 
 		{
 			name:        "remove",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.PrefixPathEnv([]string{"some/path", "other/path", "third"})
 				})
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.PrefixPathEnv([]string{"!other/path"})
 				})
-				So(must(jd.Info().PrefixPathEnv()), ShouldResemble, []string{
+				env, err := jd.Info().PrefixPathEnv()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, env, should.Resemble([]string{
 					"some/path", "third",
-				})
+				}))
 			},
 		},
 	})
@@ -298,23 +312,23 @@ func TestTags(t *testing.T) {
 	runCases(t, `Tags`, []testCase{
 		{
 			name: "empty",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Tags(nil)
 				})
-				So(jd.Info().Tags(), ShouldBeEmpty)
+				assert.Loosely(t, jd.Info().Tags(), should.BeEmpty)
 			},
 		},
 
 		{
 			name: "add",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.Tags([]string{"other:value", "key:value"})
 				})
-				So(jd.Info().Tags(), ShouldResemble, []string{
+				assert.Loosely(t, jd.Info().Tags(), should.Resemble([]string{
 					"key:value", "other:value",
-				})
+				}))
 			},
 		},
 	})
@@ -327,19 +341,19 @@ func TestExperimental(t *testing.T) {
 		{
 			name:   "full",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				So(jd.HighLevelInfo().Experimental(), ShouldBeFalse)
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				assert.Loosely(t, jd.HighLevelInfo().Experimental(), should.BeFalse)
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Experimental(true)
 				})
-				So(jd.HighLevelInfo().Experimental(), ShouldBeTrue)
-				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{buildbucket.ExperimentNonProduction})
+				assert.Loosely(t, jd.HighLevelInfo().Experimental(), should.BeTrue)
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{buildbucket.ExperimentNonProduction}))
 
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Experimental(false)
 				})
-				So(jd.HighLevelInfo().Experimental(), ShouldBeFalse)
-				So(jd.HighLevelInfo().Experiments(), ShouldHaveLength, 0)
+				assert.Loosely(t, jd.HighLevelInfo().Experimental(), should.BeFalse)
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.HaveLength(0))
 			},
 		},
 	})
@@ -352,10 +366,10 @@ func TestExperiments(t *testing.T) {
 		{
 			name:   "full",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				So(jd.HighLevelInfo().Experiments(), ShouldHaveLength, 0)
+			fn: func(t *ftt.Test, jd *Definition) {
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.HaveLength(0))
 
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Experiments(map[string]bool{
 						"exp1":         true,
 						"exp2":         true,
@@ -363,20 +377,20 @@ func TestExperiments(t *testing.T) {
 					})
 				})
 				er := jd.GetBuildbucket().BbagentArgs.Build.Infra.Buildbucket.ExperimentReasons
-				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp1", "exp2"})
-				So(er, ShouldResemble, map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{"exp1", "exp2"}))
+				assert.Loosely(t, er, should.Resemble(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
 					"exp1": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
 					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-				})
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				}))
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Experiments(map[string]bool{
 						"exp1": false,
 					})
 				})
-				So(jd.HighLevelInfo().Experiments(), ShouldResemble, []string{"exp2"})
-				So(er, ShouldResemble, map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
+				assert.Loosely(t, jd.HighLevelInfo().Experiments(), should.Resemble([]string{"exp2"}))
+				assert.Loosely(t, er, should.Resemble(map[string]bbpb.BuildInfra_Buildbucket_ExperimentReason{
 					"exp2": bbpb.BuildInfra_Buildbucket_EXPERIMENT_REASON_REQUESTED,
-				})
+				}))
 			},
 		},
 	})
@@ -389,65 +403,73 @@ func TestProperties(t *testing.T) {
 		{
 			name:   "nil",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Properties(nil, false)
 				})
-				So(must(jd.HighLevelInfo().Properties()), ShouldBeEmpty)
+				props, err := jd.HighLevelInfo().Properties()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, props, should.BeEmpty)
 			},
 		},
 
 		{
 			name:   "add",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Properties(map[string]string{
 						"key":    `"value"`,
 						"other":  `{"something": [1, 2, "subvalue"]}`,
 						"delete": "", // noop
 					}, false)
 				})
-				So(must(jd.HighLevelInfo().Properties()), ShouldResemble, map[string]string{
+				props, err := jd.HighLevelInfo().Properties()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, props, should.Resemble(map[string]string{
 					"key":   `"value"`,
 					"other": `{"something":[1,2,"subvalue"]}`,
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "add (auto)",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Properties(map[string]string{
 						"json":    `{"thingy": "kerplop"}`,
 						"literal": `{I am a banana}`,
 						"delete":  "", // noop
 					}, true)
 				})
-				So(must(jd.HighLevelInfo().Properties()), ShouldResemble, map[string]string{
+				props, err := jd.HighLevelInfo().Properties()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, props, should.Resemble(map[string]string{
 					"json":    `{"thingy":"kerplop"}`,
 					"literal": `"{I am a banana}"`, // string now
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "delete",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Properties(map[string]string{
 						"key": `"value"`,
 					}, false)
 				})
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.Properties(map[string]string{
 						"key": "",
 					}, false)
 				})
-				So(must(jd.HighLevelInfo().Properties()), ShouldBeEmpty)
+				props, err := jd.HighLevelInfo().Properties()
+				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.Loosely(t, props, should.BeEmpty)
 			},
 		},
 	})
@@ -469,63 +491,63 @@ func TestGerritChange(t *testing.T) {
 		{
 			name:   "nil",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(nil)
 					je.RemoveGerritChange(nil)
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldBeEmpty)
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.BeEmpty)
 			},
 		},
 
 		{
 			name:   "new",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("project"),
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "clear",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("project"),
-				})
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				}))
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.ClearGerritChanges()
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldBeEmpty)
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.BeEmpty)
 			},
 		},
 
 		{
 			name:   "dupe",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("project"))
 					je.AddGerritChange(mkChange("project"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("project"),
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "remove",
 			skipSW: true,
-			fn: func(jd *Definition) {
+			fn: func(t *ftt.Test, jd *Definition) {
 				bb := jd.GetBuildbucket()
 				bb.EnsureBasics()
 				bb.BbagentArgs.Build.Input.GerritChanges = []*bbpb.GerritChange{
@@ -533,34 +555,34 @@ func TestGerritChange(t *testing.T) {
 					mkChange("b"),
 					mkChange("c"),
 				}
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("b"),
 					mkChange("c"),
-				})
+				}))
 
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("a"),
 					mkChange("c"),
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "remove (noop)",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.AddGerritChange(mkChange("a"))
 
 					je.RemoveGerritChange(mkChange("b"))
 				})
-				So(jd.HighLevelInfo().GerritChanges(), ShouldResembleProto, []*bbpb.GerritChange{
+				assert.Loosely(t, jd.HighLevelInfo().GerritChanges(), should.Resemble([]*bbpb.GerritChange{
 					mkChange("a"),
-				})
+				}))
 			},
 		},
 	})
@@ -573,38 +595,38 @@ func TestGitilesCommit(t *testing.T) {
 		{
 			name:   "nil",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.GitilesCommit(nil)
 				})
-				So(jd.HighLevelInfo().GitilesCommit(), ShouldBeNil)
+				assert.Loosely(t, jd.HighLevelInfo().GitilesCommit(), should.BeNil)
 			},
 		},
 
 		{
 			name:   "add",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
 				})
-				So(jd.HighLevelInfo().GitilesCommit(), ShouldResembleProto, &bbpb.GitilesCommit{
+				assert.Loosely(t, jd.HighLevelInfo().GitilesCommit(), should.Resemble(&bbpb.GitilesCommit{
 					Id: "deadbeef",
-				})
+				}))
 			},
 		},
 
 		{
 			name:   "del",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.GitilesCommit(&bbpb.GitilesCommit{Id: "deadbeef"})
 				})
-				SoHLEdit(jd, func(je HighLevelEditor) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.GitilesCommit(nil)
 				})
-				So(jd.HighLevelInfo().GitilesCommit(), ShouldBeNil)
+				assert.Loosely(t, jd.HighLevelInfo().GitilesCommit(), should.BeNil)
 			},
 		},
 	})
@@ -617,66 +639,66 @@ func TestTaskPayload(t *testing.T) {
 		{
 			name:   "empty",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.TaskPayloadSource("", "")
 					je.TaskPayloadPath("")
 					je.TaskPayloadCmd(nil)
 				})
 				hli := jd.HighLevelInfo()
 				pkg, vers := hli.TaskPayloadSource()
-				So(pkg, ShouldEqual, "")
-				So(vers, ShouldEqual, "")
-				So(hli.TaskPayloadPath(), ShouldEqual, "")
-				So(hli.TaskPayloadCmd(), ShouldResemble, []string{"luciexe"})
+				assert.Loosely(t, pkg, should.BeEmpty)
+				assert.Loosely(t, vers, should.BeEmpty)
+				assert.Loosely(t, hli.TaskPayloadPath(), should.BeEmpty)
+				assert.Loosely(t, hli.TaskPayloadCmd(), should.Resemble([]string{"luciexe"}))
 			},
 		},
 
 		{
 			name:   "isolate",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.TaskPayloadSource("", "")
 					je.TaskPayloadPath("some/path")
 				})
 				hli := jd.HighLevelInfo()
 				pkg, vers := hli.TaskPayloadSource()
-				So(pkg, ShouldEqual, "")
-				So(vers, ShouldEqual, "")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+				assert.Loosely(t, pkg, should.BeEmpty)
+				assert.Loosely(t, vers, should.BeEmpty)
+				assert.Loosely(t, hli.TaskPayloadPath(), should.Equal("some/path"))
 			},
 		},
 
 		{
 			name:   "cipd",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.TaskPayloadSource("pkgname", "latest")
 					je.TaskPayloadPath("some/path")
 				})
 				hli := jd.HighLevelInfo()
 				pkg, vers := hli.TaskPayloadSource()
-				So(pkg, ShouldEqual, "pkgname")
-				So(vers, ShouldEqual, "latest")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+				assert.Loosely(t, pkg, should.Equal("pkgname"))
+				assert.Loosely(t, vers, should.Equal("latest"))
+				assert.Loosely(t, hli.TaskPayloadPath(), should.Equal("some/path"))
 			},
 		},
 
 		{
 			name:   "cipd latest",
 			skipSW: true,
-			fn: func(jd *Definition) {
-				SoHLEdit(jd, func(je HighLevelEditor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustHLEdit(t, jd, func(je HighLevelEditor) {
 					je.TaskPayloadSource("pkgname", "")
 					je.TaskPayloadPath("some/path")
 				})
 				hli := jd.HighLevelInfo()
 				pkg, vers := hli.TaskPayloadSource()
-				So(pkg, ShouldEqual, "pkgname")
-				So(vers, ShouldEqual, "latest")
-				So(hli.TaskPayloadPath(), ShouldEqual, "some/path")
+				assert.Loosely(t, pkg, should.Equal("pkgname"))
+				assert.Loosely(t, vers, should.Equal("latest"))
+				assert.Loosely(t, hli.TaskPayloadPath(), should.Equal("some/path"))
 			},
 		},
 	})

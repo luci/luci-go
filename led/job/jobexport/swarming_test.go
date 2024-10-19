@@ -23,50 +23,55 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/jsonpb"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 var train = flag.Bool("train", false, "If set, write testdata/*.swarm.json")
 
-func readTestFixture(fixtureBaseName string) *swarmingpb.NewTaskRequest {
+func readTestFixture(t testing.TB, fixtureBaseName string) *swarmingpb.NewTaskRequest {
+	t.Helper()
+
 	jobFile, err := os.Open(fmt.Sprintf("testdata/%s.job.json", fixtureBaseName))
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	defer jobFile.Close()
 
 	jd := &job.Definition{}
-	So(jsonpb.Unmarshal(jobFile, jd), ShouldBeNil)
-	So(jd, ShouldNotBeNil)
+	assert.Loosely(t, jsonpb.Unmarshal(jobFile, jd), should.BeNil, truth.LineContext())
+	assert.Loosely(t, jd, should.NotBeNil, truth.LineContext())
 
 	ctx := cryptorand.MockForTest(context.Background(), 0)
 	ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-	So(jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport(), "off"),
-		ShouldBeNil)
+	assert.Loosely(t, jd.FlattenToSwarming(ctx, "testuser@example.com", "293109284abc", job.NoKitchenSupport(), "off"),
+		should.BeNil, truth.LineContext())
 
 	ret := jd.GetSwarming().GetTask()
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 	outFile := fmt.Sprintf("testdata/%s.swarm.json", fixtureBaseName)
 	if *train {
 		oFile, err := os.Create(outFile)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 		defer oFile.Close()
 
 		enc := json.NewEncoder(oFile)
 		enc.SetIndent("", "  ")
-		So(enc.Encode(ret), ShouldBeNil)
+		assert.Loosely(t, enc.Encode(ret), should.BeNil, truth.LineContext())
 	} else {
 		current, err := os.ReadFile(outFile)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		actual, err := json.MarshalIndent(ret, "", "  ")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
-		So(string(actual)+"\n", ShouldEqual, string(current))
+		assert.Loosely(t, string(actual)+"\n", should.Equal(string(current)), truth.LineContext())
 	}
 
 	return ret
@@ -75,17 +80,17 @@ func readTestFixture(fixtureBaseName string) *swarmingpb.NewTaskRequest {
 func TestExportRaw(t *testing.T) {
 	t.Parallel()
 
-	Convey(`export raw swarming task with rbe-cas input`, t, func() {
-		req := readTestFixture("raw_cas")
-		So(req, ShouldNotBeNil)
+	ftt.Run(`export raw swarming task with rbe-cas input`, t, func(t *ftt.Test) {
+		req := readTestFixture(t, "raw_cas")
+		assert.Loosely(t, req, should.NotBeNil)
 	})
 }
 
 func TestExportBBagent(t *testing.T) {
 	t.Parallel()
 
-	Convey(`export bbagent task with rbe-cas input`, t, func() {
-		req := readTestFixture("bbagent_cas")
-		So(req, ShouldNotBeNil)
+	ftt.Run(`export bbagent task with rbe-cas input`, t, func(t *ftt.Test) {
+		req := readTestFixture(t, "bbagent_cas")
+		assert.Loosely(t, req, should.NotBeNil)
 	})
 }

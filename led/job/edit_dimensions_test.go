@@ -22,10 +22,11 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMakeDimensionEditCommands(t *testing.T) {
@@ -129,16 +130,16 @@ func TestMakeDimensionEditCommands(t *testing.T) {
 		},
 	}
 
-	Convey(`MakeDimensionEditCommands`, t, func() {
+	ftt.Run(`MakeDimensionEditCommands`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
 			tc := tc
-			Convey(tc.name, func() {
+			t.Run(tc.name, func(t *ftt.Test) {
 				dec, err := MakeDimensionEditCommands(tc.cmds)
 				if tc.err == "" {
-					So(err, ShouldBeNil)
-					So(dec, ShouldResemble, tc.expect)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, dec, should.Resemble(tc.expect))
 				} else {
-					So(err, ShouldErrLike, tc.err)
+					assert.Loosely(t, err, should.ErrLike(tc.err))
 				}
 			})
 		}
@@ -151,21 +152,21 @@ func TestSetDimensions(t *testing.T) {
 	runCases(t, "SetDimensions", []testCase{
 		{
 			name: "nil",
-			fn: func(jd *Definition) {
-				SoEdit(jd, func(je Editor) {
+			fn: func(t *ftt.Test, jd *Definition) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SetDimensions(nil)
 				})
-				So(mustGetDimensions(jd), ShouldBeEmpty)
+				assert.Loosely(t, mustGetDimensions(t, jd), should.BeEmpty)
 			},
 		},
 
 		{
 			name:        "add",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				baselineDims(jd)
+			fn: func(t *ftt.Test, jd *Definition) {
+				baselineDims(t, jd)
 
-				So(mustGetDimensions(jd).String(), ShouldResemble, ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd).String(), should.Resemble(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "A", Expiration: swSlice1Exp},
 						{Value: "AA", Expiration: swSlice1Exp},
@@ -173,11 +174,11 @@ func TestSetDimensions(t *testing.T) {
 						{Value: "C", Expiration: swSlice3Exp},
 						{Value: "Z", Expiration: swSlice3Exp},
 					},
-				}.String())
+				}.String()))
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "A",
@@ -198,8 +199,8 @@ func TestSetDimensions(t *testing.T) {
 							Key:   "key",
 							Value: "Z",
 						},
-					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					}))
+					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "B",
@@ -212,8 +213,8 @@ func TestSetDimensions(t *testing.T) {
 							Key:   "key",
 							Value: "Z",
 						},
-					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					}))
+					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "C",
@@ -222,16 +223,16 @@ func TestSetDimensions(t *testing.T) {
 							Key:   "key",
 							Value: "Z",
 						},
-					})
+					}))
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
+					assert.Loosely(t, rdims, should.Resemble([]*bbpb.RequestedDimension{
 						{Key: "key", Value: "A", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "key", Value: "AA", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "key", Value: "B", Expiration: durationpb.New(swSlice2Exp)},
 						{Key: "key", Value: "C", Expiration: durationpb.New(swSlice3Exp)},
 						{Key: "key", Value: "Z"},
-					})
+					}))
 				}
 			},
 		},
@@ -239,10 +240,10 @@ func TestSetDimensions(t *testing.T) {
 		{
 			name:        "replace",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				baselineDims(jd)
+			fn: func(t *ftt.Test, jd *Definition) {
+				baselineDims(t, jd)
 
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SetDimensions(ExpiringDimensions{
 						"key": []ExpiringValue{
 							{Value: "norp", Expiration: swSlice1Exp},
@@ -250,25 +251,25 @@ func TestSetDimensions(t *testing.T) {
 					})
 				})
 
-				So(mustGetDimensions(jd), ShouldResemble, ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "norp", Expiration: swSlice1Exp},
 					},
-				})
+				}))
 			},
 		},
 
 		{
 			name:        "delete",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				baselineDims(jd)
+			fn: func(t *ftt.Test, jd *Definition) {
+				baselineDims(t, jd)
 
-				SoEdit(jd, func(je Editor) {
+				MustEdit(t, jd, func(je Editor) {
 					je.SetDimensions(nil)
 				})
 
-				So(mustGetDimensions(jd), ShouldResemble, ExpiringDimensions{})
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{}))
 			},
 		},
 
@@ -276,7 +277,7 @@ func TestSetDimensions(t *testing.T) {
 			name:        "bad expiration",
 			skipSWEmpty: true,
 			skipBB:      true,
-			fn: func(jd *Definition) {
+			fn: func(t *ftt.Test, jd *Definition) {
 				err := jd.Edit(func(je Editor) {
 					je.SetDimensions(ExpiringDimensions{
 						"key": []ExpiringValue{
@@ -284,22 +285,23 @@ func TestSetDimensions(t *testing.T) {
 						},
 					})
 				})
-				So(err, ShouldErrLike,
+				assert.Loosely(t, err, should.ErrLike(
 					"key=narp@10 has invalid expiration time: "+
-						"current slices expire at [0 60 240 600]")
+						"current slices expire at [0 60 240 600]"))
 			},
 		},
 	})
 
 }
 
-func editDims(jd *Definition, cmds ...string) {
+func editDims(t testing.TB, jd *Definition, cmds ...string) {
+	t.Helper()
 	editCmds, err := MakeDimensionEditCommands(cmds)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	err = jd.Edit(func(je Editor) {
 		je.EditDimensions(editCmds)
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 }
 
 func TestEditDimensions(t *testing.T) {
@@ -308,30 +310,30 @@ func TestEditDimensions(t *testing.T) {
 	runCases(t, "EditDimensions", []testCase{
 		{
 			name: "nil (empty)",
-			fn: func(jd *Definition) {
-				editDims(jd) // no edit commands
-				So(mustGetDimensions(jd), ShouldResemble, ExpiringDimensions{})
+			fn: func(t *ftt.Test, jd *Definition) {
+				editDims(t, jd) // no edit commands
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{}))
 			},
 		},
 
 		{
 			name:        "nil (existing)",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				base := baselineDims(jd)
-				So(mustGetDimensions(jd), ShouldResemble, base)
+			fn: func(t *ftt.Test, jd *Definition) {
+				base := baselineDims(t, jd)
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(base))
 
-				editDims(jd) // no edit commands
+				editDims(t, jd) // no edit commands
 
-				So(mustGetDimensions(jd), ShouldResemble, base)
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(base))
 			},
 		},
 
 		{
 			name:        "add",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				editDims(jd,
+			fn: func(t *ftt.Test, jd *Definition) {
+				editDims(t, jd,
 					fmt.Sprintf("key+=value@%d", swSlice1ExpSecs),
 					fmt.Sprintf("key+=other_value@%d", swSlice3ExpSecs),
 					"other-=bogus",
@@ -339,7 +341,7 @@ func TestEditDimensions(t *testing.T) {
 					"reset=else",
 				)
 
-				So(mustGetDimensions(jd), ShouldResemble, ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "value", Expiration: swSlice1Exp},
 						{Value: "other_value", Expiration: swSlice3Exp},
@@ -348,11 +350,11 @@ func TestEditDimensions(t *testing.T) {
 						{Value: "else", Expiration: swSlice3Exp},
 						{Value: "everything", Expiration: swSlice3Exp},
 					},
-				})
+				}))
 
 				if sw := jd.GetSwarming(); sw != nil {
 					// ensure dimensions show up in ALL slices which they ought to.
-					So(sw.Task.TaskSlices[0].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					assert.Loosely(t, sw.Task.TaskSlices[0].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -369,8 +371,8 @@ func TestEditDimensions(t *testing.T) {
 							Key:   "reset",
 							Value: "everything",
 						},
-					})
-					So(sw.Task.TaskSlices[1].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					}))
+					assert.Loosely(t, sw.Task.TaskSlices[1].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -383,8 +385,8 @@ func TestEditDimensions(t *testing.T) {
 							Key:   "reset",
 							Value: "everything",
 						},
-					})
-					So(sw.Task.TaskSlices[2].Properties.Dimensions, ShouldResembleProto, []*swarmingpb.StringPair{
+					}))
+					assert.Loosely(t, sw.Task.TaskSlices[2].Properties.Dimensions, should.Resemble([]*swarmingpb.StringPair{
 						{
 							Key:   "key",
 							Value: "other_value",
@@ -397,15 +399,15 @@ func TestEditDimensions(t *testing.T) {
 							Key:   "reset",
 							Value: "everything",
 						},
-					})
+					}))
 				} else {
 					rdims := jd.GetBuildbucket().BbagentArgs.Build.Infra.Swarming.TaskDimensions
-					So(rdims, ShouldResembleProto, []*bbpb.RequestedDimension{
+					assert.Loosely(t, rdims, should.Resemble([]*bbpb.RequestedDimension{
 						{Key: "key", Value: "other_value", Expiration: durationpb.New(swSlice3Exp)},
 						{Key: "key", Value: "value", Expiration: durationpb.New(swSlice1Exp)},
 						{Key: "reset", Value: "else"},
 						{Key: "reset", Value: "everything"},
-					})
+					}))
 				}
 			},
 		},
@@ -413,17 +415,17 @@ func TestEditDimensions(t *testing.T) {
 		{
 			name:        "remove",
 			skipSWEmpty: true,
-			fn: func(jd *Definition) {
-				editDims(jd,
+			fn: func(t *ftt.Test, jd *Definition) {
+				editDims(t, jd,
 					fmt.Sprintf("key+=value@%d", swSlice1ExpSecs),
 					fmt.Sprintf("key+=other_value@%d", swSlice3ExpSecs),
 					"reset=everything",
 					"reset=else",
 				)
 
-				editDims(jd, "key-=other_value")
+				editDims(t, jd, "key-=other_value")
 
-				So(mustGetDimensions(jd), ShouldResemble, ExpiringDimensions{
+				assert.Loosely(t, mustGetDimensions(t, jd), should.Resemble(ExpiringDimensions{
 					"key": []ExpiringValue{
 						{Value: "value", Expiration: swSlice1Exp},
 					},
@@ -431,7 +433,7 @@ func TestEditDimensions(t *testing.T) {
 						{Value: "else", Expiration: swSlice3Exp},
 						{Value: "everything", Expiration: swSlice3Exp},
 					},
-				})
+				}))
 
 			},
 		},
