@@ -29,25 +29,30 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEncoding(t *testing.T) {
 	t.Parallel()
 
-	Convey("responseFormat", t, func() {
+	ftt.Run("responseFormat", t, func(t *ftt.Test) {
 		test := func(acceptHeader string, expectedFormat Format, expectedErr any) {
 			acceptHeader = strings.Replace(acceptHeader, "{json}", mtPRPCJSONPB, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{binary}", mtPRPCBinary, -1)
 			acceptHeader = strings.Replace(acceptHeader, "{text}", mtPRPCText, -1)
 
-			Convey("Accept: "+acceptHeader, func() {
-				actualFormat, err := responseFormat(acceptHeader)
-				So(err, ShouldErrLike, expectedErr)
-				if err == nil {
-					So(actualFormat, ShouldEqual, expectedFormat)
+			t.Run("Accept: "+acceptHeader, func(t *ftt.Test) {
+				actualFormat, protoErr := responseFormat(acceptHeader)
+				if expectedErr == nil {
+					assert.That(t, protoErr, should.Equal[*protocolError](nil))
+				} else {
+					assert.That(t, error(protoErr), should.ErrLike(expectedErr))
+				}
+				if protoErr == nil {
+					assert.Loosely(t, actualFormat, should.Equal(expectedFormat))
 				}
 			})
 		}
@@ -91,32 +96,32 @@ func TestEncoding(t *testing.T) {
 		test("x//y", 0, "prpc: bad Accept header: specified media types are not not supported")
 	})
 
-	Convey("writeResponse", t, func() {
+	ftt.Run("writeResponse", t, func(t *ftt.Test) {
 		msg := &HelloReply{Message: "Hi"}
 		c := context.Background()
 
 		test := func(f Format, body []byte, contentType string) {
-			Convey(contentType, func() {
+			t.Run(contentType, func(t *ftt.Test) {
 				rec := httptest.NewRecorder()
 				writeResponse(c, rec, &response{
 					out: msg,
 					fmt: f,
 				})
-				So(rec.Code, ShouldEqual, http.StatusOK)
-				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
-				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
-				So(rec.Body.Bytes(), ShouldResemble, body)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+				assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("0"))
+				assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal(contentType))
+				assert.Loosely(t, rec.Body.Bytes(), should.Resemble(body))
 			})
 		}
 
 		msgBytes, err := proto.Marshal(msg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		test(FormatBinary, msgBytes, mtPRPCBinary)
 		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
 		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
 
-		Convey("compression", func() {
+		t.Run("compression", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
@@ -124,12 +129,12 @@ func TestEncoding(t *testing.T) {
 				fmt:         FormatText,
 				acceptsGZip: true,
 			})
-			So(rec.Code, ShouldEqual, http.StatusOK)
-			So(rec.Header().Get("Content-Encoding"), ShouldEqual, "gzip")
-			So(rec.Body.Len(), ShouldBeLessThan, 1024)
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
+			assert.Loosely(t, rec.Header().Get("Content-Encoding"), should.Equal("gzip"))
+			assert.Loosely(t, rec.Body.Len(), should.BeLessThan(1024))
 		})
 
-		Convey("maxResponseSize", func() {
+		t.Run("maxResponseSize", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
@@ -137,49 +142,49 @@ func TestEncoding(t *testing.T) {
 				fmt:             FormatJSONPB,
 				maxResponseSize: 123,
 			})
-			So(rec.Code, ShouldEqual, http.StatusServiceUnavailable)
-			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "14") // codes.Unavailable
-			So(rec.Header().Get(HeaderStatusDetail), ShouldNotBeEmpty)
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusServiceUnavailable))
+			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("14")) // codes.Unavailable
+			assert.Loosely(t, rec.Header().Get(HeaderStatusDetail), should.NotBeEmpty)
 			body, _ := io.ReadAll(rec.Body)
-			So(string(body), ShouldEndWith, "exceeds the client limit 123\n")
+			assert.Loosely(t, string(body), should.HaveSuffix("exceeds the client limit 123\n"))
 		})
 	})
 
-	Convey("writeError", t, func() {
+	ftt.Run("writeError", t, func(t *ftt.Test) {
 		c := context.Background()
 		c = memlogger.Use(c)
 		log := logging.Get(c).(*memlogger.MemLogger)
 
 		rec := httptest.NewRecorder()
 
-		Convey("client error", func() {
+		t.Run("client error", func(t *ftt.Test) {
 			writeError(c, rec, status.Error(codes.NotFound, "not found"), FormatBinary)
-			So(rec.Code, ShouldEqual, http.StatusNotFound)
-			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "5")
-			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain; charset=utf-8")
-			So(rec.Body.String(), ShouldEqual, "not found\n")
-			So(log, memlogger.ShouldHaveLog, logging.Warning, "prpc: responding with NotFound error (HTTP 404): not found")
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("5"))
+			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
+			assert.Loosely(t, rec.Body.String(), should.Equal("not found\n"))
+			assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "prpc: responding with NotFound error (HTTP 404): not found"))
 		})
 
-		Convey("internal error", func() {
+		t.Run("internal error", func(t *ftt.Test) {
 			writeError(c, rec, status.Error(codes.Internal, "errmsg"), FormatBinary)
-			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
-			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "13")
-			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain; charset=utf-8")
-			So(rec.Body.String(), ShouldEqual, "Internal server error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Internal error (HTTP 500): errmsg")
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
+			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("13"))
+			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
+			assert.Loosely(t, rec.Body.String(), should.Equal("Internal server error\n"))
+			assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "prpc: responding with Internal error (HTTP 500): errmsg"))
 		})
 
-		Convey("unknown error", func() {
+		t.Run("unknown error", func(t *ftt.Test) {
 			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), FormatBinary)
-			So(rec.Code, ShouldEqual, http.StatusInternalServerError)
-			So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "2")
-			So(rec.Header().Get(headerContentType), ShouldEqual, "text/plain; charset=utf-8")
-			So(rec.Body.String(), ShouldEqual, "Unknown server error\n")
-			So(log, memlogger.ShouldHaveLog, logging.Error, "prpc: responding with Unknown error (HTTP 500): errmsg")
+			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
+			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("2"))
+			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
+			assert.Loosely(t, rec.Body.String(), should.Equal("Unknown server error\n"))
+			assert.Loosely(t, log, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "prpc: responding with Unknown error (HTTP 500): errmsg"))
 		})
 
-		Convey("status details", func() {
+		t.Run("status details", func(t *ftt.Test) {
 			testStatusDetails := func(format Format, expected []string) {
 				st := status.New(codes.InvalidArgument, "invalid argument")
 
@@ -188,34 +193,34 @@ func TestEncoding(t *testing.T) {
 						{Field: "a"},
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				st, err = st.WithDetails(&errdetails.Help{
 					Links: []*errdetails.Help_Link{
 						{Url: "https://example.com"},
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				writeError(c, rec, st.Err(), format)
-				So(rec.Header()[HeaderStatusDetail], ShouldResemble, expected)
+				assert.Loosely(t, rec.Header()[HeaderStatusDetail], should.Resemble(expected))
 			}
 
-			Convey("binary", func() {
+			t.Run("binary", func(t *ftt.Test) {
 				testStatusDetails(FormatBinary, []string{
 					"Cil0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdBIFCgMKAWE=",
 					"CiN0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscBIXChUSE2h0dHBzOi8vZXhhbXBsZS5jb20=",
 				})
 			})
 
-			Convey("json", func() {
+			t.Run("json", func(t *ftt.Test) {
 				testStatusDetails(FormatJSONPB, []string{
 					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwiZmllbGRWaW9sYXRpb25zIjpbeyJmaWVsZCI6ImEifV19",
 					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwibGlua3MiOlt7InVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifV19",
 				})
 			})
 
-			Convey("text", func() {
+			t.Run("text", func(t *ftt.Test) {
 				testStatusDetails(FormatText, []string{
 					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdCIKdmFsdWU6ICJcblwwMDNcblwwMDFhIgo=",
 					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscCIKdmFsdWU6ICJcblwwMjVcMDIyXDAyM2h0dHBzOi8vZXhhbXBsZS5jb20iCg==",

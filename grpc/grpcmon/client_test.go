@@ -25,9 +25,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/distribution"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type echoService struct {
@@ -44,12 +45,12 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 		return append([]any{method}, fs...)
 	}
 
-	Convey("ClientRPCStatsMonitor", t, func() {
+	ftt.Run("ClientRPCStatsMonitor", t, func(t *ftt.Test) {
 		// spin up a server
 		srv, svc := grpc.NewServer(), &echoService{}
 		RegisterEchoServer(srv, svc)
 		l, err := net.Listen("tcp", "localhost:0")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		go func() { _ = srv.Serve(l) }()
 		defer srv.Stop()
 
@@ -59,8 +60,8 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithStatsHandler(&ClientRPCStatsMonitor{}),
 		)
-		So(err, ShouldBeNil)
-		defer func() { So(conn.Close(), ShouldBeNil) }()
+		assert.Loosely(t, err, should.BeNil)
+		defer func() { assert.Loosely(t, conn.Close(), should.BeNil) }()
 		client := NewEchoClient(conn)
 		ctx, memStore := testContext()
 
@@ -68,16 +69,16 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			svc.err = err
 			resp, rerr := client.Say(ctx, &SayRequest{Msg: msg})
 			if err == nil {
-				So(rerr, ShouldBeNil)
-				So(resp.GetMsg(), ShouldEqual, msg)
+				assert.Loosely(t, rerr, should.BeNil)
+				assert.Loosely(t, resp.GetMsg(), should.Equal(msg))
 			} else {
-				So(rerr.Error(), ShouldEqual, err.Error())
+				assert.Loosely(t, rerr.Error(), should.Equal(err.Error()))
 			}
 		}
-		Convey("Captures count and duration", func() {
+		t.Run("Captures count and duration", func(t *ftt.Test) {
 			count := func(code string) int64 {
 				val := memStore.Get(ctx, grpcClientCount, time.Time{}, fields(code))
-				So(val, ShouldNotBeNil)
+				assert.Loosely(t, val, should.NotBeZero)
 				return val.(int64)
 			}
 			duration := func(code string) any {
@@ -89,46 +90,46 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 			//
 			// Therefore, this only checks the duration has been set or not.
 			// i.e., nil or not.
-			So(duration("OK"), ShouldBeNil)
+			assert.Loosely(t, duration("OK"), should.BeNil)
 			run(nil, "echo!")
-			So(count("OK"), ShouldEqual, 1)
-			So(duration("OK"), ShouldNotBeNil)
+			assert.Loosely(t, count("OK"), should.Equal(1))
+			assert.Loosely(t, duration("OK"), should.NotBeNil)
 
-			So(duration("PERMISSION_DENIED"), ShouldBeNil)
+			assert.Loosely(t, duration("PERMISSION_DENIED"), should.BeNil)
 			run(status.Error(codes.PermissionDenied, "no permission"), "echo!")
-			So(count("PERMISSION_DENIED"), ShouldEqual, 1)
-			So(duration("PERMISSION_DENIED"), ShouldNotBeNil)
+			assert.Loosely(t, count("PERMISSION_DENIED"), should.Equal(1))
+			assert.Loosely(t, duration("PERMISSION_DENIED"), should.NotBeNil)
 
-			So(duration("UNAUTHENTICATED"), ShouldBeNil)
+			assert.Loosely(t, duration("UNAUTHENTICATED"), should.BeNil)
 			run(status.Error(codes.Unauthenticated, "no auth"), "echo!")
-			So(count("UNAUTHENTICATED"), ShouldEqual, 1)
-			So(duration("UNAUTHENTICATED"), ShouldNotBeNil)
+			assert.Loosely(t, count("UNAUTHENTICATED"), should.Equal(1))
+			assert.Loosely(t, duration("UNAUTHENTICATED"), should.NotBeNil)
 		})
 
-		Convey("Captures sent/received messages", func() {
+		t.Run("Captures sent/received messages", func(t *ftt.Test) {
 			count := func(code string) (float64, float64) {
 				sent := memStore.Get(ctx, grpcClientSentMsg, time.Time{}, fields())
-				So(sent, ShouldNotBeNil)
+				assert.Loosely(t, sent, should.NotBeNil)
 				recv := memStore.Get(ctx, grpcClientRecvMsg, time.Time{}, fields())
-				So(recv, ShouldNotBeNil)
+				assert.Loosely(t, recv, should.NotBeNil)
 				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
 			}
 			bytes := func(code string) (float64, float64) {
 				sent := memStore.Get(ctx, grpcClientSentByte, time.Time{}, fields())
-				So(sent, ShouldNotBeNil)
+				assert.Loosely(t, sent, should.NotBeNil)
 				recv := memStore.Get(ctx, grpcClientRecvByte, time.Time{}, fields())
-				So(recv, ShouldNotBeNil)
+				assert.Loosely(t, recv, should.NotBeNil)
 				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
 			}
 
 			run(nil, "echo!")
 			sentCount, recvCount := count("OK")
-			So(sentCount, ShouldEqual, 1)
-			So(recvCount, ShouldEqual, 1)
+			assert.Loosely(t, sentCount, should.Equal(1.0))
+			assert.Loosely(t, recvCount, should.Equal(1.0))
 
 			sentBytes, recvBytes := bytes("OK")
-			So(sentBytes, ShouldBeGreaterThan, 0)
-			So(recvBytes, ShouldBeGreaterThan, 0)
+			assert.Loosely(t, sentBytes, should.BeGreaterThan(0.0))
+			assert.Loosely(t, recvBytes, should.BeGreaterThan(0.0))
 		})
 	})
 }

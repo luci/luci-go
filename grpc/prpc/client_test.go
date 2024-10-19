@@ -43,27 +43,31 @@ import (
 
 	"go.chromium.org/luci/grpc/prpc/prpcpb"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
-func sayHello(c C) http.HandlerFunc {
+func sayHello(t testing.TB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c.So(r.Method, ShouldEqual, "POST")
-		c.So(r.URL.Path == "/prpc/prpc.Greeter/SayHello" || r.URL.Path == "/python/prpc/prpc.Greeter/SayHello", ShouldBeTrue)
-		c.So(r.Header.Get("Content-Type"), ShouldEqual, "application/prpc; encoding=binary")
-		c.So(r.Header.Get("User-Agent"), ShouldEqual, "prpc-test")
+		assert.Loosely(t, r.Method, should.Equal("POST"))
+		assert.Loosely(t, r.URL.Path == "/prpc/prpc.Greeter/SayHello" || r.URL.Path == "/python/prpc/prpc.Greeter/SayHello", should.BeTrue)
+		assert.Loosely(t, r.Header.Get("Content-Type"), should.Equal("application/prpc; encoding=binary"))
+		assert.Loosely(t, r.Header.Get("User-Agent"), should.Equal("prpc-test"))
 
 		if timeout := r.Header.Get(HeaderTimeout); timeout != "" {
-			c.So(timeout, ShouldEqual, "10000000u")
+			assert.Loosely(t, timeout, should.Equal("10000000u"))
 		}
 
 		reqBody, err := io.ReadAll(r.Body)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		var req HelloRequest
 		err = proto.Unmarshal(reqBody, &req)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		if req.Name == "TOO BIG" {
 			w.Header().Set("Content-Length", "999999999999")
@@ -77,14 +81,14 @@ func sayHello(c C) http.HandlerFunc {
 		var buf []byte
 
 		if req.Name == "ACCEPT JSONPB" {
-			c.So(r.Header.Get("Accept"), ShouldEqual, "application/json")
+			assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/json"))
 			sbuf, err := (&jsonpb.Marshaler{}).MarshalToString(&res)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			buf = []byte(sbuf)
 		} else {
-			c.So(r.Header.Get("Accept"), ShouldEqual, "application/prpc; encoding=binary")
+			assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/prpc; encoding=binary"))
 			buf, err = proto.Marshal(&res)
-			c.So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		code := codes.OK
@@ -99,7 +103,7 @@ func sayHello(c C) http.HandlerFunc {
 		w.WriteHeader(status)
 
 		_, err = w.Write(buf)
-		c.So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	}
 }
 
@@ -129,17 +133,15 @@ func advanceClockAndErr(tc testclock.TestClock, d time.Duration) http.HandlerFun
 	}
 }
 
-func shouldHaveMessagesLike(actual any, expected ...any) string {
-	log := actual.(*memlogger.MemLogger)
+func shouldHaveMessagesLike(t testing.TB, log *memlogger.MemLogger, expected ...memlogger.LogEntry) {
+	t.Helper()
 	msgs := log.Messages()
 
-	So(msgs, ShouldHaveLength, len(expected))
+	assert.Loosely(t, msgs, should.HaveLength(len(expected)), truth.LineContext())
 	for i, actual := range msgs {
-		expected := expected[i].(memlogger.LogEntry)
-		So(actual.Level, ShouldEqual, expected.Level)
-		So(actual.Msg, ShouldContainSubstring, expected.Msg)
+		assert.Loosely(t, actual.Level, should.Equal(expected[i].Level), truth.LineContext())
+		assert.Loosely(t, actual.Msg, should.ContainSubstring(expected[i].Msg), truth.LineContext())
 	}
-	return ""
 }
 
 func TestClient(t *testing.T) {
@@ -163,7 +165,7 @@ func TestClient(t *testing.T) {
 		return client, server
 	}
 
-	Convey("Client", t, func() {
+	ftt.Run("Client", t, func(t *ftt.Test) {
 		// These unit tests use real HTTP connections to localhost. Since go 1.7
 		// 'net/http' library uses the context deadline to derive the connection
 		// timeout: it grabs the deadline (as time.Time) from the context and
@@ -184,49 +186,49 @@ func TestClient(t *testing.T) {
 		req := &HelloRequest{Name: "John"}
 		res := &HelloReply{}
 
-		Convey("Call", func() {
-			Convey("Works", func(c C) {
+		t.Run("Call", func(t *ftt.Test) {
+			t.Run("Works", func(c *ftt.Test) {
 				client, server := setUp(sayHello(c))
 				defer server.Close()
 
 				var hd metadata.MD
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "Hello John")
-				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, res.Message, should.Equal("Hello John"))
+				assert.Loosely(c, hd["x-lower-case-header"], should.Resemble([]string{"CamelCaseValueStays"}))
 
-				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+				shouldHaveMessagesLike(c, log, expectedCallLogEntry(client))
 			})
 
-			Convey("Works with PathPrefix", func(c C) {
-				client, server := setUp(sayHello(c))
+			t.Run("Works with PathPrefix", func(t *ftt.Test) {
+				client, server := setUp(sayHello(t))
 				defer server.Close()
 
 				client.PathPrefix = "/python/prpc"
 				var hd metadata.MD
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "Hello John from python service")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Message, should.Equal("Hello John from python service"))
 			})
 
-			Convey("Works with response in JSONPB", func(c C) {
+			t.Run("Works with response in JSONPB", func(t *ftt.Test) {
 				req.Name = "ACCEPT JSONPB"
-				client, server := setUp(sayHello(c))
+				client, server := setUp(sayHello(t))
 				client.Options.AcceptContentSubtype = "json"
 				defer server.Close()
 
 				var hd metadata.MD
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "Hello ACCEPT JSONPB")
-				So(hd["x-lower-case-header"], ShouldResemble, []string{"CamelCaseValueStays"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Message, should.Equal("Hello ACCEPT JSONPB"))
+				assert.Loosely(t, hd["x-lower-case-header"], should.Resemble([]string{"CamelCaseValueStays"}))
 
-				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+				shouldHaveMessagesLike(t, log, expectedCallLogEntry(client))
 			})
 
-			Convey("With outgoing metadata", func(c C) {
+			t.Run("With outgoing metadata", func(t *ftt.Test) {
 				var receivedHeader http.Header
-				greeter := sayHello(c)
+				greeter := sayHello(t)
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 					receivedHeader = r.Header
 					greeter(w, r)
@@ -240,54 +242,54 @@ func TestClient(t *testing.T) {
 				))
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(receivedHeader["Key"], ShouldResemble, []string{"value 1", "value 2"})
-				So(receivedHeader["Data-Bin"], ShouldResemble, []string{"AAECAw=="})
+				assert.Loosely(t, receivedHeader["Key"], should.Resemble([]string{"value 1", "value 2"}))
+				assert.Loosely(t, receivedHeader["Data-Bin"], should.Resemble([]string{"AAECAw=="}))
 			})
 
-			Convey("Works with compression", func(c C) {
+			t.Run("Works with compression", func(t *ftt.Test) {
 				req := &HelloRequest{Name: strings.Repeat("A", 1024)}
 
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 
 					// Parse request.
-					c.So(r.Header.Get("Accept-Encoding"), ShouldEqual, "gzip")
-					c.So(r.Header.Get("Content-Encoding"), ShouldEqual, "gzip")
+					assert.Loosely(t, r.Header.Get("Accept-Encoding"), should.Equal("gzip"))
+					assert.Loosely(t, r.Header.Get("Content-Encoding"), should.Equal("gzip"))
 					gz, err := gzip.NewReader(r.Body)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer gz.Close()
 					reqBody, err := io.ReadAll(gz)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					var actualReq HelloRequest
 					err = proto.Unmarshal(reqBody, &actualReq)
-					c.So(err, ShouldBeNil)
-					c.So(&actualReq, ShouldResembleProto, req)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, &actualReq, should.Resemble(req))
 
 					// Write response.
 					resBytes, err := proto.Marshal(&HelloReply{Message: "compressed response"})
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					resBody, err := compressBlob(resBytes)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					w.Header().Set("Content-Type", mtPRPCBinary)
 					w.Header().Set("Content-Encoding", "gzip")
 					w.Header().Set(HeaderGRPCCode, "0")
 					w.WriteHeader(http.StatusOK)
 					_, err = w.Write(resBody)
-					c.So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
 				defer server.Close()
 
 				client.EnableRequestCompression = true
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "compressed response")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Message, should.Equal("compressed response"))
 			})
 
-			Convey("With a deadline <= now, does not execute.", func(c C) {
+			t.Run("With a deadline <= now, does not execute.", func(t *ftt.Test) {
 				client, server := setUp(doPanicHandler)
 				defer server.Close()
 
@@ -295,25 +297,25 @@ func TestClient(t *testing.T) {
 				defer cancelFunc()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.DeadlineExceeded)
-				So(err, ShouldErrLike, "overall deadline exceeded")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.DeadlineExceeded))
+				assert.Loosely(t, err, should.ErrLike("overall deadline exceeded"))
 			})
 
-			Convey("With a deadline in the future, sets the deadline header.", func(c C) {
-				client, server := setUp(sayHello(c))
+			t.Run("With a deadline in the future, sets the deadline header.", func(t *ftt.Test) {
+				client, server := setUp(sayHello(t))
 				defer server.Close()
 
 				ctx, cancelFunc := clock.WithDeadline(ctx, clock.Now(ctx).Add(10*time.Second))
 				defer cancelFunc()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "Hello John")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Message, should.Equal("Hello John"))
 
-				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+				shouldHaveMessagesLike(t, log, expectedCallLogEntry(client))
 			})
 
-			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
+			t.Run("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(t *ftt.Test) {
 				// Set an overall deadline.
 				overallDeadline := time.Second + 500*time.Millisecond
 				ctx, cancel := clock.WithTimeout(ctx, overallDeadline)
@@ -335,58 +337,58 @@ func TestClient(t *testing.T) {
 				client.Options.PerRPCTimeout = time.Second
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.DeadlineExceeded)
-				So(err, ShouldErrLike, "overall deadline exceeded")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.DeadlineExceeded))
+				assert.Loosely(t, err, should.ErrLike("overall deadline exceeded"))
 
-				So(calls, ShouldEqual, 2)
+				assert.Loosely(t, calls, should.Equal(2))
 			})
 
-			Convey(`With a maximum response size smaller than the response, returns "ErrResponseTooBig".`, func(c C) {
-				client, server := setUp(sayHello(c))
+			t.Run(`With a maximum response size smaller than the response, returns "ErrResponseTooBig".`, func(t *ftt.Test) {
+				client, server := setUp(sayHello(t))
 				defer server.Close()
 
 				client.MaxResponseSize = 8
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldHaveGRPCStatus, codes.Unavailable)
-				So(err, ShouldErrLike, "exceeds the client limit")
-				So(ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
+				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
+				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
 						ResponseTooBig: &prpcpb.ResponseTooBig{
 							ResponseSize:  12,
 							ResponseLimit: 8,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`When the response returns a huge Content-Length, returns "ErrResponseTooBig".`, func(c C) {
-				client, server := setUp(sayHello(c))
+			t.Run(`When the response returns a huge Content-Length, returns "ErrResponseTooBig".`, func(t *ftt.Test) {
+				client, server := setUp(sayHello(t))
 				defer server.Close()
 
 				req.Name = "TOO BIG"
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldHaveGRPCStatus, codes.Unavailable)
-				So(err, ShouldErrLike, "exceeds the client limit")
-				So(ProtocolErrorDetails(err), ShouldResembleProto, &prpcpb.ErrorDetails{
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
+				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
+				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
 						ResponseTooBig: &prpcpb.ResponseTooBig{
 							ResponseSize:  999999999999,
 							ResponseLimit: DefaultMaxResponseSize,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Doesn't log expected codes", func(c C) {
-				client, server := setUp(sayHello(c))
+			t.Run("Doesn't log expected codes", func(t *ftt.Test) {
+				client, server := setUp(sayHello(t))
 				defer server.Close()
 
 				req.Name = "NOT FOUND"
 
 				// Have it logged by default
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(log, shouldHaveMessagesLike,
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				shouldHaveMessagesLike(t, log,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"})
 
@@ -394,19 +396,19 @@ func TestClient(t *testing.T) {
 
 				// And don't have it if using ExpectedCode.
 				err = client.Call(ctx, "prpc.Greeter", "SayHello", req, res, ExpectedCode(codes.NotFound))
-				So(status.Code(err), ShouldEqual, codes.NotFound)
-				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+				shouldHaveMessagesLike(t, log, expectedCallLogEntry(client))
 			})
 
-			Convey("HTTP 500 x2", func(c C) {
-				client, server := setUp(transientErrors(2, true, http.StatusInternalServerError, sayHello(c)))
+			t.Run("HTTP 500 x2", func(t *ftt.Test) {
+				client, server := setUp(transientErrors(2, true, http.StatusInternalServerError, sayHello(t)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(err, ShouldBeNil)
-				So(res.Message, ShouldEqual, "Hello John")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Message, should.Equal("Hello John"))
 
-				So(log, shouldHaveMessagesLike,
+				shouldHaveMessagesLike(t, log,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
@@ -417,15 +419,15 @@ func TestClient(t *testing.T) {
 				)
 			})
 
-			Convey("HTTP 500 many", func(c C) {
-				client, server := setUp(transientErrors(10, true, http.StatusInternalServerError, sayHello(c)))
+			t.Run("HTTP 500 many", func(t *ftt.Test) {
+				client, server := setUp(transientErrors(10, true, http.StatusInternalServerError, sayHello(t)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.Internal)
-				So(status.Convert(err).Message(), ShouldEqual, "Server misbehaved")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
+				assert.Loosely(t, status.Convert(err).Message(), should.Equal("Server misbehaved"))
 
-				So(log, shouldHaveMessagesLike,
+				shouldHaveMessagesLike(t, log,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
@@ -440,14 +442,14 @@ func TestClient(t *testing.T) {
 				)
 			})
 
-			Convey("HTTP 500 without gRPC header", func(c C) {
-				client, server := setUp(transientErrors(10, false, http.StatusInternalServerError, sayHello(c)))
+			t.Run("HTTP 500 without gRPC header", func(t *ftt.Test) {
+				client, server := setUp(transientErrors(10, false, http.StatusInternalServerError, sayHello(t)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.Internal)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
 
-				So(log, shouldHaveMessagesLike,
+				shouldHaveMessagesLike(t, log,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed transiently"},
 
@@ -462,15 +464,15 @@ func TestClient(t *testing.T) {
 				)
 			})
 
-			Convey("HTTP 503 without gRPC header", func(c C) {
-				client, server := setUp(transientErrors(10, false, http.StatusServiceUnavailable, sayHello(c)))
+			t.Run("HTTP 503 without gRPC header", func(t *ftt.Test) {
+				client, server := setUp(transientErrors(10, false, http.StatusServiceUnavailable, sayHello(t)))
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.Unavailable)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Unavailable))
 			})
 
-			Convey("Forbidden", func(c C) {
+			t.Run("Forbidden", func(t *ftt.Test) {
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.PermissionDenied)))
 					w.WriteHeader(http.StatusForbidden)
@@ -479,16 +481,16 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(status.Convert(err).Message(), ShouldEqual, "Access denied")
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, status.Convert(err).Message(), should.Equal("Access denied"))
 
-				So(log, shouldHaveMessagesLike,
+				shouldHaveMessagesLike(t, log,
 					expectedCallLogEntry(client),
 					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"},
 				)
 			})
 
-			Convey(HeaderGRPCCode, func(c C) {
+			t.Run(HeaderGRPCCode, func(t *ftt.Test) {
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.Canceled)))
 					w.WriteHeader(http.StatusBadRequest)
@@ -496,10 +498,10 @@ func TestClient(t *testing.T) {
 				defer server.Close()
 
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				So(status.Code(err), ShouldEqual, codes.Canceled)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.Canceled))
 			})
 
-			Convey("Concurrency limit", func(c C) {
+			t.Run("Concurrency limit", func(t *ftt.Test) {
 				const (
 					maxConcurrentRequests = 3
 					totalRequests         = 10
@@ -520,7 +522,7 @@ func TestClient(t *testing.T) {
 					// code under test is not correct (i.e. regresses), we'll start seeing
 					// test errors most of the time, with occasional false successes.
 					time.Sleep(200 * time.Millisecond)
-					sayHello(c)(w, r)
+					sayHello(t)(w, r)
 				})
 				defer server.Close()
 
@@ -533,7 +535,7 @@ func TestClient(t *testing.T) {
 					go func() {
 						defer wg.Done()
 						err := client.Call(ctx, "prpc.Greeter", "SayHello", &HelloRequest{Name: "John"}, &HelloReply{})
-						c.So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 					}()
 				}
 				wg.Wait()
@@ -542,7 +544,7 @@ func TestClient(t *testing.T) {
 				for i := 0; i < totalRequests; i++ {
 					select {
 					case concur := <-reports:
-						So(concur, ShouldBeLessThanOrEqualTo, maxConcurrentRequests)
+						assert.Loosely(t, concur, should.BeLessThanOrEqual(maxConcurrentRequests))
 					default:
 						t.Fatal("Some requests didn't execute")
 					}

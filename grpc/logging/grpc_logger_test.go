@@ -20,17 +20,18 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"google.golang.org/grpc/grpclog"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // TestGRPCLogger assumes that it has exclusive ownership of the grpclog
 // package. Each test MUST execute in series, as they install a global logger
 // into the grpclog package.
 func TestGRPCLogger(t *testing.T) {
-	Convey(`Testing gRPC logger adapter`, t, func() {
+	ftt.Run(`Testing gRPC logger adapter`, t, func(t *ftt.Test) {
 		var base memlogger.MemLogger
 
 		// Override "fatalExit" so our Fatal* tests don't actually exit.
@@ -52,8 +53,8 @@ func TestGRPCLogger(t *testing.T) {
 			} else {
 				name = l.String()
 			}
-			Convey(fmt.Sprintf(`At logging level %q`, name), func() {
-				Convey(`Logs correctly`, func() {
+			t.Run(fmt.Sprintf(`At logging level %q`, name), func(t *ftt.Test) {
+				t.Run(`Logs correctly`, func(t *ftt.Test) {
 					Install(&base, l)
 
 					// expected will accumulate during logging based on the current test
@@ -102,27 +103,28 @@ func TestGRPCLogger(t *testing.T) {
 						}...)
 					}
 
-					So(base.Messages(), ShouldResemble, expected)
+					assert.Loosely(t, base.Messages(), should.Resemble(expected))
 
 					for i := 0; i < 3; i++ {
 						exp := i <= translateLevel(l)
 						t.Logf("Testing %q V(%d) => %v", name, i, exp)
-						So(grpclog.V(i), ShouldEqual, exp)
+						assert.Loosely(t, grpclog.V(i), should.Equal(exp))
 					}
 				})
 
-				// XXX: disabled, pending https://github.com/grpc/grpc-go/issues/1360
-				SkipConvey(`Handles Fatal calls`, func() {
+				t.Run(`Handles Fatal calls`, func(t *ftt.Test) {
+					t.Skip("XXX: disabled, pending https://github.com/grpc/grpc-go/issues/1360")
+
 					grpclog.Fatal("fatal", "foo", "bar")
 					grpclog.Fatalf("fatalf(%q, %q)", "foo", "bar")
 					grpclog.Fatalln("fatalln", "foo", "bar")
 
-					So(base.Messages(), ShouldResemble, []memlogger.LogEntry{
+					assert.Loosely(t, base.Messages(), should.Resemble([]memlogger.LogEntry{
 						{logging.Error, "fatal foo bar", nil, 3},
 						{logging.Error, `fatalf("foo", "bar")`, nil, 3},
 						{logging.Error, "fatalln foo bar", nil, 3},
-					})
-					So(exitCalls, ShouldEqual, 3)
+					}))
+					assert.Loosely(t, exitCalls, should.Equal(3))
 				})
 			})
 		}

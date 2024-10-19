@@ -26,16 +26,17 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
-	Convey("Captures count and duration", t, func() {
+	ftt.Run("Captures count and duration", t, func(t *ftt.Test) {
 		c, memStore := testContext()
 
 		// Handler that runs for 500 ms.
@@ -50,15 +51,15 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		}, handler)
 
 		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
-		So(count, ShouldEqual, 1)
+		assert.Loosely(t, count, should.Equal(1))
 
 		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
-		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
+		assert.Loosely(t, duration.(*distribution.Distribution).Sum(), should.Equal(500.0))
 	})
 }
 
 func TestStreamServerInterceptor(t *testing.T) {
-	Convey("Captures count and duration", t, func() {
+	ftt.Run("Captures count and duration", t, func(t *ftt.Test) {
 		c, memStore := testContext()
 
 		// Handler that runs for 500 ms.
@@ -73,10 +74,10 @@ func TestStreamServerInterceptor(t *testing.T) {
 		}, handler)
 
 		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
-		So(count, ShouldEqual, 1)
+		assert.Loosely(t, count, should.Equal(1))
 
 		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
-		So(duration.(*distribution.Distribution).Sum(), ShouldEqual, 500)
+		assert.Loosely(t, duration.(*distribution.Distribution).Sum(), should.Equal(500.0))
 	})
 }
 

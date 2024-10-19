@@ -19,11 +19,13 @@ import (
 	"net"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/stats"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type testStatsHandler struct {
@@ -48,7 +50,7 @@ func (tsh *testStatsHandler) HandleConn(context.Context, stats.ConnStats) {
 }
 
 func TestWithMultiStatsHandler(t *testing.T) {
-	Convey("Test WithMultiStatsHandler", t, func() {
+	ftt.Run("Test WithMultiStatsHandler", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		h1 := &testStatsHandler{}
 		h2 := &testStatsHandler{}
@@ -57,7 +59,7 @@ func TestWithMultiStatsHandler(t *testing.T) {
 		srv, svc := grpc.NewServer(), &echoService{}
 		RegisterEchoServer(srv, svc)
 		l, err := net.Listen("tcp", "localhost:0")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		go func() { _ = srv.Serve(l) }()
 		defer srv.Stop()
 
@@ -67,39 +69,45 @@ func TestWithMultiStatsHandler(t *testing.T) {
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
 				opt,
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return conn
 		}
 
-		Convey("w/o params", func() {
+		t.Run("w/o params", func(t *ftt.Test) {
 			conn := connect(WithMultiStatsHandler())
-			defer func() { So(conn.Close(), ShouldBeNil) }()
+			defer func() { assert.Loosely(t, conn.Close(), should.BeNil) }()
 			NewEchoClient(conn).Say(ctx, &SayRequest{Msg: "echo!"})
 		})
 
-		Convey("w/ testStatsHandler", func() {
+		t.Run("w/ testStatsHandler", func(t *ftt.Test) {
 			ch := make(chan int, 1)
 			h1.tagRPC = func() {
 				ch <- 1
 			}
 
-			Convey("alone", func() {
+			check := func(t testing.TB) {
+				t.Helper()
+
+				close(ch)
+				assert.Loosely(t, <-ch, should.Equal(1), truth.LineContext())
+			}
+
+			t.Run("alone", func(t *ftt.Test) {
 				conn := connect(WithMultiStatsHandler(h1))
-				defer func() { So(conn.Close(), ShouldBeNil) }()
+				defer func() { assert.Loosely(t, conn.Close(), should.BeNil) }()
 				NewEchoClient(conn).Say(ctx, &SayRequest{Msg: "echo!"})
+				check(t)
 			})
 
-			Convey("w/ nil", func() {
+			t.Run("w/ nil", func(t *ftt.Test) {
 				conn := connect(WithMultiStatsHandler(nil, h1, nil))
-				defer func() { So(conn.Close(), ShouldBeNil) }()
+				defer func() { assert.Loosely(t, conn.Close(), should.BeNil) }()
 				NewEchoClient(conn).Say(ctx, &SayRequest{Msg: "echo!"})
+				check(t)
 			})
-
-			close(ch)
-			So(<-ch, ShouldEqual, 1)
 		})
 
-		Convey("runs the handlers in order", func() {
+		t.Run("runs the handlers in order", func(t *ftt.Test) {
 			ch := make(chan int, 3)
 			h1.tagRPC = func() {
 				ch <- 2
@@ -108,7 +116,7 @@ func TestWithMultiStatsHandler(t *testing.T) {
 				ch <- 1
 			}
 			conn := connect(WithMultiStatsHandler(h1, h2, h1))
-			defer func() { So(conn.Close(), ShouldBeNil) }()
+			defer func() { assert.Loosely(t, conn.Close(), should.BeNil) }()
 			NewEchoClient(conn).Say(ctx, &SayRequest{Msg: "echo!"})
 
 			close(ch)
@@ -116,7 +124,7 @@ func TestWithMultiStatsHandler(t *testing.T) {
 			for val := range ch {
 				values = append(values, val)
 			}
-			So(values, ShouldResemble, []int{2, 1, 2})
+			assert.Loosely(t, values, should.Resemble([]int{2, 1, 2}))
 		})
 
 	})

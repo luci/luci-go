@@ -28,15 +28,16 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestDecoding(t *testing.T) {
 	t.Parallel()
 
-	Convey("readMessage", t, func() {
+	ftt.Run("readMessage", t, func(t *ftt.Test) {
 		const maxDecompressedSize = 100
 
 		var msg HelloRequest
@@ -57,20 +58,21 @@ func TestDecoding(t *testing.T) {
 			return nil
 		}
 
-		testLucy := func(contentType string, body []byte) {
+		testLucy := func(t testing.TB, contentType string, body []byte) {
+			t.Helper()
 			err := read(contentType, "identity", body)
-			So(err, ShouldBeNil)
-			So(&msg, ShouldResembleProto, &HelloRequest{
+			assert.That(t, err, should.Equal[*protocolError](nil), truth.LineContext())
+			assert.Loosely(t, &msg, should.Resemble(&HelloRequest{
 				Name: "Lucy",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{
 						"name",
 					},
 				},
-			})
+			}), truth.LineContext())
 		}
 
-		Convey("binary", func() {
+		t.Run("binary", func(t *ftt.Test) {
 			testMsg := &HelloRequest{
 				Name: "Lucy",
 				Fields: &field_mask.FieldMask{
@@ -80,110 +82,110 @@ func TestDecoding(t *testing.T) {
 				},
 			}
 			body, err := proto.Marshal(testMsg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(ContentTypePRPC, func() {
-				testLucy(ContentTypePRPC, body)
+			t.Run(ContentTypePRPC, func(t *ftt.Test) {
+				testLucy(t, ContentTypePRPC, body)
 			})
-			Convey(mtPRPCBinary, func() {
-				testLucy(mtPRPCBinary, body)
+			t.Run(mtPRPCBinary, func(t *ftt.Test) {
+				testLucy(t, mtPRPCBinary, body)
 			})
-			Convey("malformed body", func() {
+			t.Run("malformed body", func(t *ftt.Test) {
 				err := read(mtPRPCBinary, "identity", []byte{0})
-				So(err, ShouldNotBeNil)
-				So(err.status, ShouldEqual, http.StatusBadRequest)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.status, should.Equal(http.StatusBadRequest))
 			})
-			Convey("empty body", func() {
+			t.Run("empty body", func(t *ftt.Test) {
 				err := read(mtPRPCBinary, "identity", nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal[*protocolError](nil))
 			})
 		})
 
-		Convey("json", func() {
+		t.Run("json", func(t *ftt.Test) {
 			body := []byte(`{"name": "Lucy", "fields": "name"}`)
-			Convey(ContentTypeJSON, func() {
-				testLucy(ContentTypeJSON, body)
+			t.Run(ContentTypeJSON, func(t *ftt.Test) {
+				testLucy(t, ContentTypeJSON, body)
 			})
-			Convey(mtPRPCJSONPBLegacy, func() {
-				testLucy(mtPRPCJSONPB, body)
+			t.Run(mtPRPCJSONPBLegacy, func(t *ftt.Test) {
+				testLucy(t, mtPRPCJSONPB, body)
 			})
-			Convey("malformed body", func() {
+			t.Run("malformed body", func(t *ftt.Test) {
 				err := read(mtPRPCJSONPB, "identity", []byte{0})
-				So(err, ShouldNotBeNil)
-				So(err.status, ShouldEqual, http.StatusBadRequest)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.status, should.Equal(http.StatusBadRequest))
 			})
-			Convey("empty body", func() {
+			t.Run("empty body", func(t *ftt.Test) {
 				err := read(mtPRPCJSONPB, "identity", nil)
-				So(err, ShouldNotBeNil)
-				So(err.status, ShouldEqual, http.StatusBadRequest)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.status, should.Equal(http.StatusBadRequest))
 			})
 		})
 
-		Convey("text", func() {
-			Convey(mtPRPCText, func() {
+		t.Run("text", func(t *ftt.Test) {
+			t.Run(mtPRPCText, func(t *ftt.Test) {
 				body := []byte(`name: "Lucy" fields < paths: "name" >`)
-				testLucy(mtPRPCText, body)
+				testLucy(t, mtPRPCText, body)
 			})
-			Convey("malformed body", func() {
+			t.Run("malformed body", func(t *ftt.Test) {
 				err := read(mtPRPCText, "identity", []byte{0})
-				So(err, ShouldNotBeNil)
-				So(err.status, ShouldEqual, http.StatusBadRequest)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.status, should.Equal(http.StatusBadRequest))
 			})
-			Convey("empty body", func() {
+			t.Run("empty body", func(t *ftt.Test) {
 				err := read(mtPRPCText, "identity", nil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.Equal[*protocolError](nil))
 			})
 		})
 
-		Convey("unsupported media type", func() {
+		t.Run("unsupported media type", func(t *ftt.Test) {
 			err := read("blah", "identity", nil)
-			So(err, ShouldNotBeNil)
-			So(err.status, ShouldEqual, http.StatusUnsupportedMediaType)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.status, should.Equal(http.StatusUnsupportedMediaType))
 		})
 
-		Convey("compressed", func() {
+		t.Run("compressed", func(t *ftt.Test) {
 			compressRaw := func(blob []byte) []byte {
 				var buf bytes.Buffer
 				w := gzip.NewWriter(&buf)
 				_, err := w.Write(blob)
-				So(err, ShouldBeNil)
-				So(w.Close(), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, w.Close(), should.BeNil)
 				return buf.Bytes()
 			}
 
-			Convey("OK", func() {
+			t.Run("OK", func(t *ftt.Test) {
 				m := &HelloRequest{Name: "hi"}
 				blob, err := proto.Marshal(m)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				err = read(mtPRPCBinary, "gzip", compressRaw(blob))
-				So(err, ShouldBeNil)
-				So(msg.Name, ShouldEqual, "hi")
+				assert.Loosely(t, err, should.Equal[*protocolError](nil))
+				assert.Loosely(t, msg.Name, should.Equal("hi"))
 			})
 
-			Convey("Exactly at the limit", func() {
+			t.Run("Exactly at the limit", func(t *ftt.Test) {
 				err := read(mtPRPCBinary, "gzip",
 					compressRaw(make([]byte, maxDecompressedSize)))
-				So(err, ShouldErrLike, "could not decode body") // it is full of zeros
+				assert.Loosely(t, err, should.ErrLike("could not decode body")) // it is full of zeros
 			})
 
-			Convey("Past the limit", func() {
+			t.Run("Past the limit", func(t *ftt.Test) {
 				err := read(mtPRPCBinary, "gzip",
 					compressRaw(make([]byte, maxDecompressedSize+1)))
-				So(err, ShouldErrLike, "the decompressed request size exceeds the server limit")
+				assert.Loosely(t, err, should.ErrLike("the decompressed request size exceeds the server limit"))
 			})
 		})
 	})
 
-	Convey("parseHeader", t, func() {
+	ftt.Run("parseHeader", t, func(t *ftt.Test) {
 		c := context.Background()
 
-		Convey("host", func() {
+		t.Run("host", func(t *ftt.Test) {
 			c, _, err := parseHeader(c, http.Header{}, "example.com")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			md, ok := metadata.FromIncomingContext(c)
-			So(ok, ShouldBeTrue)
-			So(md.Get("host"), ShouldResemble, []string{"example.com"})
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, md.Get("host"), should.Resemble([]string{"example.com"}))
 		})
 
 		header := func(name, value string) http.Header {
@@ -194,48 +196,48 @@ func TestDecoding(t *testing.T) {
 			return ctx, err
 		}
 
-		Convey(HeaderTimeout, func() {
-			Convey("Works", func() {
+		t.Run(HeaderTimeout, func(t *ftt.Test) {
+			t.Run("Works", func(t *ftt.Test) {
 				now := time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC)
 				c, _ = testclock.UseTime(c, now)
 
 				var err error
 				c, err = parse(c, HeaderTimeout, "1M")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				deadline, ok := c.Deadline()
-				So(ok, ShouldBeTrue)
-				So(deadline, ShouldHappenWithin, time.Second, now.Add(time.Minute))
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, deadline, should.HappenWithin(time.Second, now.Add(time.Minute)))
 			})
 
-			Convey("Fails", func() {
+			t.Run("Fails", func(t *ftt.Test) {
 				c, err := parse(c, HeaderTimeout, "blah")
-				So(c, ShouldEqual, c)
-				So(err, ShouldErrLike, `"`+HeaderTimeout+`" header: unit is not recognized: "blah"`)
+				assert.Loosely(t, c, should.Equal(c))
+				assert.Loosely(t, err, should.ErrLike(`"`+HeaderTimeout+`" header: unit is not recognized: "blah"`))
 			})
 		})
 
-		Convey("Content-Type", func() {
+		t.Run("Content-Type", func(t *ftt.Test) {
 			c, err := parse(c, "Content-Type", "blah")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, ok := metadata.FromIncomingContext(c)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey("Accept", func() {
+		t.Run("Accept", func(t *ftt.Test) {
 			c, err := parse(c, "Accept", "blah")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, ok := metadata.FromIncomingContext(c)
-			So(ok, ShouldBeFalse)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey("Unrecognized headers", func() {
+		t.Run("Unrecognized headers", func(t *ftt.Test) {
 			test := func(ctx context.Context, header http.Header, expectedMetadata metadata.MD) {
 				ctx, _, err := parseHeader(ctx, header, "")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				md, ok := metadata.FromIncomingContext(ctx)
-				So(ok, ShouldBeTrue)
-				So(md, ShouldResemble, expectedMetadata)
+				assert.Loosely(t, ok, should.BeTrue)
+				assert.Loosely(t, md, should.Resemble(expectedMetadata))
 			}
 
 			headers := http.Header{
@@ -243,14 +245,14 @@ func TestDecoding(t *testing.T) {
 				"Y": []string{"1", "2"},
 			}
 
-			Convey("without metadata in context", func() {
+			t.Run("without metadata in context", func(t *ftt.Test) {
 				test(c, headers, metadata.MD{
 					"x": []string{"1"},
 					"y": []string{"1", "2"},
 				})
 			})
 
-			Convey("with metadata in context", func() {
+			t.Run("with metadata in context", func(t *ftt.Test) {
 				c = metadata.NewIncomingContext(c, metadata.MD{
 					"x": []string{"0"},
 					"z": []string{"1"},
@@ -262,18 +264,18 @@ func TestDecoding(t *testing.T) {
 				})
 			})
 
-			Convey("binary", func() {
-				Convey("Works", func() {
+			t.Run("binary", func(t *ftt.Test) {
+				t.Run("Works", func(t *ftt.Test) {
 					const name = "Lucy"
 					b64 := base64.StdEncoding.EncodeToString([]byte(name))
 					test(c, header("Name-Bin", b64), metadata.MD{
 						"name-bin": []string{name},
 					})
 				})
-				Convey("Fails", func() {
+				t.Run("Fails", func(t *ftt.Test) {
 					c, err := parse(c, "Name-Bin", "zzz")
-					So(c, ShouldEqual, c)
-					So(err, ShouldErrLike, `header "Name-Bin": illegal base64 data at input byte 0`)
+					assert.Loosely(t, c, should.Equal(c))
+					assert.Loosely(t, err, should.ErrLike(`header "Name-Bin": illegal base64 data at input byte 0`))
 				})
 			})
 		})
