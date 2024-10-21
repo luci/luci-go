@@ -209,6 +209,7 @@ import (
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
 
 	clientauth "go.chromium.org/luci/auth"
@@ -284,7 +285,7 @@ var cloudRegionFromGAERegion = map[string]string{
 	"s": "us-central1",
 }
 
-// Context key of *incomingRequest{...}, see httpRoot(...) and grpcRoot(...).
+// Context key of *incomingRequest{...}, see httpRoot(...) and grpcRoot{...}.
 var incomingRequestKey = "go.chromium.org/luci/server.incomingRequest"
 
 // Main initializes the server and runs its serving loop until SIGTERM.
@@ -1610,20 +1611,13 @@ func (s *Server) Serve() error {
 
 	// Finish setting the gRPC server, if enabled.
 	if s.grpcPort != nil {
-		grpcRoot := s.grpcRoot()
 		grpcDispatch := s.grpcDispatch()
 		s.grpcPort.addServerOptions(
-			grpc.ChainUnaryInterceptor(
-				grpcRoot.Unary(),
-				otelgrpc.UnaryServerInterceptor(),
-				grpcDispatch.Unary(),
-			),
+			grpc.StatsHandler(grpcRoot{}), // this **must** be first, see grpcRoot doc
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+			grpc.ChainUnaryInterceptor(grpcDispatch.Unary()),
 			grpc.ChainUnaryInterceptor(unaryInterceptors...),
-			grpc.ChainStreamInterceptor(
-				grpcRoot.Stream(),
-				otelgrpc.StreamServerInterceptor(),
-				grpcDispatch.Stream(),
-			),
+			grpc.ChainStreamInterceptor(grpcDispatch.Stream()),
 			grpc.ChainStreamInterceptor(streamInterceptors...),
 		)
 	}
@@ -1857,10 +1851,22 @@ func (s *Server) genUniqueID(l int) string {
 //
 // It is either an HTTP or a gRPC request.
 type incomingRequest struct {
-	url         string               // the full URL for logs
-	method      string               // HTTP method verb for logs, e.g. "POST"
-	metadata    auth.RequestMetadata // headers etc.
-	healthCheck bool                 // true if this is a health check request
+	url      string               // the full URL for logs
+	method   string               // HTTP method verb for logs, e.g. "POST"
+	metadata auth.RequestMetadata // headers etc.
+
+	// True if this is a health check request based on the URL and the User-Agent.
+	//
+	// Some environments send a lot of health check requests. Additionally the
+	// server currently implements the health check in a trivial manner (just
+	// replying OK). For these reasons health check requests and not logged or
+	// sampled (there's nothing worthy to log or sample: it is just going to be
+	// a lot of "empty" requests).
+	//
+	// Health check endpoints are "/healthz" for HTTP and "/grpc.health.*" for
+	// gRPC. See isHealthCheckerUA for the list of recognized health checking
+	// user agents.
+	healthCheck bool
 }
 
 // requestResult is logged after completion of a request.
@@ -1898,7 +1904,7 @@ func (s *Server) wrapHTTPHandler(next http.Handler) http.Handler {
 // examined by other middlewares (and the tracing sampler), in particular in
 // httpDispatch.
 //
-// See grpcRoot(...) for a gRPC counterpart.
+// See grpcRoot{...} for a gRPC counterpart.
 func (s *Server) httpRoot(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		// This context is derived from s.Context (see Serve) and has various server
@@ -1971,31 +1977,44 @@ func (s *Server) httpDispatch(next http.Handler) http.Handler {
 	})
 }
 
-// grpcRoot is the entry point for gRPC requests.
+// grpcRoot is a stats.Handler that prepares per-RPC context for tracing.
 //
-// Its job is to initialize *incomingRequest in the context which is then
-// examined by other middlewares (and the tracing sampler), in particular in
-// grpcDispatch.
+// Its job is to initialize *incomingRequest in the context, which is then
+// examined by the tracing sampler (see otelSampler).
+//
+// This needs to happen before the tracing sampler is consulted, which happens
+// inside otelgrpc's stats.Handler. Thus this needs to be done from a
+// stats.Handler, installed before otelgrpc's one. It can't be an interceptor,
+// since interceptors are invoked after stats handlers.
+//
+// The actual request processing starts later in grpcDispatch() interceptor,
+// which is called after otelgrpc's stats.Handler sets up the full tracing
+// state.
 //
 // See httpRoot(...) for a HTTP counterpart.
-func (s *Server) grpcRoot() grpcutil.UnifiedServerInterceptor {
-	return func(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
-		// incomingRequest is used by middlewares that work with both HTTP and gRPC
-		// requests, in particular it is used by startRequest(...).
-		//
-		// Note that here `ctx` is already derived from s.Context (except it is
-		// canceled if the client disconnects). See grpcPort{} implementation.
-		md := auth.RequestMetadataForGRPC(ctx)
-		return handler(context.WithValue(ctx, &incomingRequestKey, &incomingRequest{
-			url:         fmt.Sprintf("grpc://%s%s", md.Host(), fullMethod),
-			method:      "POST",
-			metadata:    md,
-			healthCheck: strings.HasPrefix(fullMethod, "/grpc.health.") && isHealthCheckerUA(md.Header("User-Agent")),
-		}))
-	}
+type grpcRoot struct{}
+
+// TagRPC is a part of stats.Handler interface.
+func (grpcRoot) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
+	md := auth.RequestMetadataForGRPC(ctx)
+	return context.WithValue(ctx, &incomingRequestKey, &incomingRequest{
+		url:         fmt.Sprintf("grpc://%s%s", md.Host(), info.FullMethodName),
+		method:      "POST",
+		metadata:    md,
+		healthCheck: strings.HasPrefix(info.FullMethodName, "/grpc.health.") && isHealthCheckerUA(md.Header("User-Agent")),
+	})
 }
 
-// grpcDispatch finishes gRPC request context initialization.
+// HandleRPC is a part of stats.Handler interface.
+func (grpcRoot) HandleRPC(context.Context, stats.RPCStats) {}
+
+// TagConn is a part of stats.Handler interface.
+func (grpcRoot) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context { return ctx }
+
+// HandleConn processes the Conn stats.
+func (grpcRoot) HandleConn(context.Context, stats.ConnStats) {}
+
+// grpcDispatch finishes gRPC per-request context initialization.
 //
 // Its primary purpose it so setup logging, but it also does some other context
 // touches. See startRequest(...) where the bulk of work is happening.
@@ -2049,7 +2068,7 @@ func (s *Server) grpcDispatch() grpcutil.UnifiedServerInterceptor {
 // request.
 //
 // The incoming context is assumed to be derived by either httpRoot(...) or
-// grpcRoot(...) and have *incomingRequest inside.
+// grpcRoot{...} and have *incomingRequest inside.
 func (s *Server) startRequest(ctx context.Context) (context.Context, func(*requestResult)) {
 	// The value *must* be there. Let it panic if it is not.
 	req := ctx.Value(&incomingRequestKey).(*incomingRequest)
