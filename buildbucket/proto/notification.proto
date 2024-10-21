@@ -60,6 +60,13 @@ message BuildsV2PubSub {
   // is ZLIB as this is the most common one and is the built-in lib in many
   // programming languages.
   Compression compression = 3;
+
+  // A flag to indicate the build large fields are dropped from the PubSub
+  // message. This can happen if the large fields are too large even after
+  // compression.
+  //
+  // If you need those fields, please call GetBuild RPC to get them.
+  bool build_large_fields_dropped = 4;
 }
 
 // PubSubCallBack is the message data schema for the ad-hoc pubsub notification

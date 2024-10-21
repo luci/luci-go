@@ -21,6 +21,8 @@ queue:
 - name: notify-pubsub-go
   target: default-go
   rate: 500/s
+  retry_parameters:
+    task_age_limit: 7d
 - name: finalize-resultdb-go
   target: default-go
   rate: 500/s
