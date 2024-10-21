@@ -913,7 +913,8 @@ type Server struct {
 	started bool          // true inside and after Serve
 	stopped bool          // true inside and after Shutdown
 	ready   chan struct{} // closed right before starting the serving loop
-	done    chan struct{} // closed after Shutdown returns
+	stop    chan struct{} // closed by Shutdown after all serving ports are down
+	done    chan struct{} // closed when Serve exits after running the cleanup
 
 	// gRPC/pRPC configuration.
 	unaryInterceptors  []grpc.UnaryServerInterceptor
@@ -1054,6 +1055,7 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 		Context: ctx,
 		Options: opts,
 		ready:   make(chan struct{}),
+		stop:    make(chan struct{}),
 		done:    make(chan struct{}),
 		rnd:     rand.New(rand.NewSource(seed)),
 		bgrDone: make(chan struct{}),
@@ -1586,6 +1588,9 @@ func (s *Server) Serve() error {
 	s.started = true
 	s.mu.Unlock()
 
+	// Notify Shutdown when Serve exits.
+	defer close(s.done)
+
 	// The configuration is "locked" now and we can finish the setup.
 	authInterceptor := auth.AuthenticatingInterceptor(s.rpcAuthMethods)
 
@@ -1660,20 +1665,19 @@ func (s *Server) Serve() error {
 			if err := port.serve(func() context.Context { return s.Context }); err != nil {
 				logging.WithError(err).Errorf(s.Context, "Server %s failed", port.nameForLog())
 				errs[i] = err
-				s.Shutdown() // close all other servers
+				s.shutdownPorts() // close all other servers
 			}
 		}()
 	}
 	wg.Wait()
 
-	// Per http.Server docs, we end up here *immediately* after Shutdown call was
-	// initiated. Some requests can still be in-flight. We block until they are
-	// done (as indicated by Shutdown call itself exiting).
+	// Per http.Server docs, we end up here *immediately* after shutdownPorts call
+	// was initiated. Some requests can still be in-flight. We block until they
+	// are done (as indicated by shutdownPorts call itself exiting).
 	logging.Infof(s.Context, "Waiting for the server to stop...")
-	<-s.done
+	<-s.stop
 	logging.Infof(s.Context, "The serving loop stopped, running the final cleanup...")
 	s.runCleanup()
-	logging.Infof(s.Context, "The server has stopped")
 
 	if errs.First() != nil {
 		return errs
@@ -1685,6 +1689,18 @@ func (s *Server) Serve() error {
 //
 // Blocks until the server is stopped. Can be called multiple times.
 func (s *Server) Shutdown() {
+	// Tell all ports to stop and signal Serve it can exit.
+	s.shutdownPorts()
+	// Wait for Serve to finish running the cleanup.
+	<-s.done
+	logging.Infof(s.Context, "The server has stopped")
+}
+
+// shutdownPorts closes all ports and signals Serve it can exit.
+//
+// Unlike Shutdown, it doesn't wait for Serve to exit. This is used inside
+// Serve itself to shutdown after an error.
+func (s *Server) shutdownPorts() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.stopped {
@@ -1714,7 +1730,7 @@ func (s *Server) Shutdown() {
 
 	// Notify Serve that it can exit now.
 	s.stopped = true
-	close(s.done)
+	close(s.stop)
 }
 
 // Fatal logs the error and immediately shuts down the process with exit code 3.

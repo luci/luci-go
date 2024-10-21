@@ -95,6 +95,7 @@ type TestServer struct {
 	srv     *server.Server
 	tm      *testingModule
 	cleanup []func()
+	cancel  context.CancelFunc
 }
 
 // RunServer launches a test server and runs it in background.
@@ -154,7 +155,8 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 		opts.ClientAuth = auth.Options{Method: auth.GCEMetadataMethod}
 	}
 
-	ts := &TestServer{}
+	ctx, cancel := context.WithCancel(ctx)
+	ts := &TestServer{cancel: cancel}
 
 	success := false
 	defer func() {
@@ -275,6 +277,7 @@ func (ts *TestServer) Shutdown() {
 	for _, cb := range ts.cleanup {
 		cb()
 	}
+	ts.cancel()
 }
 
 // Context is the server's root context with all modules initialized.
