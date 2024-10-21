@@ -323,6 +323,10 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 	}
 	bld := entities[0].(*model.Build)
 	infra := entities[1].(*model.BuildInfra)
+	target := infra.Proto.GetBackend().GetTask().GetId().GetTarget()
+	if target == "" {
+		return tq.Fatal.Apply(errors.Reason("failed to get backend target for build %d", buildID).Err())
+	}
 
 	if infra.Proto.GetBackend().GetTask().GetId().GetId() != "" {
 		// This task is likely a retry.
@@ -341,7 +345,7 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 
 	var backendCfg *pb.BackendSetting
 	for _, backend := range globalCfg.GetBackends() {
-		if backend.Target == infra.Proto.Backend.Task.Id.Target {
+		if backend.Target == target {
 			backendCfg = backend
 		}
 	}
