@@ -215,7 +215,7 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 }
 
 // findRecipesPy locates the current repo's `recipes.py`. It does this by:
-//   - invoking git to find the repo root
+//   - call deduceRepoRoot to get the repo root.
 //   - loading the recipes.cfg at infra/config/recipes.cfg
 //   - stat'ing the recipes.py implied by the recipes_path in that cfg file.
 //
@@ -223,19 +223,15 @@ func (opts *EditRecipeBundleOpts) prepBundle(ctx context.Context, inDir, recipes
 //
 // On success, the absolute path to recipes.py is returned.
 func findRecipesPy(ctx context.Context, inDir string) (string, error) {
-	cmd := logCmd(ctx, inDir, "git", "rev-parse", "--show-toplevel")
-	out, err := cmd.Output()
-	if err = cmdErr(cmd, err, "finding git repo"); err != nil {
+	repoRoot, err := deduceRepoRoot(ctx, inDir)
+	if err != nil {
 		return "", err
 	}
-
-	repoRoot := strings.TrimSpace(string(out))
 
 	pth := filepath.Join(repoRoot, "infra", "config", "recipes.cfg")
 	switch st, err := os.Stat(pth); {
 	case err != nil:
 		return "", errors.Annotate(err, "reading recipes.cfg").Err()
-
 	case !st.Mode().IsRegular():
 		return "", errors.Reason("%q is not a regular file", pth).Err()
 	}
@@ -257,4 +253,46 @@ func findRecipesPy(ctx context.Context, inDir string) (string, error) {
 
 	return filepath.Join(
 		repoRoot, filepath.FromSlash(rj.RecipesPath), "recipes.py"), nil
+}
+
+var errRepoRootNotFound = errors.New("can not determine repo root. Is this a recipe repo?")
+
+// deduceRepoRoot returns the most possible root repo root for the `indir`.
+//
+// It first consults `git` to find the repo root. If it doesn't work, it will
+// walk up the directories tree to find the directory that contains
+// `infra/config/recipes.cfg`. If either attempts fail, `errRepoRootNotFound`
+// will be returned.
+func deduceRepoRoot(ctx context.Context, inDir string) (string, error) {
+	cmd := logCmd(ctx, inDir, "git", "rev-parse", "--show-toplevel")
+	out, err := cmd.Output()
+	switch exitErr := (&exec.ExitError{}); {
+	case err == nil:
+		return strings.TrimSpace(string(out)), nil
+	case !errors.As(err, &exitErr):
+		return "", cmdErr(cmd, err, "finding git repo")
+	}
+
+	curPath, err := filepath.Abs(inDir)
+	if err != nil {
+		return "", errors.Annotate(err, "compute absolute path").Err()
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(curPath, "infra", "config", "recipes.cfg")); err == nil {
+			return curPath, nil
+		}
+		// prevent walking across known source control boundary. `.git` here is just
+		// for visibility purpose cause the earlier `git rev-parse`` command would
+		// have succeeded.
+		for _, sentinel := range []string{".git", ".citc"} {
+			if _, err := os.Stat(filepath.Join(curPath, sentinel)); err == nil {
+				return "", errRepoRootNotFound
+			}
+		}
+		parent := filepath.Dir(curPath)
+		if curPath == parent { // reached top-level directory
+			return "", errRepoRootNotFound
+		}
+		curPath = parent
+	}
 }
