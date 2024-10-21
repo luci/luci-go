@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
@@ -95,6 +96,8 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: fmt.Sprintf("Failed to start luciexe host: %s", err.Error()),
 			}
+			// we can send opts.BaseBuild without cloning - we're quitting at this
+			// point so cannot do more writes.
 			buildCh <- opts.BaseBuild
 			return
 		}
@@ -208,7 +211,8 @@ func calcLogFlushWaitTime(ctx context.Context) time.Duration {
 
 // downloadInputs downloads CIPD and CAS inputs then updates the build.
 func downloadInputs(ctx context.Context, wd, cacheBase string, build *bbpb.Build, buildCh chan<- *bbpb.Build) bool {
-	defer func() { buildCh <- build }() // Always send back the result build.
+	// send clone - we are still mutating `build` in this goroutine.
+	defer func() { buildCh <- proto.Clone(build).(*bbpb.Build) }() // Always send back the result build.
 
 	logging.Infof(ctx, "downloading agent inputs")
 
@@ -233,7 +237,8 @@ func downloadInputs(ctx context.Context, wd, cacheBase string, build *bbpb.Build
 		Status:        bbpb.Status_STARTED,
 		AgentPlatform: platform.CurrentPlatform(),
 	}
-	buildCh <- build // Signal started
+	// send clone - we are still mutating `build` in this goroutine.
+	buildCh <- proto.Clone(build).(*bbpb.Build) // Signal started
 
 	// Encapsulate all the installation logic with a defer to set the
 	// TotalDuration. As we add more installation logic (e.g. RBE-CAS),

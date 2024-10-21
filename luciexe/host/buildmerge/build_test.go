@@ -25,63 +25,62 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestSetErrorOnBuild(t *testing.T) {
 	t.Parallel()
-	Convey(`setErrorOnBuild`, t, func() {
-		Convey(`basic`, func() {
+	ftt.Run(`setErrorOnBuild`, t, func(t *ftt.Test) {
+		t.Run(`basic`, func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Output: &bbpb.Build_Output{},
 			}
 			setErrorOnBuild(build, errors.New("hi"))
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				SummaryMarkdown: "\n\nError in build protocol: hi",
 				Status:          bbpb.Status_INFRA_FAILURE,
 				Output: &bbpb.Build_Output{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "\n\nError in build protocol: hi",
 				},
-			})
+			}))
 		})
 
-		Convey(`truncated message`, func() {
+		t.Run(`truncated message`, func(t *ftt.Test) {
 			build := &bbpb.Build{
 				SummaryMarkdown: strings.Repeat("16 test pattern\n", 256),
 				Output:          &bbpb.Build_Output{},
 			}
 			setErrorOnBuild(build, errors.New("hi"))
-			So(build.SummaryMarkdown, ShouldHaveLength, 4096)
-			So(build.SummaryMarkdown, ShouldEndWith, "...\n\nError in build protocol: hi")
-			So(build.Output.SummaryMarkdown, ShouldEqual, build.SummaryMarkdown)
+			assert.Loosely(t, build.SummaryMarkdown, should.HaveLength(4096))
+			assert.Loosely(t, build.SummaryMarkdown, should.HaveSuffix("...\n\nError in build protocol: hi"))
+			assert.Loosely(t, build.Output.SummaryMarkdown, should.Equal(build.SummaryMarkdown))
 			build.SummaryMarkdown = ""
 			build.Output.SummaryMarkdown = ""
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				Status: bbpb.Status_INFRA_FAILURE,
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_INFRA_FAILURE,
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestProcessFinalBuild(t *testing.T) {
 	t.Parallel()
-	Convey(`processFinalBuild`, t, func() {
+	ftt.Run(`processFinalBuild`, t, func(t *ftt.Test) {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Output: &bbpb.Build_Output{},
 			}
 			processFinalBuild(now, build)
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				SummaryMarkdown: ("\n\nError in build protocol: " +
 					"Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 				UpdateTime: now,
@@ -92,10 +91,10 @@ func TestProcessFinalBuild(t *testing.T) {
 					SummaryMarkdown: ("\n\nError in build protocol: " +
 						"Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."),
 				},
-			})
+			}))
 		})
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Status: bbpb.Status_SUCCESS,
 				Steps: []*bbpb.Step{
@@ -106,7 +105,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -116,10 +115,10 @@ func TestProcessFinalBuild(t *testing.T) {
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_SUCCESS,
 				},
-			})
+			}))
 		})
 
-		Convey(`incomplete step`, func() {
+		t.Run(`incomplete step`, func(t *ftt.Test) {
 			build := &bbpb.Build{
 				Status: bbpb.Status_SUCCESS,
 				Steps: []*bbpb.Step{
@@ -131,7 +130,7 @@ func TestProcessFinalBuild(t *testing.T) {
 				},
 			}
 			processFinalBuild(now, build)
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				UpdateTime: now,
 				EndTime:    now,
 				Status:     bbpb.Status_SUCCESS,
@@ -146,17 +145,17 @@ func TestProcessFinalBuild(t *testing.T) {
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_SUCCESS,
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestUpdateStepFromBuild(t *testing.T) {
-	Convey(`updateStepFromBuild`, t, func() {
+	ftt.Run(`updateStepFromBuild`, t, func(t *ftt.Test) {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`basic`, func() {
+		t.Run(`basic`, func(t *ftt.Test) {
 			step := &bbpb.Step{
 				Logs: []*bbpb.Log{{Name: "something"}},
 			}
@@ -170,7 +169,7 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			}
 			updateStepFromBuild(step, build)
-			So(step, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, step, should.Resemble(&bbpb.Step{
 				SummaryMarkdown: "hi",
 				Status:          bbpb.Status_FAILURE,
 				EndTime:         now,
@@ -178,9 +177,9 @@ func TestUpdateStepFromBuild(t *testing.T) {
 					{Name: "something"},
 					{Name: "other"},
 				},
-			})
+			}))
 		})
-		Convey(`step status terminal`, func() {
+		t.Run(`step status terminal`, func(t *ftt.Test) {
 			step := &bbpb.Step{
 				Status:          bbpb.Status_INFRA_FAILURE,
 				SummaryMarkdown: "hi step",
@@ -196,24 +195,24 @@ func TestUpdateStepFromBuild(t *testing.T) {
 				},
 			}
 			updateStepFromBuild(step, build)
-			So(step, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, step, should.Resemble(&bbpb.Step{
 				SummaryMarkdown: "hi step",
 				Status:          bbpb.Status_INFRA_FAILURE,
 				EndTime:         now,
 				Logs: []*bbpb.Log{
 					{Name: "step something"},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestUpdateBaseFromUserbuild(t *testing.T) {
-	Convey(`updateBaseFromUserBuild`, t, func() {
+	ftt.Run(`updateBaseFromUserBuild`, t, func(t *ftt.Test) {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`basic`, func() {
+		t.Run(`basic`, func(t *ftt.Test) {
 			base := &bbpb.Build{
 				Steps: []*bbpb.Step{{Name: "sup"}},
 			}
@@ -239,20 +238,20 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 			buildClone := proto.Clone(build).(*bbpb.Build)
 			buildClone.Steps = append(buildClone.Steps, &bbpb.Step{Name: "sup"})
 			updateBaseFromUserBuild(base, build)
-			So(base, ShouldResembleProto, buildClone)
+			assert.Loosely(t, base, should.Resemble(buildClone))
 		})
 
-		Convey(`nil build`, func() {
+		t.Run(`nil build`, func(t *ftt.Test) {
 			base := &bbpb.Build{
 				Steps:           []*bbpb.Step{{Name: "sup"}},
 				SummaryMarkdown: "hi",
 			}
 			baseClone := proto.Clone(base).(*bbpb.Build)
 			updateBaseFromUserBuild(base, nil)
-			So(base, ShouldResembleProto, baseClone)
+			assert.Loosely(t, base, should.Resemble(baseClone))
 		})
 
-		Convey(`output is merged`, func() {
+		t.Run(`output is merged`, func(t *ftt.Test) {
 			base := &bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
@@ -267,70 +266,70 @@ func TestUpdateBaseFromUserbuild(t *testing.T) {
 					},
 				},
 			})
-			So(base, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, base, should.Resemble(&bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Logs: []*bbpb.Log{
 						{Name: "hello"},
 						{Name: "world"},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
-	Convey(`TestUpdateBuildFromGlobalSubBuild`, t, func() {
+	ftt.Run(`TestUpdateBuildFromGlobalSubBuild`, t, func(t *ftt.Test) {
 		base := &bbpb.Build{}
 		sub := &bbpb.Build{}
 
-		Convey(`empty parent`, func() {
-			Convey(`empty child`, func() {
+		t.Run(`empty parent`, func(t *ftt.Test) {
+			t.Run(`empty child`, func(t *ftt.Test) {
 				updateOutputProperties(base, sub, []string{""})
-				So(base, ShouldResembleProto, &bbpb.Build{})
+				assert.Loosely(t, base, should.Resemble(&bbpb.Build{}))
 			})
 
-			Convey(`properties`, func() {
+			t.Run(`properties`, func(t *ftt.Test) {
 				s, err := structpb.NewStruct(map[string]any{
 					"hello": "world",
 					"this":  100,
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sub.Output = &bbpb.Build_Output{Properties: s}
 				updateOutputProperties(base, sub, []string{""})
 				m := base.Output.Properties.AsMap()
-				So(m, ShouldResemble, map[string]any{
+				assert.Loosely(t, m, should.Resemble(map[string]any{
 					"hello": "world",
 					"this":  100.0, // because JSON semantics
-				})
+				}))
 			})
 		})
 
-		Convey(`populated parent`, func() {
+		t.Run(`populated parent`, func(t *ftt.Test) {
 			s, err := structpb.NewStruct(map[string]any{
 				"hello": "world",
 				"this":  100,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			base.Output = &bbpb.Build_Output{
 				Properties: s,
 			}
 
-			Convey(`empty child`, func() {
+			t.Run(`empty child`, func(t *ftt.Test) {
 				updateOutputProperties(base, sub, []string{""})
-				So(base, ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, base, should.Resemble(&bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: s,
 					},
-				})
+				}))
 			})
 
-			Convey(`properties`, func() {
+			t.Run(`properties`, func(t *ftt.Test) {
 				sSub, err := structpb.NewStruct(map[string]any{
 					"newkey": "yes",
 					"hello":  "replacement",
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				sub.Output = &bbpb.Build_Output{Properties: sSub}
 				updateOutputProperties(base, sub, []string{""})
 
@@ -339,22 +338,22 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 					"this":   100,
 					"newkey": "yes",
 				})
-				So(err, ShouldBeNil)
-				So(base, ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, base, should.Resemble(&bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: sNew,
 					},
-				})
+				}))
 			})
 
 		})
 
-		Convey(`deep path`, func() {
+		t.Run(`deep path`, func(t *ftt.Test) {
 			s, err := structpb.NewStruct(map[string]any{
 				"hello": "world",
 				"this":  100,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			base.Output = &bbpb.Build_Output{
 				Properties: s,
 			}
@@ -376,11 +375,11 @@ func TestUpdateBuildFromGlobalSubBuild(t *testing.T) {
 			})
 
 			updateOutputProperties(base, sub, []string{"a", "b", "c"})
-			So(base, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, base, should.Resemble(&bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Properties: sNew,
 				},
-			})
+			}))
 		})
 	})
 }

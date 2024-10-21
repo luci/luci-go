@@ -27,94 +27,95 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStepNoop(t *testing.T) {
-	Convey(`Step no-op mode`, t, func() {
+	ftt.Run(`Step no-op mode`, t, func(t *ftt.Test) {
 		ctx := memlogger.Use(context.Background())
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
 
-		Convey(`Step creation`, func() {
-			Convey(`ScheduleStep`, func() {
+		t.Run(`Step creation`, func(t *ftt.Test) {
+			t.Run(`ScheduleStep`, func(t *ftt.Test) {
 				step, ctx := ScheduleStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 
-				So(logs, memlogger.ShouldHaveLog,
-					logging.Info, "set status: SCHEDULED", logging.Fields{"build.step": "some step"})
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+					logging.Info, "set status: SCHEDULED", logging.Fields{"build.step": "some step"}))
 
-				So(step, ShouldNotBeNil)
-				So(getCurrentStep(ctx).name, ShouldResemble, "some step")
+				assert.Loosely(t, step, should.NotBeNil)
+				assert.Loosely(t, getCurrentStep(ctx).name, should.Match("some step"))
 
-				So(step.Start, ShouldNotPanic)
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
-				So(logs.Messages(), ShouldHaveLength, 2)
+				assert.Loosely(t, step.Start, should.NotPanic)
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "set status: STARTED"))
+				assert.Loosely(t, logs.Messages(), should.HaveLength(2))
 
-				So(step.Start, ShouldNotPanic) // noop
-				So(logs.Messages(), ShouldHaveLength, 2)
+				assert.Loosely(t, step.Start, should.NotPanic) // noop
+				assert.Loosely(t, logs.Messages(), should.HaveLength(2))
 			})
 
-			Convey(`StartStep`, func() {
+			t.Run(`StartStep`, func(t *ftt.Test) {
 				step, ctx := StartStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SCHEDULED")
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: STARTED")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "set status: SCHEDULED"))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "set status: STARTED"))
 
-				So(step, ShouldNotBeNil)
-				So(getCurrentStep(ctx).name, ShouldResemble, "some step")
-				So(logs.Messages(), ShouldHaveLength, 2)
+				assert.Loosely(t, step, should.NotBeNil)
+				assert.Loosely(t, getCurrentStep(ctx).name, should.Match("some step"))
+				assert.Loosely(t, logs.Messages(), should.HaveLength(2))
 
-				So(step.Start, ShouldNotPanic) // noop
-				So(logs.Messages(), ShouldHaveLength, 2)
+				assert.Loosely(t, step.Start, should.NotPanic) // noop
+				assert.Loosely(t, logs.Messages(), should.HaveLength(2))
 			})
 
-			Convey(`Bad step name`, func() {
-				So(func() {
+			t.Run(`Bad step name`, func(t *ftt.Test) {
+				assert.Loosely(t, func() {
 					StartStep(ctx, "bad | step")
-				}, ShouldPanicLike, "reserved character")
+				}, should.PanicLike("reserved character"))
 			})
 		})
 
-		Convey(`Step closure`, func() {
-			Convey(`SUCCESS`, func() {
+		t.Run(`Step closure`, func(t *ftt.Test) {
+			t.Run(`SUCCESS`, func(t *ftt.Test) {
 				step, ctx := StartStep(ctx, "some step")
 				step.End(nil)
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_SUCCESS))
 
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "set status: SUCCESS"))
 
-				Convey(`cannot double-close`, func() {
-					So(func() { step.End(nil) }, ShouldPanicLike, "cannot mutate ended step")
+				t.Run(`cannot double-close`, func(t *ftt.Test) {
+					assert.Loosely(t, func() { step.End(nil) }, should.PanicLike("cannot mutate ended step"))
 				})
 
-				Convey(`cancels context as well`, func() {
-					So(ctx.Err(), ShouldResemble, context.Canceled)
+				t.Run(`cancels context as well`, func(t *ftt.Test) {
+					assert.Loosely(t, ctx.Err(), should.Resemble(context.Canceled))
 				})
 			})
 
-			Convey(`error`, func() {
+			t.Run(`error`, func(t *ftt.Test) {
 				step, _ := StartStep(ctx, "some step")
 				step.End(errors.New("bad stuff"))
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_FAILURE)
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_FAILURE))
 
-				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: FAILURE: bad stuff")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "set status: FAILURE: bad stuff"))
 			})
 
-			Convey(`CANCELED`, func() {
+			t.Run(`CANCELED`, func(t *ftt.Test) {
 				step, _ := StartStep(ctx, "some step")
 				step.End(context.Canceled)
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_CANCELED)
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_CANCELED))
 
-				So(logs, memlogger.ShouldHaveLog, logging.Warning, "set status: CANCELED: context canceled")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "set status: CANCELED: context canceled"))
 			})
 
-			Convey(`panic`, func() {
+			t.Run(`panic`, func(t *ftt.Test) {
 				step, _ := StartStep(ctx, "some step")
 				func() {
 					defer func() {
@@ -123,107 +124,107 @@ func TestStepNoop(t *testing.T) {
 					}()
 					panic("doom!")
 				}()
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_INFRA_FAILURE)
-				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: INFRA_FAILURE: PANIC")
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "set status: INFRA_FAILURE: PANIC"))
 			})
 
-			Convey(`with SummaryMarkdown`, func() {
+			t.Run(`with SummaryMarkdown`, func(t *ftt.Test) {
 				step, _ := StartStep(ctx, "some step")
 				step.SetSummaryMarkdown("cool story!")
 				step.End(nil)
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "set status: SUCCESS\n  with SummaryMarkdown:\ncool story!")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "set status: SUCCESS\n  with SummaryMarkdown:\ncool story!"))
 			})
 
-			Convey(`modify starts step`, func() {
+			t.Run(`modify starts step`, func(t *ftt.Test) {
 				step, _ := ScheduleStep(ctx, "some step")
 				defer func() { step.End(nil) }()
 				step.SetSummaryMarkdown("cool story!")
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_STARTED))
 			})
 
-			Convey(`closure of un-started step`, func() {
+			t.Run(`closure of un-started step`, func(t *ftt.Test) {
 				step, ctx := ScheduleStep(ctx, "some step")
-				So(func() { step.End(nil) }, ShouldNotPanic)
-				So(step.stepPb.Status, ShouldResemble, bbpb.Status_SUCCESS)
-				So(step.stepPb.StartTime, ShouldNotBeNil)
-				So(ctx.Err(), ShouldResemble, context.Canceled)
+				assert.Loosely(t, func() { step.End(nil) }, should.NotPanic)
+				assert.Loosely(t, step.stepPb.Status, should.Resemble(bbpb.Status_SUCCESS))
+				assert.Loosely(t, step.stepPb.StartTime, should.NotBeNil)
+				assert.Loosely(t, ctx.Err(), should.Resemble(context.Canceled))
 			})
 		})
 
-		Convey(`Recursive steps`, func() {
-			Convey(`basic`, func() {
+		t.Run(`Recursive steps`, func(t *ftt.Test) {
+			t.Run(`basic`, func(t *ftt.Test) {
 				parent, ctx := StartStep(ctx, "parent")
 				defer func() { parent.End(nil) }()
 
 				child, ctx := StartStep(ctx, "child")
 				defer func() { child.End(nil) }()
 
-				So(parent.name, ShouldResemble, "parent")
-				So(child.name, ShouldResemble, "parent|child")
+				assert.Loosely(t, parent.name, should.Match("parent"))
+				assert.Loosely(t, child.name, should.Match("parent|child"))
 			})
 
-			Convey(`creating child step with explicit parent`, func() {
+			t.Run(`creating child step with explicit parent`, func(t *ftt.Test) {
 				parent, ctx := ScheduleStep(ctx, "parent")
 				defer func() { parent.End(nil) }()
 
 				child, _ := parent.ScheduleStep(ctx, "child")
 				defer func() { child.End(nil) }()
 
-				So(parent.name, ShouldResemble, "parent")
-				So(parent.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
-				So(child.name, ShouldResemble, "parent|child")
-				So(child.stepPb.Status, ShouldResemble, bbpb.Status_SCHEDULED)
+				assert.Loosely(t, parent.name, should.Match("parent"))
+				assert.Loosely(t, parent.stepPb.Status, should.Resemble(bbpb.Status_STARTED))
+				assert.Loosely(t, child.name, should.Match("parent|child"))
+				assert.Loosely(t, child.stepPb.Status, should.Resemble(bbpb.Status_SCHEDULED))
 			})
 
-			Convey(`creating child step starts parent`, func() {
+			t.Run(`creating child step starts parent`, func(t *ftt.Test) {
 				parent, ctx := ScheduleStep(ctx, "parent")
 				defer func() { parent.End(nil) }()
 
 				child, ctx := ScheduleStep(ctx, "child")
 				defer func() { child.End(nil) }()
 
-				So(parent.name, ShouldResemble, "parent")
-				So(parent.stepPb.Status, ShouldResemble, bbpb.Status_STARTED)
-				So(child.name, ShouldResemble, "parent|child")
-				So(child.stepPb.Status, ShouldResemble, bbpb.Status_SCHEDULED)
+				assert.Loosely(t, parent.name, should.Match("parent"))
+				assert.Loosely(t, parent.stepPb.Status, should.Resemble(bbpb.Status_STARTED))
+				assert.Loosely(t, child.name, should.Match("parent|child"))
+				assert.Loosely(t, child.stepPb.Status, should.Resemble(bbpb.Status_SCHEDULED))
 			})
 		})
 
-		Convey(`Step logs`, func() {
+		t.Run(`Step logs`, func(t *ftt.Test) {
 			ctx := memlogger.Use(ctx)
 			logs := logging.Get(ctx).(*memlogger.MemLogger)
 			step, _ := StartStep(ctx, "some step")
 
-			Convey(`text`, func() {
+			t.Run(`text`, func(t *ftt.Test) {
 				log := step.Log("a log")
 				_, err := log.Write([]byte("this is stuff"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				step.End(nil)
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "this is stuff")
-				So(log.UILink(), ShouldEqual, "")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "this is stuff"))
+				assert.Loosely(t, log.UILink(), should.BeEmpty)
 			})
 
-			Convey(`binary`, func() {
+			t.Run(`binary`, func(t *ftt.Test) {
 				log := step.Log("a log", streamclient.Binary())
 				_, err := log.Write([]byte("this is stuff"))
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				step.End(nil)
-				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping BINARY log \"a log\"")
-				So(log.UILink(), ShouldEqual, "")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "dropping BINARY log \"a log\""))
+				assert.Loosely(t, log.UILink(), should.BeEmpty)
 			})
 
-			Convey(`datagram`, func() {
+			t.Run(`datagram`, func(t *ftt.Test) {
 				log := step.LogDatagram("a log")
-				So(log.WriteDatagram([]byte("this is stuff")), ShouldBeNil)
+				assert.Loosely(t, log.WriteDatagram([]byte("this is stuff")), should.BeNil)
 				step.End(nil)
-				So(logs, memlogger.ShouldHaveLog, logging.Warning, "dropping DATAGRAM log \"a log\"")
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Warning, "dropping DATAGRAM log \"a log\""))
 			})
 		})
 	})
 }
 
 func TestStepLog(t *testing.T) {
-	Convey(`Step logging`, t, func() {
+	ftt.Run(`Step logging`, t, func(t *ftt.Test) {
 		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		build := &bbpb.Build{
@@ -236,16 +237,16 @@ func TestStepLog(t *testing.T) {
 			},
 		}
 		buildState, ctx, err := Start(ctx, build, OptLogsink(lc))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() { buildState.End(nil) }()
-		So(buildState, ShouldNotBeNil)
+		assert.Loosely(t, buildState, should.NotBeNil)
 
-		Convey(`logging redirects`, func() {
+		t.Run(`logging redirects`, func(t *ftt.Test) {
 			step, ctx := StartStep(ctx, "some step")
 			logging.Infof(ctx, "hi there!")
 			step.End(nil)
 
-			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, step.stepPb, should.Resemble(&bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
@@ -253,18 +254,18 @@ func TestStepLog(t *testing.T) {
 				Logs: []*bbpb.Log{
 					{Name: "log", Url: "step/0/log/0"},
 				},
-			})
+			}))
 
-			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "hi there!")
+			assert.Loosely(t, scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), should.ContainSubstring("hi there!"))
 		})
 
-		Convey(`can open logs`, func() {
+		t.Run(`can open logs`, func(t *ftt.Test) {
 			step, _ := StartStep(ctx, "some step")
 			log := step.Log("some log")
 			fmt.Fprintln(log, "here's some stuff")
 			step.End(nil)
 
-			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, step.stepPb, should.Resemble(&bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
@@ -274,16 +275,16 @@ func TestStepLog(t *testing.T) {
 					// {Name: "log", Url: "step/0/log/0"},
 					{Name: "some log", Url: "step/0/log/1"},
 				},
-			})
+			}))
 
-			So(scFake.Data()["fakeNS/step/0/log/1"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+			assert.Loosely(t, scFake.Data()["fakeNS/step/0/log/1"].GetStreamData(), should.ContainSubstring("here's some stuff"))
 
 			// Check the link.
 			wantLink := "https://logs.chromium.org/logs/example/builds/8888888888/+/fakeNS/step/0/log/1"
-			So(log.UILink(), ShouldEqual, wantLink)
+			assert.Loosely(t, log.UILink(), should.Equal(wantLink))
 		})
 
-		Convey(`child log context is correct`, func() {
+		t.Run(`child log context is correct`, func(t *ftt.Test) {
 			step, ctx := StartStep(ctx, "parent")
 			defer step.End(nil)
 			logging.Infof(ctx, "I am on the parent")
@@ -295,20 +296,20 @@ func TestStepLog(t *testing.T) {
 			defer child.End(nil)
 			logging.Infof(childCtx, "I am on the child")
 
-			So(environ.FromCtx(ctx).Get("LOGDOG_NAMESPACE"), ShouldResemble, "fakeNS/step/0/u")
-			So(environ.FromCtx(childCtx).Get("LOGDOG_NAMESPACE"), ShouldResemble, "fakeNS/step/1/u")
+			assert.Loosely(t, environ.FromCtx(ctx).Get("LOGDOG_NAMESPACE"), should.Match("fakeNS/step/0/u"))
+			assert.Loosely(t, environ.FromCtx(childCtx).Get("LOGDOG_NAMESPACE"), should.Match("fakeNS/step/1/u"))
 
-			So(scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), ShouldContainSubstring, "I am on the parent")
-			So(scFake.Data()["fakeNS/step/1/log/0"].GetStreamData(), ShouldContainSubstring, "I am on the child")
+			assert.Loosely(t, scFake.Data()["fakeNS/step/0/log/0"].GetStreamData(), should.ContainSubstring("I am on the parent"))
+			assert.Loosely(t, scFake.Data()["fakeNS/step/1/log/0"].GetStreamData(), should.ContainSubstring("I am on the child"))
 		})
 
-		Convey(`can open datagram logs`, func() {
+		t.Run(`can open datagram logs`, func(t *ftt.Test) {
 			step, _ := StartStep(ctx, "some step")
 			log := step.LogDatagram("some log")
 			log.WriteDatagram([]byte("here's some stuff"))
 			step.End(nil)
 
-			So(step.stepPb, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, step.stepPb, should.Resemble(&bbpb.Step{
 				Name:      "some step",
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				EndTime:   timestamppb.New(testclock.TestRecentTimeUTC),
@@ -318,17 +319,17 @@ func TestStepLog(t *testing.T) {
 					// {Name: "log", Url: "step/0/log/0"},
 					{Name: "some log", Url: "step/0/log/1"},
 				},
-			})
+			}))
 
-			So(scFake.Data()["fakeNS/step/0/log/1"].GetDatagrams(), ShouldContain, "here's some stuff")
+			assert.Loosely(t, scFake.Data()["fakeNS/step/0/log/1"].GetDatagrams(), should.Contain("here's some stuff"))
 		})
 
-		Convey(`sets LOGDOG_NAMESPACE`, func() {
+		t.Run(`sets LOGDOG_NAMESPACE`, func(t *ftt.Test) {
 			_, subCtx := StartStep(ctx, "some step")
-			So(environ.FromCtx(subCtx).Get(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/0/u")
+			assert.Loosely(t, environ.FromCtx(subCtx).Get(luciexe.LogdogNamespaceEnv), should.Equal("fakeNS/step/0/u"))
 
 			_, subSubCtx := StartStep(ctx, "some sub step")
-			So(environ.FromCtx(subSubCtx).Get(luciexe.LogdogNamespaceEnv), ShouldEqual, "fakeNS/step/1/u")
+			assert.Loosely(t, environ.FromCtx(subSubCtx).Get(luciexe.LogdogNamespaceEnv), should.Equal("fakeNS/step/1/u"))
 		})
 	})
 }

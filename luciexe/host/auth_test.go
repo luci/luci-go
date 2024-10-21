@@ -33,9 +33,12 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // Use this instead of ShouldStartWith to avoid logging a real token if the
@@ -56,7 +59,8 @@ func tokenShouldStartWith(actual any, expected ...any) string {
 	return ""
 }
 
-func testCtx() (context.Context, func()) {
+func testCtx(t testing.TB) (context.Context, func()) {
+	t.Helper()
 	ctx := context.Background()
 	if testing.Verbose() {
 		ctx = logging.SetLevel(gologger.StdConfig.Use(ctx), logging.Debug)
@@ -74,43 +78,43 @@ func testCtx() (context.Context, func()) {
 		DefaultAccountID: "task",
 	}
 	la, err := fakeAuth.Start(ctx)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	ctx = lucictx.SetLocalAuth(ctx, la)
 
 	return ctx, func() { fakeAuth.Stop(ctx) }
 }
 
 func TestAuth(t *testing.T) {
-	Convey(`test auth environment`, t, func() {
-		ctx, closer := testCtx()
+	ftt.Run(`test auth environment`, t, func(t *ftt.Test) {
+		ctx, closer := testCtx(t)
 		defer closer()
 
-		Convey(`default`, func(c C) {
+		t.Run(`default`, func(c *ftt.Test) {
 			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
-				c.Convey("Task account is available", func() {
+				c.Run("Task account is available", func(c *ftt.Test) {
 					a := auth.NewAuthenticator(ctx, auth.SilentLogin, auth.Options{
 						Method: auth.LUCIContextMethod,
 					})
 					email, err := a.GetEmail()
-					So(err, ShouldBeNil)
-					So(email, ShouldEqual, "task@example.com")
+					assert.Loosely(c, err, should.BeNil)
+					assert.Loosely(c, email, should.Equal("task@example.com"))
 					tok, err := a.GetAccessToken(time.Minute)
-					So(err, ShouldBeNil)
-					So(tok.AccessToken, tokenShouldStartWith, "task_token_")
+					assert.Loosely(c, err, should.BeNil)
+					assert.Loosely(c, tok.AccessToken, convey.Adapt(tokenShouldStartWith)("task_token_"))
 				})
 
-				c.Convey("Git config is set", func() {
+				c.Run("Git config is set", func(c *ftt.Test) {
 					gitHome := os.Getenv("INFRA_GIT_WRAPPER_HOME")
-					So(gitHome, ShouldNotEqual, "")
+					assert.Loosely(c, gitHome, should.NotEqual(""))
 
 					cfg, err := os.ReadFile(filepath.Join(gitHome, ".gitconfig"))
-					So(err, ShouldBeNil)
+					assert.Loosely(c, err, should.BeNil)
 
-					So(string(cfg), ShouldContainSubstring, "email = task@example.com")
-					So(string(cfg), ShouldContainSubstring, "helper = luci")
+					assert.Loosely(c, string(cfg), should.ContainSubstring("email = task@example.com"))
+					assert.Loosely(c, string(cfg), should.ContainSubstring("helper = luci"))
 				})
 
-				c.Convey("GCE metadata server is faked", func() {
+				c.Run("GCE metadata server is faked", func(c *ftt.Test) {
 					// Note: metadata.OnGCE() and other top-level functions in `metadata`
 					// package are unreliable in this test since their values may be
 					// cached in the process global memory the first time they are called
@@ -121,18 +125,18 @@ func TestAuth(t *testing.T) {
 					md := metadata.NewClient(nil)
 
 					email, err := md.Email("default")
-					So(err, ShouldBeNil)
-					So(email, ShouldEqual, "task@example.com")
+					assert.Loosely(c, err, should.BeNil)
+					assert.Loosely(c, email, should.Equal("task@example.com"))
 
 					tokBody, err := md.Get("instance/service-accounts/default/token")
-					So(err, ShouldBeNil)
+					assert.Loosely(c, err, should.BeNil)
 
 					tok := &oauth2.Token{}
-					So(json.Unmarshal([]byte(tokBody), &tok), ShouldBeNil)
-					So(tok.AccessToken, tokenShouldStartWith, "task_token_")
+					assert.Loosely(c, json.Unmarshal([]byte(tokBody), &tok), should.BeNil)
+					assert.Loosely(c, tok.AccessToken, convey.Adapt(tokenShouldStartWith)("task_token_"))
 				})
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for range ch {
 				// TODO(iannucci): check for Build object contents
 			}

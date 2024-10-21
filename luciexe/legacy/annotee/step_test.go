@@ -24,10 +24,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	annotpb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var annotationStep = &annotpb.Step{
@@ -337,13 +337,13 @@ var expectedStepsFn = func(urlFunc, viewerURLFunc calcURLFunc) []*pb.Step {
 func TestConvertBuildStep(t *testing.T) {
 	t.Parallel()
 
-	Convey("convert", t, func() {
-		Convey("with LogDog URL constructed", func() {
+	ftt.Run("convert", t, func(t *ftt.Test) {
+		t.Run("with LogDog URL constructed", func(t *ftt.Test) {
 			host := "logdog.example.com"
 			prefix := "project/prefix"
 
 			actual, err := ConvertBuildSteps(context.Background(), annotationStep.Substep, true, host, prefix)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := expectedStepsFn(
 				func(logName string) string {
 					return fmt.Sprintf("logdog://%s/%s/+/%s", host, prefix, logName)
@@ -352,16 +352,16 @@ func TestConvertBuildStep(t *testing.T) {
 					return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(prefix+"/+/"+logName))
 				},
 			)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
-		Convey("without LogDog URL constructed", func() {
+		t.Run("without LogDog URL constructed", func(t *ftt.Test) {
 			actual, err := ConvertBuildSteps(context.Background(), annotationStep.Substep, false, "", "")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := expectedStepsFn(
 				func(logName string) string { return logName },
 				func(logName string) string { return "" },
 			)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 	})
 }
@@ -369,7 +369,7 @@ func TestConvertBuildStep(t *testing.T) {
 func TestConvertRootStep(t *testing.T) {
 	t.Parallel()
 
-	Convey("convert", t, func() {
+	ftt.Run("convert", t, func(t *ftt.Test) {
 		rootStep := &annotpb.Step{
 			Started: &timestamppb.Timestamp{Seconds: 1400000000},
 			Ended:   &timestamppb.Timestamp{Seconds: 1500000000},
@@ -462,13 +462,13 @@ func TestConvertRootStep(t *testing.T) {
 
 		var test = func() {
 			actual, err := ConvertRootStep(context.Background(), rootStep)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, expectedBuild)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expectedBuild))
 		}
 
 		test()
 
-		Convey("infra failure build", func() {
+		t.Run("infra failure build", func(t *ftt.Test) {
 			rootStep.Status = annotpb.Status_FAILURE
 			rootStep.FailureDetails = &annotpb.FailureDetails{
 				Type: annotpb.FailureDetails_INFRA,
@@ -481,7 +481,7 @@ func TestConvertRootStep(t *testing.T) {
 			expectedBuild.Output.SummaryMarkdown = expectedBuild.SummaryMarkdown
 			test()
 		})
-		Convey("worst step status", func() {
+		t.Run("worst step status", func(t *ftt.Test) {
 			rootStep.Substep[0].GetStep().Status = annotpb.Status_FAILURE
 
 			expectedBuild.Steps[0].Status = pb.Status_FAILURE
@@ -489,7 +489,7 @@ func TestConvertRootStep(t *testing.T) {
 			expectedBuild.Output.Status = pb.Status_FAILURE
 			test()
 		})
-		Convey("use largest step end time", func() {
+		t.Run("use largest step end time", func(t *ftt.Test) {
 			rootStep.Substep[0].GetStep().Ended = &timestamppb.Timestamp{Seconds: 1600000000}
 
 			expectedBuild.Steps[0].EndTime = &timestamppb.Timestamp{Seconds: 1600000000}

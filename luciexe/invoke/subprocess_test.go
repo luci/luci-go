@@ -34,9 +34,11 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/lucictx"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const (
@@ -108,45 +110,44 @@ func TestMain(m *testing.M) {
 }
 
 func TestSubprocess(t *testing.T) {
-	Convey(`Subprocess`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
-		defer closer()
+	ftt.Run(`Subprocess`, t, func(t *ftt.Test) {
+		ctx, o, tdir := commonOptions(t)
 
 		o.Env.Set(selfTestEnvvar, "1")
 
 		selfArgs := []string{os.Args[0]}
 
-		Convey(`defaults`, func() {
+		t.Run(`defaults`, func(t *ftt.Test) {
 			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
-			So(err, ShouldBeNil)
-			So(sp.Step, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sp.Step, should.BeNil)
 			build, err := sp.Wait()
-			So(err, ShouldBeNil)
-			So(build, ShouldResembleProto, &bbpb.Build{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{}))
 		})
 
-		Convey(`exiterr`, func() {
+		t.Run(`exiterr`, func(t *ftt.Test) {
 			o.Env.Set(selfTestEnvvar, "exiterr")
 			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
-			So(err, ShouldBeNil)
-			So(sp.Step, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sp.Step, should.BeNil)
 			build, err := sp.Wait()
-			So(err, ShouldErrLike, "exit status 97")
-			So(build, ShouldResembleProto, &bbpb.Build{})
+			assert.Loosely(t, err, should.ErrLike("exit status 97"))
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{}))
 		})
 
-		Convey(`collect`, func() {
+		t.Run(`collect`, func(t *ftt.Test) {
 			o.CollectOutput = true
 			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
-			So(err, ShouldBeNil)
-			So(sp.Step, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sp.Step, should.BeNil)
 			build, err := sp.Wait()
-			So(err, ShouldBeNil)
-			So(build, ShouldNotBeNil)
-			So(build.SummaryMarkdown, ShouldEqual, "hi")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, build, should.NotBeNil)
+			assert.Loosely(t, build.SummaryMarkdown, should.Equal("hi"))
 		})
 
-		Convey(`clear fields in initial build`, func() {
+		t.Run(`clear fields in initial build`, func(t *ftt.Test) {
 			o.CollectOutput = true
 			initialBuildTime := time.Date(2020, time.January, 2, 3, 4, 5, 6, time.UTC)
 			ctx, _ := testclock.UseTime(ctx, initialBuildTime)
@@ -165,20 +166,20 @@ func TestSubprocess(t *testing.T) {
 				},
 			}
 			sp, err := Start(ctx, selfArgs, inputBuild, o)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build, err := sp.Wait()
-			So(err, ShouldBeNil)
-			So(build, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, build, should.Resemble(&bbpb.Build{
 				Id:              11,
 				Status:          bbpb.Status_STARTED,
 				SummaryMarkdown: "hi",
 				CreateTime:      timestamppb.New(initialBuildTime),
 				StartTime:       timestamppb.New(initialBuildTime),
 				Tags:            []*bbpb.StringPair{{Key: "foo", Value: "bar"}},
-			})
+			}))
 		})
 
-		Convey(`cancel context`, func() {
+		t.Run(`cancel context`, func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 
@@ -186,22 +187,22 @@ func TestSubprocess(t *testing.T) {
 
 			o.Env.Set(selfTestEnvvar, "hang")
 			sp, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cancel()
 			_, err = sp.Wait()
-			So(err, ShouldErrLike, "waiting for luciexe")
+			assert.Loosely(t, err, should.ErrLike("waiting for luciexe"))
 
-			So(time.Now(), ShouldHappenWithin, time.Second, start)
+			assert.Loosely(t, time.Now(), should.HappenWithin(time.Second, start))
 		})
 
-		Convey(`cancel context before Start`, func() {
+		t.Run(`cancel context before Start`, func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			cancel()
 			_, err := Start(ctx, selfArgs, &bbpb.Build{Id: 1}, o)
-			So(err, ShouldErrLike, "prior to starting subprocess: context canceled")
+			assert.Loosely(t, err, should.ErrLike("prior to starting subprocess: context canceled"))
 		})
 
-		Convey(`deadline`, func() {
+		t.Run(`deadline`, func(t *ftt.Test) {
 			o.Env.Set(selfTestEnvvar, "signal")
 
 			ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -212,7 +213,7 @@ func TestSubprocess(t *testing.T) {
 
 			readyFile := path.Join(tdir, "readyToCatchSignal")
 			sp, err := Start(ctx, append(selfArgs, readyFile), &bbpb.Build{Id: 1}, o)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			timer := time.After(time.Minute)
 			for {
 				select {
@@ -229,34 +230,34 @@ func TestSubprocess(t *testing.T) {
 			}
 			defer os.Remove(readyFile)
 
-			Convey(`interrupt`, func() {
+			t.Run(`interrupt`, func(t *ftt.Test) {
 				shutdown()
 
 				bld, err := sp.Wait()
-				So(err, ShouldContainErr, "luciexe process is interrupted")
-				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
-				So(bld, ShouldResembleProto, &bbpb.Build{})
+				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process is interrupted"))
+				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
+				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))
 			})
 
-			Convey(`timeout`, func() {
+			t.Run(`timeout`, func(t *ftt.Test) {
 				tc.Add(100 * time.Second) // hits soft deadline
 
 				bld, err := sp.Wait()
-				So(err, ShouldContainErr, "luciexe process timed out")
-				So(sp.cmd.ProcessState.ExitCode(), ShouldEqual, terminateExitCode)
-				So(bld, ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process timed out"))
+				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
+				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{
 					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
-				})
+				}))
 			})
 
-			Convey(`closure`, func() {
+			t.Run(`closure`, func(t *ftt.Test) {
 				cancel()
 
 				bld, err := sp.Wait()
-				So(err, ShouldContainErr, "luciexe process's context is cancelled")
+				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process's context is cancelled"))
 				// The exit code for killed process varies on different platform.
-				So(sp.cmd.ProcessState.ExitCode(), ShouldNotEqual, unexpectedErrorExitCode)
-				So(bld, ShouldResembleProto, &bbpb.Build{})
+				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.NotEqual(unexpectedErrorExitCode))
+				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))
 			})
 		})
 	})

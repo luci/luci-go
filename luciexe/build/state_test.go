@@ -25,16 +25,16 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestState(t *testing.T) {
 	t.Parallel()
 
-	Convey(`State`, t, func() {
+	ftt.Run(`State`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		nowpb := timestamppb.New(testclock.TestRecentTimeUTC)
 
@@ -46,65 +46,65 @@ func TestState(t *testing.T) {
 		st, ctx, err := Start(ctx, &bbpb.Build{
 			Infra: origInfra,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			if st != nil {
 				st.End(nil)
 			}
 		}()
 
-		Convey(`StartStep`, func() {
+		t.Run(`StartStep`, func(t *ftt.Test) {
 			step, _ := StartStep(ctx, "some step")
 			defer func() { step.End(nil) }()
 
-			So(st.buildPb.Steps, ShouldResembleProto, []*bbpb.Step{
+			assert.Loosely(t, st.buildPb.Steps, should.Resemble([]*bbpb.Step{
 				{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
-			})
+			}))
 
-			Convey(`child with explicit parent`, func() {
+			t.Run(`child with explicit parent`, func(t *ftt.Test) {
 				child, _ := step.StartStep(ctx, "child step")
 				defer func() { child.End(nil) }()
 
-				So(st.buildPb.Steps, ShouldResembleProto, []*bbpb.Step{
+				assert.Loosely(t, st.buildPb.Steps, should.Resemble([]*bbpb.Step{
 					{Name: "some step", StartTime: nowpb, Status: bbpb.Status_STARTED},
 					{Name: "some step|child step", StartTime: nowpb, Status: bbpb.Status_STARTED},
-				})
+				}))
 			})
 		})
 
-		Convey(`End`, func() {
-			Convey(`cannot End twice`, func() {
+		t.Run(`End`, func(t *ftt.Test) {
+			t.Run(`cannot End twice`, func(t *ftt.Test) {
 				st.End(nil)
-				So(func() { st.End(nil) }, ShouldPanicLike, "cannot mutate ended build")
+				assert.Loosely(t, func() { st.End(nil) }, should.PanicLike("cannot mutate ended build"))
 				st = nil
 			})
 		})
 
-		Convey(`Build.Infra()`, func() {
+		t.Run(`Build.Infra()`, func(t *ftt.Test) {
 			build := st.Build()
-			So(build.GetInfra().Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
+			assert.Loosely(t, build.GetInfra().Buildbucket.ServiceConfigRevision, should.Match("I am a string"))
 			build.GetInfra().Buildbucket.ServiceConfigRevision = "narf"
-			So(origInfra.Buildbucket.ServiceConfigRevision, ShouldResemble, "I am a string")
+			assert.Loosely(t, origInfra.Buildbucket.ServiceConfigRevision, should.Match("I am a string"))
 
 		})
 	})
 
-	Convey(`nil build`, t, func() {
+	ftt.Run(`nil build`, t, func(t *ftt.Test) {
 		st, _, err := Start(context.Background(), nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			if st != nil {
 				st.End(nil)
 			}
 		}()
-		So(st.Build().GetInfra(), ShouldBeNil)
+		assert.Loosely(t, st.Build().GetInfra(), should.BeNil)
 	})
 }
 
 func TestStateLogging(t *testing.T) {
 	t.Parallel()
 
-	Convey(`State logging`, t, func() {
+	ftt.Run(`State logging`, t, func(t *ftt.Test) {
 		scFake, lc := streamclient.NewUnregisteredFake("fakeNS")
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
@@ -124,21 +124,21 @@ func TestStateLogging(t *testing.T) {
 			},
 			Infra: buildInfra,
 		}, OptLogsink(lc))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() { st.End(nil) }()
-		So(st, ShouldNotBeNil)
+		assert.Loosely(t, st, should.NotBeNil)
 
-		Convey(`existing logs are reserved`, func() {
-			So(st.logNames.pool, ShouldResemble, map[string]int{
+		t.Run(`existing logs are reserved`, func(t *ftt.Test) {
+			assert.Loosely(t, st.logNames.pool, should.Resemble(map[string]int{
 				"something": 1,
 				"other":     1,
-			})
+			}))
 		})
 
-		Convey(`can open logs`, func() {
+		t.Run(`can open logs`, func(t *ftt.Test) {
 			log := st.Log("some log")
 			fmt.Fprintln(log, "here's some stuff")
-			So(st.buildPb, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, st.buildPb, should.Resemble(&bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
 				Input:     &bbpb.Build_Input{},
@@ -151,20 +151,20 @@ func TestStateLogging(t *testing.T) {
 					Status: bbpb.Status_STARTED,
 				},
 				Infra: buildInfra,
-			})
+			}))
 
-			So(scFake.Data()["fakeNS/log/2"].GetStreamData(), ShouldContainSubstring, "here's some stuff")
+			assert.Loosely(t, scFake.Data()["fakeNS/log/2"].GetStreamData(), should.ContainSubstring("here's some stuff"))
 
 			// Check the link.
 			wantLink := "https://logs.chromium.org/logs/example/builds/8888888888/+/fakeNS/log/2"
-			So(log.UILink(), ShouldEqual, wantLink)
+			assert.Loosely(t, log.UILink(), should.Equal(wantLink))
 		})
 
-		Convey(`can open datagram logs`, func() {
+		t.Run(`can open datagram logs`, func(t *ftt.Test) {
 			log := st.LogDatagram("some log")
 			log.WriteDatagram([]byte("here's some stuff"))
 
-			So(st.buildPb, ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, st.buildPb, should.Resemble(&bbpb.Build{
 				StartTime: timestamppb.New(testclock.TestRecentTimeUTC),
 				Status:    bbpb.Status_STARTED,
 				Input:     &bbpb.Build_Input{},
@@ -177,9 +177,9 @@ func TestStateLogging(t *testing.T) {
 					Status: bbpb.Status_STARTED,
 				},
 				Infra: buildInfra,
-			})
+			}))
 
-			So(scFake.Data()["fakeNS/log/2"].GetDatagrams(), ShouldContain, "here's some stuff")
+			assert.Loosely(t, scFake.Data()["fakeNS/log/2"].GetDatagrams(), should.Contain("here's some stuff"))
 		})
 
 	})
@@ -220,26 +220,26 @@ func (b buildWaiter) sendFn(vers int64, build *bbpb.Build) {
 func TestStateSend(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test that OptSend works`, t, func() {
+	ftt.Run(`Test that OptSend works`, t, func(t *ftt.Test) {
 		lastBuildVers := newBuildWaiter()
 
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 		ts := timestamppb.New(testclock.TestRecentTimeUTC)
 		st, ctx, err := Start(ctx, nil, OptSend(rate.Inf, lastBuildVers.sendFn))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() {
 			if st != nil {
 				st.End(nil)
 			}
 		}()
 
-		Convey(`startup causes no send`, func() {
-			So(func() { lastBuildVers.waitFor(1) }, ShouldPanicLike, "timed out")
+		t.Run(`startup causes no send`, func(t *ftt.Test) {
+			assert.Loosely(t, func() { lastBuildVers.waitFor(1) }, should.PanicLike("timed out"))
 		})
 
-		Convey(`adding a step sends`, func() {
+		t.Run(`adding a step sends`, func(t *ftt.Test) {
 			step, _ := StartStep(ctx, "something")
-			So(lastBuildVers.waitFor(2), ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, lastBuildVers.waitFor(2), should.Resemble(&bbpb.Build{
 				Status:    bbpb.Status_STARTED,
 				StartTime: ts,
 				Input:     &bbpb.Build_Input{},
@@ -253,11 +253,11 @@ func TestStateSend(t *testing.T) {
 						Status:    bbpb.Status_STARTED,
 					},
 				},
-			})
+			}))
 
-			Convey(`closing a step sends`, func() {
+			t.Run(`closing a step sends`, func(t *ftt.Test) {
 				step.End(nil)
-				So(lastBuildVers.waitFor(3), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, lastBuildVers.waitFor(3), should.Resemble(&bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -272,12 +272,12 @@ func TestStateSend(t *testing.T) {
 							Status:    bbpb.Status_SUCCESS,
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`manipulating a step sends`, func() {
+			t.Run(`manipulating a step sends`, func(t *ftt.Test) {
 				step.SetSummaryMarkdown("hey")
-				So(lastBuildVers.waitFor(3), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, lastBuildVers.waitFor(3), should.Resemble(&bbpb.Build{
 					Status:    bbpb.Status_STARTED,
 					StartTime: ts,
 					Input:     &bbpb.Build_Input{},
@@ -292,14 +292,14 @@ func TestStateSend(t *testing.T) {
 							SummaryMarkdown: "hey",
 						},
 					},
-				})
+				}))
 			})
 		})
 
-		Convey(`ending build sends`, func() {
+		t.Run(`ending build sends`, func(t *ftt.Test) {
 			st.End(nil)
 			st = nil
-			So(lastBuildVers.waitFor(1), ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, lastBuildVers.waitFor(1), should.Resemble(&bbpb.Build{
 				Status:    bbpb.Status_SUCCESS,
 				StartTime: ts,
 				EndTime:   ts,
@@ -307,7 +307,7 @@ func TestStateSend(t *testing.T) {
 				Output: &bbpb.Build_Output{
 					Status: bbpb.Status_SUCCESS,
 				},
-			})
+			}))
 		})
 
 	})
@@ -316,47 +316,47 @@ func TestStateSend(t *testing.T) {
 func TestStateView(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Test State View functionality`, t, func() {
+	ftt.Run(`Test State View functionality`, t, func(t *ftt.Test) {
 		st, _, err := Start(context.Background(), nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer func() { st.End(nil) }()
 
-		Convey(`SetSummaryMarkdown`, func() {
+		t.Run(`SetSummaryMarkdown`, func(t *ftt.Test) {
 			st.SetSummaryMarkdown("hi")
 
-			So(st.buildPb.SummaryMarkdown, ShouldResemble, "hi")
+			assert.Loosely(t, st.buildPb.SummaryMarkdown, should.Match("hi"))
 
 			st.SetSummaryMarkdown("there")
 
-			So(st.buildPb.SummaryMarkdown, ShouldResemble, "there")
+			assert.Loosely(t, st.buildPb.SummaryMarkdown, should.Match("there"))
 		})
 
-		Convey(`SetCritical`, func() {
+		t.Run(`SetCritical`, func(t *ftt.Test) {
 			st.SetCritical(bbpb.Trinary_YES)
 
-			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_YES)
+			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_YES))
 
 			st.SetCritical(bbpb.Trinary_NO)
 
-			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_NO)
+			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_NO))
 
 			st.SetCritical(bbpb.Trinary_UNSET)
 
-			So(st.buildPb.Critical, ShouldResemble, bbpb.Trinary_UNSET)
+			assert.Loosely(t, st.buildPb.Critical, should.Resemble(bbpb.Trinary_UNSET))
 		})
 
-		Convey(`SetGitilesCommit`, func() {
+		t.Run(`SetGitilesCommit`, func(t *ftt.Test) {
 			st.SetGitilesCommit(&bbpb.GitilesCommit{
 				Host: "a host",
 			})
 
-			So(st.buildPb.Output.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			assert.Loosely(t, st.buildPb.Output.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 				Host: "a host",
-			})
+			}))
 
 			st.SetGitilesCommit(nil)
 
-			So(st.buildPb.Output.GitilesCommit, ShouldBeNil)
+			assert.Loosely(t, st.buildPb.Output.GitilesCommit, should.BeNil)
 		})
 	})
 }

@@ -21,11 +21,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func init() {
@@ -39,26 +40,26 @@ func init() {
 }
 
 func TestButler(t *testing.T) {
-	Convey(`test butler environment`, t, func() {
-		ctx, closer := testCtx()
+	ftt.Run(`test butler environment`, t, func(t *ftt.Test) {
+		ctx, closer := testCtx(t)
 		defer closer()
 
-		Convey(`butler active within Run`, func(c C) {
+		t.Run(`butler active within Run`, func(c *ftt.Test) {
 			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 				bs, err := bootstrap.Get()
-				c.So(err, ShouldBeNil)
-				c.So(bs.Client, ShouldNotBeNil)
-				c.So(bs.Project, ShouldEqual, "null")
-				c.So(bs.Prefix, ShouldEqual, types.StreamName("null"))
-				c.So(bs.Namespace, ShouldEqual, types.StreamName("u"))
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, bs.Client, should.NotBeNil)
+				assert.Loosely(c, bs.Project, should.Equal("null"))
+				assert.Loosely(c, bs.Prefix, should.Equal(types.StreamName("null")))
+				assert.Loosely(c, bs.Namespace, should.Equal(types.StreamName("u")))
 
 				stream, err := bs.Client.NewStream(ctx, "sup")
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				defer stream.Close()
 				_, err = stream.Write([]byte("HELLO"))
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for range ch {
 				// TODO(iannucci): check for Build object contents
 			}

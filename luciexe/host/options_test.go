@@ -18,15 +18,16 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/viewer"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestOptions(t *testing.T) {
-	Convey(`test Options`, t, func() {
-		Convey(`initialize sets logdogTags`, func() {
+	ftt.Run(`test Options`, t, func(t *ftt.Test) {
+		t.Run(`initialize sets logdogTags`, func(t *ftt.Test) {
 			opts := Options{}
 			builder := &bbpb.BuilderID{
 				Builder: "builder-a",
@@ -34,28 +35,28 @@ func TestOptions(t *testing.T) {
 				Project: "proj-c",
 			}
 
-			Convey(`logdog viewer URL`, func() {
+			t.Run(`logdog viewer URL`, func(t *ftt.Test) {
 				opts.ViewerURL = "https://example.org"
 
 				// w/ BaseBuild
 				opts.BaseBuild = &bbpb.Build{Builder: builder}
-				So(opts.initialize(), ShouldBeNil)
-				So(opts.logdogTags, ShouldResemble, streamproto.TagMap{
+				assert.Loosely(t, opts.initialize(), should.BeNil)
+				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
 					"buildbucket.builder":     "builder-a",
 					"buildbucket.bucket":      "bucket-b",
 					"buildbucket.project":     "proj-c",
 					viewer.LogDogViewerURLTag: "https://example.org",
-				})
+				}))
 
 				// w/o BaseBuild
 				opts.BaseBuild = nil
-				So(opts.initialize(), ShouldBeNil)
-				So(opts.logdogTags, ShouldResemble, streamproto.TagMap{
+				assert.Loosely(t, opts.initialize(), should.BeNil)
+				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
 					viewer.LogDogViewerURLTag: "https://example.org",
-				})
+				}))
 			})
 
-			Convey(`buildbucket`, func() {
+			t.Run(`buildbucket`, func(t *ftt.Test) {
 				opts.BaseBuild = &bbpb.Build{Builder: builder}
 
 				// w/ ViewerURL
@@ -63,12 +64,12 @@ func TestOptions(t *testing.T) {
 
 				// w/o ViewerURL
 				opts.ViewerURL = ""
-				So(opts.initialize(), ShouldBeNil)
-				So(opts.logdogTags, ShouldResemble, streamproto.TagMap{
+				assert.Loosely(t, opts.initialize(), should.BeNil)
+				assert.Loosely(t, opts.logdogTags, should.Resemble(streamproto.TagMap{
 					"buildbucket.builder": "builder-a",
 					"buildbucket.bucket":  "bucket-b",
 					"buildbucket.project": "proj-c",
-				})
+				}))
 			})
 		})
 	})

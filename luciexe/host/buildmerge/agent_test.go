@@ -26,13 +26,12 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/reflectutil"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func mkDesc(name string) *logpb.LogStreamDescriptor {
@@ -46,16 +45,16 @@ func mkDesc(name string) *logpb.LogStreamDescriptor {
 func TestAgent(t *testing.T) {
 	t.Parallel()
 
-	Convey(`buildState`, t, func() {
+	ftt.Run(`buildState`, t, func(t *ftt.Test) {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 		ctx, cancel := context.WithCancel(ctx)
 
 		baseProps, err := structpb.NewStruct(map[string]any{
 			"test": "value",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		base := &bbpb.Build{
 			Input: &bbpb.Build_Input{
@@ -71,7 +70,7 @@ func TestAgent(t *testing.T) {
 		merger, err := New(ctx, "u/", base, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), ""
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer merger.Close()
 		defer cancel()
 
@@ -82,22 +81,22 @@ func TestAgent(t *testing.T) {
 			return
 		}
 
-		Convey(`can close without any data`, func() {
+		t.Run(`can close without any data`, func(t *ftt.Test) {
 			merger.Close()
 			build := <-merger.MergedBuildC
 
 			base.Output.Logs[0].Url = "url://u/stdout"
 
-			So(build, ShouldResembleProto, base)
+			assert.Loosely(t, build, should.Resemble(base))
 		})
 
-		Convey(`bad stream type`, func() {
+		t.Run(`bad stream type`, func(t *ftt.Test) {
 			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
 				Name:        "u/build.proto",
 				StreamType:  logpb.StreamType_TEXT, // should be DATAGRAM
 				ContentType: luciexe.BuildProtoContentType,
 			})
-			So(cb, ShouldBeNil)
+			assert.Loosely(t, cb, should.BeNil)
 			// NOTE: here and below we do ShouldBeTrue on `ok` instead of using
 			// ShouldNotBeNil on `tracker`. This is because ShouldNotBeNil is
 			// currently (as of Sep'19) implemented in terms of ShouldBeNil, which
@@ -105,9 +104,9 @@ func TestAgent(t *testing.T) {
 			// causes the race detector to claim that we're reading the contents of
 			// the atomic.Value in tracker without a lock (which is true).
 			tracker, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -116,20 +115,20 @@ func TestAgent(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "\n\nError in build protocol: build proto stream \"u/build.proto\" has type \"TEXT\", expected \"DATAGRAM\"",
 				},
-			})
+			}))
 		})
 
-		Convey(`bad content type`, func() {
+		t.Run(`bad content type`, func(t *ftt.Test) {
 			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
 				Name:        "u/build.proto",
 				StreamType:  logpb.StreamType_DATAGRAM,
 				ContentType: "i r bad",
 			})
-			So(cb, ShouldBeNil)
+			assert.Loosely(t, cb, should.BeNil)
 			tracker, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -138,20 +137,20 @@ func TestAgent(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: stream \"u/build.proto\" has content type \"i r bad\", expected one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
 				},
-			})
+			}))
 		})
 
-		Convey(`build.proto suffix but bad stream type and content type `, func() {
+		t.Run(`build.proto suffix but bad stream type and content type `, func(t *ftt.Test) {
 			cb := merger.onNewStream(&logpb.LogStreamDescriptor{
 				Name:        "u/build.proto",
 				StreamType:  logpb.StreamType_TEXT,
 				ContentType: "i r bad",
 			})
-			So(cb, ShouldBeNil)
+			assert.Loosely(t, cb, should.BeNil)
 			tracker, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			So(tracker.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, tracker.getLatestBuild(), should.Resemble(&bbpb.Build{
 				EndTime:         now,
 				UpdateTime:      now,
 				Status:          bbpb.Status_INFRA_FAILURE,
@@ -160,28 +159,28 @@ func TestAgent(t *testing.T) {
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: fmt.Sprintf("\n\nError in build protocol: build.proto stream \"u/build.proto\" has stream type \"TEXT\" and content type \"i r bad\", expected \"DATAGRAM\" and one of %v", []string{luciexe.BuildProtoContentType, luciexe.BuildProtoZlibContentType}),
 				},
-			})
+			}))
 		})
 
-		Convey(`ignores out-of-namespace streams`, func() {
-			So(merger.onNewStream(&logpb.LogStreamDescriptor{Name: "uprefix"}), ShouldBeNil)
-			So(merger.onNewStream(&logpb.LogStreamDescriptor{Name: "nope/something"}), ShouldBeNil)
-			So(merger.states, ShouldBeEmpty)
+		t.Run(`ignores out-of-namespace streams`, func(t *ftt.Test) {
+			assert.Loosely(t, merger.onNewStream(&logpb.LogStreamDescriptor{Name: "uprefix"}), should.BeNil)
+			assert.Loosely(t, merger.onNewStream(&logpb.LogStreamDescriptor{Name: "nope/something"}), should.BeNil)
+			assert.Loosely(t, merger.states, should.BeEmpty)
 		})
 
-		Convey(`ignores new registrations on closure`, func() {
+		t.Run(`ignores new registrations on closure`, func(t *ftt.Test) {
 			merger.Close()
 			merger.onNewStream(mkDesc("u/build.proto"))
-			So(merger.states, ShouldBeEmpty)
+			assert.Loosely(t, merger.states, should.BeEmpty)
 		})
 
-		Convey(`will merge+relay root proto only`, func() {
+		t.Run(`will merge+relay root proto only`, func(t *ftt.Test) {
 			cb := merger.onNewStream(mkDesc("u/build.proto"))
-			So(cb, ShouldNotBeNil)
+			assert.Loosely(t, cb, should.NotBeNil)
 			tracker, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			tracker.handleNewData(mkDgram(&bbpb.Build{
+			tracker.handleNewData(mkDgram(t, &bbpb.Build{
 				Steps: []*bbpb.Step{
 					{Name: "Hello"},
 				},
@@ -192,23 +191,23 @@ func TestAgent(t *testing.T) {
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(mergedBuild, ShouldResembleProto, expect)
+			assert.Loosely(t, mergedBuild, should.Resemble(expect))
 
 			merger.Close()
 			<-merger.MergedBuildC // final build
 		})
 
-		Convey(`can emit changes for merge steps`, func() {
+		t.Run(`can emit changes for merge steps`, func(t *ftt.Test) {
 			merger.onNewStream(mkDesc("u/build.proto"))
 			merger.onNewStream(mkDesc("u/sub/build.proto"))
 
 			rootTrack, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 			subTrack, ok := merger.states["url://u/sub/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			// No merge step yet
-			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+			rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
 				Steps: []*bbpb.Step{
 					{Name: "Hello"},
 				},
@@ -217,19 +216,19 @@ func TestAgent(t *testing.T) {
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Hello"})
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
-			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
 			// order of updates doesn't matter, so we'll update the sub build first
-			subTrack.handleNewData(mkDgram(&bbpb.Build{
+			subTrack.handleNewData(mkDgram(t, &bbpb.Build{
 				Steps: []*bbpb.Step{
 					{Name: "SubStep"},
 				},
 			}))
 			// the root stream doesn't have the merge step yet, so it doesn't show up.
-			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
 			// Ok, now add the merge step
-			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+			rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
 				Steps: []*bbpb.Step{
 					{Name: "Hello"},
 					{Name: "Merge",
@@ -246,9 +245,9 @@ func TestAgent(t *testing.T) {
 			})
 			expect.Steps = append(expect.Steps, &bbpb.Step{Name: "Merge|SubStep"})
 			expect.UpdateTime = now
-			So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+			assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
-			Convey(`and shut down`, func() {
+			t.Run(`and shut down`, func(t *ftt.Test) {
 				merger.Close()
 				expect.EndTime = now
 				expect.Status = bbpb.Status_INFRA_FAILURE
@@ -265,15 +264,15 @@ func TestAgent(t *testing.T) {
 						step.SummaryMarkdown = "\n\nError in build protocol: Expected a terminal build status, got STATUS_UNSPECIFIED, while top level status is STATUS_UNSPECIFIED."
 					}
 				}
-				So(getFinal(), ShouldResembleProto, expect)
+				assert.Loosely(t, getFinal(), should.Resemble(expect))
 			})
 
-			Convey(`can handle recursive merge steps`, func() {
+			t.Run(`can handle recursive merge steps`, func(t *ftt.Test) {
 				merger.onNewStream(mkDesc("u/sub/super_deep/build.proto"))
 				superTrack, ok := merger.states["url://u/sub/super_deep/build.proto"]
-				So(ok, ShouldBeTrue)
+				assert.Loosely(t, ok, should.BeTrue)
 
-				subTrack.handleNewData(mkDgram(&bbpb.Build{
+				subTrack.handleNewData(mkDgram(t, &bbpb.Build{
 					Steps: []*bbpb.Step{
 						{Name: "SubStep"},
 						{Name: "SuperDeep",
@@ -283,7 +282,7 @@ func TestAgent(t *testing.T) {
 					},
 				}))
 				<-merger.MergedBuildC // digest subTrack update
-				superTrack.handleNewData(mkDgram(&bbpb.Build{
+				superTrack.handleNewData(mkDgram(t, &bbpb.Build{
 					Steps: []*bbpb.Step{
 						{Name: "Hi!"},
 					},
@@ -299,9 +298,9 @@ func TestAgent(t *testing.T) {
 						Name: "Merge|SuperDeep|Hi!",
 					},
 				)
-				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
-				Convey(`and shut down`, func() {
+				t.Run(`and shut down`, func(t *ftt.Test) {
 					merger.Close()
 
 					expect.EndTime = now
@@ -320,13 +319,13 @@ func TestAgent(t *testing.T) {
 							step.SummaryMarkdown = "step was never finalized; did the build crash?"
 						}
 					}
-					So(getFinal(), ShouldResembleProto, expect)
+					assert.Loosely(t, getFinal(), should.Resemble(expect))
 				})
 			})
 
-			Convey(`and merge sub-build successfully as it becomes invalid`, func() {
+			t.Run(`and merge sub-build successfully as it becomes invalid`, func(t *ftt.Test) {
 				// added an invalid step to sub build
-				subTrack.handleNewData(mkDgram(&bbpb.Build{
+				subTrack.handleNewData(mkDgram(t, &bbpb.Build{
 					Steps: []*bbpb.Step{
 						{Name: "SubStep"},
 						{
@@ -338,7 +337,7 @@ func TestAgent(t *testing.T) {
 					},
 				}))
 
-				Convey(`and shut down`, func() {
+				t.Run(`and shut down`, func(t *ftt.Test) {
 					merger.Close()
 
 					expect.EndTime = now
@@ -379,17 +378,17 @@ func TestAgent(t *testing.T) {
 							SummaryMarkdown: "bad log url \"emoji 💩 is not a valid url\": illegal character ( ) at index 5",
 						},
 					)
-					So(getFinal(), ShouldResembleProto, expect)
+					assert.Loosely(t, getFinal(), should.Resemble(expect))
 				})
 			})
 		})
 
-		Convey(`can merge sub-build`, func() {
+		t.Run(`can merge sub-build`, func(t *ftt.Test) {
 			merger.onNewStream(mkDesc("u/build.proto"))
 			rootTrack, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+			rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
 				Steps: []*bbpb.Step{
 					{
 						Name:   "Merge",
@@ -406,7 +405,7 @@ func TestAgent(t *testing.T) {
 			expect.UpdateTime = now
 			expect.Output.Logs[0].Url = "url://u/stdout"
 
-			Convey(`when sub-build stream has not been registered yet`, func() {
+			t.Run(`when sub-build stream has not been registered yet`, func(t *ftt.Test) {
 				expect.Steps = []*bbpb.Step{
 					{
 						Name:   "Merge",
@@ -417,10 +416,10 @@ func TestAgent(t *testing.T) {
 						SummaryMarkdown: "build.proto stream: \"url://u/sub/build.proto\" is not registered",
 					},
 				}
-				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
-				Convey(`Append existing SummaryMarkdown`, func() {
-					rootTrack.handleNewData(mkDgram(&bbpb.Build{
+				t.Run(`Append existing SummaryMarkdown`, func(t *ftt.Test) {
+					rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
 						Steps: []*bbpb.Step{
 							{
 								Name:            "Merge",
@@ -443,13 +442,13 @@ func TestAgent(t *testing.T) {
 							SummaryMarkdown: "existing summary\n\nbuild.proto stream: \"url://u/sub/build.proto\" is not registered",
 						},
 					}
-					So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+					assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 				})
 
-				Convey(`then registered but stream is empty`, func() {
+				t.Run(`then registered but stream is empty`, func(t *ftt.Test) {
 					merger.onNewStream(mkDesc("u/sub/build.proto"))
 					subTrack, ok := merger.states["url://u/sub/build.proto"]
-					So(ok, ShouldBeTrue)
+					assert.Loosely(t, ok, should.BeTrue)
 					expect.Steps = []*bbpb.Step{
 						{
 							Name:   "Merge",
@@ -461,11 +460,11 @@ func TestAgent(t *testing.T) {
 						},
 					}
 					// send something random to kick off a merge.
-					merger.onNewStream(mkDesc("u/unknown/build.proto"))(mkDgram(&bbpb.Build{}))
-					So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+					merger.onNewStream(mkDesc("u/unknown/build.proto"))(mkDgram(t, &bbpb.Build{}))
+					assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 
-					Convey(`finally merge properly when sub-build stream is present`, func() {
-						subTrack.handleNewData(mkDgram(&bbpb.Build{
+					t.Run(`finally merge properly when sub-build stream is present`, func(t *ftt.Test) {
+						subTrack.handleNewData(mkDgram(t, &bbpb.Build{
 							Status: bbpb.Status_SUCCESS,
 							Output: &bbpb.Build_Output{
 								Status: bbpb.Status_SUCCESS,
@@ -484,24 +483,24 @@ func TestAgent(t *testing.T) {
 							},
 							{Name: "Merge|SubStep"},
 						}
-						So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+						assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 					})
 
 				})
 			})
 		})
 
-		Convey(`can merge sub-build into global namespace`, func() {
+		t.Run(`can merge sub-build into global namespace`, func(t *ftt.Test) {
 			merger.onNewStream(mkDesc("u/build.proto"))
 			rootTrack, ok := merger.states["url://u/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			baseProps, err := structpb.NewStruct(map[string]any{
 				"something": "value",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			rootTrack.handleNewData(mkDgram(&bbpb.Build{
+			rootTrack.handleNewData(mkDgram(t, &bbpb.Build{
 				Output: &bbpb.Build_Output{
 					Properties: baseProps,
 				},
@@ -542,15 +541,15 @@ func TestAgent(t *testing.T) {
 
 			merger.onNewStream(mkDesc("u/sub/build.proto"))
 			subTrack, ok := merger.states["url://u/sub/build.proto"]
-			So(ok, ShouldBeTrue)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			Convey(`Overwrites properties`, func() {
+			t.Run(`Overwrites properties`, func(t *ftt.Test) {
 				subProps, err := structpb.NewStruct(map[string]any{
 					"new":       "prop",
 					"something": "overwrite",
 				})
-				So(err, ShouldBeNil)
-				subTrack.handleNewData(mkDgram(&bbpb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				subTrack.handleNewData(mkDgram(t, &bbpb.Build{
 					Output: &bbpb.Build_Output{
 						Properties: subProps,
 						Status:     bbpb.Status_STARTED,
@@ -564,7 +563,7 @@ func TestAgent(t *testing.T) {
 				expect.Output.Properties.Fields["new"] = structpb.NewStringValue("prop")
 				expect.Output.Properties.Fields["something"] = structpb.NewStringValue("overwrite")
 				expect.Steps[0].SummaryMarkdown = ""
-				So(<-merger.MergedBuildC, ShouldResembleProto, expect)
+				assert.Loosely(t, <-merger.MergedBuildC, should.Resemble(expect))
 			})
 
 		})

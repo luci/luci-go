@@ -18,18 +18,17 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExtractProperties(t *testing.T) {
 	t.Parallel()
 
-	Convey("ExtractProperties", t, func() {
+	ftt.Run("ExtractProperties", t, func(t *ftt.Test) {
 		root := &Step{}
 		err := proto.UnmarshalText(`
 			substep {
@@ -56,7 +55,7 @@ func TestExtractProperties(t *testing.T) {
 					}
 				}
 			}`, root)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		expected := &structpb.Struct{}
 		err = protojson.Unmarshal([]byte(`
@@ -65,10 +64,10 @@ func TestExtractProperties(t *testing.T) {
 				"b": "str",
 				"c": [1]
 			}`), expected)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		actual, err := ExtractProperties(root)
-		So(err, ShouldBeNil)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

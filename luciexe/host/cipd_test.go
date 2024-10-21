@@ -24,12 +24,13 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 )
 
@@ -96,7 +97,7 @@ func TestHelperProcess(t *testing.T) {
 
 func TestPrependPath(t *testing.T) {
 	originalPathEnv := os.Getenv("PATH")
-	Convey("prependPath", t, func() {
+	ftt.Run("prependPath", t, func(t *ftt.Test) {
 		defer func() {
 			_ = os.Setenv("PATH", originalPathEnv)
 		}()
@@ -145,14 +146,14 @@ func TestPrependPath(t *testing.T) {
 		}
 
 		cwd, err := os.Getwd()
-		So(err, ShouldBeNil)
-		So(prependPath(build, cwd), ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, prependPath(build, cwd), should.BeNil)
 		pathEnv := os.Getenv("PATH")
 		var expectedPath []string
 		for _, p := range []string{"path_a", "path_a/bin", "path_b", "path_b/bin"} {
 			expectedPath = append(expectedPath, filepath.Join(cwd, p))
 		}
-		So(strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), ShouldBeTrue)
+		assert.Loosely(t, strings.Contains(pathEnv, strings.Join(expectedPath, string(os.PathListSeparator))), should.BeTrue)
 	})
 }
 
@@ -160,7 +161,7 @@ func TestInstallCipdPackages(t *testing.T) {
 	t.Parallel()
 	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
 	caseBase := "cache"
-	Convey("installCipdPackages", t, func() {
+	ftt.Run("installCipdPackages", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx = memlogger.Use(ctx)
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
@@ -201,83 +202,83 @@ func TestInstallCipdPackages(t *testing.T) {
 			},
 		}
 
-		Convey("without named cache", func() {
-			Convey("success", func() {
+		t.Run("without named cache", func(t *ftt.Test) {
+			t.Run("success", func(t *ftt.Test) {
 				testCase = "success"
 				cwd, err := os.Getwd()
-				So(err, ShouldBeNil)
-				So(installCipdPackages(ctx, build, cwd, caseBase), ShouldBeNil)
-				So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, installCipdPackages(ctx, build, cwd, caseBase), should.BeNil)
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Resemble(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 						},
 					},
-				})
-				So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				}))
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Resemble(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("failure", func() {
+			t.Run("failure", func(t *ftt.Test) {
 				testCase = "failure"
 				err := installCipdPackages(ctx, build, ".", caseBase)
-				So(build.Infra.Buildbucket.Agent.Output.ResolvedData, ShouldBeNil)
-				So(err, ShouldErrLike, "Failed to run cipd ensure command")
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData, should.BeNil)
+				assert.Loosely(t, err, should.ErrLike("Failed to run cipd ensure command"))
 			})
 		})
 
-		Convey("with named cache", func() {
+		t.Run("with named cache", func(t *ftt.Test) {
 			build.Infra.Buildbucket.Agent.CipdPackagesCache = &bbpb.CacheEntry{
 				Name: "cipd_cache_hash",
 				Path: "cipd_cache",
 			}
 			testCase = "success"
 			cwd, err := os.Getwd()
-			So(err, ShouldBeNil)
-			So(installCipdPackages(ctx, build, cwd, caseBase), ShouldBeNil)
-			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, installCipdPackages(ctx, build, cwd, caseBase), should.BeNil)
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_a"], should.Resemble(&bbpb.ResolvedDataRef{
 				DataType: &bbpb.ResolvedDataRef_Cipd{
 					Cipd: &bbpb.ResolvedDataRef_CIPD{
 						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_a"][0].Package, Version: successResult.Result["path_a"][0].InstanceID}},
 					},
 				},
-			})
-			So(build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], ShouldResembleProto, &bbpb.ResolvedDataRef{
+			}))
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData["path_b"], should.Resemble(&bbpb.ResolvedDataRef{
 				DataType: &bbpb.ResolvedDataRef_Cipd{
 					Cipd: &bbpb.ResolvedDataRef_CIPD{
 						Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result["path_b"][0].Package, Version: successResult.Result["path_b"][0].InstanceID}},
 					},
 				},
-			})
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Info, fmt.Sprintf(`Setting $CIPD_CACHE_DIR to %q`, filepath.Join(caseBase, "cipd_cache")))
+			}))
+			assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+				logging.Info, fmt.Sprintf(`Setting $CIPD_CACHE_DIR to %q`, filepath.Join(caseBase, "cipd_cache"))))
 		})
 
-		Convey("handle kitchenCheckout", func() {
-			Convey("kitchenCheckout not in agent input", func() {
+		t.Run("handle kitchenCheckout", func(t *ftt.Test) {
+			t.Run("kitchenCheckout not in agent input", func(t *ftt.Test) {
 				testCase = "success"
 				build.Exe = &bbpb.Executable{
 					CipdPackage: "package",
 					CipdVersion: "version",
 				}
 				cwd, err := os.Getwd()
-				So(err, ShouldBeNil)
-				So(installCipdPackages(ctx, build, cwd, "cache"), ShouldBeNil)
-				So(build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], ShouldEqual, bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
-				So(build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, installCipdPackages(ctx, build, cwd, "cache"), should.BeNil)
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], should.Equal(bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Resemble(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},
 						},
 					},
-				})
+				}))
 			})
-			Convey("kitchenCheckout in agent input", func() {
+			t.Run("kitchenCheckout in agent input", func(t *ftt.Test) {
 				testCase = "success"
 				build.Exe = &bbpb.Executable{
 					CipdPackage: "package",
@@ -294,16 +295,16 @@ func TestInstallCipdPackages(t *testing.T) {
 					kitchenCheckout: bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
 				}
 				cwd, err := os.Getwd()
-				So(err, ShouldBeNil)
-				So(installCipdPackages(ctx, build, cwd, "cache"), ShouldBeNil)
-				So(build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], ShouldEqual, bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD)
-				So(build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], ShouldResembleProto, &bbpb.ResolvedDataRef{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, installCipdPackages(ctx, build, cwd, "cache"), should.BeNil)
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Purposes[kitchenCheckout], should.Equal(bbpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
+				assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.ResolvedData[kitchenCheckout], should.Resemble(&bbpb.ResolvedDataRef{
 					DataType: &bbpb.ResolvedDataRef_Cipd{
 						Cipd: &bbpb.ResolvedDataRef_CIPD{
 							Specs: []*bbpb.ResolvedDataRef_CIPD_PkgSpec{{Package: successResult.Result[kitchenCheckout][0].Package, Version: successResult.Result[kitchenCheckout][0].InstanceID}},
 						},
 					},
-				})
+				}))
 			})
 		})
 	})
@@ -311,7 +312,7 @@ func TestInstallCipdPackages(t *testing.T) {
 
 func TestInstallCipd(t *testing.T) {
 	t.Parallel()
-	Convey("InstallCipd", t, func() {
+	ftt.Run("InstallCipd", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = memlogger.Use(ctx)
 		logs := logging.Get(ctx).(*memlogger.MemLogger)
@@ -367,67 +368,67 @@ func TestInstallCipd(t *testing.T) {
 		tempDir := t.TempDir()
 		cacheBase := "cache"
 		cipdURL := "https://chrome-infra-packages.appspot.com/client?platform=linux-amd64&version=latest"
-		Convey("without cache", func() {
+		t.Run("without cache", func(t *ftt.Test) {
 			err := installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// check to make sure cipd is correctly saved in the directory
 			cipdDir := filepath.Join(tempDir, "cipd")
 			files, err := os.ReadDir(cipdDir)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			for _, file := range files {
-				So(file.Name(), ShouldEqual, "cipd")
+				assert.Loosely(t, file.Name(), should.Equal("cipd"))
 			}
 			// check the cipd path in set in PATH
 			pathEnv := os.Getenv("PATH")
-			So(strings.Contains(pathEnv, "cipd"), ShouldBeTrue)
-			So(logs, memlogger.ShouldHaveLog,
-				logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdDir))
+			assert.Loosely(t, strings.Contains(pathEnv, "cipd"), should.BeTrue)
+			assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+				logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdDir)))
 		})
 
-		Convey("with cache", func() {
+		t.Run("with cache", func(t *ftt.Test) {
 			build.Infra.Buildbucket.Agent.CipdClientCache = &bbpb.CacheEntry{
 				Name: "cipd_client_hash",
 				Path: "cipd_client",
 			}
 			cipdCacheDir := filepath.Join(tempDir, cacheBase, "cipd_client")
 			err := os.MkdirAll(cipdCacheDir, 0750)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("hit", func() {
+			t.Run("hit", func(t *ftt.Test) {
 				// create an empty file as if it's the cipd client.
 				err := os.WriteFile(filepath.Join(cipdCacheDir, "cipd"), []byte(""), 0644)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				err = installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// check to make sure cipd is correctly saved in the directory
 				files, err := os.ReadDir(cipdCacheDir)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				for _, file := range files {
-					So(file.Name(), ShouldEqual, "cipd")
+					assert.Loosely(t, file.Name(), should.Equal("cipd"))
 				}
-				So(logs, memlogger.ShouldNotHaveLog,
-					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldNotHaveLog)(
+					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir)))
 
 				// check the cipd path in set in PATH
 				pathEnv := os.Getenv("PATH")
-				So(strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), ShouldBeTrue)
+				assert.Loosely(t, strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), should.BeTrue)
 			})
 
-			Convey("miss", func() {
+			t.Run("miss", func(t *ftt.Test) {
 				err := installCipd(ctx, build, tempDir, cacheBase, "linux-amd64")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// check to make sure cipd is correctly saved in the directory
 				files, err := os.ReadDir(cipdCacheDir)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				for _, file := range files {
-					So(file.Name(), ShouldEqual, "cipd")
+					assert.Loosely(t, file.Name(), should.Equal("cipd"))
 				}
-				So(logs, memlogger.ShouldHaveLog,
-					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+					logging.Info, fmt.Sprintf("Install CIPD client from URL: %s into %s", cipdURL, cipdCacheDir)))
 
 				// check the cipd path in set in PATH
 				pathEnv := os.Getenv("PATH")
-				So(strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), ShouldBeTrue)
+				assert.Loosely(t, strings.Contains(pathEnv, strings.Join([]string{cipdCacheDir, filepath.Join(cipdCacheDir, "bin")}, string(os.PathListSeparator))), should.BeTrue)
 			})
 		})
 	})

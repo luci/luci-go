@@ -15,34 +15,35 @@
 package build
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNameTracker(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Name Tracker`, t, func() {
+	ftt.Run(`Name Tracker`, t, func(t *ftt.Test) {
 		nt := &nameTracker{}
 
-		Convey(`unique names`, func() {
-			So(nt.resolveName("hello"), ShouldEqual, "hello")
-			So(nt.resolveName("bob"), ShouldEqual, "bob")
+		t.Run(`unique names`, func(t *ftt.Test) {
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello"))
+			assert.Loosely(t, nt.resolveName("bob"), should.Equal("bob"))
 		})
 
-		Convey(`simple duplicates`, func() {
-			So(nt.resolveName("hello"), ShouldEqual, "hello")
-			So(nt.resolveName("hello"), ShouldEqual, "hello (2)")
-			So(nt.resolveName("hello"), ShouldEqual, "hello (3)")
+		t.Run(`simple duplicates`, func(t *ftt.Test) {
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello"))
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello (2)"))
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello (3)"))
 		})
 
-		Convey(`poisoned duplicates`, func() {
-			So(nt.resolveName("hello (2)"), ShouldEqual, "hello (2)")
+		t.Run(`poisoned duplicates`, func(t *ftt.Test) {
+			assert.Loosely(t, nt.resolveName("hello (2)"), should.Equal("hello (2)"))
 
-			So(nt.resolveName("hello"), ShouldEqual, "hello")
-			So(nt.resolveName("hello"), ShouldEqual, "hello (3)")
-			So(nt.resolveName("hello"), ShouldEqual, "hello (4)")
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello"))
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello (3)"))
+			assert.Loosely(t, nt.resolveName("hello"), should.Equal("hello (4)"))
 		})
 	})
 }

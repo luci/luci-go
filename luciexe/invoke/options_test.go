@@ -16,7 +16,6 @@ package invoke
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -32,13 +31,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var tempEnvVar string
@@ -58,7 +56,8 @@ var nullLogdogEnv = environ.New([]string{
 	bootstrap.EnvCoordinatorHost + "=test.example.com",
 })
 
-func commonOptions() (ctx context.Context, o *Options, tdir string, closer func()) {
+func commonOptions(t testing.TB) (ctx context.Context, o *Options, tdir string) {
+	t.Helper()
 	ctx, _ = testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 	ctx = lucictx.SetDeadline(ctx, nil)
 
@@ -66,20 +65,13 @@ func commonOptions() (ctx context.Context, o *Options, tdir string, closer func(
 	// In this context the test binary is the host. It's more
 	// convenient+accurate to have a non-hermetic test than to mock this out.
 	oldTemp := os.Getenv(tempEnvVar)
-	closer = func() {
+	t.Cleanup(func() {
 		if err := os.Setenv(tempEnvVar, oldTemp); err != nil {
 			panic(err)
 		}
-		if tdir != "" {
-			So(os.RemoveAll(tdir), ShouldBeNil)
-		}
-	}
+	})
 
-	var err error
-	if tdir, err = ioutil.TempDir("", "luciexe_test"); err != nil {
-		closer() // want to do cleanup if ioutil.TempDir failed
-		So(err, ShouldBeNil)
-	}
+	tdir = t.TempDir()
 	if err := os.Setenv(tempEnvVar, tdir); err != nil {
 		panic(err)
 	}
@@ -92,10 +84,10 @@ func commonOptions() (ctx context.Context, o *Options, tdir string, closer func(
 }
 
 func TestOptionsGeneral(t *testing.T) {
-	Convey(`test Options (general)`, t, func() {
+	ftt.Run(`test Options (general)`, t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
-		Convey(`works with nil`, func() {
+		t.Run(`works with nil`, func(t *ftt.Test) {
 			// TODO(iannucci): really gotta put all these envvars in LUCI_CONTEXT...
 			oldVals := map[string]string{}
 			for k, v := range nullLogdogEnv.Map() {
@@ -118,48 +110,47 @@ func TestOptionsGeneral(t *testing.T) {
 			expected.Add(lucictx.EnvKey)
 
 			lo, _, err := ((*Options)(nil)).rationalize(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			envKeys := stringset.New(expected.Len())
 			lo.env.Iter(func(k, _ string) error {
 				envKeys.Add(k)
 				return nil
 			})
-			So(envKeys, ShouldResemble, expected)
+			assert.Loosely(t, envKeys, should.Resemble(expected))
 		})
 	})
 }
 
 func TestOptionsNamespace(t *testing.T) {
-	Convey(`test Options.Namespace`, t, func() {
-		ctx, o, _, closer := commonOptions()
-		defer closer()
+	ftt.Run(`test Options.Namespace`, t, func(t *ftt.Test) {
+		ctx, o, _ := commonOptions(t)
 
 		nowP := timestamppb.New(clock.Now(ctx))
 
-		Convey(`default`, func() {
+		t.Run(`default`, func(t *ftt.Test) {
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "")
-			So(lo.step, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace), should.BeBlank)
+			assert.Loosely(t, lo.step, should.BeNil)
 		})
 
-		Convey(`errors`, func() {
-			Convey(`bad clock`, func() {
+		t.Run(`errors`, func(t *ftt.Test) {
+			t.Run(`bad clock`, func(t *ftt.Test) {
 				o.Namespace = "yarp"
 				ctx, _ := testclock.UseTime(ctx, time.Unix(-100000000000, 0))
 
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "preparing namespace: invalid StartTime")
+				assert.Loosely(t, err, should.ErrLike("preparing namespace: invalid StartTime"))
 			})
 		})
 
-		Convey(`toplevel`, func() {
+		t.Run(`toplevel`, func(t *ftt.Test) {
 			o.Namespace = "u"
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u")
-			So(lo.step, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace), should.Match("u"))
+			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
 				Name:      "u",
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -170,16 +161,16 @@ func TestOptionsNamespace(t *testing.T) {
 				MergeBuild: &bbpb.Step_MergeBuild{
 					FromLogdogStream: "u/build.proto",
 				},
-			})
+			}))
 		})
 
-		Convey(`nested`, func() {
+		t.Run(`nested`, func(t *ftt.Test) {
 			o.Env.Set(bootstrap.EnvNamespace, "u/bar")
 			o.Namespace = "sub"
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get(bootstrap.EnvNamespace), ShouldResemble, "u/bar/sub")
-			So(lo.step, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace), should.Match("u/bar/sub"))
+			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
 				Name:      "sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -190,17 +181,17 @@ func TestOptionsNamespace(t *testing.T) {
 				MergeBuild: &bbpb.Step_MergeBuild{
 					FromLogdogStream: "sub/build.proto",
 				},
-			})
+			}))
 		})
 
-		Convey(`deeply nested`, func() {
+		t.Run(`deeply nested`, func(t *ftt.Test) {
 			o.Env.Set(bootstrap.EnvNamespace, "u")
 			o.Namespace = "step|!!cool!!|sub"
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get(bootstrap.EnvNamespace),
-				ShouldResemble, "u/step/s___cool__/sub")
-			So(lo.step, ShouldResembleProto, &bbpb.Step{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get(bootstrap.EnvNamespace),
+				should.Match("u/step/s___cool__/sub"))
+			assert.Loosely(t, lo.step, should.Resemble(&bbpb.Step{
 				Name:      "step|!!cool!!|sub", // host application will swizzle this
 				StartTime: nowP,
 				Status:    bbpb.Status_STARTED,
@@ -211,164 +202,162 @@ func TestOptionsNamespace(t *testing.T) {
 				MergeBuild: &bbpb.Step_MergeBuild{
 					FromLogdogStream: "step/s___cool__/sub/build.proto",
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestOptionsCacheDir(t *testing.T) {
-	Convey(`Options.CacheDir`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
-		defer closer()
+	ftt.Run(`Options.CacheDir`, t, func(t *ftt.Test) {
+		ctx, o, tdir := commonOptions(t)
 
-		Convey(`default`, func() {
+		t.Run(`default`, func(t *ftt.Test) {
 			_, ctx, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			lexe := lucictx.GetLUCIExe(ctx)
-			So(lexe, ShouldNotBeNil)
-			So(lexe.CacheDir, ShouldStartWith, tdir)
+			assert.Loosely(t, lexe, should.NotBeNil)
+			assert.Loosely(t, lexe.CacheDir, should.HavePrefix(tdir))
 		})
 
-		Convey(`override`, func() {
+		t.Run(`override`, func(t *ftt.Test) {
 			o.CacheDir = filepath.Join(tdir, "cache")
-			So(os.Mkdir(o.CacheDir, 0777), ShouldBeNil)
+			assert.Loosely(t, os.Mkdir(o.CacheDir, 0777), should.BeNil)
 			_, ctx, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			lexe := lucictx.GetLUCIExe(ctx)
-			So(lexe, ShouldNotBeNil)
-			So(lexe.CacheDir, ShouldEqual, o.CacheDir)
+			assert.Loosely(t, lexe, should.NotBeNil)
+			assert.Loosely(t, lexe.CacheDir, should.Equal(o.CacheDir))
 		})
 
-		Convey(`errors`, func() {
-			Convey(`empty cache dir set`, func() {
+		t.Run(`errors`, func(t *ftt.Test) {
+			t.Run(`empty cache dir set`, func(t *ftt.Test) {
 				ctx := lucictx.SetLUCIExe(ctx, &lucictx.LUCIExe{})
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, `"cache_dir" is empty`)
+				assert.Loosely(t, err, should.ErrLike(`"cache_dir" is empty`))
 			})
 
-			Convey(`bad override (doesn't exist)`, func() {
+			t.Run(`bad override (doesn't exist)`, func(t *ftt.Test) {
 				o.CacheDir = filepath.Join(tdir, "cache")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "checking CacheDir: dir does not exist")
+				assert.Loosely(t, err, should.ErrLike("checking CacheDir: dir does not exist"))
 			})
 
-			Convey(`bad override (not a dir)`, func() {
+			t.Run(`bad override (not a dir)`, func(t *ftt.Test) {
 				o.CacheDir = filepath.Join(tdir, "cache")
-				So(os.WriteFile(o.CacheDir, []byte("not a dir"), 0666), ShouldBeNil)
+				assert.Loosely(t, os.WriteFile(o.CacheDir, []byte("not a dir"), 0666), should.BeNil)
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "checking CacheDir: path is not a directory")
+				assert.Loosely(t, err, should.ErrLike("checking CacheDir: path is not a directory"))
 			})
 		})
 	})
 }
 
 func TestOptionsCollectOutput(t *testing.T) {
-	Convey(`Options.CollectOutput`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
-		defer closer()
+	ftt.Run(`Options.CollectOutput`, t, func(t *ftt.Test) {
+		ctx, o, tdir := commonOptions(t)
 
-		Convey(`default`, func() {
+		t.Run(`default`, func(t *ftt.Test) {
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.args, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.args, should.BeEmpty)
 			out, err := luciexe.ReadBuildFile(lo.collectPath)
-			So(err, ShouldBeNil)
-			So(out, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, out, should.BeNil)
 		})
 
-		Convey(`errors`, func() {
-			Convey(`bad extension`, func() {
+		t.Run(`errors`, func(t *ftt.Test) {
+			t.Run(`bad extension`, func(t *ftt.Test) {
 				o.CollectOutputPath = filepath.Join(tdir, "output.fleem")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "bad extension for build proto file path")
+				assert.Loosely(t, err, should.ErrLike("bad extension for build proto file path"))
 			})
 
-			Convey(`already exists`, func() {
+			t.Run(`already exists`, func(t *ftt.Test) {
 				outPath := filepath.Join(tdir, "output.pb")
 				o.CollectOutputPath = outPath
-				So(os.WriteFile(outPath, nil, 0666), ShouldBeNil)
+				assert.Loosely(t, os.WriteFile(outPath, nil, 0666), should.BeNil)
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "CollectOutputPath points to an existing file")
+				assert.Loosely(t, err, should.ErrLike("CollectOutputPath points to an existing file"))
 			})
 
-			Convey(`parent is not a dir`, func() {
+			t.Run(`parent is not a dir`, func(t *ftt.Test) {
 				parDir := filepath.Join(tdir, "parent")
-				So(os.WriteFile(parDir, nil, 0666), ShouldBeNil)
+				assert.Loosely(t, os.WriteFile(parDir, nil, 0666), should.BeNil)
 				o.CollectOutputPath = filepath.Join(parDir, "out.pb")
 
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "checking CollectOutputPath's parent: path is not a directory")
+				assert.Loosely(t, err, should.ErrLike("checking CollectOutputPath's parent: path is not a directory"))
 			})
 
-			Convey(`no parent folder`, func() {
+			t.Run(`no parent folder`, func(t *ftt.Test) {
 				o.CollectOutputPath = filepath.Join(tdir, "extra", "output.fleem")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "checking CollectOutputPath's parent: dir does not exist")
+				assert.Loosely(t, err, should.ErrLike("checking CollectOutputPath's parent: dir does not exist"))
 			})
 		})
 
-		Convey(`parseOutput`, func() {
+		t.Run(`parseOutput`, func(t *ftt.Test) {
 			expected := &bbpb.Build{SummaryMarkdown: "I'm a summary."}
 			testParseOutput := func(expectedData []byte, checkFilename func(string)) {
 				lo, _, err := o.rationalize(ctx)
-				So(err, ShouldBeNil)
-				So(lo.args, ShouldHaveLength, 2)
-				So(lo.args[0], ShouldEqual, luciexe.OutputCLIArg)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, lo.args, should.HaveLength(2))
+				assert.Loosely(t, lo.args[0], should.Equal(luciexe.OutputCLIArg))
 				checkFilename(lo.args[1])
 
 				_, err = luciexe.ReadBuildFile(lo.collectPath)
-				So(err, ShouldErrLike, "opening build file")
+				assert.Loosely(t, err, should.ErrLike("opening build file"))
 
-				So(os.WriteFile(lo.args[1], expectedData, 0666), ShouldBeNil)
+				assert.Loosely(t, os.WriteFile(lo.args[1], expectedData, 0666), should.BeNil)
 
 				build, err := luciexe.ReadBuildFile(lo.collectPath)
-				So(err, ShouldBeNil)
-				So(build, ShouldResembleProto, expected)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, build, should.Resemble(expected))
 			}
 
-			Convey(`collect but no specific file`, func() {
+			t.Run(`collect but no specific file`, func(t *ftt.Test) {
 				o.CollectOutput = true
 				data, err := proto.Marshal(expected)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				testParseOutput(data, func(filename string) {
-					So(filename, ShouldStartWith, tdir)
-					So(filename, ShouldEndWith, luciexe.BuildFileCodecBinary.FileExtension())
+					assert.Loosely(t, filename, should.HavePrefix(tdir))
+					assert.Loosely(t, filename, should.HaveSuffix(luciexe.BuildFileCodecBinary.FileExtension()))
 				})
 			})
 
-			Convey(`collect from a binary file`, func() {
+			t.Run(`collect from a binary file`, func(t *ftt.Test) {
 				o.CollectOutput = true
 				outPath := filepath.Join(tdir, "output.pb")
 				o.CollectOutputPath = outPath
 
 				data, err := proto.Marshal(expected)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				testParseOutput(data, func(filename string) {
-					So(filename, ShouldEqual, outPath)
+					assert.Loosely(t, filename, should.Equal(outPath))
 				})
 			})
 
-			Convey(`collect from a json file`, func() {
+			t.Run(`collect from a json file`, func(t *ftt.Test) {
 				o.CollectOutput = true
 				outPath := filepath.Join(tdir, "output.json")
 				o.CollectOutputPath = outPath
 
 				data, err := (&jsonpb.Marshaler{OrigName: true}).MarshalToString(expected)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				testParseOutput([]byte(data), func(filename string) {
-					So(filename, ShouldEqual, outPath)
+					assert.Loosely(t, filename, should.Equal(outPath))
 				})
 			})
 
-			Convey(`collect from a textpb file`, func() {
+			t.Run(`collect from a textpb file`, func(t *ftt.Test) {
 				o.CollectOutput = true
 				outPath := filepath.Join(tdir, "output.textpb")
 				o.CollectOutputPath = outPath
 
 				testParseOutput([]byte(expected.String()), func(filename string) {
-					So(filename, ShouldEqual, outPath)
+					assert.Loosely(t, filename, should.Equal(outPath))
 				})
 			})
 		})
@@ -376,13 +365,12 @@ func TestOptionsCollectOutput(t *testing.T) {
 }
 
 func TestOptionsEnv(t *testing.T) {
-	Convey(`Env`, t, func() {
-		ctx, o, _, closer := commonOptions()
-		defer closer()
+	ftt.Run(`Env`, t, func(t *ftt.Test) {
+		ctx, o, _ := commonOptions(t)
 
-		Convey(`default`, func() {
+		t.Run(`default`, func(t *ftt.Test) {
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expected := stringset.NewFromSlice(luciexe.TempDirEnvVars...)
 			for key := range o.Env.Map() {
@@ -395,71 +383,69 @@ func TestOptionsEnv(t *testing.T) {
 				actual.Add(key)
 			}
 
-			So(actual, ShouldResemble, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 	})
 }
 
 func TestOptionsStdio(t *testing.T) {
-	Convey(`stdio`, t, func() {
-		ctx, o, _, closer := commonOptions()
-		defer closer()
+	ftt.Run(`stdio`, t, func(t *ftt.Test) {
+		ctx, o, _ := commonOptions(t)
 
-		Convey(`default`, func() {
+		t.Run(`default`, func(t *ftt.Test) {
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.stderr, ShouldNotBeNil)
-			So(lo.stdout, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.stderr, should.NotBeNil)
+			assert.Loosely(t, lo.stdout, should.NotBeNil)
 		})
 
-		Convey(`errors`, func() {
-			Convey(`bad bootstrap (missing)`, func() {
+		t.Run(`errors`, func(t *ftt.Test) {
+			t.Run(`bad bootstrap (missing)`, func(t *ftt.Test) {
 				o.Env.Remove(bootstrap.EnvStreamServerPath)
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, "Logdog Butler environment required")
+				assert.Loosely(t, err, should.ErrLike("Logdog Butler environment required"))
 			})
 
-			Convey(`bad bootstrap (malformed)`, func() {
+			t.Run(`bad bootstrap (malformed)`, func(t *ftt.Test) {
 				o.Env.Set(bootstrap.EnvStreamPrefix, "!!!!")
 				_, _, err := o.rationalize(ctx)
-				So(err, ShouldErrLike, `failed to validate prefix "!!!!"`)
+				assert.Loosely(t, err, should.ErrLike(`failed to validate prefix "!!!!"`))
 			})
 		})
 	})
 }
 
 func TestOptionsExtraDirs(t *testing.T) {
-	Convey(`tempDir+workDir`, t, func() {
-		ctx, o, tdir, closer := commonOptions()
-		defer closer()
+	ftt.Run(`tempDir+workDir`, t, func(t *ftt.Test) {
+		ctx, o, tdir := commonOptions(t)
 
-		Convey(`provided BaseDir`, func() {
+		t.Run(`provided BaseDir`, func(t *ftt.Test) {
 			o.BaseDir = filepath.Join(tdir, "base")
-			So(os.Mkdir(o.BaseDir, 0777), ShouldBeNil)
+			assert.Loosely(t, os.Mkdir(o.BaseDir, 0777), should.BeNil)
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get("TMP"), ShouldStartWith, o.BaseDir)
-			So(lo.workDir, ShouldStartWith, o.BaseDir)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get("TMP"), should.HavePrefix(o.BaseDir))
+			assert.Loosely(t, lo.workDir, should.HavePrefix(o.BaseDir))
 		})
 
-		Convey(`provided BaseDir does not exist`, func() {
+		t.Run(`provided BaseDir does not exist`, func(t *ftt.Test) {
 			o.BaseDir = filepath.Join(tdir, "base")
 			_, _, err := o.rationalize(ctx)
-			So(err, ShouldErrLike, "checking BaseDir: dir does not exist")
+			assert.Loosely(t, err, should.ErrLike("checking BaseDir: dir does not exist"))
 		})
 
-		Convey(`provided BaseDir is not a directory`, func() {
+		t.Run(`provided BaseDir is not a directory`, func(t *ftt.Test) {
 			o.BaseDir = filepath.Join(tdir, "base")
-			So(os.WriteFile(o.BaseDir, []byte("not a dir"), 0666), ShouldBeNil)
+			assert.Loosely(t, os.WriteFile(o.BaseDir, []byte("not a dir"), 0666), should.BeNil)
 			_, _, err := o.rationalize(ctx)
-			So(err, ShouldErrLike, "checking BaseDir: path is not a directory")
+			assert.Loosely(t, err, should.ErrLike("checking BaseDir: path is not a directory"))
 		})
 
-		Convey(`fallback to temp`, func() {
+		t.Run(`fallback to temp`, func(t *ftt.Test) {
 			lo, _, err := o.rationalize(ctx)
-			So(err, ShouldBeNil)
-			So(lo.env.Get("TMP"), ShouldStartWith, tdir)
-			So(lo.workDir, ShouldStartWith, tdir)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, lo.env.Get("TMP"), should.HavePrefix(tdir))
+			assert.Loosely(t, lo.workDir, should.HavePrefix(tdir))
 		})
 	})
 }

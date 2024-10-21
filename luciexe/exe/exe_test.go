@@ -30,19 +30,18 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExe(t *testing.T) {
 	t.Parallel()
 
-	Convey(`test exe`, t, func() {
+	ftt.Run(`test exe`, t, func(t *ftt.Test) {
 		scFake := streamclient.NewFake()
 		defer scFake.Unregister()
 
@@ -57,13 +56,13 @@ func TestExe(t *testing.T) {
 		getBuilds := func(decompress bool) []*bbpb.Build {
 			fakeData := scFake.Data()["test_namespace/build.proto"]
 			if decompress {
-				So(fakeData.GetFlags().ContentType, ShouldEqual, luciexe.BuildProtoZlibContentType)
+				assert.Loosely(t, fakeData.GetFlags().ContentType, should.Equal(luciexe.BuildProtoZlibContentType))
 			} else {
-				So(fakeData.GetFlags().ContentType, ShouldEqual, luciexe.BuildProtoContentType)
+				assert.Loosely(t, fakeData.GetFlags().ContentType, should.Equal(luciexe.BuildProtoContentType))
 			}
 
 			dgs := fakeData.GetDatagrams()
-			So(len(dgs), ShouldBeGreaterThanOrEqualTo, 1)
+			assert.Loosely(t, len(dgs), should.BeGreaterThanOrEqual(1))
 
 			ret := make([]*bbpb.Build, len(dgs))
 			for i, dg := range dgs {
@@ -73,14 +72,14 @@ func TestExe(t *testing.T) {
 
 				if decompress {
 					r, err := zlib.NewReader(bytes.NewBufferString(dg))
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					data, err = io.ReadAll(r)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				} else {
 					data = []byte(dg)
 				}
 
-				So(proto.Unmarshal(data, ret[i]), ShouldBeNil)
+				assert.Loosely(t, proto.Unmarshal(data, ret[i]), should.BeNil)
 			}
 			return ret
 		}
@@ -91,28 +90,28 @@ func TestExe(t *testing.T) {
 
 		args := []string{"fake_test_executable"}
 
-		Convey(`basic`, func() {
-			Convey(`success`, func() {
+		t.Run(`basic`, func(t *ftt.Test) {
+			t.Run(`success`, func(t *ftt.Test) {
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.Status = bbpb.Status_SCHEDULED
 					return nil
 				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.BeZero)
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status: bbpb.Status_SUCCESS,
 					Output: &bbpb.Build_Output{
 						Properties: &structpb.Struct{},
 						Status:     bbpb.Status_SUCCESS,
 					},
-				})
+				}))
 			})
 
-			Convey(`failure`, func() {
+			t.Run(`failure`, func(t *ftt.Test) {
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff")
 				})
-				So(exitCode, ShouldEqual, 1)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.Equal(1))
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Final error: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -120,15 +119,15 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_FAILURE,
 						SummaryMarkdown: "Final error: bad stuff",
 					},
-				})
+				}))
 			})
 
-			Convey(`infra failure`, func() {
+			t.Run(`infra failure`, func(t *ftt.Test) {
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					return errors.New("bad stuff", InfraErrorTag)
 				})
-				So(exitCode, ShouldEqual, 1)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.Equal(1))
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final infra error: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -136,15 +135,15 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: "Final infra error: bad stuff",
 					},
-				})
+				}))
 			})
 
-			Convey(`panic`, func() {
+			t.Run(`panic`, func(t *ftt.Test) {
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					panic(errors.New("bad stuff"))
 				})
-				So(exitCode, ShouldEqual, 2)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.Equal(2))
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "Final panic: bad stuff",
 					Output: &bbpb.Build_Output{
@@ -152,17 +151,17 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: "Final panic: bad stuff",
 					},
-				})
+				}))
 			})
 
-			Convey(`respect user program status`, func() {
+			t.Run(`respect user program status`, func(t *ftt.Test) {
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.Status = bbpb.Status_INFRA_FAILURE
 					build.SummaryMarkdown = "status set inside"
 					return nil
 				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.BeZero)
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_INFRA_FAILURE,
 					SummaryMarkdown: "status set inside",
 					Output: &bbpb.Build_Output{
@@ -170,26 +169,26 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_INFRA_FAILURE,
 						SummaryMarkdown: "status set inside",
 					},
-				})
+				}))
 			})
 		})
 
-		Convey(`send`, func() {
+		t.Run(`send`, func(t *ftt.Test) {
 			exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
 			})
-			So(exitCode, ShouldEqual, 1)
+			assert.Loosely(t, exitCode, should.Equal(1))
 			builds := getBuilds(false)
-			So(len(builds), ShouldEqual, 2)
-			So(builds[0], ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, len(builds), should.Equal(2))
+			assert.Loosely(t, builds[0], should.Resemble(&bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
-			})
-			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
+			}))
+			assert.Loosely(t, builds[len(builds)-1], should.Resemble(&bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
@@ -197,25 +196,25 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				},
-			})
+			}))
 		})
 
-		Convey(`send (zlib)`, func() {
+		t.Run(`send (zlib)`, func(t *ftt.Test) {
 			exitCode := runCtx(ctx, args, []Option{WithZlibCompression(5)}, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 				build.SummaryMarkdown = "Hi. I did stuff."
 				bs()
 				return errors.New("oh no i failed")
 			})
-			So(exitCode, ShouldEqual, 1)
+			assert.Loosely(t, exitCode, should.Equal(1))
 			builds := getBuilds(true)
-			So(len(builds), ShouldEqual, 2)
-			So(builds[0], ShouldResembleProto, &bbpb.Build{
+			assert.Loosely(t, len(builds), should.Equal(2))
+			assert.Loosely(t, builds[0], should.Resemble(&bbpb.Build{
 				SummaryMarkdown: "Hi. I did stuff.",
 				Output: &bbpb.Build_Output{
 					Properties: &structpb.Struct{},
 				},
-			})
-			So(builds[len(builds)-1], ShouldResembleProto, &bbpb.Build{
+			}))
+			assert.Loosely(t, builds[len(builds)-1], should.Resemble(&bbpb.Build{
 				Status:          bbpb.Status_FAILURE,
 				SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				Output: &bbpb.Build_Output{
@@ -223,15 +222,15 @@ func TestExe(t *testing.T) {
 					Status:          bbpb.Status_FAILURE,
 					SummaryMarkdown: "Hi. I did stuff.\n\nFinal error: oh no i failed",
 				},
-			})
+			}))
 		})
 
-		Convey(`output`, func() {
+		t.Run(`output`, func(t *ftt.Test) {
 			tdir, err := ioutil.TempDir("", "luciexe-exe-test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(tdir)
 
-			Convey(`binary`, func() {
+			t.Run(`binary`, func(t *ftt.Test) {
 				outFile := filepath.Join(tdir, "out.pb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
@@ -245,8 +244,8 @@ func TestExe(t *testing.T) {
 
 					return nil
 				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.BeZero)
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -260,22 +259,22 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_SUCCESS,
 						SummaryMarkdown: "Hi.",
 					},
-				})
+				}))
 				data, err := os.ReadFile(outFile)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble,
-					"`\f\x82\x01\x1a\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\x12\x03Hi.0\f\xa2\x01\x03Hi.")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(
+					"`\f\x82\x01\x1a\n\x11\n\x0f\n\x04some\x12\a\x1a\x05thing\x12\x03Hi.0\f\xa2\x01\x03Hi."))
 			})
 
-			Convey(`textpb`, func() {
+			t.Run(`textpb`, func(t *ftt.Test) {
 				outFile := filepath.Join(tdir, "out.textpb")
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.BeZero)
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -283,22 +282,22 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_SUCCESS,
 						SummaryMarkdown: "Hi.",
 					},
-				})
+				}))
 				data, err := os.ReadFile(outFile)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble,
-					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n  status: SUCCESS\n  summary_markdown: \"Hi.\"\n>\n")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(
+					"status: SUCCESS\nsummary_markdown: \"Hi.\"\noutput: <\n  properties: <\n  >\n  status: SUCCESS\n  summary_markdown: \"Hi.\"\n>\n"))
 			})
 
-			Convey(`jsonpb`, func() {
+			t.Run(`jsonpb`, func(t *ftt.Test) {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return nil
 				})
-				So(exitCode, ShouldEqual, 0)
-				So(lastBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, exitCode, should.BeZero)
+				assert.Loosely(t, lastBuild(), should.Resemble(&bbpb.Build{
 					Status:          bbpb.Status_SUCCESS,
 					SummaryMarkdown: "Hi.",
 					Output: &bbpb.Build_Output{
@@ -306,51 +305,51 @@ func TestExe(t *testing.T) {
 						Status:          bbpb.Status_SUCCESS,
 						SummaryMarkdown: "Hi.",
 					},
-				})
+				}))
 				data, err := os.ReadFile(outFile)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"SUCCESS\",\n    \"summary_markdown\": \"Hi.\"\n  }\n}")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(
+					"{\n  \"status\": \"SUCCESS\",\n  \"summary_markdown\": \"Hi.\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"SUCCESS\",\n    \"summary_markdown\": \"Hi.\"\n  }\n}"))
 			})
 
-			Convey(`pass through user args`, func() {
+			t.Run(`pass through user args`, func(t *ftt.Test) {
 				// Delimiter inside user args should also be passed through
 				expectedUserArgs := []string{"foo", "bar", ArgsDelim, "baz"}
-				Convey(`when output is not specified`, func() {
+				t.Run(`when output is not specified`, func(t *ftt.Test) {
 					args = append(args, ArgsDelim)
 					args = append(args, expectedUserArgs...)
 					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-						So(userArgs, ShouldResemble, expectedUserArgs)
+						assert.Loosely(t, userArgs, should.Resemble(expectedUserArgs))
 						return nil
 					})
-					So(exitcode, ShouldEqual, 0)
+					assert.Loosely(t, exitcode, should.BeZero)
 				})
-				Convey(`when output is specified`, func() {
+				t.Run(`when output is specified`, func(t *ftt.Test) {
 					tdir, err := ioutil.TempDir("", "luciexe-exe-test")
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					defer os.RemoveAll(tdir)
 					args = append(args, luciexe.OutputCLIArg, filepath.Join(tdir, "out.pb"), ArgsDelim)
 					args = append(args, expectedUserArgs...)
 					exitcode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
-						So(userArgs, ShouldResemble, expectedUserArgs)
+						assert.Loosely(t, userArgs, should.Resemble(expectedUserArgs))
 						return nil
 					})
-					So(exitcode, ShouldEqual, 0)
+					assert.Loosely(t, exitcode, should.BeZero)
 				})
 			})
 
-			Convey(`write output on error`, func() {
+			t.Run(`write output on error`, func(t *ftt.Test) {
 				outFile := filepath.Join(tdir, "out.json")
 				args = append(args, luciexe.OutputCLIArg, outFile)
 				exitCode := runCtx(ctx, args, nil, func(ctx context.Context, build *bbpb.Build, userArgs []string, bs BuildSender) error {
 					build.SummaryMarkdown = "Hi."
 					return errors.New("bad stuff")
 				})
-				So(exitCode, ShouldEqual, 1)
+				assert.Loosely(t, exitCode, should.Equal(1))
 				data, err := os.ReadFile(outFile)
-				So(err, ShouldBeNil)
-				So(string(data), ShouldResemble,
-					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"FAILURE\",\n    \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\"\n  }\n}")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(data), should.Match(
+					"{\n  \"status\": \"FAILURE\",\n  \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\",\n  \"output\": {\n    \"properties\": {\n      },\n    \"status\": \"FAILURE\",\n    \"summary_markdown\": \"Hi.\\n\\nFinal error: bad stuff\"\n  }\n}"))
 			})
 		})
 	})

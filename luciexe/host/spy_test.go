@@ -24,14 +24,13 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/luciexe"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpy(t *testing.T) {
@@ -39,8 +38,8 @@ func TestSpy(t *testing.T) {
 		t.Skip("disabled on windows due to crbug.com/998936")
 	}
 
-	Convey(`test build spy environment`, t, func() {
-		ctx, closer := testCtx()
+	ftt.Run(`test build spy environment`, t, func(t *ftt.Test) {
+		ctx, closer := testCtx(t)
 		defer closer()
 
 		sawBuild := false
@@ -51,14 +50,14 @@ func TestSpy(t *testing.T) {
 			}
 		}()
 
-		Convey(`butler active within Run`, func(c C) {
+		t.Run(`butler active within Run`, func(c *ftt.Test) {
 			ch, err := Run(ctx, nil, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 				bs, _ := bootstrap.Get()
 
 				stream, err := bs.Client.NewDatagramStream(
 					ctx, luciexe.BuildProtoStreamSuffix,
 					streamclient.WithContentType(luciexe.BuildProtoZlibContentType))
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 				defer stream.Close()
 
 				data, err := proto.Marshal(&bbpb.Build{
@@ -68,18 +67,18 @@ func TestSpy(t *testing.T) {
 						Status: bbpb.Status_SUCCESS,
 					},
 				})
-				c.So(err, ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
 
 				buf := bytes.Buffer{}
 				z := zlib.NewWriter(&buf)
 				_, err = z.Write(data)
-				c.So(err, ShouldBeNil)
-				c.So(z.Close(), ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, z.Close(), should.BeNil)
 				data = buf.Bytes()
 
 				err = stream.WriteDatagram(data)
-				c.So(err, ShouldBeNil)
-				c.So(stream.Close(), ShouldBeNil)
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, stream.Close(), should.BeNil)
 
 				// NOTE: This is very much cheating. Currently (Sept 2019) there's a bug
 				// in Logdog Butler (crbug.com/1007022) where the butler protocol is TOO
@@ -91,27 +90,27 @@ func TestSpy(t *testing.T) {
 				<-sawBuildC
 			})
 
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			for build := range ch {
 				if build.EndTime != nil && !sawBuild {
 					build := proto.Clone(build).(*bbpb.Build)
-					So(build.UpdateTime, ShouldNotBeNil)
-					So(build.EndTime, ShouldNotBeNil)
+					assert.Loosely(c, build.UpdateTime, should.NotBeNil)
+					assert.Loosely(c, build.EndTime, should.NotBeNil)
 					build.UpdateTime = nil
 					build.EndTime = nil
 
-					So(build, ShouldResembleProto, &bbpb.Build{
+					assert.Loosely(c, build, should.Resemble(&bbpb.Build{
 						SummaryMarkdown: "we did it",
 						Status:          bbpb.Status_SUCCESS,
 						Output: &bbpb.Build_Output{
 							Status: bbpb.Status_SUCCESS,
 						},
-					})
+					}))
 					close(sawBuildC)
 					sawBuild = true
 				}
 			}
-			So(sawBuild, ShouldBeTrue)
+			assert.Loosely(c, sawBuild, should.BeTrue)
 		})
 
 	})

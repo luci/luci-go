@@ -18,68 +18,70 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAbsolutize(t *testing.T) {
 	t.Parallel()
-	Convey(`absolutize`, t, func() {
+	ftt.Run(`absolutize`, t, func(t *ftt.Test) {
 		absolutize := func(logURL, viewURL string) (absLogURL, absViewURL string, err error) {
 			return absolutizeURLs(logURL, viewURL, "ns/", func(ns, streamName types.StreamName) (url string, viewUrl string) {
 				return fmt.Sprintf("url://%s%s", ns, streamName), fmt.Sprintf("viewURL://%s%s", ns, streamName)
 			})
 
 		}
-		Convey(`no-op if both urls are absolute`, func() {
+		t.Run(`no-op if both urls are absolute`, func(t *ftt.Test) {
 			absLogURL, absViewURL, err := absolutize("url://ns/log/foo", "viewURL://ns/log/foo")
-			So(err, ShouldBeNil)
-			So(absLogURL, ShouldEqual, "url://ns/log/foo")
-			So(absViewURL, ShouldEqual, "viewURL://ns/log/foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
+			assert.Loosely(t, absViewURL, should.Equal("viewURL://ns/log/foo"))
 		})
 
-		Convey(`calc urls if log url is relative`, func() {
+		t.Run(`calc urls if log url is relative`, func(t *ftt.Test) {
 			absLogURL, absViewURL, err := absolutize("log/foo", "")
-			So(err, ShouldBeNil)
-			So(absLogURL, ShouldEqual, "url://ns/log/foo")
-			So(absViewURL, ShouldEqual, "viewURL://ns/log/foo")
-			Convey(`even when log url has non-alnum char but valid stream char`, func() {
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
+			assert.Loosely(t, absViewURL, should.Equal("viewURL://ns/log/foo"))
+			t.Run(`even when log url has non-alnum char but valid stream char`, func(t *ftt.Test) {
 				absLogURL, absViewURL, err := absolutize("log:hi.hello_hey-aloha/foo", "")
-				So(err, ShouldBeNil)
-				So(absLogURL, ShouldEqual, "url://ns/log:hi.hello_hey-aloha/foo")
-				So(absViewURL, ShouldEqual, "viewURL://ns/log:hi.hello_hey-aloha/foo")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, absLogURL, should.Equal("url://ns/log:hi.hello_hey-aloha/foo"))
+				assert.Loosely(t, absViewURL, should.Equal("viewURL://ns/log:hi.hello_hey-aloha/foo"))
 			})
-			Convey(`omits provided view url`, func() {
+			t.Run(`omits provided view url`, func(t *ftt.Test) {
 				absLogURL, absViewURL, err := absolutize("log/foo", "Hi there!")
-				So(err, ShouldBeNil)
-				So(absLogURL, ShouldEqual, "url://ns/log/foo")
-				So(absViewURL, ShouldEqual, "viewURL://ns/log/foo")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
+				assert.Loosely(t, absViewURL, should.Equal("viewURL://ns/log/foo"))
 			})
 		})
 
-		Convey(`error`, func() {
-			Convey(`if log url is absolute`, func() {
-				Convey(`but view url is empty`, func() {
+		t.Run(`error`, func(t *ftt.Test) {
+			t.Run(`if log url is absolute`, func(t *ftt.Test) {
+				t.Run(`but view url is empty`, func(t *ftt.Test) {
 					absLogURL, absViewURL, err := absolutize("url://ns/log/foo", "")
-					So(err, ShouldErrLike, "absolute log url is provided", "view url is empty")
-					So(absLogURL, ShouldEqual, "url://ns/log/foo")
-					So(absViewURL, ShouldEqual, "")
+					assert.Loosely(t, err, should.ErrLike("absolute log url is provided"))
+					assert.Loosely(t, err, should.ErrLike("view url is empty"))
+					assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
+					assert.Loosely(t, absViewURL, should.BeEmpty)
 				})
-				Convey(`but view url is not absolute`, func() {
+				t.Run(`but view url is not absolute`, func(t *ftt.Test) {
 					absLogURL, absViewURL, err := absolutize("url://ns/log/foo", "log/foo")
-					So(err, ShouldErrLike, "expected absolute view url, got")
-					So(absLogURL, ShouldEqual, "url://ns/log/foo")
-					So(absViewURL, ShouldEqual, "log/foo")
+					assert.Loosely(t, err, should.ErrLike("expected absolute view url, got"))
+					assert.Loosely(t, absLogURL, should.Equal("url://ns/log/foo"))
+					assert.Loosely(t, absViewURL, should.Equal("log/foo"))
 				})
 			})
 
-			Convey(`if log url is relative but not a valid stream`, func() {
+			t.Run(`if log url is relative but not a valid stream`, func(t *ftt.Test) {
 				absLogURL, absViewURL, err := absolutize("log/foo#key=value", "")
-				So(err, ShouldErrLike, "bad log url", "illegal character")
-				So(absLogURL, ShouldEqual, "log/foo#key=value")
-				So(absViewURL, ShouldEqual, "")
+				assert.Loosely(t, err, should.ErrLike("bad log url"))
+				assert.Loosely(t, err, should.ErrLike("illegal character"))
+				assert.Loosely(t, absLogURL, should.Equal("log/foo#key=value"))
+				assert.Loosely(t, absViewURL, should.BeEmpty)
 			})
 		})
 	})

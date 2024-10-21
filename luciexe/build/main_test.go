@@ -34,14 +34,15 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/system/environ"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 
 	"go.chromium.org/luci/luciexe/build/internal/testpb"
 	"go.chromium.org/luci/luciexe/build/properties"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func init() {
@@ -52,7 +53,7 @@ func init() {
 func TestMain(t *testing.T) {
 	// avoid t.Parallel() because this registers property handlers.
 
-	Convey(`Main`, t, func() {
+	ftt.Run(`Main`, t, func(t *ftt.Test) {
 		// reset the property registry
 		Properties = &properties.Registry{}
 		topLevel := RegisterProperty[*testpb.TopLevel]("")
@@ -79,7 +80,7 @@ func TestMain(t *testing.T) {
 
 		mkStruct := func(dictlike map[string]any) *structpb.Struct {
 			s, err := structpb.NewStruct(dictlike)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return s
 		}
 
@@ -90,16 +91,16 @@ func TestMain(t *testing.T) {
 				},
 			}
 			data, err := proto.Marshal(b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			_, err = stdin.Write(data)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
 		getFinal := func() *bbpb.Build {
 			data, err := os.ReadFile(finalBuildPath)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ret := &bbpb.Build{}
-			So(protojson.Unmarshal(data, ret), ShouldBeNil)
+			assert.Loosely(t, protojson.Unmarshal(data, ret), should.BeNil)
 
 			// proto module is cute and tries to introduce non-deterministic
 			// characters into their error messages. This is annoying and unhelpful
@@ -111,14 +112,14 @@ func TestMain(t *testing.T) {
 			return ret
 		}
 
-		Convey(`good`, func() {
-			Convey(`simple`, func() {
+		t.Run(`good`, func(t *ftt.Test) {
+			t.Run(`simple`, func(t *ftt.Test) {
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(args, ShouldBeNil)
+					assert.Loosely(t, args, should.BeNil)
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(getFinal(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
@@ -126,17 +127,17 @@ func TestMain(t *testing.T) {
 						Status: bbpb.Status_SUCCESS,
 					},
 					Input: &bbpb.Build_Input{},
-				})
+				}))
 			})
 
-			Convey(`user args`, func() {
+			t.Run(`user args`, func(t *ftt.Test) {
 				args = append(args, "--", "custom", "stuff")
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(args, ShouldResemble, []string{"custom", "stuff"})
+					assert.Loosely(t, args, should.Resemble([]string{"custom", "stuff"}))
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(getFinal(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_SUCCESS,
@@ -144,45 +145,45 @@ func TestMain(t *testing.T) {
 						Status: bbpb.Status_SUCCESS,
 					},
 					Input: &bbpb.Build_Input{},
-				})
+				}))
 			})
 
-			Convey(`inputProps`, func() {
+			t.Run(`inputProps`, func(t *ftt.Test) {
 				writeStdinProps(map[string]any{
 					"field": "something",
 					"$cool": "blah",
 				})
 
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(topLevel.GetInput(ctx), ShouldResembleProto, &testpb.TopLevel{
+					assert.Loosely(t, topLevel.GetInput(ctx), should.Resemble(&testpb.TopLevel{
 						Field:         "something",
 						JsonNameField: "blah",
-					})
+					}))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`help`, func() {
+			t.Run(`help`, func(t *ftt.Test) {
 				args = append(args, "--help")
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
 					return nil
 				})
-				So(err, ShouldBeNil)
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "`myprogram` is a `luciexe` binary. See go.chromium.org/luci/luciexe.")
-				So(logs, memlogger.ShouldHaveLog, logging.Info, "======= I/O Proto =======")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "`myprogram` is a `luciexe` binary. See go.chromium.org/luci/luciexe."))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Info, "======= I/O Proto ======="))
 				// TODO(iannucci): check I/O proto when implemented
 			})
 		})
 
-		Convey(`errors`, func() {
-			Convey(`returned`, func() {
+		t.Run(`errors`, func(t *ftt.Test) {
+			t.Run(`returned`, func(t *ftt.Test) {
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(args, ShouldBeNil)
+					assert.Loosely(t, args, should.BeNil)
 					return errors.New("bad stuff")
 				})
-				So(err, ShouldEqual, errNonSuccess)
-				So(getFinal(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, should.Equal(errNonSuccess))
+				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_FAILURE,
@@ -190,17 +191,17 @@ func TestMain(t *testing.T) {
 						Status: bbpb.Status_FAILURE,
 					},
 					Input: &bbpb.Build_Input{},
-				})
-				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: FAILURE: bad stuff")
+				}))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "set status: FAILURE: bad stuff"))
 			})
 
-			Convey(`panic`, func() {
+			t.Run(`panic`, func(t *ftt.Test) {
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
-					So(args, ShouldBeNil)
+					assert.Loosely(t, args, should.BeNil)
 					panic("BAD THINGS")
 				})
-				So(err, ShouldEqual, errNonSuccess)
-				So(getFinal(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, err, should.Equal(errNonSuccess))
+				assert.Loosely(t, getFinal(), should.Resemble(&bbpb.Build{
 					StartTime: nowpb,
 					EndTime:   nowpb,
 					Status:    bbpb.Status_INFRA_FAILURE,
@@ -208,12 +209,12 @@ func TestMain(t *testing.T) {
 						Status: bbpb.Status_INFRA_FAILURE,
 					},
 					Input: &bbpb.Build_Input{},
-				})
-				So(logs, memlogger.ShouldHaveLog, logging.Error, "set status: INFRA_FAILURE: PANIC")
-				So(logs, memlogger.ShouldHaveLog, logging.Error, "recovered panic: BAD THINGS")
+				}))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "set status: INFRA_FAILURE: PANIC"))
+				assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(logging.Error, "recovered panic: BAD THINGS"))
 			})
 
-			Convey(`inputProps`, func() {
+			t.Run(`inputProps`, func(t *ftt.Test) {
 				writeStdinProps(map[string]any{
 					"field": 100,
 				})
@@ -221,15 +222,15 @@ func TestMain(t *testing.T) {
 				err := main(ctx, args, stdin, func(ctx context.Context, args []string, st *State) error {
 					return nil
 				})
-				So(err, ShouldErrLike, `invalid value for string field field: 100`)
+				assert.Loosely(t, err, should.ErrLike(`invalid value for string field field: 100`))
 				summary := "fatal error starting build: build.Start: properties.Registry.Instantiate - input[top-level]: protoFromStruct[*testpb.TopLevel]: proto: (line 1:10): invalid value for string field field: 100"
 				final := getFinal()
 				// protobuf package deliberately introduce random prefix:
 				// https://github.com/protocolbuffers/protobuf-go/blob/master/internal/errors/errors.go#L26
-				So(strings.ReplaceAll(final.SummaryMarkdown, "\u00a0", " "), ShouldEqual, summary)
-				So(strings.ReplaceAll(final.Output.SummaryMarkdown, "\u00a0", " "), ShouldEqual, summary)
-				So(final.Status, ShouldEqual, bbpb.Status_INFRA_FAILURE)
-				So(final.Output.Status, ShouldEqual, bbpb.Status_INFRA_FAILURE)
+				assert.Loosely(t, strings.ReplaceAll(final.SummaryMarkdown, "\u00a0", " "), should.Equal(summary))
+				assert.Loosely(t, strings.ReplaceAll(final.Output.SummaryMarkdown, "\u00a0", " "), should.Equal(summary))
+				assert.Loosely(t, final.Status, should.Equal(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, final.Output.Status, should.Equal(bbpb.Status_INFRA_FAILURE))
 			})
 
 		})

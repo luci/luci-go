@@ -19,8 +19,10 @@ import (
 	"runtime"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestResolveExeCmd(t *testing.T) {
@@ -28,7 +30,7 @@ func TestResolveExeCmd(t *testing.T) {
 		t.Skip("unable to resolve luciexe")
 	}
 
-	Convey(`test resolve exe cmd`, t, func() {
+	ftt.Run(`test resolve exe cmd`, t, func(t *ftt.Test) {
 		opts := &Options{
 			BaseBuild: &buildbucketpb.Build{
 				Infra: &buildbucketpb.BuildInfra{Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{}},
@@ -38,13 +40,13 @@ func TestResolveExeCmd(t *testing.T) {
 			},
 		}
 
-		Convey("default", func() {
+		t.Run("default", func(t *ftt.Test) {
 			args, err := ResolveExeCmd(opts, "/default")
-			So(err, ShouldBeNil)
-			So(args, ShouldEqual, []string{"/default/luciexe"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, args, should.Resemble([]string{"/default/luciexe"}))
 		})
 
-		Convey("agent", func() {
+		t.Run("agent", func(t *ftt.Test) {
 			opts.BaseBuild.Infra.Buildbucket.Agent = &buildbucketpb.BuildInfra_Buildbucket_Agent{
 				Purposes: map[string]buildbucketpb.BuildInfra_Buildbucket_Agent_Purpose{
 					"inputs": buildbucketpb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD,
@@ -54,18 +56,18 @@ func TestResolveExeCmd(t *testing.T) {
 			opts.agentInputsDir = "/base"
 
 			args, err := ResolveExeCmd(opts, "/default")
-			So(err, ShouldBeNil)
-			So(args, ShouldEqual, []string{"/base/inputs/luciexe"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, args, should.Resemble([]string{"/base/inputs/luciexe"}))
 		})
 
-		Convey("wrapper", func() {
+		t.Run("wrapper", func(t *ftt.Test) {
 			wrapper, err := os.Executable() // Resolve require wrapper exist; use the test binary.
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			opts.BaseBuild.Exe.Wrapper = []string{wrapper}
 
 			args, err := ResolveExeCmd(opts, "/default")
-			So(err, ShouldBeNil)
-			So(args, ShouldEqual, []string{wrapper, "--", "/default/luciexe"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, args, should.Resemble([]string{wrapper, "--", "/default/luciexe"}))
 		})
 	})
 }

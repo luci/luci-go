@@ -26,17 +26,18 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func mkDgram(build *bbpb.Build) *logpb.LogEntry {
+func mkDgram(t testing.TB, build *bbpb.Build) *logpb.LogEntry {
+	t.Helper()
 	data, err := proto.Marshal(build)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return &logpb.LogEntry{
 		Content: &logpb.LogEntry_Datagram{Datagram: &logpb.Datagram{
 			Data: data,
@@ -49,11 +50,13 @@ func mkDgram(build *bbpb.Build) *logpb.LogEntry {
 // The reason we are doing this is that the proto lib discourage us to perform
 // error string comparison. See:
 // https://github.com/protocolbuffers/protobuf-go/blob/cd108d00a8df3bba55927ef35ca07438b895d7aa/internal/errors/errors.go#L26-L34
-func cleanupProtoError(builds ...*bbpb.Build) {
+func cleanupProtoError(t testing.TB, builds ...*bbpb.Build) {
+	t.Helper()
+
 	re := regexp.MustCompile(`Error in build protocol:.*\sproto:`)
 	for _, build := range builds {
 		if build.Output.GetSummaryMarkdown() != "" {
-			So(build.Output.SummaryMarkdown, ShouldEqual, build.SummaryMarkdown)
+			assert.Loosely(t, build.Output.SummaryMarkdown, should.Equal(build.SummaryMarkdown), truth.LineContext())
 		}
 		if loc := re.FindStringIndex(build.SummaryMarkdown); loc != nil {
 			build.SummaryMarkdown = build.SummaryMarkdown[:loc[1]]
@@ -64,20 +67,21 @@ func cleanupProtoError(builds ...*bbpb.Build) {
 	}
 }
 
-func assertStateEqual(actual, expected *buildState) {
-	cleanupProtoError(actual.build, expected.build)
-	So(actual.build, ShouldResembleProto, expected.build)
-	So(actual.closed, ShouldEqual, expected.closed)
-	So(actual.final, ShouldEqual, expected.final)
-	So(actual.invalid, ShouldEqual, expected.invalid)
+func assertStateEqual(t testing.TB, actual, expected *buildState) {
+	t.Helper()
+	cleanupProtoError(t, actual.build, expected.build)
+	assert.Loosely(t, actual.build, should.Resemble(expected.build), truth.LineContext())
+	assert.Loosely(t, actual.closed, should.Equal(expected.closed), truth.LineContext())
+	assert.Loosely(t, actual.final, should.Equal(expected.final), truth.LineContext())
+	assert.Loosely(t, actual.invalid, should.Equal(expected.invalid), truth.LineContext())
 }
 
 func TestBuildState(t *testing.T) {
 	t.Parallel()
 
-	Convey(`buildState`, t, func() {
+	ftt.Run(`buildState`, t, func(t *ftt.Test) {
 		now, err := ptypes.TimestampProto(testclock.TestRecentTimeLocal)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
@@ -85,7 +89,7 @@ func TestBuildState(t *testing.T) {
 		merger, err := New(ctx, "u/", &bbpb.Build{Output: &bbpb.Build_Output{}}, func(ns, stream types.StreamName) (url, viewURL string) {
 			return fmt.Sprintf("url://%s%s", ns, stream), fmt.Sprintf("view://%s%s", ns, stream)
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer merger.Close()
 
 		informChan := make(chan struct{}, 1)
@@ -96,12 +100,12 @@ func TestBuildState(t *testing.T) {
 			<-informChan
 		}
 
-		Convey(`opened in error state`, func() {
+		t.Run(`opened in error state`, func(t *ftt.Test) {
 			bs := newBuildStateTracker(ctx, merger, "ns/", false, errors.New("nope"))
 			wait() // for final build
-			So(bs.workClosed, ShouldBeTrue)
+			assert.Loosely(t, bs.workClosed, should.BeTrue)
 			bs.Drain()
-			assertStateEqual(bs.latestState, &buildState{
+			assertStateEqual(t, bs.latestState, &buildState{
 				build: &bbpb.Build{
 					SummaryMarkdown: "\n\nError in build protocol: nope",
 					Status:          bbpb.Status_INFRA_FAILURE,
@@ -117,14 +121,14 @@ func TestBuildState(t *testing.T) {
 			})
 		})
 
-		Convey(`basic`, func() {
+		t.Run(`basic`, func(t *ftt.Test) {
 			bs := newBuildStateTracker(ctx, merger, "ns/", false, nil)
 
-			Convey(`ignores updates when merger cancels context`, func() {
+			t.Run(`ignores updates when merger cancels context`, func(t *ftt.Test) {
 				cancel()
 				wait() // cancel generated an 'informNewData'
 
-				bs.handleNewData(mkDgram(&bbpb.Build{
+				bs.handleNewData(mkDgram(t, &bbpb.Build{
 					SummaryMarkdown: "some stuff",
 					Steps: []*bbpb.Step{
 						{Name: "Parent"},
@@ -140,7 +144,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				// No wait, because this handleNewData was ignored.
 				bs.Drain()
-				assertStateEqual(bs.latestState, &buildState{
+				assertStateEqual(t, bs.latestState, &buildState{
 					build: &bbpb.Build{
 						EndTime:         now,
 						UpdateTime:      now,
@@ -155,10 +159,10 @@ func TestBuildState(t *testing.T) {
 					final:  true,
 				})
 
-				Convey(`can still close, though`, func() {
+				t.Run(`can still close, though`, func(t *ftt.Test) {
 					bs.handleNewData(nil)
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -175,12 +179,12 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			Convey(`no updates`, func() {
-				Convey(`handleNewData(nil)`, func() {
+			t.Run(`no updates`, func(t *ftt.Test) {
+				t.Run(`handleNewData(nil)`, func(t *ftt.Test) {
 					bs.handleNewData(nil)
 					wait()
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -195,7 +199,7 @@ func TestBuildState(t *testing.T) {
 						}},
 					)
 
-					Convey(`convey close noop`, func() {
+					t.Run(`convey close noop`, func(t *ftt.Test) {
 						// not a valid state, but bs is closed, so handleNewData should do nothing
 						// when invoked.
 						bs.latestState = &buildState{
@@ -204,7 +208,7 @@ func TestBuildState(t *testing.T) {
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
 						}
 						bs.handleNewData(nil)
-						assertStateEqual(bs.latestState, &buildState{
+						assertStateEqual(t, bs.latestState, &buildState{
 							closed: true,
 							final:  true,
 							build:  &bbpb.Build{SummaryMarkdown: "wat"},
@@ -213,8 +217,8 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			Convey(`valid update`, func() {
-				bs.handleNewData(mkDgram(&bbpb.Build{
+			t.Run(`valid update`, func(t *ftt.Test) {
+				bs.handleNewData(mkDgram(t, &bbpb.Build{
 					SummaryMarkdown: "some stuff",
 					Steps: []*bbpb.Step{
 						{Name: "Parent"},
@@ -236,7 +240,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				So(bs.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, bs.getLatestBuild(), should.Resemble(&bbpb.Build{
 					SummaryMarkdown: "some stuff",
 					Steps: []*bbpb.Step{
 						{Name: "Parent"},
@@ -257,9 +261,9 @@ func TestBuildState(t *testing.T) {
 							ViewUrl: "view://ns/stderr",
 						}},
 					},
-				})
+				}))
 
-				Convey(`followed by garbage`, func() {
+				t.Run(`followed by garbage`, func(t *ftt.Test) {
 					bs.handleNewData(&logpb.LogEntry{
 						Content: &logpb.LogEntry_Datagram{Datagram: &logpb.Datagram{
 							Data: []byte("narpnarp"),
@@ -268,7 +272,7 @@ func TestBuildState(t *testing.T) {
 					wait()
 					wait() // for final build
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -305,11 +309,11 @@ func TestBuildState(t *testing.T) {
 					})
 				})
 
-				Convey(`handleNewData(nil)`, func() {
+				t.Run(`handleNewData(nil)`, func(t *ftt.Test) {
 					bs.handleNewData(nil)
 					wait()
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed: true,
 						final:  true,
 						build: &bbpb.Build{
@@ -348,7 +352,7 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			Convey(`invalid build data`, func() {
+			t.Run(`invalid build data`, func(t *ftt.Test) {
 				bs.handleNewData(&logpb.LogEntry{
 					Content: &logpb.LogEntry_Datagram{Datagram: &logpb.Datagram{
 						Data: []byte("narpnarp"),
@@ -357,7 +361,7 @@ func TestBuildState(t *testing.T) {
 				wait()
 				wait() // for final build
 				bs.Drain()
-				assertStateEqual(bs.latestState, &buildState{
+				assertStateEqual(t, bs.latestState, &buildState{
 					closed:  true,
 					final:   true,
 					invalid: true,
@@ -373,10 +377,10 @@ func TestBuildState(t *testing.T) {
 					},
 				})
 
-				Convey(`ignores further updates`, func() {
-					bs.handleNewData(mkDgram(&bbpb.Build{SummaryMarkdown: "hi"}))
+				t.Run(`ignores further updates`, func(t *ftt.Test) {
+					bs.handleNewData(mkDgram(t, &bbpb.Build{SummaryMarkdown: "hi"}))
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						invalid: true,
 						final:   true,
 						closed:  true,
@@ -394,8 +398,8 @@ func TestBuildState(t *testing.T) {
 				})
 			})
 
-			Convey(`accept absolute url`, func() {
-				bs.handleNewData(mkDgram(&bbpb.Build{
+			t.Run(`accept absolute url`, func(t *ftt.Test) {
+				bs.handleNewData(mkDgram(t, &bbpb.Build{
 					Steps: []*bbpb.Step{
 						{
 							Name: "hi",
@@ -429,7 +433,7 @@ func TestBuildState(t *testing.T) {
 				}))
 				wait()
 
-				So(bs.getLatestBuild(), ShouldResembleProto, &bbpb.Build{
+				assert.Loosely(t, bs.getLatestBuild(), should.Resemble(&bbpb.Build{
 					Steps: []*bbpb.Step{
 						{
 							Name: "hi",
@@ -463,12 +467,12 @@ func TestBuildState(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey(`bad log url`, func() {
-				Convey(`step log`, func() {
-					bs.handleNewData(mkDgram(&bbpb.Build{
+			t.Run(`bad log url`, func(t *ftt.Test) {
+				t.Run(`step log`, func(t *ftt.Test) {
+					bs.handleNewData(mkDgram(t, &bbpb.Build{
 						Steps: []*bbpb.Step{
 							{
 								Name: "hi",
@@ -482,7 +486,7 @@ func TestBuildState(t *testing.T) {
 					wait()
 					wait() // for final build
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,
@@ -516,8 +520,8 @@ func TestBuildState(t *testing.T) {
 					})
 				})
 
-				Convey(`build log`, func() {
-					bs.handleNewData(mkDgram(&bbpb.Build{
+				t.Run(`build log`, func(t *ftt.Test) {
+					bs.handleNewData(mkDgram(t, &bbpb.Build{
 						Output: &bbpb.Build_Output{
 							Logs: []*bbpb.Log{{
 								Name: "log",
@@ -528,7 +532,7 @@ func TestBuildState(t *testing.T) {
 					wait()
 					wait() // for final build
 					bs.Drain()
-					assertStateEqual(bs.latestState, &buildState{
+					assertStateEqual(t, bs.latestState, &buildState{
 						closed:  true,
 						final:   true,
 						invalid: true,

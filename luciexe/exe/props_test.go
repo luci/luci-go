@@ -20,10 +20,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 type testStruct struct {
@@ -31,19 +30,19 @@ type testStruct struct {
 }
 
 func TestProperties(t *testing.T) {
-	Convey(`test property helpers`, t, func() {
+	ftt.Run(`test property helpers`, t, func(t *ftt.Test) {
 		props := &structpb.Struct{}
 
 		expectedStruct := &testStruct{Field: "hi"}
 		expectedProto := &bbpb.Build{SummaryMarkdown: "there"}
 		expectedStrings := []string{"not", "a", "struct"}
-		So(WriteProperties(props, map[string]any{
+		assert.Loosely(t, WriteProperties(props, map[string]any{
 			"struct":  expectedStruct,
 			"proto":   expectedProto,
 			"strings": expectedStrings,
 			"null":    Null,
-		}), ShouldBeNil)
-		So(props, ShouldResembleProto, &structpb.Struct{
+		}), should.BeNil)
+		assert.Loosely(t, props, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"struct": {Kind: &structpb.Value_StructValue{StructValue: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -68,33 +67,33 @@ func TestProperties(t *testing.T) {
 				}}},
 				"null": {Kind: &structpb.Value_NullValue{NullValue: 0}},
 			},
-		})
+		}))
 
 		readStruct := &testStruct{}
 		extraStruct := &testStruct{}
 		readProto := &bbpb.Build{}
 		var readStrings []string
 		readNil := any(100) // not currently nil
-		So(ParseProperties(props, map[string]any{
+		assert.Loosely(t, ParseProperties(props, map[string]any{
 			"struct":       readStruct,
 			"extra_struct": extraStruct,
 			"proto":        readProto,
 			"strings":      &readStrings,
 			"null":         &readNil,
-		}), ShouldBeNil)
-		So(readStruct, ShouldResemble, expectedStruct)
-		So(extraStruct, ShouldResemble, &testStruct{})
-		So(readStrings, ShouldResemble, expectedStrings)
-		So(readNil, ShouldResemble, nil)
-		So(readProto, ShouldResembleProto, expectedProto)
+		}), should.BeNil)
+		assert.Loosely(t, readStruct, should.Resemble(expectedStruct))
+		assert.Loosely(t, extraStruct, should.Resemble(&testStruct{}))
+		assert.Loosely(t, readStrings, should.Resemble(expectedStrings))
+		assert.Loosely(t, readNil, should.BeNil)
+		assert.Loosely(t, readProto, should.Resemble(expectedProto))
 
 		// now, delete some keys
-		So(WriteProperties(props, map[string]any{
+		assert.Loosely(t, WriteProperties(props, map[string]any{
 			"struct":         nil,
 			"proto":          nil,
 			"does_not_exist": nil,
-		}), ShouldBeNil)
-		So(props, ShouldResembleProto, &structpb.Struct{
+		}), should.BeNil)
+		assert.Loosely(t, props, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"strings": {Kind: &structpb.Value_ListValue{ListValue: &structpb.ListValue{
 					Values: []*structpb.Value{
@@ -105,6 +104,6 @@ func TestProperties(t *testing.T) {
 				}}},
 				"null": {Kind: &structpb.Value_NullValue{NullValue: 0}},
 			},
-		})
+		}))
 	})
 }

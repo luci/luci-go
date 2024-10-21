@@ -20,15 +20,15 @@ import (
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging/memlogger"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestStepTags(t *testing.T) {
 	ctx := memlogger.Use(context.Background())
 
-	Convey(`no tags added`, t, func() {
+	ftt.Run(`no tags added`, t, func(t *ftt.Test) {
 		step := Step{
 			ctx:    ctx,
 			stepPb: &pb.Step{},
@@ -37,10 +37,10 @@ func TestStepTags(t *testing.T) {
 		actualTags := step.stepPb.Tags
 
 		expectedTags := []*pb.StringPair(nil)
-		So(actualTags, ShouldResembleProto, expectedTags)
+		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
 	})
 
-	Convey(`Add step tags`, t, func() {
+	ftt.Run(`Add step tags`, t, func(t *ftt.Test) {
 		step := Step{
 			ctx:    ctx,
 			stepPb: &pb.Step{},
@@ -53,10 +53,10 @@ func TestStepTags(t *testing.T) {
 			Key:   "build.testing.key",
 			Value: "value",
 		})
-		So(actualTags, ShouldResembleProto, expectedTags)
+		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
 	})
 
-	Convey(`Add step tag with existing key`, t, func() {
+	ftt.Run(`Add step tag with existing key`, t, func(t *ftt.Test) {
 		// One key may have multiple values
 		tags := []*pb.StringPair{}
 		tags = append(tags, &pb.StringPair{
@@ -89,23 +89,23 @@ func TestStepTags(t *testing.T) {
 			Key:   "build.testing.key",
 			Value: "g",
 		})
-		So(actualTags, ShouldResembleProto, expectedTags)
+		assert.Loosely(t, actualTags, should.Resemble(expectedTags))
 	})
 }
 
 func TestSummaryMarkdown(t *testing.T) {
 	ctx := memlogger.Use(context.Background())
 
-	Convey(`no summary markdown; one is added`, t, func() {
+	ftt.Run(`no summary markdown; one is added`, t, func(t *ftt.Test) {
 		step := Step{
 			ctx:    ctx,
 			stepPb: &pb.Step{},
 		}
 		step.SetSummaryMarkdown("test")
-		So(step.stepPb.SummaryMarkdown, ShouldEqual, "test")
+		assert.Loosely(t, step.stepPb.SummaryMarkdown, should.Equal("test"))
 	})
 
-	Convey(`existing summary markdown; then modified`, t, func() {
+	ftt.Run(`existing summary markdown; then modified`, t, func(t *ftt.Test) {
 		step := Step{
 			ctx: ctx,
 			stepPb: &pb.Step{
@@ -113,6 +113,6 @@ func TestSummaryMarkdown(t *testing.T) {
 			},
 		}
 		step.SetSummaryMarkdown("some_really_cool_test_string")
-		So(step.stepPb.SummaryMarkdown, ShouldEqual, "some_really_cool_test_string")
+		assert.Loosely(t, step.stepPb.SummaryMarkdown, should.Equal("some_really_cool_test_string"))
 	})
 }

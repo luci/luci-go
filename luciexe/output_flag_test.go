@@ -16,67 +16,67 @@ package luciexe
 
 import (
 	"flag"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"io"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestOutputFlag(t *testing.T) {
 	t.Parallel()
 
-	Convey(`OutputFlag`, t, func() {
+	ftt.Run(`OutputFlag`, t, func(t *ftt.Test) {
 		fs := &flag.FlagSet{}
 		fs.SetOutput(io.Discard)
 		of := AddOutputFlagToSet(fs)
 
-		Convey(`good`, func() {
-			Convey(`empty`, func() {
-				So(fs.Parse(nil), ShouldBeNil)
-				So(of.Path, ShouldBeEmpty)
-				So(of.Codec, ShouldResemble, buildFileCodecNoop{})
+		t.Run(`good`, func(t *ftt.Test) {
+			t.Run(`empty`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse(nil), should.BeNil)
+				assert.Loosely(t, of.Path, should.BeEmpty)
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
 			})
 
-			Convey(`missing`, func() {
-				So(fs.Parse([]string{"other", "stuff"}), ShouldBeNil)
-				So(of.Path, ShouldBeEmpty)
-				So(of.Codec, ShouldResemble, buildFileCodecNoop{})
+			t.Run(`missing`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{"other", "stuff"}), should.BeNil)
+				assert.Loosely(t, of.Path, should.BeEmpty)
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
 			})
 
-			Convey(`equal`, func() {
-				So(fs.Parse([]string{OutputCLIArg + "=out.textpb", "a", "b"}), ShouldBeNil)
-				So(of.Path, ShouldResemble, "out.textpb")
-				So(of.Codec, ShouldResemble, buildFileCodecText{})
-				So(fs.Args(), ShouldResemble, []string{"a", "b"})
+			t.Run(`equal`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{OutputCLIArg + "=out.textpb", "a", "b"}), should.BeNil)
+				assert.Loosely(t, of.Path, should.Match("out.textpb"))
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecText{}))
+				assert.Loosely(t, fs.Args(), should.Resemble([]string{"a", "b"}))
 			})
 
-			Convey(`two val`, func() {
-				So(fs.Parse([]string{OutputCLIArg, "out.json", "a", "b"}), ShouldBeNil)
-				So(of.Path, ShouldResemble, "out.json")
-				So(of.Codec, ShouldResemble, buildFileCodecJSON{})
-				So(fs.Args(), ShouldResemble, []string{"a", "b"})
+			t.Run(`two val`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{OutputCLIArg, "out.json", "a", "b"}), should.BeNil)
+				assert.Loosely(t, of.Path, should.Match("out.json"))
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecJSON{}))
+				assert.Loosely(t, fs.Args(), should.Resemble([]string{"a", "b"}))
 			})
 
-			Convey(`explicit noop`, func() {
-				So(fs.Parse([]string{OutputCLIArg + "="}), ShouldBeNil)
-				So(of.Path, ShouldBeEmpty)
-				So(of.Codec, ShouldResemble, buildFileCodecNoop{})
+			t.Run(`explicit noop`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{OutputCLIArg + "="}), should.BeNil)
+				assert.Loosely(t, of.Path, should.BeEmpty)
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
 			})
 
 		})
 
-		Convey(`bad`, func() {
-			Convey(`incomplete`, func() {
-				So(fs.Parse([]string{OutputCLIArg}), ShouldErrLike, "flag needs an argument")
-				So(of.Path, ShouldBeEmpty)
-				So(of.Codec, ShouldResemble, buildFileCodecNoop{})
+		t.Run(`bad`, func(t *ftt.Test) {
+			t.Run(`incomplete`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{OutputCLIArg}), should.ErrLike("flag needs an argument"))
+				assert.Loosely(t, of.Path, should.BeEmpty)
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
 			})
 
-			Convey(`bad extension`, func() {
-				So(fs.Parse([]string{OutputCLIArg, "nope", "arg"}), ShouldErrLike, "bad extension")
-				So(of.Path, ShouldBeEmpty)
-				So(of.Codec, ShouldResemble, buildFileCodecNoop{})
+			t.Run(`bad extension`, func(t *ftt.Test) {
+				assert.Loosely(t, fs.Parse([]string{OutputCLIArg, "nope", "arg"}), should.ErrLike("bad extension"))
+				assert.Loosely(t, of.Path, should.BeEmpty)
+				assert.Loosely(t, of.Codec, should.Resemble(buildFileCodecNoop{}))
 			})
 		})
 	})

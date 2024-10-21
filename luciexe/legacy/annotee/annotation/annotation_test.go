@@ -30,11 +30,11 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testDataDir = "test_data"
@@ -132,7 +132,8 @@ func superfluous(touched stringset.Set) ([]string, error) {
 //
 // Empty lines and lines beginning with "#" are ignored. Preceding whitespace
 // is discarded.
-func playAnnotationScript(t *testing.T, name string, st *State) (string, error) {
+func playAnnotationScript(t testing.TB, name string, st *State) (string, error) {
+	t.Helper()
 	tc := st.Clock.(testclock.TestClock)
 
 	path := filepath.Join(testDataDir, fmt.Sprintf("%s.annotations.txt", normalize(name)))
@@ -181,7 +182,7 @@ func playAnnotationScript(t *testing.T, name string, st *State) (string, error) 
 	return path, nil
 }
 
-func loadStepProto(t *testing.T, test string, s *Step) *annopb.Step {
+func loadStepProto(t testing.TB, test string, s *Step) *annopb.Step {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.proto.txt", normalize(test), normalize(string(s.LogNameBase))))
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -202,7 +203,7 @@ func writeStepProto(test string, s *Step) (string, error) {
 	return path, os.WriteFile(path, []byte(proto.MarshalTextString(s.Proto())), 0644)
 }
 
-func loadLogText(t *testing.T, test, name string) []string {
+func loadLogText(t testing.TB, test, name string) []string {
 	path := filepath.Join(testExpDir, fmt.Sprintf("%s_%s.txt", normalize(test), normalize(name)))
 	f, err := os.Open(path)
 	if err != nil {
@@ -305,30 +306,30 @@ func TestState(t *testing.T) {
 		return
 	}
 
-	Convey(`A testing annotation State`, t, func() {
+	ftt.Run(`A testing annotation State`, t, func(t *ftt.Test) {
 		for _, testCase := range testCases {
 			st := testCase.state(startTime)
 
-			Convey(fmt.Sprintf(`Correctly loads/generates for %q test case.`, testCase.name), func() {
+			t.Run(fmt.Sprintf(`Correctly loads/generates for %q test case.`, testCase.name), func(t *ftt.Test) {
 
 				_, err := playAnnotationScript(t, testCase.name, st)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Iterate through generated streams and validate.
 				st.Finish()
 
 				// All log streams should be closed.
 				cb := st.Callbacks.(*testCallbacks)
-				So(cb.logsOpen, ShouldResemble, map[types.StreamName]struct{}{})
+				assert.Loosely(t, cb.logsOpen, should.Resemble(map[types.StreamName]struct{}{}))
 
 				// Iterate over each generated stream and assert that it matches its
 				// expectation. Do it deterministically so failures aren't frustrating
 				// to reproduce.
-				Convey(`Has correct Step value`, func() {
+				t.Run(`Has correct Step value`, func(t *ftt.Test) {
 					rootStep := st.RootStep()
 
 					exp := loadStepProto(t, testCase.name, rootStep)
-					So(rootStep.Proto(), ShouldResembleProto, exp)
+					assert.Loosely(t, rootStep.Proto(), should.Resemble(exp))
 				})
 
 				// Iterate over each generated log and assert that it matches its
@@ -341,17 +342,17 @@ func TestState(t *testing.T) {
 				for _, logName := range logs {
 					log := cb.logs[types.StreamName(logName)]
 					exp := loadLogText(t, testCase.name, logName)
-					So(log, ShouldResemble, exp)
+					assert.Loosely(t, log, should.Resemble(exp))
 				}
 			})
 		}
 
-		Convey(`Append to a closed State is a no-op.`, func() {
+		t.Run(`Append to a closed State is a no-op.`, func(t *ftt.Test) {
 			st := testCases[0].state(startTime)
 			st.Finish()
 			sclone := st
-			So(st.Append("asdf"), ShouldBeNil)
-			So(st, ShouldResemble, sclone)
+			assert.Loosely(t, st.Append("asdf"), should.BeNil)
+			assert.Loosely(t, st, should.Equal(sclone))
 		})
 	})
 }

@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func skipWin(t *testing.T) {
@@ -34,7 +34,7 @@ func skipWin(t *testing.T) {
 
 func TestFindCasClient(t *testing.T) {
 	skipWin(t)
-	Convey("findCasClient", t, func() {
+	ftt.Run("findCasClient", t, func(t *ftt.Test) {
 		build := &pb.Build{
 			Id: 123,
 			Infra: &pb.BuildInfra{
@@ -72,17 +72,17 @@ func TestFindCasClient(t *testing.T) {
 			},
 		}
 
-		Convey("pass", func() {
+		t.Run("pass", func(t *ftt.Test) {
 			casClient, err := findCasClient("", build)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			cwd, _ := os.Getwd()
-			So(casClient, ShouldEqual, filepath.Join(cwd, "path_a/cas"))
+			assert.Loosely(t, casClient, should.Equal(filepath.Join(cwd, "path_a/cas")))
 		})
 
-		Convey("fail", func() {
+		t.Run("fail", func(t *ftt.Test) {
 			build.Infra.Buildbucket.Agent.Purposes = nil
 			_, err := findCasClient("", build)
-			So(err, ShouldErrLike, "Failed to find bbagent utility packages")
+			assert.Loosely(t, err, should.ErrLike("Failed to find bbagent utility packages"))
 		})
 	})
 }

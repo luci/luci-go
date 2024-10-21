@@ -20,64 +20,64 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestErrors(t *testing.T) {
-	Convey(`Errors`, t, func() {
-		Convey(`nil`, func() {
+	ftt.Run(`Errors`, t, func(t *ftt.Test) {
+		t.Run(`nil`, func(t *ftt.Test) {
 			var err error
 
-			So(AttachStatus(err, bbpb.Status_INFRA_FAILURE, &bbpb.StatusDetails{
+			assert.Loosely(t, AttachStatus(err, bbpb.Status_INFRA_FAILURE, &bbpb.StatusDetails{
 				ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
-			}), ShouldBeNil)
+			}), should.BeNil)
 
 			status, details := ExtractStatus(err)
-			So(status, ShouldResemble, bbpb.Status_SUCCESS)
-			So(details, ShouldBeNil)
+			assert.Loosely(t, status, should.Resemble(bbpb.Status_SUCCESS))
+			assert.Loosely(t, details, should.BeNil)
 		})
 
-		Convey(`err`, func() {
-			Convey(`generic`, func() {
+		t.Run(`err`, func(t *ftt.Test) {
+			t.Run(`generic`, func(t *ftt.Test) {
 				err := errors.New("some error")
 				status, details := ExtractStatus(err)
-				So(status, ShouldResemble, bbpb.Status_FAILURE)
-				So(details, ShouldBeNil)
+				assert.Loosely(t, status, should.Resemble(bbpb.Status_FAILURE))
+				assert.Loosely(t, details, should.BeNil)
 			})
 
-			Convey(`AttachStatus`, func() {
+			t.Run(`AttachStatus`, func(t *ftt.Test) {
 				err := errors.New("some error")
 				err2 := AttachStatus(err, bbpb.Status_INFRA_FAILURE, &bbpb.StatusDetails{
 					ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
 				})
 
 				status, details := ExtractStatus(err2)
-				So(status, ShouldResemble, bbpb.Status_INFRA_FAILURE)
-				So(details, ShouldResembleProto, &bbpb.StatusDetails{
+				assert.Loosely(t, status, should.Resemble(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, details, should.Resemble(&bbpb.StatusDetails{
 					ResourceExhaustion: &bbpb.StatusDetails_ResourceExhaustion{},
-				})
+				}))
 			})
 
-			Convey(`context`, func() {
+			t.Run(`context`, func(t *ftt.Test) {
 				status, details := ExtractStatus(context.Canceled)
-				So(status, ShouldResemble, bbpb.Status_CANCELED)
-				So(details, ShouldBeNil)
+				assert.Loosely(t, status, should.Resemble(bbpb.Status_CANCELED))
+				assert.Loosely(t, details, should.BeNil)
 
 				status, details = ExtractStatus(context.DeadlineExceeded)
-				So(status, ShouldResemble, bbpb.Status_INFRA_FAILURE)
-				So(details, ShouldResembleProto, &bbpb.StatusDetails{
+				assert.Loosely(t, status, should.Resemble(bbpb.Status_INFRA_FAILURE))
+				assert.Loosely(t, details, should.Resemble(&bbpb.StatusDetails{
 					Timeout: &bbpb.StatusDetails_Timeout{},
-				})
+				}))
 			})
 
 		})
 
-		Convey(`AttachStatus panics for bad status`, func() {
-			So(func() {
+		t.Run(`AttachStatus panics for bad status`, func(t *ftt.Test) {
+			assert.Loosely(t, func() {
 				AttachStatus(nil, bbpb.Status_STARTED, nil)
-			}, ShouldPanicLike, "cannot be used with non-terminal status \"STARTED\"")
+			}, should.PanicLike("cannot be used with non-terminal status \"STARTED\""))
 		})
 	})
 }

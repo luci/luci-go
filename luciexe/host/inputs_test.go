@@ -21,15 +21,17 @@ import (
 	"testing"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDownloadInputs(t *testing.T) {
-	resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
-	Convey(`test download agent inputs`, t, func() {
-		ctx, closer := testCtx()
+	ftt.Run(`test download agent inputs`, t, func(t *ftt.Test) {
+		resultsFilePath = filepath.Join(t.TempDir(), "cipd_ensure_results.json")
+
+		ctx, closer := testCtx(t)
 		defer closer()
 
 		execCommandContext = fakeExecCommand
@@ -44,21 +46,21 @@ func TestDownloadInputs(t *testing.T) {
 			DownloadAgentInputs: true,
 		}
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			ch, err := Run(ctx, opts, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
-				So("unreachable", ShouldBeEmpty)
+				assert.Loosely(t, "unreachable", should.BeEmpty)
 			})
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build := opts.BaseBuild
 			for build = range ch {
 			}
-			So(build.Output.Status, ShouldEqual, bbpb.Status_INFRA_FAILURE)
-			So(build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_FAILURE)
-			So(build.Infra.Buildbucket.Agent.Output.SummaryMarkdown, ShouldContainSubstring, "Build Agent field is not set")
+			assert.Loosely(t, build.Output.Status, should.Equal(bbpb.Status_INFRA_FAILURE))
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_FAILURE))
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.SummaryMarkdown, should.ContainSubstring("Build Agent field is not set"))
 		})
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			testCase = "success"
 			opts.BaseBuild.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
 				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
@@ -93,15 +95,15 @@ func TestDownloadInputs(t *testing.T) {
 			ch, err := Run(ctx, opts, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 			})
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build := <-ch
-			So(build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_STARTED)
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_STARTED))
 			for build = range ch {
 			}
-			So(build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_SUCCESS)
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_SUCCESS))
 		})
 
-		Convey(`failure`, func() {
+		t.Run(`failure`, func(t *ftt.Test) {
 			testCase = "failure"
 			opts.BaseBuild.Infra.Buildbucket.Agent = &bbpb.BuildInfra_Buildbucket_Agent{
 				Input: &bbpb.BuildInfra_Buildbucket_Agent_Input{
@@ -136,12 +138,12 @@ func TestDownloadInputs(t *testing.T) {
 			ch, err := Run(ctx, opts, func(ctx context.Context, _ Options, _ <-chan lucictx.DeadlineEvent, _ func()) {
 			})
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			build := opts.BaseBuild
 			for build = range ch {
 			}
-			So(build.Infra.Buildbucket.Agent.Output.Status, ShouldEqual, bbpb.Status_FAILURE)
-			So(build.Infra.Buildbucket.Agent.Output.SummaryMarkdown, ShouldContainSubstring, "cipd ensure")
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.Status, should.Equal(bbpb.Status_FAILURE))
+			assert.Loosely(t, build.Infra.Buildbucket.Agent.Output.SummaryMarkdown, should.ContainSubstring("cipd ensure"))
 		})
 	})
 }
