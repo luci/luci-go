@@ -97,7 +97,7 @@ func TestSave(t *testing.T) {
 		row, id, err := r.Save()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, id, should.Equal("testid"))
-		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+		assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 			"name":      "testname",
 			"timestamp": recentTime,
 			"nested":    map[string]bigquery.Value{"name": "nestedname"},
@@ -168,7 +168,7 @@ func TestSave(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 		err = outputStruct.UnmarshalJSON([]byte(bytesString))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, outputStruct, should.Resemble(inputStruct))
+		assert.Loosely(t, outputStruct, should.Match(inputStruct))
 	})
 
 	ftt.Run("empty", t, func(t *ftt.Test) {
@@ -179,7 +179,7 @@ func TestSave(t *testing.T) {
 		row, id, err := r.Save()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, id, should.Equal("testid"))
-		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+		assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 			// only scalar proto fields
 			// because for them, proto3 does not distinguish empty and unset
 			// values.
@@ -197,12 +197,32 @@ func TestSave(t *testing.T) {
 		row, id, err := r.Save()
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, id, should.Equal("testid"))
-		assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+		assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 			// only scalar proto fields
 			// because for them, proto3 does not distinguish empty and unset
 			// values.
 			"bar":  "Q", // enums are always set
 			"name": "",  // in proto3, empty string and unset are indistinguishable
+		}))
+	})
+
+	ftt.Run("non-existent enum", t, func(t *ftt.Test) {
+		r := &Row{
+			Message: &testdata.TestMessage{
+				Foo: 777, // I'm feeling lucky
+			},
+			InsertID: "testid",
+		}
+		row, id, err := r.Save()
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal("testid"))
+		assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
+			// only scalar proto fields
+			// because for them, proto3 does not distinguish empty and unset
+			// values.
+			"bq_type_override": int64(0),
+			"foo":              "X", // enums should be set to default
+			"name":             "",  // in proto3, empty string and unset are indistinguishable
 		}))
 	})
 
@@ -215,7 +235,7 @@ func TestSave(t *testing.T) {
 			row, id, err := r.Save()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, id, should.Equal("testid"))
-			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+			assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 				// only scalar proto fields (ie. Name)
 				"name": "",
 			}))
@@ -235,7 +255,7 @@ func TestSave(t *testing.T) {
 			row, id, err := r.Save()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, id, should.Equal("testid"))
-			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+			assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 				// only scalar proto fields (ie. strings)
 				"name":    "",
 				"strings": []any{"", ""},
@@ -266,7 +286,7 @@ func TestSave(t *testing.T) {
 			row, id, err := r.Save()
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, id, should.Equal("testid"))
-			assert.Loosely(t, row, should.Resemble(map[string]bigquery.Value{
+			assert.Loosely(t, row, should.Match(map[string]bigquery.Value{
 				"name":    "Repeated Fields",
 				"strings": []any{"string1", "string2"},
 				"bar":     []any{"Q", "R"},

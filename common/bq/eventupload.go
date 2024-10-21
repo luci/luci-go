@@ -190,7 +190,12 @@ func mapFromMessage(pm proto.Message, path []string) (map[string]bigquery.Value,
 func getValue(field protoreflect.FieldDescriptor, value protoreflect.Value, path []string) (any, error) {
 	// enums and primitives
 	if enumField := field.Enum(); enumField != nil {
-		enumName := string(enumField.Values().ByNumber(value.Enum()).Name())
+		enumFieldNumber := enumField.Values().ByNumber(value.Enum())
+		// If the enum doesn't exist, use the default value
+		if enumFieldNumber == nil {
+			enumFieldNumber = enumField.Values().ByNumber(0)
+		}
+		enumName := string(enumFieldNumber.Name())
 		return enumName, nil
 	}
 	if field.Kind() != protoreflect.MessageKind && field.Kind() != protoreflect.GroupKind {
