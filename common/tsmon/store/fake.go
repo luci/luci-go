@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -55,3 +56,6 @@ func (s *Fake) GetAll(context.Context) []types.Cell { return s.Cells }
 
 // Reset does nothing.
 func (s *Fake) Reset(context.Context, types.Metric) {}
+
+// Now just returns the current time via clock.Now(ctx).
+func (s *Fake) Now(ctx context.Context) time.Time { return clock.Now(ctx) }

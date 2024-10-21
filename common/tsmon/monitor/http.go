@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
@@ -44,6 +45,8 @@ type httpMonitor struct {
 
 // NewHTTPMonitor creates a new Monitor object that sends metric to an HTTP
 // (or HTTPS) endpoint.  The http client should be authenticated as required.
+//
+// DEPRECATED: NewGRPCMonitor should be used instead.
 func NewHTTPMonitor(ctx context.Context, client *http.Client, endpoint *url.URL) (Monitor, error) {
 	return &httpMonitor{
 		client:   client,
@@ -55,11 +58,13 @@ func (m *httpMonitor) ChunkSize() int {
 	return 500
 }
 
-func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) {
+func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell, now time.Time) (err error) {
+	// Note `now` can actually be in the past. Here we use `startTime` exclusively
+	// to measure how long it takes to call Insert. So get the freshest value.
 	startTime := clock.Now(ctx)
 	defer func() {
 		if err == nil {
-			logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Now(ctx).Sub(startTime))
+			logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Since(ctx, startTime))
 		} else {
 			logging.Warningf(ctx, "tsmon: failed to send %d cells - %s", len(cells), err)
 		}
@@ -73,7 +78,7 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) (err error) 
 	// Serialize the tsmon cells into protobufs.
 	req := &pb.Request{
 		Payload: &pb.MetricsPayload{
-			MetricsCollection: SerializeCells(cells, startTime),
+			MetricsCollection: SerializeCells(cells, now),
 		},
 	}
 

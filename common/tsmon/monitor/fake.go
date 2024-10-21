@@ -16,6 +16,7 @@ package monitor
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/tsmon/types"
 )
@@ -33,7 +34,7 @@ func (m *Fake) ChunkSize() int {
 }
 
 // Send appends the cells to Cells, unless SendErr is set.
-func (m *Fake) Send(ctx context.Context, cells []types.Cell) error {
+func (m *Fake) Send(ctx context.Context, cells []types.Cell, now time.Time) error {
 	if m.SendErr != nil {
 		return m.SendErr
 	}

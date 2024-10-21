@@ -35,6 +35,9 @@ type inMemoryStore struct {
 
 	data     map[dataKey]*metricData
 	dataLock sync.RWMutex
+
+	lastNow     time.Time
+	lastNowLock sync.Mutex
 }
 
 type cellKey struct {
@@ -126,7 +129,11 @@ func (m *metricData) get(fieldVals []any, t types.Target, resetTime time.Time) *
 		}
 	}
 
-	cell := &types.CellData{fieldVals, t, resetTime, nil}
+	cell := &types.CellData{
+		FieldVals: fieldVals,
+		Target:    t,
+		ResetTime: resetTime,
+	}
 	m.cells[key] = append(cells, cell)
 	return cell
 }
@@ -209,7 +216,7 @@ func (s *inMemoryStore) SetDefaultTarget(t types.Target) {
 // Get returns the value for a given metric cell.
 func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any) any {
 	if resetTime.IsZero() {
-		resetTime = clock.Now(ctx)
+		resetTime = s.Now(ctx)
 	}
 
 	m := s.getOrCreateData(h)
@@ -235,7 +242,7 @@ func isLessThan(a, b any) bool {
 // Set writes the value into the given metric cell.
 func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, value any) {
 	if resetTime.IsZero() {
-		resetTime = clock.Now(ctx)
+		resetTime = s.Now(ctx)
 	}
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
@@ -267,7 +274,7 @@ func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []any
 // Incr increments the value in a given metric cell by the given delta.
 func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, delta any) {
 	if resetTime.IsZero() {
-		resetTime = clock.Now(ctx)
+		resetTime = s.Now(ctx)
 	}
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
@@ -351,4 +358,39 @@ func (s *inMemoryStore) Reset(ctx context.Context, h types.Metric) {
 	m.lock.Lock()
 	m.cells = make(map[cellKey][]*types.CellData)
 	m.lock.Unlock()
+}
+
+// Now returns a wallclock-like timestamp with monotonically increasing absolute
+// timestamp value at microsecond precision.
+//
+// Prerequisite reading: https://pkg.go.dev/time#hdr-Monotonic_Clocks.
+//
+// Each call to Now(...) will produce a timestamp with wall clock reading
+// strictly larger (by at least a microsecond) than the previous value.
+//
+// This is used to make tsmon tolerant to small adjustments to machine's system
+// clock that result in time jumping back. Without this, tsmon will end up
+// sending monitoring points that "go back in time" (relative to previously
+// reported points), which triggers validation errors in the ProdX backend,
+// eventually resulting in alerts.
+func (s *inMemoryStore) Now(ctx context.Context) time.Time {
+	now := clock.Now(ctx).Truncate(time.Microsecond)
+
+	s.lastNowLock.Lock()
+	defer s.lastNowLock.Unlock()
+
+	if s.lastNow.IsZero() || now.After(s.lastNow) {
+		// If the real clock has caught up with us, just use it.
+		s.lastNow = now
+	} else {
+		// The real clock was moved back and it is still catching up to us. We need
+		// to keep returning monotonically advancing "fake" time until the real
+		// clock catches up. Note this assumes Store.Now(...) is called relatively
+		// infrequently (mush less frequently than once per microsecond). Otherwise
+		// this "fake" time can end up ticking faster than the real time and the
+		// real clock will never catch up to us.
+		s.lastNow = s.lastNow.Add(time.Microsecond)
+	}
+
+	return s.lastNow
 }

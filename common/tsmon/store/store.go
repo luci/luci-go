@@ -33,6 +33,6 @@ type Store interface {
 	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any)
 
 	GetAll(ctx context.Context) []types.Cell
-
 	Reset(ctx context.Context, m types.Metric)
+	Now(ctx context.Context) time.Time
 }

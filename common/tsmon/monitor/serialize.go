@@ -19,14 +19,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 type dataSetKey struct {

@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"
-
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/registry"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -211,6 +210,12 @@ func (s *State) ParallelFlush(ctx context.Context, mon monitor.Monitor, workers 
 	if len(cells) == 0 {
 		return nil
 	}
+
+	// Get the monotonic time that is guaranteed to be ahead of all existing reset
+	// timestamps in the store and all previously reported points (even if the
+	// system's clock was rolled back by ntpd).
+	now := s.Store().Now(ctx)
+
 	// Split up the payload into chunks if there are too many cells.
 	chunkSize := mon.ChunkSize()
 	if chunkSize == 0 {
@@ -223,7 +228,7 @@ func (s *State) ParallelFlush(ctx context.Context, mon monitor.Monitor, workers 
 				end = len(cells)
 			}
 			taskC <- func() error {
-				return mon.Send(ctx, cells[start:end])
+				return mon.Send(ctx, cells[start:end], now)
 			}
 		}
 	})

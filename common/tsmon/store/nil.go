@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
@@ -52,9 +53,6 @@ func (nilStore) Del(ctx context.Context, m types.Metric, fieldVals []any) {
 func (nilStore) Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any) {
 }
 
-func (nilStore) GetAll(ctx context.Context) []types.Cell {
-	return nil
-}
-
-func (nilStore) Reset(ctx context.Context, m types.Metric) {
-}
+func (nilStore) GetAll(ctx context.Context) []types.Cell   { return nil }
+func (nilStore) Reset(ctx context.Context, m types.Metric) {}
+func (nilStore) Now(ctx context.Context) time.Time         { return clock.Now(ctx) }

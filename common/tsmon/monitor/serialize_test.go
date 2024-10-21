@@ -18,17 +18,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/target"
-	"go.chromium.org/luci/common/tsmon/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
+	"go.chromium.org/luci/common/tsmon/types"
 )
 
 func TestSerializeDistribution(t *testing.T) {

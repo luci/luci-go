@@ -17,12 +17,13 @@ package monitor
 import (
 	"context"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"
 	"go.chromium.org/luci/common/tsmon/types"
 )
@@ -48,22 +49,33 @@ func (m *grpcMonitor) ChunkSize() int {
 	return m.chunkSize
 }
 
-func (m *grpcMonitor) Send(ctx context.Context, cells []types.Cell) error {
+func (m *grpcMonitor) Send(ctx context.Context, cells []types.Cell, now time.Time) error {
 	// Don't waste time on serialization if we are already too late.
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+
+	// Note `now` can actually be in the past. Here we use `startTime` exclusively
+	// to measure how long it takes to call Insert. So get the freshest value.
 	startTime := clock.Now(ctx)
-	_, err := m.client.Insert(ctx, &pb.MonitoringInsertRequest{
+
+	resp, err := m.client.Insert(ctx, &pb.MonitoringInsertRequest{
 		Payload: &pb.MetricsPayload{
-			MetricsCollection: SerializeCells(cells, startTime),
+			MetricsCollection: SerializeCells(cells, now),
 		},
 	})
 	if err != nil {
 		logging.Warningf(ctx, "tsmon: failed to send %d cells - %s", len(cells), err)
 		return err
 	}
-	logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Now(ctx).Sub(startTime))
+
+	if resp.ResponseStatus != nil {
+		if err := status.FromProto(resp.ResponseStatus).Err(); err != nil {
+			logging.Warningf(ctx, "tsmon: got non-OK response status - %s", err)
+		}
+	}
+
+	logging.Debugf(ctx, "tsmon: sent %d cells in %s", len(cells), clock.Since(ctx, startTime))
 	return nil
 }
 

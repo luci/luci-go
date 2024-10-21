@@ -16,6 +16,7 @@ package monitor
 
 import (
 	"context"
+	"time"
 
 	"go.chromium.org/luci/common/tsmon/types"
 )
@@ -31,7 +32,7 @@ func (m *nilMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *nilMonitor) Send(ctx context.Context, cells []types.Cell) error {
+func (m *nilMonitor) Send(ctx context.Context, cells []types.Cell, now time.Time) error {
 	return nil
 }
 

@@ -17,6 +17,7 @@ package monitor
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -42,7 +43,7 @@ func (m *debugMonitor) ChunkSize() int {
 	return 0
 }
 
-func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell) error {
+func (m *debugMonitor) Send(ctx context.Context, cells []types.Cell, now time.Time) error {
 	str := proto.MarshalTextString(&pb.MetricsPayload{
 		MetricsCollection: SerializeCells(cells, clock.Now(ctx)),
 	})
