@@ -36,6 +36,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -47,8 +50,6 @@ import (
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var now = time.Date(2019, time.February, 3, 4, 5, 6, 7, time.UTC)
@@ -111,7 +112,9 @@ func TestPages(t *testing.T) {
 		return fixZeroDurationRE.ReplaceAllLiteralString(text, "[ZERO DURATION]")
 	}
 
-	SkipConvey("Testing basic rendering.", t, func() {
+	ftt.Run("Testing basic rendering.", t, func(t *ftt.Test) {
+		t.Skip("Accidentally skipped in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/3216129")
+
 		r := &http.Request{URL: &url.URL{Path: "/foobar"}}
 		c := context.Background()
 		c = memory.Use(c)
@@ -120,22 +123,22 @@ func TestPages(t *testing.T) {
 		c = settings.Use(c, settings.New(&settings.MemoryStorage{Expiration: time.Second}))
 		c = templates.Use(c, getTemplateBundle("appengine/templates", "testVersionID", false), &templates.Extra{Request: r})
 		for _, p := range allPackages {
-			Convey(fmt.Sprintf("Testing handler %q", p.DisplayName), func() {
+			t.Run(fmt.Sprintf("Testing handler %q", p.DisplayName), func(t *ftt.Test) {
 				for _, b := range p.Data() {
-					Convey(fmt.Sprintf("Testing: %q", b.Description), func() {
+					t.Run(fmt.Sprintf("Testing: %q", b.Description), func(t *ftt.Test) {
 						args := b.Data
 						// This is not a path, but a file key, should always be "/".
 						tmplName := p.TemplateName
 						buf, err := templates.Render(c, tmplName, args)
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 						fname := fmt.Sprintf(
 							"%s-%s.html", p.DisplayName, b.Description)
 						if *generate {
 							mustWrite(fname, buf)
 						} else {
 							localBuf, err := load(fname)
-							So(err, ShouldBeNil)
-							So(fixZeroDuration(string(buf)), ShouldEqual, fixZeroDuration(string(localBuf)))
+							assert.Loosely(t, err, should.BeNil)
+							assert.Loosely(t, fixZeroDuration(string(buf)), should.Equal(fixZeroDuration(string(localBuf))))
 						}
 					})
 				}
@@ -329,35 +332,35 @@ func GetTestBuild(relDir, name string) (*buildbucketpb.Build, error) {
 }
 
 func TestCreateInterpolator(t *testing.T) {
-	Convey("Test createInterpolator", t, func() {
-		Convey("Should encode params", func() {
+	ftt.Run("Test createInterpolator", t, func(t *ftt.Test) {
+		t.Run("Should encode params", func(t *ftt.Test) {
 			params := httprouter.Params{httprouter.Param{Key: "component2", Value: ":? +"}}
 			interpolator := createInterpolator("/component1/:component2")
 
 			path := interpolator(params)
-			So(path, ShouldEqual, "/component1/"+url.PathEscape(":? +"))
+			assert.Loosely(t, path, should.Equal("/component1/"+url.PathEscape(":? +")))
 		})
 
-		Convey("Should support catching path segments with *", func() {
+		t.Run("Should support catching path segments with *", func(t *ftt.Test) {
 			params := httprouter.Params{httprouter.Param{Key: "component2", Value: "/:?/ +"}}
 			interpolator := createInterpolator("/component1/*component2")
 
 			path := interpolator(params)
-			So(path, ShouldEqual, "/component1/"+url.PathEscape(":?")+"/"+url.PathEscape(" +"))
+			assert.Loosely(t, path, should.Equal("/component1/"+url.PathEscape(":?")+"/"+url.PathEscape(" +")))
 		})
 
-		Convey("Should support encoding / with *_", func() {
+		t.Run("Should support encoding / with *_", func(t *ftt.Test) {
 			params := httprouter.Params{httprouter.Param{Key: "_component2", Value: "/:?/ +"}}
 			interpolator := createInterpolator("/component1/*_component2")
 
 			path := interpolator(params)
-			So(path, ShouldEqual, "/component1/"+url.PathEscape(":?/ +"))
+			assert.Loosely(t, path, should.Equal("/component1/"+url.PathEscape(":?/ +")))
 		})
 	})
 }
 
 func TestRedirect(t *testing.T) {
-	Convey("Test redirect", t, func() {
+	ftt.Run("Test redirect", t, func(t *ftt.Test) {
 		client := &http.Client{
 			// Don't follow the redirect. We want to test the response directly.
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -368,12 +371,12 @@ func TestRedirect(t *testing.T) {
 		r := router.New()
 		ts := httptest.NewServer(r)
 
-		Convey("Should not double-encode params", func() {
+		t.Run("Should not double-encode params", func(t *ftt.Test) {
 			r.GET("/foo/:param", router.NewMiddlewareChain(), redirect("/bar/:param", http.StatusFound))
 			res, err := client.Get(ts.URL + "/foo/" + url.PathEscape(":? "))
-			So(err, ShouldBeNil)
-			So(res.StatusCode, ShouldEqual, http.StatusFound)
-			So(res.Header.Get("Location"), ShouldEqual, "/bar/"+url.PathEscape(":? "))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, res.Header.Get("Location"), should.Equal("/bar/"+url.PathEscape(":? ")))
 		})
 	})
 }
