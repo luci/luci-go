@@ -208,6 +208,7 @@ import (
 	"google.golang.org/api/option"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	clientauth "go.chromium.org/luci/auth"
@@ -2012,12 +2013,18 @@ func (s *Server) grpcDispatch() grpcutil.UnifiedServerInterceptor {
 			code := status.Code(err)
 			httpStatusCode := grpcutil.CodeStatus(code)
 
-			// Log errors (for parity with pRPC server behavior).
-			switch {
-			case httpStatusCode >= 400 && httpStatusCode < 500:
-				logging.Warningf(ctx, "%s", err)
-			case httpStatusCode >= 500:
-				logging.Errorf(ctx, "%s", err)
+			// Log errors (for parity with pRPC server behavior). Do not log Canceled,
+			// since it is very common when using streaming RPCs with an "endless"
+			// stream (such as /grpc.health.v1.Health/Watch): the only way for the
+			// client to abort such streaming RPC is to cancel the context. As a
+			// result majority of such streaming RPCs end with Canceled code.
+			if code != codes.Canceled {
+				switch {
+				case httpStatusCode >= 400 && httpStatusCode < 500:
+					logging.Warningf(ctx, "%s", err)
+				case httpStatusCode >= 500:
+					logging.Errorf(ctx, "%s", err)
+				}
 			}
 
 			// Report canonical GRPC code as a log entry field for filtering by it.
@@ -3235,6 +3242,8 @@ func isHealthCheckerUA(ua string) bool {
 	case strings.HasPrefix(ua, "kube-probe/"): // Kubernetes
 		return true
 	case strings.HasPrefix(ua, "GoogleHC"): // Cloud Load Balancer
+		return true
+	case strings.HasPrefix(ua, "LUCI-ServerTest-Health"): // LUCI integration tests, see servertest.go
 		return true
 	default:
 		return false

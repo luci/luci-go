@@ -28,6 +28,11 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/authtest"
 	"go.chromium.org/luci/auth/integration/gcemeta"
@@ -220,23 +225,13 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	logging.Infof(srvCtx, "Waiting for a health check to pass...")
 	healthDone := make(chan error, 1)
 	go func() {
-		req, err := http.NewRequestWithContext(
-			healthCtx,
-			"GET",
-			fmt.Sprintf("http://%s/healthz", ts.HTTPAddr()),
-			nil,
-		)
-		if err != nil {
-			panic(err) // should be impossible
-		}
-		resp, err := http.DefaultClient.Do(req)
-		if resp != nil && resp.Body != nil {
-			_ = resp.Body.Close()
-		}
-		if err == nil && resp.StatusCode != 200 {
-			err = errors.Reason("health check replied with status code %d", resp.StatusCode).Err()
-		}
-		healthDone <- err
+		// There's potentially a race condition between HTTP and gRPC health
+		// servers. Make sure to wait for both checks to pass (in case TestServer
+		// users care about a particular flavor of RPC client).
+		eg, ectx := errgroup.WithContext(healthCtx)
+		eg.Go(func() error { return waitHTTPHealthy(ectx, ts) })
+		eg.Go(func() error { return waitGRPCHealthy(ectx, ts) })
+		healthDone <- eg.Wait()
 	}()
 
 	serveLoopErr := func(err error) error {
@@ -297,9 +292,20 @@ func (ts *TestServer) GRPCAddr() string {
 	return ts.tm.grpcAddr.String()
 }
 
+// GRPCConn returns a gRPC client connection to the server's gRPC port.
+func (ts *TestServer) GRPCConn(opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	finalOpts := make([]grpc.DialOption, 0, len(opts)+1)
+	finalOpts = append(finalOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	finalOpts = append(finalOpts, opts...)
+	return grpc.NewClient("passthrough:///"+ts.GRPCAddr(), finalOpts...)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 var testingModuleName = module.RegisterName("go.chromium.org/luci/server/servertest")
+
+// This is known to isHealthCheckerUA in server.go
+const healthCheckUA = "LUCI-ServerTest-Health"
 
 // testingModule is a module.Module injected into test server to get access to
 // some of the server's API.
@@ -317,4 +323,51 @@ func (tm *testingModule) Initialize(ctx context.Context, host module.Host, opts 
 	tm.httpAddr = host.HTTPAddr()
 	tm.grpcAddr = host.GRPCAddr()
 	return ctx, nil
+}
+
+func waitHTTPHealthy(ctx context.Context, ts *TestServer) error {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"GET",
+		fmt.Sprintf("http://%s/healthz", ts.HTTPAddr()),
+		nil,
+	)
+	if err != nil {
+		panic(err) // should be impossible
+	}
+	req.Header.Set("User-Agent", healthCheckUA)
+	resp, err := http.DefaultClient.Do(req)
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
+	if err == nil && resp.StatusCode != 200 {
+		err = errors.Reason("health check replied with status code %d", resp.StatusCode).Err()
+	}
+	return err
+}
+
+func waitGRPCHealthy(ctx context.Context, ts *TestServer) error {
+	conn, err := ts.GRPCConn(grpc.WithUserAgent(healthCheckUA))
+	if err != nil {
+		return errors.Annotate(err, "constructing gRPC health check client").Err()
+	}
+	defer func() { _ = conn.Close() }()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	stream, err := grpc_health_v1.NewHealthClient(conn).Watch(ctx, &grpc_health_v1.HealthCheckRequest{})
+	if err != nil {
+		return errors.Annotate(err, "error calling gRPC health check Watch").Err()
+	}
+
+	for {
+		status, err := stream.Recv()
+		if err != nil {
+			return errors.Annotate(err, "gRPC health check error").Err()
+		}
+		if status.Status == grpc_health_v1.HealthCheckResponse_SERVING {
+			return nil
+		}
+	}
 }
