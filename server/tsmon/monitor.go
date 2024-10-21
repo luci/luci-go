@@ -36,7 +36,7 @@ func NewProdXMonitor(ctx context.Context, chunkSize int, account string) (monito
 	cred, err := auth.GetPerRPCCredentials(
 		ctx, auth.AsActor,
 		auth.WithServiceAccount(account),
-		auth.WithScopes(monitor.ProdxmonScopes...),
+		auth.WithScopes(monitor.ProdXMonScope),
 	)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get per RPC credentials").Err()

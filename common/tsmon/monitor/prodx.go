@@ -17,4 +17,6 @@ package monitor
 const (
 	// MetricNamePrefix is the prefix for all tsmon metrics.
 	MetricNamePrefix = "/chrome/infra/"
+	// ProdXMonScope is an OAuth2 scope required by ProdX Mon API.
+	ProdXMonScope = "https://www.googleapis.com/auth/prodxmon"
 )

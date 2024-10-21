@@ -315,7 +315,7 @@ func canActAsProdX(c context.Context, account string) error {
 	ts, err := auth.GetTokenSource(
 		c, auth.AsActor,
 		auth.WithServiceAccount(account),
-		auth.WithScopes(monitor.ProdxmonScopes...))
+		auth.WithScopes(monitor.ProdXMonScope))
 	if err != nil {
 		return err
 	}

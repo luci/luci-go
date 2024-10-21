@@ -20,13 +20,15 @@ import (
 	"net/url"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
@@ -35,17 +37,6 @@ import (
 // use the metric objects which provide type-safe accessors.
 func Store(ctx context.Context) store.Store {
 	return GetState(ctx).Store()
-}
-
-// Monitor returns the global monitor that sends metrics to monitoring
-// endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
-func Monitor(ctx context.Context) monitor.Monitor {
-	return GetState(ctx).Monitor()
-}
-
-// SetStore changes the global metric store.
-func SetStore(ctx context.Context, s store.Store) {
-	GetState(ctx).SetStore(s)
 }
 
 // InitializeFromFlags configures the tsmon library from flag values.
@@ -104,9 +95,10 @@ func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 		return errors.Annotate(err, "failed to configure target from flags").Err()
 	}
 
-	Initialize(ctx, mon, store.NewInMemory(t))
-
 	state := GetState(ctx)
+	state.SetMonitor(mon)
+	state.SetStore(store.NewInMemory(t))
+
 	if state.flusher != nil {
 		logging.Infof(ctx, "Canceling previous tsmon auto flush")
 		state.flusher.stop()
@@ -119,13 +111,6 @@ func InitializeFromFlags(ctx context.Context, fl *Flags) error {
 	}
 
 	return nil
-}
-
-// Initialize configures the tsmon library with the given monitor and store.
-func Initialize(ctx context.Context, m monitor.Monitor, s store.Store) {
-	state := GetState(ctx)
-	state.SetMonitor(m)
-	state.SetStore(s)
 }
 
 // Shutdown gracefully terminates the tsmon by doing the final flush and
@@ -146,11 +131,14 @@ func Shutdown(ctx context.Context) {
 		state.flusher = nil
 	}
 
-	// Flush logs errors inside.
-	Flush(ctx)
+	// Flush the remaining metrics. This logs errors inside.
+	_ = Flush(ctx)
+	// We are done using this monitor.
+	_ = state.monitor.Close()
 
 	// Reset the state as if 'InitializeFromFlags' was never called.
-	Initialize(ctx, monitor.NewNilMonitor(), store.NewNilStore())
+	state.SetMonitor(monitor.NewNilMonitor())
+	state.SetStore(store.NewNilStore())
 }
 
 // ResetCumulativeMetrics resets only cumulative metrics.
@@ -179,25 +167,40 @@ func initMonitor(ctx context.Context, cfg config) (monitor.Monitor, error) {
 	switch endpointURL.Scheme {
 	case "file":
 		return monitor.NewDebugMonitor(endpointURL.Path), nil
-	case "http", "https":
-		client, err := newAuthenticator(ctx, cfg.Credentials, cfg.ActAs, monitor.ProdxmonScopes).Client()
+	case "https":
+		// Ignore the path part of the URL for compatibility with legacy configs
+		// that use "https://prodxmon-pa.googleapis.com/v1:insert". We only care
+		// about the hostname for the gRPC monitor.
+		hostname, port := endpointURL.Hostname(), endpointURL.Port()
+		if port == "" {
+			port = "443"
+		}
+		creds, err := newAuthenticator(ctx, cfg.Credentials, cfg.ActAs).PerRPCCredentials()
 		if err != nil {
 			return nil, err
 		}
-
-		return monitor.NewHTTPMonitor(ctx, client, endpointURL)
+		conn, err := grpc.NewClient(
+			fmt.Sprintf("%s:%s", hostname, port),
+			grpc.WithTransportCredentials(credentials.NewTLS(nil)),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to dial ProdX service %s:%s", hostname, port).Err()
+		}
+		return monitor.NewGRPCMonitor(ctx, 500, conn), nil
+	case "http":
+		// We should not be sending credential tokens over an unencrypted channel.
+		return nil, fmt.Errorf("unsupported tsmon endpoint url: %s", cfg.Endpoint)
 	default:
 		return nil, fmt.Errorf("unknown tsmon endpoint url: %s", cfg.Endpoint)
 	}
 }
 
-// newAuthenticator returns a new authenticator for HTTP requests.
-func newAuthenticator(ctx context.Context, credentials, actAs string, scopes []string) *auth.Authenticator {
-	// TODO(vadimsh): Don't hardcode auth options here, pass them from outside
-	// somehow.
+// newAuthenticator returns a new authenticator for RPC requests.
+func newAuthenticator(ctx context.Context, credentials, actAs string) *auth.Authenticator {
 	authOpts := chromeinfra.DefaultAuthOptions()
 	authOpts.ServiceAccountJSONPath = credentials
-	authOpts.Scopes = scopes
+	authOpts.Scopes = []string{monitor.ProdXMonScope}
 	authOpts.ActAsServiceAccount = actAs
 	return auth.NewAuthenticator(ctx, auth.SilentLogin, authOpts)
 }
