@@ -166,6 +166,34 @@ func TestListener(t *testing.T) {
 				ensureAcked(msgID)
 			})
 
+			t.Run("Relevant v2 - large fields dropped", func(t *ftt.Test) {
+				eid := tryjob.MustBuildbucketID(bbHost, 123)
+				eid.MustCreateIfNotExists(ctx)
+				b := &buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Infra: &buildbucketpb.BuildInfra{
+						Buildbucket: &buildbucketpb.BuildInfra_Buildbucket{
+							Hostname: bbHost,
+						},
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				}
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b, true), makeBuildsV2PubsubAttrs(b))
+				select {
+				case <-time.After(15 * time.Second):
+					panic("took too long to process message")
+				case processedMsgID := <-l.processedCh:
+					assert.Loosely(t, processedMsgID, should.Equal(msgID))
+				}
+				assert.Loosely(t, tjNotifier.notified, should.Match([]tryjob.ExternalID{eid}))
+				ensureAcked(msgID)
+			})
+
 			t.Run("Relevant v2", func(t *ftt.Test) {
 				eid := tryjob.MustBuildbucketID(bbHost, 123)
 				eid.MustCreateIfNotExists(ctx)
@@ -183,7 +211,7 @@ func TestListener(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_SUCCESS,
 				}
-				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b, false), makeBuildsV2PubsubAttrs(b))
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
@@ -208,7 +236,7 @@ func TestListener(t *testing.T) {
 				eid := tryjob.MustBuildbucketID(l.bbHost, 123)
 				eid.MustCreateIfNotExists(ctx)
 
-				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b, false), makeBuildsV2PubsubAttrs(b))
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
@@ -247,7 +275,7 @@ func TestListener(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_SUCCESS,
 				}
-				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b, false), makeBuildsV2PubsubAttrs(b))
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
@@ -328,7 +356,7 @@ func TestListener(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_SUCCESS,
 				}
-				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b), makeBuildsV2PubsubAttrs(b))
+				msgID := srv.Publish(topic.String(), makeBuildsV2PubsubData(b, false), makeBuildsV2PubsubAttrs(b))
 				select {
 				case <-time.After(15 * time.Second):
 					panic("took too long to process message")
@@ -389,7 +417,7 @@ func makeBuildsV2PubsubAttrs(b *buildbucketpb.Build) map[string]string {
 	}
 }
 
-func makeBuildsV2PubsubData(b *buildbucketpb.Build) []byte {
+func makeBuildsV2PubsubData(b *buildbucketpb.Build, dropLargeFields bool) []byte {
 	copyB := proto.Clone(b).(*buildbucketpb.Build)
 	large := &buildbucketpb.Build{
 		Input: &buildbucketpb.Build_Input{
@@ -418,15 +446,20 @@ func makeBuildsV2PubsubData(b *buildbucketpb.Build) []byte {
 		}
 		return buf.Bytes()
 	}
-	largeBytes, err := proto.Marshal(large)
-	if err != nil {
-		panic(errors.Annotate(err, "failed to marshal build large fields"))
+
+	msg := &buildbucketpb.BuildsV2PubSub{
+		Build: copyB,
 	}
-	compressedLarge := compress(largeBytes)
-	data, err := protojson.Marshal(&buildbucketpb.BuildsV2PubSub{
-		Build:            copyB,
-		BuildLargeFields: compressedLarge,
-	})
+	if dropLargeFields {
+		msg.BuildLargeFieldsDropped = true
+	} else {
+		largeBytes, err := proto.Marshal(large)
+		if err != nil {
+			panic(errors.Annotate(err, "failed to marshal build large fields"))
+		}
+		msg.BuildLargeFields = compress(largeBytes)
+	}
+	data, err := protojson.Marshal(msg)
 	if err != nil {
 		panic(errors.Annotate(err, "failed to marshal BuildsV2PubSub message"))
 	}

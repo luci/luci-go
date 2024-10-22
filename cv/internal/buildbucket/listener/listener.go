@@ -204,13 +204,15 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	var isV2Msg bool
 	var buildID int64
 	var hostname string
+	var buildsV2Msg *buildbucketpb.BuildsV2PubSub
 	var build *buildbucketpb.Build
 	var err error
 	if v, ok := msg.Attributes["version"]; ok && v == "v2" {
 		isV2Msg = true
-		if build, err = parseV2Data(msg); err != nil {
+		if buildsV2Msg, err = parseV2Data(msg); err != nil {
 			return err
 		}
+		build = buildsV2Msg.Build
 		hostname, buildID = build.GetInfra().GetBuildbucket().GetHostname(), build.GetId()
 	} else {
 		// TODO(crbug.com/1406393): delete it once the migration is done. And the
@@ -235,7 +237,7 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 		return err
 	case id != 0:
 		// Build is tracked by LUCI CV.
-		if !isV2Msg {
+		if !isV2Msg || buildsV2Msg.GetBuildLargeFieldsDropped() {
 			return l.tjNotifier.ScheduleUpdate(ctx, id, eid)
 		}
 		// TODO(crbug.com/1406393): remove the debugging once the migration is done.
@@ -246,11 +248,15 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 }
 
 // parseV2Data parses Buildbucket new `builds_v2` pubsub message data.
-func parseV2Data(msg *pubsub.Message) (*buildbucketpb.Build, error) {
+func parseV2Data(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) {
 	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
 	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(msg.Data, buildsV2Msg); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
 	}
+	if buildsV2Msg.BuildLargeFieldsDropped {
+		return buildsV2Msg, nil
+	}
+
 	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
@@ -261,7 +267,7 @@ func parseV2Data(msg *pubsub.Message) (*buildbucketpb.Build, error) {
 	}
 	proto.Merge(buildsV2Msg.Build, largeFields)
 
-	return buildsV2Msg.Build, nil
+	return buildsV2Msg, nil
 }
 
 // parseV1Data extracts the relevant information from Buildbucket old `builds`
