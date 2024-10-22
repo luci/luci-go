@@ -73,23 +73,42 @@
 // A package line looks like `<package_template> <version>`. Package templates
 // are CIPD package names, with optional expansion parameters `${os}`,
 // `${arch}`, and `${platform}`. These placeholders can appear anywhere in the
-// package template except for the first letter.  All other characters in the
+// package template except for the first letter. All other characters in the
 // template are taken verbatim.
 //
-// ${os} will expand to one of the following, based on the value of this
-// client's runtime.GOOS value:
+// ${os} will expand to one of the following, based on the value of GOOS used
+// to build this client:
 //   - windows
 //   - mac
 //   - linux
+//   - freebsd
+//   - netbsd
+//   - ...
 //
-// ${arch} will expand to one of the following, based on the value of this
-// client's runtime.GOARCH value:
-//   - 386
-//   - amd64
-//   - armv6l
+// (basically, just the GOOS value, with `mac` instead of `darwin` as the
+// only historical exception).
+//
+// ${arch} will expand to one of the following, based on combination of values
+// of GOARCH, GOARM, GOAMD64, etc used to build this client:
+//   - 386: GOARCH=386, GO386=sse2 (default)
+//   - amd64: GOARCH=amd64, GOAMD64=v1 (default)
+//   - arm64: GOARCH=arm64
+//   - armv6l: GOARCH=arm, GOARM=6
+//   - armv7l: GOARCH=arm, GOARM=7
+//   - loong64: GOARCH=loong64
+//   - mips: GOARCH=mips, GOMIPS=hardfloat (default)
+//   - mips64: GOARCH=mips64, GOMIPS64=hardfloat (default)
+//   - mips64le: GOARCH=mips64le, GOMIPS64=hardfloat (default)
+//   - mipsle: GOARCH=mipsle, GOMIPS=hardfloat (default)
+//   - ppc64: GOARCH=ppc64, GOPPC64=power8 (default)
+//   - ppc64le: GOARCH=ppc64le, GOPPC64=power8 (default)
+//   - riscv64: GOARCH=riscv64
+//   - s390x: GOARCH=s390x
 //
 // Since these two often appear together, the convenience placeholder
-// `${platform}` expands to the equivalent of `${os}-${arch}`.
+// `${platform}` expands to the equivalent of `${os}-${arch}`. Note that not all
+// combinations of `${os}` and `${arch}` are supported (e.g. there's no
+// windows-mips64).
 //
 // All of these parameters also support the syntax ${var=possible,values}.
 // What this means is that the package line will be expanded if, and only if,
