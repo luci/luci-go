@@ -97,7 +97,6 @@ func TestRunner(t *testing.T) {
 				case wc <- WorkItem{F: valueWriter(1)}:
 					dispatch--
 					remaining--
-					break
 
 				case v := <-outC:
 					count += v

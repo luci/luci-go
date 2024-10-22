@@ -249,7 +249,7 @@ func runForever(ctx context.Context, ar *archivist.Archivist, flags *CommandLine
 			case jobChan.C <- &archiveJob{deadline, task}:
 			case <-ctx.Done():
 				logging.Infof(ctx, "lease thread got context err in jobChan push: %s", ctx.Err())
-				break
+				// break
 			}
 		}
 	}

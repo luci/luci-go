@@ -294,7 +294,7 @@ func (b *Bundler) makeBundles() {
 
 			case has:
 				// There is more data, and it has already expired, so go immediately.
-				break
+				// break
 
 			default:
 				// No data, and no enqueued stream data, so block indefinitely until we

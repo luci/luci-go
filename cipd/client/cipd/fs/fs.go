@@ -518,11 +518,14 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 			return nil
 
 		case IsNotEmpty(err):
-			break // existing non-empty directory
+			// existing non-empty directory
+			// break
 		case IsNotDir(err):
-			break // "old argument names a directory and new argument names a non-directory"
+			// "old argument names a directory and new argument names a non-directory"
+			// break
 		case IsAccessDenied(err):
-			break // Windows-specific edge case
+			// Windows-specific edge case
+			// break
 
 		default:
 			// Failing in a weird way.

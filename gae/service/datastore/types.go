@@ -129,7 +129,7 @@ func (r *ExistsResult) init(sizes ...int) {
 	for i, s := range sizes {
 		switch {
 		case s <= 0:
-			break
+			// break
 
 		case s == 1:
 			// Single-entry slice out of "entries".

@@ -461,12 +461,12 @@ func dumpRecordIO(c context.Context, r io.Reader, cb func(context.Context, []byt
 		frameSize, r, err := frameReader.ReadFrame()
 		switch err {
 		case nil:
-			break
+			// break
 
 		case io.EOF:
 			log.Debugf(c, "Encountered EOF.")
 			eof = true
-			break
+			// break
 
 		default:
 			return errors.Annotate(err, "reading frameIndex(%d)", frameIndex).Err()
