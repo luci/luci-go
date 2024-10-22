@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"
@@ -41,6 +42,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/pubsub"
@@ -56,6 +58,9 @@ var buildbucketPubSub = metric.NewCounter(
 	// "success", "transient-failure" or "permanent-failure"
 	field.String("status"),
 )
+
+// mockedBBClientKey is the context key indicates using mocked buildbucket client in tests.
+var mockedBBClientKey = "used in tests only for setting the mock buildbucket client"
 
 func getBuilderID(b *buildbucketpb.Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
@@ -394,6 +399,9 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 }
 
 func newBuildsClient(c context.Context, host, project string) (buildbucketpb.BuildsClient, error) {
+	if mockClient, ok := c.Value(&mockedBBClientKey).(*buildbucketpb.MockBuildsClient); ok {
+		return mockClient, nil
+	}
 	t, err := auth.GetRPCTransport(c, auth.AsProject, auth.WithProject(project))
 	if err != nil {
 		return nil, err
@@ -443,15 +451,15 @@ func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) 
 		logging.Infof(c, "Received build %d that hasn't completed yet, ignoring...", buildsV2Msg.Build.GetId())
 		return nil, nil
 	}
-	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+	if buildsV2Msg.BuildLargeFieldsDropped {
+		if err := fetchBuildLargeFields(c, buildsV2Msg); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := extractBuildLargeFields(buildsV2Msg); err != nil {
+			return nil, err
+		}
 	}
-	largeFields := &buildbucketpb.Build{}
-	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
-	}
-	proto.Merge(buildsV2Msg.Build, largeFields)
 
 	emails, err := extractEmailNotifyValues(buildsV2Msg.Build, "")
 	if err != nil {
@@ -463,6 +471,52 @@ func extractBuild(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) 
 		Build:               *buildsV2Msg.Build,
 		EmailNotify:         emails,
 	}, nil
+}
+
+// fetchBuildLargeFields gets the large build fields by calling GetBuild RPC
+// and merge them into buildsV2Msg.Build in place.
+func fetchBuildLargeFields(c context.Context, buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
+	buildsClient, err := newBuildsClient(c, buildsV2Msg.Build.GetInfra().GetBuildbucket().GetHostname(), buildsV2Msg.Build.GetBuilder().GetProject())
+	if err != nil {
+		return err
+	}
+
+	bID := buildsV2Msg.Build.GetId()
+	logging.Infof(c, "fetching large fields for build %d", bID)
+	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
+		Id: bID,
+		Mask: &buildbucketpb.BuildMask{
+			Fields: &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"input.properties",
+					"output.properties",
+					"steps",
+				},
+			},
+		},
+	})
+	if err != nil {
+		err = grpcutil.WrapIfTransient(err)
+		err = errors.Annotate(err, "could not fetch large fields for buildbucket build %d", bID).Err()
+		return err
+	}
+	proto.Merge(buildsV2Msg.Build, res)
+	return nil
+}
+
+// extractBuildLargeFields extracts large build fields from
+// buildsV2Msg.BuildLargeFields and merge them into buildsV2Msg.Build in place.
+func extractBuildLargeFields(buildsV2Msg *buildbucketpb.BuildsV2PubSub) error {
+	largeFieldsData, err := zlibDecompress(buildsV2Msg.BuildLargeFields)
+	if err != nil {
+		return errors.Annotate(err, "failed to decompress build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+	}
+	largeFields := &buildbucketpb.Build{}
+	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+		return errors.Annotate(err, "failed to unmarshal build_large_fields for build %d", buildsV2Msg.Build.GetId()).Err()
+	}
+	proto.Merge(buildsV2Msg.Build, largeFields)
+	return nil
 }
 
 // zlibDecompress decompresses data using zlib.
