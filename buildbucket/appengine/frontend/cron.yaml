@@ -30,25 +30,6 @@ cron:
   url: /internal/cron/report_builder_metrics
   schedule: every 2 minutes
 
-### ereporter2
-
-- description: ereporter2 cleanup
-  target: backend
-  url: /internal/cron/ereporter2/cleanup
-  schedule: every 1 hours
-
-- description: ereporter2 mail exception report
-  target: backend
-  url: /internal/cron/ereporter2/mail
-  schedule: every 1 hours synchronized
-
-### luci-config
-
-- description: config update
-  target: backend
-  url: /internal/cron/config/update
-  schedule: every 10 minutes
-
 ## cleanup builders
 
 - description: removes inactive BuilderStats
@@ -59,7 +40,7 @@ cron:
 ### gae_ts_mon
 
 - description: Send ts_mon metrics
-  target: backend
+  target: default
   url: /internal/cron/ts_mon/send
   schedule: every 1 minutes
 
