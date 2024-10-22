@@ -22,6 +22,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -36,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	taskpb "go.chromium.org/luci/bisection/task/proto"
@@ -102,8 +104,8 @@ func TestBuildBucketPubsub(t *testing.T) {
 
 		t.Run("Excluded builder group", func(t *ftt.Test) {
 			c, _ := tsmon.WithDummyInMemory(c)
-			largeField, err := largeField("chromium.clang")
-			assert.Loosely(t, err, should.BeNil)
+			// largeField, err := largeField("chromium.clang")
+			// assert.Loosely(t, err, should.BeNil)
 			buildPubsub := &buildbucketpb.BuildsV2PubSub{
 				Build: &buildbucketpb.Build{
 					Builder: &buildbucketpb.BuilderID{
@@ -112,9 +114,14 @@ func TestBuildBucketPubsub(t *testing.T) {
 					},
 					Status: buildbucketpb.Status_FAILURE,
 				},
-				BuildLargeFields: largeField,
+				BuildLargeFieldsDropped: true,
 			}
-			err = BuildbucketPubSubHandler(c, message, buildPubsub)
+			ctl := gomock.NewController(t)
+			defer ctl.Finish()
+			mc := buildbucket.NewMockedClient(c, ctl)
+			c = mc.Ctx
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(buildWithInputProperties("chromium.clang"), nil)
+			err := BuildbucketPubSubHandler(c, message, buildPubsub)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, bbCounter.Get(c, "chromium", "unsupported"), should.Equal(1))
 		})
@@ -180,8 +187,8 @@ func makeBBReq(message *buildbucketpb.BuildsV2PubSub) io.ReadCloser {
 	return io.NopCloser(bytes.NewReader(jmsg))
 }
 
-func largeField(builderGroup string) ([]byte, error) {
-	large := &buildbucketpb.Build{
+func buildWithInputProperties(builderGroup string) *buildbucketpb.Build {
+	return &buildbucketpb.Build{
 		Input: &buildbucketpb.Build_Input{
 			Properties: &structpb.Struct{
 				Fields: map[string]*structpb.Value{
@@ -190,6 +197,9 @@ func largeField(builderGroup string) ([]byte, error) {
 			},
 		},
 	}
+}
+func largeField(builderGroup string) ([]byte, error) {
+	large := buildWithInputProperties(builderGroup)
 	largeBytes, err := proto.Marshal(large)
 	if err != nil {
 		return nil, err

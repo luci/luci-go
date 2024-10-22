@@ -23,6 +23,7 @@ import (
 	"io"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
@@ -33,6 +34,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/bisection/compilefailuredetection"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/metrics"
 	"go.chromium.org/luci/bisection/rerun"
@@ -156,14 +158,27 @@ func BuildbucketPubSubHandler(c context.Context, msg pubsub.Message, bbmsg *buil
 	if err != nil {
 		return errors.Annotate(err, "get excluded builder groups for compile").Err()
 	}
-	// Pubsub message stores input properties in large fields.
-	largeFieldsData, err := zlibDecompress(bbmsg.BuildLargeFields)
-	if err != nil {
-		return errors.Annotate(err, "decompress large field").Err()
-	}
-	largeFields := &buildbucketpb.Build{}
-	if err := proto.Unmarshal(largeFieldsData, largeFields); err != nil {
-		return errors.Annotate(err, "unmarshal large field").Err()
+	var largeFields *buildbucketpb.Build
+	if bbmsg.BuildLargeFieldsDropped {
+		mask := &buildbucketpb.BuildMask{
+			Fields: &fieldmaskpb.FieldMask{
+				Paths: []string{"input.properties"},
+			},
+		}
+		largeFields, err = buildbucket.GetBuild(c, bbmsg.Build.Id, mask)
+		if err != nil {
+			return errors.Annotate(err, "fetch large field").Err()
+		}
+	} else {
+		// Pubsub message stores input properties in large fields.
+		largeFieldsData, err := zlibDecompress(bbmsg.BuildLargeFields)
+		if err != nil {
+			return errors.Annotate(err, "decompress large field").Err()
+		}
+		largeFields = &buildbucketpb.Build{}
+		if err = proto.Unmarshal(largeFieldsData, largeFields); err != nil {
+			return errors.Annotate(err, "unmarshal large field").Err()
+		}
 	}
 
 	builderGroup := util.GetBuilderGroup(largeFields)
