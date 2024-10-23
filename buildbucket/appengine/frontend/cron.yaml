@@ -37,13 +37,6 @@ cron:
   url: /internal/cron/remove_inactive_builder_stats
   schedule: every 1 hours
 
-### gae_ts_mon
-
-- description: Send ts_mon metrics
-  target: default
-  url: /internal/cron/ts_mon/send
-  schedule: every 1 minutes
-
 ### trigger cloud tasks to sync builds with backend tasks
 - description: trigger cloud tasks to sync builds with backend tasks
   target: default-go
