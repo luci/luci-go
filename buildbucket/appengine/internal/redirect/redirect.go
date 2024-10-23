@@ -44,11 +44,24 @@ import (
 // TODO(b/326502532): may worth investing time on a possible future improvement
 // to make these handers more lightweight as said in b/326502532.
 func InstallHandlers(r *router.Router, mw router.MiddlewareChain) {
+	r.GET("/", mw, handleMain)
 	r.GET("/build/*BuildID", mw, handleViewBuild)
 	r.GET("/builds/*BuildID", mw, handleViewBuild)
 	r.GET("/log/:BuildID/*StepName", mw, handleViewBuild)
 	r.GET("/builder/:Project/:Bucket/*Builder", mw, handleViewBuilder)
 	r.GET("/builders/:Project/:Bucket/*Builder", mw, handleViewBuilder)
+}
+
+// Redirects to milo home page.
+func handleMain(c *router.Context) {
+	ctx := c.Request.Context()
+	globalCfg, err := config.GetSettingsCfg(ctx)
+	if err != nil {
+		replyError(c, err, "failed to redirect to LUCI UI", http.StatusInternalServerError)
+		return
+	}
+	url := fmt.Sprintf("https://%s/ui/", globalCfg.Swarming.MiloHostname)
+	http.Redirect(c.Writer, c.Request, url, http.StatusFound)
 }
 
 func handleViewLog(c *router.Context) {

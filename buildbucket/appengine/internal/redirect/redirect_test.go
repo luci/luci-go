@@ -445,3 +445,30 @@ func TestHandleViewLog(t *testing.T) {
 		})
 	})
 }
+
+func TestHandleMain(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("handleMain", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		settingsCfg := &pb.SettingsCfg{
+			Swarming: &pb.SwarmingSettings{
+				MiloHostname: "milo.com",
+			},
+		}
+
+		rsp := httptest.NewRecorder()
+		rctx := &router.Context{
+			Writer: rsp,
+		}
+		rctx.Request = (&http.Request{}).WithContext(ctx)
+		rctx.Request.URL = &url.URL{
+			Path: "/",
+		}
+
+		assert.Loosely(t, config.SetTestSettingsCfg(ctx, settingsCfg), should.BeNil)
+		handleMain(rctx)
+		assert.Loosely(t, rsp.Code, should.Equal(http.StatusFound))
+		assert.Loosely(t, rsp.Header().Get("Location"), should.Equal("https://milo.com/ui/"))
+	})
+}
