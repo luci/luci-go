@@ -566,3 +566,63 @@ https://gerrit-review.googlesource.com/Documentation/user-search-accounts.html#_
 		},
 	}
 }
+
+func cmdWip(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
+		ri := input.JSONInput.(*gerrit.WipInput)
+		return client.Wip(ctx, input.ChangeID, ri)
+	}
+	return &subcommands.Command{
+		UsageLine: "wip <options>",
+		ShortDesc: "sets work-in-progress on a change",
+		LongDesc: `sets work-in-progress on a change.
+
+Input should contain a change ID, and optionally a JSON payload, e.g.
+{
+  "change_id": <change-id>,
+  "input": <JSON payload>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on "set-work-in-progress" may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-work-in-progress`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:  true,
+				jsonInput: &gerrit.WipInput{},
+			}, runner)
+		},
+	}
+}
+
+func cmdReady(authOpts auth.Options) *subcommands.Command {
+	runner := func(ctx context.Context, client *gerrit.Client, input *apiCallInput) (any, error) {
+		ri := input.JSONInput.(*gerrit.WipInput)
+		return client.Ready(ctx, input.ChangeID, ri)
+	}
+	return &subcommands.Command{
+		UsageLine: "ready <options>",
+		ShortDesc: "sets ready-for-review on a change",
+		LongDesc: `sets ready-for-review on a change.
+
+Input should contain a change ID, and optionally a JSON payload, e.g.
+{
+  "change_id": <change-id>,
+  "input": <JSON payload>
+}
+
+For more information on change-id, see
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+
+More information on "set-ready-for-review" may be found here:
+https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-ready-for-review`,
+		CommandRun: func() subcommands.CommandRun {
+			return newChangeRun(authOpts, changeRunOptions{
+				changeID:  true,
+				jsonInput: &gerrit.WipInput{},
+			}, runner)
+		},
+	}
+}

@@ -1155,6 +1155,56 @@ func (c *Client) AccountQuery(ctx context.Context, qr AccountQueryParams) ([]*Ac
 	return result, moreAccounts, nil
 }
 
+// WipInput contains information for marking a change as work-in-progress or
+// ready-for-review.
+type WipInput struct {
+	// Message is the message to be added as review comment to the change when
+	// changing the WIP state.
+	Message string `json:"message,omitempty"`
+}
+
+// Wip marks a change as work-in-progress in Gerrit.
+//
+// Returns a Change referenced by changeID, if successful.
+//
+// WipInput is optional (that is, may be nil).
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) Wip(ctx context.Context, changeID string, ri *WipInput) (any, error) {
+	var resp string
+	path := fmt.Sprintf("a/changes/%s/wip", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// Ready marks a change as ready-for-review in Gerrit.
+//
+// Returns a Change referenced by changeID, if successful.
+//
+// WipInput is optional (that is, may be nil).
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+//
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) Ready(ctx context.Context, changeID string, ri *WipInput) (any, error) {
+	var resp string
+	path := fmt.Sprintf("a/changes/%s/ready", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (c *Client) get(ctx context.Context, path string, query url.Values, result any) (int, error) {
 	u := c.gerritURL
 	u.Opaque = "//" + u.Host + "/" + path

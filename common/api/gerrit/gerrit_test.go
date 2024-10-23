@@ -733,6 +733,72 @@ func TestIsPureRevert(t *testing.T) {
 	})
 }
 
+func TestWip(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	ftt.Run("Wip", t, func(c *ftt.Test) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ri RestoreInput
+			err := json.NewDecoder(r.Body).Decode(&ri)
+			assert.Loosely(c, err, should.BeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n\"\"\n")
+		})
+		defer srv.Close()
+
+		c.Run("Basic", func(c *ftt.Test) {
+			_, err := client.Wip(ctx, "627036", nil)
+			assert.Loosely(c, err, should.BeNil)
+		})
+
+		c.Run("Basic with message", func(c *ftt.Test) {
+			ri := WipInput{
+				Message: "restored",
+			}
+			_, err := client.Wip(ctx, "627036", &ri)
+			assert.Loosely(c, err, should.BeNil)
+		})
+	})
+}
+
+func TestReady(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	ftt.Run("Ready", t, func(c *ftt.Test) {
+		srv, client := newMockClient(func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			var ri RestoreInput
+			err := json.NewDecoder(r.Body).Decode(&ri)
+			assert.Loosely(c, err, should.BeNil)
+
+			w.WriteHeader(200)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, ")]}'\n\"\"\n")
+		})
+		defer srv.Close()
+
+		c.Run("Basic", func(c *ftt.Test) {
+			_, err := client.Ready(ctx, "627036", nil)
+			assert.Loosely(c, err, should.BeNil)
+		})
+
+		c.Run("Basic with message", func(c *ftt.Test) {
+			ri := WipInput{
+				Message: "restored",
+			}
+			_, err := client.Ready(ctx, "627036", &ri)
+			assert.Loosely(c, err, should.BeNil)
+		})
+	})
+}
+
 func TestDirectSetReview(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
