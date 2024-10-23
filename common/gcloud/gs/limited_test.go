@@ -20,6 +20,8 @@ import (
 	"io"
 	"testing"
 
+	"cloud.google.com/go/storage"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -62,6 +64,10 @@ func (trc *testReaderClient) NewReader(p Path, offset, length int64) (io.ReadClo
 	trc.readers[tr] = struct{}{}
 	trc.totalReaders++
 	return tr, nil
+}
+
+func (trc *testReaderClient) Attrs(p Path) (*storage.ObjectAttrs, error) {
+	return &storage.ObjectAttrs{Size: int64(len(trc.data[p]))}, nil
 }
 
 type testReader struct {
