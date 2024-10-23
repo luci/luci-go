@@ -52,41 +52,41 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/noop"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestGetAllProjects(t *testing.T) {
 	t.Parallel()
 
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
 		// Empty.
 		projects, err := e.GetAllProjects(c)
-		So(err, ShouldBeNil)
-		So(len(projects), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(projects), should.BeZero)
 
 		// Non empty.
-		So(datastore.Put(c,
+		assert.Loosely(t, datastore.Put(c,
 			&Job{JobID: "abc/1", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "abc/2", ProjectID: "abc", Enabled: true},
 			&Job{JobID: "def/1", ProjectID: "def", Enabled: true},
 			&Job{JobID: "xyz/1", ProjectID: "xyz", Enabled: false},
-		), ShouldBeNil)
+		), should.BeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 		projects, err = e.GetAllProjects(c)
-		So(err, ShouldBeNil)
-		So(projects, ShouldResemble, []string{"abc", "def"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, projects, should.Resemble([]string{"abc", "def"}))
 	})
 }
 
 func TestUpdateProjectJobs(t *testing.T) {
 	t.Parallel()
 
-	Convey("with test context", t, func() {
+	ftt.Run("with test context", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
@@ -102,17 +102,17 @@ func TestUpdateProjectJobs(t *testing.T) {
 			TriggeringPolicy: []uint8{4, 5, 6}, // same
 		}
 
-		Convey("noop", func() {
-			So(e.UpdateProjectJobs(c, "proj", nil), ShouldBeNil)
-			So(allJobs(c), ShouldResemble, []Job{})
+		t.Run("noop", func(t *ftt.Test) {
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", nil), should.BeNil)
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{}))
 		})
 
-		Convey("adding a job", func() {
+		t.Run("adding a job", func(t *ftt.Test) {
 			// Adding a job that ticks each 5 sec.
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
 
 			// Added.
-			So(allJobs(c), ShouldResemble, []Job{
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
@@ -132,26 +132,26 @@ func TestUpdateProjectJobs(t *testing.T) {
 					Task:                jobDef.Task,
 					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
-			})
+			}))
 
 			// The first tick is scheduled.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
-			})
+			}))
 
 			// Again, should be noop.
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
-			So(len(tq.GetScheduledTasks()), ShouldEqual, 1) // no new tasks
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
+			assert.Loosely(t, len(tq.GetScheduledTasks()), should.Equal(1)) // no new tasks
 		})
 
-		Convey("adding a very infrequent job", func() {
+		t.Run("adding a very infrequent job", func(t *ftt.Test) {
 			jobDef.Schedule = "59 23 31 12 *" // every Dec 31st.
 			nextTick := time.Date(epoch.Year(), time.December, 31, 23, 59, 00, 0, time.UTC)
-			So(nextTick.Sub(epoch), ShouldBeGreaterThan, 30*24*time.Hour)
+			assert.Loosely(t, nextTick.Sub(epoch), should.BeGreaterThan(30*24*time.Hour))
 
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
 			// Added.
-			So(allJobs(c), ShouldResemble, []Job{
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
@@ -171,50 +171,50 @@ func TestUpdateProjectJobs(t *testing.T) {
 					Task:                jobDef.Task,
 					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
-			})
+			}))
 
 			// The first tick is scheduled with ETA substantially before actual next
 			// tick.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
-			})
-			So(tq.GetScheduledTasks()[0].Task.Delay, ShouldBeLessThan, 30*24*time.Hour)
+			}))
+			assert.Loosely(t, tq.GetScheduledTasks()[0].Task.Delay, should.BeLessThan(30*24*time.Hour))
 		})
 
-		Convey("adding a job with txn retry", func() {
+		t.Run("adding a job with txn retry", func(t *ftt.Test) {
 			// Simulate the transaction retry.
 			datastore.GetTestable(c).SetTransactionRetryCount(2)
 			// Add a job.
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
 			// Added only one task, even though we had 2 retries.
-			So(len(tq.GetScheduledTasks()), ShouldEqual, 1)
+			assert.Loosely(t, len(tq.GetScheduledTasks()), should.Equal(1))
 		})
 
-		Convey("adding a job with txn collision", func() {
+		t.Run("adding a job with txn collision", func(t *ftt.Test) {
 			// Simulate the transaction refusing to land even after many tries.
 			datastore.GetTestable(c).SetTransactionRetryCount(15)
 			// Attempt to add a job.
 			err := e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef})
 			// Failed transiently, nothing in the datastore or in TQ.
-			So(transient.Tag.In(err), ShouldBeTrue)
-			So(allJobs(c), ShouldResemble, []Job{})
-			So(len(tq.GetScheduledTasks()), ShouldEqual, 0)
+			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{}))
+			assert.Loosely(t, len(tq.GetScheduledTasks()), should.BeZero)
 		})
 
-		Convey("updating job's schedule", func() {
+		t.Run("updating job's schedule", func(t *ftt.Test) {
 			// Adding a job that ticks every 5 sec. Make sure its tick is scheduled.
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
-			})
+			}))
 
 			// Changing it to tick every 30 sec.
 			newDef := jobDef
 			newDef.Schedule = "*/30 * * * * * *"
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{newDef}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{newDef}), should.BeNil)
 
 			// The job is updated now.
-			So(allJobs(c), ShouldResemble, []Job{
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
@@ -234,30 +234,30 @@ func TestUpdateProjectJobs(t *testing.T) {
 					Task:                jobDef.Task,
 					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
-			})
+			}))
 
 			// The new tick is scheduled now too.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 2673062197574995716},
-			})
+			}))
 		})
 
-		Convey("updating job's triggering policy", func() {
+		t.Run("updating job's triggering policy", func(t *ftt.Test) {
 			// Adding a job that is triggered externally (doesn't tick). Schedules no
 			// tasks.
 			job := jobDef
 			job.Schedule = "triggered"
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), ShouldBeNil)
-			So(tq.GetScheduledTasks().Payloads(), ShouldHaveLength, 0)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), should.BeNil)
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.HaveLength(0))
 
 			// Update its triggering policy. It should emit a triage to evaluate
 			// the state of the job using this new policy.
 			job.TriggeringPolicy = []uint8{1, 1, 1, 1}
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), should.BeNil)
 
 			// The job is updated now.
-			So(allJobs(c), ShouldResemble, []Job{
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
@@ -277,24 +277,24 @@ func TestUpdateProjectJobs(t *testing.T) {
 					Task:                jobDef.Task,
 					TriggeringPolicyRaw: job.TriggeringPolicy,
 				},
-			})
+			}))
 
 			// Kicked the triage indeed.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tq.GetScheduledTasks().Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.KickTriageTask{JobId: "proj/1"},
-			})
+			}))
 		})
 
-		Convey("removing a job", func() {
+		t.Run("removing a job", func(t *ftt.Test) {
 			// Adding a job first.
-			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 
 			// And now removing it.
-			So(e.UpdateProjectJobs(c, "proj", nil), ShouldBeNil)
+			assert.Loosely(t, e.UpdateProjectJobs(c, "proj", nil), should.BeNil)
 
 			// Switched to disabled state.
-			So(allJobs(c), ShouldResemble, []Job{
+			assert.Loosely(t, allJobs(c), should.Resemble([]Job{
 				{
 					JobID:     "proj/1",
 					ProjectID: "proj",
@@ -309,7 +309,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 					Task:                jobDef.Task,
 					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
-			})
+			}))
 		})
 	})
 }
@@ -317,38 +317,38 @@ func TestUpdateProjectJobs(t *testing.T) {
 func TestGenerateInvocationID(t *testing.T) {
 	t.Parallel()
 
-	Convey("generateInvocationID does not collide", t, func() {
+	ftt.Run("generateInvocationID does not collide", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 
 		// Bunch of ids generated at the exact same moment in time do not collide.
 		ids := map[int64]struct{}{}
 		for i := 0; i < 20; i++ {
 			id, err := generateInvocationID(c)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ids[id] = struct{}{}
 		}
-		So(len(ids), ShouldEqual, 20)
+		assert.Loosely(t, len(ids), should.Equal(20))
 	})
 
-	Convey("generateInvocationID gen IDs with most recent first", t, func() {
+	ftt.Run("generateInvocationID gen IDs with most recent first", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 
 		older, err := generateInvocationID(c)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		clock.Get(c).(testclock.TestClock).Add(5 * time.Second)
 
 		newer, err := generateInvocationID(c)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		So(newer, ShouldBeLessThan, older)
+		assert.Loosely(t, newer, should.BeLessThan(older))
 	})
 }
 
 func TestQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mock data", t, func() {
+	ftt.Run("with mock data", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
@@ -392,7 +392,7 @@ func TestQueries(t *testing.T) {
 		job2 := "abc/2"
 		job3 := "abc/3"
 
-		So(datastore.Put(c,
+		assert.Loosely(t, datastore.Put(c,
 			&Job{JobID: job1, ProjectID: "abc", Enabled: true, RealmID: "abc:one"},
 			&Job{JobID: job2, ProjectID: "abc", Enabled: true, RealmID: "abc:some"},
 			&Job{JobID: job3, ProjectID: "abc", Enabled: true, RealmID: "abc:public"},
@@ -400,10 +400,10 @@ func TestQueries(t *testing.T) {
 			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, RealmID: "abc:public"},
 			&Job{JobID: "secret/admin-only", ProjectID: "secret", Enabled: true, RealmID: "abc:secret"},
 			&Job{JobID: "secret/restricted", ProjectID: "secret", Enabled: true, RealmID: "abc:secret"},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		// Mocked invocations, all in finished state (IndexedJobID set).
-		So(datastore.Put(c,
+		assert.Loosely(t, datastore.Put(c,
 			&Invocation{ID: 1, JobID: job1, IndexedJobID: job1},
 			&Invocation{ID: 2, JobID: job1, IndexedJobID: job1},
 			&Invocation{ID: 3, JobID: job1, IndexedJobID: job1},
@@ -411,130 +411,130 @@ func TestQueries(t *testing.T) {
 			&Invocation{ID: 5, JobID: job2, IndexedJobID: job2},
 			&Invocation{ID: 6, JobID: job2, IndexedJobID: job2},
 			&Invocation{ID: 7, JobID: job3, IndexedJobID: job3},
-		), ShouldBeNil)
+		), should.BeNil)
 
 		datastore.GetTestable(c).CatchupIndexes()
 
-		Convey("GetAllProjects ignores ACLs and CurrentIdentity", func() {
+		t.Run("GetAllProjects ignores ACLs and CurrentIdentity", func(t *ftt.Test) {
 			test := func(ctx context.Context) {
 				r, err := e.GetAllProjects(c)
-				So(err, ShouldBeNil)
-				So(r, ShouldResemble, []string{"abc", "def", "secret"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, r, should.Resemble([]string{"abc", "def", "secret"}))
 			}
 			test(c)
 			test(ctxAnon)
 			test(ctxAdmin)
 		})
 
-		Convey("GetVisibleJobs works", func() {
+		t.Run("GetVisibleJobs works", func(t *ftt.Test) {
 			get := func(ctx context.Context) []string {
 				jobs, err := e.GetVisibleJobs(ctx)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				return sortedJobIds(jobs)
 			}
 
-			Convey("Anonymous users see only public jobs", func() {
+			t.Run("Anonymous users see only public jobs", func(t *ftt.Test) {
 				// Only 3 jobs with default ACLs granting read access to everyone, but
 				// def/2 is disabled and so shouldn't be returned.
-				So(get(ctxAnon), ShouldResemble, []string{"abc/3", "def/1"})
+				assert.Loosely(t, get(ctxAnon), should.Resemble([]string{"abc/3", "def/1"}))
 			})
-			Convey("Owners can see their own jobs + public jobs", func() {
+			t.Run("Owners can see their own jobs + public jobs", func(t *ftt.Test) {
 				// abc/1 is owned by one@example.com.
-				So(get(ctxOne), ShouldResemble, []string{"abc/1", "abc/3", "def/1"})
+				assert.Loosely(t, get(ctxOne), should.Resemble([]string{"abc/1", "abc/3", "def/1"}))
 			})
-			Convey("Explicit readers", func() {
-				So(get(ctxSome), ShouldResemble, []string{
+			t.Run("Explicit readers", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxSome), should.Resemble([]string{
 					"abc/2",
 					"abc/3",
 					"def/1",
 					"secret/restricted", // via the conditional permission
-				})
+				}))
 			})
-			Convey("Admins have implicit read access to all jobs", func() {
-				So(get(ctxAdmin), ShouldResemble, []string{
+			t.Run("Admins have implicit read access to all jobs", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxAdmin), should.Resemble([]string{
 					"abc/1",
 					"abc/2",
 					"abc/3",
 					"def/1",
 					"secret/admin-only",
 					"secret/restricted",
-				})
+				}))
 			})
 		})
 
-		Convey("GetProjectJobsRA works", func() {
+		t.Run("GetProjectJobsRA works", func(t *ftt.Test) {
 			get := func(ctx context.Context, project string) []string {
 				jobs, err := e.GetVisibleProjectJobs(ctx, project)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				return sortedJobIds(jobs)
 			}
-			Convey("Anonymous can still see public jobs", func() {
-				So(get(ctxAnon, "def"), ShouldResemble, []string{"def/1"})
+			t.Run("Anonymous can still see public jobs", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxAnon, "def"), should.Resemble([]string{"def/1"}))
 			})
-			Convey("Admin have implicit read access to all jobs", func() {
-				So(get(ctxAdmin, "abc"), ShouldResemble, []string{"abc/1", "abc/2", "abc/3"})
+			t.Run("Admin have implicit read access to all jobs", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxAdmin, "abc"), should.Resemble([]string{"abc/1", "abc/2", "abc/3"}))
 			})
-			Convey("Owners can still see their jobs", func() {
-				So(get(ctxOne, "abc"), ShouldResemble, []string{"abc/1", "abc/3"})
+			t.Run("Owners can still see their jobs", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxOne, "abc"), should.Resemble([]string{"abc/1", "abc/3"}))
 			})
-			Convey("Readers can see their jobs", func() {
-				So(get(ctxSome, "abc"), ShouldResemble, []string{"abc/2", "abc/3"})
+			t.Run("Readers can see their jobs", func(t *ftt.Test) {
+				assert.Loosely(t, get(ctxSome, "abc"), should.Resemble([]string{"abc/2", "abc/3"}))
 			})
 		})
 
-		Convey("GetVisibleJob works", func() {
+		t.Run("GetVisibleJob works", func(t *ftt.Test) {
 			_, err := e.GetVisibleJob(ctxAdmin, "missing/job")
-			So(err, ShouldEqual, ErrNoSuchJob)
+			assert.Loosely(t, err, should.Equal(ErrNoSuchJob))
 
 			_, err = e.GetVisibleJob(ctxAnon, "abc/1") // no "scheduler.jobs.get" permission.
-			So(err, ShouldEqual, ErrNoSuchJob)
+			assert.Loosely(t, err, should.Equal(ErrNoSuchJob))
 
 			_, err = e.GetVisibleJob(ctxAnon, "def/2") // not enabled, hence not visible.
-			So(err, ShouldEqual, ErrNoSuchJob)
+			assert.Loosely(t, err, should.Equal(ErrNoSuchJob))
 
 			job, err := e.GetVisibleJob(ctxAnon, "def/1") // OK.
-			So(job, ShouldNotBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, job, should.NotBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("ListInvocations works", func() {
+		t.Run("ListInvocations works", func(t *ftt.Test) {
 			job, err := e.GetVisibleJob(ctxOne, "abc/1")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("With paging", func() {
+			t.Run("With paging", func(t *ftt.Test) {
 				invs, cursor, err := e.ListInvocations(ctxOne, job, ListInvocationsOpts{
 					PageSize: 2,
 				})
-				So(err, ShouldBeNil)
-				So(len(invs), ShouldEqual, 2)
-				So(invs[0].ID, ShouldEqual, 1)
-				So(invs[1].ID, ShouldEqual, 2)
-				So(cursor, ShouldNotEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(invs), should.Equal(2))
+				assert.Loosely(t, invs[0].ID, should.Equal(1))
+				assert.Loosely(t, invs[1].ID, should.Equal(2))
+				assert.Loosely(t, cursor, should.NotEqual(""))
 
 				invs, cursor, err = e.ListInvocations(ctxOne, job, ListInvocationsOpts{
 					PageSize: 2,
 					Cursor:   cursor,
 				})
-				So(err, ShouldBeNil)
-				So(len(invs), ShouldEqual, 1)
-				So(invs[0].ID, ShouldEqual, 3)
-				So(cursor, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(invs), should.Equal(1))
+				assert.Loosely(t, invs[0].ID, should.Equal(3))
+				assert.Loosely(t, cursor, should.BeEmpty)
 			})
 		})
 
-		Convey("GetInvocation works", func() {
+		t.Run("GetInvocation works", func(t *ftt.Test) {
 			job, err := e.GetVisibleJob(ctxOne, "abc/1")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey("NoSuchInvocation", func() {
+			t.Run("NoSuchInvocation", func(t *ftt.Test) {
 				_, err = e.GetInvocation(ctxOne, job, 666) // Missing invocation.
-				So(err, ShouldResemble, ErrNoSuchInvocation)
+				assert.Loosely(t, err, should.ErrLike(ErrNoSuchInvocation))
 			})
 
-			Convey("Existing invocation", func() {
+			t.Run("Existing invocation", func(t *ftt.Test) {
 				inv, err := e.GetInvocation(ctxOne, job, 1)
-				So(inv, ShouldNotBeNil)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, inv, should.NotBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -543,7 +543,7 @@ func TestQueries(t *testing.T) {
 func TestPrepareTopic(t *testing.T) {
 	t.Parallel()
 
-	Convey("PrepareTopic works", t, func(ctx C) {
+	ftt.Run("PrepareTopic works", t, func(ctx *ftt.Test) {
 		c := newTestContext(epoch)
 
 		e, _ := newTestEngine()
@@ -551,10 +551,10 @@ func TestPrepareTopic(t *testing.T) {
 		pubSubCalls := 0
 		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
 			pubSubCalls++
-			ctx.So(topic, ShouldEqual, fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID))
-			ctx.So(sub, ShouldEqual, fmt.Sprintf("projects/%s/subscriptions/dev-scheduler.noop.some~publisher.com", fakeAppID))
-			ctx.So(pushURL, ShouldEqual, "") // pull on dev server
-			ctx.So(publisher, ShouldEqual, "some@publisher.com")
+			assert.Loosely(ctx, topic, should.Equal(fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID)))
+			assert.Loosely(ctx, sub, should.Equal(fmt.Sprintf("projects/%s/subscriptions/dev-scheduler.noop.some~publisher.com", fakeAppID)))
+			assert.Loosely(ctx, pushURL, should.BeEmpty) // pull on dev server
+			assert.Loosely(ctx, publisher, should.Equal("some@publisher.com"))
 			return nil
 		}
 
@@ -568,22 +568,22 @@ func TestPrepareTopic(t *testing.T) {
 
 		// Once.
 		topic, token, err := ctl.PrepareTopic(c, "some@publisher.com")
-		So(err, ShouldBeNil)
-		So(topic, ShouldEqual, fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID))
-		So(token, ShouldNotEqual, "")
-		So(pubSubCalls, ShouldEqual, 1)
+		assert.Loosely(ctx, err, should.BeNil)
+		assert.Loosely(ctx, topic, should.Equal(fmt.Sprintf("projects/%s/topics/dev-scheduler.noop.some~publisher.com", fakeAppID)))
+		assert.Loosely(ctx, token, should.NotEqual(""))
+		assert.Loosely(ctx, pubSubCalls, should.Equal(1))
 
 		// Again. 'configureTopic' should not be called anymore.
 		_, _, err = ctl.PrepareTopic(c, "some@publisher.com")
-		So(err, ShouldBeNil)
-		So(pubSubCalls, ShouldEqual, 1)
+		assert.Loosely(ctx, err, should.BeNil)
+		assert.Loosely(ctx, pubSubCalls, should.Equal(1))
 	})
 }
 
 func TestProcessPubSubPush(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mock invocation", t, func() {
+	ftt.Run("with mock invocation", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
@@ -592,23 +592,23 @@ func TestProcessPubSubPush(t *testing.T) {
 			tc.Add(d)
 		})
 
-		So(datastore.Put(c, &Job{
+		assert.Loosely(t, datastore.Put(c, &Job{
 			JobID:     "abc/1",
 			ProjectID: "abc",
 			Enabled:   true,
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		task, err := proto.Marshal(&messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		inv := Invocation{
 			ID:    1,
 			JobID: "abc/1",
 			Task:  task,
 		}
-		So(datastore.Put(c, &inv), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, &inv), should.BeNil)
 
 		// Skip talking to PubSub for real.
 		e.configureTopic = func(c context.Context, topic, sub, pushURL, publisher string) error {
@@ -616,12 +616,12 @@ func TestProcessPubSubPush(t *testing.T) {
 		}
 
 		ctl, err := controllerForInvocation(c, e, &inv)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Grab the working auth token.
 		_, token, err := ctl.PrepareTopic(c, "some@publisher.com")
-		So(err, ShouldBeNil)
-		So(token, ShouldNotEqual, "")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, token, should.NotEqual(""))
 
 		prepMessage := func(body, token string) []byte {
 			msg := struct {
@@ -644,49 +644,49 @@ func TestProcessPubSubPush(t *testing.T) {
 			return msg.Attributes["auth_token"]
 		}
 
-		Convey("ProcessPubSubPush works and retries tq.Retry errors", func() {
+		t.Run("ProcessPubSubPush works and retries tq.Retry errors", func(t *ftt.Test) {
 			calls := 0
 			mgr.handleNotification = func(ctx context.Context, msg *pubsub.PubsubMessage) error {
-				So(msg.Data, ShouldEqual, "blah")
+				assert.Loosely(t, msg.Data, should.Equal("blah"))
 				calls++
 				if calls == 1 {
 					return errors.New("should be retried", tq.Retry)
 				}
 				return nil
 			}
-			So(e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues), ShouldBeNil)
-			So(calls, ShouldEqual, 2) // executed the retry
+			assert.Loosely(t, e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues), should.BeNil)
+			assert.Loosely(t, calls, should.Equal(2)) // executed the retry
 		})
 
-		Convey("ProcessPubSubPush handles bad token", func() {
+		t.Run("ProcessPubSubPush handles bad token", func(t *ftt.Test) {
 			err := e.ProcessPubSubPush(c, prepMessage("blah", token+"blah"), urlValues)
-			So(err, ShouldErrLike, "bad token")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("bad token"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("ProcessPubSubPush handles missing invocation", func() {
+		t.Run("ProcessPubSubPush handles missing invocation", func(t *ftt.Test) {
 			datastore.Delete(c, datastore.KeyForObj(c, &inv))
 
 			err := e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues)
-			So(err, ShouldErrLike, "doesn't exist")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("doesn't exist"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("ProcessPubSubPush handles unknown task manager", func() {
+		t.Run("ProcessPubSubPush handles unknown task manager", func(t *ftt.Test) {
 			// Pass `nil` instead of urlValue, so that the engine can't figure out
 			// what task manager to use.
 			err := e.ProcessPubSubPush(c, prepMessage("blah", token), nil)
-			So(err, ShouldErrLike, "unknown task manager")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("unknown task manager"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 
-		Convey("ProcessPubSubPush can't find the auth token", func() {
+		t.Run("ProcessPubSubPush can't find the auth token", func(t *ftt.Test) {
 			mgr.examineNotification = func(context.Context, *pubsub.PubsubMessage) string {
 				return ""
 			}
 			err := e.ProcessPubSubPush(c, prepMessage("blah", token), urlValues)
-			So(err, ShouldErrLike, "failed to extract")
-			So(transient.Tag.In(err), ShouldBeFalse)
+			assert.Loosely(t, err, should.ErrLike("failed to extract"))
+			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
 	})
 }
@@ -705,24 +705,24 @@ func TestTrimDebugLog(t *testing.T) {
 		return inv.DebugLog
 	}
 
-	Convey("small log is not trimmed", t, func() {
+	ftt.Run("small log is not trimmed", t, func(t *ftt.Test) {
 		inv := Invocation{
 			DebugLog: genLines(0, 100),
 		}
 		inv.trimDebugLog()
-		So(inv.DebugLog, ShouldEqual, genLines(0, 100))
+		assert.Loosely(t, inv.DebugLog, should.Equal(genLines(0, 100)))
 	})
 
-	Convey("huge log is trimmed", t, func() {
+	ftt.Run("huge log is trimmed", t, func(t *ftt.Test) {
 		inv := Invocation{
 			DebugLog: genLines(0, 500),
 		}
 		inv.trimDebugLog()
-		So(inv.DebugLog, ShouldEqual,
-			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(400, 500))
+		assert.Loosely(t, inv.DebugLog, should.Equal(
+			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(400, 500)))
 	})
 
-	Convey("writing lines to huge log and trimming", t, func() {
+	ftt.Run("writing lines to huge log and trimming", t, func(t *ftt.Test) {
 		inv := Invocation{
 			DebugLog: genLines(0, 500),
 		}
@@ -732,24 +732,24 @@ func TestTrimDebugLog(t *testing.T) {
 			inv.trimDebugLog()
 		}
 		// Still single cut only. New 10 lines are at the end.
-		So(inv.DebugLog, ShouldEqual,
-			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(410, 500)+genLines(0, 10))
+		assert.Loosely(t, inv.DebugLog, should.Equal(
+			genLines(0, 94)+"--- the log has been cut here ---\n"+genLines(410, 500)+genLines(0, 10)))
 	})
 
-	Convey("one huge line", t, func() {
+	ftt.Run("one huge line", t, func(t *ftt.Test) {
 		inv := Invocation{
 			DebugLog: strings.Repeat("z", 300000),
 		}
 		inv.trimDebugLog()
 		const msg = "\n--- the log has been cut here ---\n"
-		So(inv.DebugLog, ShouldEqual, strings.Repeat("z", debugLogSizeLimit-len(msg))+msg)
+		assert.Loosely(t, inv.DebugLog, should.Equal(strings.Repeat("z", debugLogSizeLimit-len(msg))+msg))
 	})
 }
 
 func TestEnqueueInvocations(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
@@ -757,7 +757,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		tq.CreateQueues()
 
 		job := Job{JobID: "project/job"}
-		So(datastore.Put(c, &job), ShouldBeNil)
+		assert.Loosely(t, datastore.Put(c, &job), should.BeNil)
 
 		var invs []*Invocation
 		err := runTxn(c, func(c context.Context) error {
@@ -769,7 +769,7 @@ func TestEnqueueInvocations(t *testing.T) {
 			datastore.Put(c, &job)
 			return err
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// The order of new invocations is undefined (including IDs assigned to
 		// them), so convert them to map and clear IDs.
@@ -781,7 +781,7 @@ func TestEnqueueInvocations(t *testing.T) {
 			cpy.ID = 0
 			invsByTrigger[inv.TriggeredBy] = cpy
 		}
-		So(invsByTrigger, ShouldResemble, map[identity.Identity]Invocation{
+		assert.Loosely(t, invsByTrigger, should.Resemble(map[identity.Identity]Invocation{
 			"user:a@example.com": {
 				JobID:       "project/job",
 				Started:     epoch,
@@ -798,22 +798,22 @@ func TestEnqueueInvocations(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:b@example.com\n",
 			},
-		})
+		}))
 
 		// Both invocations are in ActiveInvocations list of the job.
-		So(len(job.ActiveInvocations), ShouldEqual, 2)
+		assert.Loosely(t, len(job.ActiveInvocations), should.Equal(2))
 		for _, invID := range job.ActiveInvocations {
-			So(invIDs[invID], ShouldBeTrue)
+			assert.Loosely(t, invIDs[invID], should.BeTrue)
 		}
 
 		// And we've emitted the launch task.
 		tasks := tq.GetScheduledTasks()
-		So(tasks[0].Payload, ShouldHaveSameTypeAs, &internal.LaunchInvocationsBatchTask{})
+		assert.Loosely(t, tasks[0].Payload, should.HaveType[*internal.LaunchInvocationsBatchTask])
 		batch := tasks[0].Payload.(*internal.LaunchInvocationsBatchTask)
-		So(len(batch.Tasks), ShouldEqual, 2)
+		assert.Loosely(t, len(batch.Tasks), should.Equal(2))
 		for _, subtask := range batch.Tasks {
-			So(subtask.JobId, ShouldEqual, "project/job")
-			So(invIDs[subtask.InvId], ShouldBeTrue)
+			assert.Loosely(t, subtask.JobId, should.Equal("project/job"))
+			assert.Loosely(t, invIDs[subtask.InvId], should.BeTrue)
 		}
 	})
 }
@@ -821,53 +821,53 @@ func TestEnqueueInvocations(t *testing.T) {
 func TestTriageTaskDedup(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, _ := newTestEngine()
 
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		Convey("single task", func() {
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+		t.Run("single task", func(t *ftt.Test) {
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			tasks := tq.GetScheduledTasks()
-			So(len(tasks), ShouldEqual, 1)
-			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
+			assert.Loosely(t, len(tasks), should.Equal(1))
+			assert.Loosely(t, tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), should.BeTrue)
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&internal.TriageJobStateTask{JobId: "fake/job"}))
 		})
 
-		Convey("a bunch of tasks, deduplicated by hitting memcache", func() {
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+		t.Run("a bunch of tasks, deduplicated by hitting memcache", func(t *ftt.Test) {
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(time.Second)
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(900 * time.Millisecond)
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			tasks := tq.GetScheduledTasks()
-			So(len(tasks), ShouldEqual, 1)
-			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
+			assert.Loosely(t, len(tasks), should.Equal(1))
+			assert.Loosely(t, tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), should.BeTrue)
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&internal.TriageJobStateTask{JobId: "fake/job"}))
 		})
 
-		Convey("a bunch of tasks, deduplicated by hitting task queue", func() {
+		t.Run("a bunch of tasks, deduplicated by hitting task queue", func(t *ftt.Test) {
 			c, fb := featureBreaker.FilterMC(c, fmt.Errorf("omg, memcache error"))
 			fb.BreakFeatures(nil, "GetMulti", "SetMulti")
 
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(time.Second)
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			clock.Get(c).(testclock.TestClock).Add(900 * time.Millisecond)
-			So(e.kickTriageNow(c, "fake/job"), ShouldBeNil)
+			assert.Loosely(t, e.kickTriageNow(c, "fake/job"), should.BeNil)
 
 			tasks := tq.GetScheduledTasks()
-			So(len(tasks), ShouldEqual, 1)
-			So(tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), ShouldBeTrue)
-			So(tasks[0].Payload, ShouldResembleProto, &internal.TriageJobStateTask{JobId: "fake/job"})
+			assert.Loosely(t, len(tasks), should.Equal(1))
+			assert.Loosely(t, tasks[0].Task.ETA.Equal(epoch.Add(2*time.Second)), should.BeTrue)
+			assert.Loosely(t, tasks[0].Payload, should.Resemble(&internal.TriageJobStateTask{JobId: "fake/job"}))
 		})
 	})
 }
@@ -875,7 +875,7 @@ func TestTriageTaskDedup(t *testing.T) {
 func TestLaunchInvocationTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
@@ -883,7 +883,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		tq.CreateQueues()
 
 		// Add the job.
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    "project/job",
 				RealmID:  "project:testing",
@@ -891,15 +891,15 @@ func TestLaunchInvocationTask(t *testing.T) {
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		// Prepare Invocation in Starting state.
 		job := Job{JobID: "project/job"}
-		So(datastore.Get(c, &job), ShouldBeNil)
+		assert.Loosely(t, datastore.Get(c, &job), should.BeNil)
 		inv, err := e.allocateInvocation(c, &job, task.Request{
 			IncomingTriggers: []*internal.Trigger{{Id: "a"}},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		callLaunchInvocation := func(c context.Context, execCount int64) error {
 			return tq.ExecuteTask(c, tqtesting.Task{
@@ -913,27 +913,27 @@ func TestLaunchInvocationTask(t *testing.T) {
 
 		fetchInvocation := func(c context.Context) *Invocation {
 			toFetch := Invocation{ID: inv.ID}
-			So(datastore.Get(c, &toFetch), ShouldBeNil)
+			assert.Loosely(t, datastore.Get(c, &toFetch), should.BeNil)
 			return &toFetch
 		}
 
-		Convey("happy path", func() {
+		t.Run("happy path", func(t *ftt.Test) {
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
-				So(ctl.InvocationID(), ShouldEqual, inv.ID)
-				So(ctl.RealmID(), ShouldEqual, "project:testing")
+				assert.Loosely(t, ctl.InvocationID(), should.Equal(inv.ID))
+				assert.Loosely(t, ctl.RealmID(), should.Equal("project:testing"))
 				ctl.DebugLog("Succeeded!")
 				ctl.State().Status = task.StatusSucceeded
 				return nil
 			}
-			So(callLaunchInvocation(c, 0), ShouldBeNil)
+			assert.Loosely(t, callLaunchInvocation(c, 0), should.BeNil)
 
 			updated := fetchInvocation(c)
 			triggers, err := updated.IncomingTriggers()
 			updated.IncomingTriggersRaw = nil
 
-			So(err, ShouldBeNil)
-			So(triggers, ShouldResemble, []*internal.Trigger{{Id: "a"}})
-			So(updated, ShouldResemble, &Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, triggers, should.Resemble([]*internal.Trigger{{Id: "a"}}))
+			assert.Loosely(t, updated, should.Resemble(&Invocation{
 				ID:             inv.ID,
 				JobID:          "project/job",
 				IndexedJobID:   "project/job",
@@ -948,26 +948,26 @@ func TestLaunchInvocationTask(t *testing.T) {
 					"[22:42:00.000] Starting the invocation (attempt 1)\n" +
 					"[22:42:00.000] Succeeded!\n" +
 					"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n",
-			})
+			}))
 		})
 
-		Convey("already aborted", func() {
+		t.Run("already aborted", func(t *ftt.Test) {
 			inv.Status = task.StatusAborted
-			So(datastore.Put(c, inv), ShouldBeNil)
+			assert.Loosely(t, datastore.Put(c, inv), should.BeNil)
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return fmt.Errorf("must not be called")
 			}
-			So(callLaunchInvocation(c, 0), ShouldBeNil)
-			So(fetchInvocation(c).Status, ShouldEqual, task.StatusAborted)
+			assert.Loosely(t, callLaunchInvocation(c, 0), should.BeNil)
+			assert.Loosely(t, fetchInvocation(c).Status, should.Equal(task.StatusAborted))
 		})
 
-		Convey("successful retry", func() {
+		t.Run("successful retry", func(t *ftt.Test) {
 			// Attempt #1.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
 			}
-			So(callLaunchInvocation(c, 0), ShouldEqual, errRetryingLaunch)
-			So(fetchInvocation(c).Status, ShouldEqual, task.StatusRetrying)
+			assert.Loosely(t, callLaunchInvocation(c, 0), should.Equal(errRetryingLaunch))
+			assert.Loosely(t, fetchInvocation(c).Status, should.Equal(task.StatusRetrying))
 
 			// Attempt #2.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
@@ -975,41 +975,41 @@ func TestLaunchInvocationTask(t *testing.T) {
 				ctl.State().Status = task.StatusSucceeded
 				return nil
 			}
-			So(callLaunchInvocation(c, 1), ShouldBeNil)
+			assert.Loosely(t, callLaunchInvocation(c, 1), should.BeNil)
 
 			updated := fetchInvocation(c)
-			So(updated.Status, ShouldEqual, task.StatusSucceeded)
-			So(updated.RetryCount, ShouldEqual, 1)
-			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation is queued and will start shortly\n"+
+			assert.Loosely(t, updated.Status, should.Equal(task.StatusSucceeded))
+			assert.Loosely(t, updated.RetryCount, should.Equal(1))
+			assert.Loosely(t, updated.DebugLog, should.Equal("[22:42:00.000] New invocation is queued and will start shortly\n"+
 				"[22:42:00.000] Starting the invocation (attempt 1)\n"+
 				"[22:42:00.000] The invocation will be retried\n"+
 				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
 				"[22:42:00.000] Succeeded!\n"+
-				"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n")
+				"[22:42:00.000] Invocation finished in 0s with status SUCCEEDED\n"))
 		})
 
-		Convey("failed retry", func() {
+		t.Run("failed retry", func(t *ftt.Test) {
 			// Attempt #1.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return transient.Tag.Apply(fmt.Errorf("oops, failed to start"))
 			}
-			So(callLaunchInvocation(c, 0), ShouldEqual, errRetryingLaunch)
-			So(fetchInvocation(c).Status, ShouldEqual, task.StatusRetrying)
+			assert.Loosely(t, callLaunchInvocation(c, 0), should.Equal(errRetryingLaunch))
+			assert.Loosely(t, fetchInvocation(c).Status, should.Equal(task.StatusRetrying))
 
 			// Attempt #2.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				return fmt.Errorf("boom, fatal shot")
 			}
-			So(callLaunchInvocation(c, 1), ShouldBeNil) // didn't ask for a retry
+			assert.Loosely(t, callLaunchInvocation(c, 1), should.BeNil) // didn't ask for a retry
 
 			updated := fetchInvocation(c)
-			So(updated.Status, ShouldEqual, task.StatusFailed)
-			So(updated.RetryCount, ShouldEqual, 1)
-			So(updated.DebugLog, ShouldEqual, "[22:42:00.000] New invocation is queued and will start shortly\n"+
+			assert.Loosely(t, updated.Status, should.Equal(task.StatusFailed))
+			assert.Loosely(t, updated.RetryCount, should.Equal(1))
+			assert.Loosely(t, updated.DebugLog, should.Equal("[22:42:00.000] New invocation is queued and will start shortly\n"+
 				"[22:42:00.000] Starting the invocation (attempt 1)\n"+
 				"[22:42:00.000] The invocation will be retried\n"+
 				"[22:42:00.000] Starting the invocation (attempt 2)\n"+
-				"[22:42:00.000] Invocation finished in 0s with status FAILED\n")
+				"[22:42:00.000] Invocation finished in 0s with status FAILED\n"))
 		})
 	})
 }
@@ -1017,7 +1017,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 func TestAbortJob(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		const jobID = "project/job"
 		const realmID = "project:testing"
 		const expectedInvID int64 = 9200093523825193008
@@ -1028,7 +1028,7 @@ func TestAbortJob(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    jobID,
 				RealmID:  realmID,
@@ -1036,23 +1036,23 @@ func TestAbortJob(t *testing.T) {
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
 		// Launch a new invocation.
 		job, err := e.getJob(c, jobID)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		inv := forceInvocation(c, e, jobID)
 		invID := inv.ID
-		So(invID, ShouldEqual, expectedInvID)
+		assert.Loosely(t, invID, should.Equal(expectedInvID))
 
-		Convey("inv aborted before it starts", func() {
+		t.Run("inv aborted before it starts", func(t *ftt.Test) {
 			// Kill it right away before it had a chance to start.
-			So(e.AbortJob(mockOwnerCtx(c, realmID), job), ShouldBeNil)
+			assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
 
 			// It is dead right away.
 			inv, err := e.getInvocation(c, jobID, invID)
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, &Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(&Invocation{
 				ID:             expectedInvID,
 				JobID:          jobID,
 				RealmID:        realmID,
@@ -1066,7 +1066,7 @@ func TestAbortJob(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Invocation is manually aborted by user:owner@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
-			})
+			}))
 
 			// Unpause the task queue to confirm the new invocation doesn't actually
 			// start.
@@ -1074,10 +1074,10 @@ func TestAbortJob(t *testing.T) {
 				panic("must not be called")
 			}
 			tasks, _, err := tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1093,12 +1093,12 @@ func TestAbortJob(t *testing.T) {
 				// The triage from KickTriageTask and from InvocationFinishedTask
 				// finally arrives.
 				&internal.TriageJobStateTask{JobId: jobID},
-			})
+			}))
 
 			// The job state is updated (the invocation is no longer active).
 			job, err = e.getJob(c, jobID)
-			So(err, ShouldBeNil)
-			So(job.ActiveInvocations, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, job.ActiveInvocations, should.BeNil)
 
 			// The invocation is now in the list of finished invocations.
 			datastore.GetTestable(c).CatchupIndexes()
@@ -1106,10 +1106,10 @@ func TestAbortJob(t *testing.T) {
 				PageSize:     100,
 				FinishedOnly: true,
 			})
-			So(invs, ShouldResemble, []*Invocation{inv})
+			assert.Loosely(t, invs, should.Resemble([]*Invocation{inv}))
 		})
 
-		Convey("inv aborted while it is running", func() {
+		t.Run("inv aborted while it is running", func(t *ftt.Test) {
 			// Let the invocation start and set a timer. Abort the simulation before
 			// the timer ticks.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
@@ -1123,17 +1123,17 @@ func TestAbortJob(t *testing.T) {
 					return ok
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: jobID, InvId: expectedInvID}},
 				},
 				&internal.LaunchInvocationTask{
 					JobId: jobID, InvId: expectedInvID,
 				},
-			})
+			}))
 
 			// At this point the timer tick is scheduled to happen 1 min from now, but
 			// we abort the job.
@@ -1141,24 +1141,24 @@ func TestAbortJob(t *testing.T) {
 				ctl.DebugLog("Really aborted!")
 				return nil
 			}
-			So(e.AbortJob(mockOwnerCtx(c, realmID), job), ShouldBeNil)
+			assert.Loosely(t, e.AbortJob(mockOwnerCtx(c, realmID), job), should.BeNil)
 
 			// It is dead right away.
 			inv, err := e.getInvocation(c, jobID, invID)
-			So(inv.Status, ShouldEqual, task.StatusAborted)
+			assert.Loosely(t, inv.Status, should.Equal(task.StatusAborted))
 
 			// And AbortTask callback was really called.
-			So(inv.DebugLog, ShouldContainSubstring, "Really aborted!")
+			assert.Loosely(t, inv.DebugLog, should.ContainSubstring("Really aborted!"))
 
 			// Run all processes to completion.
 			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
 				panic("must not be called")
 			}
 			tasks, _, err = tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1180,7 +1180,7 @@ func TestAbortJob(t *testing.T) {
 						Title:   "1 min",
 					},
 				},
-			})
+			}))
 		})
 	})
 }
@@ -1188,7 +1188,7 @@ func TestAbortJob(t *testing.T) {
 func TestEmitTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		const testingJob = "project/job"
 		const realmID = "project:testing"
 
@@ -1198,7 +1198,7 @@ func TestEmitTriggers(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    testingJob,
 				RealmID:  realmID,
@@ -1206,9 +1206,9 @@ func TestEmitTriggers(t *testing.T) {
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("happy path", func() {
+		t.Run("happy path", func(t *ftt.Test) {
 			var incomingTriggers []*internal.Trigger
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				incomingTriggers = ctl.Request().IncomingTriggers
@@ -1217,7 +1217,7 @@ func TestEmitTriggers(t *testing.T) {
 			}
 
 			job, err := e.getJob(c, testingJob)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Simulate EmitTriggers call from an owner.
 			emittedTriggers := []*internal.Trigger{
@@ -1236,51 +1236,51 @@ func TestEmitTriggers(t *testing.T) {
 				},
 			}
 			err = e.EmitTriggers(mockOwnerCtx(c, realmID), map[*Job][]*internal.Trigger{job: emittedTriggers})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Run TQ until all activities stop.
 			tasks, _, err := tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// We expect a triage invoked by EmitTrigger, and one full invocation.
 			expect := expectedTasks{JobID: testingJob, Epoch: epoch}
 			expect.triage()
 			expect.invocationSequence(9200093521727759856)
 			expect.triage()
-			So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+			assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 
 			// The task manager received all triggers (though maybe out of order, it
 			// is not defined).
 			sort.Slice(incomingTriggers, func(i, j int) bool {
 				return incomingTriggers[i].Id < incomingTriggers[j].Id
 			})
-			So(incomingTriggers, ShouldResembleProto, emittedTriggers)
+			assert.Loosely(t, incomingTriggers, should.Resemble(emittedTriggers))
 		})
 
-		Convey("no scheduler.jobs.trigger permission", func() {
+		t.Run("no scheduler.jobs.trigger permission", func(t *ftt.Test) {
 			job, err := e.getJob(c, testingJob)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = e.EmitTriggers(mockReaderCtx(c, realmID), map[*Job][]*internal.Trigger{
 				job: {
 					{Id: "t1"},
 				},
 			})
-			So(err, ShouldEqual, ErrNoPermission)
+			assert.Loosely(t, err, should.Equal(ErrNoPermission))
 		})
 
-		Convey("paused job ignores triggers", func() {
+		t.Run("paused job ignores triggers", func(t *ftt.Test) {
 			job, err := e.getJob(c, testingJob)
-			So(err, ShouldBeNil)
-			So(e.setJobPausedFlag(c, job, true, "", ""), ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, e.setJobPausedFlag(c, job, true, "", ""), should.BeNil)
 
 			// The pause emits a triage, get over it now.
 			tasks, _, err := tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expect := expectedTasks{JobID: testingJob, Epoch: epoch}
 			expect.kickTriage()
 			expect.triage()
-			So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+			assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 
 			// Make the RPC, which succeeds.
 			err = e.EmitTriggers(mockOwnerCtx(c, realmID), map[*Job][]*internal.Trigger{
@@ -1288,12 +1288,12 @@ func TestEmitTriggers(t *testing.T) {
 					{Id: "t1"},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// But nothing really happens.
 			tasks, _, err = tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
-			So(tasks.Payloads(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tasks.Payloads(), should.HaveLength(0))
 		})
 	})
 }
@@ -1301,7 +1301,7 @@ func TestEmitTriggers(t *testing.T) {
 func TestOneJobTriggersAnother(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
@@ -1311,7 +1311,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		triggeringJob := "project/triggering-job"
 		triggeredJob := "project/triggered-job"
 
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:           triggeringJob,
 				RealmID:         "project:testing",
@@ -1327,9 +1327,9 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("happy path", func() {
+		t.Run("happy path", func(t *ftt.Test) {
 			const triggeringInvID int64 = 9200093523824911856
 			const triggeredInvID int64 = 9200093521728457040
 
@@ -1341,7 +1341,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// what we see.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
-				So(ctl.Save(ctx), ShouldBeNil)
+				assert.Loosely(t, ctl.Save(ctx), should.BeNil)
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t2"})
 				ctl.State().Status = task.StatusSucceeded
 				return nil
@@ -1352,7 +1352,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 					return ok
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// How these triggers are seen from outside the task.
 			expectedTrigger1 := &internal.Trigger{
@@ -1370,7 +1370,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			}
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeringJob, InvId: triggeringInvID}},
@@ -1402,23 +1402,23 @@ func TestOneJobTriggersAnother(t *testing.T) {
 					JobId:    triggeredJob,
 					Triggers: []*internal.Trigger{expectedTrigger2},
 				},
-			})
+			}))
 
 			// Triggering invocation has finished (with triggers recorded).
 			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID)
-			So(err, ShouldBeNil)
-			So(triggeringInv.Status, ShouldEqual, task.StatusSucceeded)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, triggeringInv.Status, should.Equal(task.StatusSucceeded))
 			outgoing, err := triggeringInv.OutgoingTriggers()
-			So(err, ShouldBeNil)
-			So(outgoing, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, outgoing, should.Resemble([]*internal.Trigger{expectedTrigger1, expectedTrigger2}))
 
 			// At this point triggered job's triage is about to start. Before it does,
 			// verify emitted trigger (sitting in the pending triggers set) is
 			// discoverable through ListTriggers.
 			tj, _ := e.getJob(c, triggeredJob)
 			triggers, err := e.ListTriggers(c, tj)
-			So(err, ShouldBeNil)
-			So(triggers, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, triggers, should.Resemble([]*internal.Trigger{expectedTrigger1, expectedTrigger2}))
 
 			// Resume the simulation to do the triages and start the triggered
 			// invocation.
@@ -1429,10 +1429,10 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				return nil
 			}
 			tasks, _, err = tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				// Triggered job is getting triaged (because pending triggers).
 				&internal.TriageJobStateTask{
 					JobId: triggeredJob,
@@ -1453,18 +1453,18 @@ func TestOneJobTriggersAnother(t *testing.T) {
 					JobId: triggeredJob, InvId: triggeredInvID,
 				},
 				&internal.TriageJobStateTask{JobId: triggeredJob},
-			})
+			}))
 
 			// Verify LaunchTask callback saw the triggers.
-			So(seen, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			assert.Loosely(t, seen, should.Resemble([]*internal.Trigger{expectedTrigger1, expectedTrigger2}))
 
 			// And they are recoded in IncomingTriggers set.
 			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID)
-			So(err, ShouldBeNil)
-			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, triggeredInv.Status, should.Equal(task.StatusSucceeded))
 			incoming, err := triggeredInv.IncomingTriggers()
-			So(err, ShouldBeNil)
-			So(incoming, ShouldResembleProto, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, incoming, should.Resemble([]*internal.Trigger{expectedTrigger1, expectedTrigger2}))
 		})
 	})
 }
@@ -1472,7 +1472,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 func TestInvocationTimers(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
@@ -1480,7 +1480,7 @@ func TestInvocationTimers(t *testing.T) {
 		tq.CreateQueues()
 
 		const testJobID = "project/job"
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+		assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    testJobID,
 				RealmID:  "project:testing",
@@ -1488,9 +1488,9 @@ func TestInvocationTimers(t *testing.T) {
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
 			},
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		Convey("happy path", func() {
+		t.Run("happy path", func(t *ftt.Test) {
 			const testInvID int64 = 9200093523825193008
 
 			// Force launch the job.
@@ -1521,7 +1521,7 @@ func TestInvocationTimers(t *testing.T) {
 				return nil
 			}
 			tasks, _, err := tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			timerMsg := func(idSuffix string, created, eta time.Duration, title string, payload []byte) *internal.Timer {
 				return &internal.Timer{
@@ -1540,14 +1540,14 @@ func TestInvocationTimers(t *testing.T) {
 			timer3 := timerMsg("3:0", time.Second+2*time.Minute, time.Second+3*time.Minute, "stop", []byte{3})
 
 			// All 'handleTimer' ticks happened at expected moments in time.
-			So(callTimes, ShouldResemble, map[string]time.Duration{
+			assert.Loosely(t, callTimes, should.Resemble(map[string]time.Duration{
 				"1 min": time.Second + time.Minute,
 				"2 min": time.Second + 2*time.Minute,
 				"stop":  time.Second + 3*time.Minute,
-			})
+			}))
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResembleProto, []protoiface.MessageV1{
+			assert.Loosely(t, tasks.Payloads(), should.Resemble([]protoiface.MessageV1{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: testJobID, InvId: testInvID}},
@@ -1587,7 +1587,7 @@ func TestInvocationTimers(t *testing.T) {
 					JobId: testJobID, InvId: testInvID,
 				},
 				&internal.TriageJobStateTask{JobId: testJobID},
-			})
+			}))
 		})
 	})
 }
@@ -1595,14 +1595,14 @@ func TestInvocationTimers(t *testing.T) {
 func TestCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		const testJobID = "project/job"
 
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
 
 		updateJob := func(schedule string) {
-			So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
+			assert.Loosely(t, e.UpdateProjectJobs(c, "project", []catalog.Definition{
 				{
 					JobID:    testJobID,
 					RealmID:  "project:testing",
@@ -1610,7 +1610,7 @@ func TestCron(t *testing.T) {
 					Schedule: schedule,
 					Task:     noopTaskBytes(),
 				},
-			}), ShouldBeNil)
+			}), should.BeNil)
 			datastore.GetTestable(c).CatchupIndexes()
 		}
 
@@ -1622,15 +1622,15 @@ func TestCron(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		Convey("relative schedule", func() {
+		t.Run("relative schedule", func(t *ftt.Test) {
 			updateJob("with 10s interval")
 
-			Convey("happy path", func() {
+			t.Run("happy path", func(t *ftt.Test) {
 				// Let the TQ spin for two full cycles.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(30 * time.Second),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Collect the list of TQ tasks we expect to be executed.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1647,10 +1647,10 @@ func TestCron(t *testing.T) {
 				expect.triage()
 				// ... and so on
 
-				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 			})
 
-			Convey("schedule changes", func() {
+			t.Run("schedule changes", func(t *ftt.Test) {
 				// Let the TQ spin until it hits the task execution.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					ShouldStopBefore: func(t tqtesting.Task) bool {
@@ -1658,7 +1658,7 @@ func TestCron(t *testing.T) {
 						return ok
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// At this point the job's schedule changes.
 				updateJob("with 30s interval")
@@ -1667,7 +1667,7 @@ func TestCron(t *testing.T) {
 				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(50 * time.Second),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Here's what we expect to execute.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1684,10 +1684,10 @@ func TestCron(t *testing.T) {
 				expect.triage()
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, append(tasks, moreTasks...).Payloads(), should.Resemble(expect.Tasks))
 			})
 
-			Convey("pause/unpause", func() {
+			t.Run("pause/unpause", func(t *ftt.Test) {
 				// Let the TQ spin until it hits the end of task execution.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					ShouldStopAfter: func(t tqtesting.Task) bool {
@@ -1695,26 +1695,26 @@ func TestCron(t *testing.T) {
 						return ok
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// At this point we pause the job.
 				j, err := e.getJob(c, testJobID)
-				So(err, ShouldBeNil)
-				So(e.setJobPausedFlag(c, j, true, "user:someone@example.com", "pause reason"), ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, e.setJobPausedFlag(c, j, true, "user:someone@example.com", "pause reason"), should.BeNil)
 
 				// The information about the pause was recorded in the entity.
 				job, err := e.getJob(c, testJobID)
-				So(err, ShouldBeNil)
-				So(job.Paused, ShouldBeTrue)
-				So(job.PausedOrResumedWhen, ShouldEqual, clock.Now(c).UTC())
-				So(job.PausedOrResumedBy, ShouldEqual, identity.Identity("user:someone@example.com"))
-				So(job.PausedOrResumedReason, ShouldEqual, "pause reason")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, job.Paused, should.BeTrue)
+				assert.Loosely(t, job.PausedOrResumedWhen, should.Match(clock.Now(c).UTC()))
+				assert.Loosely(t, job.PausedOrResumedBy, should.Equal(identity.Identity("user:someone@example.com")))
+				assert.Loosely(t, job.PausedOrResumedReason, should.Equal("pause reason"))
 
 				// We let the TQ spin some more.
 				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(time.Hour),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Here's what we expect to execute.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1728,26 +1728,26 @@ func TestCron(t *testing.T) {
 				// and nothing else happens ...
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, append(tasks, moreTasks...).Payloads(), should.Resemble(expect.Tasks))
 
 				// Some time later we unpause the job, it starts again immediately.
 				clock.Get(c).(testclock.TestClock).Set(epoch.Add(time.Hour))
-				So(e.setJobPausedFlag(c, j, false, "user:someone@example.com", "resume reason"), ShouldBeNil)
+				assert.Loosely(t, e.setJobPausedFlag(c, j, false, "user:someone@example.com", "resume reason"), should.BeNil)
 
 				tasks, _, err = tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(time.Hour + 10*time.Second),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Did it?
 				expect.clear()
 				expect.cronTickSequence(325298467681248558, 7, time.Hour)
 				expect.invocationSequence(9200089746854060480)
 				expect.triage()
-				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 			})
 
-			Convey("disabling", func() {
+			t.Run("disabling", func(t *ftt.Test) {
 				// Let the TQ spin until it hits the end of task execution.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					ShouldStopAfter: func(t tqtesting.Task) bool {
@@ -1755,16 +1755,16 @@ func TestCron(t *testing.T) {
 						return ok
 					},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// At this point we disable the job.
-				So(e.UpdateProjectJobs(c, "project", nil), ShouldBeNil)
+				assert.Loosely(t, e.UpdateProjectJobs(c, "project", nil), should.BeNil)
 
 				// We let the TQ spin some more...
 				moreTasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(time.Hour),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Here's what we expect to execute.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1778,19 +1778,19 @@ func TestCron(t *testing.T) {
 				// and nothing else happens ...
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, append(tasks, moreTasks...).Payloads(), should.Resemble(expect.Tasks))
 			})
 		})
 
-		Convey("absolute schedule", func() {
+		t.Run("absolute schedule", func(t *ftt.Test) {
 			updateJob("5,10 * * * * * *") // on 5th and 10th sec
 
-			Convey("happy path", func() {
+			t.Run("happy path", func(t *ftt.Test) {
 				// Let the TQ spin for two full cycles.
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(14 * time.Second),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Collect the list of TQ tasks we expect to be executed.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1806,10 +1806,10 @@ func TestCron(t *testing.T) {
 				expect.triage()
 				// ... and so on
 
-				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 			})
 
-			Convey("overrun", func() {
+			t.Run("overrun", func(t *ftt.Test) {
 				// Currently cron just keeps submitting triggers that ends up in the
 				// pending triggers queue if there's some invocation currently running.
 				// Once the invocation finishes, the next one start right away (just
@@ -1830,7 +1830,7 @@ func TestCron(t *testing.T) {
 				tasks, _, err := tq.RunSimulation(c, &tqtesting.SimulationParams{
 					Deadline: epoch.Add(15 * time.Second),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// Collect the list of TQ tasks we expect to be executed.
 				expect := expectedTasks{JobID: testJobID, Epoch: epoch}
@@ -1849,7 +1849,7 @@ func TestCron(t *testing.T) {
 				// right away.
 				expect.invocationStart(9200093509144748480)
 
-				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
+				assert.Loosely(t, tasks.Payloads(), should.Resemble(expect.Tasks))
 			})
 		})
 	})

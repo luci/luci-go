@@ -27,41 +27,40 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTriageOp(t *testing.T) {
 	t.Parallel()
 
-	Convey("with fake env", t, func() {
+	ftt.Run("with fake env", t, func(t *ftt.Test) {
 		c := newTestContext(epoch)
 		tb := triageTestBed{maxAllowedTriggers: 1000}
 
-		Convey("noop triage", func() {
+		t.Run("noop triage", func(t *ftt.Test) {
 			before := &Job{
 				JobID:             "job",
 				Enabled:           true,
 				ActiveInvocations: []int64{1, 2, 3},
 			}
 			after, err := tb.runTestTriage(c, before)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Only LastTriage timestamp is bumped.
 			expected := *before
 			expected.LastTriage = epoch
-			So(after, ShouldResemble, &expected)
+			assert.Loosely(t, after, should.Resemble(&expected))
 
 			// Have some triage log.
 			job := JobTriageLog{JobID: "job"}
-			So(datastore.Get(c, &job), ShouldBeNil)
-			So(job, ShouldResemble, JobTriageLog{
+			assert.Loosely(t, datastore.Get(c, &job), should.BeNil)
+			assert.Loosely(t, job, should.Resemble(JobTriageLog{
 				JobID:      "job",
 				LastTriage: epoch,
 				DebugLog: strings.Join([]string{
@@ -80,10 +79,10 @@ func TestTriageOp(t *testing.T) {
 					"[000 ms] Done",
 					"",
 				}, "\n"),
-			})
+			}))
 		})
 
-		Convey("pops finished invocations", func() {
+		t.Run("pops finished invocations", func(t *ftt.Test) {
 			before := &Job{
 				JobID:             "job",
 				Enabled:           true,
@@ -98,33 +97,33 @@ func TestTriageOp(t *testing.T) {
 			expectedFinishedTS := epoch.Add(15 * time.Second)
 
 			after, err := tb.runTestTriage(c, before)
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldResemble, []int64{3, 5})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.Resemble([]int64{3, 5}))
 
 			// FinishedInvocationsRaw has the finished invocations.
 			finishedRaw := after.FinishedInvocationsRaw
 			finished, err := unmarshalFinishedInvs(finishedRaw)
-			So(err, ShouldBeNil)
-			So(finished, ShouldResemble, []*internal.FinishedInvocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, finished, should.Resemble([]*internal.FinishedInvocation{
 				{InvocationId: 1, Finished: timestamppb.New(expectedFinishedTS)},
 				{InvocationId: 2, Finished: timestamppb.New(expectedFinishedTS)},
 				{InvocationId: 4, Finished: timestamppb.New(expectedFinishedTS)},
-			})
+			}))
 
 			// Some time later, they are still there.
 			clock.Get(c).(testclock.TestClock).Add(FinishedInvocationsHorizon - time.Second)
 			after, err = tb.runTestTriage(c, after)
-			So(err, ShouldBeNil)
-			So(after.FinishedInvocationsRaw, ShouldResemble, finishedRaw)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.FinishedInvocationsRaw, should.Resemble(finishedRaw))
 
 			// But eventually the get kicked out.
 			clock.Get(c).(testclock.TestClock).Add(2 * time.Second)
 			after, err = tb.runTestTriage(c, after)
-			So(err, ShouldBeNil)
-			So(after.FinishedInvocationsRaw, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.FinishedInvocationsRaw, should.BeNil)
 		})
 
-		Convey("processes triggers", func() {
+		t.Run("processes triggers", func(t *ftt.Test) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
@@ -153,23 +152,23 @@ func TestTriageOp(t *testing.T) {
 			// Cycle 1. Pops triggers, converts them into a bunch of invocations.
 			// Triggers are in sorted order!
 			after, err := tb.runTestTriage(c, before)
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
-			So(tb.requests, ShouldHaveLength, 4)
-			So(tb.requests[0].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[2]})
-			So(tb.requests[1].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[3]})
-			So(tb.requests[2].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[0]})
-			So(tb.requests[3].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[1]})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.Resemble([]int64{1, 2, 3, 4}))
+			assert.Loosely(t, tb.requests, should.HaveLength(4))
+			assert.Loosely(t, tb.requests[0].IncomingTriggers, should.Resemble([]*internal.Trigger{triggers[2]}))
+			assert.Loosely(t, tb.requests[1].IncomingTriggers, should.Resemble([]*internal.Trigger{triggers[3]}))
+			assert.Loosely(t, tb.requests[2].IncomingTriggers, should.Resemble([]*internal.Trigger{triggers[0]}))
+			assert.Loosely(t, tb.requests[3].IncomingTriggers, should.Resemble([]*internal.Trigger{triggers[1]}))
 			tb.requests = nil
 
 			// Cycle 2. Nothing new.
 			after, err = tb.runTestTriage(c, after)
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
-			So(tb.requests, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.Resemble([]int64{1, 2, 3, 4}))
+			assert.Loosely(t, tb.requests, should.BeNil)
 		})
 
-		Convey("ignores triggers if paused", func() {
+		t.Run("ignores triggers if paused", func(t *ftt.Test) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
@@ -189,17 +188,17 @@ func TestTriageOp(t *testing.T) {
 				Enabled: true,
 				Paused:  true,
 			})
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldHaveLength, 0)
-			So(tb.requests, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.HaveLength(0))
+			assert.Loosely(t, tb.requests, should.HaveLength(0))
 
 			// No triggers there anymore.
 			listing, err := pendingTriggersSet(c, "job").List(c)
-			So(err, ShouldBeNil)
-			So(listing.Items, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, listing.Items, should.HaveLength(0))
 		})
 
-		Convey("drops excessive triggers", func() {
+		t.Run("drops excessive triggers", func(t *ftt.Test) {
 			tb.maxAllowedTriggers = 1
 
 			triggers := []*internal.Trigger{
@@ -225,18 +224,18 @@ func TestTriageOp(t *testing.T) {
 				JobID:   "job",
 				Enabled: true,
 			})
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldHaveLength, 1)
-			So(tb.requests, ShouldHaveLength, 1)
-			So(tb.requests[0].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[0]})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.HaveLength(1))
+			assert.Loosely(t, tb.requests, should.HaveLength(1))
+			assert.Loosely(t, tb.requests[0].IncomingTriggers, should.Resemble([]*internal.Trigger{triggers[0]}))
 
 			// No triggers there anymore.
 			listing, err := pendingTriggersSet(c, "job").List(c)
-			So(err, ShouldBeNil)
-			So(listing.Items, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, listing.Items, should.HaveLength(0))
 		})
 
-		Convey("doesn't touch ds sets if txn fails to land", func() {
+		t.Run("doesn't touch ds sets if txn fails to land", func(t *ftt.Test) {
 			triggers := []*internal.Trigger{
 				{
 					Id:      "t0",
@@ -256,16 +255,16 @@ func TestTriageOp(t *testing.T) {
 				JobID:   "job",
 				Enabled: true,
 			})
-			So(err, ShouldNotBeNil)
-			So(after.ActiveInvocations, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.HaveLength(0))
 
 			// Triggers are still there.
 			listing, err := pendingTriggersSet(c, "job").List(c)
-			So(err, ShouldBeNil)
-			So(listing.Items, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, listing.Items, should.HaveLength(2))
 		})
 
-		Convey("discards triggers", func() {
+		t.Run("discards triggers", func(t *ftt.Test) {
 			tb.policyDiscardsTriggers = true
 
 			triggers := []*internal.Trigger{
@@ -288,15 +287,15 @@ func TestTriageOp(t *testing.T) {
 
 			// Cycle 1. Pops triggers and discards them.
 			after, err := tb.runTestTriage(c, before)
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldHaveLength, 0)
-			So(tb.requests, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.HaveLength(0))
+			assert.Loosely(t, tb.requests, should.HaveLength(0))
 
 			// Cycle 2. Nothing new.
 			after, err = tb.runTestTriage(c, after)
-			So(err, ShouldBeNil)
-			So(after.ActiveInvocations, ShouldHaveLength, 0)
-			So(tb.requests, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, after.ActiveInvocations, should.HaveLength(0))
+			assert.Loosely(t, tb.requests, should.HaveLength(0))
 		})
 	})
 }

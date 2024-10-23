@@ -19,50 +19,49 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRequestBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("FromCronTrigger", t, func() {
+	ftt.Run("FromCronTrigger", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Cron{},
 		})
-		So(r.Request, ShouldResemble, task.Request{})
+		assert.Loosely(t, r.Request, should.Resemble(task.Request{}))
 	})
 
-	Convey("FromWebUITrigger", t, func() {
+	ftt.Run("FromWebUITrigger", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Webui{},
 		})
-		So(r.Request, ShouldResemble, task.Request{})
+		assert.Loosely(t, r.Request, should.Resemble(task.Request{}))
 	})
 
-	Convey("FromNoopTrigger", t, func() {
+	ftt.Run("FromNoopTrigger", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{Data: "abc"}},
 		})
-		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"noop_trigger_data": {
 					Kind: &structpb.Value_StringValue{StringValue: "abc"},
 				},
 			},
-		})
-		So(r.Request.Tags, ShouldBeEmpty)
+		}))
+		assert.Loosely(t, r.Request.Tags, should.BeEmpty)
 	})
 
-	Convey("FromGitilesTrigger good", t, func() {
+	ftt.Run("FromGitilesTrigger good", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Gitiles{Gitiles: &api.GitilesTrigger{
@@ -71,7 +70,7 @@ func TestRequestBuilder(t *testing.T) {
 				Revision: "aaaaaaaa",
 			}},
 		})
-		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"revision": {
 					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
@@ -83,14 +82,14 @@ func TestRequestBuilder(t *testing.T) {
 					Kind: &structpb.Value_StringValue{StringValue: "https://example.googlesource.com/repo.git"},
 				},
 			},
-		})
-		So(r.Request.Tags, ShouldResemble, []string{
+		}))
+		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
-		})
+		}))
 	})
 
-	Convey("FromGitilesTrigger with extra properties and tags", t, func() {
+	ftt.Run("FromGitilesTrigger with extra properties and tags", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Gitiles{Gitiles: &api.GitilesTrigger{
@@ -108,7 +107,7 @@ func TestRequestBuilder(t *testing.T) {
 				},
 			}},
 		})
-		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"revision": {
 					Kind: &structpb.Value_StringValue{StringValue: "aaaaaaaa"},
@@ -123,16 +122,16 @@ func TestRequestBuilder(t *testing.T) {
 					Kind: &structpb.Value_StringValue{StringValue: "remains"},
 				},
 			},
-		})
-		So(r.Request.Tags, ShouldResemble, []string{
+		}))
+		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{
 			"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
 			"gitiles_ref:refs/heads/master",
 			"tag1:val1",
 			"gitiles_ref:not-overridden",
-		})
+		}))
 	})
 
-	Convey("FromGitilesTrigger bad", t, func() {
+	ftt.Run("FromGitilesTrigger bad", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Gitiles{Gitiles: &api.GitilesTrigger{
@@ -141,13 +140,13 @@ func TestRequestBuilder(t *testing.T) {
 				Revision: "aaaaaaaa",
 			}},
 		})
-		So(r.Request, ShouldResemble, task.Request{
+		assert.Loosely(t, r.Request, should.Resemble(task.Request{
 			DebugLog: "Bad repo URL \"https://zzz.example.com/repo\" in the trigger " +
 				"- only .googlesource.com repos are supported\n",
-		})
+		}))
 	})
 
-	Convey("FromBuildbucketTrigger", t, func() {
+	ftt.Run("FromBuildbucketTrigger", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{
 			Payload: &internal.Trigger_Buildbucket{Buildbucket: &api.BuildbucketTrigger{
@@ -155,21 +154,21 @@ func TestRequestBuilder(t *testing.T) {
 				Tags:       []string{"c:d"},
 			}},
 		})
-		So(r.Request.Properties, ShouldResembleProto, &structpb.Struct{
+		assert.Loosely(t, r.Request.Properties, should.Resemble(&structpb.Struct{
 			Fields: map[string]*structpb.Value{
 				"a": {
 					Kind: &structpb.Value_StringValue{StringValue: "b"},
 				},
 			},
-		})
-		So(r.Request.Tags, ShouldResemble, []string{"c:d"})
+		}))
+		assert.Loosely(t, r.Request.Tags, should.Resemble([]string{"c:d"}))
 	})
 
-	Convey("From unknown", t, func() {
+	ftt.Run("From unknown", t, func(t *ftt.Test) {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{})
-		So(r.Request, ShouldResemble, task.Request{
+		assert.Loosely(t, r.Request, should.Resemble(task.Request{
 			DebugLog: "Unrecognized trigger payload of type <nil>, ignoring\n",
-		})
+		}))
 	})
 }

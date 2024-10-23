@@ -22,89 +22,90 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestRunTxn(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mock context", t, func(C) {
+	ftt.Run("With mock context", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c = clock.Set(c, testclock.New(epoch))
 
-		Convey("Happy path", func() {
+		t.Run("Happy path", func(t *ftt.Test) {
 			calls := 0
 			err := runTxn(c, func(ctx context.Context) error {
 				calls++
 				job := Job{JobID: "123", Revision: "abc"}
 				inner := datastore.Put(ctx, &job)
-				So(inner, ShouldBeNil)
+				assert.Loosely(t, inner, should.BeNil)
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(calls, ShouldEqual, 1) // one successful attempt
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(1)) // one successful attempt
 
 			// Committed.
 			job := Job{JobID: "123"}
-			So(datastore.Get(c, &job), ShouldBeNil)
-			So(job.Revision, ShouldEqual, "abc")
+			assert.Loosely(t, datastore.Get(c, &job), should.BeNil)
+			assert.Loosely(t, job.Revision, should.Equal("abc"))
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			calls := 0
 			transient := errors.New("transient error", transient.Tag)
 			err := runTxn(c, func(ctx context.Context) error {
 				calls++
 				job := Job{JobID: "123", Revision: "abc"}
 				inner := datastore.Put(ctx, &job)
-				So(inner, ShouldBeNil)
+				assert.Loosely(t, inner, should.BeNil)
 				return transient
 			})
-			So(err, ShouldEqual, transient)
-			So(calls, ShouldEqual, defaultTransactionOptions.Attempts) // all attempts
+			assert.Loosely(t, err, should.Equal(transient))
+			assert.Loosely(t, calls, should.Equal(defaultTransactionOptions.Attempts)) // all attempts
 
 			// Not committed.
 			job := Job{JobID: "123"}
-			So(datastore.Get(c, &job), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, &job), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("Fatal error", func() {
+		t.Run("Fatal error", func(t *ftt.Test) {
 			calls := 0
 			fatal := errors.New("fatal error")
 			err := runTxn(c, func(ctx context.Context) error {
 				calls++
 				job := Job{JobID: "123", Revision: "abc"}
 				inner := datastore.Put(ctx, &job)
-				So(inner, ShouldBeNil)
+				assert.Loosely(t, inner, should.BeNil)
 				return fatal
 			})
-			So(err, ShouldEqual, fatal)
-			So(calls, ShouldEqual, 1) // one failed attempt
+			assert.Loosely(t, err, should.Equal(fatal))
+			assert.Loosely(t, calls, should.Equal(1)) // one failed attempt
 
 			// Not committed.
 			job := Job{JobID: "123"}
-			So(datastore.Get(c, &job), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, &job), should.Equal(datastore.ErrNoSuchEntity))
 		})
 
-		Convey("Transient error, but marked as abortTransaction", func() {
+		t.Run("Transient error, but marked as abortTransaction", func(t *ftt.Test) {
 			calls := 0
 			transient := errors.New("transient error", transient.Tag, abortTransaction)
 			err := runTxn(c, func(ctx context.Context) error {
 				calls++
 				job := Job{JobID: "123", Revision: "abc"}
 				inner := datastore.Put(ctx, &job)
-				So(inner, ShouldBeNil)
+				assert.Loosely(t, inner, should.BeNil)
 				return transient
 			})
-			So(err, ShouldEqual, transient)
-			So(calls, ShouldEqual, 1) // one failed attempt
+			assert.Loosely(t, err, should.Equal(transient))
+			assert.Loosely(t, calls, should.Equal(1)) // one failed attempt
 
 			// Not committed.
 			job := Job{JobID: "123"}
-			So(datastore.Get(c, &job), ShouldEqual, datastore.ErrNoSuchEntity)
+			assert.Loosely(t, datastore.Get(c, &job), should.Equal(datastore.ErrNoSuchEntity))
 		})
 	})
 }
@@ -112,7 +113,7 @@ func TestRunTxn(t *testing.T) {
 func TestOpsCache(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func(C) {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		calls := 0
@@ -122,16 +123,16 @@ func TestOpsCache(t *testing.T) {
 		}
 
 		ops := opsCache{}
-		So(ops.Do(c, "key", cb), ShouldBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(t, ops.Do(c, "key", cb), should.BeNil)
+		assert.Loosely(t, calls, should.Equal(1))
 
 		// Second call is skipped.
-		So(ops.Do(c, "key", cb), ShouldBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(t, ops.Do(c, "key", cb), should.BeNil)
+		assert.Loosely(t, calls, should.Equal(1))
 
 		// Make sure memcache-based deduplication also works.
 		ops.doneFlags = nil
-		So(ops.Do(c, "key", cb), ShouldBeNil)
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(t, ops.Do(c, "key", cb), should.BeNil)
+		assert.Loosely(t, calls, should.Equal(1))
 	})
 }

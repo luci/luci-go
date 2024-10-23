@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMachine(t *testing.T) {
@@ -33,7 +33,7 @@ func TestMachine(t *testing.T) {
 	each10min, _ := schedule.Parse("with 10m interval", 0)
 	never, _ := schedule.Parse("triggered", 0)
 
-	Convey("Absolute schedule", t, func() {
+	ftt.Run("Absolute schedule", t, func(t *ftt.Test) {
 		tm := testMachine{
 			Now:      parseTime("00:15"),
 			Schedule: at0min,
@@ -44,76 +44,76 @@ func TestMachine(t *testing.T) {
 			m.Enable()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 1,
 			},
-		})
+		}))
 
 		// RewindIfNecessary does nothing, the tick is already set.
 		err = tm.roll(func(m *Machine) error {
 			m.RewindIfNecessary()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Very early tick re-schedules itself (https://crbug.com/1176901#c4)
 		// with new nonce.
 		tm.Now = parseTime("01:00").Add(-1 * time.Minute)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 2,
 			},
-		})
+		}))
 		tm.Actions = nil
 
 		// Moderately early tick is ignored with an error.
 		tm.Now = parseTime("01:00").Add(-200 * time.Millisecond)
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
-		So(err, ShouldErrLike, "tick happened 200ms before it was expected")
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("tick happened 200ms before it was expected"))
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Slightly earlier tick (i.e. due to clock desync) is accepted.
 		tm.Now = parseTime("01:00").Add(-20 * time.Millisecond)
 
 		// A tick with wrong nonce is silently skipped.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(123) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// The correct tick comes. Invocation is started and new tick is scheduled.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			StartInvocationAction{Generation: 4},
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 3,
 			},
-		})
+		}))
 
 		// Disabling the job.
 		err = tm.roll(func(m *Machine) error {
 			m.Disable()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// It silently skips the tick now.
 		tm.Now = parseTime("02:00")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 	})
 
-	Convey("Relative schedule", t, func() {
+	ftt.Run("Relative schedule", t, func(t *ftt.Test) {
 		tm := testMachine{
 			Now:      parseTime("00:00"),
 			Schedule: each30min,
@@ -124,30 +124,30 @@ func TestMachine(t *testing.T) {
 			m.Enable()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("00:30"),
 				TickNonce: 1,
 			},
-		})
+		}))
 
 		// RewindIfNecessary does nothing, the tick is already set.
 		err = tm.roll(func(m *Machine) error {
 			m.RewindIfNecessary()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Tick arrives (slightly late). The invocation is started, but the next
 		// tick is _not_ set.
 		tm.Now = parseTime("00:31")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			StartInvocationAction{Generation: 3},
-		})
+		}))
 
 		// Some time later (when invocation has presumably finished), rewind the
 		// clock. It sets a new tick 30min from now.
@@ -156,16 +156,16 @@ func TestMachine(t *testing.T) {
 			m.RewindIfNecessary()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("01:10"), // 40min + 30min
 				TickNonce: 2,
 			},
-		})
+		}))
 	})
 
-	Convey("Relative schedule, distant future", t, func() {
+	ftt.Run("Relative schedule, distant future", t, func(t *ftt.Test) {
 		tm := testMachine{
 			Now:      parseTime("00:00"),
 			Schedule: never,
@@ -176,24 +176,24 @@ func TestMachine(t *testing.T) {
 			m.Enable()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Rewinding does nothing.
 		err = tm.roll(func(m *Machine) error {
 			m.RewindIfNecessary()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Ticking does nothing.
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(1) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 	})
 
-	Convey("Schedule changes", t, func() {
+	ftt.Run("Schedule changes", t, func(t *ftt.Test) {
 		// Start with absolute.
 		tm := testMachine{
 			Now:      parseTime("00:00"),
@@ -205,13 +205,13 @@ func TestMachine(t *testing.T) {
 			m.Enable()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("01:00"),
 				TickNonce: 1,
 			},
-		})
+		}))
 
 		// 10 min later switch to the relative schedule. It reschedules the tick
 		// to 30 min since the _previous action_ (which was 'Enable').
@@ -221,13 +221,13 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("00:30"),
 				TickNonce: 2,
 			},
-		})
+		}))
 
 		// The operation is idempotent. No new tick is scheduled when we try again.
 		tm.Now = parseTime("00:15")
@@ -235,17 +235,17 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// The scheduled tick comes. Since it is a relative schedule, no new tick
 		// is scheduled.
 		tm.Now = parseTime("00:30")
 		err = tm.roll(func(m *Machine) error { return m.OnTimerTick(2) })
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			StartInvocationAction{Generation: 4},
-		})
+		}))
 
 		// Some time later we switch it to another relative schedule. Nothing
 		// happens, since we are waiting for a rewind now anyway.
@@ -255,8 +255,8 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 
 		// Now we switch back to the absolute schedule. It schedules a new tick.
 		tm.Now = parseTime("01:30")
@@ -265,13 +265,13 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 3,
 			},
-		})
+		}))
 
 		// Changing the absolute schedule moves the tick accordingly.
 		tm.Schedule = at45min
@@ -279,13 +279,13 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("01:45"),
 				TickNonce: 4,
 			},
-		})
+		}))
 
 		// Switching to 'triggered' schedule "disarms" the current tick by replacing
 		// it with "tick in the distant future". This doesn't emit any actions,
@@ -295,12 +295,12 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
-		So(tm.State.LastTick, ShouldResemble, TickLaterAction{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
+		assert.Loosely(t, tm.State.LastTick, should.Resemble(TickLaterAction{
 			When:      schedule.DistantFuture,
 			TickNonce: 5,
-		})
+		}))
 
 		// Enabling back absolute schedule places a new tick.
 		tm.Now = parseTime("01:30")
@@ -309,13 +309,13 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldResemble, []Action{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.Resemble([]Action{
 			TickLaterAction{
 				When:      parseTime("02:00"),
 				TickNonce: 6,
 			},
-		})
+		}))
 
 		// Schedule changes do nothing to disabled jobs.
 		tm.Schedule = at45min
@@ -324,11 +324,11 @@ func TestMachine(t *testing.T) {
 			m.OnScheduleChange()
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(tm.Actions, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tm.Actions, should.BeNil)
 	})
 
-	Convey("Equals uses time.Equal", t, func() {
+	ftt.Run("Equals uses time.Equal", t, func(t *ftt.Test) {
 		s1 := State{
 			Enabled:    true,
 			Generation: 123,
@@ -339,13 +339,13 @@ func TestMachine(t *testing.T) {
 			Generation: 123,
 			LastRewind: parseTime("00:15").Local(), // same time, different TZ
 		}
-		So(s1.Equal(&s2), ShouldBeTrue)
+		assert.Loosely(t, s1.Equal(&s2), should.BeTrue)
 	})
 
-	Convey("Petty code coverage", t, func() {
+	ftt.Run("Petty code coverage", t, func(t *ftt.Test) {
 		// Just to get 100% code coverage...
-		So((StartInvocationAction{}).IsAction(), ShouldBeTrue)
-		So((TickLaterAction{}).IsAction(), ShouldBeTrue)
+		assert.Loosely(t, (StartInvocationAction{}).IsAction(), should.BeTrue)
+		assert.Loosely(t, (TickLaterAction{}).IsAction(), should.BeTrue)
 	})
 }
 

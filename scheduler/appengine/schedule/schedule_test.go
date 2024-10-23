@@ -15,10 +15,11 @@
 package schedule
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
 	"time"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -52,96 +53,96 @@ func timeTable(cron string, now time.Time, count int) (out []time.Time) {
 func TestAbsoluteSchedule(t *testing.T) {
 	t.Parallel()
 
-	Convey("Parsing success", t, func() {
+	ftt.Run("Parsing success", t, func(t *ftt.Test) {
 		sched, err := Parse("* * * * * *", 0)
-		So(err, ShouldBeNil)
-		So(sched.String(), ShouldEqual, "* * * * * *")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sched.String(), should.Equal("* * * * * *"))
 	})
 
-	Convey("Parsing error", t, func() {
+	ftt.Run("Parsing error", t, func(t *ftt.Test) {
 		sched, err := Parse("not a schedule", 0)
-		So(err, ShouldNotBeNil)
-		So(sched, ShouldBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, sched, should.BeNil)
 	})
 
-	Convey("Next works", t, func() {
+	ftt.Run("Next works", t, func(t *ftt.Test) {
 		sched, _ := Parse("*/15 * * * * * *", 0)
-		So(sched.IsAbsolute(), ShouldBeTrue)
-		So(sched.Next(epoch, time.Time{}), ShouldResemble, epoch.Add(15*time.Second))
-		So(sched.Next(epoch.Add(15*time.Second), epoch), ShouldResemble, epoch.Add(30*time.Second))
+		assert.Loosely(t, sched.IsAbsolute(), should.BeTrue)
+		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Resemble(epoch.Add(15*time.Second)))
+		assert.Loosely(t, sched.Next(epoch.Add(15*time.Second), epoch), should.Resemble(epoch.Add(30*time.Second)))
 	})
 
-	Convey("Each 3 hours time table", t, func() {
-		So(timeTable("0 */3 * * * *", epoch, 4), ShouldResemble, []time.Time{
+	ftt.Run("Each 3 hours time table", t, func(t *ftt.Test) {
+		assert.Loosely(t, timeTable("0 */3 * * * *", epoch, 4), should.Resemble([]time.Time{
 			closestMidnight,
 			closestMidnight.Add(3 * time.Hour),
 			closestMidnight.Add(6 * time.Hour),
 			closestMidnight.Add(9 * time.Hour),
-		})
-		So(timeTable("0 1/3 * * * *", epoch, 4), ShouldResemble, []time.Time{
+		}))
+		assert.Loosely(t, timeTable("0 1/3 * * * *", epoch, 4), should.Resemble([]time.Time{
 			closestMidnight.Add(1 * time.Hour),
 			closestMidnight.Add(4 * time.Hour),
 			closestMidnight.Add(7 * time.Hour),
 			closestMidnight.Add(10 * time.Hour),
-		})
+		}))
 	})
 
-	Convey("Trailing stars are optional", t, func() {
+	ftt.Run("Trailing stars are optional", t, func(t *ftt.Test) {
 		// Exact same time tables.
-		So(timeTable("0 */3 * * *", epoch, 4), ShouldResemble, timeTable("0 */3 * * * *", epoch, 4))
+		assert.Loosely(t, timeTable("0 */3 * * *", epoch, 4), should.Resemble(timeTable("0 */3 * * * *", epoch, 4)))
 	})
 
-	Convey("List of hours", t, func() {
-		So(timeTable("0 2,10,18 * * *", epoch, 4), ShouldResemble, []time.Time{
+	ftt.Run("List of hours", t, func(t *ftt.Test) {
+		assert.Loosely(t, timeTable("0 2,10,18 * * *", epoch, 4), should.Resemble([]time.Time{
 			closestMidnight.Add(2 * time.Hour),
 			closestMidnight.Add(10 * time.Hour),
 			closestMidnight.Add(18 * time.Hour),
 			closestMidnight.Add(26 * time.Hour),
-		})
+		}))
 	})
 
-	Convey("Once a day", t, func() {
-		So(timeTable("0 7 * * *", epoch, 4), ShouldResemble, []time.Time{
+	ftt.Run("Once a day", t, func(t *ftt.Test) {
+		assert.Loosely(t, timeTable("0 7 * * *", epoch, 4), should.Resemble([]time.Time{
 			closestMidnight.Add(7 * time.Hour),
 			closestMidnight.Add(31 * time.Hour),
 			closestMidnight.Add(55 * time.Hour),
 			closestMidnight.Add(79 * time.Hour),
-		})
+		}))
 	})
 }
 
 func TestRelativeSchedule(t *testing.T) {
 	t.Parallel()
 
-	Convey("Parsing success", t, func() {
+	ftt.Run("Parsing success", t, func(t *ftt.Test) {
 		sched, err := Parse("with 15s interval", 0)
-		So(err, ShouldBeNil)
-		So(sched.String(), ShouldEqual, "with 15s interval")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sched.String(), should.Equal("with 15s interval"))
 	})
 
-	Convey("Parsing error", t, func() {
+	ftt.Run("Parsing error", t, func(t *ftt.Test) {
 		sched, err := Parse("with bladasdafier", 0)
-		So(err, ShouldNotBeNil)
-		So(sched, ShouldBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, sched, should.BeNil)
 
 		sched, err = Parse("with -1s interval", 0)
-		So(err, ShouldNotBeNil)
-		So(sched, ShouldBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, sched, should.BeNil)
 
 		sched, err = Parse("with NaNs interval", 0)
-		So(err, ShouldNotBeNil)
-		So(sched, ShouldBeNil)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, sched, should.BeNil)
 	})
 
-	Convey("Next works", t, func() {
+	ftt.Run("Next works", t, func(t *ftt.Test) {
 		sched, _ := Parse("with 15s interval", 0)
-		So(sched.IsAbsolute(), ShouldBeFalse)
+		assert.Loosely(t, sched.IsAbsolute(), should.BeFalse)
 
 		// First tick is pseudorandom.
-		So(sched.Next(epoch, time.Time{}), ShouldResemble, epoch.Add(14*time.Second+177942239*time.Nanosecond))
+		assert.Loosely(t, sched.Next(epoch, time.Time{}), should.Resemble(epoch.Add(14*time.Second+177942239*time.Nanosecond)))
 
 		// Next tick is 15s from prev one, or now if it's too late.
-		So(sched.Next(epoch.Add(16*time.Second), epoch.Add(15*time.Second)), ShouldResemble, epoch.Add(30*time.Second))
-		So(sched.Next(epoch.Add(31*time.Second), epoch.Add(15*time.Second)), ShouldResemble, epoch.Add(31*time.Second))
+		assert.Loosely(t, sched.Next(epoch.Add(16*time.Second), epoch.Add(15*time.Second)), should.Resemble(epoch.Add(30*time.Second)))
+		assert.Loosely(t, sched.Next(epoch.Add(31*time.Second), epoch.Add(15*time.Second)), should.Resemble(epoch.Add(31*time.Second)))
 	})
 }

@@ -29,6 +29,9 @@ import (
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -37,28 +40,26 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/urlfetch"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetJobsApi(t *testing.T) {
 	t.Parallel()
 
-	Convey("Scheduler GetJobs API works", t, func() {
+	ftt.Run("Scheduler GetJobs API works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		fakeTaskBlob, err := registerURLFetcher(catalog)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
-		Convey("Empty", func() {
+		t.Run("Empty", func(t *ftt.Test) {
 			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) { return []*engine.Job{}, nil }
 			reply, err := ss.GetJobs(ctx, nil)
-			So(err, ShouldBeNil)
-			So(len(reply.GetJobs()), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(reply.GetJobs()), should.BeZero)
 		})
 
-		Convey("All Projects", func() {
+		t.Run("All Projects", func(t *ftt.Test) {
 			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) {
 				return []*engine.Job{
 					{
@@ -80,8 +81,8 @@ func TestGetJobsApi(t *testing.T) {
 				}, nil
 			}
 			reply, err := ss.GetJobs(ctx, nil)
-			So(err, ShouldBeNil)
-			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
@@ -94,12 +95,12 @@ func TestGetJobsApi(t *testing.T) {
 					State:    &scheduler.JobState{UiStatus: "PAUSED"},
 					Paused:   true,
 				},
-			})
+			}))
 		})
 
-		Convey("One Project", func() {
+		t.Run("One Project", func(t *ftt.Test) {
 			fakeEng.getVisibleProjectJobs = func(projectID string) ([]*engine.Job, error) {
-				So(projectID, ShouldEqual, "bar")
+				assert.Loosely(t, projectID, should.Equal("bar"))
 				return []*engine.Job{
 					{
 						JobID:             "bar/foo",
@@ -112,20 +113,20 @@ func TestGetJobsApi(t *testing.T) {
 				}, nil
 			}
 			reply, err := ss.GetJobs(ctx, &scheduler.JobsRequest{Project: "bar"})
-			So(err, ShouldBeNil)
-			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
 					Paused:   false,
 				},
-			})
+			}))
 		})
 
-		Convey("Paused but currently running job", func() {
+		t.Run("Paused but currently running job", func(t *ftt.Test) {
 			fakeEng.getVisibleProjectJobs = func(projectID string) ([]*engine.Job, error) {
-				So(projectID, ShouldEqual, "bar")
+				assert.Loosely(t, projectID, should.Equal("bar"))
 				return []*engine.Job{
 					{
 						// Job which is paused but its latest invocation still running.
@@ -140,15 +141,15 @@ func TestGetJobsApi(t *testing.T) {
 				}, nil
 			}
 			reply, err := ss.GetJobs(ctx, &scheduler.JobsRequest{Project: "bar"})
-			So(err, ShouldBeNil)
-			So(reply.GetJobs(), ShouldResemble, []*scheduler.Job{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, reply.GetJobs(), should.Resemble([]*scheduler.Job{
 				{
 					JobRef:   &scheduler.JobRef{Job: "foo", Project: "bar"},
 					Schedule: "0 * * * * * *",
 					State:    &scheduler.JobState{UiStatus: "RUNNING"},
 					Paused:   true,
 				},
-			})
+			}))
 		})
 	})
 }
@@ -156,24 +157,24 @@ func TestGetJobsApi(t *testing.T) {
 func TestGetInvocationsApi(t *testing.T) {
 	t.Parallel()
 
-	Convey("Scheduler GetInvocations API works", t, func() {
+	ftt.Run("Scheduler GetInvocations API works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		_, err := registerURLFetcher(catalog)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
-		Convey("Job not found", func() {
+		t.Run("Job not found", func(t *ftt.Test) {
 			fakeEng.mockNoJob()
 			_, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef: &scheduler.JobRef{Project: "not", Job: "exists"},
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 
-		Convey("DS error", func() {
+		t.Run("DS error", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
 				return nil, "", fmt.Errorf("ds error")
@@ -182,36 +183,36 @@ func TestGetInvocationsApi(t *testing.T) {
 				JobRef: &scheduler.JobRef{Project: "proj", Job: "job"},
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.Internal)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.Internal))
 		})
 
-		Convey("Empty with huge pagesize", func() {
+		t.Run("Empty with huge pagesize", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
-				So(opts, ShouldResemble, engine.ListInvocationsOpts{
+				assert.Loosely(t, opts, should.Resemble(engine.ListInvocationsOpts{
 					PageSize: 50,
-				})
+				}))
 				return nil, "", nil
 			}
 			r, err := ss.GetInvocations(ctx, &scheduler.InvocationsRequest{
 				JobRef:   &scheduler.JobRef{Project: "proj", Job: "job"},
 				PageSize: 1e9,
 			})
-			So(err, ShouldBeNil)
-			So(r.GetNextCursor(), ShouldEqual, "")
-			So(r.GetInvocations(), ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r.GetNextCursor(), should.BeEmpty)
+			assert.Loosely(t, r.GetInvocations(), should.BeEmpty)
 		})
 
-		Convey("Some with custom pagesize and cursor", func() {
+		t.Run("Some with custom pagesize and cursor", func(t *ftt.Test) {
 			started := time.Unix(123123123, 0).UTC()
 			finished := time.Unix(321321321, 0).UTC()
 			fakeEng.mockJob("proj/job")
 			fakeEng.listInvocations = func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error) {
-				So(opts, ShouldResemble, engine.ListInvocationsOpts{
+				assert.Loosely(t, opts, should.Resemble(engine.ListInvocationsOpts{
 					PageSize: 5,
 					Cursor:   "cursor",
-				})
+				}))
 				return []*engine.Invocation{
 					{ID: 12, Revision: "deadbeef", Status: task.StatusRunning, Started: started,
 						TriggeredBy: identity.Identity("user:bot@example.com")},
@@ -224,9 +225,9 @@ func TestGetInvocationsApi(t *testing.T) {
 				PageSize: 5,
 				Cursor:   "cursor",
 			})
-			So(err, ShouldBeNil)
-			So(r.GetNextCursor(), ShouldEqual, "next")
-			So(r.GetInvocations(), ShouldResemble, []*scheduler.Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r.GetNextCursor(), should.Equal("next"))
+			assert.Loosely(t, r.GetInvocations(), should.Resemble([]*scheduler.Invocation{
 				{
 					InvocationRef: &scheduler.InvocationRef{
 						JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
@@ -250,7 +251,7 @@ func TestGetInvocationsApi(t *testing.T) {
 					FinishedTs:     finished.UnixNano() / 1000,
 					ViewUrl:        "https://example.com/13",
 				},
-			})
+			}))
 		})
 	})
 }
@@ -258,16 +259,16 @@ func TestGetInvocationsApi(t *testing.T) {
 func TestGetInvocationApi(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.getInvocation = func(jobID string, invID int64) (*engine.Invocation, error) {
-				So(jobID, ShouldEqual, "proj/job")
-				So(invID, ShouldEqual, 12)
+				assert.Loosely(t, jobID, should.Equal("proj/job"))
+				assert.Loosely(t, invID, should.Equal(12))
 				return &engine.Invocation{
 					JobID:    jobID,
 					ID:       12,
@@ -280,8 +281,8 @@ func TestGetInvocationApi(t *testing.T) {
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 				InvocationId: 12,
 			})
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, &scheduler.Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(&scheduler.Invocation{
 				InvocationRef: &scheduler.InvocationRef{
 					JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 					InvocationId: 12,
@@ -289,21 +290,21 @@ func TestGetInvocationApi(t *testing.T) {
 				ConfigRevision: "deadbeef",
 				Status:         "RUNNING",
 				StartedTs:      123123123000000,
-			})
+			}))
 		})
 
-		Convey("No job", func() {
+		t.Run("No job", func(t *ftt.Test) {
 			fakeEng.mockNoJob()
 			_, err := ss.GetInvocation(ctx, &scheduler.InvocationRef{
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 				InvocationId: 12,
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 
-		Convey("No invocation", func() {
+		t.Run("No invocation", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.getInvocation = func(jobID string, invID int64) (*engine.Invocation, error) {
 				return nil, engine.ErrNoSuchInvocation
@@ -313,8 +314,8 @@ func TestGetInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 	})
 }
@@ -325,39 +326,39 @@ func TestJobActionsApi(t *testing.T) {
 	// Note: PauseJob/ResumeJob/AbortJob are implemented identically, so test only
 	// PauseJob.
 
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
-		Convey("PermissionDenied", func() {
+		t.Run("PermissionDenied", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.pauseJob = func(jobID string) error {
 				return engine.ErrNoPermission
 			}
 			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.pauseJob = func(jobID string) error {
-				So(jobID, ShouldEqual, "proj/job")
+				assert.Loosely(t, jobID, should.Equal("proj/job"))
 				return nil
 			}
 			r, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble(&emptypb.Empty{}))
 		})
 
-		Convey("NotFound", func() {
+		t.Run("NotFound", func(t *ftt.Test) {
 			fakeEng.mockNoJob()
 			_, err := ss.PauseJob(ctx, &scheduler.JobRef{Project: "proj", Job: "job"})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 	})
 }
@@ -365,12 +366,12 @@ func TestJobActionsApi(t *testing.T) {
 func TestAbortInvocationApi(t *testing.T) {
 	t.Parallel()
 
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		fakeEng, catalog := newTestEngine()
 		ss := SchedulerServer{Engine: fakeEng, Catalog: catalog}
 
-		Convey("PermissionDenied", func() {
+		t.Run("PermissionDenied", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				return engine.ErrNoPermission
@@ -380,37 +381,37 @@ func TestAbortInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.PermissionDenied)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.PermissionDenied))
 		})
 
-		Convey("OK", func() {
+		t.Run("OK", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
-				So(jobID, ShouldEqual, "proj/job")
-				So(invID, ShouldEqual, 12)
+				assert.Loosely(t, jobID, should.Equal("proj/job"))
+				assert.Loosely(t, invID, should.Equal(12))
 				return nil
 			}
 			r, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 				InvocationId: 12,
 			})
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble(&emptypb.Empty{}))
 		})
 
-		Convey("No job", func() {
+		t.Run("No job", func(t *ftt.Test) {
 			fakeEng.mockNoJob()
 			_, err := ss.AbortInvocation(ctx, &scheduler.InvocationRef{
 				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
 				InvocationId: 12,
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 
-		Convey("No invocation", func() {
+		t.Run("No invocation", func(t *ftt.Test) {
 			fakeEng.mockJob("proj/job")
 			fakeEng.abortInvocation = func(jobID string, invID int64) error {
 				return engine.ErrNoSuchInvocation
@@ -420,8 +421,8 @@ func TestAbortInvocationApi(t *testing.T) {
 				InvocationId: 12,
 			})
 			s, ok := status.FromError(err)
-			So(ok, ShouldBeTrue)
-			So(s.Code(), ShouldEqual, codes.NotFound)
+			assert.Loosely(t, ok, should.BeTrue)
+			assert.Loosely(t, s.Code(), should.Equal(codes.NotFound))
 		})
 	})
 }

@@ -18,9 +18,11 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -30,33 +32,33 @@ import (
 
 func TestGetJobTraits(t *testing.T) {
 	t.Parallel()
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		cat := catalog.New()
-		So(cat.RegisterTaskManager(&urlfetch.TaskManager{}), ShouldBeNil)
+		assert.Loosely(t, cat.RegisterTaskManager(&urlfetch.TaskManager{}), should.BeNil)
 		ctx := context.Background()
 
-		Convey("bad task", func() {
+		t.Run("bad task", func(t *ftt.Test) {
 			taskBlob, err := proto.Marshal(&messages.TaskDefWrapper{
 				Noop: &messages.NoopTask{},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			traits, err := GetJobTraits(ctx, cat, &engine.Job{
 				Task: taskBlob,
 			})
-			So(err, ShouldNotBeNil)
-			So(traits, ShouldResemble, task.Traits{})
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, traits, should.Resemble(task.Traits{}))
 		})
 
-		Convey("OK task", func() {
+		t.Run("OK task", func(t *ftt.Test) {
 			taskBlob, err := proto.Marshal(&messages.TaskDefWrapper{
 				UrlFetch: &messages.UrlFetchTask{Url: "http://example.com/path"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			traits, err := GetJobTraits(ctx, cat, &engine.Job{
 				Task: taskBlob,
 			})
-			So(err, ShouldBeNil)
-			So(traits, ShouldResemble, task.Traits{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, traits, should.Resemble(task.Traits{}))
 		})
 	})
 }

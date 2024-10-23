@@ -35,6 +35,9 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/rand/mathrand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -43,9 +46,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var _ task.Manager = (*TaskManager)(nil)
@@ -56,39 +56,39 @@ func TestValidateProtoMessage(t *testing.T) {
 	tm := TaskManager{}
 	c := context.Background()
 
-	Convey("ValidateProtoMessage works", t, func() {
+	ftt.Run("ValidateProtoMessage works", t, func(t *ftt.Test) {
 		ctx := &validation.Context{Context: c}
 		validate := func(msg proto.Message) error {
 			tm.ValidateProtoMessage(ctx, msg, "some-project:some-realm")
 			return ctx.Finalize()
 		}
 
-		Convey("ValidateProtoMessage passes good msg", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage passes good msg", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server:     "blah.com",
 				Bucket:     "bucket",
 				Builder:    "builder",
 				Tags:       []string{"a:b", "c:d"},
 				Properties: []string{"a:b", "c:d"},
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("ValidateProtoMessage passes good minimal msg", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage passes good minimal msg", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server:  "blah.com",
 				Builder: "builder",
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("ValidateProtoMessage wrong type", func() {
-			So(validate(&messages.NoopTask{}), ShouldErrLike, "wrong type")
+		t.Run("ValidateProtoMessage wrong type", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.NoopTask{}), should.ErrLike("wrong type"))
 		})
 
-		Convey("ValidateProtoMessage empty", func() {
-			So(validate(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty BuildbucketTask")
+		t.Run("ValidateProtoMessage empty", func(t *ftt.Test) {
+			assert.Loosely(t, validate(tm.ProtoMessageType()), should.ErrLike("expecting a non-empty BuildbucketTask"))
 		})
 
-		Convey("ValidateProtoMessage validates URL", func() {
+		t.Run("ValidateProtoMessage validates URL", func(t *ftt.Test) {
 			call := func(url string) error {
 				ctx = &validation.Context{Context: c}
 				tm.ValidateProtoMessage(ctx, &messages.BuildbucketTask{
@@ -98,52 +98,52 @@ func TestValidateProtoMessage(t *testing.T) {
 				}, "some-project:some-realm")
 				return ctx.Finalize()
 			}
-			So(call(""), ShouldErrLike, "field 'server' is required")
-			So(call("https://host/not-root"), ShouldErrLike, "field 'server' should be just a host, not a URL")
-			So(call("%%%%"), ShouldErrLike, "field 'server' is not a valid hostname")
-			So(call("blah.com/abc"), ShouldErrLike, "field 'server' is not a valid hostname")
+			assert.Loosely(t, call(""), should.ErrLike("field 'server' is required"))
+			assert.Loosely(t, call("https://host/not-root"), should.ErrLike("field 'server' should be just a host, not a URL"))
+			assert.Loosely(t, call("%%%%"), should.ErrLike("field 'server' is not a valid hostname"))
+			assert.Loosely(t, call("blah.com/abc"), should.ErrLike("field 'server' is not a valid hostname"))
 		})
 
-		Convey("ValidateProtoMessage needs bucket", func() {
+		t.Run("ValidateProtoMessage needs bucket", func(t *ftt.Test) {
 			tm.ValidateProtoMessage(ctx, &messages.BuildbucketTask{
 				Server:  "blah.com",
 				Builder: "builder",
 			}, "some-project:@legacy")
-			So(ctx.Finalize(), ShouldErrLike, `'bucket' field for jobs in "@legacy" realm is required`)
+			assert.Loosely(t, ctx.Finalize(), should.ErrLike(`'bucket' field for jobs in "@legacy" realm is required`))
 		})
 
-		Convey("ValidateProtoMessage needs builder", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage needs builder", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server: "blah.com",
 				Bucket: "bucket",
-			}), ShouldErrLike, "'builder' field is required")
+			}), should.ErrLike("'builder' field is required"))
 		})
 
-		Convey("ValidateProtoMessage validates properties", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage validates properties", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server:     "blah.com",
 				Bucket:     "bucket",
 				Builder:    "builder",
 				Properties: []string{"not_kv_pair"},
-			}), ShouldErrLike, "bad property, not a 'key:value' pair")
+			}), should.ErrLike("bad property, not a 'key:value' pair"))
 		})
 
-		Convey("ValidateProtoMessage validates tags", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage validates tags", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server:  "blah.com",
 				Bucket:  "bucket",
 				Builder: "builder",
 				Tags:    []string{"not_kv_pair"},
-			}), ShouldErrLike, "bad tag, not a 'key:value' pair")
+			}), should.ErrLike("bad tag, not a 'key:value' pair"))
 		})
 
-		Convey("ValidateProtoMessage forbids default tags overwrite", func() {
-			So(validate(&messages.BuildbucketTask{
+		t.Run("ValidateProtoMessage forbids default tags overwrite", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.BuildbucketTask{
 				Server:  "blah.com",
 				Bucket:  "bucket",
 				Builder: "builder",
 				Tags:    []string{"scheduler_job_id:blah"},
-			}), ShouldErrLike, "tag \"scheduler_job_id\" is reserved")
+			}), should.ErrLike("tag \"scheduler_job_id\" is reserved"))
 		})
 	})
 }
@@ -230,7 +230,7 @@ func TestBuilderID(t *testing.T) {
 func TestFullFlow(t *testing.T) {
 	t.Parallel()
 
-	Convey("LaunchTask and HandleNotification work", t, func(ctx C) {
+	ftt.Run("LaunchTask and HandleNotification work", t, func(ctx *ftt.Test) {
 		scheduleRequest := make(chan *bbpb.ScheduleBuildRequest, 1)
 
 		buildStatus := atomic.Value{}
@@ -263,14 +263,14 @@ func TestFullFlow(t *testing.T) {
 		ctl := fakeController(srv.URL())
 
 		// Launch.
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
-		So(ctl.TaskState, ShouldResemble, task.State{
+		assert.Loosely(ctx, mgr.LaunchTask(c, ctl), should.BeNil)
+		assert.Loosely(ctx, ctl.TaskState, should.Resemble(task.State{
 			Status:   task.StatusRunning,
 			TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 			ViewURL:  srv.URL() + "/build/9025781602559305888",
-		})
+		}))
 
-		So(<-scheduleRequest, ShouldResembleProto, &bbpb.ScheduleBuildRequest{
+		assert.Loosely(ctx, <-scheduleRequest, should.Resemble(&bbpb.ScheduleBuildRequest{
 			RequestId: "1",
 			Builder: &bbpb.BuilderID{
 				Project: "some-project",
@@ -313,37 +313,37 @@ func TestFullFlow(t *testing.T) {
 				PubsubTopic: "topic",
 				UserData:    []byte("auth_token"),
 			},
-		})
+		}))
 
 		// Added the timer.
-		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
+		assert.Loosely(ctx, ctl.Timers, should.Resemble([]tasktest.TimerSpec{
 			{
 				Delay: 224 * time.Second, // random
 				Name:  statusCheckTimerName,
 			},
-		})
+		}))
 		ctl.Timers = nil
 
 		// The timer is called. Checks the state, reschedules itself.
-		So(mgr.HandleTimer(c, ctl, statusCheckTimerName, nil), ShouldBeNil)
-		So(ctl.Timers, ShouldResemble, []tasktest.TimerSpec{
+		assert.Loosely(ctx, mgr.HandleTimer(c, ctl, statusCheckTimerName, nil), should.BeNil)
+		assert.Loosely(ctx, ctl.Timers, should.Resemble([]tasktest.TimerSpec{
 			{
 				Delay: 157 * time.Second, // random
 				Name:  statusCheckTimerName,
 			},
-		})
+		}))
 
 		// Process finish notification.
 		buildStatus.Store(bbpb.Status_SUCCESS)
-		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
-		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
+		assert.Loosely(ctx, mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), should.BeNil)
+		assert.Loosely(ctx, ctl.TaskState.Status, should.Equal(task.StatusSucceeded))
 	})
 }
 
 func TestAbort(t *testing.T) {
 	t.Parallel()
 
-	Convey("LaunchTask and AbortTask work", t, func(ctx C) {
+	ftt.Run("LaunchTask and AbortTask work", t, func(ctx *ftt.Test) {
 		srv := BuildbucketFake{
 			ScheduleBuild: func(req *bbpb.ScheduleBuildRequest) (*bbpb.Build, error) {
 				return &bbpb.Build{
@@ -369,15 +369,15 @@ func TestAbort(t *testing.T) {
 		ctl := fakeController(srv.URL())
 
 		// Launch and kill.
-		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
-		So(mgr.AbortTask(c, ctl), ShouldBeNil)
+		assert.Loosely(ctx, mgr.LaunchTask(c, ctl), should.BeNil)
+		assert.Loosely(ctx, mgr.AbortTask(c, ctl), should.BeNil)
 	})
 }
 
 func TestTriggeredFlow(t *testing.T) {
 	t.Parallel()
 
-	Convey("LaunchTask with GitilesTrigger works", t, func(ctx C) {
+	ftt.Run("LaunchTask with GitilesTrigger works", t, func(ctx *ftt.Test) {
 		scheduleRequest := make(chan *bbpb.ScheduleBuildRequest, 1)
 
 		srv := BuildbucketFake{
@@ -413,17 +413,17 @@ func TestTriggeredFlow(t *testing.T) {
 			ctl.Req = req.Request
 
 			// Launch with triggers,
-			So(mgr.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.TaskState, ShouldResemble, task.State{
+			assert.Loosely(ctx, mgr.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(ctx, ctl.TaskState, should.Resemble(task.State{
 				Status:   task.StatusRunning,
 				TaskData: []byte(`{"build_id":"9025781602559305888"}`),
 				ViewURL:  srv.URL() + "/build/9025781602559305888",
-			})
+			}))
 
 			return <-scheduleRequest
 		}
 
-		Convey("Gitiles triggers", func() {
+		ctx.Run("Gitiles triggers", func(ctx *ftt.Test) {
 			req := schedule([]*internal.Trigger{
 				{
 					Id: "1",
@@ -450,31 +450,31 @@ func TestTriggeredFlow(t *testing.T) {
 			})
 
 			// Used the last trigger to get the commit.
-			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
 				Ref:     "refs/heads/master",
-			})
+			}))
 
 			// Properties are sanitized.
-			So(structKeys(req.Properties), ShouldResemble, []string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
 				"$recipe_engine/scheduler",
 				"extra_prop",
-			})
+			}))
 
 			// Tags are sanitized too.
-			So(req.Tags, ShouldResembleProto, []*bbpb.StringPair{
+			assert.Loosely(ctx, req.Tags, should.Resemble([]*bbpb.StringPair{
 				{Key: "scheduler_invocation_id", Value: "1"},
 				{Key: "scheduler_job_id", Value: "some-project/some-job"},
 				{Key: "user_agent", Value: "app"},
 				{Key: "a", Value: "from-task-def"},
 				{Key: "b", Value: "from-task-def"},
 				{Key: "extra", Value: "tag"},
-			})
+			}))
 		})
 
-		Convey("Reconstructs gitiles commit from generic trigger", func() {
+		ctx.Run("Reconstructs gitiles commit from generic trigger", func(ctx *ftt.Test) {
 			req := schedule([]*internal.Trigger{
 				{
 					Id: "1",
@@ -499,31 +499,31 @@ func TestTriggeredFlow(t *testing.T) {
 			})
 
 			// Reconstructed gitiles commit from properties.
-			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
 				Ref:     "refs/heads/master",
-			})
+			}))
 
 			// Properties are sanitized.
-			So(structKeys(req.Properties), ShouldResemble, []string{
+			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
 				"$recipe_engine/scheduler",
 				"extra_prop",
-			})
+			}))
 
 			// Tags are sanitized too.
-			So(req.Tags, ShouldResembleProto, []*bbpb.StringPair{
+			assert.Loosely(ctx, req.Tags, should.Resemble([]*bbpb.StringPair{
 				{Key: "scheduler_invocation_id", Value: "1"},
 				{Key: "scheduler_job_id", Value: "some-project/some-job"},
 				{Key: "user_agent", Value: "app"},
 				{Key: "a", Value: "from-task-def"},
 				{Key: "b", Value: "from-task-def"},
 				{Key: "extra", Value: "tag"},
-			})
+			}))
 		})
 
-		Convey("Branch is optional when reconstructing", func() {
+		ctx.Run("Branch is optional when reconstructing", func(ctx *ftt.Test) {
 			req := schedule([]*internal.Trigger{
 				{
 					Id: "1",
@@ -540,16 +540,16 @@ func TestTriggeredFlow(t *testing.T) {
 					},
 				},
 			})
-			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 				Host:    "r.googlesource.com",
 				Project: "repo",
 				Id:      "deadbeef",
-			})
-			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
-			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
+			}))
+			assert.Loosely(ctx, countTags(req.Tags, "buildset"), should.BeZero)
+			assert.Loosely(ctx, countTags(req.Tags, "gitiles_ref"), should.BeZero)
 		})
 
-		Convey("Properties are ignored if buildset tag is missing", func() {
+		ctx.Run("Properties are ignored if buildset tag is missing", func(ctx *ftt.Test) {
 			req := schedule([]*internal.Trigger{
 				{
 					Id: "1",
@@ -567,15 +567,15 @@ func TestTriggeredFlow(t *testing.T) {
 					},
 				},
 			})
-			So(req.GitilesCommit, ShouldBeNil)
-			So(structKeys(req.Properties), ShouldResemble, []string{
+			assert.Loosely(ctx, req.GitilesCommit, should.BeNil)
+			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
 				"$recipe_engine/scheduler",
-			})
-			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
-			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
+			}))
+			assert.Loosely(ctx, countTags(req.Tags, "buildset"), should.BeZero)
+			assert.Loosely(ctx, countTags(req.Tags, "gitiles_ref"), should.BeZero)
 		})
 
-		Convey("Tags are authoritative over properties", func() {
+		ctx.Run("Tags are authoritative over properties", func(ctx *ftt.Test) {
 			req := schedule([]*internal.Trigger{
 				{
 					Id: "1",
@@ -594,17 +594,17 @@ func TestTriggeredFlow(t *testing.T) {
 					},
 				},
 			})
-			So(req.GitilesCommit, ShouldResembleProto, &bbpb.GitilesCommit{
+			assert.Loosely(ctx, req.GitilesCommit, should.Resemble(&bbpb.GitilesCommit{
 				Host:    "tag.googlesource.com",
 				Project: "repo-tag",
 				Id:      "bbbb",
 				Ref:     "refs/heads/main-tag",
-			})
-			So(structKeys(req.Properties), ShouldResemble, []string{
+			}))
+			assert.Loosely(ctx, structKeys(req.Properties), should.Resemble([]string{
 				"$recipe_engine/scheduler",
-			})
-			So(countTags(req.Tags, "buildset"), ShouldEqual, 0)
-			So(countTags(req.Tags, "gitiles_ref"), ShouldEqual, 0)
+			}))
+			assert.Loosely(ctx, countTags(req.Tags, "buildset"), should.BeZero)
+			assert.Loosely(ctx, countTags(req.Tags, "gitiles_ref"), should.BeZero)
 		})
 	})
 }
@@ -612,7 +612,7 @@ func TestTriggeredFlow(t *testing.T) {
 func TestPassedTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey(fmt.Sprintf("Passed to buildbucket triggers are capped at %d", maxTriggersAsSchedulerProperty), t, func(ctx C) {
+	ftt.Run(fmt.Sprintf("Passed to buildbucket triggers are capped at %d", maxTriggersAsSchedulerProperty), t, func(ctx *ftt.Test) {
 		c := memory.Use(context.Background())
 		ctl := fakeController("doesn't matter")
 		triggers := make([]*internal.Trigger, 0, maxTriggersAsSchedulerProperty+10)
@@ -635,47 +635,47 @@ func TestPassedTriggers(t *testing.T) {
 		propertiesString := func() string {
 			ctl.Req = task.Request{IncomingTriggers: triggers}
 			v, err := schedulerProperty(c, ctl)
-			So(err, ShouldBeNil)
+			assert.Loosely(ctx, err, should.BeNil)
 			return v.String()
 		}
 
 		s := propertiesString()
-		So(s, ShouldContainSubstring, "sha1=0")
-		So(s, ShouldContainSubstring, fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty-1))
+		assert.Loosely(ctx, s, should.ContainSubstring("sha1=0"))
+		assert.Loosely(ctx, s, should.ContainSubstring(fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty-1)))
 
 		add(maxTriggersAsSchedulerProperty)
 		s = propertiesString()
-		So(s, ShouldContainSubstring, fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty))
-		So(s, ShouldNotContainSubstring, "sha1=0")
+		assert.Loosely(ctx, s, should.ContainSubstring(fmt.Sprintf("sha1=%d", maxTriggersAsSchedulerProperty)))
+		assert.Loosely(ctx, s, should.NotContainSubstring("sha1=0"))
 	})
 }
 
 func TestExamineNotification(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
 
-		Convey("v1 builds", func() {
+		t.Run("v1 builds", func(t *ftt.Test) {
 			tok := mgr.ExamineNotification(c, &pubsub.PubsubMessage{
 				Attributes: map[string]string{"auth_token": "blah"},
 			})
-			So(tok, ShouldEqual, "blah")
+			assert.Loosely(t, tok, should.Equal("blah"))
 		})
 
-		Convey("v2 builds", func() {
-			Convey("old pubsub message", func() {
+		t.Run("v2 builds", func(t *ftt.Test) {
+			t.Run("old pubsub message", func(t *ftt.Test) {
 				call := func(data string) string {
 					return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
 						Data: data,
 					})
 				}
-				So(call(base64.StdEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), ShouldEqual, "blah")
-				So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
-				So(call("not base64"), ShouldEqual, "")
+				assert.Loosely(t, call(base64.StdEncoding.EncodeToString([]byte(`{"user_data": "blah"}`))), should.Equal("blah"))
+				assert.Loosely(t, call(base64.StdEncoding.EncodeToString([]byte(`not json`))), should.BeEmpty)
+				assert.Loosely(t, call("not base64"), should.BeEmpty)
 			})
-			Convey("new pubsub message", func() {
+			t.Run("new pubsub message", func(t *ftt.Test) {
 				call := func(data string) string {
 					return mgr.ExamineNotification(c, &pubsub.PubsubMessage{
 						Data:       data,
@@ -684,9 +684,9 @@ func TestExamineNotification(t *testing.T) {
 				}
 
 				ud := base64.StdEncoding.EncodeToString([]byte("blah"))
-				So(call(base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"userData": "%s"}`, ud)))), ShouldEqual, "blah")
-				So(call(base64.StdEncoding.EncodeToString([]byte(`not json`))), ShouldEqual, "")
-				So(call("not base64"), ShouldEqual, "")
+				assert.Loosely(t, call(base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"userData": "%s"}`, ud)))), should.Equal("blah"))
+				assert.Loosely(t, call(base64.StdEncoding.EncodeToString([]byte(`not json`))), should.BeEmpty)
+				assert.Loosely(t, call("not base64"), should.BeEmpty)
 			})
 		})
 	})

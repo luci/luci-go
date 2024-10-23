@@ -35,16 +35,15 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/gitiles/mock_gitiles"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var _ task.Manager = (*TaskManager)(nil)
@@ -52,7 +51,7 @@ var _ task.Manager = (*TaskManager)(nil)
 func TestTriggerBuild(t *testing.T) {
 	t.Parallel()
 
-	Convey("LaunchTask Triggers Jobs", t, func() {
+	ftt.Run("LaunchTask Triggers Jobs", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
@@ -77,7 +76,6 @@ func TestTriggerBuild(t *testing.T) {
 		}
 
 		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
 		gitilesMock := mock_gitiles.NewMockGitilesClient(mockCtrl)
 
 		m := TaskManager{mockGitilesClient: gitilesMock}
@@ -152,39 +150,39 @@ func TestTriggerBuild(t *testing.T) {
 			return gitilesMock.EXPECT().Log(gomock.Any(), commonpb.MatcherEqual(req)).Return(res, nil)
 		}
 
-		Convey("each configured ref must match resolved ref", func() {
+		t.Run("each configured ref must match resolved ref", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master", `regexp:refs/branch-heads/\d+`}
 			expectRefs("refs/heads", strmap{"refs/heads/not-master": "deadbeef00"})
 			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/not-digits": "deadbeef00"})
-			So(m.LaunchTask(c, ctl), ShouldErrLike, "2 unresolved refs")
-			So(ctl.Triggers, ShouldHaveLength, 0)
-			So(ctl.Log[len(ctl.Log)-2], ShouldContainSubstring,
-				"following configured refs didn't match a single actual ref:")
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.ErrLike("2 unresolved refs"))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
+			assert.Loosely(t, ctl.Log[len(ctl.Log)-2], should.ContainSubstring(
+				"following configured refs didn't match a single actual ref:"))
 		})
 
-		Convey("new refs are discovered", func() {
+		t.Run("new refs are discovered", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00", "refs/weird": "123456"})
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master": "deadbeef00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
-			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
+			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00"))
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/heads/master",
 				Revision: "deadbeef00",
-			})
+			}))
 		})
 
-		Convey("regexp refs are matched correctly", func() {
+		t.Run("regexp refs are matched correctly", func(t *ftt.Test) {
 			cfg.Refs = []string{`regexp:refs/branch-heads/1\.\d+`}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/branch-heads/1.0": "deadcafe00",
 				"refs/branch-heads/1.1": "beefcafe02",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1.1":   "beefcafe00",
 				"refs/branch-heads/1.2":   "deadbeef00",
@@ -192,43 +190,43 @@ func TestTriggerBuild(t *testing.T) {
 			})
 			expectLog("beefcafe00", "beefcafe02", 50, log("beefcafe00", "beefcafe01"))
 			expectLog("deadbeef00", "", 1, log("deadbeef00"))
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/branch-heads/1.2": "deadbeef00",
 				"refs/branch-heads/1.1": "beefcafe00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 3)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.1@beefcafe01")
-			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(3))
+			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/branch-heads/1.1@beefcafe01"))
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
 				Repo:     "https://a.googlesource.com/b.git",
 				Ref:      "refs/branch-heads/1.1",
 				Revision: "beefcafe01",
-			})
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.1@beefcafe00")
-			So(ctl.Triggers[2].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2@deadbeef00")
+			}))
+			assert.Loosely(t, ctl.Triggers[1].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/branch-heads/1.1@beefcafe00"))
+			assert.Loosely(t, ctl.Triggers[2].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/branch-heads/1.2@deadbeef00"))
 		})
 
-		Convey("do not trigger if there are no new commits", func() {
+		t.Run("do not trigger if there are no new commits", func(t *ftt.Test) {
 			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/branch-heads/beta": "deadbeef00",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/beta": "deadbeef00"})
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/branch-heads/beta": "deadbeef00",
-			})
+			}))
 		})
 
-		Convey("New, updated, and deleted refs", func() {
+		t.Run("New, updated, and deleted refs", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master":   "deadbeef03",
 				"refs/branch-heads/x": "1234567890",
 				"refs/was/watched":    "0987654321",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			expectRefs("refs/heads", strmap{
 				"refs/heads/master": "deadbeef00",
 			})
@@ -238,31 +236,31 @@ func TestTriggerBuild(t *testing.T) {
 			expectLog("deadbeef00", "deadbeef03", 50, log("deadbeef00", "deadbeef01", "deadbeef02"))
 			expectLog("baadcafe00", "", 1, log("baadcafe00"))
 
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master":       "deadbeef00",
 				"refs/branch-heads/1.2.3": "baadcafe00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 4)
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(4))
 			// Ordered by ref, then by timestamp.
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe00")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02")
-			So(ctl.Triggers[2].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
-			So(ctl.Triggers[3].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
-			for i, t := range ctl.Triggers {
-				So(t.OrderInBatch, ShouldEqual, i)
+			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe00"))
+			assert.Loosely(t, ctl.Triggers[1].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02"))
+			assert.Loosely(t, ctl.Triggers[2].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01"))
+			assert.Loosely(t, ctl.Triggers[3].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00"))
+			for i, trig := range ctl.Triggers {
+				assert.Loosely(t, trig.OrderInBatch, should.Equal(i))
 			}
-			So(ctl.Triggers[0].Created.AsTime(), ShouldEqual, epoch.Add(-1*time.Minute))
-			So(ctl.Triggers[1].Created.AsTime(), ShouldEqual, epoch.Add(-3*time.Minute)) // oldest on master
-			So(ctl.Triggers[2].Created.AsTime(), ShouldEqual, epoch.Add(-2*time.Minute))
-			So(ctl.Triggers[3].Created.AsTime(), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
+			assert.Loosely(t, ctl.Triggers[0].Created.AsTime(), should.Match(epoch.Add(-1*time.Minute)))
+			assert.Loosely(t, ctl.Triggers[1].Created.AsTime(), should.Match(epoch.Add(-3*time.Minute))) // oldest on master
+			assert.Loosely(t, ctl.Triggers[2].Created.AsTime(), should.Match(epoch.Add(-2*time.Minute)))
+			assert.Loosely(t, ctl.Triggers[3].Created.AsTime(), should.Match(epoch.Add(-1*time.Minute))) // newest on master
 		})
 
-		Convey("Updated ref with pathfilters", func() {
+		t.Run("Updated ref with pathfilters", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`.+\.emit`}
 			cfg.PathRegexpsExclude = []string{`skip/.+`}
-			So(saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectLogWithDiff("deadbeef00", "deadbeef04", 50, "b",
 				"deadbeef00:skip/commit",
@@ -270,19 +268,19 @@ func TestTriggerBuild(t *testing.T) {
 				"deadbeef02:skip/this-file,not-matched-file,but-still.emit",
 				"deadbeef03:nothing-matched-means-skipped")
 
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master": "deadbeef00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
+			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02"))
+			assert.Loosely(t, ctl.Triggers[1].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01"))
 		})
 
-		Convey("Updated ref without matched commits", func() {
+		t.Run("Updated ref without matched commits", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`must-match`}
-			So(saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), ShouldBeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 
 			expectLogWithDiff("deadbeef00", "deadbeef04", 50, "b",
@@ -290,35 +288,35 @@ func TestTriggerBuild(t *testing.T) {
 				"deadbeef01:nope1",
 				"deadbeef02:nope2",
 				"deadbeef03:nope3")
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master": "deadbeef00",
-			})
-			So(ctl.Triggers, ShouldHaveLength, 0)
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
 		})
 
-		Convey("do nothing at all if there are no changes", func() {
+		t.Run("do nothing at all if there are no changes", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "deadbeef",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			expectRefs("refs/heads", strmap{
 				"refs/heads/master": "deadbeef",
 			})
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldBeNil)
-			So(ctl.Log, ShouldNotContain, "Saved 1 known refs")
-			So(ctl.Log, ShouldContain, "No changes detected")
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.BeNil)
+			assert.Loosely(t, ctl.Log, should.NotContain("Saved 1 known refs"))
+			assert.Loosely(t, ctl.Log, should.Contain("No changes detected"))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master": "deadbeef",
-			})
+			}))
 		})
 
-		Convey("Avoid choking on too many refs", func() {
+		t.Run("Avoid choking on too many refs", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "deadbeef",
-			}), ShouldBeNil)
+			}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef"}).AnyTimes()
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1": "cafee1",
@@ -336,41 +334,41 @@ func TestTriggerBuild(t *testing.T) {
 			m.maxCommitsPerRefUpdate = 1
 
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master preserved.
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
-			})
+			}))
 			ctl.Triggers = nil
 
 			// Second run, refs/branch-heads/{3,4} updated.
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
 				"refs/branch-heads/4": "cafee4",
-			})
+			}))
 			ctl.Triggers = nil
 
 			// Final run, refs/branch-heads/5 updated.
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/heads/master":   "deadbeef",
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
 				"refs/branch-heads/4": "cafee4",
 				"refs/branch-heads/5": "cafee5",
-			})
+			}))
 		})
 
-		Convey("Ensure progress", func() {
+		t.Run("Ensure progress", func(t *ftt.Test) {
 			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1": "cafee1",
@@ -380,80 +378,83 @@ func TestTriggerBuild(t *testing.T) {
 			m.maxTriggersPerInvocation = 2
 			m.maxCommitsPerRefUpdate = 1
 
-			Convey("no progress is an error", func() {
+			t.Run("no progress is an error", func(t *ftt.Test) {
 				expectLog("cafee1", "", 1, log(), errors.New("flake"))
-				So(m.LaunchTask(c, ctl), ShouldErrLike, "flake")
+				assert.Loosely(t, m.LaunchTask(c, ctl), should.ErrLike("flake"))
 			})
 
 			expectLog("cafee1", "", 1, log("cafee1"))
 			expectLog("cafee2", "", 1, log(), errors.New("flake"))
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldHaveLength, 1)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/branch-heads/1": "cafee1",
-			})
+			}))
 			ctl.Triggers = nil
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/branch-heads/1": "cafee1",
-			})
+			}))
 
 			// Second run.
 			expectLog("cafee2", "", 1, log("cafee2"))
 			expectLog("cafee3", "", 1, log("cafee3"))
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(loadNoError(), ShouldResemble, strmap{
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(2))
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
-			})
+			}))
 		})
 
-		Convey("distinguish force push from transient weirdness", func() {
+		t.Run("distinguish force push from transient weirdness", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
-			So(saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
 				"refs/heads/master": "001d", // old.
-			}), ShouldBeNil)
-			expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
+			}), should.BeNil)
 
-			Convey("force push going backwards", func() {
+			t.Run("force push going backwards", func(t *ftt.Test) {
+				expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
 				expectLog("1111", "001d", 50, log())
-				So(m.LaunchTask(c, ctl), ShouldBeNil)
+				assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
 				// Changes state
-				So(loadNoError(), ShouldResemble, strmap{
+				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 					"refs/heads/master": "1111",
-				})
+				}))
 				// .. but no triggers, since there are no new commits.
-				So(ctl.Triggers, ShouldHaveLength, 0)
+				assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
 			})
 
-			Convey("force push wiping out prior HEAD", func() {
+			t.Run("force push wiping out prior HEAD", func(t *ftt.Test) {
+				expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
 				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, log("1111"))
 				expectLog("001d", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
-				So(m.LaunchTask(c, ctl), ShouldBeNil)
-				So(loadNoError(), ShouldResemble, strmap{
+				assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 					"refs/heads/master": "1111",
-				})
-				So(ctl.Triggers, ShouldHaveLength, 1)
+				}))
+				assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
 			})
 
-			Convey("race 1", func() {
+			t.Run("race 1", func(t *ftt.Test) {
+				expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
 				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
-				So(transient.Tag.In(m.LaunchTask(c, ctl)), ShouldBeTrue)
-				So(loadNoError(), ShouldResemble, strmap{
+				assert.Loosely(t, transient.Tag.In(m.LaunchTask(c, ctl)), should.BeTrue)
+				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 					"refs/heads/master": "001d", // no change.
-				})
+				}))
 			})
 
-			Convey("race or fluke", func() {
+			t.Run("race or fluke", func(t *ftt.Test) {
+				expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
 				expectLog("1111", "001d", 50, nil, status.Errorf(codes.NotFound, "not found"))
 				expectLog("1111", "", 1, nil, status.Errorf(codes.NotFound, "not found"))
-				So(m.LaunchTask(c, ctl), ShouldNotBeNil)
-				So(loadNoError(), ShouldResemble, strmap{
+				assert.Loosely(t, m.LaunchTask(c, ctl), should.NotBeNil)
+				assert.Loosely(t, loadNoError(), should.Resemble(strmap{
 					"refs/heads/master": "001d",
-				})
+				}))
 			})
 		})
 	})
@@ -462,38 +463,38 @@ func TestTriggerBuild(t *testing.T) {
 func TestPathFilterHelpers(t *testing.T) {
 	t.Parallel()
 
-	Convey("PathFilter helpers work", t, func() {
-		Convey("disjunctiveOfRegexps works", func() {
-			So(disjunctiveOfRegexps([]string{`.+\.cpp`}), ShouldEqual, `^((.+\.cpp))$`)
-			So(disjunctiveOfRegexps([]string{`.+\.cpp`, `?a`}), ShouldEqual, `^((.+\.cpp)|(?a))$`)
+	ftt.Run("PathFilter helpers work", t, func(t *ftt.Test) {
+		t.Run("disjunctiveOfRegexps works", func(t *ftt.Test) {
+			assert.Loosely(t, disjunctiveOfRegexps([]string{`.+\.cpp`}), should.Equal(`^((.+\.cpp))$`))
+			assert.Loosely(t, disjunctiveOfRegexps([]string{`.+\.cpp`, `?a`}), should.Equal(`^((.+\.cpp)|(?a))$`))
 		})
-		Convey("pathFilter works", func() {
-			Convey("simple", func() {
+		t.Run("pathFilter works", func(t *ftt.Test) {
+			t.Run("simple", func(t *ftt.Test) {
 				empty, err := newPathFilter(&messages.GitilesTask{})
-				So(err, ShouldBeNil)
-				So(empty.active(), ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, empty.active(), should.BeFalse)
 				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`\K`}})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 				_, err = newPathFilter(&messages.GitilesTask{PathRegexps: []string{`a?`}, PathRegexpsExclude: []string{`\K`}})
-				So(err, ShouldNotBeNil)
+				assert.Loosely(t, err, should.NotBeNil)
 
 			})
-			Convey("just negative ignored", func() {
+			t.Run("just negative ignored", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{PathRegexpsExclude: []string{`.+\.cpp`}})
-				So(err, ShouldBeNil)
-				So(v.active(), ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.active(), should.BeFalse)
 			})
 
-			Convey("just positive", func() {
+			t.Run("just positive", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+`}})
-				So(err, ShouldBeNil)
-				So(v.active(), ShouldBeTrue)
-				Convey("empty commit is not interesting", func() {
-					So(v.isInteresting([]*git.Commit_TreeDiff{}), ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.active(), should.BeTrue)
+				t.Run("empty commit is not interesting", func(t *ftt.Test) {
+					assert.Loosely(t, v.isInteresting([]*git.Commit_TreeDiff{}), should.BeFalse)
 				})
-				Convey("new or old paths are taken into account", func() {
-					So(v.isInteresting([]*git.Commit_TreeDiff{{OldPath: "old"}}), ShouldBeTrue)
-					So(v.isInteresting([]*git.Commit_TreeDiff{{NewPath: "new"}}), ShouldBeTrue)
+				t.Run("new or old paths are taken into account", func(t *ftt.Test) {
+					assert.Loosely(t, v.isInteresting([]*git.Commit_TreeDiff{{OldPath: "old"}}), should.BeTrue)
+					assert.Loosely(t, v.isInteresting([]*git.Commit_TreeDiff{{NewPath: "new"}}), should.BeTrue)
 				})
 			})
 
@@ -509,42 +510,42 @@ func TestPathFilterHelpers(t *testing.T) {
 				return r
 			}
 
-			Convey("many positives", func() {
+			t.Run("many positives", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{PathRegexps: []string{`.+\.cpp`, "exact"}})
-				So(err, ShouldBeNil)
-				So(v.isInteresting(genDiff("not.matched")), ShouldBeFalse)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.isInteresting(genDiff("not.matched")), should.BeFalse)
 
-				So(v.isInteresting(genDiff("matched.cpp")), ShouldBeTrue)
-				So(v.isInteresting(genDiff("exact")), ShouldBeTrue)
-				So(v.isInteresting(genDiff("at least", "one", "matched.cpp")), ShouldBeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("matched.cpp")), should.BeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("exact")), should.BeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("at least", "one", "matched.cpp")), should.BeTrue)
 			})
 
-			Convey("many negatives", func() {
+			t.Run("many negatives", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{
 					PathRegexps:        []string{`.+`},
 					PathRegexpsExclude: []string{`.+\.cpp`, `excluded`},
 				})
-				So(err, ShouldBeNil)
-				So(v.isInteresting(genDiff("not excluded")), ShouldBeTrue)
-				So(v.isInteresting(genDiff("excluded/is/a/dir/not/a/file")), ShouldBeTrue)
-				So(v.isInteresting(genDiff("excluded", "also.excluded.cpp", "but this file isn't")), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.isInteresting(genDiff("not excluded")), should.BeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("excluded/is/a/dir/not/a/file")), should.BeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("excluded", "also.excluded.cpp", "but this file isn't")), should.BeTrue)
 
-				So(v.isInteresting(genDiff("excluded.cpp")), ShouldBeFalse)
-				So(v.isInteresting(genDiff("excluded")), ShouldBeFalse)
-				So(v.isInteresting(genDiff()), ShouldBeFalse)
+				assert.Loosely(t, v.isInteresting(genDiff("excluded.cpp")), should.BeFalse)
+				assert.Loosely(t, v.isInteresting(genDiff("excluded")), should.BeFalse)
+				assert.Loosely(t, v.isInteresting(genDiff()), should.BeFalse)
 			})
 
-			Convey("smoke test for complexity", func() {
+			t.Run("smoke test for complexity", func(t *ftt.Test) {
 				v, err := newPathFilter(&messages.GitilesTask{
 					PathRegexps:        []string{`.+/\d\.py`, `included/.+`},
 					PathRegexpsExclude: []string{`.+\.cpp`, `excluded/.*`},
 				})
-				So(err, ShouldBeNil)
-				So(v.isInteresting(genDiff("excluded/1", "also.cpp", "included/one-is-enough")), ShouldBeTrue)
-				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "one-still-enough/1.py")), ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, v.isInteresting(genDiff("excluded/1", "also.cpp", "included/one-is-enough")), should.BeTrue)
+				assert.Loosely(t, v.isInteresting(genDiff("included/but-also-excluded.cpp", "one-still-enough/1.py")), should.BeTrue)
 
-				So(v.isInteresting(genDiff("included/but-also-excluded.cpp", "excluded/2.py")), ShouldBeFalse)
-				So(v.isInteresting(genDiff("matches nothing", "")), ShouldBeFalse)
+				assert.Loosely(t, v.isInteresting(genDiff("included/but-also-excluded.cpp", "excluded/2.py")), should.BeFalse)
+				assert.Loosely(t, v.isInteresting(genDiff("matches nothing", "")), should.BeFalse)
 			})
 		})
 	})
@@ -554,28 +555,28 @@ func TestValidateConfig(t *testing.T) {
 	t.Parallel()
 	c := context.Background()
 
-	Convey("ValidateProtoMessage works", t, func() {
+	ftt.Run("ValidateProtoMessage works", t, func(t *ftt.Test) {
 		ctx := &validation.Context{Context: c}
 		m := TaskManager{}
 		validate := func(msg proto.Message) error {
 			m.ValidateProtoMessage(ctx, msg, "some-project:some-realm")
 			return ctx.Finalize()
 		}
-		Convey("refNamespace works", func() {
+		t.Run("refNamespace works", func(t *ftt.Test) {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
 				Refs: []string{"refs/heads/master", "refs/heads/branch", "regexp:refs/branch-heads/[^/]+"},
 			}
-			Convey("proper refs", func() {
-				So(validate(cfg), ShouldBeNil)
+			t.Run("proper refs", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
-			Convey("invalid ref", func() {
+			t.Run("invalid ref", func(t *ftt.Test) {
 				cfg.Refs = []string{"wtf/not/a/ref"}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
 		})
 
-		Convey("refRegexp works", func() {
+		t.Run("refRegexp works", func(t *ftt.Test) {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
 				Refs: []string{
@@ -584,40 +585,40 @@ func TestValidateConfig(t *testing.T) {
 					`refs/heads/master`,
 				},
 			}
-			Convey("valid", func() {
-				So(validate(cfg), ShouldBeNil)
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
-			Convey("invalid regexp", func() {
+			t.Run("invalid regexp", func(t *ftt.Test) {
 				cfg.Refs = []string{`regexp:a++`}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
 		})
 
-		Convey("pathRegexs works", func() {
+		t.Run("pathRegexs works", func(t *ftt.Test) {
 			cfg := &messages.GitilesTask{
 				Repo:               "https://a.googlesource.com/b.git",
 				Refs:               []string{"refs/heads/master"},
 				PathRegexps:        []string{`.+\.cpp`},
 				PathRegexpsExclude: []string{`.+\.py`},
 			}
-			Convey("valid", func() {
-				So(validate(cfg), ShouldBeNil)
+			t.Run("valid", func(t *ftt.Test) {
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
-			Convey("can't even parse", func() {
+			t.Run("can't even parse", func(t *ftt.Test) {
 				cfg.PathRegexpsExclude = []string{`\K`}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
-			Convey("redundant", func() {
+			t.Run("redundant", func(t *ftt.Test) {
 				cfg.PathRegexps = []string{``}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 				cfg.PathRegexps = []string{`^file`}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 				cfg.PathRegexps = []string{`file$`}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
-			Convey("excludes require includes", func() {
+			t.Run("excludes require includes", func(t *ftt.Test) {
 				cfg.PathRegexps = nil
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
 		})
 	})

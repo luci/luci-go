@@ -27,6 +27,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -40,31 +43,28 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterTaskManagerAndFriends(t *testing.T) {
 	t.Parallel()
 
-	Convey("RegisterTaskManager works", t, func() {
+	ftt.Run("RegisterTaskManager works", t, func(t *ftt.Test) {
 		c := New()
-		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
-		So(c.GetTaskManager(&messages.NoopTask{}), ShouldNotBeNil)
-		So(c.GetTaskManager(&messages.UrlFetchTask{}), ShouldBeNil)
-		So(c.GetTaskManager(nil), ShouldBeNil)
+		assert.Loosely(t, c.RegisterTaskManager(fakeTaskManager{t: t}), should.BeNil)
+		assert.Loosely(t, c.GetTaskManager(&messages.NoopTask{}), should.NotBeNilInterface)
+		assert.Loosely(t, c.GetTaskManager(&messages.UrlFetchTask{}), should.BeNil)
+		assert.Loosely(t, c.GetTaskManager(nil), should.BeNil)
 	})
 
-	Convey("RegisterTaskManager bad proto type", t, func() {
+	ftt.Run("RegisterTaskManager bad proto type", t, func(t *ftt.Test) {
 		c := New()
-		So(c.RegisterTaskManager(brokenTaskManager{}), ShouldErrLike, "expecting pointer to a struct")
+		assert.Loosely(t, c.RegisterTaskManager(brokenTaskManager{}), should.ErrLike("expecting pointer to a struct"))
 	})
 
-	Convey("RegisterTaskManager twice", t, func() {
+	ftt.Run("RegisterTaskManager twice", t, func(t *ftt.Test) {
 		c := New()
-		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldBeNil)
-		So(c.RegisterTaskManager(fakeTaskManager{}), ShouldNotBeNil)
+		assert.Loosely(t, c.RegisterTaskManager(fakeTaskManager{t: t}), should.BeNil)
+		assert.Loosely(t, c.RegisterTaskManager(fakeTaskManager{t: t}), should.NotBeNil)
 	})
 }
 
@@ -73,7 +73,7 @@ func TestProtoValidation(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("validateJobProto works", t, func() {
+	ftt.Run("validateJobProto works", t, func(t *ftt.Test) {
 		c := New().(*catalog)
 
 		call := func(j *messages.Job) error {
@@ -82,30 +82,30 @@ func TestProtoValidation(t *testing.T) {
 			return valCtx.Finalize()
 		}
 
-		c.RegisterTaskManager(fakeTaskManager{})
-		So(call(&messages.Job{}), ShouldErrLike, "missing 'id' field'")
-		So(call(&messages.Job{Id: "bad'id"}), ShouldErrLike, "not valid value for 'id' field")
-		So(call(&messages.Job{
+		c.RegisterTaskManager(fakeTaskManager{t: t})
+		assert.Loosely(t, call(&messages.Job{}), should.ErrLike("missing 'id' field'"))
+		assert.Loosely(t, call(&messages.Job{Id: "bad'id"}), should.ErrLike("not valid value for 'id' field"))
+		assert.Loosely(t, call(&messages.Job{
 			Id:   "good id can have spaces and . and - and even ()",
 			Noop: &messages.NoopTask{},
-		}), ShouldBeNil)
-		So(call(&messages.Job{
+		}), should.BeNil)
+		assert.Loosely(t, call(&messages.Job{
 			Id:       "good",
 			Schedule: "blah",
-		}), ShouldErrLike, "not valid value for 'schedule' field")
-		So(call(&messages.Job{
+		}), should.ErrLike("not valid value for 'schedule' field"))
+		assert.Loosely(t, call(&messages.Job{
 			Id:       "good",
 			Schedule: "* * * * *",
-		}), ShouldErrLike, "can't find a recognized task definition")
-		So(call(&messages.Job{
+		}), should.ErrLike("can't find a recognized task definition"))
+		assert.Loosely(t, call(&messages.Job{
 			Id:               "good",
 			Schedule:         "* * * * *",
 			Noop:             &messages.NoopTask{},
 			TriggeringPolicy: &messages.TriggeringPolicy{Kind: 111111},
-		}), ShouldErrLike, "unrecognized policy kind 111111")
+		}), should.ErrLike("unrecognized policy kind 111111"))
 	})
 
-	Convey("extractTaskProto works", t, func() {
+	ftt.Run("extractTaskProto works", t, func(t *ftt.Test) {
 		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name: "noop",
@@ -116,54 +116,54 @@ func TestProtoValidation(t *testing.T) {
 			task: &messages.UrlFetchTask{},
 		})
 
-		Convey("with TaskDefWrapper", func() {
+		t.Run("with TaskDefWrapper", func(t *ftt.Test) {
 			msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop: &messages.NoopTask{},
 			}, "some-project:some-realm")
-			So(err, ShouldBeNil)
-			So(msg.(*messages.NoopTask), ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, msg.(*messages.NoopTask), should.NotBeNil)
 
 			msg, err = c.extractTaskProto(ctx, nil, "some-project:some-realm")
-			So(err, ShouldErrLike, "expecting a pointer to proto message")
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("expecting a pointer to proto message"))
+			assert.Loosely(t, msg, should.BeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{}, "some-project:some-realm")
-			So(err, ShouldErrLike, "can't find a recognized task definition")
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("can't find a recognized task definition"))
+			assert.Loosely(t, msg, should.BeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
 			}, "some-project:some-realm")
-			So(err, ShouldErrLike, "only one field with task definition must be set")
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("only one field with task definition must be set"))
+			assert.Loosely(t, msg, should.BeNil)
 		})
 
-		Convey("with Job", func() {
+		t.Run("with Job", func(t *ftt.Test) {
 			msg, err := c.extractTaskProto(ctx, &messages.Job{
 				Id:   "blah",
 				Noop: &messages.NoopTask{},
 			}, "some-project:some-realm")
-			So(err, ShouldBeNil)
-			So(msg.(*messages.NoopTask), ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, msg.(*messages.NoopTask), should.NotBeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.Job{
 				Id: "blah",
 			}, "some-project:some-realm")
-			So(err, ShouldErrLike, "can't find a recognized task definition")
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("can't find a recognized task definition"))
+			assert.Loosely(t, msg, should.BeNil)
 
 			msg, err = c.extractTaskProto(ctx, &messages.Job{
 				Id:       "blah",
 				Noop:     &messages.NoopTask{},
 				UrlFetch: &messages.UrlFetchTask{},
 			}, "some-project:some-realm")
-			So(err, ShouldErrLike, "only one field with task definition must be set")
-			So(msg, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("only one field with task definition must be set"))
+			assert.Loosely(t, msg, should.BeNil)
 		})
 	})
 
-	Convey("extractTaskProto uses task manager validation", t, func() {
+	ftt.Run("extractTaskProto uses task manager validation", t, func(t *ftt.Test) {
 		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name:            "broken noop",
@@ -173,8 +173,8 @@ func TestProtoValidation(t *testing.T) {
 		msg, err := c.extractTaskProto(ctx, &messages.TaskDefWrapper{
 			Noop: &messages.NoopTask{},
 		}, "some-project:some-realm")
-		So(err, ShouldErrLike, "boo")
-		So(msg, ShouldBeNil)
+		assert.Loosely(t, err, should.ErrLike("boo"))
+		assert.Loosely(t, msg, should.BeNil)
 	})
 }
 
@@ -183,7 +183,7 @@ func TestTaskMarshaling(t *testing.T) {
 
 	ctx := context.Background()
 
-	Convey("works", t, func() {
+	ftt.Run("works", t, func(t *ftt.Test) {
 		c := New().(*catalog)
 		c.RegisterTaskManager(fakeTaskManager{
 			name:            "url fetch",
@@ -195,28 +195,28 @@ func TestTaskMarshaling(t *testing.T) {
 		blob, err := c.marshalTask(&messages.UrlFetchTask{
 			Url: "123",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		task, err := c.UnmarshalTask(ctx, blob, "some-project:some-realm")
-		So(err, ShouldBeNil)
-		So(task, ShouldResembleProto, &messages.UrlFetchTask{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, task, should.Resemble(&messages.UrlFetchTask{
 			Url: "123",
-		})
+		}))
 
 		// Unknown task type.
 		_, err = c.marshalTask(&messages.NoopTask{})
-		So(err, ShouldErrLike, "unrecognized task definition type *messages.NoopTask")
+		assert.Loosely(t, err, should.ErrLike("unrecognized task definition type *messages.NoopTask"))
 
 		// Once registered, but not anymore.
 		c = New().(*catalog)
 		_, err = c.UnmarshalTask(ctx, blob, "some-project:some-realm")
-		So(err, ShouldErrLike, "can't find a recognized task definition")
+		assert.Loosely(t, err, should.ErrLike("can't find a recognized task definition"))
 	})
 }
 
 func TestConfigReading(t *testing.T) {
 	t.Parallel()
 
-	Convey("with mocked config", t, func() {
+	ftt.Run("with mocked config", t, func(t *ftt.Test) {
 		ctx := testContext()
 
 		// Fetch configs from memory but resolve ${appid} into "app" to make
@@ -237,18 +237,18 @@ func TestConfigReading(t *testing.T) {
 			task: &messages.UrlFetchTask{},
 		})
 
-		Convey("GetAllProjects works", func() {
+		t.Run("GetAllProjects works", func(t *ftt.Test) {
 			projects, err := cat.GetAllProjects(ctx)
-			So(err, ShouldBeNil)
-			So(projects, ShouldResemble, []string{"broken", "project1", "project2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, projects, should.Resemble([]string{"broken", "project1", "project2"}))
 		})
 
-		Convey("GetProjectJobs works", func() {
+		t.Run("GetProjectJobs works", func(t *ftt.Test) {
 			const expectedRev = "06e505e46c49133cc928fbc244b27b232d7e8010"
 
 			defs, err := cat.GetProjectJobs(ctx, "project1")
-			So(err, ShouldBeNil)
-			So(defs, ShouldResemble, []Definition{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, defs, should.Resemble([]Definition{
 				{
 					JobID:            "project1/noop-job-1",
 					RealmID:          "project1:public",
@@ -289,15 +289,15 @@ func TestConfigReading(t *testing.T) {
 						"project1/noop-job-3",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("GetProjectJobs filters unknown job IDs in triggers", func() {
+		t.Run("GetProjectJobs filters unknown job IDs in triggers", func(t *ftt.Test) {
 			const expectedRev = "3ef040fb696156a96c882837b05f31d2da0ba0f5"
 
 			defs, err := cat.GetProjectJobs(ctx, "project2")
-			So(err, ShouldBeNil)
-			So(defs, ShouldResemble, []Definition{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, defs, should.Resemble([]Definition{
 				{
 					JobID:       "project2/noop-job-1",
 					RealmID:     "project2:@legacy",
@@ -319,32 +319,32 @@ func TestConfigReading(t *testing.T) {
 						"project2/noop-job-1",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("GetProjectJobs unknown project", func() {
+		t.Run("GetProjectJobs unknown project", func(t *ftt.Test) {
 			defs, err := cat.GetProjectJobs(ctx, "unknown")
-			So(defs, ShouldBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, defs, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("GetProjectJobs broken proto", func() {
+		t.Run("GetProjectJobs broken proto", func(t *ftt.Test) {
 			defs, err := cat.GetProjectJobs(ctx, "broken")
-			So(defs, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, defs, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("UnmarshalTask works", func() {
+		t.Run("UnmarshalTask works", func(t *ftt.Test) {
 			defs, err := cat.GetProjectJobs(ctx, "project1")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			task, err := cat.UnmarshalTask(ctx, defs[0].Task, defs[0].RealmID)
-			So(err, ShouldBeNil)
-			So(task, ShouldResembleProto, &messages.NoopTask{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, task, should.Resemble(&messages.NoopTask{}))
 
 			task, err = cat.UnmarshalTask(ctx, []byte("blarg"), defs[0].RealmID)
-			So(err, ShouldNotBeNil)
-			So(task, ShouldBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, task, should.BeNil)
 		})
 	})
 }
@@ -368,34 +368,34 @@ func TestValidateConfig(t *testing.T) {
 	})
 	catalog.RegisterConfigRules(rules)
 
-	Convey("Patterns are correct", t, func() {
+	ftt.Run("Patterns are correct", t, func(t *ftt.Test) {
 		patterns, err := rules.ConfigPatterns(context.Background())
-		So(err, ShouldBeNil)
-		So(len(patterns), ShouldEqual, 1)
-		So(patterns[0].ConfigSet.Match("projects/xyz"), ShouldBeTrue)
-		So(patterns[0].Path.Match("luci-scheduler.cfg"), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(patterns), should.Equal(1))
+		assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
+		assert.Loosely(t, patterns[0].Path.Match("luci-scheduler.cfg"), should.BeTrue)
 	})
 
-	Convey("Config validation works", t, func() {
+	ftt.Run("Config validation works", t, func(t *ftt.Test) {
 		ctx := &validation.Context{Context: testContext()}
-		Convey("correct config file content", func() {
-			So(rules.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg)), ShouldBeNil)
-			So(ctx.Finalize(), ShouldBeNil)
+		t.Run("correct config file content", func(t *ftt.Test) {
+			assert.Loosely(t, rules.ValidateConfig(ctx, "projects/good", "luci-scheduler.cfg", []byte(project3Cfg)), should.BeNil)
+			assert.Loosely(t, ctx.Finalize(), should.BeNil)
 		})
 
-		Convey("Config that can't be deserialized", func() {
-			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef")), ShouldBeNil)
-			So(ctx.Finalize(), ShouldNotBeNil)
+		t.Run("Config that can't be deserialized", func(t *ftt.Test) {
+			assert.Loosely(t, rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte("deadbeef")), should.BeNil)
+			assert.Loosely(t, ctx.Finalize(), should.NotBeNil)
 		})
 
-		Convey("rejects triggers with unknown references", func() {
-			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg)), ShouldBeNil)
-			So(ctx.Finalize(), ShouldErrLike, `referencing unknown job "noop-job-2" in 'triggers' field`)
+		t.Run("rejects triggers with unknown references", func(t *ftt.Test) {
+			assert.Loosely(t, rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(project2Cfg)), should.BeNil)
+			assert.Loosely(t, ctx.Finalize(), should.ErrLike(`referencing unknown job "noop-job-2" in 'triggers' field`))
 		})
 
-		Convey("rejects duplicate ids", func() {
+		t.Run("rejects duplicate ids", func(t *ftt.Test) {
 			// job + job
-			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
+			assert.Loosely(t, rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
 				job {
 					id: "dup"
 					noop: { }
@@ -404,11 +404,11 @@ func TestValidateConfig(t *testing.T) {
 					id: "dup"
 					noop: { }
 				}
-			`)), ShouldBeNil)
-			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
+			`)), should.BeNil)
+			assert.Loosely(t, ctx.Finalize(), should.ErrLike(`duplicate id "dup"`))
 
 			// job + trigger
-			So(rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
+			assert.Loosely(t, rules.ValidateConfig(ctx, "projects/bad", "luci-scheduler.cfg", []byte(`
 				job {
 					id: "dup"
 					noop: { }
@@ -417,8 +417,8 @@ func TestValidateConfig(t *testing.T) {
 					id: "dup"
 					noop: { }
 				}
-			`)), ShouldBeNil)
-			So(ctx.Finalize(), ShouldErrLike, `duplicate id "dup"`)
+			`)), should.BeNil)
+			assert.Loosely(t, ctx.Finalize(), should.ErrLike(`duplicate id "dup"`))
 		})
 	})
 }
@@ -428,6 +428,8 @@ func TestValidateConfig(t *testing.T) {
 type fakeTaskManager struct {
 	name string
 	task proto.Message
+
+	t testing.TB
 
 	validationErr   error
 	expectedRealmID string
@@ -452,9 +454,9 @@ func (m fakeTaskManager) Traits() task.Traits {
 }
 
 func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message, realmID string) {
-	So(msg, ShouldNotBeNil)
+	assert.Loosely(m.t, msg, should.NotBeNil)
 	if m.expectedRealmID != "" {
-		So(realmID, ShouldEqual, m.expectedRealmID)
+		assert.Loosely(m.t, realmID, should.Equal(m.expectedRealmID))
 	}
 	if m.validationErr != nil {
 		c.Error(m.validationErr)
@@ -462,7 +464,7 @@ func (m fakeTaskManager) ValidateProtoMessage(c *validation.Context, msg proto.M
 }
 
 func (m fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
-	So(ctl.Task(), ShouldNotBeNil)
+	assert.Loosely(m.t, ctl.Task(), should.NotBeNil)
 	return nil
 }
 

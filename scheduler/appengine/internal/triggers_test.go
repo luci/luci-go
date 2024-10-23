@@ -17,16 +17,16 @@ package internal
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestToPublicTriggers(t *testing.T) {
 	t.Parallel()
 
-	Convey("ToPublicTriggers", t, func(c C) {
+	ftt.Run("ToPublicTriggers", t, func(c *ftt.Test) {
 		gitiles := &scheduler.GitilesTrigger{}
 
 		input := &Trigger{
@@ -46,6 +46,6 @@ func TestToPublicTriggers(t *testing.T) {
 			},
 		}
 		actual := ToPublicTrigger(input)
-		So(actual, ShouldResembleProto, expected)
+		assert.Loosely(c, actual, should.Resemble(expected))
 	})
 }

@@ -23,14 +23,15 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func makeInvListQ(ids ...int64) *invListQuery {
@@ -52,82 +53,82 @@ func invIDs(invs []*Invocation) []int64 {
 func TestMergeInvQueries(t *testing.T) {
 	t.Parallel()
 
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(), makeInvListQ(),
 		}, 100, nil)
-		So(invs, ShouldBeEmpty)
-		So(done, ShouldBeTrue)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invs, should.BeEmpty)
+		assert.Loosely(t, done, should.BeTrue)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Single source, with limit", t, func() {
+	ftt.Run("Single source, with limit", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 3, 4, 5),
 		}, 3, nil)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3})
-		So(done, ShouldBeFalse)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3}))
+		assert.Loosely(t, done, should.BeFalse)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Single source, with limit, appends", t, func() {
+	ftt.Run("Single source, with limit, appends", t, func(t *ftt.Test) {
 		invs := []*Invocation{{ID: 1}, {ID: 2}}
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(3, 4, 5, 6),
 		}, 3, invs)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5})
-		So(done, ShouldBeFalse)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3, 4, 5}))
+		assert.Loosely(t, done, should.BeFalse)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Single source, dups and out of order", t, func() {
+	ftt.Run("Single source, dups and out of order", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 2, 3, 2, 4, 5),
 		}, 100, nil)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5})
-		So(done, ShouldBeTrue)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3, 4, 5}))
+		assert.Loosely(t, done, should.BeTrue)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Merging", t, func() {
+	ftt.Run("Merging", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 3, 5),
 			makeInvListQ(2, 4, 6),
 		}, 100, nil)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5, 6})
-		So(done, ShouldBeTrue)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3, 4, 5, 6}))
+		assert.Loosely(t, done, should.BeTrue)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Merging with dups and limit", t, func() {
+	ftt.Run("Merging with dups and limit", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 3, 4, 5),
 			makeInvListQ(1, 2, 3, 4, 5),
 		}, 3, nil)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3})
-		So(done, ShouldBeFalse)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3}))
+		assert.Loosely(t, done, should.BeFalse)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey("Merging with limit that exactly matches query size", t, func() {
+	ftt.Run("Merging with limit that exactly matches query size", t, func(t *ftt.Test) {
 		invs, done, err := mergeInvQueries([]invQuery{
 			makeInvListQ(1, 2, 3, 4, 5),
 			makeInvListQ(1, 2, 3, 4, 5),
 		}, 5, nil)
-		So(invIDs(invs), ShouldResemble, []int64{1, 2, 3, 4, 5})
-		So(done, ShouldBeTrue) // true here! this is important, otherwise we'll get empty pages
-		So(err, ShouldBeNil)
+		assert.Loosely(t, invIDs(invs), should.Resemble([]int64{1, 2, 3, 4, 5}))
+		assert.Loosely(t, done, should.BeTrue) // true here! this is important, otherwise we'll get empty pages
+		assert.Loosely(t, err, should.BeNil)
 	})
 }
 
 func TestActiveInvQuery(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		q := activeInvQuery(context.Background(), &Job{
 			ActiveInvocations: []int64{1, 2, 3, 4, 5, 8, 6},
 		}, 3)
-		So(invIDs(q.invs), ShouldResemble, []int64{4, 5, 6, 8})
+		assert.Loosely(t, invIDs(q.invs), should.Resemble([]int64{4, 5, 6, 8}))
 	})
 }
 
@@ -137,7 +138,7 @@ func TestRecentInvQuery(t *testing.T) {
 	c, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 	now := timestamppb.New(clock.Now(c))
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		q := recentInvQuery(c, &Job{
 			FinishedInvocationsRaw: marshalFinishedInvs([]*internal.FinishedInvocation{
 				{InvocationId: 1, Finished: now},
@@ -151,7 +152,7 @@ func TestRecentInvQuery(t *testing.T) {
 				{InvocationId: 9, Finished: timestamppb.New(clock.Now(c).Add(-FinishedInvocationsHorizon - 1))},
 			}),
 		}, 3)
-		So(invIDs(q.invs), ShouldResemble, []int64{4, 5, 6, 8})
+		assert.Loosely(t, invIDs(q.invs), should.Resemble([]int64{4, 5, 6, 8}))
 	})
 }
 
@@ -178,13 +179,13 @@ func TestInvDatastoreIter(t *testing.T) {
 
 	c := memory.Use(context.Background())
 
-	Convey("Empty", t, func() {
+	ftt.Run("Empty", t, func(t *ftt.Test) {
 		invs, err := run(c, datastore.NewQuery("Invocation"), 100)
-		So(err, ShouldBeNil)
-		So(len(invs), ShouldEqual, 0)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(invs), should.BeZero)
 	})
 
-	Convey("Not empty", t, func() {
+	ftt.Run("Not empty", t, func(t *ftt.Test) {
 		original := []*Invocation{
 			{ID: 1},
 			{ID: 2},
@@ -195,38 +196,38 @@ func TestInvDatastoreIter(t *testing.T) {
 		datastore.Put(c, original)
 		datastore.GetTestable(c).CatchupIndexes()
 
-		Convey("No limit", func() {
+		t.Run("No limit", func(t *ftt.Test) {
 			q := datastore.NewQuery("Invocation").Order("__key__")
 			invs, err := run(c, q, 100)
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, original)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(original))
 		})
 
-		Convey("With limit", func() {
+		t.Run("With limit", func(t *ftt.Test) {
 			q := datastore.NewQuery("Invocation").Order("__key__")
 
 			gtq := q
 			invs, err := run(c, gtq, 2)
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, original[:2])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(original[:2]))
 
 			gtq = q.Gt("__key__", datastore.KeyForObj(c, invs[1]))
 			invs, err = run(c, gtq, 2)
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, original[2:4])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(original[2:4]))
 
 			gtq = q.Gt("__key__", datastore.KeyForObj(c, invs[1]))
 			invs, err = run(c, gtq, 2)
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, original[4:5])
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(original[4:5]))
 
 			gtq = q.Gt("__key__", datastore.KeyForObj(c, invs[0]))
 			invs, err = run(c, gtq, 2)
-			So(err, ShouldBeNil)
-			So(invs, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.BeEmpty)
 		})
 
-		Convey("With error", func() {
+		t.Run("With error", func(t *ftt.Test) {
 			dsErr := fmt.Errorf("boo")
 
 			brokenC, breaker := featureBreaker.FilterRDS(c, nil)
@@ -234,8 +235,8 @@ func TestInvDatastoreIter(t *testing.T) {
 
 			q := datastore.NewQuery("Invocation").Order("__key__")
 			invs, err := run(brokenC, q, 100)
-			So(err, ShouldEqual, dsErr)
-			So(len(invs), ShouldEqual, 0)
+			assert.Loosely(t, err, should.Equal(dsErr))
+			assert.Loosely(t, len(invs), should.BeZero)
 		})
 	})
 }
@@ -276,27 +277,27 @@ func TestFinishedInvQuery(t *testing.T) {
 		}
 	}
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
-		Convey("Empty", func() {
+		t.Run("Empty", func(t *ftt.Test) {
 			q := finishedInvQuery(c, &Job{JobID: "proj/job"}, 0)
-			So(fetchAll(q), ShouldBeEmpty)
+			assert.Loosely(t, fetchAll(q), should.BeEmpty)
 		})
 
-		Convey("Non empty", func() {
+		t.Run("Non empty", func(t *ftt.Test) {
 			insertInv(c, "proj/job", 3, task.StatusSucceeded)
 			insertInv(c, "proj/job", 2, task.StatusSucceeded)
 			insertInv(c, "proj/job", 1, task.StatusSucceeded)
 
-			Convey("no cursor", func() {
+			t.Run("no cursor", func(t *ftt.Test) {
 				q := finishedInvQuery(c, &Job{JobID: "proj/job"}, 0)
-				So(invIDs(fetchAll(q)), ShouldResemble, []int64{1, 2, 3})
+				assert.Loosely(t, invIDs(fetchAll(q)), should.Resemble([]int64{1, 2, 3}))
 			})
 
-			Convey("with cursor", func() {
+			t.Run("with cursor", func(t *ftt.Test) {
 				q := finishedInvQuery(c, &Job{JobID: "proj/job"}, 1)
-				So(invIDs(fetchAll(q)), ShouldResemble, []int64{2, 3})
+				assert.Loosely(t, invIDs(fetchAll(q)), should.Resemble([]int64{2, 3}))
 			})
 		})
 	})
@@ -305,7 +306,7 @@ func TestFinishedInvQuery(t *testing.T) {
 func TestFetchInvsPage(t *testing.T) {
 	t.Parallel()
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		const jobID = "proj/job"
 
 		c := memory.Use(context.Background())
@@ -317,7 +318,7 @@ func TestFetchInvsPage(t *testing.T) {
 			qs := []invQuery{}
 			if !opts.ActiveOnly {
 				ds := finishedInvQuery(c, job, lastScanned)
-				Reset(ds.close)
+				t.Cleanup(ds.close)
 				qs = append(qs, ds)
 			}
 			if !opts.FinishedOnly {
@@ -332,9 +333,9 @@ func TestFetchInvsPage(t *testing.T) {
 			for {
 				before := len(invs)
 				invs, page, err = fetchInvsPage(c, qs, opts, invs)
-				So(err, ShouldBeNil)
-				So(len(invs)-before, ShouldEqual, page.count)
-				So(page.count, ShouldBeLessThanOrEqualTo, opts.PageSize)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(invs)-before, should.Equal(page.count))
+				assert.Loosely(t, page.count, should.BeLessThanOrEqual(opts.PageSize))
 				pages = append(pages, page)
 				if page.final {
 					return
@@ -342,7 +343,7 @@ func TestFetchInvsPage(t *testing.T) {
 			}
 		}
 
-		Convey("ActiveInvocations list is consistent with datastore", func() {
+		t.Run("ActiveInvocations list is consistent with datastore", func(t *ftt.Test) {
 			// List of finished invocations, oldest to newest.
 			i6 := insertInv(c, jobID, 6, task.StatusSucceeded)
 			i5 := insertInv(c, jobID, 5, task.StatusFailed)
@@ -359,73 +360,73 @@ func TestFetchInvsPage(t *testing.T) {
 				},
 			}
 
-			Convey("No paging", func() {
+			t.Run("No paging", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{6, true, 6})
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3, i4, i5, i6})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{6, true, 6}))
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3, i4, i5, i6}))
 			})
 
-			Convey("No paging, active only", func() {
+			t.Run("No paging, active only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7, ActiveOnly: true}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{3, true, 3})
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{3, true, 3}))
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3}))
 			})
 
-			Convey("No paging, finished only", func() {
+			t.Run("No paging, finished only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7, FinishedOnly: true}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{3, true, 6})
-				So(invs, ShouldResemble, []*Invocation{i4, i5, i6})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{3, true, 6}))
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i4, i5, i6}))
 			})
 
-			Convey("Paging", func() {
+			t.Run("Paging", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3, i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3, i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 2},
 					{2, false, 4},
 					{2, true, 6},
-				})
+				}))
 			})
 
-			Convey("Paging, resuming from cursor", func() {
+			t.Run("Paging, resuming from cursor", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2}
 				invs, pages := fetchAllPages(makeQS(job, opts, 3), opts)
-				So(invs, ShouldResemble, []*Invocation{i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 5},
 					{1, true, 6},
-				})
+				}))
 			})
 
-			Convey("Paging, active only", func() {
+			t.Run("Paging, active only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2, ActiveOnly: true}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 2},
 					{1, true, 3},
-				})
+				}))
 			})
 
-			Convey("Paging, finished only", func() {
+			t.Run("Paging, finished only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2, FinishedOnly: true}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 5},
 					{1, true, 6},
-				})
+				}))
 			})
 		})
 
-		Convey("ActiveInvocations list is stale", func() {
+		t.Run("ActiveInvocations list is stale", func(t *ftt.Test) {
 			// List of finished invocations, oldest to newest.
 			i6 := insertInv(c, jobID, 6, task.StatusSucceeded)
 			i5 := insertInv(c, jobID, 5, task.StatusFailed)
@@ -440,70 +441,70 @@ func TestFetchInvsPage(t *testing.T) {
 				ActiveInvocations: []int64{3, 1, 2},
 			}
 
-			Convey("No paging", func() {
+			t.Run("No paging", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{6, true, 6})
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3, i4, i5, i6})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{6, true, 6}))
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3, i4, i5, i6}))
 			})
 
-			Convey("No paging, active only", func() {
+			t.Run("No paging, active only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7, ActiveOnly: true}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{2, true, 3}) // 3 was scanned and skipped!
-				So(invs, ShouldResemble, []*Invocation{i1, i2})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{2, true, 3})) // 3 was scanned and skipped!
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2}))
 			})
 
-			Convey("No paging, finished only", func() {
+			t.Run("No paging, finished only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 7, FinishedOnly: true}
 				invs, page, err := fetchInvsPage(c, makeQS(job, opts, 0), opts, nil)
-				So(err, ShouldBeNil)
-				So(page, ShouldResemble, invsPage{4, true, 6})
-				So(invs, ShouldResemble, []*Invocation{i3, i4, i5, i6})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, page, should.Resemble(invsPage{4, true, 6}))
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i3, i4, i5, i6}))
 			})
 
-			Convey("Paging", func() {
+			t.Run("Paging", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i1, i2, i3, i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2, i3, i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 2},
 					{2, false, 4},
 					{2, true, 6},
-				})
+				}))
 			})
 
-			Convey("Paging, resuming from cursor", func() {
+			t.Run("Paging, resuming from cursor", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2}
 				invs, pages := fetchAllPages(makeQS(job, opts, 3), opts)
-				So(invs, ShouldResemble, []*Invocation{i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 5},
 					{1, true, 6},
-				})
+				}))
 			})
 
-			Convey("Paging, active only", func() {
+			t.Run("Paging, active only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 1, ActiveOnly: true}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i1, i2})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i1, i2}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{1, false, 1},
 					{1, false, 2},
 					{0, true, 3}, // empty mini-page, but advanced cursor
-				})
+				}))
 			})
 
-			Convey("Paging, finished only", func() {
+			t.Run("Paging, finished only", func(t *ftt.Test) {
 				opts := ListInvocationsOpts{PageSize: 2, FinishedOnly: true}
 				invs, pages := fetchAllPages(makeQS(job, opts, 0), opts)
-				So(invs, ShouldResemble, []*Invocation{i3, i4, i5, i6})
-				So(pages, ShouldResemble, []invsPage{
+				assert.Loosely(t, invs, should.Resemble([]*Invocation{i3, i4, i5, i6}))
+				assert.Loosely(t, pages, should.Resemble([]invsPage{
 					{2, false, 4},
 					{2, true, 6},
-				})
+				}))
 			})
 		})
 	})
@@ -512,7 +513,7 @@ func TestFetchInvsPage(t *testing.T) {
 func TestFillShallowInvs(t *testing.T) {
 	t.Parallel()
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 
 		// Bodies for inflated items.
@@ -530,44 +531,44 @@ func TestFillShallowInvs(t *testing.T) {
 			{ID: 11, Status: task.StatusSucceeded},
 		}
 
-		Convey("no filtering", func() {
+		t.Run("no filtering", func(t *ftt.Test) {
 			fat, err := fillShallowInvs(c, shallow, ListInvocationsOpts{})
-			So(err, ShouldBeNil)
-			So(fat, ShouldResemble, []*Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fat, should.Resemble([]*Invocation{
 				{ID: 1, Status: task.StatusSucceeded},
 				{ID: 2, Status: task.StatusSucceeded},
 				{ID: 3, Status: task.StatusRunning},
 				{ID: 10, Status: task.StatusRunning},
 				{ID: 10, Status: task.StatusRunning},
 				{ID: 11, Status: task.StatusSucceeded},
-			})
-			So(&shallow[0], ShouldEqual, &fat[0]) // same backing array
+			}))
+			assert.Loosely(t, &shallow[0], should.Equal(&fat[0])) // same backing array
 		})
 
-		Convey("finished only", func() {
+		t.Run("finished only", func(t *ftt.Test) {
 			fat, err := fillShallowInvs(c, shallow, ListInvocationsOpts{
 				FinishedOnly: true,
 			})
-			So(err, ShouldBeNil)
-			So(fat, ShouldResemble, []*Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fat, should.Resemble([]*Invocation{
 				{ID: 1, Status: task.StatusSucceeded},
 				{ID: 2, Status: task.StatusSucceeded},
 				{ID: 11, Status: task.StatusSucceeded},
-			})
-			So(&shallow[0], ShouldEqual, &fat[0]) // same backing array
+			}))
+			assert.Loosely(t, &shallow[0], should.Equal(&fat[0])) // same backing array
 		})
 
-		Convey("active only", func() {
+		t.Run("active only", func(t *ftt.Test) {
 			fat, err := fillShallowInvs(c, shallow, ListInvocationsOpts{
 				ActiveOnly: true,
 			})
-			So(err, ShouldBeNil)
-			So(fat, ShouldResemble, []*Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fat, should.Resemble([]*Invocation{
 				{ID: 3, Status: task.StatusRunning},
 				{ID: 10, Status: task.StatusRunning},
 				{ID: 10, Status: task.StatusRunning},
-			})
-			So(&shallow[0], ShouldEqual, &fat[0]) // same backing array
+			}))
+			assert.Loosely(t, &shallow[0], should.Equal(&fat[0])) // same backing array
 		})
 	})
 }

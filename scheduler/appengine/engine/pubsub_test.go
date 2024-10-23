@@ -16,18 +16,19 @@ package engine
 
 import (
 	"encoding/json"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestConfigureTopic(t *testing.T) {
 	t.Parallel()
 
-	Convey("configureTopic works", t, func(ctx C) {
+	ftt.Run("configureTopic works", t, func(ctx *ftt.Test) {
 		c := newTestContext(epoch)
 
 		calls := []struct {
@@ -98,20 +99,20 @@ func TestConfigureTopic(t *testing.T) {
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if idx == len(calls) {
-				ctx.Printf("Unexpected URL call '%s %s'", r.Method, r.URL.Path)
-				ctx.So(idx, ShouldNotEqual, len(calls))
+				ctx.Logf("Unexpected URL call '%s %s'", r.Method, r.URL.Path)
+				assert.Loosely(ctx, idx, should.NotEqual(len(calls)))
 			}
 			call := calls[idx]
 			idx++
-			ctx.So(r.Method+" "+r.URL.Path, ShouldEqual, call.Call)
+			assert.Loosely(ctx, r.Method+" "+r.URL.Path, should.Equal(call.Call))
 			if call.Request != "" {
 				blob, err := io.ReadAll(r.Body)
-				ctx.So(err, ShouldBeNil)
+				assert.Loosely(ctx, err, should.BeNil)
 				expected := make(map[string]any)
 				received := make(map[string]any)
-				ctx.So(json.Unmarshal([]byte(call.Request), &expected), ShouldBeNil)
-				ctx.So(json.Unmarshal([]byte(blob), &received), ShouldBeNil)
-				ctx.So(received, ShouldResemble, expected)
+				assert.Loosely(ctx, json.Unmarshal([]byte(call.Request), &expected), should.BeNil)
+				assert.Loosely(ctx, json.Unmarshal([]byte(blob), &received), should.BeNil)
+				assert.Loosely(ctx, received, should.Resemble(expected))
 			}
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(call.Code)
@@ -126,7 +127,7 @@ func TestConfigureTopic(t *testing.T) {
 			"http://push_url",
 			"some@publisher.com",
 			ts.URL)
-		So(err, ShouldBeNil)
+		assert.Loosely(ctx, err, should.BeNil)
 
 		// Repeat to test idempotency.
 		err = configureTopic(
@@ -136,9 +137,9 @@ func TestConfigureTopic(t *testing.T) {
 			"http://push_url",
 			"some@publisher.com",
 			ts.URL)
-		So(err, ShouldBeNil)
+		assert.Loosely(ctx, err, should.BeNil)
 
 		// All expected calls are made.
-		So(idx, ShouldEqual, len(calls))
+		assert.Loosely(ctx, idx, should.Equal(len(calls)))
 	})
 }

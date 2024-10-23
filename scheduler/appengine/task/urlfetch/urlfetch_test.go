@@ -25,15 +25,15 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/urlfetch"
 
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var _ task.Manager = (*TaskManager)(nil)
@@ -42,60 +42,60 @@ func TestValidateProtoMessage(t *testing.T) {
 	t.Parallel()
 
 	tm := TaskManager{}
-	Convey("ValidateProtoMessage works", t, func() {
+	ftt.Run("ValidateProtoMessage works", t, func(t *ftt.Test) {
 		c := &validation.Context{Context: context.Background()}
 		validate := func(msg proto.Message) error {
 			tm.ValidateProtoMessage(c, msg, "some-project:some-realm")
 			return c.Finalize()
 		}
-		Convey("ValidateProtoMessage passes good msg", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage passes good msg", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Url: "https://blah.com",
-			}), ShouldBeNil)
+			}), should.BeNil)
 		})
 
-		Convey("ValidateProtoMessage wrong type", func() {
-			So(validate(&messages.NoopTask{}), ShouldErrLike, "wrong type")
+		t.Run("ValidateProtoMessage wrong type", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.NoopTask{}), should.ErrLike("wrong type"))
 		})
 
-		Convey("ValidateProtoMessage empty", func() {
-			So(validate(tm.ProtoMessageType()), ShouldErrLike, "expecting a non-empty UrlFetchTask")
+		t.Run("ValidateProtoMessage empty", func(t *ftt.Test) {
+			assert.Loosely(t, validate(tm.ProtoMessageType()), should.ErrLike("expecting a non-empty UrlFetchTask"))
 		})
 
-		Convey("ValidateProtoMessage bad method", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage bad method", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Method: "BLAH",
-			}), ShouldErrLike, "unsupported HTTP method")
+			}), should.ErrLike("unsupported HTTP method"))
 		})
 
-		Convey("ValidateProtoMessage no URL", func() {
-			So(validate(&messages.UrlFetchTask{}), ShouldErrLike, "field 'url' is required")
+		t.Run("ValidateProtoMessage no URL", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{}), should.ErrLike("field 'url' is required"))
 		})
 
-		Convey("ValidateProtoMessage bad URL", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage bad URL", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Url: "%%%%",
-			}), ShouldErrLike, "invalid URL")
+			}), should.ErrLike("invalid URL"))
 		})
 
-		Convey("ValidateProtoMessage non-absolute URL", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage non-absolute URL", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Url: "/abc",
-			}), ShouldErrLike, "not an absolute url")
+			}), should.ErrLike("not an absolute url"))
 		})
 
-		Convey("ValidateProtoMessage bad timeout", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage bad timeout", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Url:        "https://blah.com",
 				TimeoutSec: -1,
-			}), ShouldErrLike, "minimum allowed 'timeout_sec' is 1 sec")
+			}), should.ErrLike("minimum allowed 'timeout_sec' is 1 sec"))
 		})
 
-		Convey("ValidateProtoMessage large timeout", func() {
-			So(validate(&messages.UrlFetchTask{
+		t.Run("ValidateProtoMessage large timeout", func(t *ftt.Test) {
+			assert.Loosely(t, validate(&messages.UrlFetchTask{
 				Url:        "https://blah.com",
 				TimeoutSec: 10000,
-			}), ShouldErrLike, "maximum allowed 'timeout_sec' is 480 sec")
+			}), should.ErrLike("maximum allowed 'timeout_sec' is 480 sec"))
 		})
 	})
 }
@@ -105,7 +105,7 @@ func TestLaunchTask(t *testing.T) {
 
 	tm := TaskManager{}
 
-	Convey("LaunchTask works", t, func(c C) {
+	ftt.Run("LaunchTask works", t, func(c *ftt.Test) {
 		ts, ctx := newTestContext(time.Unix(0, 1))
 		defer ts.Close()
 		ctl := &tasktest.TestController{
@@ -114,9 +114,9 @@ func TestLaunchTask(t *testing.T) {
 			},
 			SaveCallback: func() error { return nil },
 		}
-		So(tm.LaunchTask(ctx, ctl), ShouldBeNil)
-		So(ctl.Log[0], ShouldEqual, "GET "+ts.URL)
-		So(ctl.Log[1], ShouldStartWith, "Finished with overall status SUCCEEDED in 0")
+		assert.Loosely(c, tm.LaunchTask(ctx, ctl), should.BeNil)
+		assert.Loosely(c, ctl.Log[0], should.Equal("GET "+ts.URL))
+		assert.Loosely(c, ctl.Log[1], should.HavePrefix("Finished with overall status SUCCEEDED in 0"))
 	})
 }
 

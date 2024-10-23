@@ -22,20 +22,21 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestLoadSave(t *testing.T) {
 	t.Parallel()
 
-	Convey("storeState/loadState work", t, func() {
+	ftt.Run("storeState/loadState work", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		repo := "https://example.googlesource.com/what/ever.git"
 		jobID := "job"
@@ -48,24 +49,24 @@ func TestLoadSave(t *testing.T) {
 			return r
 		}
 
-		Convey("load first time ever", func() {
-			So(loadNoError(repo), ShouldResemble, map[string]string{})
-			So(loadNoError(repo), ShouldNotBeNil)
+		t.Run("load first time ever", func(t *ftt.Test) {
+			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{}))
+			assert.Loosely(t, loadNoError(repo), should.NotBeNil)
 		})
 
-		Convey("save/load/save/load", func() {
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/heads/master": "beefcafe"})
-			So(saveState(c, jobID, repo, map[string]string{"refs/tails/master": "efacfeeb"}), ShouldBeNil)
-			So(loadNoError(repo), ShouldResemble, map[string]string{"refs/tails/master": "efacfeeb"})
+		t.Run("save/load/save/load", func(t *ftt.Test) {
+			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
+			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/heads/master": "beefcafe"}))
+			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/tails/master": "efacfeeb"}), should.BeNil)
+			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/tails/master": "efacfeeb"}))
 		})
 
-		Convey("save/change repo name/load", func() {
-			So(saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), ShouldBeNil)
-			So(loadNoError("https://some-other.googlesource.com/repo"), ShouldResemble, map[string]string{})
+		t.Run("save/change repo name/load", func(t *ftt.Test) {
+			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
+			assert.Loosely(t, loadNoError("https://some-other.googlesource.com/repo"), should.Resemble(map[string]string{}))
 		})
 
-		Convey("save/load with deeply nested refs", func() {
+		t.Run("save/load with deeply nested refs", func(t *ftt.Test) {
 			nested := map[string]string{
 				"refs/weirdo":                  "00",
 				"refs/heads/master":            "11",
@@ -75,8 +76,8 @@ func TestLoadSave(t *testing.T) {
 				"refs/heads/infra/configs/why": "55",
 				"refs/heads/infra/configs/not": "66",
 			}
-			So(saveState(c, jobID, repo, nested), ShouldBeNil)
-			So(loadNoError(repo), ShouldResemble, nested)
+			assert.Loosely(t, saveState(c, jobID, repo, nested), should.BeNil)
+			assert.Loosely(t, loadNoError(repo), should.Resemble(nested))
 		})
 	})
 }
@@ -84,7 +85,7 @@ func TestLoadSave(t *testing.T) {
 func TestLoadSaveCompression(t *testing.T) {
 	t.Parallel()
 
-	Convey("Compress lots of similar refs", t, func() {
+	ftt.Run("Compress lots of similar refs", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		c, _, _ = tsmon.WithFakes(c)
 		tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
@@ -100,20 +101,20 @@ func TestLoadSaveCompression(t *testing.T) {
 			tags[ref] = hsh
 		}
 
-		So(saveState(c, jobID, repo, tags), ShouldBeNil)
+		assert.Loosely(t, saveState(c, jobID, repo, tags), should.BeNil)
 		id, err := repositoryID(jobID, repo)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		stored := Repository{ID: id}
-		So(ds.Get(c, &stored), ShouldBeNil)
+		assert.Loosely(t, ds.Get(c, &stored), should.BeNil)
 		// Given that SHA1 must have high entropy and hence shouldn't be
 		// compressible. Thus, we can't go below 20 bytes (len of SHA1) per ref,
 		// hence 20*many16Ki = 320 KiB.
-		So(len(stored.CompressedState), ShouldBeGreaterThan, 20*many16Ki)
+		assert.Loosely(t, len(stored.CompressedState), should.BeGreaterThan(20*many16Ki))
 		// But refs themselves should be quite compressible.
-		So(len(stored.CompressedState), ShouldBeLessThan, 20*many16Ki*5/4)
+		assert.Loosely(t, len(stored.CompressedState), should.BeLessThan(20*many16Ki*5/4))
 
-		So(getSentMetric(c, metricTaskGitilesStoredRefs, jobID), ShouldEqual, many16Ki)
-		So(getSentMetric(c, metricTaskGitilesStoredSize, jobID), ShouldEqual, len(stored.CompressedState))
+		assert.Loosely(t, getSentMetric(c, metricTaskGitilesStoredRefs, jobID), should.Equal(many16Ki))
+		assert.Loosely(t, getSentMetric(c, metricTaskGitilesStoredSize, jobID), should.Equal(len(stored.CompressedState)))
 	})
 }
 
