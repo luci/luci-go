@@ -1106,6 +1106,13 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 			return nil
 		}
 
+		// Do additional validation if it's the admin group being updated.
+		if authGroup.ID == AdminGroup {
+			if err := validateAdminGroup(ctx, authGroup); err != nil {
+				return err
+			}
+		}
+
 		if dryRun {
 			logging.Infof(ctx, "(dry run) updating AuthGroup:\n%+v", authGroup)
 			return nil
@@ -1118,6 +1125,41 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		return nil, err
 	}
 	return authGroup, nil
+}
+
+func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
+	// The admin group must own itself.
+	if admin.Owners != AdminGroup {
+		return errors.Annotate(ErrInvalidArgument,
+			"%s must be owned by itself", AdminGroup).Err()
+	}
+
+	// Forbid globs because the admin group is very privileged.
+	if len(admin.Globs) > 0 {
+		return errors.Annotate(ErrInvalidArgument,
+			"%s cannot have globs", AdminGroup).Err()
+	}
+
+	// Forbid internal subgroups, as this could lead to an unexpectedly large
+	// admin group over time.
+	for _, nested := range admin.Nested {
+		if !IsExternalAuthGroupName(nested) {
+			return errors.Annotate(ErrInvalidArgument,
+				"%s can only have external subgroups", AdminGroup).Err()
+		}
+	}
+	// If here, all nested subgroups are external.
+
+	// The admin group cannot be empty, i.e.
+	// - there should be at least one explicit member, OR
+	// - there should be at least one external subgroup so there is a pathway
+	//   to admin membership.
+	if len(admin.Members) > 0 || len(admin.Nested) > 0 {
+		return nil
+	}
+
+	return errors.Annotate(ErrInvalidArgument,
+		"%s cannot be empty", AdminGroup).Err()
 }
 
 // DeleteAuthGroup deletes the specified AuthGroup.

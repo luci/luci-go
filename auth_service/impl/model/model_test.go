@@ -685,22 +685,57 @@ func TestUpdateAuthGroup(t *testing.T) {
 			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 		})
 
-		t.Run("can't change admin owners", func(t *ftt.Test) {
+		t.Run("extra validation is completed for admin group", func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity:       "user:someone@example.com",
 				IdentityGroups: []string{AdminGroup},
 			})
 
-			// Set up the admin group and another self-owned test group.
+			// Set up the admin group, a self-owned internal group and an
+			// external group.
 			adminAuthGroup := emptyAuthGroup(ctx, AdminGroup)
-			assert.Loosely(t, datastore.Put(
-				ctx, adminAuthGroup, emptyAuthGroup(ctx, "foo")), should.BeNil)
+			adminAuthGroup.Members = []string{"user:someone@example.com"}
+			assert.Loosely(t, datastore.Put(ctx,
+				adminAuthGroup,
+				emptyAuthGroup(ctx, "foo"),
+				emptyAuthGroup(ctx, "sys/admins@example.com")), should.BeNil)
 
-			// Attempt to change the owners of the admin group.
-			adminAuthGroup.Owners = "foo"
-			_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
-			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("changing %q group owners is forbidden", AdminGroup)))
-			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+			t.Run("can't change admin owners", func(t *ftt.Test) {
+				// Attempt to change the owners of the admin group.
+				adminAuthGroup.Owners = "foo"
+				_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
+				assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("changing %q group owners is forbidden", AdminGroup)))
+				assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+			})
+
+			t.Run("invalid admin group change is rejected", func(t *ftt.Test) {
+				// Attempt to add a glob to the admin group.
+				adminAuthGroup.Globs = []string{"user:*@example.com"}
+				_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+				adminAuthGroup.Globs = []string{}
+
+				// Attempt to nest a nonexistent external group.
+				adminAuthGroup.Nested = []string{"unknown/group"}
+				_, err = UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+				adminAuthGroup.Nested = []string{}
+
+				// Attempt to empty the admin group.
+				adminAuthGroup.Members = []string{}
+				_, err = UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
+			})
+
+			t.Run("valid admin group change succeeds", func(t *ftt.Test) {
+				adminAuthGroup.Nested = []string{"sys/admins@example.com"}
+				_, err := UpdateAuthGroup(ctx, adminAuthGroup, nil, etag, "Go pRPC API", false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
+			})
 		})
 
 		t.Run("can't delete if etag doesn't match", func(t *ftt.Test) {
@@ -2297,5 +2332,72 @@ func TestStorableRealms(t *testing.T) {
 		actual, err := FromStorableRealms(blob)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(projRealms))
+	})
+}
+
+func TestValidateAdminGroup(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Admin group validation works", t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run("must be self-owned", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:     AdminGroup,
+				Owners: "test-group",
+			}
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), "owned by itself")
+		})
+
+		t.Run("cannot have globs", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:     AdminGroup,
+				Owners: AdminGroup,
+				Globs:  []string{"user:*@example.com"},
+			}
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				"cannot have globs")
+		})
+
+		t.Run("cannot have internal subgroups", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:     AdminGroup,
+				Owners: AdminGroup,
+				Nested: []string{"test-group"},
+			}
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				"can only have external subgroups")
+		})
+
+		t.Run("cannot be empty", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:     AdminGroup,
+				Owners: AdminGroup,
+			}
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				"cannot be empty")
+		})
+
+		t.Run("happy with a member", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:      AdminGroup,
+				Owners:  AdminGroup,
+				Members: []string{"user:someone@example.com"},
+			}
+			assert.Loosely(t, validateAdminGroup(ctx, g), should.BeNil)
+		})
+
+		t.Run("happy with an external subgroup", func(t *ftt.Test) {
+			g := &AuthGroup{
+				ID:     AdminGroup,
+				Owners: AdminGroup,
+				Nested: []string{"sys/admins@example.com"},
+			}
+			assert.Loosely(t, validateAdminGroup(ctx, g), should.BeNil)
+		})
 	})
 }
