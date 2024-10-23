@@ -19,38 +19,39 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSpannerConversion(t *testing.T) {
 	t.Parallel()
-	Convey(`ID`, t, func() {
+	ftt.Run(`ID`, t, func(t *ftt.Test) {
 		var b spanutil.Buffer
 
-		Convey(`ID`, func() {
+		t.Run(`ID`, func(t *ftt.Test) {
 			id := ID("a")
-			So(id.ToSpanner(), ShouldEqual, "ca978112:a")
+			assert.Loosely(t, id.ToSpanner(), should.Equal("ca978112:a"))
 
 			row, err := spanner.NewRow([]string{"a"}, []any{id.ToSpanner()})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var actual ID
 			err = b.FromSpanner(row, &actual)
-			So(err, ShouldBeNil)
-			So(actual, ShouldEqual, id)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Equal(id))
 		})
 
-		Convey(`IDSet`, func() {
+		t.Run(`IDSet`, func(t *ftt.Test) {
 			ids := NewIDSet("a", "b")
-			So(ids.ToSpanner(), ShouldResemble, []string{"3e23e816:b", "ca978112:a"})
+			assert.Loosely(t, ids.ToSpanner(), should.Resemble([]string{"3e23e816:b", "ca978112:a"}))
 
 			row, err := spanner.NewRow([]string{"a"}, []any{ids.ToSpanner()})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			var actual IDSet
 			err = b.FromSpanner(row, &actual)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResemble, ids)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(ids))
 		})
 	})
 }

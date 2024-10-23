@@ -35,8 +35,12 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -45,31 +49,32 @@ var textPBMultiline = prototext.MarshalOptions{
 
 func TestValidateGetArtifactRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateGetArtifactRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`ValidateGetArtifactRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
-			So(validateGetArtifactRequest(req), ShouldBeNil)
+			assert.Loosely(t, validateGetArtifactRequest(req), should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
 			req := &pb.GetArtifactRequest{}
-			So(validateGetArtifactRequest(req), ShouldErrLike, "unspecified")
+			assert.Loosely(t, validateGetArtifactRequest(req), should.ErrLike("unspecified"))
 		})
 	})
 }
 
-func AssertFetchURLCorrectness(ctx context.Context, a *pb.Artifact) {
+func AssertFetchURLCorrectness(ctx context.Context, t testing.TB, a *pb.Artifact) {
+	t.Helper()
 	fetchURL, err := url.Parse(a.FetchUrl)
-	So(err, ShouldBeNil)
-	So(fetchURL.Query().Get("token"), ShouldNotBeEmpty)
-	So(fetchURL.RawPath, ShouldEqual, "/"+a.Name)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(t, fetchURL.Query().Get("token"), should.NotBeEmpty, truth.LineContext())
+	assert.Loosely(t, fetchURL.RawPath, should.Equal("/"+a.Name), truth.LineContext())
 
-	So(a.FetchUrlExpiration, ShouldNotBeNil)
-	So(pbutil.MustTimestamp(a.FetchUrlExpiration), ShouldHappenWithin, 10*time.Second, clock.Now(ctx))
+	assert.Loosely(t, a.FetchUrlExpiration, should.NotBeNil, truth.LineContext())
+	assert.Loosely(t, pbutil.MustTimestamp(a.FetchUrlExpiration), should.HappenWithin(10*time.Second, clock.Now(ctx)), truth.LineContext())
 }
 
 func TestGetArtifact(t *testing.T) {
-	Convey(`GetArtifact`, t, func() {
+	ftt.Run(`GetArtifact`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -78,33 +83,33 @@ func TestGetArtifact(t *testing.T) {
 		})
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			// Insert a Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.get")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.get"))
 		})
 
-		Convey(`Exists`, func() {
+		t.Run(`Exists`, func(t *ftt.Test) {
 			// Insert a Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			const name = "invocations/inv/artifacts/a"
 			req := &pb.GetArtifactRequest{Name: name}
 			art, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldBeNil)
-			So(art.Name, ShouldEqual, name)
-			So(art.ArtifactId, ShouldEqual, "a")
-			So(strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a"), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal(name))
+			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
+			assert.Loosely(t, strings.HasPrefix(art.FetchUrl, "https://signed-url.example.com/invocations/inv/artifacts/a"), should.BeTrue)
 		})
 
-		Convey(`Exists with gcsURI`, func() {
+		t.Run(`Exists with gcsURI`, func(t *ftt.Test) {
 			const realm = "testrealm"
 			const project = "testproject"
 			const bucket = "bucket1"
@@ -112,7 +117,7 @@ func TestGetArtifact(t *testing.T) {
 			var globalRealm = fmt.Sprintf("%s:%s", project, realm)
 
 			// Insert an Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": globalRealm}),
 				insert.Artifact("inv", "", "a", map[string]any{"GcsURI": fmt.Sprintf("gs://%s/%s", bucket, object)}),
 			)
@@ -122,24 +127,24 @@ func TestGetArtifact(t *testing.T) {
 			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
 
 			art, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldBeNil)
-			So(art.Name, ShouldEqual, name)
-			So(art.ArtifactId, ShouldEqual, "a")
-			So(art.FetchUrl, ShouldStartWith,
-				fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, art.Name, should.Equal(name))
+			assert.Loosely(t, art.ArtifactId, should.Equal("a"))
+			assert.Loosely(t, art.FetchUrl, should.HavePrefix(
+				fmt.Sprintf("https://storage.googleapis.com/%s/%s?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential", bucket, object)))
 		})
 
-		Convey(`Does not exist`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Does not exist`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldBeRPCNotFound, "invocations/inv/artifacts/a not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv/artifacts/a not found"))
 		})
-		Convey(`Invocation does not exist`, func() {
+		t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			So(err, ShouldBeRPCNotFound, "invocations/inv not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv not found"))
 		})
 	})
 }

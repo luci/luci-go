@@ -32,6 +32,9 @@ import (
 	grpcstatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/span"
@@ -44,9 +47,6 @@ import (
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type fakeCASClient struct {
@@ -146,15 +146,15 @@ func (c *fakeBQClient) InsertArtifactRows(ctx context.Context, rows []*bqpb.Text
 }
 
 func TestQueryTextArtifacts(t *testing.T) {
-	Convey(`Query Text Artifacts`, t, func() {
+	ftt.Run(`Query Text Artifacts`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ae := artifactExporter{}
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		Convey("query artifacts", func() {
-			testutil.MustApply(ctx,
+		t.Run("query artifacts", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
@@ -163,14 +163,14 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "200000000", "RBECASHash": "deadbeef"}),
 			)
 
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
 			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024, map[string]bool{})
-			So(err, ShouldBeNil)
-			So(len(artifacts), ShouldEqual, 2)
-			So(artifacts, ShouldResemble, []*Artifact{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(artifacts), should.Equal(2))
+			assert.Loosely(t, artifacts, should.Resemble([]*Artifact{
 				{
 					InvocationID: "inv1",
 					TestID:       "",
@@ -193,15 +193,15 @@ func TestQueryTextArtifacts(t *testing.T) {
 					TestVariant:     &pb.Variant{Def: map[string]string{"os": "linux"}},
 					TestVariantHash: "f334f047f88eb721",
 				},
-			})
-			So(artifactContentCounter.Get(ctx, "testproject", "text"), ShouldEqual, 3)
-			So(artifactContentCounter.Get(ctx, "testproject", "nontext"), ShouldEqual, 1)
-			So(artifactContentCounter.Get(ctx, "testproject", "empty"), ShouldEqual, 1)
-			So(artifactExportCounter.Get(ctx, "testproject", "skipped_over_limit"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, artifactContentCounter.Get(ctx, "testproject", "text"), should.Equal(3))
+			assert.Loosely(t, artifactContentCounter.Get(ctx, "testproject", "nontext"), should.Equal(1))
+			assert.Loosely(t, artifactContentCounter.Get(ctx, "testproject", "empty"), should.Equal(1))
+			assert.Loosely(t, artifactExportCounter.Get(ctx, "testproject", "skipped_over_limit"), should.Equal(1))
 		})
 
-		Convey("total invocation size exceeds limit", func() {
-			testutil.MustApply(ctx,
+		t.Run("total invocation size exceeds limit", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "tr/testid/0", "a1", map[string]any{"ContentType": "text/html", "Size": "5000000", "RBECASHash": "deadbeef"}),
@@ -210,27 +210,27 @@ func TestQueryTextArtifacts(t *testing.T) {
 				insert.Artifact("inv1", "tr/testid/0", "a4", map[string]any{"ContentType": "text/html", "Size": "6000000", "RBECASHash": "deadbeef"}),
 			)
 
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 			)...)
 
 			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "test project", 10_000_000, map[string]bool{})
-			So(err, ShouldBeNil)
-			So(len(artifacts), ShouldEqual, 0)
-			So(artifactInvocationCounter.Get(ctx, "test project", "skipped_over_limit"), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(artifacts), should.BeZero)
+			assert.Loosely(t, artifactInvocationCounter.Get(ctx, "test project", "skipped_over_limit"), should.Equal(1))
 		})
 
-		Convey("With checkpoint", func() {
-			testutil.MustApply(ctx,
+		t.Run("With checkpoint", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "100", "RBECASHash": "deadbeef"}),
 				insert.Artifact("inv1", "", "a1", map[string]any{"ContentType": "text/html", "Size": "100", "RBECASHash": "deadbeef"}),
 			)
 
 			artifacts, err := ae.queryTextArtifacts(ctx, "inv1", "testproject", 5*1024*1024*1024, map[string]bool{"//a1": true})
-			So(err, ShouldBeNil)
-			So(len(artifacts), ShouldEqual, 1)
-			So(artifacts, ShouldResemble, []*Artifact{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(artifacts), should.Equal(1))
+			assert.Loosely(t, artifacts, should.Resemble([]*Artifact{
 				{
 					InvocationID: "inv1",
 					TestID:       "",
@@ -241,15 +241,15 @@ func TestQueryTextArtifacts(t *testing.T) {
 					RBECASHash:   "deadbeef",
 					TestStatus:   pb.TestStatus_STATUS_UNSPECIFIED,
 				},
-			})
-			So(artifactContentCounter.Get(ctx, "testproject", "text"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, artifactContentCounter.Get(ctx, "testproject", "text"), should.Equal(1))
 		})
 	})
 }
 
 func TestDownloadArtifactContent(t *testing.T) {
 	ctx := context.Background()
-	Convey(`Download multiple artifact content`, t, func() {
+	ftt.Run(`Download multiple artifact content`, t, func(t *ftt.Test) {
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		casClient := &fakeCASClient{
 			ResponseData: map[string][]byte{
@@ -359,41 +359,41 @@ func TestDownloadArtifactContent(t *testing.T) {
 			CreateTime:             timestamppb.New(time.Unix(10000, 0).UTC()),
 			TestResultVariantUnion: &pb.Variant{Def: map[string]string{"os": "linux", "runner": "test"}},
 		}
-		Convey("Batch failed", func() {
+		t.Run("Batch failed", func(t *ftt.Test) {
 			ae.casClient = &fakeCASClient{
 				Err: errors.New("batch failed"),
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 1000, map[string]bool{})
-			So(err, ShouldErrLike, "batch failed")
+			assert.Loosely(t, err, should.ErrLike("batch failed"))
 		})
 
-		Convey("Invalid argument should not retry", func() {
+		t.Run("Invalid argument should not retry", func(t *ftt.Test) {
 			ae.casClient = &fakeCASClient{
 				Err: grpcstatus.New(codes.InvalidArgument, "invalid argument").Err(),
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Resource Exhausted should not retry", func() {
+		t.Run("Resource Exhausted should not retry", func(t *ftt.Test) {
 			ae.casClient = &fakeCASClient{
 				Err: grpcstatus.New(codes.ResourceExhausted, "resource exhausted").Err(),
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Stream failed", func() {
+		t.Run("Stream failed", func(t *ftt.Test) {
 			ae.bytestreamClient = &fakeByteStreamClient{
 				Err: errors.New("stream failed"),
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 100, map[string]bool{})
-			So(err, ShouldErrLike, "stream failed")
+			assert.Loosely(t, err, should.ErrLike("stream failed"))
 		})
 
-		Convey("Succeed", func() {
+		t.Run("Succeed", func(t *ftt.Test) {
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 300, 300, map[string]bool{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			close(rowC)
 			rows := []*Row{}
 			for r := range rowC {
@@ -404,7 +404,7 @@ func TestDownloadArtifactContent(t *testing.T) {
 				return (rows[i].content.ArtifactId < rows[j].content.ArtifactId ||
 					(rows[i].content.ArtifactId == rows[j].content.ArtifactId && rows[i].content.ShardId < rows[j].content.ShardId))
 			})
-			So(rows, ShouldResembleProto, []*Row{
+			assert.Loosely(t, rows, should.Resemble([]*Row{
 				{
 					content: &bqpb.TextArtifactRow{
 						Project:                    "chromium",
@@ -488,21 +488,21 @@ func TestDownloadArtifactContent(t *testing.T) {
 					},
 					isLastShard: true,
 				},
-			})
+			}))
 			// Make sure we do the chunking properly.
 			sort.Slice(casClient.DigestHashes, func(i, j int) bool {
 				return (casClient.DigestHashes[i][0] < casClient.DigestHashes[j][0])
 			})
-			So(casClient.DigestHashes, ShouldResemble, [][]string{
+			assert.Loosely(t, casClient.DigestHashes, should.Resemble([][]string{
 				{"hash2", "hash1"},
 				{"hash5"},
 				{"hash6"},
 				{"hash7"},
-			})
-			So(artifactExportCounter.Get(ctx, "chromium", "failure_input"), ShouldEqual, 4)
+			}))
+			assert.Loosely(t, artifactExportCounter.Get(ctx, "chromium", "failure_input"), should.Equal(4))
 		})
 
-		Convey("One batch error", func() {
+		t.Run("One batch error", func(t *ftt.Test) {
 			artifacts := []*Artifact{
 				{
 					InvocationID: "inv1",
@@ -516,14 +516,14 @@ func TestDownloadArtifactContent(t *testing.T) {
 				},
 			}
 			err := ae.downloadMultipleArtifactContent(ctx, artifacts, inv, rowC, 100, 300, map[string]bool{})
-			So(err, ShouldErrLike, "downloading artifact")
+			assert.Loosely(t, err, should.ErrLike("downloading artifact"))
 			close(rowC)
 		})
 	})
 }
 
 func TestExportArtifacts(t *testing.T) {
-	Convey("Export Artifacts", t, func() {
+	ftt.Run("Export Artifacts", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = memory.Use(ctx)
 		bqClient := &fakeBQClient{}
@@ -538,27 +538,25 @@ func TestExportArtifacts(t *testing.T) {
 		}
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		Convey("Export disabled", func() {
-			err := config.SetServiceConfig(ctx, &configpb.Config{
-				BqArtifactExporterServiceConfig: &configpb.BqArtifactExportConfig{
-					Enabled: false,
-				},
-			})
-			So(err, ShouldBeNil)
-			err = ae.exportArtifacts(ctx, "inv1")
-			So(err, ShouldBeNil)
-		})
-
 		err := config.SetServiceConfig(ctx, &configpb.Config{
+			BqArtifactExporterServiceConfig: &configpb.BqArtifactExportConfig{
+				Enabled: false,
+			},
+		})
+		assert.Loosely(t, err, should.BeNil)
+		err = ae.exportArtifacts(ctx, "inv1")
+		assert.Loosely(t, err, should.BeNil)
+
+		err = config.SetServiceConfig(ctx, &configpb.Config{
 			BqArtifactExporterServiceConfig: &configpb.BqArtifactExportConfig{
 				Enabled:       true,
 				ExportPercent: 100,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		invocationVariantUnion := &pb.Variant{Def: map[string]string{"os": "linux", "runner": "test"}}
-		commitTime := testutil.MustApply(ctx,
+		commitTime := testutil.MustApply(ctx, t,
 			insert.Invocation("inv-1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm", "TestResultVariantUnion": invocationVariantUnion}),
 			insert.Invocation("inv-2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Artifact("inv-1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8", "Size": "4", "RBECASHash": "deadbeef"}),
@@ -572,27 +570,27 @@ func TestExportArtifacts(t *testing.T) {
 			insert.Checkpoint(ctx, "testproject", "inv-1", CheckpointProcessID, "testid/0/a4/0"),
 		)
 
-		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv-1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv-1", "testid", &pb.Variant{Def: map[string]string{"os": "linux"}}, pb.TestStatus_PASS),
 		)...)
 
-		Convey("Invocation not finalized", func() {
+		t.Run("Invocation not finalized", func(t *ftt.Test) {
 			err = ae.exportArtifacts(ctx, "inv-2")
-			So(err, ShouldErrLike, "invocation not finalized")
+			assert.Loosely(t, err, should.ErrLike("invocation not finalized"))
 		})
 
-		Convey("BQ Export failed", func() {
+		t.Run("BQ Export failed", func(t *ftt.Test) {
 			ae.bqExportClient = &fakeBQClient{
 				Error: errors.New("bq error"),
 			}
 			err = ae.exportArtifacts(ctx, "inv-1")
-			So(err, ShouldErrLike, "bq error")
-			So(artifactExportCounter.Get(ctx, "testproject", "failure_bq"), ShouldEqual, 3)
+			assert.Loosely(t, err, should.ErrLike("bq error"))
+			assert.Loosely(t, artifactExportCounter.Get(ctx, "testproject", "failure_bq"), should.Equal(3))
 		})
 
-		Convey("Succeed", func() {
+		t.Run("Succeed", func(t *ftt.Test) {
 			err = ae.exportArtifacts(ctx, "inv-1")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Sort to make deterministic, as we parallelized the downloading,
 			// so it is not certain which row will come first.
 			rows := []*bqpb.TextArtifactRow{}
@@ -603,7 +601,7 @@ func TestExportArtifacts(t *testing.T) {
 				return (rows[i].ArtifactId < rows[j].ArtifactId)
 			})
 
-			So(rows, ShouldResembleProto, []*bqpb.TextArtifactRow{
+			assert.Loosely(t, rows, should.Resemble([]*bqpb.TextArtifactRow{
 				{
 					Project:                    "testproject",
 					Realm:                      "testrealm",
@@ -659,26 +657,26 @@ func TestExportArtifacts(t *testing.T) {
 					InvocationVariantUnion:     "{}",
 					InvocationVariantUnionHash: "",
 				},
-			})
-			So(artifactExportCounter.Get(ctx, "testproject", "success"), ShouldEqual, 3)
-			So(artifactInvocationCounter.Get(ctx, "testproject", "success"), ShouldEqual, 1)
+			}))
+			assert.Loosely(t, artifactExportCounter.Get(ctx, "testproject", "success"), should.Equal(3))
+			assert.Loosely(t, artifactInvocationCounter.Get(ctx, "testproject", "success"), should.Equal(1))
 
 			// Check that new checkpoints are created.
 			uqs, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), "testproject", "inv-1", CheckpointProcessID)
-			So(err, ShouldBeNil)
-			So(uqs, ShouldResemble, map[string]bool{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, uqs, should.Resemble(map[string]bool{
 				"//a0":          true,
 				"testid/0/a1":   true,
 				"testid/0/a3":   true,
 				"testid/0/a4/0": true,
 				"testid/0/a4":   true,
-			})
+			}))
 		})
 	})
 }
 
 func TestExportArtifactsToBigQuery(t *testing.T) {
-	Convey("Export Artifacts To BigQuery", t, func() {
+	ftt.Run("Export Artifacts To BigQuery", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx = memory.Use(ctx)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -717,33 +715,34 @@ func TestExportArtifactsToBigQuery(t *testing.T) {
 
 		close(rowC)
 
-		Convey("Grouping", func() {
+		t.Run("Grouping", func(t *ftt.Test) {
 			err := ae.exportToBigQuery(ctx, rowC)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(bqClient.Rows, ShouldResembleProto, [][]*bqpb.TextArtifactRow{
+			assert.Loosely(t, bqClient.Rows, should.Resemble([][]*bqpb.TextArtifactRow{
 				{
 					rows[0], rows[1],
 				},
 				{
 					rows[2],
 				},
-			})
-		})
-		So(artifactExportCounter.Get(ctx, "project", "success"), ShouldEqual, 3)
-		// Check that new checkpoints are created.
-		uqs, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), "project", "inv", CheckpointProcessID)
-		So(err, ShouldBeNil)
-		So(uqs, ShouldResemble, map[string]bool{
-			"test/result/artifact0":   true,
-			"test/result/artifact1/0": true,
-			"test/result/artifact2/0": true,
+			}))
+
+			assert.Loosely(t, artifactExportCounter.Get(ctx, "project", "success"), should.Equal(3))
+			// Check that new checkpoints are created.
+			uqs, err := checkpoints.ReadAllUniquifiers(span.Single(ctx), "project", "inv", CheckpointProcessID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, uqs, should.Resemble(map[string]bool{
+				"test/result/artifact0":   true,
+				"test/result/artifact1/0": true,
+				"test/result/artifact2/0": true,
+			}))
 		})
 	})
 }
 
 func TestThrottleArtifacts(t *testing.T) {
-	Convey("Throttle artifact", t, func() {
+	ftt.Run("Throttle artifact", t, func(t *ftt.Test) {
 		artReqs := []*Artifact{
 			{
 				TestID:     "test",
@@ -768,23 +767,23 @@ func TestThrottleArtifacts(t *testing.T) {
 		}
 		// 0%.
 		results, err := throttleArtifactsForBQ(artReqs, 0)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*Artifact{})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*Artifact{}))
 
 		// 1%.
 		results, err = throttleArtifactsForBQ(artReqs, 1)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*Artifact{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*Artifact{
 			{
 				TestID:     "test",
 				ArtifactID: "artifact158", // Hash value 99
 			},
-		})
+		}))
 
 		// 33%.
 		results, err = throttleArtifactsForBQ(artReqs, 33)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*Artifact{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*Artifact{
 			{
 				TestID:     "test",
 				ArtifactID: "artifact158", // Hash value 99
@@ -793,12 +792,12 @@ func TestThrottleArtifacts(t *testing.T) {
 				TestID:     "test",
 				ArtifactID: "artifact341", // Hash value 91
 			},
-		})
+		}))
 
 		// 90%.
 		results, err = throttleArtifactsForBQ(artReqs, 90)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*Artifact{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*Artifact{
 			{
 				TestID:     "test",
 				ArtifactID: "artifact158", // Hash value 0
@@ -815,12 +814,12 @@ func TestThrottleArtifacts(t *testing.T) {
 				TestID:     "test",
 				ArtifactID: "artifact341", // Hash value 91
 			},
-		})
+		}))
 
 		// 100%.
 		results, err = throttleArtifactsForBQ(artReqs, 100)
-		So(err, ShouldBeNil)
-		So(results, ShouldResemble, []*Artifact{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, results, should.Resemble([]*Artifact{
 			{
 				TestID:     "test",
 				ArtifactID: "artifact38", // Hash value 0
@@ -841,7 +840,7 @@ func TestThrottleArtifacts(t *testing.T) {
 				TestID:     "test",
 				ArtifactID: "artifact341", // Hash value 91
 			},
-		})
+		}))
 	})
 }
 

@@ -17,6 +17,7 @@ package checkpoints
 import (
 	"context"
 	"sort"
+	"testing"
 
 	"cloud.google.com/go/spanner"
 
@@ -66,8 +67,10 @@ func ReadAllForTesting(ctx context.Context) ([]Checkpoint, error) {
 }
 
 // SetForTesting replaces the set of stored checkpoints to match the given set.
-func SetForTesting(ctx context.Context, cs ...Checkpoint) error {
-	testutil.MustApply(ctx,
+func SetForTesting(ctx context.Context, t testing.TB, cs ...Checkpoint) error {
+	t.Helper()
+
+	testutil.MustApply(ctx, t,
 		spanner.Delete("Checkpoints", spanner.AllKeys()))
 	// Insert some Checkpoint records.
 	_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {

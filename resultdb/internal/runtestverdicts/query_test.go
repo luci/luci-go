@@ -24,30 +24,30 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQuery(t *testing.T) {
-	Convey(`Query`, t, func() {
+	ftt.Run(`Query`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		variant := &pb.Variant{
 			Def: map[string]string{"k1": "v1"},
 		}
 
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", map[string]any{}, "b"),
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{}),
-			insert.TestResults("a", "A", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResultMessages([]*pb.TestResult{
+			insert.TestResults(t, "a", "A", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			insert.TestResultMessages(t, []*pb.TestResult{
 				{
 					Name:        "invocations/a/tests/B/results/maximalfields",
 					Variant:     variant,
@@ -70,17 +70,17 @@ func TestQuery(t *testing.T) {
 					},
 				},
 			}),
-			insert.TestResultMessages([]*pb.TestResult{
+			insert.TestResultMessages(t, []*pb.TestResult{
 				{
 					Name:     "invocations/a/tests/B/results/minimalfields",
 					Expected: true,
 					Status:   pb.TestStatus_PASS,
 				},
 			}),
-			insert.TestResults("a", "C", nil, pb.TestStatus_SKIP, pb.TestStatus_CRASH),
+			insert.TestResults(t, "a", "C", nil, pb.TestStatus_SKIP, pb.TestStatus_CRASH),
 			// Should not be included in results for invocation 'a' because not
 			// immediately inside invocation.
-			insert.TestResults("b", "A", nil, pb.TestStatus_CRASH),
+			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
 		)...)
 
 		properties := &structpb.Struct{
@@ -200,33 +200,33 @@ func TestQuery(t *testing.T) {
 			ResponseLimitBytes: 1_000_000,
 		}
 
-		Convey(`empty invocation`, func() {
-			testutil.MustApply(ctx, insert.FinalizedInvocationWithInclusions("empty", map[string]any{})...)
+		t.Run(`empty invocation`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.FinalizedInvocationWithInclusions("empty", map[string]any{})...)
 			q.InvocationID = invocations.ID("empty")
 
 			result, err := query(ctx, q)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, QueryResult{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(QueryResult{}))
 		})
-		Convey(`query all in one page`, func() {
+		t.Run(`query all in one page`, func(t *ftt.Test) {
 			result, err := query(ctx, q)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, QueryResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(QueryResult{
 				RunTestVerdicts: expectedTestVerdicts,
-			})
+			}))
 		})
-		Convey(`page size works`, func() {
+		t.Run(`page size works`, func(t *ftt.Test) {
 			q.PageSize = 1
 
 			var tvs []*pb.RunTestVerdict
 			err := fetchAll(ctx, q, func(page QueryResult) {
 				tvs = append(tvs, page.RunTestVerdicts...)
-				So(page.RunTestVerdicts, ShouldHaveLength, 1)
+				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
-			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
 		})
-		Convey(`response limit bytes works`, func() {
+		t.Run(`response limit bytes works`, func(t *ftt.Test) {
 			q.ResponseLimitBytes = 1
 
 			var tvs []*pb.RunTestVerdict
@@ -237,12 +237,12 @@ func TestQuery(t *testing.T) {
 				}
 
 				tvs = append(tvs, page.RunTestVerdicts...)
-				So(page.RunTestVerdicts, ShouldHaveLength, 1)
+				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
-			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
 		})
-		Convey(`result limit works`, func() {
+		t.Run(`result limit works`, func(t *ftt.Test) {
 			q.ResultLimit = 1
 
 			for _, tv := range expectedTestVerdicts {
@@ -250,12 +250,12 @@ func TestQuery(t *testing.T) {
 			}
 
 			result, err := query(ctx, q)
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, QueryResult{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(QueryResult{
 				RunTestVerdicts: expectedTestVerdicts,
-			})
+			}))
 		})
-		Convey(`low result and page limit works #1`, func() {
+		t.Run(`low result and page limit works #1`, func(t *ftt.Test) {
 			q.ResultLimit = 1
 			q.PageSize = 1
 
@@ -271,12 +271,12 @@ func TestQuery(t *testing.T) {
 				}
 
 				tvs = append(tvs, page.RunTestVerdicts...)
-				So(page.RunTestVerdicts, ShouldHaveLength, 1)
+				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
-			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
 		})
-		Convey(`low result and page limit works #2`, func() {
+		t.Run(`low result and page limit works #2`, func(t *ftt.Test) {
 			q.ResultLimit = 2
 			q.PageSize = 1
 
@@ -288,10 +288,10 @@ func TestQuery(t *testing.T) {
 				}
 
 				tvs = append(tvs, page.RunTestVerdicts...)
-				So(page.RunTestVerdicts, ShouldHaveLength, 1)
+				assert.Loosely(t, page.RunTestVerdicts, should.HaveLength(1))
 			})
-			So(err, ShouldBeNil)
-			So(tvs, ShouldResembleProto, expectedTestVerdicts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tvs, should.Resemble(expectedTestVerdicts))
 		})
 	})
 }

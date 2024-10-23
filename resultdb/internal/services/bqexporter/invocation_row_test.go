@@ -21,22 +21,23 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerateInvocationBQRow(t *testing.T) {
 	t.Parallel()
 
-	Convey("prepareInvocationRow", t, func() {
+	ftt.Run("prepareInvocationRow", t, func(t *ftt.Test) {
 		properties, err := structpb.NewStruct(map[string]interface{}{
 			"num_prop":    123,
 			"string_prop": "ABC",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		extendedProperties := map[string]*structpb.Struct{
 			"a_key": properties,
 		}
@@ -53,15 +54,15 @@ func TestGenerateInvocationBQRow(t *testing.T) {
 			ExtendedProperties:  extendedProperties,
 		}
 		row, err := prepareInvocationRow(inv)
-		So(err, ShouldBeNil)
-		So(row.Project, ShouldEqual, "testproject")
-		So(row.Realm, ShouldEqual, "testrealm")
-		So(row.Id, ShouldEqual, "exported")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, row.Project, should.Equal("testproject"))
+		assert.Loosely(t, row.Realm, should.Equal("testrealm"))
+		assert.Loosely(t, row.Id, should.Equal("exported"))
 		// Different implementations may use different spacing between
 		// json elements. Ignore this.
 		rowProp := strings.ReplaceAll(row.Properties, " ", "")
-		So(rowProp, ShouldResemble, `{"num_prop":123,"string_prop":"ABC"}`)
+		assert.Loosely(t, rowProp, should.Match(`{"num_prop":123,"string_prop":"ABC"}`))
 		rowExtProp := strings.ReplaceAll(row.ExtendedProperties, " ", "")
-		So(rowExtProp, ShouldResemble, `{"a_key":{"num_prop":123,"string_prop":"ABC"}}`)
+		assert.Loosely(t, rowExtProp, should.Match(`{"a_key":{"num_prop":123,"string_prop":"ABC"}}`))
 	})
 }

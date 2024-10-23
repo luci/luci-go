@@ -30,13 +30,14 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/spantest"
 	"go.chromium.org/luci/common/spantest/emulator"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/redisconn"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/spanutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -241,9 +242,10 @@ func cleanupRedis(ctx context.Context) error {
 // MustApply applies the mutations to the spanner client in the context.
 // Asserts that application succeeds.
 // Returns the commit timestamp.
-func MustApply(ctx context.Context, ms ...*spanner.Mutation) time.Time {
+func MustApply(ctx context.Context, t testing.TB, ms ...*spanner.Mutation) time.Time {
+	t.Helper()
 	ct, err := span.Apply(ctx, ms)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	return ct
 }
 
@@ -262,14 +264,16 @@ func CombineMutations(msSlice ...[]*spanner.Mutation) []*spanner.Mutation {
 
 // MustReadRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert success.
-func MustReadRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]any) {
+func MustReadRow(ctx context.Context, t testing.TB, table string, key spanner.Key, ptrMap map[string]any) {
+	t.Helper()
 	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 }
 
 // MustNotFindRow is a shortcut to do a single row read in a single transaction
 // using the current client, and assert the row was not found.
-func MustNotFindRow(ctx context.Context, table string, key spanner.Key, ptrMap map[string]any) {
+func MustNotFindRow(ctx context.Context, t testing.TB, table string, key spanner.Key, ptrMap map[string]any) {
+	t.Helper()
 	err := spanutil.ReadRow(span.Single(span.WithoutTxn(ctx)), table, key, ptrMap)
-	So(spanner.ErrCode(err), ShouldEqual, codes.NotFound)
+	assert.Loosely(t, spanner.ErrCode(err), should.Equal(codes.NotFound), truth.LineContext())
 }

@@ -28,42 +28,45 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateBatchCreateTestExonerationsRequest`, t, func() {
-		Convey(`Empty`, func() {
+	ftt.Run(`TestValidateBatchCreateTestExonerationsRequest`, t, func(t *ftt.Test) {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{})
-			So(err, ShouldErrLike, `invocation: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`invocation: unspecified`))
 		})
 
-		Convey(`Invalid invocation`, func() {
+		t.Run(`Invalid invocation`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "x",
 			})
-			So(err, ShouldErrLike, `invocation: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`invocation: does not match`))
 		})
 
-		Convey(`Invalid request id`, func() {
+		t.Run(`Invalid request id`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				RequestId:  "😃",
 			})
-			So(err, ShouldErrLike, `request_id: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`request_id: does not match`))
 		})
 
-		Convey(`Too many requests`, func() {
+		t.Run(`Too many requests`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/a",
 				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
 			})
-			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
+			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
 		})
 
-		Convey(`Invalid sub-request`, func() {
+		t.Run(`Invalid sub-request`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
@@ -76,10 +79,10 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `requests[0]: test_exoneration: test_id: non-printable rune`)
+			assert.Loosely(t, err, should.ErrLike(`requests[0]: test_exoneration: test_id: non-printable rune`))
 		})
 
-		Convey(`Inconsistent invocation`, func() {
+		t.Run(`Inconsistent invocation`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
@@ -93,10 +96,10 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `requests[0]: invocation: inconsistent with top-level invocation`)
+			assert.Loosely(t, err, should.ErrLike(`requests[0]: invocation: inconsistent with top-level invocation`))
 		})
 
-		Convey(`Inconsistent request_id`, func() {
+		t.Run(`Inconsistent request_id`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				RequestId:  "req1",
@@ -111,10 +114,10 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `requests[0]: request_id: inconsistent with top-level request_id`)
+			assert.Loosely(t, err, should.ErrLike(`requests[0]: request_id: inconsistent with top-level request_id`))
 		})
 
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			err := validateBatchCreateTestExonerationsRequest(&pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
@@ -136,41 +139,42 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 				},
 				RequestId: "a",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestBatchCreateTestExonerations(t *testing.T) {
-	Convey(`TestBatchCreateTestExonerations`, t, func() {
+	ftt.Run(`TestBatchCreateTestExonerations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		Convey(`Invalid request`, func() {
+		t.Run(`Invalid request`, func(t *ftt.Test) {
 			req := &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "x",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `bad request: invocation: does not match`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: invocation: does not match`))
 		})
 
-		Convey(`No invocation`, func() {
+		t.Run(`No invocation`, func(t *ftt.Test) {
 			req := &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 			}
 			_, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/inv not found`))
 		})
 
-		// Insert the invocation.
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-
 		e2eTest := func(withRequestID bool) {
+
+			// Insert the invocation.
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+
 			req := &pb.BatchCreateTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				Requests: []*pb.CreateTestExonerationRequest{
@@ -198,9 +202,9 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 			}
 
 			res, err := recorder.BatchCreateTestExonerations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(res.TestExonerations, ShouldHaveLength, len(req.Requests))
+			assert.Loosely(t, res.TestExonerations, should.HaveLength(len(req.Requests)))
 			for i := range req.Requests {
 				actual := res.TestExonerations[i]
 
@@ -211,28 +215,28 @@ func TestBatchCreateTestExonerations(t *testing.T) {
 					VariantHash:   pbutil.VariantHash(expected.Variant),
 				})
 
-				So(actual, ShouldResembleProto, expected)
+				assert.Loosely(t, actual, should.Resemble(expected))
 
 				// Now check the database.
 				row, err := exonerations.Read(span.Single(ctx), actual.Name)
-				So(err, ShouldBeNil)
-				So(row.Variant, ShouldResembleProto, expected.Variant)
-				So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
-				So(row.Reason, ShouldEqual, expected.Reason)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, row.Variant, should.Resemble(expected.Variant))
+				assert.Loosely(t, row.ExplanationHtml, should.Equal(expected.ExplanationHtml))
+				assert.Loosely(t, row.Reason, should.Equal(expected.Reason))
 			}
 
 			if withRequestID {
 				// Test idempotency.
 				res2, err := recorder.BatchCreateTestExonerations(ctx, req)
-				So(err, ShouldBeNil)
-				So(res2, ShouldResembleProto, res)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res2, should.Resemble(res))
 			}
 		}
 
-		Convey(`Without request id, e2e`, func() {
+		t.Run(`Without request id, e2e`, func(t *ftt.Test) {
 			e2eTest(false)
 		})
-		Convey(`With request id, e2e`, func() {
+		t.Run(`With request id, e2e`, func(t *ftt.Test) {
 			e2eTest(true)
 		})
 	})

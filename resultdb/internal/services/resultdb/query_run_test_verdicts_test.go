@@ -29,12 +29,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryRunTestVerdicts(t *testing.T) {
-	Convey(`QueryRunTestVerdicts`, t, func() {
+	ftt.Run(`QueryRunTestVerdicts`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -43,13 +46,13 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 		})
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
 			insert.FinalizedInvocationWithInclusions("b", map[string]any{"Realm": "testproject:testrealm"}),
-			insert.TestResults("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults("a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
-			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
-			insert.TestResults("b", "A", nil, pb.TestStatus_CRASH),
+			insert.TestResults(t, "a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "B", nil, pb.TestStatus_PASS, pb.TestStatus_CRASH),
+			insert.TestResults(t, "a", "C", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", "A", nil, pb.TestStatus_CRASH),
 		)...)
 
 		srv := newTestResultDBService()
@@ -137,100 +140,100 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 			},
 		}
 
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx, insert.Invocation("y", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:secret"}))
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("y", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:secret"}))
 
 			_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/y",
 			})
 
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.list in realm of invocation y")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testResults.list in realm of invocation y"))
 		})
-		Convey(`Invalid argument`, func() {
-			Convey(`Empty request`, func() {
+		t.Run(`Invalid argument`, func(t *ftt.Test) {
+			t.Run(`Empty request`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{})
 
-				So(err, ShouldBeRPCInvalidArgument, `unspecified`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`unspecified`))
 			})
-			Convey(`Invalid invocation name`, func() {
+			t.Run(`Invalid invocation name`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "x",
 				})
 
-				So(err, ShouldBeRPCInvalidArgument, `does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`))
 			})
-			Convey(`Invalid result limit`, func() {
+			t.Run(`Invalid result limit`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation:  "invocations/a",
 					ResultLimit: -1,
 				})
 
-				So(err, ShouldBeRPCInvalidArgument, `result_limit: negative`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`result_limit: negative`))
 			})
-			Convey(`Invalid page size`, func() {
+			t.Run(`Invalid page size`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "invocations/a",
 					PageSize:   -1,
 				})
 
-				So(err, ShouldBeRPCInvalidArgument, `page_size: negative`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_size: negative`))
 			})
-			Convey(`Invalid page token`, func() {
+			t.Run(`Invalid page token`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "invocations/a",
 					PageToken:  "aaaa",
 				})
 
-				So(err, ShouldBeRPCInvalidArgument, `page_token`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_token`))
 			})
 		})
-		Convey(`Invocation not found`, func() {
+		t.Run(`Invocation not found`, func(t *ftt.Test) {
 			_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/notexists",
 			})
-			So(err, ShouldBeRPCNotFound)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 		})
-		Convey(`Valid, no pagination`, func() {
+		t.Run(`Valid, no pagination`, func(t *ftt.Test) {
 			result, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 			})
-			So(err, ShouldBeNil)
-			So(result, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Resemble(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts,
-			})
+			}))
 		})
-		Convey(`Valid, pagination`, func() {
+		t.Run(`Valid, pagination`, func(t *ftt.Test) {
 			response, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 			})
-			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[:1],
 				NextPageToken:   "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
-			})
+			}))
 
 			response, err = srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 				PageToken:  "CgFBChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
-			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[1:2],
 				NextPageToken:   "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
-			})
+			}))
 
 			response, err = srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/a",
 				PageSize:   1,
 				PageToken:  "CgFCChBlM2IwYzQ0Mjk4ZmMxYzE0",
 			})
-			So(err, ShouldBeNil)
-			So(response, ShouldResembleProto, &pb.QueryRunTestVerdictsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, response, should.Resemble(&pb.QueryRunTestVerdictsResponse{
 				RunTestVerdicts: expectedTestVerdicts[2:],
 				NextPageToken:   "",
-			})
+			}))
 		})
 	})
 }

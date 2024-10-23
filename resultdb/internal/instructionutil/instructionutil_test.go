@@ -17,15 +17,15 @@ package instructionutil
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRemoveInstructionsContent(t *testing.T) {
-	Convey("Remove instructions content", t, func() {
-		Convey("Success", func() {
+	ftt.Run("Remove instructions content", t, func(t *ftt.Test) {
+		t.Run("Success", func(t *ftt.Test) {
 			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
@@ -57,7 +57,7 @@ func TestRemoveInstructionsContent(t *testing.T) {
 				},
 			}
 			result := RemoveInstructionsContent(instructions)
-			So(result, ShouldResembleProto, &pb.Instructions{
+			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",
@@ -84,14 +84,14 @@ func TestRemoveInstructionsContent(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestFilterInstructionType(t *testing.T) {
-	Convey("Filter instruction types", t, func() {
-		Convey("Success", func() {
+	ftt.Run("Filter instruction types", t, func(t *ftt.Test) {
+		t.Run("Success", func(t *ftt.Test) {
 			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
@@ -136,7 +136,7 @@ func TestFilterInstructionType(t *testing.T) {
 				},
 			}
 			result := FilterInstructionType(instructions, pb.InstructionType_TEST_RESULT_INSTRUCTION)
-			So(result, ShouldResembleProto, &pb.Instructions{
+			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "test",
@@ -165,17 +165,17 @@ func TestFilterInstructionType(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestInstructionsName(t *testing.T) {
-	Convey("Instructions name", t, func() {
-		Convey("Instructions is nil", func() {
-			So(InstructionsWithNames(nil, "inv"), ShouldBeNil)
+	ftt.Run("Instructions name", t, func(t *ftt.Test) {
+		t.Run("Instructions is nil", func(t *ftt.Test) {
+			assert.Loosely(t, InstructionsWithNames(nil, "inv"), should.BeNil)
 		})
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
@@ -207,7 +207,7 @@ func TestInstructionsName(t *testing.T) {
 				},
 			}
 			result := InstructionsWithNames(instructions, "inv")
-			So(result, ShouldResembleProto, &pb.Instructions{
+			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",
@@ -238,17 +238,17 @@ func TestInstructionsName(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }
 
 func TestRemoveInstructionsName(t *testing.T) {
-	Convey("Instructions name", t, func() {
-		Convey("Instructions is nil", func() {
-			So(RemoveInstructionsName(nil), ShouldBeNil)
+	ftt.Run("Instructions name", t, func(t *ftt.Test) {
+		t.Run("Instructions is nil", func(t *ftt.Test) {
+			assert.Loosely(t, RemoveInstructionsName(nil), should.BeNil)
 		})
-		Convey("Success", func() {
+		t.Run("Success", func(t *ftt.Test) {
 			instructions := &pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
@@ -282,7 +282,7 @@ func TestRemoveInstructionsName(t *testing.T) {
 				},
 			}
 			result := RemoveInstructionsName(instructions)
-			So(result, ShouldResembleProto, &pb.Instructions{
+			assert.Loosely(t, result, should.Resemble(&pb.Instructions{
 				Instructions: []*pb.Instruction{
 					{
 						Id:   "step",
@@ -311,7 +311,7 @@ func TestRemoveInstructionsName(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 	})
 }

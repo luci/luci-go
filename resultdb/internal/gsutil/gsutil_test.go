@@ -22,20 +22,21 @@ import (
 	"cloud.google.com/go/storage"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"time"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerateSignedURL(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Generate Signed URL`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`Generate Signed URL`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: "user:user@example.com",
 			})
@@ -45,11 +46,11 @@ func TestGenerateSignedURL(t *testing.T) {
 			opts := testutil.GetSignedURLOptions(ctx)
 
 			gsClient, err := storage.NewClient(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			url, err := GenerateSignedURL(ctx, gsClient, bucket, object, expiration, opts)
-			So(err, ShouldBeNil)
-			So(url, ShouldStartWith, "https://storage.googleapis.com/testBucket/object.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.HavePrefix("https://storage.googleapis.com/testBucket/object.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential="))
 		})
 	})
 }
@@ -57,29 +58,29 @@ func TestGenerateSignedURL(t *testing.T) {
 func TestSplit(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Split`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`Split`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			bucket := "testBucket"
 			object := "object.txt"
 			b, o := Split(fmt.Sprintf("gs://%s/%s", bucket, object))
-			So(b, ShouldEqual, bucket)
-			So(o, ShouldEqual, object)
+			assert.Loosely(t, b, should.Equal(bucket))
+			assert.Loosely(t, o, should.Equal(object))
 		})
 
-		Convey(`With no object`, func() {
+		t.Run(`With no object`, func(t *ftt.Test) {
 			bucket := "testBucket"
 			b, o := Split(fmt.Sprintf("gs://%s", bucket))
-			So(b, ShouldEqual, bucket)
-			So(o, ShouldBeEmpty)
+			assert.Loosely(t, b, should.Equal(bucket))
+			assert.Loosely(t, o, should.BeEmpty)
 		})
 
-		Convey(`With invalid prefix`, func() {
+		t.Run(`With invalid prefix`, func(t *ftt.Test) {
 			bucket := "testBucket"
 			object := "object.txt"
 			path := fmt.Sprintf("xyz://%s/%s", bucket, object)
 			b, o := Split(path)
-			So(b, ShouldBeEmpty)
-			So(o, ShouldEqual, path)
+			assert.Loosely(t, b, should.BeEmpty)
+			assert.Loosely(t, o, should.Equal(path))
 		})
 	})
 }

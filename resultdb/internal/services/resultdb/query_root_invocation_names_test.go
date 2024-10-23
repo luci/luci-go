@@ -27,34 +27,37 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateQueryRootInvocationNamesRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`validateQueryRootInvocationNamesRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`validateQueryRootInvocationNamesRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			req := &pb.QueryRootInvocationNamesRequest{Name: "invocations/valid_id_0"}
-			So(validateQueryRootInvocationNamesRequest(req), ShouldBeNil)
+			assert.Loosely(t, validateQueryRootInvocationNamesRequest(req), should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
-			Convey(`, missing`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
+			t.Run(`, missing`, func(t *ftt.Test) {
 				req := &pb.QueryRootInvocationNamesRequest{}
-				So(validateQueryRootInvocationNamesRequest(req), ShouldErrLike, "name missing")
+				assert.Loosely(t, validateQueryRootInvocationNamesRequest(req), should.ErrLike("name missing"))
 			})
 
-			Convey(`, invalid format`, func() {
+			t.Run(`, invalid format`, func(t *ftt.Test) {
 				req := &pb.QueryRootInvocationNamesRequest{Name: "bad_name"}
-				So(validateQueryRootInvocationNamesRequest(req), ShouldErrLike, "does not match")
+				assert.Loosely(t, validateQueryRootInvocationNamesRequest(req), should.ErrLike("does not match"))
 			})
 		})
 	})
 }
 
 func TestQueryRootInvocationNames(t *testing.T) {
-	Convey(`QueryRootInvocationNames`, t, func() {
+	ftt.Run(`QueryRootInvocationNames`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -64,8 +67,8 @@ func TestQueryRootInvocationNames(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		Convey(`Valid`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Valid`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil, "c"),
 				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil, "d"),
@@ -73,21 +76,21 @@ func TestQueryRootInvocationNames(t *testing.T) {
 			)...)
 
 			inv, err := srv.QueryRootInvocationNames(ctx, &pb.QueryRootInvocationNamesRequest{Name: "invocations/d"})
-			So(err, ShouldBeNil)
-			So(inv, ShouldResembleProto, &pb.QueryRootInvocationNamesResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(&pb.QueryRootInvocationNamesResponse{
 				RootInvocationNames: []string{"invocations/a"},
-			})
+			}))
 		})
 
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("secret", pb.Invocation_ACTIVE, map[string]any{
 					"Realm": "secretproject:testrealm",
 				}),
 			)
 			req := &pb.QueryRootInvocationNamesRequest{Name: "invocations/secret"}
 			_, err := srv.QueryRootInvocationNames(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.invocations.get")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.invocations.get"))
 		})
 	})
 }

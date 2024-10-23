@@ -34,12 +34,14 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestReachable(t *testing.T) {
-	Convey(`Reachable`, t, func() {
+	ftt.Run(`Reachable`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		read := func(roots ...invocations.ID) (ReachableInvocations, error) {
@@ -50,7 +52,7 @@ func TestReachable(t *testing.T) {
 
 		mustRead := func(roots ...invocations.ID) ReachableInvocations {
 			invs, err := read(roots...)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return invs
 		}
 
@@ -117,7 +119,7 @@ func TestReachable(t *testing.T) {
 			},
 		}
 
-		Convey(`a -> []`, func() {
+		t.Run(`a -> []`, func(t *ftt.Test) {
 			expected := ReachableInvocations{
 				Invocations: map[invocations.ID]ReachableInvocation{
 					"a": {
@@ -128,15 +130,15 @@ func TestReachable(t *testing.T) {
 				},
 				Sources: make(map[SourceHash]*pb.Sources),
 			}
-			Convey(`Root has no sources`, func() {
-				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withInstructions(instructions).Build())...)
+			t.Run(`Root has no sources`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, node("a", newExtraValueBuilder().withInstructions(instructions).Build())...)
 
-				So(mustRead("a"), ShouldResembleReachable, expected)
+				ShouldBeReachable(t, mustRead("a"), expected)
 			})
-			Convey(`Root has no instructions`, func() {
-				testutil.MustApply(ctx, node("a", nil)...)
+			t.Run(`Root has no instructions`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, node("a", nil)...)
 
-				So(mustRead("a"), ShouldResembleReachable, ReachableInvocations{
+				ShouldBeReachable(t, mustRead("a"), ReachableInvocations{
 					Invocations: map[invocations.ID]ReachableInvocation{
 						"a": {
 							Realm:                 insert.TestRealm,
@@ -147,13 +149,13 @@ func TestReachable(t *testing.T) {
 				})
 			})
 
-			Convey(`Root has inherit sources`, func() {
-				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withInheritSources().withInstructions(instructions).Build())...)
+			t.Run(`Root has inherit sources`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, node("a", newExtraValueBuilder().withInheritSources().withInstructions(instructions).Build())...)
 
-				So(mustRead("a"), ShouldResembleReachable, expected)
+				ShouldBeReachable(t, mustRead("a"), expected)
 			})
-			Convey(`Root has concrete sources`, func() {
-				testutil.MustApply(ctx, node("a", newExtraValueBuilder().withSources(1).withInstructions(instructions).Build())...)
+			t.Run(`Root has concrete sources`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, node("a", newExtraValueBuilder().withSources(1).withInstructions(instructions).Build())...)
 
 				expected.Invocations["a"] = ReachableInvocation{
 					Realm:                 insert.TestRealm,
@@ -163,17 +165,17 @@ func TestReachable(t *testing.T) {
 				}
 				expected.Sources[HashSources(sources(1))] = sources(1)
 
-				So(mustRead("a"), ShouldResembleReachable, expected)
+				ShouldBeReachable(t, mustRead("a"), expected)
 			})
 		})
 
-		Convey(`a -> [b, c]`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`a -> [b, c]`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				node("a", newExtraValueBuilder().withSources(1).Build(), "b", "c"),
 				node("b", newExtraValueBuilder().withInheritSources().Build()),
 				node("c", nil),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-				insert.TestResults("c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 				insert.TestExonerations("c", "Z", nil, pb.ExonerationReason_NOT_CRITICAL),
 			)...)
 
@@ -202,16 +204,16 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			So(mustRead("a"), ShouldResembleReachable, expected)
+			ShouldBeReachable(t, mustRead("a"), expected)
 		})
 
-		Convey(`a -> b -> c`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`a -> b -> c`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				node("a", newExtraValueBuilder().withSources(1).Build(), "b"),
 				node("b", newExtraValueBuilder().withInheritSources().Build(), "c"),
 				node("c", newExtraValueBuilder().withInheritSources().Build()),
 				insert.TestExonerations("a", "Z", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-				insert.TestResults("c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "c", "Z", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 				insert.TestExonerations("c", "Z", nil, pb.ExonerationReason_NOT_CRITICAL),
 			)...)
 			expected := ReachableInvocations{
@@ -240,10 +242,10 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			So(mustRead("a"), ShouldResembleReachable, expected)
+			ShouldBeReachable(t, mustRead("a"), expected)
 		})
 
-		Convey(`a -> [b1 -> b2, c, d] -> e`, func() {
+		t.Run(`a -> [b1 -> b2, c, d] -> e`, func(t *ftt.Test) {
 			// e is included through three paths:
 			// a -> b1 -> b2 -> e
 			// a -> c -> e
@@ -259,7 +261,7 @@ func TestReachable(t *testing.T) {
 			// 1. Shortest path to the root, then
 			// 2. Minimal invocation name.
 			// In this case, e should inherit sources from c.
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				node("a", newExtraValueBuilder().withSources(1).Build(), "b1", "c", "d"),
 				node("b1", newExtraValueBuilder().withInheritSources().Build(), "b2"),
 				node("b2", newExtraValueBuilder().withInheritSources().Build(), "e"),
@@ -308,12 +310,12 @@ func TestReachable(t *testing.T) {
 				},
 			}
 
-			So(mustRead("a"), ShouldResembleReachable, expected)
+			ShouldBeReachable(t, mustRead("a"), expected)
 		})
-		Convey(`a -> b -> a`, func() {
+		t.Run(`a -> b -> a`, func(t *ftt.Test) {
 			// Test a graph with cycles to make sure
 			// source resolution always terminates.
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				node("a", newExtraValueBuilder().withInheritSources().Build(), "b"),
 				node("b", newExtraValueBuilder().withInheritSources().Build(), "a"),
 			)...)
@@ -332,10 +334,10 @@ func TestReachable(t *testing.T) {
 				Sources: map[SourceHash]*pb.Sources{},
 			}
 
-			So(mustRead("a"), ShouldResembleReachable, expected)
+			ShouldBeReachable(t, mustRead("a"), expected)
 		})
 
-		Convey(`a -> [100 invocations]`, func() {
+		t.Run(`a -> [100 invocations]`, func(t *ftt.Test) {
 			nodes := [][]*spanner.Mutation{}
 			nodeSet := []invocations.ID{}
 			childInvs := []invocations.ID{}
@@ -343,12 +345,12 @@ func TestReachable(t *testing.T) {
 				name := invocations.ID("b" + strconv.FormatInt(int64(i), 10))
 				childInvs = append(childInvs, name)
 				nodes = append(nodes, node(name, nil))
-				nodes = append(nodes, insert.TestResults(string(name), "testID", nil, pb.TestStatus_SKIP))
+				nodes = append(nodes, insert.TestResults(t, string(name), "testID", nil, pb.TestStatus_SKIP))
 				nodes = append(nodes, insert.TestExonerations(name, "testID", nil, pb.ExonerationReason_NOT_CRITICAL))
 				nodeSet = append(nodeSet, name)
 			}
 			nodes = append(nodes, node("a", nil, nodeSet...))
-			testutil.MustApply(ctx, testutil.CombineMutations(
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				nodes...,
 			)...)
 
@@ -369,7 +371,7 @@ func TestReachable(t *testing.T) {
 					IncludedInvocationIDs: []invocations.ID{},
 				}
 			}
-			So(mustRead("a"), ShouldResembleReachable, expectedInvs)
+			ShouldBeReachable(t, mustRead("a"), expectedInvs)
 		})
 	})
 }
@@ -421,6 +423,7 @@ func BenchmarkChainFetch(b *testing.B) {
 
 type redisConn struct {
 	redis.Conn
+	t        testing.TB
 	reply    any
 	replyErr error
 	received [][]any
@@ -433,7 +436,7 @@ func (c *redisConn) Send(cmd string, args ...any) error {
 
 func (c *redisConn) Do(cmd string, args ...any) (reply any, err error) {
 	if cmd != "" {
-		So(c.Send(cmd, args...), ShouldBeNil)
+		assert.Loosely(c.t, c.Send(cmd, args...), should.BeNil)
 	}
 	return c.reply, c.replyErr
 }
@@ -445,7 +448,7 @@ func (c *redisConn) Close() error { return nil }
 func TestReachCache(t *testing.T) {
 	t.Parallel()
 
-	Convey(`TestReachCache`, t, func(c C) {
+	ftt.Run(`TestReachCache`, t, func(c *ftt.Test) {
 		ctx := testutil.TestingContext()
 
 		// Stub Redis.
@@ -506,64 +509,46 @@ func TestReachCache(t *testing.T) {
 			IncludedInvocationIDs: []invocations.ID{},
 		}
 
-		Convey(`Read`, func() {
+		c.Run(`Read`, func(c *ftt.Test) {
 			var err error
 			conn.reply, err = invs.marshal()
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 			actual, err := cache.Read(ctx)
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, invs)
-			So(conn.received, ShouldResemble, [][]any{
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actual, should.Resemble(invs))
+			assert.Loosely(c, conn.received, should.Resemble([][]any{
 				{"GET", "reach4:inv"},
-			})
+			}))
 		})
 
-		Convey(`Read, cache miss`, func() {
+		c.Run(`Read, cache miss`, func(c *ftt.Test) {
 			conn.replyErr = redis.ErrNil
 			_, err := cache.Read(ctx)
-			So(err, ShouldEqual, ErrUnknownReach)
+			assert.Loosely(c, err, should.Equal(ErrUnknownReach))
 		})
 
-		Convey(`Write`, func() {
+		c.Run(`Write`, func(c *ftt.Test) {
 			err := cache.Write(ctx, invs)
-			So(err, ShouldBeNil)
+			assert.Loosely(c, err, should.BeNil)
 
-			So(conn.received, ShouldResemble, [][]any{
+			assert.Loosely(c, conn.received, should.Resemble([][]any{
 				{"SET", "reach4:inv", conn.received[0][2]},
 				{"EXPIRE", "reach4:inv", 2592000},
-			})
+			}))
 			actual, err := unmarshalReachableInvocations(conn.received[0][2].([]byte))
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, invs)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, actual, should.Resemble(invs))
 		})
 	})
 }
 
-func ShouldResembleReachable(actual any, expected ...any) string {
-	a, ok := actual.(ReachableInvocations)
-	if !ok {
-		return "expected actual to be of type ReachableInvocations"
+func ShouldBeReachable(t testing.TB, actual, expected ReachableInvocations) {
+	t.Helper()
+	assert.That(t, actual.Invocations, should.Match(expected.Invocations), truth.LineContext())
+	assert.Loosely(t, actual.Sources, should.HaveLength(len(expected.Sources)), truth.LineContext())
+	for key := range expected.Sources {
+		assert.That(t, actual.Sources[key], should.Match(expected.Sources[key]), truth.LineContext())
 	}
-	if len(expected) != 1 {
-		return "expected expected to be of length one"
-	}
-	e, ok := expected[0].(ReachableInvocations)
-	if !ok {
-		return "expected expected to be of type ReachableInvocations"
-	}
-
-	if msg := ShouldResembleProto(a.Invocations, e.Invocations); msg != "" {
-		return msg
-	}
-	if msg := ShouldEqual(len(a.Sources), len(e.Sources)); msg != "" {
-		return fmt.Sprintf("comparing sources: %s", msg)
-	}
-	for key := range e.Sources {
-		if msg := ShouldResembleProto(a.Sources[key], e.Sources[key]); msg != "" {
-			return fmt.Sprintf("comparing sources[%s]: %s", key, msg)
-		}
-	}
-	return ""
 }
 
 type ExtraValueBuilder struct {

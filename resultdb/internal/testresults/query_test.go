@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -30,6 +29,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -39,10 +42,10 @@ import (
 )
 
 func TestQueryTestResults(t *testing.T) {
-	Convey(`QueryTestResults`, t, func() {
+	ftt.Run(`QueryTestResults`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{
+		testutil.MustApply(ctx, t, insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{
 			"CommonTestIDPrefix":     "",
 			"TestResultVariantUnion": []string{"a:b", "k:1", "k:2", "k2:1"},
 		}))
@@ -62,13 +65,13 @@ func TestQueryTestResults(t *testing.T) {
 
 		mustFetch := func(q *Query) (trs []*pb.TestResult, token string) {
 			trs, token, err := fetch(q)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return
 		}
 
 		mustFetchNames := func(q *Query) []string {
 			trs, _, err := fetch(q)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			names := make([]string, len(trs))
 			for i, a := range trs {
 				names[i] = a.Name
@@ -77,7 +80,7 @@ func TestQueryTestResults(t *testing.T) {
 			return names
 		}
 
-		Convey(`Does not fetch test results of other invocations`, func() {
+		t.Run(`Does not fetch test results of other invocations`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
@@ -85,105 +88,105 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, nil),
 				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResultMessages(expected),
-				insert.TestResults("inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "X", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResultMessages(t, expected),
+				insert.TestResults(t, "inv2", "Y", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
 			)...)
 
 			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey(`Expectancy filter`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
+		t.Run(`Expectancy filter`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"CommonTestIDPrefix":     "",
 				"TestResultVariantUnion": pbutil.Variant("a", "b"),
 			}))
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 
-			Convey(`VARIANTS_WITH_UNEXPECTED_RESULTS`, func() {
+			t.Run(`VARIANTS_WITH_UNEXPECTED_RESULTS`, func(t *ftt.Test) {
 				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 
-				testutil.MustApply(ctx, testutil.CombineMutations(
-					insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-					insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
-					insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
-					insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
-					insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
-					insert.TestResults("inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
+				testutil.MustApply(ctx, t, testutil.CombineMutations(
+					insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_PASS),
+					insert.TestResults(t, "inv1", "T1", nil, pb.TestStatus_PASS),
+					insert.TestResults(t, "inv1", "T2", nil, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS),
+					insert.TestResults(t, "inv1", "T4", pbutil.Variant("a", "b"), pb.TestStatus_FAIL),
 					insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 				)...)
 
-				Convey(`Works`, func() {
-					So(mustFetchNames(q), ShouldResemble, []string{
+				t.Run(`Works`, func(t *ftt.Test) {
+					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 						"invocations/inv0/tests/T1/results/0",
 						"invocations/inv0/tests/T1/results/1",
 						"invocations/inv0/tests/T2/results/0",
 						"invocations/inv1/tests/T1/results/0",
 						"invocations/inv1/tests/T2/results/0",
 						"invocations/inv1/tests/T4/results/0",
-					})
+					}))
 				})
 
-				Convey(`TestID filter`, func() {
+				t.Run(`TestID filter`, func(t *ftt.Test) {
 					q.Predicate.TestIdRegexp = ".*T4"
-					So(mustFetchNames(q), ShouldResemble, []string{
+					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 						"invocations/inv1/tests/T4/results/0",
-					})
+					}))
 				})
 
-				Convey(`Variant filter`, func() {
+				t.Run(`Variant filter`, func(t *ftt.Test) {
 					q.Predicate.Variant = &pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Equals{
 							Equals: pbutil.Variant("a", "b"),
 						},
 					}
-					So(mustFetchNames(q), ShouldResemble, []string{
+					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 						"invocations/inv1/tests/T4/results/0",
-					})
+					}))
 				})
 
-				Convey(`ExcludeExonerated`, func() {
+				t.Run(`ExcludeExonerated`, func(t *ftt.Test) {
 					q.Predicate.ExcludeExonerated = true
-					So(mustFetchNames(q), ShouldResemble, []string{
+					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 						"invocations/inv0/tests/T2/results/0",
 						"invocations/inv1/tests/T2/results/0",
 						"invocations/inv1/tests/T4/results/0",
-					})
+					}))
 				})
 			})
 
-			Convey(`VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS`, func() {
+			t.Run(`VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS`, func(t *ftt.Test) {
 				q.Predicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
 
-				testutil.MustApply(ctx, testutil.CombineMutations(
-					insert.TestResults("inv0", "flaky", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-					insert.TestResults("inv0", "passing", nil, pb.TestStatus_PASS),
-					insert.TestResults("inv0", "F0", pbutil.Variant("a", "0"), pb.TestStatus_FAIL),
-					insert.TestResults("inv0", "in_both_invocations", nil, pb.TestStatus_FAIL),
+				testutil.MustApply(ctx, t, testutil.CombineMutations(
+					insert.TestResults(t, "inv0", "flaky", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv0", "passing", nil, pb.TestStatus_PASS),
+					insert.TestResults(t, "inv0", "F0", pbutil.Variant("a", "0"), pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv0", "in_both_invocations", nil, pb.TestStatus_FAIL),
 					// Same test, but different variant.
-					insert.TestResults("inv1", "F0", pbutil.Variant("a", "1"), pb.TestStatus_PASS),
-					insert.TestResults("inv1", "in_both_invocations", nil, pb.TestStatus_PASS),
-					insert.TestResults("inv1", "F1", nil, pb.TestStatus_FAIL, pb.TestStatus_FAIL),
+					insert.TestResults(t, "inv1", "F0", pbutil.Variant("a", "1"), pb.TestStatus_PASS),
+					insert.TestResults(t, "inv1", "in_both_invocations", nil, pb.TestStatus_PASS),
+					insert.TestResults(t, "inv1", "F1", nil, pb.TestStatus_FAIL, pb.TestStatus_FAIL),
 				)...)
 
-				Convey(`Works`, func() {
-					So(mustFetchNames(q), ShouldResemble, []string{
+				t.Run(`Works`, func(t *ftt.Test) {
+					assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 						"invocations/inv0/tests/F0/results/0",
 						"invocations/inv1/tests/F1/results/0",
 						"invocations/inv1/tests/F1/results/1",
-					})
+					}))
 				})
 			})
 		})
 
-		Convey(`Test id filter`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Test id filter`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"CommonTestIDPrefix": "1-",
 				}),
@@ -191,31 +194,31 @@ func TestQueryTestResults(t *testing.T) {
 					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 				}),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "1-2", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "1-1", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2-1", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2", nil, pb.TestStatus_FAIL),
-				insert.TestResults("inv2", "1-2", nil, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "1-1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "1-2", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "1-1", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2-1", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2", nil, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv2", "1-2", nil, pb.TestStatus_PASS),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
 			q.Predicate.TestIdRegexp = "1-.+"
 
-			So(mustFetchNames(q), ShouldResemble, []string{
+			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv0/tests/1-2/results/0",
 				"invocations/inv1/tests/1-1/results/0",
 				"invocations/inv2/tests/1-2/results/0",
-			})
+			}))
 		})
 
-		Convey(`Variant equals`, func() {
+		t.Run(`Variant equals`, func(t *ftt.Test) {
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"TestResultVariantUnion": []string{"k:1", "k:2"},
 				}),
@@ -223,12 +226,12 @@ func TestQueryTestResults(t *testing.T) {
 					"CreateTime": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 				}),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv2", "1-1", v1, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv2", "1-1", v1, pb.TestStatus_PASS),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1", "inv2")
@@ -236,60 +239,60 @@ func TestQueryTestResults(t *testing.T) {
 				Predicate: &pb.VariantPredicate_Equals{Equals: v1},
 			}
 
-			So(mustFetchNames(q), ShouldResemble, []string{
+			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 				"invocations/inv0/tests/1-1/results/0",
 				"invocations/inv0/tests/1-1/results/1",
 				"invocations/inv1/tests/1-1/results/0",
 				"invocations/inv2/tests/1-1/results/0",
-			})
+			}))
 		})
 
-		Convey(`Variant contains`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
+		t.Run(`Variant contains`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"TestResultVariantUnion": []string{"k:1", "k:2", "k2:1"},
 			}))
 
 			v1 := pbutil.Variant("k", "1")
 			v11 := pbutil.Variant("k", "1", "k2", "1")
 			v2 := pbutil.Variant("k", "2")
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "1-2", v11, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "1-2", v11, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 
-			Convey(`Empty`, func() {
+			t.Run(`Empty`, func(t *ftt.Test) {
 				q.Predicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
 				}
 
-				So(mustFetchNames(q), ShouldResemble, []string{
+				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
 					"invocations/inv1/tests/1-1/results/0",
 					"invocations/inv1/tests/2-1/results/0",
-				})
+				}))
 			})
 
-			Convey(`Non-empty`, func() {
+			t.Run(`Non-empty`, func(t *ftt.Test) {
 				q.Predicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: v1},
 				}
 
-				So(mustFetchNames(q), ShouldResemble, []string{
+				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 					"invocations/inv0/tests/1-1/results/0",
 					"invocations/inv0/tests/1-1/results/1",
 					"invocations/inv0/tests/1-2/results/0",
 					"invocations/inv1/tests/1-1/results/0",
-				})
+				}))
 			})
 		})
 
-		Convey(`Paging`, func() {
+		t.Run(`Paging`, func(t *ftt.Test) {
 			trs := insert.MakeTestResults("inv1", "DoBaz", nil,
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
@@ -297,52 +300,52 @@ func TestQueryTestResults(t *testing.T) {
 				pb.TestStatus_PASS,
 				pb.TestStatus_FAIL,
 			)
-			testutil.MustApply(ctx, insert.TestResultMessages(trs)...)
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, trs)...)
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestResult) string {
 				q2 := q
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
 				actual, token := mustFetch(q2)
-				So(actual, ShouldResembleProto, expected)
+				assert.Loosely(t, actual, should.Resemble(expected))
 				return token
 			}
 
-			Convey(`All results`, func() {
+			t.Run(`All results`, func(t *ftt.Test) {
 				token := mustReadPage("", 10, trs)
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`With pagination`, func() {
+			t.Run(`With pagination`, func(t *ftt.Test) {
 				token := mustReadPage("", 1, trs[:1])
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 4, trs[1:])
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 5, nil)
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`Bad token`, func() {
+			t.Run(`Bad token`, func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
 
-				Convey(`From bad position`, func() {
+				t.Run(`From bad position`, func(t *ftt.Test) {
 					q.PageToken = "CgVoZWxsbw=="
 					_, _, err := q.Fetch(ctx)
-					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 				})
 
-				Convey(`From decoding`, func() {
+				t.Run(`From decoding`, func(t *ftt.Test) {
 					q.PageToken = "%%%"
 					_, _, err := q.Fetch(ctx)
-					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 				})
 			})
 		})
 
-		Convey(`Test metadata`, func() {
+		t.Run(`Test metadata`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "DoBaz", nil, pb.TestStatus_PASS)
 			expected[0].TestMetadata = &pb.TestMetadata{
 				Name: "original_name",
@@ -359,14 +362,14 @@ func TestQueryTestResults(t *testing.T) {
 					},
 				},
 			}
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey(`Failure reason`, func() {
+		t.Run(`Failure reason`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "DoFailureReason", nil, pb.TestStatus_PASS)
 			expected[0].FailureReason = &pb.FailureReason{
 				PrimaryErrorMessage: "want true, got false",
@@ -376,76 +379,76 @@ func TestQueryTestResults(t *testing.T) {
 				},
 				TruncatedErrorsCount: 0,
 			}
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey(`Properties`, func() {
+		t.Run(`Properties`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "WithProperties", nil, pb.TestStatus_PASS)
 			expected[0].Properties = &structpb.Struct{Fields: map[string]*structpb.Value{
 				"key": structpb.NewStringValue("value"),
 			}}
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey(`Skip reason`, func() {
+		t.Run(`Skip reason`, func(t *ftt.Test) {
 			expected := insert.MakeTestResults("inv1", "WithSkipReason", nil, pb.TestStatus_SKIP)
 			expected[0].SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-			testutil.MustApply(ctx, insert.TestResultMessages(expected)...)
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, expected)...)
 
 			actual, _ := mustFetch(q)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey(`Variant in the mask`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+		t.Run(`Variant in the mask`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
 
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
 
-			Convey(`Present`, func() {
+			t.Run(`Present`, func(t *ftt.Test) {
 				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_id", "variant", "variant_hash")
 				results, _ := mustFetch(q)
 				for _, r := range results {
-					So(r.Variant, ShouldNotBeNil)
-					So(r.VariantHash, ShouldNotEqual, "")
+					assert.Loosely(t, r.Variant, should.NotBeNil)
+					assert.Loosely(t, r.VariantHash, should.NotEqual(""))
 				}
 			})
 
-			Convey(`Not present`, func() {
+			t.Run(`Not present`, func(t *ftt.Test) {
 				q.Mask = mask.MustFromReadMask(&pb.TestResult{}, "name", "test_id")
 				results, _ := mustFetch(q)
 				for _, r := range results {
-					So(r.Variant, ShouldBeNil)
-					So(r.VariantHash, ShouldEqual, "")
+					assert.Loosely(t, r.Variant, should.BeNil)
+					assert.Loosely(t, r.VariantHash, should.BeEmpty)
 				}
 			})
 		})
 
-		Convey(`Empty list of invocations`, func() {
+		t.Run(`Empty list of invocations`, func(t *ftt.Test) {
 			q.InvocationIDs = invocations.NewIDSet()
 			actual, _ := mustFetch(q)
-			So(actual, ShouldHaveLength, 0)
+			assert.Loosely(t, actual, should.HaveLength(0))
 		})
 
-		Convey(`Filter invocations`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Filter invocations`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, map[string]any{
 					"CommonTestIDPrefix": "ninja://browser_tests/",
 				}),
@@ -454,12 +457,12 @@ func TestQueryTestResults(t *testing.T) {
 
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv0", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv0", "1-2", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "2-1", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv2", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv0", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv0", "1-2", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "2-1", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv2", "ninja://browser_tests/1-1", v1, pb.TestStatus_PASS),
 			)...)
 
 			q.InvocationIDs = invocations.NewIDSet("inv0", "inv1")
@@ -467,13 +470,13 @@ func TestQueryTestResults(t *testing.T) {
 
 			results, _ := mustFetch(q)
 			for _, r := range results {
-				So(r.Name, ShouldNotStartWith, "invocations/inv2")
-				So(r.TestId, ShouldEqual, "ninja://browser_tests/1-1")
+				assert.Loosely(t, r.Name, should.NotHavePrefix("invocations/inv2"))
+				assert.Loosely(t, r.TestId, should.Equal("ninja://browser_tests/1-1"))
 			}
 		})
 
-		Convey(`Query statements`, func() {
-			Convey(`only unexpected exclude exonerated`, func() {
+		t.Run(`Query statements`, func(t *ftt.Test) {
+			t.Run(`only unexpected exclude exonerated`, func(t *ftt.Test) {
 				st := q.genStatement("testResults", map[string]any{
 					"params": map[string]any{
 						"invIDs":            q.InvocationIDs,
@@ -536,10 +539,10 @@ func TestQueryTestResults(t *testing.T) {
 						)
 					ORDER BY InvocationId, TestId, ResultId
 				`
-				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
+				assert.Loosely(t, strings.Join(strings.Fields(st.SQL), " "), should.Equal(strings.Join(strings.Fields(expected), " ")))
 			})
 
-			Convey(`with unexpected filter by testID`, func() {
+			t.Run(`with unexpected filter by testID`, func(t *ftt.Test) {
 				st := q.genStatement("testResults", map[string]any{
 					"params": map[string]any{
 						"invIDs":            q.InvocationIDs,
@@ -586,7 +589,7 @@ func TestQueryTestResults(t *testing.T) {
 					ORDER BY InvocationId, TestId, ResultId
 					`
 				// Compare sql strings ignoring whitespaces.
-				So(strings.Join(strings.Fields(st.SQL), " "), ShouldEqual, strings.Join(strings.Fields(expected), " "))
+				assert.Loosely(t, strings.Join(strings.Fields(st.SQL), " "), should.Equal(strings.Join(strings.Fields(expected), " ")))
 			})
 		})
 	})
@@ -595,7 +598,7 @@ func TestQueryTestResults(t *testing.T) {
 func TestToLimitedData(t *testing.T) {
 	ctx := context.Background()
 
-	Convey(`ToLimitedData`, t, func() {
+	ftt.Run(`ToLimitedData`, t, func(t *ftt.Test) {
 		invID := "inv0"
 		testID := "FooBar"
 		resultID := "123"
@@ -603,7 +606,7 @@ func TestToLimitedData(t *testing.T) {
 		variant := pbutil.Variant()
 		variantHash := pbutil.VariantHash(variant)
 
-		Convey(`masks fields`, func() {
+		t.Run(`masks fields`, func(t *ftt.Test) {
 			testResult := &pb.TestResult{
 				Name:        name,
 				TestId:      testID,
@@ -647,7 +650,7 @@ func TestToLimitedData(t *testing.T) {
 				},
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			expected := &pb.TestResult{
 				Name:        name,
@@ -669,14 +672,14 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:   true,
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
-			So(err, ShouldBeNil)
-			So(testResult, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testResult, should.Resemble(expected))
 		})
 
-		Convey(`truncates primary error message`, func() {
+		t.Run(`truncates primary error message`, func(t *ftt.Test) {
 			testResult := &pb.TestResult{
 				Name:        name,
 				TestId:      testID,
@@ -726,7 +729,7 @@ func TestToLimitedData(t *testing.T) {
 				},
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			limitedLongErrMsg := strings.Repeat("a very long error message",
 				10)[:limitedReasonLength] + "..."
@@ -752,13 +755,13 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:   true,
 				SkipReason: pb.SkipReason_SKIP_REASON_UNSPECIFIED,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
-			So(err, ShouldBeNil)
-			So(testResult, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testResult, should.Resemble(expected))
 		})
-		Convey(`mask preserves skip reason`, func() {
+		t.Run(`mask preserves skip reason`, func(t *ftt.Test) {
 			testResult := &pb.TestResult{
 				Name:        name,
 				TestId:      testID,
@@ -769,7 +772,7 @@ func TestToLimitedData(t *testing.T) {
 				VariantHash: variantHash,
 				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, testResult), should.BeNil)
 
 			expected := &pb.TestResult{
 				Name:        name,
@@ -781,11 +784,11 @@ func TestToLimitedData(t *testing.T) {
 				IsMasked:    true,
 				SkipReason:  pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS,
 			}
-			So(pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), ShouldBeNil)
+			assert.Loosely(t, pbutil.ValidateTestResult(testclock.TestRecentTimeUTC, expected), should.BeNil)
 
 			err := ToLimitedData(ctx, testResult)
-			So(err, ShouldBeNil)
-			So(testResult, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, testResult, should.Resemble(expected))
 		})
 	})
 }

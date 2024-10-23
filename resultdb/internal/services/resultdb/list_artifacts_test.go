@@ -30,48 +30,51 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateListArtifactsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateListArtifactsRequest`, t, func() {
-		Convey(`Valid, invocation level`, func() {
+	ftt.Run(`TestValidateListArtifactsRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid, invocation level`, func(t *ftt.Test) {
 			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
 				Parent:   "invocations/x",
 				PageSize: 50,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Valid, test result level`, func() {
+		t.Run(`Valid, test result level`, func(t *ftt.Test) {
 			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
 				Parent:   "invocations/x/tests/t%20t/results/r",
 				PageSize: 50,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invalid parent`, func() {
+		t.Run(`Invalid parent`, func(t *ftt.Test) {
 			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
 				Parent: "x",
 			})
-			So(err, ShouldErrLike, `parent: neither valid invocation name nor valid test result name`)
+			assert.Loosely(t, err, should.ErrLike(`parent: neither valid invocation name nor valid test result name`))
 		})
 
-		Convey(`Invalid page size`, func() {
+		t.Run(`Invalid page size`, func(t *ftt.Test) {
 			err := validateListArtifactsRequest(&pb.ListArtifactsRequest{
 				Parent:   "invocations/x",
 				PageSize: -1,
 			})
-			So(err, ShouldErrLike, `page_size: negative`)
+			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 		})
 	})
 }
 
 func TestListArtifacts(t *testing.T) {
-	Convey(`ListArtifacts`, t, func() {
+	ftt.Run(`ListArtifacts`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -79,7 +82,7 @@ func TestListArtifacts(t *testing.T) {
 			},
 		})
 
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 		)
@@ -96,7 +99,7 @@ func TestListArtifacts(t *testing.T) {
 			ctx := context.WithValue(ctx, gsutil.Key("signedURLOpts"), opts)
 
 			res, err := srv.ListArtifacts(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return res.Artifacts, res.NextPageToken
 		}
 
@@ -109,14 +112,14 @@ func TestListArtifacts(t *testing.T) {
 			return names
 		}
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req.Parent = "invocations/invx/tests/t%20t/results/r"
 			_, err := srv.ListArtifacts(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in realm of invocation invx")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.list in realm of invocation invx"))
 		})
 
-		Convey(`With both invocation and test result artifacts`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`With both invocation and test result artifacts`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				spanutil.InsertMap("Artifacts", map[string]any{
 					"InvocationId": invocations.ID("inv1"),
@@ -125,40 +128,40 @@ func TestListArtifacts(t *testing.T) {
 				}),
 			)
 
-			Convey(`Reads only invocation artifacts`, func() {
+			t.Run(`Reads only invocation artifacts`, func(t *ftt.Test) {
 				req.Parent = "invocations/inv1"
 				actual := mustFetchNames(req)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a",
-				})
+				}))
 			})
 
-			Convey(`Reads only test result artifacts`, func() {
+			t.Run(`Reads only test result artifacts`, func(t *ftt.Test) {
 				req.Parent = "invocations/inv1/tests/t%20t/results/r"
 				actual := mustFetchNames(req)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/tests/t%20t/results/r/artifacts/a",
-				})
+				}))
 			})
 		})
 
-		Convey(`Fetch URL`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Fetch URL`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 			)
 			actual, _ := mustFetch(req)
-			So(actual, ShouldHaveLength, 1)
-			So(strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), ShouldBeTrue)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, strings.HasPrefix(actual[0].FetchUrl, "https://signed-url.example.com/invocations/inv1/artifacts/a"), should.BeTrue)
 		})
 
-		Convey(`Fetch URL with Gcs URI`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Fetch URL with Gcs URI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", map[string]any{"GcsURI": "gs://bucket1/file1.txt"}),
 			)
 
 			actual, _ := mustFetch(req)
-			So(actual, ShouldHaveLength, 1)
-			So(actual[0].FetchUrl, ShouldStartWith, "https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential")
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].FetchUrl, should.HavePrefix("https://storage.googleapis.com/bucket1/file1.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential"))
 		})
 
 	})

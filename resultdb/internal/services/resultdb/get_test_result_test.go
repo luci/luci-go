@@ -32,34 +32,37 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateGetTestResultRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateGetTestResultRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`ValidateGetTestResultRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			req := &pb.GetTestResultRequest{Name: "invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"}
-			So(validateGetTestResultRequest(req), ShouldBeNil)
+			assert.Loosely(t, validateGetTestResultRequest(req), should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
-			Convey(`, missing`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
+			t.Run(`, missing`, func(t *ftt.Test) {
 				req := &pb.GetTestResultRequest{}
-				So(validateGetTestResultRequest(req), ShouldErrLike, "unspecified")
+				assert.Loosely(t, validateGetTestResultRequest(req), should.ErrLike("unspecified"))
 			})
 
-			Convey(`, invalid format`, func() {
+			t.Run(`, invalid format`, func(t *ftt.Test) {
 				req := &pb.GetTestResultRequest{Name: "bad_name"}
-				So(validateGetTestResultRequest(req), ShouldErrLike, "does not match")
+				assert.Loosely(t, validateGetTestResultRequest(req), should.ErrLike("does not match"))
 			})
 		})
 	})
 }
 
 func TestGetTestResult(t *testing.T) {
-	Convey(`GetTestResult`, t, func() {
+	ftt.Run(`GetTestResult`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -71,13 +74,13 @@ func TestGetTestResult(t *testing.T) {
 		test := func(ctx context.Context, name string, expected *pb.TestResult) {
 			req := &pb.GetTestResultRequest{Name: name}
 			tr, err := srv.GetTestResult(ctx, req)
-			So(err, ShouldBeNil)
-			So(tr, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tr, should.Resemble(expected))
 		}
 
 		invID := invocations.ID("inv_0")
 		// Insert a TestResult.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
@@ -105,17 +108,17 @@ func TestGetTestResult(t *testing.T) {
 			},
 		)
 
-		Convey(`permission denied`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv_s", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}))
 			req := &pb.GetTestResultRequest{Name: "invocations/inv_s/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result_id_within_inv_s"}
 			tr, err := srv.GetTestResult(ctx, req)
-			So(tr, ShouldBeNil)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.get in realm of invocation inv_s")
+			assert.Loosely(t, tr, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testResults.get in realm of invocation inv_s"))
 		})
 
-		Convey(`works with expected result`, func() {
-			testutil.MustApply(ctx, spanutil.InsertMap("TestResults", map[string]any{
+		t.Run(`works with expected result`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
 				"TestId":          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
 				"ResultId":        "result_id_within_inv_1",

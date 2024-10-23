@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
 
-	. "go.chromium.org/luci/common/testing/assertions"
-
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/baselines"
 	btv "go.chromium.org/luci/resultdb/internal/baselines/testvariants"
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -37,49 +37,49 @@ import (
 )
 
 func TestShouldMarkSubmitted(t *testing.T) {
-	Convey(`ShouldMarkSubmitted`, t, func() {
+	ftt.Run(`ShouldMarkSubmitted`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`FinalizedInvocation`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`FinalizedInvocation`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZED, map[string]any{
 					"BaselineId": "try:linux-rel",
 				}),
 			)...)
 
 			inv, err := invocations.Read(span.Single(ctx), "a")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = shouldMarkSubmitted(inv)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Not Finalized Invocation`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Not Finalized Invocation`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, map[string]any{
 					"BaselineId": "try:linux-rel",
 				}),
 			)...)
 
 			inv, err := invocations.Read(span.Single(ctx), "a")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = shouldMarkSubmitted(inv)
-			So(err, ShouldErrLike, `the invocation is not yet finalized`)
+			assert.Loosely(t, err, should.ErrLike(`the invocation is not yet finalized`))
 		})
 
-		Convey(`Non existent invocation`, func() {
+		t.Run(`Non existent invocation`, func(t *ftt.Test) {
 			_, err := invocations.Read(span.Single(ctx), "a")
-			So(err, ShouldErrLike, `invocations/a not found`)
+			assert.Loosely(t, err, should.ErrLike(`invocations/a not found`))
 		})
 	})
 }
 
 func TestEnsureBaselineExists(t *testing.T) {
-	Convey(`EnsureBaselineExists`, t, func() {
+	ftt.Run(`EnsureBaselineExists`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`New Baseline`, func() {
+		t.Run(`New Baseline`, func(t *ftt.Test) {
 			inv := &pb.Invocation{
 				Name:       "invocations/a",
 				State:      pb.Invocation_FINALIZED,
@@ -88,15 +88,15 @@ func TestEnsureBaselineExists(t *testing.T) {
 			}
 
 			err := ensureBaselineExists(ctx, inv)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			baseline, err := baselines.Read(span.Single(ctx), "testproject", "testrealm:linux-rel")
-			So(err, ShouldBeNil)
-			So(baseline.Project, ShouldEqual, "testproject")
-			So(baseline.BaselineID, ShouldEqual, "testrealm:linux-rel")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, baseline.Project, should.Equal("testproject"))
+			assert.Loosely(t, baseline.BaselineID, should.Equal("testrealm:linux-rel"))
 		})
 
-		Convey(`Existing baseline updated`, func() {
+		t.Run(`Existing baseline updated`, func(t *ftt.Test) {
 			var twoHoursAgo = time.Now().UTC().Add(-time.Hour * 2)
 			row := map[string]any{
 				"Project":         "testproject",
@@ -105,13 +105,13 @@ func TestEnsureBaselineExists(t *testing.T) {
 				"CreationTime":    twoHoursAgo,
 			}
 
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				spanutil.InsertMap("Baselines", row),
 			)
 
 			baseline, err := baselines.Read(span.Single(ctx), "testproject", "try:linux-rel")
-			So(err, ShouldBeNil)
-			So(baseline.LastUpdatedTime, ShouldEqual, twoHoursAgo)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, baseline.LastUpdatedTime, should.Match(twoHoursAgo))
 
 			inv := &pb.Invocation{
 				Name:       "invocations/a",
@@ -123,23 +123,23 @@ func TestEnsureBaselineExists(t *testing.T) {
 			// ensure baseline exists should update existing invocations'
 			// last updated time to now.
 			err = ensureBaselineExists(ctx, inv)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// re-read the baseline after ensuring it exists. the timestanp should
 			// be different from the original timestamp it was written into.
 			baseline, err = baselines.Read(span.Single(ctx), "testproject", "try:linux-rel")
-			So(err, ShouldBeNil)
-			So(baseline.LastUpdatedTime, ShouldNotEqual, twoHoursAgo)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, baseline.LastUpdatedTime, should.NotMatch(twoHoursAgo))
 		})
 	})
 }
 
 func TestTryMarkInvocationSubmitted(t *testing.T) {
 
-	Convey(`e2e`, t, func() {
+	ftt.Run(`e2e`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.InvocationWithInclusions("inv1", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"}, "inv2"),
 			insert.InvocationWithInclusions("inv2", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"}),
 		)...)
@@ -148,51 +148,51 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 		// fetches results for all included invs.
 		ms := make([]*spanner.Mutation, 0)
 		for i := 1; i <= 100; i++ {
-			ms = append(ms, insert.TestResults("inv1", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
+			ms = append(ms, insert.TestResults(t, "inv1", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
 		}
 		for i := 101; i <= 200; i++ {
-			ms = append(ms, insert.TestResults("inv2", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
+			ms = append(ms, insert.TestResults(t, "inv2", fmt.Sprintf("testId%d", i), pbutil.Variant("a", "b"), pb.TestStatus_PASS)...)
 		}
 
-		testutil.MustApply(ctx, testutil.CombineMutations(ms)...)
+		testutil.MustApply(ctx, t, testutil.CombineMutations(ms)...)
 		err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv1"))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// fetch the 200 entry to ensure that test results from subinvocations
 		// are being processed
 		res, err := btv.Read(span.Single(ctx), "testproject", "try:linux-rel", "testId200", pbutil.VariantHash(pbutil.Variant("a", "b")))
-		So(err, ShouldBeNil)
-		So(res.Project, ShouldEqual, "testproject")
-		So(res.BaselineID, ShouldEqual, "try:linux-rel")
-		So(res.TestID, ShouldEqual, "testId200")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Project, should.Equal("testproject"))
+		assert.Loosely(t, res.BaselineID, should.Equal("try:linux-rel"))
+		assert.Loosely(t, res.TestID, should.Equal("testId200"))
 
 		// find the baseline in the baselines table
 		baseline, err := baselines.Read(span.Single(ctx), "testproject", "try:linux-rel")
-		So(err, ShouldBeNil)
-		So(res.Project, ShouldEqual, baseline.Project)
-		So(res.BaselineID, ShouldEqual, baseline.BaselineID)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Project, should.Equal(baseline.Project))
+		assert.Loosely(t, res.BaselineID, should.Equal(baseline.BaselineID))
 
-		Convey(`Missing baseline`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Missing baseline`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZED, nil),
 			)...)
 
 			_, err := invocations.Read(span.Single(ctx), "a")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			err = tryMarkInvocationSubmitted(ctx, invocations.ID("a"))
 			// invocations without a baseline specified will terminate early with no error.
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Mark existing baseline test variant submitted`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Mark existing baseline test variant submitted`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv3", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults("inv3", "testId200", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
+				insert.TestResults(t, "inv3", "testId200", pbutil.Variant("a", "b"), pb.TestStatus_PASS),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv3"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			exp := &btv.BaselineTestVariant{
 				Project:     "testproject",
@@ -204,18 +204,18 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			res, err := btv.Read(span.Single(ctx), exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash)
 			// zero out Timestamp
 			res.LastUpdated = time.Time{}
-			So(err, ShouldBeNil)
-			So(res, ShouldResemble, exp)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(exp))
 		})
 
-		Convey(`Mark skipped test should be skipped`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Mark skipped test should be skipped`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				[]*spanner.Mutation{insert.Invocation("inv4", pb.Invocation_FINALIZED, map[string]any{"BaselineId": "try:linux-rel"})},
-				insert.TestResults("inv4", "testId202", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
+				insert.TestResults(t, "inv4", "testId202", pbutil.Variant("a", "b"), pb.TestStatus_SKIP),
 			)...)
 
 			err := tryMarkInvocationSubmitted(ctx, invocations.ID("inv4"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			exp := &btv.BaselineTestVariant{
 				Project:     "testproject",
@@ -225,7 +225,7 @@ func TestTryMarkInvocationSubmitted(t *testing.T) {
 			}
 
 			_, err = btv.Read(span.Single(ctx), exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash)
-			So(err, ShouldErrLike, btv.NotFound)
+			assert.Loosely(t, err, should.ErrLike(btv.NotFound))
 		})
 	})
 }

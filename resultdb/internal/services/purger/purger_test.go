@@ -25,6 +25,10 @@ import (
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/artifacts"
@@ -34,8 +38,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // makeTestResultsWithVariants creates test results with a number of passing/failing variants.
@@ -70,11 +72,12 @@ func makeTestResultsWithVariants(invID, testID string, nPassingVariants, nFailed
 	return trs
 }
 
-func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassingVariants, nFailedVariants, nArtifactsPerResult int) invocations.ID {
+func insertInvocation(ctx context.Context, t testing.TB, invID invocations.ID, nTests, nPassingVariants, nFailedVariants, nArtifactsPerResult int) invocations.ID {
+	t.Helper()
 	now := clock.Now(ctx).UTC()
 
 	// Insert an invocation,
-	testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]any{
+	testutil.MustApply(ctx, t, insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]any{
 		"ExpectedTestResultsExpirationTime": now.Add(-time.Minute),
 		"CreateTime":                        now.Add(-time.Hour),
 		"FinalizeTime":                      now.Add(-time.Hour),
@@ -84,7 +87,7 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 	inserts := []*spanner.Mutation{}
 	for i := 0; i < nTests; i++ {
 		results := makeTestResultsWithVariants(string(invID), fmt.Sprintf("Test%d", i), nPassingVariants, nFailedVariants)
-		inserts = append(inserts, insert.TestResultMessages(results)...)
+		inserts = append(inserts, insert.TestResultMessages(t, results)...)
 		for _, res := range results {
 			for j := 0; j < nArtifactsPerResult; j++ {
 				inserts = append(inserts, spanutil.InsertMap("Artifacts", map[string]any{
@@ -95,56 +98,56 @@ func insertInvocation(ctx context.Context, invID invocations.ID, nTests, nPassin
 			}
 		}
 	}
-	testutil.MustApply(ctx, testutil.CombineMutations(inserts)...)
+	testutil.MustApply(ctx, t, testutil.CombineMutations(inserts)...)
 	return invID
 }
 
-func countRows(ctx context.Context, invID invocations.ID) (testResults, artifacts int64) {
+func countRows(ctx context.Context, t testing.TB, invID invocations.ID) (testResults, artifacts int64) {
 	st := spanner.NewStatement(`
 		SELECT
 			(SELECT COUNT(*) FROM TestResults WHERE InvocationId = @invocationId),
 			(SELECT COUNT(*) FROM Artifacts WHERE InvocationId = @invocationId),
 		`)
 	st.Params["invocationId"] = spanutil.ToSpanner(invID)
-	So(spanutil.QueryFirstRow(span.Single(ctx), st, &testResults, &artifacts), ShouldBeNil)
+	assert.Loosely(t, spanutil.QueryFirstRow(span.Single(ctx), st, &testResults, &artifacts), should.BeNil, truth.LineContext())
 	return
 }
 
 func TestPurgeExpiredResults(t *testing.T) {
-	Convey(`TestPurgeExpiredResults`, t, func() {
+	ftt.Run(`TestPurgeExpiredResults`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Some results are unexpected`, func() {
-			inv := insertInvocation(ctx, "inv-some-unexpected", 10, 9, 1, 0)
+		t.Run(`Some results are unexpected`, func(t *ftt.Test) {
+			inv := insertInvocation(ctx, t, "inv-some-unexpected", 10, 9, 1, 0)
 
 			err := purgeOneShard(ctx, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// 10 tests * 1 variant with unexpected results * 2 results per test variant.
-			testResults, _ := countRows(ctx, inv)
-			So(testResults, ShouldEqual, 20)
+			testResults, _ := countRows(ctx, t, inv)
+			assert.Loosely(t, testResults, should.Equal(20))
 		})
 
-		Convey(`No unexpected results`, func() {
-			inv := insertInvocation(ctx, "inv-no-unexpected", 10, 10, 0, 0)
+		t.Run(`No unexpected results`, func(t *ftt.Test) {
+			inv := insertInvocation(ctx, t, "inv-no-unexpected", 10, 10, 0, 0)
 
 			err := purgeOneShard(ctx, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// 10 tests * 0 variants with unexpected results * 2 results per test variant.
-			testResults, _ := countRows(ctx, inv)
-			So(testResults, ShouldEqual, 0)
+			testResults, _ := countRows(ctx, t, inv)
+			assert.Loosely(t, testResults, should.BeZero)
 		})
 
-		Convey(`Purge artifacts`, func() {
-			inv := insertInvocation(ctx, "inv", 10, 9, 1, 10)
+		t.Run(`Purge artifacts`, func(t *ftt.Test) {
+			inv := insertInvocation(ctx, t, "inv", 10, 9, 1, 10)
 
 			err := purgeOneShard(ctx, 0)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// 10 tests * 1 variant with unexpected results * 2 results per test variant * 10 artifacts..
-			_, artifacts := countRows(ctx, inv)
-			So(artifacts, ShouldEqual, 200)
+			_, artifacts := countRows(ctx, t, inv)
+			assert.Loosely(t, artifacts, should.Equal(200))
 		})
 	})
 }

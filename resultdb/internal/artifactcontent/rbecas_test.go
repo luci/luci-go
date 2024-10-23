@@ -21,14 +21,15 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	artifactcontenttest "go.chromium.org/luci/resultdb/internal/artifactcontent/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDownloadRBECASContent(t *testing.T) {
-	Convey(`TestDownloadRBECASContent`, t, func() {
+	ftt.Run(`TestDownloadRBECASContent`, t, func(t *ftt.Test) {
 		ctx := testutil.TestingContext()
 
 		ac := &Reader{
@@ -46,7 +47,7 @@ func TestDownloadRBECASContent(t *testing.T) {
 			}
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(str.String(), ShouldEqual, "contentspart1\ncontentspart2\n")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, str.String(), should.Equal("contentspart1\ncontentspart2\n"))
 	})
 }

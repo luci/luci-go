@@ -21,19 +21,19 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSpan(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		_, err := span.Apply(ctx, []*spanner.Mutation{
@@ -41,9 +41,9 @@ func TestSpan(t *testing.T) {
 			insert.Invocation("inv-b", resultpb.Invocation_ACTIVE, map[string]any{}),
 			insert.Invocation("inv-c", resultpb.Invocation_ACTIVE, map[string]any{}),
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`ReadForInvocation`, func() {
+		t.Run(`ReadForInvocation`, func(t *ftt.Test) {
 			roots := []ExportRoot{
 				NewBuilder(1).WithInvocation("inv-a").WithRootInvocation("root-a").Build(),
 				NewBuilder(2).WithInvocation("inv-b").WithRootInvocation("root-a").Build(),
@@ -51,30 +51,30 @@ func TestSpan(t *testing.T) {
 				NewBuilder(4).WithInvocation("inv-b").WithRootInvocation("root-b").Build(),
 			}
 			err = SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Invocation with roots, no root restriction`, func() {
+			t.Run(`Invocation with roots, no root restriction`, func(t *ftt.Test) {
 				got, err := ReadForInvocation(span.Single(ctx), "inv-a", RootRestriction{UseRestriction: false})
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{
 					roots[0],
 					roots[2],
-				})
+				}))
 			})
-			Convey(`Invocation with roots, root restriction`, func() {
+			t.Run(`Invocation with roots, root restriction`, func(t *ftt.Test) {
 				got, err := ReadForInvocation(span.Single(ctx), "inv-a", RootRestriction{UseRestriction: true, InvocationIDs: invocations.NewIDSet("root-a")})
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{
 					roots[0],
-				})
+				}))
 			})
-			Convey(`Empty invocation`, func() {
+			t.Run(`Empty invocation`, func(t *ftt.Test) {
 				got, err := ReadForInvocation(span.Single(ctx), "inv-empty", RootRestriction{UseRestriction: false})
-				So(err, ShouldBeNil)
-				So(got, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.BeEmpty)
 			})
 		})
-		Convey(`ReadForInvocations`, func() {
+		t.Run(`ReadForInvocations`, func(t *ftt.Test) {
 			roots := []ExportRoot{
 				NewBuilder(1).WithInvocation("inv-a").WithRootInvocation("root-a").Build(),
 				NewBuilder(2).WithInvocation("inv-b").WithRootInvocation("root-a").Build(),
@@ -84,12 +84,12 @@ func TestSpan(t *testing.T) {
 				NewBuilder(6).WithInvocation("inv-c").WithRootInvocation("root-a").Build(),
 			}
 			err = SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Nominated invocations and roots`, func() {
+			t.Run(`Nominated invocations and roots`, func(t *ftt.Test) {
 				got, err := ReadForInvocations(span.Single(ctx), invocations.NewIDSet("inv-a", "inv-b"), invocations.NewIDSet("root-a", "root-b"))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, map[invocations.ID]map[invocations.ID]ExportRoot{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble(map[invocations.ID]map[invocations.ID]ExportRoot{
 					"inv-a": {
 						"root-a": roots[0],
 						"root-b": roots[2],
@@ -98,33 +98,33 @@ func TestSpan(t *testing.T) {
 						"root-a": roots[1],
 						"root-b": roots[3],
 					},
-				})
+				}))
 			})
-			Convey(`Missing export roots`, func() {
+			t.Run(`Missing export roots`, func(t *ftt.Test) {
 				results, err := ReadForInvocations(span.Single(ctx), invocations.NewIDSet("inv-empty"), invocations.NewIDSet("root-1", "root-2"))
-				So(err, ShouldBeNil)
-				So(results, ShouldResembleProto, map[invocations.ID]map[invocations.ID]ExportRoot{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, results, should.Resemble(map[invocations.ID]map[invocations.ID]ExportRoot{}))
 			})
 		})
-		Convey(`Create`, func() {
+		t.Run(`Create`, func(t *ftt.Test) {
 			entry := ExportRoot{
 				Invocation:            "inv-a",
 				RootInvocation:        "root-new",
 				IsInheritedSourcesSet: false,
 				IsNotified:            false,
 			}
-			Convey(`Without sources`, func() {
+			t.Run(`Without sources`, func(t *ftt.Test) {
 				_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 					span.BufferWrite(ctx, Create(entry))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				got, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{entry})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
 			})
-			Convey(`With sources, non-nil`, func() {
+			t.Run(`With sources, non-nil`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
 				entry.InheritedSources = testutil.TestSources()
 
@@ -132,13 +132,13 @@ func TestSpan(t *testing.T) {
 					span.BufferWrite(ctx, Create(entry))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				got, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{entry})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
 			})
-			Convey(`With sources, nil`, func() {
+			t.Run(`With sources, nil`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
 				entry.InheritedSources = nil
 
@@ -146,14 +146,14 @@ func TestSpan(t *testing.T) {
 					span.BufferWrite(ctx, Create(entry))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				got, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{entry})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
 			})
 		})
-		Convey(`SetInheritedSources`, func() {
+		t.Run(`SetInheritedSources`, func(t *ftt.Test) {
 			entry := ExportRoot{
 				Invocation:            "inv-a",
 				RootInvocation:        "root-new",
@@ -164,9 +164,9 @@ func TestSpan(t *testing.T) {
 				span.BufferWrite(ctx, Create(entry))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Non-nil sources`, func() {
+			t.Run(`Non-nil sources`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
 				entry.InheritedSources = testutil.TestSources()
 
@@ -174,13 +174,13 @@ func TestSpan(t *testing.T) {
 					span.BufferWrite(ctx, SetInheritedSources(entry))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				got, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{entry})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
 			})
-			Convey(`Nil sources`, func() {
+			t.Run(`Nil sources`, func(t *ftt.Test) {
 				entry.IsInheritedSourcesSet = true
 				entry.InheritedSources = nil
 
@@ -188,14 +188,14 @@ func TestSpan(t *testing.T) {
 					span.BufferWrite(ctx, SetInheritedSources(entry))
 					return nil
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				got, err := ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, []ExportRoot{entry})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble([]ExportRoot{entry}))
 			})
 		})
-		Convey(`SetNotified`, func() {
+		t.Run(`SetNotified`, func(t *ftt.Test) {
 			entry := ExportRoot{
 				Invocation:            "inv-a",
 				RootInvocation:        "root-new",
@@ -206,21 +206,21 @@ func TestSpan(t *testing.T) {
 				span.BufferWrite(ctx, Create(entry))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			commitTime, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 				entry.IsNotified = true
 				span.BufferWrite(ctx, SetNotified(entry))
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expected := entry
 			expected.NotifiedTime = commitTime.In(time.UTC)
 
 			got, err := ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldResembleProto, []ExportRoot{expected})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Resemble([]ExportRoot{expected}))
 		})
 	})
 }

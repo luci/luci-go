@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestToFailureOnlyLineRanges(t *testing.T) {
@@ -31,8 +32,8 @@ func TestToFailureOnlyLineRanges(t *testing.T) {
 	log line no timestamp
 }`
 
-	Convey(`ToFailureOnlyLineRanges`, t, func() {
-		Convey(`given a list of passing hashes, should return correct in_passes fields`, func() {
+	ftt.Run(`ToFailureOnlyLineRanges`, t, func(t *ftt.Test) {
+		t.Run(`given a list of passing hashes, should return correct in_passes fields`, func(t *ftt.Test) {
 			contentBytes := []byte(contentString)
 			passingHashes := map[int64]struct{}{}
 			for i, line := range bytes.Split(contentBytes, []byte("\n")) {
@@ -41,13 +42,13 @@ func TestToFailureOnlyLineRanges(t *testing.T) {
 				}
 			}
 			ranges, err := ToFailureOnlyLineRanges("log.text", "text/log", contentBytes, passingHashes, false)
-			So(err, ShouldBeNil)
-			So(len(ranges), ShouldEqual, 3)
-			So(ranges, ShouldEqual, []*pb.QueryArtifactFailureOnlyLinesResponse_LineRange{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(ranges), should.Equal(3))
+			assert.Loosely(t, ranges, should.Resemble([]*pb.QueryArtifactFailureOnlyLinesResponse_LineRange{
 				{Start: 1, End: 2},
 				{Start: 3, End: 4},
 				{Start: 5, End: 6},
-			})
+			}))
 		})
 	})
 }

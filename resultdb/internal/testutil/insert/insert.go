@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -27,14 +28,15 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // TestRealm is the default realm used for invocation mutations returned by Invocation().
@@ -93,16 +95,18 @@ func Inclusion(including, included invocations.ID) *spanner.Mutation {
 }
 
 // TestResults returns spanner mutations to insert test results
-func TestResults(invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
-	return TestResultMessages(MakeTestResults(invID, testID, v, statuses...))
+func TestResults(t testing.TB, invID, testID string, v *pb.Variant, statuses ...pb.TestStatus) []*spanner.Mutation {
+	return TestResultMessages(t, MakeTestResults(invID, testID, v, statuses...))
 }
 
 // TestResultMessages returns spanner mutations to insert test results
-func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
+func TestResultMessages(t testing.TB, trs []*pb.TestResult) []*spanner.Mutation {
+	t.Helper()
+
 	ms := make([]*spanner.Mutation, len(trs))
 	for i, tr := range trs {
 		invID, testID, resultID, err := pbutil.ParseTestResultName(tr.Name)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 
 		mutMap := map[string]any{
 			"InvocationId":    invocations.ID(invID),
@@ -127,17 +131,17 @@ func TestResultMessages(trs []*pb.TestResult) []*spanner.Mutation {
 		}
 		if tr.TestMetadata != nil {
 			tmdBytes, err := proto.Marshal(tr.TestMetadata)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			mutMap["TestMetadata"] = spanutil.Compressed(tmdBytes)
 		}
 		if tr.FailureReason != nil {
 			frBytes, err := proto.Marshal(tr.FailureReason)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			mutMap["FailureReason"] = spanutil.Compressed(frBytes)
 		}
 		if tr.Properties != nil {
 			propertiesBytes, err := proto.Marshal(tr.Properties)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
 			mutMap["Properties"] = spanutil.Compressed(propertiesBytes)
 		}
 

@@ -25,43 +25,46 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidQueryArtifactFailureOnlyLinesRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryArtifactFailureOnlyLinesRequest`, t, func() {
+	ftt.Run(`TestValidateQueryArtifactFailureOnlyLinesRequest`, t, func(t *ftt.Test) {
 
-		Convey(`Valid, invocation level`, func() {
+		t.Run(`Valid, invocation level`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent:   "invocations/x/artifacts/artifact-id",
 				PageSize: 50,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Valid, test result level`, func() {
+		t.Run(`Valid, test result level`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent:   "invocations/x/tests/t%20t/results/r/artifacts/artifact-id",
 				PageSize: 50,
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invalid parent`, func() {
+		t.Run(`Invalid parent`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent: "x",
 			})
-			So(err, ShouldErrLike, `parent: invalid artifact name`)
+			assert.Loosely(t, err, should.ErrLike(`parent: invalid artifact name`))
 		})
 
-		Convey(`Invalid page size`, func() {
+		t.Run(`Invalid page size`, func(t *ftt.Test) {
 			err := validateListArtifactLinesRequest(&pb.ListArtifactLinesRequest{
 				Parent:   "invocations/x/artifacts/artifact-id",
 				PageSize: -1,
 			})
-			So(err, ShouldErrLike, `page_size: negative`)
+			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 		})
 	})
 }
@@ -74,7 +77,7 @@ func TestQueryArtifactFailureOnlyLines(t *testing.T) {
 	log line no timestamp
 }`
 
-	Convey("TestListArtifactLines", t, func() {
+	ftt.Run("TestListArtifactLines", t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -83,37 +86,37 @@ func TestQueryArtifactFailureOnlyLines(t *testing.T) {
 		})
 		srv := newTestResultDBServiceWithArtifactContent(contentString)
 
-		Convey("given invalid permissions, then should return permission denied error", func() {
+		t.Run("given invalid permissions, then should return permission denied error", func(t *ftt.Test) {
 			// Insert a Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv/artifacts/a"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.get")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.get"))
 		})
 
-		Convey("given an invocation level artifact, then should return invalid argument error", func() {
+		t.Run("given an invocation level artifact, then should return invalid argument error", func(t *ftt.Test) {
 			// Insert a Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv/artifacts/b"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, "only test artifacts are supported")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("only test artifacts are supported"))
 		})
 
-		Convey("given a non-existent invocation, then should return not found error", func() {
+		t.Run("given a non-existent invocation, then should return not found error", func(t *ftt.Test) {
 			// Insert a Artifact.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 				insert.Artifact("inv", "", "a", nil),
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv2/artifacts/a"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			So(err, ShouldBeRPCNotFound, "invocations/inv2 not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv2 not found"))
 		})
 	})
 }

@@ -42,8 +42,11 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // fakeRBEClient mocks BatchUpdateBlobs.
@@ -77,71 +80,71 @@ func TestNewArtifactCreationRequestsFromProto(t *testing.T) {
 		}
 	}
 
-	Convey("newArtifactCreationRequestsFromProto", t, func() {
+	ftt.Run("newArtifactCreationRequestsFromProto", t, func(t *ftt.Test) {
 		bReq := &pb.BatchCreateArtifactsRequest{}
 		invArt := newArtReq("invocations/inv1", "art1", "text/html")
 		trArt := newArtReq("invocations/inv1/tests/t1/results/r1", "art2", "image/png")
 
-		Convey("successes", func() {
+		t.Run("successes", func(t *ftt.Test) {
 			bReq.Requests = append(bReq.Requests, invArt)
 			bReq.Requests = append(bReq.Requests, trArt)
 			invID, arts, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldBeNil)
-			So(invID, ShouldEqual, invocations.ID("inv1"))
-			So(len(arts), ShouldEqual, len(bReq.Requests))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invID, should.Equal(invocations.ID("inv1")))
+			assert.Loosely(t, len(arts), should.Equal(len(bReq.Requests)))
 
 			// invocation-level artifact
-			So(arts[0].artifactID, ShouldEqual, "art1")
-			So(arts[0].parentID(), ShouldEqual, artifacts.ParentID("", ""))
-			So(arts[0].contentType, ShouldEqual, "text/html")
+			assert.Loosely(t, arts[0].artifactID, should.Equal("art1"))
+			assert.Loosely(t, arts[0].parentID(), should.Equal(artifacts.ParentID("", "")))
+			assert.Loosely(t, arts[0].contentType, should.Equal("text/html"))
 
 			// test-result-level artifact
-			So(arts[1].artifactID, ShouldEqual, "art2")
-			So(arts[1].parentID(), ShouldEqual, artifacts.ParentID("t1", "r1"))
-			So(arts[1].contentType, ShouldEqual, "image/png")
+			assert.Loosely(t, arts[1].artifactID, should.Equal("art2"))
+			assert.Loosely(t, arts[1].parentID(), should.Equal(artifacts.ParentID("t1", "r1")))
+			assert.Loosely(t, arts[1].contentType, should.Equal("image/png"))
 		})
 
-		Convey("mismatched size_bytes", func() {
+		t.Run("mismatched size_bytes", func(t *ftt.Test) {
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 123
 			trArt.Artifact.Contents = make([]byte, 10249)
 			_, _, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldErrLike, `sizeBytes and contents are specified but don't match`)
+			assert.Loosely(t, err, should.ErrLike(`sizeBytes and contents are specified but don't match`))
 		})
 
-		Convey("ignored size_bytes", func() {
+		t.Run("ignored size_bytes", func(t *ftt.Test) {
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 0
 			trArt.Artifact.Contents = make([]byte, 10249)
 			_, arts, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldBeNil)
-			So(arts[0].size, ShouldEqual, 10249)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, arts[0].size, should.Equal(10249))
 		})
 
-		Convey("contents and gcs_uri both specified", func() {
+		t.Run("contents and gcs_uri both specified", func(t *ftt.Test) {
 			bReq.Requests = append(bReq.Requests, trArt)
 			trArt.Artifact.SizeBytes = 0
 			trArt.Artifact.Contents = make([]byte, 10249)
 			trArt.Artifact.GcsUri = "gs://testbucket/testfile"
 			_, _, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldErrLike, `only one of contents and gcs_uri can be given`)
+			assert.Loosely(t, err, should.ErrLike(`only one of contents and gcs_uri can be given`))
 		})
 
-		Convey("sum() of artifact.Contents is too big", func() {
+		t.Run("sum() of artifact.Contents is too big", func(t *ftt.Test) {
 			for i := 0; i < 11; i++ {
 				req := newArtReq("invocations/inv1", fmt.Sprintf("art%d", i), "text/html")
 				req.Artifact.Contents = make([]byte, 1024*1024)
 				bReq.Requests = append(bReq.Requests, req)
 			}
 			_, _, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldErrLike, "the total size of artifact contents exceeded")
+			assert.Loosely(t, err, should.ErrLike("the total size of artifact contents exceeded"))
 		})
 
-		Convey("if more than one invocations", func() {
+		t.Run("if more than one invocations", func(t *ftt.Test) {
 			bReq.Requests = append(bReq.Requests, newArtReq("invocations/inv1", "art1", "text/html"))
 			bReq.Requests = append(bReq.Requests, newArtReq("invocations/inv2", "art1", "text/html"))
 			_, _, err := parseBatchCreateArtifactsRequest(bReq)
-			So(err, ShouldErrLike, `only one invocation is allowed: "inv1", "inv2"`)
+			assert.Loosely(t, err, should.ErrLike(`only one invocation is allowed: "inv1", "inv2"`))
 		})
 	})
 }
@@ -150,11 +153,11 @@ func TestBatchCreateArtifacts(t *testing.T) {
 	// metric field values for Artifact table
 	artMFVs := []any{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
-	Convey("TestBatchCreateArtifacts", t, func() {
+	ftt.Run("TestBatchCreateArtifacts", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		ctx = testutil.TestProjectConfigContext(ctx, "testproject", "user:test@test.com", "testbucket")
+		ctx = testutil.TestProjectConfigContext(ctx, t, "testproject", "user:test@test.com", "testbucket")
 		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
@@ -168,7 +171,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				ExportPercent: 100,
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		casClient := &fakeRBEClient{}
 		recorder := newTestRecorderServerWithClients(casClient)
@@ -193,7 +196,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 		fetchState := func(parentID, aID string) (size int64, hash string, contentType string, gcsURI string) {
 			testutil.MustReadRow(
-				ctx, "Artifacts", invocations.ID("inv").Key(parentID, aID),
+				ctx, t, "Artifacts", invocations.ID("inv").Key(parentID, aID),
 				map[string]any{
 					"Size":        &size,
 					"RBECASHash":  &hash,
@@ -208,48 +211,48 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			return hex.EncodeToString(h[:])
 		}
 
-		Convey("GCS reference isAllowed", func() {
-			Convey("reference is allowed", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
+		t.Run("GCS reference isAllowed", func(t *ftt.Test) {
+			t.Run("reference is allowed", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
 
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("project not configured", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "otherproject", "user:test@test.com", "testbucket")
+			t.Run("project not configured", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "otherproject", "user:test@test.com", "testbucket")
 
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCPermissionDenied, "testproject")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("testproject"))
 			})
-			Convey("user not configured", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
+			t.Run("user not configured", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:other@test.com",
 				})
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCPermissionDenied, "user:other@test.com")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user:other@test.com"))
 			})
-			Convey("bucket not listed", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "otherbucket")
+			t.Run("bucket not listed", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "otherbucket")
 
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCPermissionDenied, "testbucket")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("testbucket"))
 			})
 		})
-		Convey("works", func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
+		t.Run("works", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
 				"CreateTime": time.Unix(10000, 0),
 			}))
 
@@ -262,8 +265,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
 			resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Resemble(&pb.BatchCreateArtifactsResponse{
 				Artifacts: []*pb.Artifact{
 					{
 						Name:        "invocations/inv/artifacts/art1",
@@ -296,9 +299,9 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						SizeBytes:   7,
 					},
 				},
-			})
+			}))
 			// verify the RBECAS reqs
-			So(casClient.req, ShouldResemble, &repb.BatchUpdateBlobsRequest{
+			assert.Loosely(t, casClient.req, should.Resemble(&repb.BatchUpdateBlobsRequest{
 				InstanceName: "",
 				Requests: []*repb.BatchUpdateBlobsRequest_Request{
 					{
@@ -323,93 +326,93 @@ func TestBatchCreateArtifacts(t *testing.T) {
 						Data: []byte("c5ntent"),
 					},
 				},
-			})
+			}))
 			// verify the Spanner states
 			size, hash, cType, gcsURI := fetchState("", "art1")
-			So(size, ShouldEqual, int64(len("c0ntent")))
-			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c0ntent")))
-			So(cType, ShouldEqual, "text/plain")
-			So(gcsURI, ShouldEqual, "")
+			assert.Loosely(t, size, should.Equal(int64(len("c0ntent"))))
+			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c0ntent"))))
+			assert.Loosely(t, cType, should.Equal("text/plain"))
+			assert.Loosely(t, gcsURI, should.BeEmpty)
 
 			size, hash, cType, gcsURI = fetchState("tr/test_id/0", "art2")
-			So(size, ShouldEqual, int64(len("c1ntent")))
-			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c1ntent")))
-			So(cType, ShouldEqual, "text/richtext")
-			So(gcsURI, ShouldEqual, "")
+			assert.Loosely(t, size, should.Equal(int64(len("c1ntent"))))
+			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c1ntent"))))
+			assert.Loosely(t, cType, should.Equal("text/richtext"))
+			assert.Loosely(t, gcsURI, should.BeEmpty)
 
 			size, hash, cType, gcsURI = fetchState("tr/test_id_1/0", "art5")
-			So(size, ShouldEqual, int64(len("c5ntent")))
-			So(hash, ShouldEqual, artifacts.AddHashPrefix(compHash("c5ntent")))
-			So(cType, ShouldEqual, "text/richtext")
-			So(gcsURI, ShouldEqual, "")
+			assert.Loosely(t, size, should.Equal(int64(len("c5ntent"))))
+			assert.Loosely(t, hash, should.Equal(artifacts.AddHashPrefix(compHash("c5ntent"))))
+			assert.Loosely(t, cType, should.Equal("text/richtext"))
+			assert.Loosely(t, gcsURI, should.BeEmpty)
 
 			size, hash, cType, gcsURI = fetchState("", "art3")
-			So(size, ShouldEqual, 0)
-			So(hash, ShouldEqual, "")
-			So(cType, ShouldEqual, "text/plain")
-			So(gcsURI, ShouldEqual, "gs://testbucket/art3")
+			assert.Loosely(t, size, should.BeZero)
+			assert.Loosely(t, hash, should.BeEmpty)
+			assert.Loosely(t, cType, should.Equal("text/plain"))
+			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art3"))
 
 			size, hash, cType, gcsURI = fetchState("", "art4")
-			So(size, ShouldEqual, 500)
-			So(hash, ShouldEqual, "")
-			So(cType, ShouldEqual, "text/richtext")
-			So(gcsURI, ShouldEqual, "gs://testbucket/art4")
+			assert.Loosely(t, size, should.Equal(500))
+			assert.Loosely(t, hash, should.BeEmpty)
+			assert.Loosely(t, cType, should.Equal("text/richtext"))
+			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art4"))
 
 			// RowCount metric should be increased by 5.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 5)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(5))
 		})
 
-		Convey("BatchUpdateBlobs fails", func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run("BatchUpdateBlobs fails", func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 			appendArtReq("art2", "c1ntent", "text/richtext", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 
-			Convey("Partly", func() {
+			t.Run("Partly", func(t *ftt.Test) {
 				casClient.mockResp(nil, codes.OK, codes.InvalidArgument)
 				// Call the implementation without postlude so that we can see the
 				// internal error, and don't just get "Internal server error" back.
 				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldErrLike, `artifact "invocations/inv/artifacts/art2": cas.BatchUpdateBlobs failed`)
+				assert.Loosely(t, err, should.ErrLike(`artifact "invocations/inv/artifacts/art2": cas.BatchUpdateBlobs failed`))
 			})
 
-			Convey("Entirely", func() {
+			t.Run("Entirely", func(t *ftt.Test) {
 				// exceeded the maximum size limit is the only possible error that
 				// can cause the entire request failed.
 				casClient.mockResp(errors.New("err"), codes.OK, codes.OK)
 				// Call the implementation without postlude so that we can see the
 				// internal error, and don't just get "Internal server error" back.
 				_, err := recorder.Service.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldErrLike, "cas.BatchUpdateBlobs failed")
+				assert.Loosely(t, err, should.ErrLike("cas.BatchUpdateBlobs failed"))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 		})
 
-		Convey("Token", func() {
+		t.Run("Token", func(t *ftt.Test) {
 			appendArtReq("art1", "", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
-			Convey("Missing", func() {
+			t.Run("Missing", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs())
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCUnauthenticated, `missing update-token`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)(`missing update-token`))
 			})
-			Convey("Wrong", func() {
+			t.Run("Wrong", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "rong"))
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCPermissionDenied, `invalid update token`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`invalid update token`))
 			})
 		})
 
-		Convey("Verify state", func() {
+		t.Run("Verify state", func(t *ftt.Test) {
 			casClient.mockResp(nil, codes.OK, codes.OK)
 
-			Convey("Finalized invocation", func() {
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+			t.Run("Finalized invocation", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCFailedPrecondition, `invocations/inv is not active`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(`invocations/inv is not active`))
 			})
 
 			art := map[string]any{
@@ -429,20 +432,20 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				"GcsURI":       "gs://testbucket/art1",
 			}
 
-			Convey("Same artifact exists", func() {
-				testutil.MustApply(ctx,
+			t.Run("Same artifact exists", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				resp, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeNil)
-				So(resp, ShouldResemble, &pb.BatchCreateArtifactsResponse{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Resemble(&pb.BatchCreateArtifactsResponse{}))
 			})
 
-			Convey("Different artifact exists", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
-				testutil.MustApply(ctx,
+			t.Run("Different artifact exists", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
+				testutil.MustApply(ctx, t,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", art),
 				)
@@ -450,48 +453,48 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different size")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different size"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different hash")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different hash"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art1"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different storage scheme")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different storage scheme"))
 			})
 
-			Convey("Different artifact exists GCS", func() {
-				testutil.SetGCSAllowedBuckets(ctx, "testproject", "user:test@test.com", "testbucket")
-				testutil.MustApply(ctx,
+			t.Run("Different artifact exists GCS", func(t *ftt.Test) {
+				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
+				testutil.MustApply(ctx, t,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", gcsArt),
 				)
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different storage scheme")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different storage scheme"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art2"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different GCS URI")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different GCS URI"))
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				So(err, ShouldBeRPCAlreadyExists, "exists w/ different size")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different size"))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 		})
 
-		Convey("Too many requests", func() {
+		t.Run("Too many requests", func(t *ftt.Test) {
 			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
 			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			So(err, ShouldBeRPCInvalidArgument, "the number of requests in the batch exceeds 500")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("the number of requests in the batch exceeds 500"))
 		})
 	})
 }

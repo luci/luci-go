@@ -20,6 +20,9 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -28,76 +31,73 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateFinalizeInvocationRequest(t *testing.T) {
-	Convey(`TestValidateFinalizeInvocationRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`TestValidateFinalizeInvocationRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			err := validateFinalizeInvocationRequest(&pb.FinalizeInvocationRequest{
 				Name: "invocations/a",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
 			err := validateFinalizeInvocationRequest(&pb.FinalizeInvocationRequest{
 				Name: "x",
 			})
-			So(err, ShouldErrLike, `name: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`name: does not match`))
 		})
 	})
 }
 
 func TestFinalizeInvocation(t *testing.T) {
-	Convey(`TestFinalizeInvocation`, t, func() {
+	ftt.Run(`TestFinalizeInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		Convey(`Idempotent`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run(`Idempotent`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
-			So(inv.FinalizeStartTime, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+			assert.Loosely(t, inv.FinalizeStartTime, should.NotBeNil)
 			finalizeStartTime := inv.FinalizeStartTime
-			So(sched.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 
 			inv, err = recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
 			// The finalize start time should be the same as after the first call.
-			So(inv.FinalizeStartTime, ShouldResembleProto, finalizeStartTime)
-			So(sched.Tasks(), ShouldHaveLength, 2)
+			assert.Loosely(t, inv.FinalizeStartTime, should.Resemble(finalizeStartTime))
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
 
-		Convey(`Success`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run(`Success`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			inv, err := recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: "invocations/inv"})
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
-			So(inv.FinalizeStartTime, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+			assert.Loosely(t, inv.FinalizeStartTime, should.NotBeNil)
 			finalizeTime := inv.FinalizeStartTime
 
 			// Read the invocation from Spanner to confirm it's really FINALIZING.
 			inv, err = invocations.Read(span.Single(ctx), "inv")
-			So(err, ShouldBeNil)
-			So(inv.State, ShouldEqual, pb.Invocation_FINALIZING)
-			So(inv.FinalizeStartTime, ShouldResembleProto, finalizeTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_FINALIZING))
+			assert.Loosely(t, inv.FinalizeStartTime, should.Resemble(finalizeTime))
 
 			// Enqueued the finalization task.
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&taskspb.RunExportNotifications{InvocationId: "inv"},
 				&taskspb.TryFinalizeInvocation{InvocationId: "inv"},
-			})
+			}))
 		})
 	})
 }

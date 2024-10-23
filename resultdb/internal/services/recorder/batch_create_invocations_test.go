@@ -24,7 +24,10 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -35,17 +38,14 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
 
-	Convey(`TestValidateBatchCreateInvocationsRequest`, t, func() {
-		Convey(`invalid request id - Batch`, func() {
+	ftt.Run(`TestValidateBatchCreateInvocationsRequest`, t, func(t *ftt.Test) {
+		t.Run(`invalid request id - Batch`, func(t *ftt.Test) {
 			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
@@ -56,9 +56,9 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 				}},
 				"😃",
 			)
-			So(err, ShouldErrLike, "request_id: does not match")
+			assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 		})
-		Convey(`non-matching request id - Batch`, func() {
+		t.Run(`non-matching request id - Batch`, func(t *ftt.Test) {
 			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
@@ -69,17 +69,17 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 					RequestId: "valid, but different"}},
 				"valid",
 			)
-			So(err, ShouldErrLike, `request_id: "valid" does not match`)
+			assert.Loosely(t, err, should.ErrLike(`request_id: "valid" does not match`))
 		})
-		Convey(`Too many requests`, func() {
+		t.Run(`Too many requests`, func(t *ftt.Test) {
 			_, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				make([]*pb.CreateInvocationRequest, 1000),
 				"valid",
 			)
-			So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
+			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
 		})
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			ids, _, err := validateBatchCreateInvocationsRequest(
 				now,
 				[]*pb.CreateInvocationRequest{{
@@ -91,15 +91,15 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 				}},
 				"valid",
 			)
-			So(err, ShouldBeNil)
-			So(ids.Has("u-a"), ShouldBeTrue)
-			So(len(ids), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ids.Has("u-a"), should.BeTrue)
+			assert.Loosely(t, len(ids), should.Equal(1))
 		})
 	})
 }
 
 func TestBatchCreateInvocations(t *testing.T) {
-	Convey(`TestBatchCreateInvocations`, t, func() {
+	ftt.Run(`TestBatchCreateInvocations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tq.TestingContext(ctx, nil)
 
@@ -126,10 +126,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 		server.Start(ctx)
 		defer server.Close()
 		client, err := server.NewClient()
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		recorder := pb.NewRecorderPRPCClient(client)
 
-		Convey(`idempotent`, func() {
+		t.Run(`idempotent`, func(t *ftt.Test) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{{
 					InvocationId: "u-batchinv",
@@ -141,16 +141,16 @@ func TestBatchCreateInvocations(t *testing.T) {
 				RequestId: "request id",
 			}
 			res, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			res2, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Update tokens are regenerated the second time, but they are both valid.
 			res2.UpdateTokens = res.UpdateTokens
 			// Otherwise, the responses must be identical.
-			So(res2, ShouldResembleProto, res)
+			assert.Loosely(t, res2, should.Resemble(res))
 		})
-		Convey(`inclusion of non-existent invocation`, func() {
+		t.Run(`inclusion of non-existent invocation`, func(t *ftt.Test) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{{
 					InvocationId: "u-batchinv",
@@ -164,10 +164,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 				}},
 			}
 			_, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldErrLike, "invocations/u-missing-inv not found")
+			assert.Loosely(t, err, should.ErrLike("invocations/u-missing-inv not found"))
 		})
 
-		Convey(`inclusion of existing disallowed invocation`, func() {
+		t.Run(`inclusion of existing disallowed invocation`, func(t *ftt.Test) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{{
 					InvocationId: "u-batchinv",
@@ -175,7 +175,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 				}},
 			}
 			_, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			req = &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{{
@@ -188,10 +188,10 @@ func TestBatchCreateInvocations(t *testing.T) {
 				RequestId: "request id",
 			}
 			_, err = recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldErrLike, "caller does not have permission resultdb.invocations.include")
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.invocations.include"))
 		})
 
-		Convey(`Same request ID, different identity`, func() {
+		t.Run(`Same request ID, different identity`, func(t *ftt.Test) {
 			req := &pb.BatchCreateInvocationsRequest{
 				Requests: []*pb.CreateInvocationRequest{{
 					InvocationId: "u-inv",
@@ -200,14 +200,14 @@ func TestBatchCreateInvocations(t *testing.T) {
 				RequestId: "request id",
 			}
 			_, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			authState.Identity = "user:someone-else@example.com"
 			_, err = recorder.BatchCreateInvocations(ctx, req)
-			So(status.Code(err), ShouldEqual, codes.AlreadyExists)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.AlreadyExists))
 		})
 
-		Convey(`end to end`, func() {
+		t.Run(`end to end`, func(t *ftt.Test) {
 			deadline := pbutil.MustTimestampProto(start.Add(time.Hour))
 			bqExport := &pb.BigQueryExport{
 				Project: "project",
@@ -313,7 +313,7 @@ func TestBatchCreateInvocations(t *testing.T) {
 			}
 
 			resp, err := recorder.BatchCreateInvocations(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expected := proto.Clone(req.Requests[0].Invocation).(*pb.Invocation)
 			expected.Instructions = instructionutil.InstructionsWithNames(expected.Instructions, "u-batch-inv")
@@ -335,20 +335,20 @@ func TestBatchCreateInvocations(t *testing.T) {
 				// we use Spanner commit time, so skip the check
 				CreateTime: resp.Invocations[1].CreateTime,
 			})
-			So(resp.Invocations[0], ShouldResembleProto, expected)
-			So(resp.Invocations[1], ShouldResembleProto, expected2)
-			So(resp.UpdateTokens, ShouldHaveLength, 2)
+			assert.Loosely(t, resp.Invocations[0], should.Resemble(expected))
+			assert.Loosely(t, resp.Invocations[1], should.Resemble(expected2))
+			assert.Loosely(t, resp.UpdateTokens, should.HaveLength(2))
 
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 
 			inv, err := invocations.Read(ctx, "u-batch-inv")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(expected))
 
 			inv2, err := invocations.Read(ctx, "u-batch-inv2")
-			So(err, ShouldBeNil)
-			So(inv2, ShouldResembleProto, expected2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv2, should.Resemble(expected2))
 
 			// Check fields not present in the proto.
 			var invExpirationTime, expectedResultsExpirationTime time.Time
@@ -356,12 +356,12 @@ func TestBatchCreateInvocations(t *testing.T) {
 				"InvocationExpirationTime":          &invExpirationTime,
 				"ExpectedTestResultsExpirationTime": &expectedResultsExpirationTime,
 			})
-			So(err, ShouldBeNil)
-			So(expectedResultsExpirationTime, ShouldHappenWithin, time.Second, start.Add(expectedResultExpiration))
-			So(invExpirationTime, ShouldHappenWithin, time.Second, start.Add(invocationExpirationDuration))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expectedResultsExpirationTime, should.HappenWithin(time.Second, start.Add(expectedResultExpiration)))
+			assert.Loosely(t, invExpirationTime, should.HappenWithin(time.Second, start.Add(invocationExpirationDuration)))
 			incIDs, err := invocations.ReadIncluded(ctx, invocations.ID("u-batch-inv"))
-			So(err, ShouldBeNil)
-			So(incIDs.Has(invocations.ID("u-batch-inv2")), ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, incIDs.Has(invocations.ID("u-batch-inv2")), should.BeTrue)
 		})
 	})
 }

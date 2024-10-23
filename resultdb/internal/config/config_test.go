@@ -18,22 +18,22 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestServiceConfig(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
 
-	Convey("Set and get config", t, func() {
+	ftt.Run("Set and get config", t, func(t *ftt.Test) {
 		cfg := CreatePlaceHolderServiceConfig()
 		err := SetServiceConfig(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cfgFromGet, err := GetServiceConfig(ctx)
-		So(err, ShouldBeNil)
-		So(cfgFromGet, ShouldResembleProto, cfg)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, cfgFromGet, should.Resemble(cfg))
 	})
 }

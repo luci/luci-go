@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
@@ -35,15 +38,12 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const testHostname = "test.resultdb.deployment.luci.app"
 
 func TestPropagate(t *testing.T) {
-	Convey(`Propagate`, t, func() {
+	ftt.Run(`Propagate`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
@@ -60,29 +60,29 @@ func TestPropagate(t *testing.T) {
 			insert.InvocationWithInclusions("inv-a1", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}),
 			insert.InvocationWithInclusions("inv-a2", pb.Invocation_ACTIVE, map[string]any{}),
 		))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`If there are no roots, does nothing`, func() {
+		t.Run(`If there are no roots, does nothing`, func(t *ftt.Test) {
 			task := &taskspb.RunExportNotifications{
 				InvocationId: "inv-root-a",
 			}
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a"))
-			So(notifications, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+			assert.Loosely(t, notifications, should.BeEmpty)
 
 			roots, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(roots, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, roots, should.BeEmpty)
 		})
-		Convey(`If there is a root, propogates roots to children (recursively)`, func() {
+		t.Run(`If there is a root, propogates roots to children (recursively)`, func(t *ftt.Test) {
 			// Create the root for inv-root-a.
 			roots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			err = exportroots.SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expectedRoots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-a").WithRootInvocation("inv-root-a").WithoutInheritedSources().WithoutNotified().Build(),
@@ -96,41 +96,41 @@ func TestPropagate(t *testing.T) {
 			}
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2"))
-			So(sentMessages(sched), ShouldBeEmpty)
-			So(notifications, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+			assert.Loosely(t, sentMessages(sched), should.BeEmpty)
+			assert.Loosely(t, notifications, should.BeEmpty)
 
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldResembleProto, expectedRoots)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Resemble(expectedRoots))
 
-			Convey(`Repeated propagation stops early`, func() {
+			t.Run(`Repeated propagation stops early`, func(t *ftt.Test) {
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
-				So(err, ShouldBeNil)
-				So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a"))
-				So(notifications, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+				assert.Loosely(t, notifications, should.BeEmpty)
 
 				got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldResembleProto, expectedRoots)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.Resemble(expectedRoots))
 			})
-			Convey(`Setting sources as final, inherited sources are propagated and notifications are sent`, func() {
+			t.Run(`Setting sources as final, inherited sources are propagated and notifications are sent`, func(t *ftt.Test) {
 				_, err := span.Apply(ctx, []*spanner.Mutation{
 					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-root-a"), "IsSourceSpecFinal": true}),
 					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
 					spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				task := &taskspb.RunExportNotifications{
 					InvocationId: "inv-root-a",
 				}
 
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
-				So(err, ShouldBeNil)
-				So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2"))
-				So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+				assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
 					{
 						ResultdbHost:        testHostname,
 						RootInvocation:      "invocations/inv-root-a",
@@ -149,11 +149,11 @@ func TestPropagate(t *testing.T) {
 						Sources:             sources,
 						RootCreateTime:      rootCreateTime,
 					},
-				})
+				}))
 
 				got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-				So(err, ShouldBeNil)
-				So(got, ShouldHaveLength, 4)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, got, should.HaveLength(4))
 
 				// Accept notified time determined by the implementation, as it is a function of commit time.
 				expectedRoots := []exportroots.ExportRoot{
@@ -162,35 +162,35 @@ func TestPropagate(t *testing.T) {
 					exportroots.NewBuilder(1).WithInvocation("inv-a2").WithRootInvocation("inv-root-a").WithInheritedSources(sources).WithoutNotified().Build(),
 					exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 				}
-				So(got, ShouldResembleProto, expectedRoots)
+				assert.Loosely(t, got, should.Resemble(expectedRoots))
 
-				Convey(`Repeated propagation does nothing`, func() {
+				t.Run(`Repeated propagation does nothing`, func(t *ftt.Test) {
 					visited, notifications, err := propagateRecursive(ctx, sched, task)
-					So(err, ShouldBeNil)
-					So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a"))
-					So(notifications, ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a")))
+					assert.Loosely(t, notifications, should.BeEmpty)
 
 					got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-					So(err, ShouldBeNil)
-					So(got, ShouldResembleProto, expectedRoots)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, got, should.Resemble(expectedRoots))
 				})
-				Convey(`Repeated propagation of notified invocation does nothing`, func() {
+				t.Run(`Repeated propagation of notified invocation does nothing`, func(t *ftt.Test) {
 					task := &taskspb.RunExportNotifications{
 						InvocationId: "inv-a",
 					}
 
 					visited, notifications, err := propagateRecursive(ctx, sched, task)
-					So(err, ShouldBeNil)
-					So(visited, ShouldResemble, invocations.NewIDSet("inv-a"))
-					So(notifications, ShouldBeEmpty)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-a")))
+					assert.Loosely(t, notifications, should.BeEmpty)
 
 					got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-					So(err, ShouldBeNil)
-					So(got, ShouldResembleProto, expectedRoots)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, got, should.Resemble(expectedRoots))
 				})
 			})
 		})
-		Convey(`If there is a root and sources are final already, roots are propogated with sources and notifications are sent immediately`, func() {
+		t.Run(`If there is a root and sources are final already, roots are propogated with sources and notifications are sent immediately`, func(t *ftt.Test) {
 			// Mark sources on inv-root-a final, and mark inv-a and inv-a1 final.
 			// Sources should propogate through inv-a to inv-a1 and inv-a2, and
 			// pub/sub notification should be sent for inv-a and inv-a1.
@@ -199,23 +199,23 @@ func TestPropagate(t *testing.T) {
 				spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a"), "State": pb.Invocation_FINALIZING}),
 				spanutil.UpdateMap("Invocations", map[string]any{"InvocationId": invocations.ID("inv-a1"), "State": pb.Invocation_FINALIZED}),
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Create the root for inv-root-a.
 			roots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			err = exportroots.SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			task := &taskspb.RunExportNotifications{
 				InvocationId: "inv-root-a",
 			}
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2"))
-			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-a", "inv-a", "inv-a1", "inv-a2")))
+			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-a",
@@ -234,11 +234,11 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 					RootCreateTime:      rootCreateTime,
 				},
-			})
+			}))
 
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(4))
 
 			// Accept notified time determined by the implementation, as it is a function of commit time.
 			expectedRoots := []exportroots.ExportRoot{
@@ -247,9 +247,9 @@ func TestPropagate(t *testing.T) {
 				exportroots.NewBuilder(1).WithInvocation("inv-a2").WithRootInvocation("inv-root-a").WithInheritedSources(sources).WithoutNotified().Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-a").WithRootInvocation("inv-root-a").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
-			So(got, ShouldResembleProto, expectedRoots)
+			assert.Loosely(t, got, should.Resemble(expectedRoots))
 		})
-		Convey(`Graph cycles do not result in an infinite propagation loop`, func() {
+		t.Run(`Graph cycles do not result in an infinite propagation loop`, func(t *ftt.Test) {
 			_, err := span.Apply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("inv-root-c", pb.Invocation_ACTIVE, map[string]any{
 					"IsExportRoot":      true,
@@ -259,23 +259,23 @@ func TestPropagate(t *testing.T) {
 				insert.InvocationWithInclusions("inv-c1", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true, "IsSourceSpecFinal": true}, "inv-c2"),
 				insert.InvocationWithInclusions("inv-c2", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true, "IsSourceSpecFinal": true}, "inv-c1"),
 			))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Create the root for inv-root-c.
 			roots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-root-c").WithRootInvocation("inv-root-c").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			err = exportroots.SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			task := &taskspb.RunExportNotifications{
 				InvocationId: "inv-root-c",
 			}
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-c", "inv-c1", "inv-c2"))
-			So(notifications, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-c", "inv-c1", "inv-c2")))
+			assert.Loosely(t, notifications, should.BeEmpty)
 
 			expectedRoots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-c1").WithRootInvocation("inv-root-c").WithInheritedSources(sources).WithoutNotified().Build(),
@@ -283,17 +283,17 @@ func TestPropagate(t *testing.T) {
 				exportroots.NewBuilder(1).WithInvocation("inv-root-c").WithRootInvocation("inv-root-c").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldResembleProto, expectedRoots)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.Resemble(expectedRoots))
 
-			Convey(`Repeated propagation stops early`, func() {
+			t.Run(`Repeated propagation stops early`, func(t *ftt.Test) {
 				visited, notifications, err := propagateRecursive(ctx, sched, task)
-				So(err, ShouldBeNil)
-				So(visited, ShouldResemble, invocations.NewIDSet("inv-root-c"))
-				So(notifications, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-c")))
+				assert.Loosely(t, notifications, should.BeEmpty)
 			})
 		})
-		Convey(`Directed propagation works`, func() {
+		t.Run(`Directed propagation works`, func(t *ftt.Test) {
 			_, err := span.Apply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("inv-root-d", pb.Invocation_FINALIZING, map[string]any{
 					"IsExportRoot": true,
@@ -304,14 +304,14 @@ func TestPropagate(t *testing.T) {
 				insert.InvocationWithInclusions("inv-d1a", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}),
 				insert.InvocationWithInclusions("inv-d2", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}),
 			))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Create the root for inv-root-d.
 			roots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-root-d").WithRootInvocation("inv-root-d").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			err = exportroots.SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Perform directed propagation for inv-root-d towards inv-d1.
 			// This might be expected if we just included inv-d1 inside inv-root-d.
@@ -322,9 +322,9 @@ func TestPropagate(t *testing.T) {
 
 			// Expect propagation to inv-d1, inv-d1a but not to inv-d2.
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-d", "inv-d1", "inv-d1a"))
-			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-d", "inv-d1", "inv-d1a")))
+			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-d",
@@ -352,20 +352,20 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 					RootCreateTime:      rootCreateTime,
 				},
-			})
+			}))
 
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(3))
 
 			expectedRoots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-d1").WithRootInvocation("inv-root-d").WithInheritedSources(sources).WithNotified(got[0].NotifiedTime).Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-d1a").WithRootInvocation("inv-root-d").WithInheritedSources(sources).WithNotified(got[1].NotifiedTime).Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-d").WithRootInvocation("inv-root-d").WithInheritedSources(nil).WithNotified(got[2].NotifiedTime).Build(),
 			}
-			So(got, ShouldResembleProto, expectedRoots)
+			assert.Loosely(t, got, should.Resemble(expectedRoots))
 		})
-		Convey(`Invocation with explicit sources`, func() {
+		t.Run(`Invocation with explicit sources`, func(t *ftt.Test) {
 			_, err := span.Apply(ctx, testutil.CombineMutations(
 				insert.InvocationWithInclusions("inv-root-e", pb.Invocation_ACTIVE, map[string]any{
 					"IsExportRoot": true,
@@ -377,23 +377,23 @@ func TestPropagate(t *testing.T) {
 					"Realm":   "projecte:included",
 				}),
 			))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Create the root for inv-root-e.
 			roots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-root-e").WithRootInvocation("inv-root-e").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
 			err = exportroots.SetForTesting(ctx, roots)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			task := &taskspb.RunExportNotifications{
 				InvocationId: "inv-root-e",
 			}
 
 			visited, notifications, err := propagateRecursive(ctx, sched, task)
-			So(err, ShouldBeNil)
-			So(visited, ShouldResemble, invocations.NewIDSet("inv-root-e", "inv-e"))
-			So(notifications, ShouldResembleProto, []*pb.InvocationReadyForExportNotification{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, visited, should.Resemble(invocations.NewIDSet("inv-root-e", "inv-e")))
+			assert.Loosely(t, notifications, should.Resemble([]*pb.InvocationReadyForExportNotification{
 				{
 					ResultdbHost:        testHostname,
 					RootInvocation:      "invocations/inv-root-e",
@@ -403,17 +403,17 @@ func TestPropagate(t *testing.T) {
 					Sources:             sources,
 					RootCreateTime:      rootCreateTime,
 				},
-			})
+			}))
 
 			got, err := exportroots.ReadAllForTesting(span.Single(ctx))
-			So(err, ShouldBeNil)
-			So(got, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(2))
 
 			expectedRoots := []exportroots.ExportRoot{
 				exportroots.NewBuilder(1).WithInvocation("inv-e").WithRootInvocation("inv-root-e").WithoutInheritedSources().WithNotified(got[0].NotifiedTime).Build(),
 				exportroots.NewBuilder(1).WithInvocation("inv-root-e").WithRootInvocation("inv-root-e").WithInheritedSources(nil).WithoutNotified().Build(),
 			}
-			So(got, ShouldResembleProto, expectedRoots)
+			assert.Loosely(t, got, should.Resemble(expectedRoots))
 		})
 	})
 }

@@ -19,9 +19,9 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -31,10 +31,10 @@ import (
 )
 
 func TestQueryTestExonerations(t *testing.T) {
-	Convey(`QueryTestExonerations`, t, func() {
+	ftt.Run(`QueryTestExonerations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.FinalizedInvocationWithInclusions("a", nil),
 			insert.FinalizedInvocationWithInclusions("b", nil),
 			insert.TestExonerations("a", "A", pbutil.Variant("v", "a"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS, pb.ExonerationReason_NOT_CRITICAL),
@@ -46,11 +46,11 @@ func TestQueryTestExonerations(t *testing.T) {
 			PageSize:      100,
 		}
 		actual, _, err := q.Fetch(span.Single(ctx))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		sort.Slice(actual, func(i, j int) bool {
 			return actual[i].Name < actual[j].Name
 		})
-		So(actual, ShouldResembleProto, []*pb.TestExoneration{
+		assert.Loosely(t, actual, should.Resemble([]*pb.TestExoneration{
 			{
 				Name:            "invocations/a/tests/A/exonerations/0",
 				TestId:          "A",
@@ -78,14 +78,14 @@ func TestQueryTestExonerations(t *testing.T) {
 				VariantHash:     pbutil.VariantHash(pbutil.Variant("v", "c")),
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 			},
-		})
+		}))
 	})
 }
 
 func TestToLimitedData(t *testing.T) {
 	ctx := context.Background()
 
-	Convey(`ToLimitedData masks fields`, t, func() {
+	ftt.Run(`ToLimitedData masks fields`, t, func(t *ftt.Test) {
 		invocationID := "inv0"
 		testID := "FooBar"
 		exonerationID := "123"
@@ -114,7 +114,7 @@ func TestToLimitedData(t *testing.T) {
 		}
 
 		err := ToLimitedData(ctx, testExoneration)
-		So(err, ShouldBeNil)
-		So(testExoneration, ShouldResembleProto, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, testExoneration, should.Resemble(expected))
 	})
 }

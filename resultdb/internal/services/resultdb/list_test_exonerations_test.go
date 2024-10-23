@@ -28,30 +28,33 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateListTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		req := &pb.ListTestExonerationsRequest{Invocation: "invocations/inv", PageSize: 50}
-		So(validateListTestExonerationsRequest(req), ShouldBeNil)
+		assert.Loosely(t, validateListTestExonerationsRequest(req), should.BeNil)
 	})
 
-	Convey(`Invalid invocation`, t, func() {
+	ftt.Run(`Invalid invocation`, t, func(t *ftt.Test) {
 		req := &pb.ListTestExonerationsRequest{Invocation: "bad_name", PageSize: 50}
-		So(validateListTestExonerationsRequest(req), ShouldErrLike, "invocation: does not match")
+		assert.Loosely(t, validateListTestExonerationsRequest(req), should.ErrLike("invocation: does not match"))
 	})
 
-	Convey(`Invalid page size`, t, func() {
+	ftt.Run(`Invalid page size`, t, func(t *ftt.Test) {
 		req := &pb.ListTestExonerationsRequest{Invocation: "invocations/inv", PageSize: -50}
-		So(validateListTestExonerationsRequest(req), ShouldErrLike, "page_size: negative")
+		assert.Loosely(t, validateListTestExonerationsRequest(req), should.ErrLike("page_size: negative"))
 	})
 }
 
 func TestListTestExonerations(t *testing.T) {
-	Convey(`ListTestExonerations`, t, func() {
+	ftt.Run(`ListTestExonerations`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -63,7 +66,7 @@ func TestListTestExonerations(t *testing.T) {
 		invID := invocations.ID("inv")
 		testID := "ninja://chrome/test:foo_tests/BarTest.DoBaz"
 		var0 := pbutil.Variant("k1", "v1", "k2", "v2")
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("invx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 			spanutil.InsertMap("TestExonerations", map[string]any{
@@ -120,48 +123,48 @@ func TestListTestExonerations(t *testing.T) {
 		}
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/invx"}
 			_, err := srv.ListTestExonerations(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testExonerations.list in realm of invocation invx")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testExonerations.list in realm of invocation invx"))
 		})
 
-		Convey(`Basic`, func() {
+		t.Run(`Basic`, func(t *ftt.Test) {
 			req := &pb.ListTestExonerationsRequest{Invocation: "invocations/inv"}
 			resp, err := srv.ListTestExonerations(ctx, req)
-			So(err, ShouldBeNil)
-			So(resp, ShouldNotBeNil)
-			So(resp.TestExonerations, ShouldResembleProto, all)
-			So(resp.NextPageToken, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.NotBeNil)
+			assert.Loosely(t, resp.TestExonerations, should.Resemble(all))
+			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
 
-		Convey(`With pagination`, func() {
+		t.Run(`With pagination`, func(t *ftt.Test) {
 			req := &pb.ListTestExonerationsRequest{
 				Invocation: "invocations/inv",
 				PageSize:   1,
 			}
 			res, err := srv.ListTestExonerations(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.TestExonerations, ShouldResembleProto, all[:1])
-			So(res.NextPageToken, ShouldNotEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.TestExonerations, should.Resemble(all[:1]))
+			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
-			Convey(`Next one`, func() {
+			t.Run(`Next one`, func(t *ftt.Test) {
 				req.PageToken = res.NextPageToken
 				res, err = srv.ListTestExonerations(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldNotBeNil)
-				So(res.TestExonerations, ShouldResembleProto, all[1:2])
-				So(res.NextPageToken, ShouldNotEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.NotBeNil)
+				assert.Loosely(t, res.TestExonerations, should.Resemble(all[1:2]))
+				assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 			})
-			Convey(`Next all`, func() {
+			t.Run(`Next all`, func(t *ftt.Test) {
 				req.PageToken = res.NextPageToken
 				req.PageSize = 100
 				res, err = srv.ListTestExonerations(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldNotBeNil)
-				So(res.TestExonerations, ShouldResembleProto, all[1:])
-				So(res.NextPageToken, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.NotBeNil)
+				assert.Loosely(t, res.TestExonerations, should.Resemble(all[1:]))
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})
 	})

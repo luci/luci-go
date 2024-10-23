@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -37,12 +38,11 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestQueryTestVariantArtifactGroups(t *testing.T) {
-	Convey(`TestQueryTestVariantArtifactGroups`, t, func() {
+	ftt.Run(`TestQueryTestVariantArtifactGroups`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"googlers"},
@@ -103,23 +103,23 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 			PageSize:  1,
 			PageToken: "",
 		}
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			req.Project = "nopermissionproject"
 			res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\"")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\""))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("invalid request", func() {
+		t.Run("invalid request", func(t *ftt.Test) {
 
-			Convey("googler", func() {
+			t.Run("googler", func(t *ftt.Test) {
 				req.StartTime = nil
 				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`start_time: unspecified`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("non-googler", func() {
+			t.Run("non-googler", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{"other"},
@@ -130,15 +130,15 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 				})
 
 				res, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 		})
 
-		Convey("valid request", func() {
+		t.Run("valid request", func(t *ftt.Test) {
 			rsp, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.QueryTestVariantArtifactGroupsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.Resemble(&pb.QueryTestVariantArtifactGroupsResponse{
 				Groups: []*pb.QueryTestVariantArtifactGroupsResponse_MatchGroup{{
 					TestId:      "test1",
 					VariantHash: "variant1",
@@ -157,22 +157,22 @@ func TestQueryTestVariantArtifactGroups(t *testing.T) {
 					MatchingCount: 10,
 				}},
 				NextPageToken: "next_page_token",
-			})
+			}))
 		})
-		Convey("query time out", func() {
+		t.Run("query time out", func(t *ftt.Test) {
 			mockBQClient.ReadArtifactGroupsFunc = func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error) {
 				return nil, "", artifacts.BQQueryTimeOutErr
 			}
 			rsp, err := rdbSvr.QueryTestVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `query can't finish within the deadline`)
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`query can't finish within the deadline`))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
 	})
 }
 
 func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryTestVariantArtifactGroupsRequest`, t, func() {
+	ftt.Run(`TestValidateQueryTestVariantArtifactGroupsRequest`, t, func(t *ftt.Test) {
 		req := &pb.QueryTestVariantArtifactGroupsRequest{
 			Project: "chromium",
 			SearchString: &pb.ArtifactContentMatcher{
@@ -195,88 +195,88 @@ func TestValidateQueryTestVariantArtifactGroupsRequest(t *testing.T) {
 			PageSize:  1,
 			PageToken: "",
 		}
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`no project`, func() {
+		t.Run(`no project`, func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `project: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 		})
 
-		Convey(`invalid page size`, func() {
+		t.Run(`invalid page size`, func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `page_size: negative`)
+			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 		})
 
-		Convey(`no search string`, func() {
+		t.Run(`no search string`, func(t *ftt.Test) {
 			req.SearchString = &pb.ArtifactContentMatcher{}
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `search_string: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`search_string: unspecified`))
 		})
 
-		Convey(`test id matcher`, func() {
-			Convey(`invalid test id prefix`, func() {
+		t.Run(`test id matcher`, func(t *ftt.Test) {
+			t.Run(`invalid test id prefix`, func(t *ftt.Test) {
 				req.TestIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
 						HasPrefix: "invalid-test-id-\r",
 					},
 				}
 				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-				So(err, ShouldErrLike, `test_id_matcher`)
+				assert.Loosely(t, err, should.ErrLike(`test_id_matcher`))
 			})
 
-			Convey(`no test id matcher called by googler`, func() {
+			t.Run(`no test id matcher called by googler`, func(t *ftt.Test) {
 				req.TestIdMatcher = nil
 				err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`no test id matcher called by non-googler`, func() {
+			t.Run(`no test id matcher called by non-googler`, func(t *ftt.Test) {
 				req.TestIdMatcher = nil
 				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `test_id_matcher: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`test_id_matcher: unspecified`))
 			})
 
-			Convey(`test id prefix called by non-googler`, func() {
+			t.Run(`test id prefix called by non-googler`, func(t *ftt.Test) {
 				req.TestIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
 						HasPrefix: "test-id-prefix",
 					},
 				}
 				err := validateQueryTestVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
+				assert.Loosely(t, err, should.ErrLike(`test_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
 			})
 		})
 
-		Convey(`invalid artifact id prefix`, func() {
+		t.Run(`invalid artifact id prefix`, func(t *ftt.Test) {
 			req.ArtifactIdMatcher = &pb.IDMatcher{
 				Matcher: &pb.IDMatcher_HasPrefix{
 					HasPrefix: "invalid-artifact-id-\r",
 				},
 			}
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `artifact_id_matcher`)
+			assert.Loosely(t, err, should.ErrLike(`artifact_id_matcher`))
 		})
 
-		Convey(`no start time`, func() {
+		t.Run(`no start time`, func(t *ftt.Test) {
 			req.StartTime = nil
 			err := validateQueryTestVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `start_time: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`start_time: unspecified`))
 		})
 	})
 }
 
 func TestValidateSearchString(t *testing.T) {
-	Convey("validateSearchString", t, func() {
-		Convey("unspecified", func() {
+	ftt.Run("validateSearchString", t, func(t *ftt.Test) {
+		t.Run("unspecified", func(t *ftt.Test) {
 			err := validateSearchString(nil)
-			So(err, ShouldErrLike, `unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`unspecified`))
 		})
-		Convey("exceed 2048 bytes", func() {
+		t.Run("exceed 2048 bytes", func(t *ftt.Test) {
 			m := &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_Contain{
 					Contain: strings.Repeat("a", 2049),
@@ -284,9 +284,9 @@ func TestValidateSearchString(t *testing.T) {
 			}
 
 			err := validateSearchString(m)
-			So(err, ShouldErrLike, `longer than 2048 bytes`)
+			assert.Loosely(t, err, should.ErrLike(`longer than 2048 bytes`))
 		})
-		Convey("invalid regex", func() {
+		t.Run("invalid regex", func(t *ftt.Test) {
 			m := &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "(.*",
@@ -294,9 +294,9 @@ func TestValidateSearchString(t *testing.T) {
 			}
 
 			err := validateSearchString(m)
-			So(err, ShouldErrLike, `error parsing regexp`)
+			assert.Loosely(t, err, should.ErrLike(`error parsing regexp`))
 		})
-		Convey("capture group is not allowed", func() {
+		t.Run("capture group is not allowed", func(t *ftt.Test) {
 			m := &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "xx([0-9]*)",
@@ -304,9 +304,9 @@ func TestValidateSearchString(t *testing.T) {
 			}
 
 			err := validateSearchString(m)
-			So(err, ShouldErrLike, `capture group is not allowed`)
+			assert.Loosely(t, err, should.ErrLike(`capture group is not allowed`))
 		})
-		Convey("non-capture group is allowed", func() {
+		t.Run("non-capture group is allowed", func(t *ftt.Test) {
 			m := &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_RegexContain{
 					RegexContain: "xx(?:[0-9]*)",
@@ -314,7 +314,7 @@ func TestValidateSearchString(t *testing.T) {
 			}
 
 			err := validateSearchString(m)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
@@ -363,7 +363,7 @@ func TestValidateStartEndTime(t *testing.T) {
 }
 
 func TestConstructSnippetAndMatches(t *testing.T) {
-	Convey("constructSnippetAndMatches", t, func() {
+	ftt.Run("constructSnippetAndMatches", t, func(t *ftt.Test) {
 		containSearchMatcher := func(str string) *pb.ArtifactContentMatcher {
 			return &pb.ArtifactContentMatcher{
 				Matcher: &pb.ArtifactContentMatcher_Contain{
@@ -371,7 +371,7 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 				},
 			}
 		}
-		Convey("no truncate", func() {
+		t.Run("no truncate", func(t *ftt.Test) {
 			atf := &artifacts.MatchingArtifact{
 				Match:                  "match",
 				MatchWithContextBefore: "before",
@@ -379,13 +379,13 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher("match"))
-			So(snippet, ShouldEqual, "beforematchafter")
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, snippet, should.Equal("beforematchafter"))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 6, EndIndex: 11,
-			}})
+			}}))
 		})
 
-		Convey("truncate match", func() {
+		t.Run("truncate match", func(t *ftt.Test) {
 			match := strings.Repeat("a", maxMatchWithContextLength+1)
 			atf := &artifacts.MatchingArtifact{
 				Match:                  match,
@@ -394,12 +394,12 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
-			So(snippet, ShouldEqual, strings.Repeat("a", maxMatchWithContextLength-3)+"...")
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, snippet, should.Equal(strings.Repeat("a", maxMatchWithContextLength-3)+"..."))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 0, EndIndex: maxMatchWithContextLength,
-			}})
+			}}))
 		})
-		Convey("truncate before and after with no enough remaining bytes", func() {
+		t.Run("truncate before and after with no enough remaining bytes", func(t *ftt.Test) {
 			match := strings.Repeat("a", maxMatchWithContextLength-5)
 			atf := &artifacts.MatchingArtifact{
 				Match:                  match,
@@ -408,13 +408,13 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
-			So(snippet, ShouldEqual, atf.Match)
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, snippet, should.Equal(atf.Match))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 0, EndIndex: int32(len(snippet)),
-			}})
+			}}))
 
 		})
-		Convey("truncate before and after append ellipsis", func() {
+		t.Run("truncate before and after append ellipsis", func(t *ftt.Test) {
 			match := strings.Repeat("a", maxMatchWithContextLength-9)
 			atf := &artifacts.MatchingArtifact{
 				Match:                  match,
@@ -423,12 +423,12 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
-			So(snippet, ShouldEqual, fmt.Sprintf("...e%sa...", atf.Match))
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, snippet, should.Equal(fmt.Sprintf("...e%sa...", atf.Match)))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 4, EndIndex: int32(len(snippet) - 4),
-			}})
+			}}))
 		})
-		Convey("doesn't truncate in the middle of a rune", func() {
+		t.Run("doesn't truncate in the middle of a rune", func(t *ftt.Test) {
 			match := strings.Repeat("a", maxMatchWithContextLength-15)
 			// There are 15 remaining bytes to fit in context before and after the match.
 			// Each end gets 7 bytes. Each chinese character below is 3 bytes, and the ellipsis takes 3 bytes.
@@ -441,12 +441,12 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			snippet, matches := constructSnippetAndMatches(atf, containSearchMatcher(match))
 			// A string of 6 bytes have been returned, when 7 bytes are allowed for each end.
 			// Because it doesn't cut from the middle of a chinese character.
-			So(snippet, ShouldEqual, fmt.Sprintf("...前%s之...", atf.Match))
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{{
+			assert.Loosely(t, snippet, should.Equal(fmt.Sprintf("...前%s之...", atf.Match)))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{{
 				StartIndex: 6, EndIndex: int32(len(snippet) - 6),
-			}})
+			}}))
 		})
-		Convey("find all remaining matches and no truncation", func() {
+		t.Run("find all remaining matches and no truncation", func(t *ftt.Test) {
 			atf := &artifacts.MatchingArtifact{
 				Match:                  "a",
 				MatchWithContextBefore: "before",
@@ -459,16 +459,16 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 
 			snippet, matches := constructSnippetAndMatches(atf, search)
-			So(snippet, ShouldEqual, "beforeaaaa")
-			So(matches, ShouldResembleProto, []*pb.ArtifactMatchingContent_Match{
+			assert.Loosely(t, snippet, should.Equal("beforeaaaa"))
+			assert.Loosely(t, matches, should.Resemble([]*pb.ArtifactMatchingContent_Match{
 				{StartIndex: 6, EndIndex: 7},
 				{StartIndex: 7, EndIndex: 8},
 				{StartIndex: 8, EndIndex: 9},
 				{StartIndex: 9, EndIndex: 10},
-			})
+			}))
 		})
 
-		Convey("find all remaining matches with truncation", func() {
+		t.Run("find all remaining matches with truncation", func(t *ftt.Test) {
 			atf := &artifacts.MatchingArtifact{
 				Match:                  "a",
 				MatchWithContextBefore: strings.Repeat("b", maxMatchWithContextLength),
@@ -481,12 +481,12 @@ func TestConstructSnippetAndMatches(t *testing.T) {
 			}
 			snippet, matches := constructSnippetAndMatches(atf, search)
 			// (10240-1)/2 bytes left for each side.
-			So(snippet, ShouldEqual, "..."+strings.Repeat("b", 5116)+"a"+strings.Repeat("a", 5116)+"...")
+			assert.Loosely(t, snippet, should.Equal("..."+strings.Repeat("b", 5116)+"a"+strings.Repeat("a", 5116)+"..."))
 			expectedMatches := []*pb.ArtifactMatchingContent_Match{}
 			for i := 5119; i < 5119+1+5116; i++ {
 				expectedMatches = append(expectedMatches, &pb.ArtifactMatchingContent_Match{StartIndex: int32(i), EndIndex: int32(i + 1)})
 			}
-			So(matches, ShouldResembleProto, expectedMatches)
+			assert.Loosely(t, matches, should.Resemble(expectedMatches))
 		})
 
 	})

@@ -32,12 +32,15 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRead(t *testing.T) {
-	Convey(`Read`, t, func() {
+	ftt.Run(`Read`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		start := testclock.TestRecentTimeUTC
 
@@ -126,7 +129,7 @@ func TestRead(t *testing.T) {
 		}
 
 		// Insert some Invocations.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insertInvocation("including", map[string]any{
 				"State":              pb.Invocation_ACTIVE,
 				"CreateTime":         start,
@@ -151,8 +154,8 @@ func TestRead(t *testing.T) {
 
 		// Fetch back the top-level Invocation.
 		inv, err := Read(ctx, "including")
-		So(err, ShouldBeNil)
-		So(inv, ShouldResembleProto, &pb.Invocation{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, inv, should.Resemble(&pb.Invocation{
 			Name:                "invocations/including",
 			State:               pb.Invocation_ACTIVE,
 			CreateTime:          pbutil.MustTimestampProto(start),
@@ -168,15 +171,15 @@ func TestRead(t *testing.T) {
 			BaselineId:         "try:linux-rel",
 			Instructions:       instructionutil.InstructionsWithNames(instructions, "including"),
 			ExtendedProperties: extendedProperties,
-		})
+		}))
 	})
 }
 
 func TestReadBatch(t *testing.T) {
-	Convey(`TestReadBatch`, t, func() {
+	ftt.Run(`TestReadBatch`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insertInvocation("inv0", nil),
 			insertInvocation("inv1", nil),
 			insertInvocation("inv2", nil),
@@ -185,125 +188,125 @@ func TestReadBatch(t *testing.T) {
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		Convey(`One name`, func() {
+		t.Run(`One name`, func(t *ftt.Test) {
 			invs, err := ReadBatch(ctx, NewIDSet("inv1"))
-			So(err, ShouldBeNil)
-			So(invs, ShouldHaveLength, 1)
-			So(invs, ShouldContainKey, ID("inv1"))
-			So(invs["inv1"].Name, ShouldEqual, "invocations/inv1")
-			So(invs["inv1"].State, ShouldEqual, pb.Invocation_FINALIZED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.HaveLength(1))
+			assert.Loosely(t, invs, should.ContainKey(ID("inv1")))
+			assert.Loosely(t, invs["inv1"].Name, should.Equal("invocations/inv1"))
+			assert.Loosely(t, invs["inv1"].State, should.Equal(pb.Invocation_FINALIZED))
 		})
 
-		Convey(`Two names`, func() {
+		t.Run(`Two names`, func(t *ftt.Test) {
 			invs, err := ReadBatch(ctx, NewIDSet("inv0", "inv1"))
-			So(err, ShouldBeNil)
-			So(invs, ShouldHaveLength, 2)
-			So(invs, ShouldContainKey, ID("inv0"))
-			So(invs, ShouldContainKey, ID("inv1"))
-			So(invs["inv0"].Name, ShouldEqual, "invocations/inv0")
-			So(invs["inv0"].State, ShouldEqual, pb.Invocation_FINALIZED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.HaveLength(2))
+			assert.Loosely(t, invs, should.ContainKey(ID("inv0")))
+			assert.Loosely(t, invs, should.ContainKey(ID("inv1")))
+			assert.Loosely(t, invs["inv0"].Name, should.Equal("invocations/inv0"))
+			assert.Loosely(t, invs["inv0"].State, should.Equal(pb.Invocation_FINALIZED))
 		})
 
-		Convey(`Not found`, func() {
+		t.Run(`Not found`, func(t *ftt.Test) {
 			_, err := ReadBatch(ctx, NewIDSet("inv0", "x"))
-			So(err, ShouldErrLike, `invocations/x not found`)
+			assert.Loosely(t, err, should.ErrLike(`invocations/x not found`))
 		})
 	})
 }
 
 func TestQueryRealms(t *testing.T) {
-	Convey(`TestQueryRealms`, t, func() {
+	ftt.Run(`TestQueryRealms`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Works`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Works`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 				insertInvocation("inv1", map[string]any{"Realm": "1"}),
 				insertInvocation("inv2", map[string]any{"Realm": "2"}),
 			)
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
-			So(err, ShouldBeNil)
-			So(realms, ShouldResemble, map[ID]string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, realms, should.Resemble(map[ID]string{
 				"inv0": "0",
 				"inv1": "1",
 				"inv2": "2",
-			})
+			}))
 		})
-		Convey(`Valid with missing invocation `, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Valid with missing invocation `, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 			)
 
 			realms, err := QueryRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
-			So(err, ShouldBeNil)
-			So(realms, ShouldResemble, map[ID]string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, realms, should.Resemble(map[ID]string{
 				"inv0": "0",
-			})
+			}))
 		})
 	})
 }
 
 func TestReadRealms(t *testing.T) {
-	Convey(`TestReadRealms`, t, func() {
+	ftt.Run(`TestReadRealms`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Works`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Works`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 				insertInvocation("inv1", map[string]any{"Realm": "1"}),
 				insertInvocation("inv2", map[string]any{"Realm": "2"}),
 			)
 
 			realms, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1", "inv2"))
-			So(err, ShouldBeNil)
-			So(realms, ShouldResemble, map[ID]string{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, realms, should.Resemble(map[ID]string{
 				"inv0": "0",
 				"inv1": "1",
 				"inv2": "2",
-			})
+			}))
 		})
-		Convey(`NotFound`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`NotFound`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Realm": "0"}),
 			)
 
 			_, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
-			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv1 not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/inv1 not found"))
 		})
 	})
 }
 
 func TestReadSubmitted(t *testing.T) {
-	Convey(`TestReadSubmitted`, t, func() {
+	ftt.Run(`TestReadSubmitted`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Valid`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Valid`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Submitted": true}),
 			)
 
 			submitted, err := ReadSubmitted(span.Single(ctx), ID("inv0"))
-			So(err, ShouldBeNil)
-			So(submitted, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, submitted, should.BeTrue)
 		})
 
-		Convey(`Not Found`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Not Found`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{"Submitted": true}),
 			)
 			_, err := ReadSubmitted(span.Single(ctx), ID("inv1"))
-			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/inv1 not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/inv1 not found"))
 		})
 
-		Convey(`Nil`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Nil`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insertInvocation("inv0", map[string]any{}),
 			)
 			submitted, err := ReadSubmitted(span.Single(ctx), ID("inv0"))
 
-			So(err, ShouldBeNil)
-			So(submitted, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, submitted, should.BeFalse)
 		})
 	})
 }

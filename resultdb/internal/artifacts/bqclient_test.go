@@ -18,15 +18,16 @@ import (
 	"regexp"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMatchWithContextRegexBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey(`MatchWithContextRegexBuilder`, t, func() {
+	ftt.Run(`MatchWithContextRegexBuilder`, t, func(t *ftt.Test) {
 		// Matching part in the middle of a line.
 		text1 := "line1\r\nline2\r\nline3exact.contain()line3after\r\nline4"
 		// Matching part at the end of a line.
@@ -35,43 +36,43 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 		text3 := "line1\r\nline2\r\nline3\r\nline4exact.contain()"
 		verifyRegex := func(text string, regex string, expected string) {
 			r, err := regexp.Compile(regex)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			matches := r.FindStringSubmatch(text)
-			So(matches, ShouldHaveLength, 2)
-			So(matches[1], ShouldEqual, expected)
+			assert.Loosely(t, matches, should.HaveLength(2))
+			assert.Loosely(t, matches[1], should.Equal(expected))
 		}
-		Convey(`exact contain mode`, func() {
+		t.Run(`exact contain mode`, func(t *ftt.Test) {
 			builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
 				Matcher: &resultpb.ArtifactContentMatcher_Contain{
 					Contain: "exact.contain()",
 				},
 			})
 
-			Convey(`capture match`, func() {
+			t.Run(`capture match`, func(t *ftt.Test) {
 				resp := builder.withCaptureMatch(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?((?i)exact\\.contain\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?((?i)exact\\.contain\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "exact.contain()")
 				verifyRegex(text2, resp, "exact.contain()")
 				verifyRegex(text3, resp, "exact.contain()")
 			})
 
-			Convey(`capture before`, func() {
+			t.Run(`capture before`, func(t *ftt.Test) {
 				resp := builder.withCaptureContextBefore(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?([^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?)(?i)exact\\.contain\\(\\)[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?([^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?)(?i)exact\\.contain\\(\\)[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "line2\r\nline3")
 				verifyRegex(text2, resp, "line1")
 				verifyRegex(text3, resp, "line3\r\nline4")
 			})
 
-			Convey(`capture after`, func() {
+			t.Run(`capture after`, func(t *ftt.Test) {
 				resp := builder.withCaptureContextAfter(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?i)exact\\.contain\\(\\)([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?i)exact\\.contain\\(\\)([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "line3after\r\nline4")
 				verifyRegex(text2, resp, "\r\nline2")
 				verifyRegex(text3, resp, "")
 			})
 
-			Convey(`should be case insensitive`, func() {
+			t.Run(`should be case insensitive`, func(t *ftt.Test) {
 				builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
 					Matcher: &resultpb.ArtifactContentMatcher_Contain{
 						Contain: "EXACT.contain()",
@@ -79,46 +80,46 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 				})
 
 				resp := builder.withCaptureMatch(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?((?i)EXACT\\.contain\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?((?i)EXACT\\.contain\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "exact.contain()")
 				verifyRegex(text2, resp, "exact.contain()")
 				verifyRegex(text3, resp, "exact.contain()")
 			})
 		})
 
-		Convey(`regex contain mode`, func() {
+		t.Run(`regex contain mode`, func(t *ftt.Test) {
 			builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
 				Matcher: &resultpb.ArtifactContentMatcher_RegexContain{
 					RegexContain: `\..*\(\)`,
 				},
 			})
 
-			Convey(`capture match`, func() {
+			t.Run(`capture match`, func(t *ftt.Test) {
 				resp := builder.withCaptureMatch(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(\\..*\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(\\..*\\(\\))[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, ".contain()")
 				verifyRegex(text2, resp, ".contain()")
 				verifyRegex(text3, resp, ".contain()")
 			})
 
-			Convey(`capture before`, func() {
+			t.Run(`capture before`, func(t *ftt.Test) {
 				resp := builder.withCaptureContextBefore(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?([^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?)\\..*\\(\\)[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?([^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?)\\..*\\(\\)[^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "line2\r\nline3exact")
 				verifyRegex(text2, resp, "line1exact")
 				verifyRegex(text3, resp, "line3\r\nline4exact")
 			})
 
-			Convey(`capture after`, func() {
+			t.Run(`capture after`, func(t *ftt.Test) {
 				resp := builder.withCaptureContextAfter(true).build()
-				So(resp, ShouldEqual, "(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?\\..*\\(\\)([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)(?:\\r\\n|\\r|\\n)?")
+				assert.Loosely(t, resp, should.Equal("(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?(?:\\r\\n|\\r|\\n)?[^\\r\\n]*?\\..*\\(\\)([^\\r\\n]*(?:\\r\\n|\\r|\\n)?[^\\r\\n]*)(?:\\r\\n|\\r|\\n)?"))
 				verifyRegex(text1, resp, "line3after\r\nline4")
 				verifyRegex(text2, resp, "\r\nline2")
 				verifyRegex(text3, resp, "")
 			})
 		})
 
-		Convey(`should match first occurrence`, func() {
+		t.Run(`should match first occurrence`, func(t *ftt.Test) {
 			builder := newMatchWithContextRegexBuilder(&resultpb.ArtifactContentMatcher{
 				Matcher: &resultpb.ArtifactContentMatcher_Contain{
 					Contain: "l",
@@ -127,12 +128,12 @@ func TestMatchWithContextRegexBuilder(t *testing.T) {
 
 			resp := builder.withCaptureMatch(true).withCaptureContextBefore(true).withCaptureContextAfter(true).build()
 			r, err := regexp.Compile(resp)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			matches := r.FindStringSubmatch(text1)
-			So(matches, ShouldHaveLength, 4)
-			So(matches[1], ShouldEqual, "")
-			So(matches[2], ShouldEqual, "l")
-			So(matches[3], ShouldEqual, "ine1\r\nline2")
+			assert.Loosely(t, matches, should.HaveLength(4))
+			assert.Loosely(t, matches[1], should.BeEmpty)
+			assert.Loosely(t, matches[2], should.Equal("l"))
+			assert.Loosely(t, matches[3], should.Equal("ine1\r\nline2"))
 		})
 	})
 }

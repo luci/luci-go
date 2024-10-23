@@ -31,6 +31,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/server/router"
 
@@ -39,8 +42,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type fakeWriter struct {
@@ -81,7 +82,7 @@ func TestCreateArtifact(t *testing.T) {
 	// metric field values for Artifact table
 	artMFVs := []any{string(spanutil.Artifacts), string(spanutil.Inserted), insert.TestRealm}
 
-	Convey(`CreateArtifact`, t, func() {
+	ftt.Run(`CreateArtifact`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
 		store := tsmon.Store(ctx)
@@ -91,7 +92,7 @@ func TestCreateArtifact(t *testing.T) {
 		ach := &artifactCreationHandler{
 			RBEInstance: "projects/example/instances/artifacts",
 			NewCASWriter: func(context.Context) (bytestream.ByteStream_WriteClient, error) {
-				So(writerCreated, ShouldBeFalse)
+				assert.Loosely(t, writerCreated, should.BeFalse)
 				writerCreated = true
 				return w, nil
 			},
@@ -100,7 +101,7 @@ func TestCreateArtifact(t *testing.T) {
 
 		art := "invocations/inv/artifacts/a"
 		tok, err := invocationTokenKind.Generate(ctx, []byte("inv"), nil, time.Hour)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		send := func(artifact, hash string, size int64, updateToken, content, contentType string) *httptest.ResponseRecorder {
 			rec := httptest.NewRecorder()
@@ -109,7 +110,7 @@ func TestCreateArtifact(t *testing.T) {
 			u := &url.URL{RawPath: "/" + artifact}
 			var err error
 			u.Path, err = url.PathUnescape(artifact)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			c := &router.Context{
 				Request: (&http.Request{
@@ -135,75 +136,75 @@ func TestCreateArtifact(t *testing.T) {
 			return rec
 		}
 
-		Convey(`Verify request`, func() {
-			Convey(`Artifact name is malformed`, func() {
+		t.Run(`Verify request`, func(t *ftt.Test) {
+			t.Run(`Artifact name is malformed`, func(t *ftt.Test) {
 				rec := send("artifact", "", 0, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "bad artifact name: does not match")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("bad artifact name: does not match"))
 			})
 
-			Convey(`Hash is missing`, func() {
+			t.Run(`Hash is missing`, func(t *ftt.Test) {
 				rec := send(art, "", 0, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Hash header is missing")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Content-Hash header is missing"))
 			})
 
-			Convey(`Hash is malformed`, func() {
+			t.Run(`Hash is malformed`, func(t *ftt.Test) {
 				rec := send(art, "a", 0, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Hash header value does not match")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Content-Hash header value does not match"))
 			})
 
-			Convey(`Size is missing`, func() {
+			t.Run(`Size is missing`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -1, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header is missing")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Content-Length header is missing"))
 			})
 
-			Convey(`Size is negative`, func() {
+			t.Run(`Size is negative`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", -100, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 1024")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Content-Length header must be a value between 0 and 1024"))
 			})
 
-			Convey(`Size is too large`, func() {
+			t.Run(`Size is too large`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 1<<30, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "Content-Length header must be a value between 0 and 1024")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Content-Length header must be a value between 0 and 1024"))
 			})
 
-			Convey(`Update token is missing`, func() {
+			t.Run(`Update token is missing`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "", "", "")
-				So(rec.Code, ShouldEqual, http.StatusUnauthorized)
-				So(rec.Body.String(), ShouldContainSubstring, "Update-Token header is missing")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusUnauthorized))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("Update-Token header is missing"))
 			})
 
-			Convey(`Update token is invalid`, func() {
+			t.Run(`Update token is invalid`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, "x", "", "")
-				So(rec.Code, ShouldEqual, http.StatusForbidden)
-				So(rec.Body.String(), ShouldContainSubstring, "invalid Update-Token header value")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusForbidden))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("invalid Update-Token header value"))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 		})
 
-		Convey(`Verify state`, func() {
-			Convey(`Invocation does not exist`, func() {
+		t.Run(`Verify state`, func(t *ftt.Test) {
+			t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
-				So(rec.Code, ShouldEqual, http.StatusNotFound)
-				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv not found")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("invocations/inv not found"))
 			})
 
-			Convey(`Invocation is finalized`, func() {
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+			t.Run(`Invocation is finalized`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldContainSubstring, "invocations/inv is not active")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.ContainSubstring("invocations/inv is not active"))
 			})
 
-			Convey(`Same artifact exists`, func() {
-				testutil.MustApply(ctx,
+			t.Run(`Same artifact exists`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", map[string]any{
 						"InvocationId": invocations.ID("inv"),
@@ -214,11 +215,11 @@ func TestCreateArtifact(t *testing.T) {
 					}),
 				)
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
-				So(rec.Code, ShouldEqual, http.StatusNoContent)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNoContent))
 			})
 
-			Convey(`Different artifact exists`, func() {
-				testutil.MustApply(ctx,
+			t.Run(`Different artifact exists`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 					spanutil.InsertMap("Artifacts", map[string]any{
 						"InvocationId": invocations.ID("inv"),
@@ -229,109 +230,109 @@ func TestCreateArtifact(t *testing.T) {
 					}),
 				)
 				rec := send(art, "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", 0, tok, "", "")
-				So(rec.Code, ShouldEqual, http.StatusConflict)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusConflict))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 		})
 
-		Convey(`Write to CAS`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run(`Write to CAS`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			w.requestsToAccept = 1
 
 			casSend := func() *httptest.ResponseRecorder {
 				return send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "")
 			}
 
-			// Skip due to https://crbug.com/1110755
-			SkipConvey(`Single request`, func() {
+			t.Run(`Single request`, func(t *ftt.Test) {
+				t.Skip("https://crbug.com/1110755")
 				rec := casSend()
-				So(rec.Code, ShouldEqual, http.StatusNoContent)
-				So(w.requests, ShouldHaveLength, 1)
-				So(w.requests[0].ResourceName, ShouldEqual, "projects/example/instances/artifacts/uploads/0194fdc2-fa2f-fcc0-41d3-ff12045b73c8/blobs/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824/5")
-				So(string(w.requests[0].Data), ShouldEqual, "hello")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNoContent))
+				assert.Loosely(t, w.requests, should.HaveLength(1))
+				assert.Loosely(t, w.requests[0].ResourceName, should.Equal("projects/example/instances/artifacts/uploads/0194fdc2-fa2f-fcc0-41d3-ff12045b73c8/blobs/2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824/5"))
+				assert.Loosely(t, string(w.requests[0].Data), should.Equal("hello"))
 			})
 
-			Convey(`Chunked`, func() {
+			t.Run(`Chunked`, func(t *ftt.Test) {
 				w.requestsToAccept = 2
 				ach.bufSize = 3
 				rec := casSend()
-				So(rec.Code, ShouldEqual, http.StatusNoContent)
-				So(w.requests, ShouldHaveLength, 2)
-				So(string(w.requests[0].Data), ShouldEqual, "hel")
-				So(string(w.requests[1].Data), ShouldEqual, "lo")
-				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNoContent))
+				assert.Loosely(t, w.requests, should.HaveLength(2))
+				assert.Loosely(t, string(w.requests[0].Data), should.Equal("hel"))
+				assert.Loosely(t, string(w.requests[1].Data), should.Equal("lo"))
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
 			})
 
-			Convey(`Invalid digest`, func() {
+			t.Run(`Invalid digest`, func(t *ftt.Test) {
 				w.resErr = status.Errorf(codes.InvalidArgument, "wrong hash")
 				rec := casSend()
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldEqual, "Content-Hash and/or Content-Length do not match the request body\n")
-				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.Equal("Content-Hash and/or Content-Length do not match the request body\n"))
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 			})
 
-			Convey(`RBE-CAS stops request early`, func() {
+			t.Run(`RBE-CAS stops request early`, func(t *ftt.Test) {
 				w.requestsToAccept = 1
 				w.res = &bytestream.WriteResponse{CommittedSize: 5} // blob already exists
 				ach.bufSize = 1
 				rec := casSend()
-				So(rec.Code, ShouldEqual, http.StatusNoContent)
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusNoContent))
 				// Must not continue requests after receiving io.EOF in the first
 				// request.
-				So(w.requests, ShouldHaveLength, 1)
-				So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
+				assert.Loosely(t, w.requests, should.HaveLength(1))
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
 			})
 
 		})
 
-		Convey(`Verify digest`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run(`Verify digest`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 			w.requestsToAccept = 1
 
-			Convey(`Hash`, func() {
+			t.Run(`Hash`, func(t *ftt.Test) {
 				rec := send(art, "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t,
 					rec.Body.String(),
-					ShouldEqual,
-					`Content-Hash header value "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" `+
-						`does not match the hash of the request body, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"`+
-						"\n")
+					should.Equal(
+						`Content-Hash header value "sha256:baaaaada5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" `+
+							`does not match the hash of the request body, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"`+
+							"\n"))
 			})
 
-			Convey(`Size`, func() {
+			t.Run(`Size`, func(t *ftt.Test) {
 				// Satisfy the RBE-level verification.
 				w.res = &bytestream.WriteResponse{CommittedSize: 100}
 
 				rec := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 100, tok, "hello", "")
-				So(rec.Code, ShouldEqual, http.StatusBadRequest)
-				So(rec.Body.String(), ShouldEqual, "Content-Length header value 100 does not match the length of the request body, 5\n")
+				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, rec.Body.String(), should.Equal("Content-Length header value 100 does not match the length of the request body, 5\n"))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldBeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
 		})
 
-		Convey(`e2e`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+		t.Run(`e2e`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 
 			res := send(art, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", 5, tok, "hello", "text/plain")
-			So(res.Code, ShouldEqual, http.StatusNoContent)
+			assert.Loosely(t, res.Code, should.Equal(http.StatusNoContent))
 
 			var actualSize int64
 			var actualHash string
 			var actualContentType string
-			testutil.MustReadRow(ctx, "Artifacts", invocations.ID("inv").Key("", "a"), map[string]any{
+			testutil.MustReadRow(ctx, t, "Artifacts", invocations.ID("inv").Key("", "a"), map[string]any{
 				"Size":        &actualSize,
 				"RBECASHash":  &actualHash,
 				"ContentType": &actualContentType,
 			})
-			So(actualSize, ShouldEqual, 5)
-			So(actualHash, ShouldEqual, "sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824")
-			So(actualContentType, ShouldEqual, "text/plain")
-			So(store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), ShouldEqual, 1)
+			assert.Loosely(t, actualSize, should.Equal(5))
+			assert.Loosely(t, actualHash, should.Equal("sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"))
+			assert.Loosely(t, actualContentType, should.Equal("text/plain"))
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
 		})
 	})
 }

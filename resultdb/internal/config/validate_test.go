@@ -21,12 +21,12 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
 
 	configpb "go.chromium.org/luci/resultdb/proto/config"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjectConfigValidator(t *testing.T) {
@@ -38,64 +38,64 @@ func TestProjectConfigValidator(t *testing.T) {
 		return c.Finalize()
 	}
 
-	Convey("config template is valid", t, func() {
+	ftt.Run("config template is valid", t, func(t *ftt.Test) {
 		content, err := os.ReadFile(
 			"../../configs/projects/chromeos/luci-resultdb-dev-template.cfg",
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cfg := &configpb.ProjectConfig{}
-		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal(content, cfg), should.BeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("valid config is valid", t, func() {
+	ftt.Run("valid config is valid", t, func(t *ftt.Test) {
 		cfg := CreatePlaceholderProjectConfig()
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("GCS allow list", t, func() {
+	ftt.Run("GCS allow list", t, func(t *ftt.Test) {
 		cfg := CreatePlaceholderProjectConfig()
-		So(cfg.GcsAllowList, ShouldNotBeNil)
-		So(len(cfg.GcsAllowList), ShouldEqual, 1)
-		So(len(cfg.GcsAllowList[0].Buckets), ShouldEqual, 1)
+		assert.Loosely(t, cfg.GcsAllowList, should.NotBeNil)
+		assert.Loosely(t, len(cfg.GcsAllowList), should.Equal(1))
+		assert.Loosely(t, len(cfg.GcsAllowList[0].Buckets), should.Equal(1))
 		gcsAllowList := cfg.GcsAllowList[0]
 
-		Convey("users", func() {
-			Convey("must be specified", func() {
+		t.Run("users", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				gcsAllowList.Users = []string{}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
-			Convey("must be non-empty", func() {
+			t.Run("must be non-empty", func(t *ftt.Test) {
 				gcsAllowList.Users = []string{""}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
-			Convey("invalid", func() {
+			t.Run("invalid", func(t *ftt.Test) {
 				gcsAllowList.Users = []string{"a:b"}
-				So(validate(cfg), ShouldNotBeNil)
+				assert.Loosely(t, validate(cfg), should.NotBeNil)
 			})
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				gcsAllowList.Users = []string{"user:test@test.com"}
-				So(validate(cfg), ShouldBeNil)
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
-			Convey("multiple", func() {
+			t.Run("multiple", func(t *ftt.Test) {
 				gcsAllowList.Users = []string{"user:test@test.com", "user:test2@test.com"}
-				So(validate(cfg), ShouldBeNil)
+				assert.Loosely(t, validate(cfg), should.BeNil)
 			})
 		})
 
-		Convey("GCS buckets", func() {
-			Convey("bucket", func() {
-				Convey("must be specified", func() {
+		t.Run("GCS buckets", func(t *ftt.Test) {
+			t.Run("bucket", func(t *ftt.Test) {
+				t.Run("must be specified", func(t *ftt.Test) {
 					gcsAllowList.Buckets[0] = ""
-					So(validate(cfg), ShouldErrLike, "empty bucket is not allowed")
+					assert.Loosely(t, validate(cfg), should.ErrLike("empty bucket is not allowed"))
 				})
-				Convey("invalid", func() {
+				t.Run("invalid", func(t *ftt.Test) {
 					gcsAllowList.Buckets[0] = "b"
-					So(validate(cfg), ShouldErrLike, `invalid bucket: "b"`)
+					assert.Loosely(t, validate(cfg), should.ErrLike(`invalid bucket: "b"`))
 				})
-				Convey("valid", func() {
+				t.Run("valid", func(t *ftt.Test) {
 					gcsAllowList.Buckets[0] = "bucket"
-					So(validate(cfg), ShouldBeNil)
+					assert.Loosely(t, validate(cfg), should.BeNil)
 				})
 			})
 		})
@@ -111,40 +111,40 @@ func TestServiceConfigValidator(t *testing.T) {
 		return c.Finalize()
 	}
 
-	Convey("config template is valid", t, func() {
+	ftt.Run("config template is valid", t, func(t *ftt.Test) {
 		content, err := os.ReadFile(
 			"../../configs/service/template.cfg",
 		)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		cfg := &configpb.Config{}
-		So(prototext.Unmarshal(content, cfg), ShouldBeNil)
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, prototext.Unmarshal(content, cfg), should.BeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("valid config is valid", t, func() {
+	ftt.Run("valid config is valid", t, func(t *ftt.Test) {
 		cfg := CreatePlaceHolderServiceConfig()
-		So(validate(cfg), ShouldBeNil)
+		assert.Loosely(t, validate(cfg), should.BeNil)
 	})
 
-	Convey("bq artifact export config", t, func() {
+	ftt.Run("bq artifact export config", t, func(t *ftt.Test) {
 		cfg := CreatePlaceHolderServiceConfig()
-		Convey("is nil", func() {
+		t.Run("is nil", func(t *ftt.Test) {
 			cfg.BqArtifactExportConfig = nil
-			So(validate(cfg), ShouldNotBeNil)
+			assert.Loosely(t, validate(cfg), should.NotBeNil)
 		})
 
-		Convey("percentage smaller than 0", func() {
+		t.Run("percentage smaller than 0", func(t *ftt.Test) {
 			cfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
 				ExportPercent: -1,
 			}
-			So(validate(cfg), ShouldNotBeNil)
+			assert.Loosely(t, validate(cfg), should.NotBeNil)
 		})
 
-		Convey("percentage bigger than 100", func() {
+		t.Run("percentage bigger than 100", func(t *ftt.Test) {
 			cfg.BqArtifactExportConfig = &configpb.BqArtifactExportConfig{
 				ExportPercent: 101,
 			}
-			So(validate(cfg), ShouldNotBeNil)
+			assert.Loosely(t, validate(cfg), should.NotBeNil)
 		})
 	})
 }

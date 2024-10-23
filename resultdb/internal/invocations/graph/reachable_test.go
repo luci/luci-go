@@ -17,16 +17,16 @@ package graph
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestReachableInvocations(t *testing.T) {
-	Convey(`ReachableInvocations`, t, func() {
+	ftt.Run(`ReachableInvocations`, t, func(t *ftt.Test) {
 		invs := NewReachableInvocations()
 
 		src1 := testutil.TestSourcesWithChangelistNumbers(12)
@@ -41,59 +41,59 @@ func TestReachableInvocations(t *testing.T) {
 		invs.Invocations["4"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}}
 		invs.Invocations["5"] = ReachableInvocation{HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}}
 
-		Convey(`Batches`, func() {
+		t.Run(`Batches`, func(t *ftt.Test) {
 			results := invs.batches(2)
-			So(results[0].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[0].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
 				"3": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmC", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
 				"4": {HasTestResults: false, HasTestExonerations: true, Realm: "testproject:testrealmB", SourceHash: HashSources(src2), IncludedInvocationIDs: []invocations.ID{}},
-			})
-			So(results[0].Sources, ShouldHaveLength, 2)
-			So(results[0].Sources[HashSources(src1)], ShouldResembleProto, src1)
-			So(results[0].Sources[HashSources(src2)], ShouldResembleProto, src2)
+			}))
+			assert.Loosely(t, results[0].Sources, should.HaveLength(2))
+			assert.Loosely(t, results[0].Sources[HashSources(src1)], should.Resemble(src1))
+			assert.Loosely(t, results[0].Sources[HashSources(src2)], should.Resemble(src2))
 
-			So(results[1].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[1].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
 				"0": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmA", SourceHash: HashSources(src1), IncludedInvocationIDs: []invocations.ID{}},
 				"1": {HasTestResults: true, HasTestExonerations: false, Realm: "testproject:testrealmB", IncludedInvocationIDs: []invocations.ID{}},
-			})
-			So(results[1].Sources, ShouldHaveLength, 1)
-			So(results[1].Sources[HashSources(src1)], ShouldResembleProto, src1)
+			}))
+			assert.Loosely(t, results[1].Sources, should.HaveLength(1))
+			assert.Loosely(t, results[1].Sources[HashSources(src1)], should.Resemble(src1))
 
-			So(results[2].Invocations, ShouldResemble, map[invocations.ID]ReachableInvocation{
+			assert.Loosely(t, results[2].Invocations, should.Resemble(map[invocations.ID]ReachableInvocation{
 				"2": {HasTestResults: true, HasTestExonerations: true, Realm: "testproject:testrealmC", IncludedInvocationIDs: []invocations.ID{}},
 				"5": {HasTestResults: false, HasTestExonerations: false, Realm: "testproject:testrealmA", IncludedInvocationIDs: []invocations.ID{}},
-			})
-			So(results[2].Sources, ShouldHaveLength, 0)
+			}))
+			assert.Loosely(t, results[2].Sources, should.HaveLength(0))
 		})
-		Convey(`Marshal and unmarshal`, func() {
+		t.Run(`Marshal and unmarshal`, func(t *ftt.Test) {
 			b, err := invs.marshal()
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			result, err := unmarshalReachableInvocations(b)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(result.Invocations, ShouldResemble, invs.Invocations)
-			So(result.Sources, ShouldHaveLength, len(invs.Sources))
+			assert.Loosely(t, result.Invocations, should.Resemble(invs.Invocations))
+			assert.Loosely(t, result.Sources, should.HaveLength(len(invs.Sources)))
 			for key, value := range invs.Sources {
-				So(result.Sources[key], ShouldResembleProto, value)
+				assert.Loosely(t, result.Sources[key], should.Resemble(value))
 			}
 		})
-		Convey(`IDSet`, func() {
+		t.Run(`IDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.IDSet()
-			So(err, ShouldBeNil)
-			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "1", "2", "3", "4", "5"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "1", "2", "3", "4", "5")))
 		})
-		Convey(`WithTestResultsIDSet`, func() {
+		t.Run(`WithTestResultsIDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.WithTestResultsIDSet()
-			So(err, ShouldBeNil)
-			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "1", "2"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "1", "2")))
 		})
-		Convey(`WithExonerationsIDSet`, func() {
+		t.Run(`WithExonerationsIDSet`, func(t *ftt.Test) {
 			invIDs, err := invs.WithExonerationsIDSet()
-			So(err, ShouldBeNil)
-			So(invIDs, ShouldResemble, invocations.NewIDSet("0", "2", "4"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invIDs, should.Resemble(invocations.NewIDSet("0", "2", "4")))
 		})
 	})
-	Convey(`Union`, t, func() {
+	ftt.Run(`Union`, t, func(t *ftt.Test) {
 		a := NewReachableInvocations()
 		a.Invocations = map[invocations.ID]ReachableInvocation{
 			"inv1": {
@@ -127,7 +127,7 @@ func TestReachableInvocations(t *testing.T) {
 			},
 		}
 		a.Union(b)
-		So(a, ShouldResembleProto, ReachableInvocations{
+		assert.Loosely(t, a, should.Resemble(ReachableInvocations{
 			Invocations: map[invocations.ID]ReachableInvocation{
 				"inv1": {
 					HasTestResults:        true,
@@ -154,9 +154,9 @@ func TestReachableInvocations(t *testing.T) {
 					},
 				},
 			},
-		})
+		}))
 	})
-	Convey(`InstructionMap`, t, func() {
+	ftt.Run(`InstructionMap`, t, func(t *ftt.Test) {
 		invs := NewReachableInvocations()
 
 		invs.Invocations["inv0"] = ReachableInvocation{
@@ -241,8 +241,8 @@ func TestReachableInvocations(t *testing.T) {
 		invs.Invocations["inv8"] = ReachableInvocation{}
 
 		instructionMap, err := invs.InstructionMap()
-		So(err, ShouldBeNil)
-		So(instructionMap, ShouldResembleProto, map[invocations.ID]*pb.VerdictInstruction{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, instructionMap, should.Resemble(map[invocations.ID]*pb.VerdictInstruction{
 			"inv1": {
 				Instruction: "invocations/inv0/instructions/instruction0",
 			},
@@ -261,6 +261,6 @@ func TestReachableInvocations(t *testing.T) {
 			"inv5": {
 				Instruction: "invocations/inv2/instructions/instruction0",
 			},
-		})
+		}))
 	})
 }

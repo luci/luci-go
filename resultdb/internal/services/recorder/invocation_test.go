@@ -31,12 +31,15 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMutateInvocation(t *testing.T) {
-	Convey("MayMutateInvocation", t, func() {
+	ftt.Run("MayMutateInvocation", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		mayMutate := func(id invocations.ID) error {
@@ -45,44 +48,44 @@ func TestMutateInvocation(t *testing.T) {
 			})
 		}
 
-		Convey("no token", func() {
+		t.Run("no token", func(t *ftt.Test) {
 			err := mayMutate("inv")
-			So(err, ShouldHaveAppStatus, codes.Unauthenticated, `missing update-token metadata value`)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.Unauthenticated, `missing update-token metadata value`))
 		})
 
-		Convey("with token", func() {
+		t.Run("with token", func(t *ftt.Test) {
 			token, err := generateInvocationToken(ctx, "inv")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-			Convey(`no invocation`, func() {
+			t.Run(`no invocation`, func(t *ftt.Test) {
 				err := mayMutate("inv")
-				So(err, ShouldHaveAppStatus, codes.NotFound, `invocations/inv not found`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, `invocations/inv not found`))
 			})
 
-			Convey(`with finalized invocation`, func() {
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+			t.Run(`with finalized invocation`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				err := mayMutate("inv")
-				So(err, ShouldHaveAppStatus, codes.FailedPrecondition, `invocations/inv is not active`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.FailedPrecondition, `invocations/inv is not active`))
 			})
 
-			Convey(`with active invocation and different token`, func() {
-				testutil.MustApply(ctx, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
+			t.Run(`with active invocation and different token`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
 				err := mayMutate("inv2")
-				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `invalid update token`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied, `invalid update token`))
 			})
 
-			Convey(`with active invocation and same token`, func() {
-				testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+			t.Run(`with active invocation and same token`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
 				err := mayMutate("inv")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 }
 
 func TestReadInvocation(t *testing.T) {
-	Convey(`ReadInvocationFull`, t, func() {
+	ftt.Run(`ReadInvocationFull`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ct := testclock.TestRecentTimeUTC
 
@@ -91,12 +94,12 @@ func TestReadInvocation(t *testing.T) {
 			defer cancel()
 
 			inv, err := invocations.Read(ctx, "inv")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return inv
 		}
 
-		Convey(`Finalized`, func() {
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
+		t.Run(`Finalized`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
 				"CreateTime":        ct,
 				"Deadline":          ct.Add(time.Hour),
 				"FinalizeStartTime": ct.Add(2 * time.Hour),
@@ -113,10 +116,10 @@ func TestReadInvocation(t *testing.T) {
 				FinalizeTime:      pbutil.MustTimestampProto(ct.Add(3 * time.Hour)),
 				Realm:             insert.TestRealm,
 			}
-			So(inv, ShouldResembleProto, expected)
+			assert.Loosely(t, inv, should.Resemble(expected))
 
-			Convey(`with included invocations`, func() {
-				testutil.MustApply(ctx,
+			t.Run(`with included invocations`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("included0", pb.Invocation_FINALIZED, nil),
 					insert.Invocation("included1", pb.Invocation_FINALIZED, nil),
 					insert.Inclusion("inv", "included0"),
@@ -124,7 +127,7 @@ func TestReadInvocation(t *testing.T) {
 				)
 
 				inv := readInv()
-				So(inv.IncludedInvocations, ShouldResemble, []string{"invocations/included0", "invocations/included1"})
+				assert.Loosely(t, inv.IncludedInvocations, should.Resemble([]string{"invocations/included0", "invocations/included1"}))
 			})
 		})
 	})

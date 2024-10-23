@@ -21,10 +21,11 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/golang/protobuf/proto"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -37,48 +38,48 @@ func TestTypeConversion(t *testing.T) {
 	test := func(goValue, spValue any) {
 		// ToSpanner
 		actualSPValue := ToSpanner(goValue)
-		So(actualSPValue, ShouldResemble, spValue)
+		assert.Loosely(t, actualSPValue, should.Resemble(spValue))
 
 		// FromSpanner
 		row, err := spanner.NewRow([]string{"a"}, []any{actualSPValue})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		goPtr := reflect.New(reflect.TypeOf(goValue))
 		err = b.FromSpanner(row, goPtr.Interface())
-		So(err, ShouldBeNil)
-		So(goPtr.Elem().Interface(), ShouldResemble, goValue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, goPtr.Elem().Interface(), should.Resemble(goValue))
 	}
 
-	Convey(`int64`, t, func() {
+	ftt.Run(`int64`, t, func(t *ftt.Test) {
 		test(int64(42), int64(42))
 	})
 
-	Convey(`*timestamppb.Timestamp`, t, func() {
+	ftt.Run(`*timestamppb.Timestamp`, t, func(t *ftt.Test) {
 		test(
 			&timestamppb.Timestamp{Seconds: 1000, Nanos: 1234},
 			spanner.NullTime{Valid: true, Time: time.Unix(1000, 1234).UTC()},
 		)
 	})
 
-	Convey(`pb.ExonerationReason`, t, func() {
+	ftt.Run(`pb.ExonerationReason`, t, func(t *ftt.Test) {
 		test(pb.ExonerationReason_OCCURS_ON_OTHER_CLS, int64(2))
 	})
 
-	Convey(`pb.Invocation_State`, t, func() {
+	ftt.Run(`pb.Invocation_State`, t, func(t *ftt.Test) {
 		test(pb.Invocation_FINALIZED, int64(3))
 	})
 
-	Convey(`pb.TestStatus`, t, func() {
+	ftt.Run(`pb.TestStatus`, t, func(t *ftt.Test) {
 		test(pb.TestStatus_PASS, int64(1))
 	})
 
-	Convey(`*pb.Variant`, t, func() {
-		Convey(`Works`, func() {
+	ftt.Run(`*pb.Variant`, t, func(t *ftt.Test) {
+		t.Run(`Works`, func(t *ftt.Test) {
 			test(
 				pbutil.Variant("a", "1", "b", "2"),
 				[]string{"a:1", "b:2"},
 			)
 		})
-		Convey(`Empty`, func() {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			test(
 				(*pb.Variant)(nil),
 				[]string{},
@@ -86,42 +87,42 @@ func TestTypeConversion(t *testing.T) {
 		})
 	})
 
-	Convey(`[]*pb.StringPair`, t, func() {
+	ftt.Run(`[]*pb.StringPair`, t, func(t *ftt.Test) {
 		test(
 			pbutil.StringPairs("a", "1", "b", "2"),
 			[]string{"a:1", "b:2"},
 		)
 	})
 
-	Convey(`Compressed`, t, func() {
-		Convey(`Empty`, func() {
+	ftt.Run(`Compressed`, t, func(t *ftt.Test) {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			test(Compressed(nil), []byte(nil))
 		})
-		Convey(`non-Empty`, func() {
+		t.Run(`non-Empty`, func(t *ftt.Test) {
 			test(
 				Compressed("aaaaaaaaaaaaaaaaaaaa"),
 				[]byte{122, 116, 100, 10, 40, 181, 47, 253, 4, 0, 163, 0, 0, 97, 247, 175, 71, 227})
 		})
 	})
 
-	Convey(`Slice`, t, func() {
+	ftt.Run(`Slice`, t, func(t *ftt.Test) {
 		var varIntA, varIntB int64
 		var varState pb.Invocation_State
 
 		row, err := spanner.NewRow([]string{"a", "b", "c"}, []any{int64(42), int64(56), int64(3)})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		err = b.FromSpanner(row, &varIntA, &varIntB, &varState)
-		So(err, ShouldBeNil)
-		So(varIntA, ShouldEqual, 42)
-		So(varIntB, ShouldEqual, 56)
-		So(varState, ShouldEqual, pb.Invocation_FINALIZED)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, varIntA, should.Equal(42))
+		assert.Loosely(t, varIntB, should.Equal(56))
+		assert.Loosely(t, varState, should.Equal(pb.Invocation_FINALIZED))
 
 		// ToSpanner
 		spValues := ToSpannerSlice(varIntA, varIntB, varState)
-		So(spValues, ShouldResemble, []any{int64(42), int64(56), int64(3)})
+		assert.Loosely(t, spValues, should.Resemble([]any{int64(42), int64(56), int64(3)}))
 	})
 
-	Convey(`[]*pb.BigQueryExport`, t, func() {
+	ftt.Run(`[]*pb.BigQueryExport`, t, func(t *ftt.Test) {
 		bqExports := []*pb.BigQueryExport{
 			{
 				Project: "project",
@@ -145,43 +146,43 @@ func TestTypeConversion(t *testing.T) {
 		expectedBqExportsBytes := make([][]byte, len(bqExports))
 		for i, bqExport := range bqExports {
 			expectedBqExportsBytes[i], err = proto.Marshal(bqExport)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
-		So(ToSpanner(bqExports), ShouldResemble, expectedBqExportsBytes)
+		assert.Loosely(t, ToSpanner(bqExports), should.Resemble(expectedBqExportsBytes))
 
 		row, err := spanner.NewRow([]string{"a"}, []any{expectedBqExportsBytes})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			expectedPtr := []*pb.BigQueryExport{}
 			err = b.FromSpanner(row, &expectedPtr)
-			So(err, ShouldBeNil)
-			So(expectedPtr, ShouldResembleProto, bqExports)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expectedPtr, should.Resemble(bqExports))
 		})
 	})
 
-	Convey(`proto.Message`, t, func() {
+	ftt.Run(`proto.Message`, t, func(t *ftt.Test) {
 		msg := &pb.Invocation{
 			Name: "a",
 		}
 		expected, err := proto.Marshal(msg)
-		So(err, ShouldBeNil)
-		So(ToSpanner(msg), ShouldResemble, expected)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ToSpanner(msg), should.Resemble(expected))
 
 		row, err := spanner.NewRow([]string{"a"}, []any{expected})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			expectedPtr := &pb.Invocation{}
 			err = b.FromSpanner(row, expectedPtr)
-			So(err, ShouldBeNil)
-			So(expectedPtr, ShouldResembleProto, msg)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expectedPtr, should.Resemble(msg))
 		})
 
-		Convey(`Passing nil pointer to fromSpanner`, func() {
+		t.Run(`Passing nil pointer to fromSpanner`, func(t *ftt.Test) {
 			var expectedPtr *pb.Invocation
 			err = b.FromSpanner(row, expectedPtr)
-			So(err, ShouldErrLike, "nil pointer encountered")
+			assert.Loosely(t, err, should.ErrLike("nil pointer encountered"))
 		})
 	})
 }

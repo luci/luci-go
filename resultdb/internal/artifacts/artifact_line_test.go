@@ -22,34 +22,35 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSupportedArtifacts(t *testing.T) {
 	t.Parallel()
 
-	Convey(`isLogSupportedArtifact`, t, func() {
-		Convey(`given a supported extension, then should return true`, func() {
+	ftt.Run(`isLogSupportedArtifact`, t, func(t *ftt.Test) {
+		t.Run(`given a supported extension, then should return true`, func(t *ftt.Test) {
 			isSupported := isLogSupportedArtifact("log.txt", "")
-			So(isSupported, ShouldBeTrue)
+			assert.Loosely(t, isSupported, should.BeTrue)
 		})
 
-		Convey(`given a supported content type, then should return true`, func() {
+		t.Run(`given a supported content type, then should return true`, func(t *ftt.Test) {
 			isSupported := isLogSupportedArtifact("log", "text/content")
-			So(isSupported, ShouldBeTrue)
+			assert.Loosely(t, isSupported, should.BeTrue)
 		})
 
-		Convey(`given a unsupported content type, then should return false`, func() {
+		t.Run(`given a unsupported content type, then should return false`, func(t *ftt.Test) {
 			isSupported := isLogSupportedArtifact("log", "image/png")
-			So(isSupported, ShouldBeFalse)
+			assert.Loosely(t, isSupported, should.BeFalse)
 		})
 
-		Convey(`given a unsupported extension and no content-type, then should return false`, func() {
+		t.Run(`given a unsupported extension and no content-type, then should return false`, func(t *ftt.Test) {
 			isSupported := isLogSupportedArtifact("log.jpg", "")
-			So(isSupported, ShouldBeFalse)
+			assert.Loosely(t, isSupported, should.BeFalse)
 		})
 	})
 }
@@ -57,8 +58,8 @@ func TestSupportedArtifacts(t *testing.T) {
 func TestExtractTimestamp(t *testing.T) {
 	t.Parallel()
 
-	Convey("extractTimestamp", t, func() {
-		Convey("given valid log lines with various timestamp formats", func() {
+	ftt.Run("extractTimestamp", t, func(t *ftt.Test) {
+		t.Run("given valid log lines with various timestamp formats", func(t *ftt.Test) {
 
 			testYear := 2024
 
@@ -191,18 +192,18 @@ func TestExtractTimestamp(t *testing.T) {
 			for _, tc := range testCases {
 				tc := tc
 
-				Convey(tc.description, func() {
+				t.Run(tc.description, func(t *ftt.Test) {
 					actualTimestamp, err := extractTimestamp(tc.line, tc.year)
 
 					if tc.expectSuccess {
-						So(err, ShouldBeNil)
+						assert.Loosely(t, err, should.BeNil)
 
 						// Use cmp.Equal to get more detailed error output if timestamps don't match
-						So(actualTimestamp, ShouldNotBeNil)
-						So(cmp.Equal(actualTimestamp.AsTime(), tc.expectedTime), ShouldBeTrue)
+						assert.Loosely(t, actualTimestamp, should.NotBeNil)
+						assert.Loosely(t, cmp.Equal(actualTimestamp.AsTime(), tc.expectedTime), should.BeTrue)
 					} else {
-						So(err, ShouldNotBeNil)
-						So(actualTimestamp, ShouldBeNil)
+						assert.Loosely(t, err, should.NotBeNil)
+						assert.Loosely(t, actualTimestamp, should.BeNil)
 					}
 				})
 			}
@@ -213,8 +214,8 @@ func TestExtractTimestamp(t *testing.T) {
 func TestExtractSeverity(t *testing.T) {
 	t.Parallel()
 
-	Convey(`extractSeverity`, t, func() {
-		Convey("Given various log lines with severity levels", func() {
+	ftt.Run(`extractSeverity`, t, func(t *ftt.Test) {
+		t.Run("Given various log lines with severity levels", func(t *ftt.Test) {
 
 			testCases := []struct {
 				description string
@@ -344,9 +345,9 @@ func TestExtractSeverity(t *testing.T) {
 			for _, tc := range testCases {
 				tc := tc
 
-				Convey(tc.description, func() {
+				t.Run(tc.description, func(t *ftt.Test) {
 					actual := extractSeverity(tc.logLine)
-					So(actual, ShouldEqual, tc.expected)
+					assert.Loosely(t, actual, should.Equal(tc.expected))
 				})
 			}
 		})
@@ -354,14 +355,15 @@ func TestExtractSeverity(t *testing.T) {
 }
 
 func TestToLogLines(t *testing.T) {
+	t.Helper()
 
-	verifyArtifactLine := func(line *pb.ArtifactLine, timestamp string, severity pb.ArtifactLine_Severity) {
+	verifyArtifactLine := func(t testing.TB, line *pb.ArtifactLine, timestamp string, severity pb.ArtifactLine_Severity) {
 		if timestamp != "" {
-			t, err := time.Parse(time.RFC3339Nano, timestamp)
-			So(err, ShouldBeNil)
-			So(line.Timestamp, ShouldResembleProto, timestamppb.New(t))
+			ts, err := time.Parse(time.RFC3339Nano, timestamp)
+			assert.Loosely(t, err, should.BeNil, truth.LineContext())
+			assert.Loosely(t, line.Timestamp, should.Match(timestamppb.New(ts)), truth.LineContext())
 		}
-		So(line.Severity, ShouldEqual, severity)
+		assert.Loosely(t, line.Severity, should.Equal(severity))
 	}
 
 	contentString := `2024-05-06T05:58:57.490076Z ERROR test[9617:9617]: log line 1
@@ -371,49 +373,49 @@ func TestToLogLines(t *testing.T) {
 	log line no timestamp
 }`
 
-	Convey(`ToLogLines`, t, func() {
-		Convey(`given a list of lines, should return valid line entries`, func() {
+	ftt.Run(`ToLogLines`, t, func(t *ftt.Test) {
+		t.Run(`given a list of lines, should return valid line entries`, func(t *ftt.Test) {
 			contentBytes := []byte(contentString)
 			lines, err := ToLogLines("log.text", "text/log", contentBytes, 2024, -1, 1000000)
-			So(err, ShouldBeNil)
-			So(len(lines), ShouldEqual, 6)
-			So(lines[0].Content, ShouldEqual, []byte("2024-05-06T05:58:57.490076Z ERROR test[9617:9617]: log line 1"))
-			verifyArtifactLine(lines[0], "2024-05-06T05:58:57.490076Z", pb.ArtifactLine_ERROR)
-			So(lines[1].Content, ShouldEqual, []byte("2024-05-06T05:58:57.491037Z VERBOSE1 test[9617:9617]: [file.cc(845)] log line 2"))
-			verifyArtifactLine(lines[1], "2024-05-06T05:58:57.491037Z", pb.ArtifactLine_VERBOSE)
-			So(lines[2].Content, ShouldEqual, []byte("2024-05-06T05:58:57.577095Z WARNING test[9617:9617]: [file.cc(89)] log line 3."))
-			verifyArtifactLine(lines[2], "2024-05-06T05:58:57.577095Z", pb.ArtifactLine_WARNING)
-			So(lines[3].Content, ShouldEqual, []byte("2024-05-06T05:58:57.577324Z INFO test[9617:9617]: [file.cc(140)] log line 4 {"))
-			verifyArtifactLine(lines[3], "2024-05-06T05:58:57.577324Z", pb.ArtifactLine_INFO)
-			So(lines[4].Content, ShouldEqual, []byte("	log line no timestamp"))
-			verifyArtifactLine(lines[4], "", pb.ArtifactLine_SEVERITY_UNSPECIFIED)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(lines), should.Equal(6))
+			assert.Loosely(t, lines[0].Content, should.Match([]byte("2024-05-06T05:58:57.490076Z ERROR test[9617:9617]: log line 1")))
+			verifyArtifactLine(t, lines[0], "2024-05-06T05:58:57.490076Z", pb.ArtifactLine_ERROR)
+			assert.Loosely(t, lines[1].Content, should.Match([]byte("2024-05-06T05:58:57.491037Z VERBOSE1 test[9617:9617]: [file.cc(845)] log line 2")))
+			verifyArtifactLine(t, lines[1], "2024-05-06T05:58:57.491037Z", pb.ArtifactLine_VERBOSE)
+			assert.Loosely(t, lines[2].Content, should.Match([]byte("2024-05-06T05:58:57.577095Z WARNING test[9617:9617]: [file.cc(89)] log line 3.")))
+			verifyArtifactLine(t, lines[2], "2024-05-06T05:58:57.577095Z", pb.ArtifactLine_WARNING)
+			assert.Loosely(t, lines[3].Content, should.Match([]byte("2024-05-06T05:58:57.577324Z INFO test[9617:9617]: [file.cc(140)] log line 4 {")))
+			verifyArtifactLine(t, lines[3], "2024-05-06T05:58:57.577324Z", pb.ArtifactLine_INFO)
+			assert.Loosely(t, lines[4].Content, should.Match([]byte("	log line no timestamp")))
+			verifyArtifactLine(t, lines[4], "", pb.ArtifactLine_SEVERITY_UNSPECIFIED)
 		})
 
-		Convey(`given a maxLines, should return lines length equal to maxLines`, func() {
+		t.Run(`given a maxLines, should return lines length equal to maxLines`, func(t *ftt.Test) {
 			contentBytes := []byte(contentString)
 			lines, err := ToLogLines("log.text", "text/log", contentBytes, 2024, 3, 1000000)
-			So(err, ShouldBeNil)
-			So(len(lines), ShouldEqual, 3)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(lines), should.Equal(3))
 		})
 
-		Convey(`given a maxBytes, then total size should be less than or equal to the maxBytes`, func() {
+		t.Run(`given a maxBytes, then total size should be less than or equal to the maxBytes`, func(t *ftt.Test) {
 			contentBytes := []byte(contentString)
 			lines, err := ToLogLines("log.text", "text/log", contentBytes, 2024, -1, 100)
-			So(err, ShouldBeNil)
-			So(len(lines), ShouldBeGreaterThan, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(lines), should.BeGreaterThan(0))
 			total := 0
 			for _, line := range lines {
 				total += proto.Size(line)
 			}
-			So(total, ShouldBeLessThanOrEqualTo, 100)
+			assert.Loosely(t, total, should.BeLessThanOrEqual(100))
 		})
 
-		Convey(`given initial line exceeding max bytes, then should return error`, func() {
+		t.Run(`given initial line exceeding max bytes, then should return error`, func(t *ftt.Test) {
 			contentBytes := []byte(contentString)
 			lines, err := ToLogLines("log.text", "text/log", contentBytes, 2024, -1, 5)
-			So(lines, ShouldBeNil)
-			So(err, ShouldNotBeNil)
-			So(err, ShouldErrLike, `first file line content exceeds maximum size limit: 5 bytes`)
+			assert.Loosely(t, lines, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err, should.ErrLike(`first file line content exceeds maximum size limit: 5 bytes`))
 		})
 	})
 }

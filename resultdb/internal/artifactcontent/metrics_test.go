@@ -15,16 +15,17 @@
 package artifactcontent
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMetrics(t *testing.T) {
-	Convey("sizeBucket", t, func() {
-		So(sizeBucket(-1), ShouldEqual, firstBucket)
-		So(sizeBucket(0), ShouldEqual, firstBucket)
-		So(sizeBucket(1000), ShouldBeLessThan, sizeBucket(1000*1000))
-		So(sizeBucket(0x7FFFFFFFFFFFFFFF), ShouldBeGreaterThan, 0)
+	ftt.Run("sizeBucket", t, func(t *ftt.Test) {
+		assert.Loosely(t, sizeBucket(-1), should.Equal(firstBucket))
+		assert.Loosely(t, sizeBucket(0), should.Equal(firstBucket))
+		assert.Loosely(t, sizeBucket(1000), should.BeLessThan(sizeBucket(1000*1000)))
+		assert.Loosely(t, sizeBucket(0x7FFFFFFFFFFFFFFF), should.BeGreaterThan(0))
 	})
 }

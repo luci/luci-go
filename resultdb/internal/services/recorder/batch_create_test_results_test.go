@@ -34,8 +34,11 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // validBatchCreateTestResultsRequest returns a valid BatchCreateTestResultsRequest message.
@@ -56,86 +59,86 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 	t.Parallel()
 
 	now := testclock.TestRecentTimeUTC
-	Convey("ValidateBatchCreateTestResultsRequest", t, func() {
+	ftt.Run("ValidateBatchCreateTestResultsRequest", t, func(t *ftt.Test) {
 		req := validBatchCreateTestResultRequest(now, "invocations/u-build-1", "test-id")
 
-		Convey("succeeds", func() {
-			So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
+		t.Run("succeeds", func(t *ftt.Test) {
+			assert.Loosely(t, validateBatchCreateTestResultsRequest(req, now), should.BeNil)
 
-			Convey("with empty request_id", func() {
-				Convey("in requests", func() {
+			t.Run("with empty request_id", func(t *ftt.Test) {
+				t.Run("in requests", func(t *ftt.Test) {
 					req.Requests[0].RequestId = ""
 					req.Requests[1].RequestId = ""
-					So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
+					assert.Loosely(t, validateBatchCreateTestResultsRequest(req, now), should.BeNil)
 				})
-				Convey("in both batch-level and requests", func() {
+				t.Run("in both batch-level and requests", func(t *ftt.Test) {
 					req.Requests[0].RequestId = ""
 					req.Requests[1].RequestId = ""
 					req.RequestId = ""
-					So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
+					assert.Loosely(t, validateBatchCreateTestResultsRequest(req, now), should.BeNil)
 				})
 			})
-			Convey("with empty invocation in requests", func() {
+			t.Run("with empty invocation in requests", func(t *ftt.Test) {
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
-				So(validateBatchCreateTestResultsRequest(req, now), ShouldBeNil)
+				assert.Loosely(t, validateBatchCreateTestResultsRequest(req, now), should.BeNil)
 			})
 		})
 
-		Convey("fails with", func() {
-			Convey(`Too many requests`, func() {
+		t.Run("fails with", func(t *ftt.Test) {
+			t.Run(`Too many requests`, func(t *ftt.Test) {
 				req.Requests = make([]*pb.CreateTestResultRequest, 1000)
 				err := validateBatchCreateTestResultsRequest(req, now)
-				So(err, ShouldErrLike, `the number of requests in the batch exceeds 500`)
+				assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
 			})
 
-			Convey("invocation", func() {
-				Convey("empty in batch-level", func() {
+			t.Run("invocation", func(t *ftt.Test) {
+				t.Run("empty in batch-level", func(t *ftt.Test) {
 					req.Invocation = ""
 					err := validateBatchCreateTestResultsRequest(req, now)
-					So(err, ShouldErrLike, "invocation: unspecified")
+					assert.Loosely(t, err, should.ErrLike("invocation: unspecified"))
 				})
-				Convey("unmatched invocation in requests", func() {
+				t.Run("unmatched invocation in requests", func(t *ftt.Test) {
 					req.Invocation = "invocations/foo"
 					req.Requests[0].Invocation = "invocations/bar"
 					err := validateBatchCreateTestResultsRequest(req, now)
-					So(err, ShouldErrLike, "requests: 0: invocation must be either empty or equal")
+					assert.Loosely(t, err, should.ErrLike("requests: 0: invocation must be either empty or equal"))
 				})
 			})
 
-			Convey("invalid test_result", func() {
+			t.Run("invalid test_result", func(t *ftt.Test) {
 				req.Requests[0].TestResult.TestId = ""
 				err := validateBatchCreateTestResultsRequest(req, now)
-				So(err, ShouldErrLike, "test_result: test_id: unspecified")
+				assert.Loosely(t, err, should.ErrLike("test_result: test_id: unspecified"))
 			})
 
-			Convey("duplicated test_results", func() {
+			t.Run("duplicated test_results", func(t *ftt.Test) {
 				req.Requests[0].TestResult.TestId = "test-id"
 				req.Requests[0].TestResult.ResultId = "result-id"
 				req.Requests[1].TestResult.TestId = "test-id"
 				req.Requests[1].TestResult.ResultId = "result-id"
 				err := validateBatchCreateTestResultsRequest(req, now)
-				So(err, ShouldErrLike, "duplicate test results in request")
+				assert.Loosely(t, err, should.ErrLike("duplicate test results in request"))
 			})
 
-			Convey("request_id", func() {
-				Convey("with an invalid character", func() {
+			t.Run("request_id", func(t *ftt.Test) {
+				t.Run("with an invalid character", func(t *ftt.Test) {
 					// non-ascii character
 					req.RequestId = string(rune(244))
 					err := validateBatchCreateTestResultsRequest(req, now)
-					So(err, ShouldErrLike, "request_id: does not match")
+					assert.Loosely(t, err, should.ErrLike("request_id: does not match"))
 				})
-				Convey("empty in batch-level, but not in requests", func() {
+				t.Run("empty in batch-level, but not in requests", func(t *ftt.Test) {
 					req.RequestId = ""
 					req.Requests[0].RequestId = "123"
 					err := validateBatchCreateTestResultsRequest(req, now)
-					So(err, ShouldErrLike, "requests: 0: request_id must be either empty or equal")
+					assert.Loosely(t, err, should.ErrLike("requests: 0: request_id must be either empty or equal"))
 				})
-				Convey("unmatched request_id in requests", func() {
+				t.Run("unmatched request_id in requests", func(t *ftt.Test) {
 					req.RequestId = "foo"
 					req.Requests[0].RequestId = "bar"
 					err := validateBatchCreateTestResultsRequest(req, now)
-					So(err, ShouldErrLike, "requests: 0: request_id must be either empty or equal")
+					assert.Loosely(t, err, should.ErrLike("requests: 0: request_id must be either empty or equal"))
 				})
 			})
 		})
@@ -143,7 +146,7 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 }
 
 func TestBatchCreateTestResults(t *testing.T) {
-	Convey(`BatchCreateTestResults`, t, func() {
+	ftt.Run(`BatchCreateTestResults`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		recorder := newTestRecorderServer()
 		now := clock.Now(ctx).UTC()
@@ -154,18 +157,18 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 		createTestResults := func(req *pb.BatchCreateTestResultsRequest, expectedCommonPrefix string) {
 			response, err := recorder.BatchCreateTestResults(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			for i, r := range req.Requests {
 				expected := proto.Clone(r.TestResult).(*pb.TestResult)
 				expected.Name = fmt.Sprintf("invocations/u-build-1/tests/%s/results/result-id-%d", expected.TestId, i)
 				expected.VariantHash = pbutil.VariantHash(expected.Variant)
-				So(response.TestResults[i], ShouldResembleProto, expected)
+				assert.Loosely(t, response.TestResults[i], should.Resemble(expected))
 
 				// double-check it with the database
 				row, err := testresults.Read(span.Single(ctx), expected.Name)
-				So(err, ShouldBeNil)
-				So(row, ShouldResembleProto, expected)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, row, should.Resemble(expected))
 
 				var invCommonTestIDPrefix string
 				var invVars []string
@@ -175,41 +178,41 @@ func TestBatchCreateTestResults(t *testing.T) {
 						"CommonTestIDPrefix":     &invCommonTestIDPrefix,
 						"TestResultVariantUnion": &invVars,
 					})
-				So(err, ShouldBeNil)
-				So(invCommonTestIDPrefix, ShouldEqual, expectedCommonPrefix)
-				So(invVars, ShouldResemble, []string{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, invCommonTestIDPrefix, should.Equal(expectedCommonPrefix))
+				assert.Loosely(t, invVars, should.Resemble([]string{
 					"a/b:1",
 					"c:2",
-				})
+				}))
 			}
 		}
 
 		// Insert a sample invocation
 		tok, err := generateInvocationToken(ctx, "u-build-1")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 		invID := invocations.ID("u-build-1")
-		testutil.MustApply(ctx, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation(invID, pb.Invocation_ACTIVE, nil))
 
-		Convey("succeeds", func() {
-			Convey("with a request ID", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
+			t.Run("with a request ID", func(t *ftt.Test) {
 				createTestResults(req, "test-id")
 
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
 				trNum, err := resultcount.ReadTestResultCount(ctx, invocations.NewIDSet(invID))
-				So(err, ShouldBeNil)
-				So(trNum, ShouldEqual, 2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, trNum, should.Equal(2))
 			})
 
-			Convey("without a request ID", func() {
+			t.Run("without a request ID", func(t *ftt.Test) {
 				req.RequestId = ""
 				req.Requests[0].RequestId = ""
 				req.Requests[1].RequestId = ""
 				createTestResults(req, "test-id")
 			})
 
-			Convey("with uncommon test id", func() {
+			t.Run("with uncommon test id", func(t *ftt.Test) {
 				newTr := validCreateTestResultRequest(now, invName, "some-other-test-id")
 				newTr.TestResult.ResultId = "result-id-2"
 				req.Requests = append(req.Requests, newTr)
@@ -217,24 +220,24 @@ func TestBatchCreateTestResults(t *testing.T) {
 			})
 		})
 
-		Convey("fails", func() {
-			Convey("with an invalid request", func() {
+		t.Run("fails", func(t *ftt.Test) {
+			t.Run("with an invalid request", func(t *ftt.Test) {
 				req.Invocation = "this is an invalid invocation name"
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
 				_, err := recorder.BatchCreateTestResults(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, "bad request: invocation: does not match")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request: invocation: does not match"))
 			})
 
-			Convey("with an non-existing invocation", func() {
+			t.Run("with an non-existing invocation", func(t *ftt.Test) {
 				tok, err = generateInvocationToken(ctx, "inv")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 				req.Invocation = "invocations/inv"
 				req.Requests[0].Invocation = ""
 				req.Requests[1].Invocation = ""
 				_, err := recorder.BatchCreateTestResults(ctx, req)
-				So(err, ShouldBeRPCNotFound, "invocations/inv not found")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv not found"))
 			})
 		})
 	})
@@ -242,15 +245,15 @@ func TestBatchCreateTestResults(t *testing.T) {
 
 func TestLongestCommonPrefix(t *testing.T) {
 	t.Parallel()
-	Convey("empty", t, func() {
-		So(longestCommonPrefix("", "str"), ShouldEqual, "")
+	ftt.Run("empty", t, func(t *ftt.Test) {
+		assert.Loosely(t, longestCommonPrefix("", "str"), should.BeEmpty)
 	})
 
-	Convey("no common prefix", t, func() {
-		So(longestCommonPrefix("str", "other"), ShouldEqual, "")
+	ftt.Run("no common prefix", t, func(t *ftt.Test) {
+		assert.Loosely(t, longestCommonPrefix("str", "other"), should.BeEmpty)
 	})
 
-	Convey("common prefix", t, func() {
-		So(longestCommonPrefix("prefix_1", "prefix_2"), ShouldEqual, "prefix_")
+	ftt.Run("common prefix", t, func(t *ftt.Test) {
+		assert.Loosely(t, longestCommonPrefix("prefix_1", "prefix_2"), should.Equal("prefix_"))
 	})
 }

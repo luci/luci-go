@@ -33,30 +33,33 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateListTestResultsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: 50}
-		So(validateListTestResultsRequest(req), ShouldBeNil)
+		assert.Loosely(t, validateListTestResultsRequest(req), should.BeNil)
 	})
 
-	Convey(`Invalid invocation`, t, func() {
+	ftt.Run(`Invalid invocation`, t, func(t *ftt.Test) {
 		req := &pb.ListTestResultsRequest{Invocation: "bad_name", PageSize: 50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "invocation: does not match")
+		assert.Loosely(t, validateListTestResultsRequest(req), should.ErrLike("invocation: does not match"))
 	})
 
-	Convey(`Invalid page size`, t, func() {
+	ftt.Run(`Invalid page size`, t, func(t *ftt.Test) {
 		req := &pb.ListTestResultsRequest{Invocation: "invocations/valid_id_0", PageSize: -50}
-		So(validateListTestResultsRequest(req), ShouldErrLike, "page_size: negative")
+		assert.Loosely(t, validateListTestResultsRequest(req), should.ErrLike("page_size: negative"))
 	})
 }
 
 func TestListTestResults(t *testing.T) {
-	Convey(`ListTestResults`, t, func() {
+	ftt.Run(`ListTestResults`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -65,46 +68,46 @@ func TestListTestResults(t *testing.T) {
 		})
 
 		// Insert some TestResults.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("req", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("reqx", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 		)
-		trs := insertTestResults(ctx, "req", "DoBaz", 0,
+		trs := insertTestResults(ctx, t, "req", "DoBaz", 0,
 			[]pb.TestStatus{pb.TestStatus_PASS, pb.TestStatus_FAIL})
 
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/reqx"}
 			_, err := srv.ListTestResults(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testResults.list in realm of invocation reqx")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testResults.list in realm of invocation reqx"))
 		})
 
-		Convey(`Works`, func() {
+		t.Run(`Works`, func(t *ftt.Test) {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/req", PageSize: 1}
 			res, err := srv.ListTestResults(ctx, req)
-			So(err, ShouldBeNil)
-			So(res, ShouldNotBeNil)
-			So(res.TestResults, ShouldResembleProto, trs[:1])
-			So(res.NextPageToken, ShouldNotEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, res.TestResults, should.Resemble(trs[:1]))
+			assert.Loosely(t, res.NextPageToken, should.NotEqual(""))
 
-			Convey(`With pagination`, func() {
+			t.Run(`With pagination`, func(t *ftt.Test) {
 				req.PageToken = res.NextPageToken
 				req.PageSize = 2
 				resp, err := srv.ListTestResults(ctx, req)
-				So(err, ShouldBeNil)
-				So(resp, ShouldNotBeNil)
-				So(resp.TestResults, ShouldResembleProto, trs[1:])
-				So(resp.NextPageToken, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.NotBeNil)
+				assert.Loosely(t, resp.TestResults, should.Resemble(trs[1:]))
+				assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 			})
 
-			Convey(`With default page size`, func() {
+			t.Run(`With default page size`, func(t *ftt.Test) {
 				req := &pb.ListTestResultsRequest{Invocation: "invocations/req"}
 				res, err := srv.ListTestResults(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldNotBeNil)
-				So(res.TestResults, ShouldResembleProto, trs)
-				So(res.NextPageToken, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.NotBeNil)
+				assert.Loosely(t, res.TestResults, should.Resemble(trs))
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			})
 		})
 	})
@@ -112,7 +115,8 @@ func TestListTestResults(t *testing.T) {
 
 // insertTestResults inserts some test results with the given statuses and returns them.
 // A result is expected IFF it is PASS.
-func insertTestResults(ctx context.Context, invID invocations.ID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
+func insertTestResults(ctx context.Context, t testing.TB, invID invocations.ID, testName string, startID int, statuses []pb.TestStatus) []*pb.TestResult {
+	t.Helper()
 	trs := make([]*pb.TestResult, len(statuses))
 	ms := make([]*spanner.Mutation, len(statuses))
 
@@ -148,6 +152,6 @@ func insertTestResults(ctx context.Context, invID invocations.ID, testName strin
 		ms[i] = spanutil.InsertMap("TestResults", mutMap)
 	}
 
-	testutil.MustApply(ctx, ms...)
+	testutil.MustApply(ctx, t, ms...)
 	return trs
 }

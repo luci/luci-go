@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/server/tq"
@@ -31,13 +34,10 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	resultpb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExpiredInvocations(t *testing.T) {
-	Convey(`ExpiredInvocations`, t, func() {
+	ftt.Run(`ExpiredInvocations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
@@ -49,35 +49,35 @@ func TestExpiredInvocations(t *testing.T) {
 		past := clock.Now(ctx).Add(-10 * time.Minute)
 		future := clock.Now(ctx).Add(10 * time.Minute)
 
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("expired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": past}),
 			insert.Invocation("unexpired", resultpb.Invocation_ACTIVE, map[string]any{"Deadline": future}),
 		)
 
 		s, err := invocations.CurrentMaxShard(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		for i := 0; i < s+1; i++ {
-			So(enforceOneShard(ctx, i), ShouldBeNil)
+			assert.Loosely(t, enforceOneShard(ctx, i), should.BeNil)
 		}
 
-		So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 			&taskspb.RunExportNotifications{InvocationId: "expired"},
 			&taskspb.TryFinalizeInvocation{InvocationId: "expired"},
-		})
+		}))
 		var state resultpb.Invocation_State
-		testutil.MustReadRow(ctx, "Invocations", invocations.ID("expired").Key(), map[string]any{
+		testutil.MustReadRow(ctx, t, "Invocations", invocations.ID("expired").Key(), map[string]any{
 			"State": &state,
 		})
-		So(state, ShouldEqual, resultpb.Invocation_FINALIZING)
-		testutil.MustReadRow(ctx, "Invocations", invocations.ID("unexpired").Key(), map[string]any{
+		assert.Loosely(t, state, should.Equal(resultpb.Invocation_FINALIZING))
+		testutil.MustReadRow(ctx, t, "Invocations", invocations.ID("unexpired").Key(), map[string]any{
 			"State": &state,
 		})
-		So(state, ShouldEqual, resultpb.Invocation_ACTIVE)
+		assert.Loosely(t, state, should.Equal(resultpb.Invocation_ACTIVE))
 
-		So(store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []any{insert.TestRealm}), ShouldEqual, 1)
+		assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []any{insert.TestRealm}), should.Equal(1))
 		d := store.Get(ctx, timeOverdue, time.Time{}, []any{insert.TestRealm}).(*distribution.Distribution)
 		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 		// allow +/- 1 bucket for clock shenanigans.
-		So(d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, ShouldBeTrue)
+		assert.Loosely(t, d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, should.BeTrue)
 	})
 }

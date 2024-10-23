@@ -23,13 +23,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	tsmonstore "go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestIdentityKindCountingInterceptor(t *testing.T) {
@@ -41,23 +42,23 @@ func TestIdentityKindCountingInterceptor(t *testing.T) {
 		return struct{}{}, status.Error(codes.Internal, "dummy error")
 	}
 
-	Convey(`Increments counter`, t, func() {
-		Reset(func() {
+	ftt.Run(`Increments counter`, t, func(t *ftt.Test) {
+		t.Cleanup(func() {
 			tsmon.GetState(ctx).SetStore(tsmonstore.NewInMemory(&target.Task{}))
 			store = tsmon.GetState(ctx).Store()
 		})
-		Convey(`user`, func() {
+		t.Run(`user`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:user@example.com",
 			})
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), ShouldEqual, 1)
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), should.Equal(1))
 		})
 
-		Convey(`anonymous`, func() {
+		t.Run(`anonymous`, func(t *ftt.Test) {
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), ShouldBeNil)
-			So(store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "anonymous"}), ShouldEqual, 1)
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "anonymous"}), should.Equal(1))
 		})
 	})
 }

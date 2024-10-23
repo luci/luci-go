@@ -17,10 +17,14 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
@@ -28,8 +32,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var textPBMultiline = prototext.MarshalOptions{
@@ -37,22 +39,25 @@ var textPBMultiline = prototext.MarshalOptions{
 }
 
 // TestProjectConfigContext returns a context to be used in project config related tests.
-func TestProjectConfigContext(ctx context.Context, project, user, bucket string) context.Context {
+func TestProjectConfigContext(ctx context.Context, t testing.TB, project, user, bucket string) context.Context {
+	t.Helper()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 	ctx = memory.Use(ctx)
 	ctx = caching.WithEmptyProcessCache(ctx)
-	ctx = SetGCSAllowedBuckets(ctx, project, user, bucket)
+	ctx = SetGCSAllowedBuckets(ctx, t, project, user, bucket)
 	return ctx
 }
 
 // SetGCSAllowedBuckets overrides the only existing project-config
 // GcsAllowlist entry to match the rule defined by project, realm, bucket
 // and prefix.
-func SetGCSAllowedBuckets(ctx context.Context, project, user, bucket string) context.Context {
+func SetGCSAllowedBuckets(ctx context.Context, t testing.TB, project, user, bucket string) context.Context {
+	t.Helper()
+
 	testProject := rdbcfg.CreatePlaceholderProjectConfig()
-	So(len(testProject.GcsAllowList), ShouldEqual, 1)
+	assert.Loosely(t, len(testProject.GcsAllowList), should.Equal(1), truth.LineContext())
 	testProject.GcsAllowList[0].Users = []string{user}
-	So(len(testProject.GcsAllowList[0].Buckets), ShouldEqual, 1)
+	assert.Loosely(t, len(testProject.GcsAllowList[0].Buckets), should.Equal(1), truth.LineContext())
 	testProject.GcsAllowList[0].Buckets[0] = bucket
 
 	cfgSet := config.Set(fmt.Sprintf("projects/%s", project))
@@ -62,7 +67,7 @@ func SetGCSAllowedBuckets(ctx context.Context, project, user, bucket string) con
 
 	ctx = cfgclient.Use(ctx, cfgmem.New(configs))
 	err := rdbcfg.UpdateProjects(ctx)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	datastore.GetTestable(ctx).CatchupIndexes()
 
 	return ctx

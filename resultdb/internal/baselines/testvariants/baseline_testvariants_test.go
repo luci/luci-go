@@ -17,44 +17,44 @@ package baselinetestvariant
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestRead(t *testing.T) {
-	Convey(`Invalid`, t, func() {
+	ftt.Run(`Invalid`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Not Found`, func() {
+		t.Run(`Not Found`, func(t *ftt.Test) {
 			_, err := Read(span.Single(ctx), "chromium", "try:linux-rel", "ninja://some/test:test_id", "12345")
-			So(err, ShouldErrLike, NotFound)
+			assert.Loosely(t, err, should.ErrLike(NotFound))
 		})
 
 	})
 
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Exists`, func() {
+		t.Run(`Exists`, func(t *ftt.Test) {
 			exp := &BaselineTestVariant{
 				Project:     "chromium",
 				BaselineID:  "try:linux-rel",
 				TestID:      "ninja://some/test:test_id",
 				VariantHash: "12345",
 			}
-			commitTime := testutil.MustApply(ctx, Create(exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash))
+			commitTime := testutil.MustApply(ctx, t, Create(exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash))
 
 			res, err := Read(span.Single(ctx), exp.Project, exp.BaselineID, exp.TestID, exp.VariantHash)
-			So(err, ShouldBeNil)
-			So(res.Project, ShouldEqual, exp.Project)
-			So(res.BaselineID, ShouldEqual, exp.BaselineID)
-			So(res.TestID, ShouldEqual, exp.TestID)
-			So(res.VariantHash, ShouldEqual, exp.VariantHash)
-			So(res.LastUpdated, ShouldEqual, commitTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Project, should.Equal(exp.Project))
+			assert.Loosely(t, res.BaselineID, should.Equal(exp.BaselineID))
+			assert.Loosely(t, res.TestID, should.Equal(exp.TestID))
+			assert.Loosely(t, res.VariantHash, should.Equal(exp.VariantHash))
+			assert.Loosely(t, res.LastUpdated, should.Match(commitTime))
 		})
 	})
 }

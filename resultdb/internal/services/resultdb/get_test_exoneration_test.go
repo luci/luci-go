@@ -28,27 +28,30 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateGetTestExonerationRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateGetTestExonerationRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`ValidateGetTestExonerationRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			req := &pb.GetTestExonerationRequest{Name: "invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}
-			So(validateGetTestExonerationRequest(req), ShouldBeNil)
+			assert.Loosely(t, validateGetTestExonerationRequest(req), should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
 			req := &pb.GetTestExonerationRequest{}
-			So(validateGetTestExonerationRequest(req), ShouldErrLike, "unspecified")
+			assert.Loosely(t, validateGetTestExonerationRequest(req), should.ErrLike("unspecified"))
 		})
 	})
 }
 
 func TestGetTestExoneration(t *testing.T) {
-	Convey(`GetTestExoneration`, t, func() {
+	ftt.Run(`GetTestExoneration`, t, func(t *ftt.Test) {
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -61,7 +64,7 @@ func TestGetTestExoneration(t *testing.T) {
 
 		invID := invocations.ID("inv_0")
 		// Insert a TestExoneration.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("inv_0", pb.Invocation_ACTIVE, nil),
 			spanutil.InsertMap("TestExonerations", map[string]any{
 				"InvocationId":    invID,
@@ -75,27 +78,27 @@ func TestGetTestExoneration(t *testing.T) {
 
 		req := &pb.GetTestExonerationRequest{Name: "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id"}
 
-		Convey(`Invocation does not exist`, func() {
+		t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 			req := &pb.GetTestExonerationRequest{Name: "invocations/inv_notexists/tests/test/exonerations/id"}
 
 			tr, err := srv.GetTestExoneration(ctx, req)
-			So(tr, ShouldBeNil)
-			So(err, ShouldBeRPCNotFound, "invocations/inv_notexists not found")
+			assert.Loosely(t, tr, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv_notexists not found"))
 		})
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx, spanutil.UpdateMap("Invocations", map[string]any{
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
 				"InvocationId": invocations.ID("inv_0"),
 				"Realm":        "secretproject:testrealm",
 			}))
 
 			tr, err := srv.GetTestExoneration(ctx, req)
-			So(tr, ShouldBeNil)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testExonerations.get in realm of invocation inv_0")
+			assert.Loosely(t, tr, should.BeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testExonerations.get in realm of invocation inv_0"))
 		})
-		Convey("Valid", func() {
+		t.Run("Valid", func(t *ftt.Test) {
 			tr, err := srv.GetTestExoneration(ctx, req)
-			So(err, ShouldBeNil)
-			So(tr, ShouldResembleProto, &pb.TestExoneration{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tr, should.Resemble(&pb.TestExoneration{
 				Name:            "invocations/inv_0/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/exonerations/id",
 				ExonerationId:   "id",
 				TestId:          "ninja://chrome/test:foo_tests/BarTest.DoBaz",
@@ -103,7 +106,7 @@ func TestGetTestExoneration(t *testing.T) {
 				VariantHash:     "deadbeef",
 				ExplanationHtml: "broken",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
-			})
+			}))
 		})
 	})
 }

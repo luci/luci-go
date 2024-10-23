@@ -21,8 +21,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
@@ -31,7 +32,7 @@ import (
 )
 
 func TestReadTestMetadata(t *testing.T) {
-	Convey(`ReadTestMetadata`, t, func() {
+	ftt.Run(`ReadTestMetadata`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		sourceRef := &pb.SourceRef{
 			System: &pb.SourceRef_Gitiles{
@@ -53,7 +54,7 @@ func TestReadTestMetadata(t *testing.T) {
 			return rows, err
 		}
 		verify := func(actual, expected []*TestMetadataRow) {
-			So(actual, ShouldHaveLength, len(expected))
+			assert.Loosely(t, actual, should.HaveLength(len(expected)))
 			sortMetadata(actual)
 			sortMetadata(expected)
 
@@ -61,8 +62,8 @@ func TestReadTestMetadata(t *testing.T) {
 				expectedRow := *expected[i]
 				// ShouldResemble does not work on struct with nested proto buffer.
 				// So we compare each proto field separately.
-				So(row.TestMetadata, ShouldResembleProto, expectedRow.TestMetadata)
-				So(row.SourceRef, ShouldResembleProto, expectedRow.SourceRef)
+				assert.Loosely(t, row.TestMetadata, should.Resemble(expectedRow.TestMetadata))
+				assert.Loosely(t, row.SourceRef, should.Resemble(expectedRow.SourceRef))
 				cloneActual := *row
 				cloneActual.TestMetadata = nil
 				cloneActual.SourceRef = nil
@@ -70,17 +71,17 @@ func TestReadTestMetadata(t *testing.T) {
 				expectedRow.SourceRef = nil
 				cloneActual.LastUpdated = time.Time{}
 				expectedRow.LastUpdated = time.Time{}
-				So(cloneActual, ShouldResemble, expectedRow)
+				assert.Loosely(t, cloneActual, should.Resemble(expectedRow))
 			}
 		}
-		Convey(`Does not fetch test metadata from other test, source ref or realm`, func() {
+		t.Run(`Does not fetch test metadata from other test, source ref or realm`, func(t *ftt.Test) {
 			tmr1 := makeTestMetadataRow("testproject", "test1", "testrealm", hash)
 			tmr2 := makeTestMetadataRow("testproject", "test2", "testrealm", hash)
 			tmr3 := makeTestMetadataRow("testproject", "test3", "testrealm", hash)
 			tmr4 := makeTestMetadataRow("testproject", "test1", "othertestrealm", hash)
 			tmr5 := makeTestMetadataRow("testproject", "test1", "testrealm", []byte("hash2"))
 			tmr6 := makeTestMetadataRow("otherproject", "test1", "testrealm", hash)
-			testutil.MustApply(ctx, insertTestMetadataRows([]*TestMetadataRow{tmr1, tmr2, tmr3, tmr4, tmr5, tmr6})...)
+			testutil.MustApply(ctx, t, insertTestMetadataRows([]*TestMetadataRow{tmr1, tmr2, tmr3, tmr4, tmr5, tmr6})...)
 			opts := ReadTestMetadataOptions{
 				Project:   "testproject",
 				TestIDs:   []string{"test1", "test2"},
@@ -89,8 +90,8 @@ func TestReadTestMetadata(t *testing.T) {
 			}
 
 			actual, err := run(opts)
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 2)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(2))
 			verify(actual, []*TestMetadataRow{tmr1, tmr2})
 		})
 	})

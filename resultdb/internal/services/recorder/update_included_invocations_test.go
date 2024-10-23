@@ -28,56 +28,59 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateUpdateIncludedInvocationsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateUpdateIncludedInvocationsRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`TestValidateUpdateIncludedInvocationsRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/b"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invalid including_invocation`, func() {
+		t.Run(`Invalid including_invocation`, func(t *ftt.Test) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "x",
 				AddInvocations:      []string{"invocations/b"},
 			})
-			So(err, ShouldErrLike, `including_invocation: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`including_invocation: does not match`))
 		})
-		Convey(`Invalid add_invocations`, func() {
+		t.Run(`Invalid add_invocations`, func(t *ftt.Test) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"x"},
 				RemoveInvocations:   []string{"invocations/c"},
 			})
-			So(err, ShouldErrLike, `add_invocations: "x": does not match`)
+			assert.Loosely(t, err, should.ErrLike(`add_invocations: "x": does not match`))
 		})
-		Convey(`Attempt to remove invocations`, func() {
+		t.Run(`Attempt to remove invocations`, func(t *ftt.Test) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/b"},
 				RemoveInvocations:   []string{"invocations/x"},
 			})
-			So(err, ShouldErrLike, `remove_invocations: invocation removal has been deprecated and is not permitted`)
+			assert.Loosely(t, err, should.ErrLike(`remove_invocations: invocation removal has been deprecated and is not permitted`))
 		})
-		Convey(`Include itself`, func() {
+		t.Run(`Include itself`, func(t *ftt.Test) {
 			err := validateUpdateIncludedInvocationsRequest(&pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/a",
 				AddInvocations:      []string{"invocations/a"},
 			})
-			So(err, ShouldErrLike, `cannot include itself`)
+			assert.Loosely(t, err, should.ErrLike(`cannot include itself`))
 		})
 	})
 }
 
 func TestUpdateIncludedInvocations(t *testing.T) {
-	Convey(`TestIncludedInvocations`, t, func() {
+	ftt.Run(`TestIncludedInvocations`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tq.TestingContext(ctx, nil)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -89,28 +92,28 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "including")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 		assertIncluded := func(includedInvID invocations.ID) {
 			var throwAway invocations.ID
-			testutil.MustReadRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
+			testutil.MustReadRow(ctx, t, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
 		assertNotIncluded := func(includedInvID invocations.ID) {
 			var throwAway invocations.ID
-			testutil.MustNotFindRow(ctx, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
+			testutil.MustNotFindRow(ctx, t, "IncludedInvocations", invocations.InclusionKey("including", includedInvID), map[string]any{
 				"IncludedInvocationID": &throwAway,
 			})
 		}
 
-		Convey(`Invalid request`, func() {
+		t.Run(`Invalid request`, func(t *ftt.Test) {
 			_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{})
-			So(err, ShouldBeRPCInvalidArgument, `bad request: including_invocation: unspecified`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: including_invocation: unspecified`))
 		})
 
-		Convey(`With valid request`, func() {
+		t.Run(`With valid request`, func(t *ftt.Test) {
 			req := &pb.UpdateIncludedInvocationsRequest{
 				IncludingInvocation: "invocations/including",
 				AddInvocations: []string{
@@ -119,17 +122,17 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 				},
 			}
 
-			Convey(`No including invocation`, func() {
-				testutil.MustApply(ctx,
+			t.Run(`No including invocation`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, req)
-				So(err, ShouldBeRPCNotFound, `invocations/including not found`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/including not found`))
 			})
 
-			Convey(`With existing inclusion`, func() {
-				testutil.MustApply(ctx,
+			t.Run(`With existing inclusion`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Invocation("including", pb.Invocation_ACTIVE, nil),
 					insert.Invocation("existinginclusion", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
@@ -137,39 +140,39 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					IncludingInvocation: "invocations/including",
 					AddInvocations:      []string{"invocations/existinginclusion"},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				assertIncluded("existinginclusion")
 
-				Convey(`No included invocation`, func() {
+				t.Run(`No included invocation`, func(t *ftt.Test) {
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldBeRPCNotFound, `invocations/included`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/included`))
 				})
 
-				Convey(`Leaking disallowed`, func() {
-					testutil.MustApply(ctx,
+				t.Run(`Leaking disallowed`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t,
 						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:secretrealm"}),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.invocations.include in realm of invocation included2`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission resultdb.invocations.include in realm of invocation included2`))
 					assertNotIncluded("included2")
 				})
 
-				Convey(`Success - idempotent`, func() {
-					testutil.MustApply(ctx,
+				t.Run(`Success - idempotent`, func(t *ftt.Test) {
+					testutil.MustApply(ctx, t,
 						insert.Invocation("included", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 						insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					assertIncluded("included")
 					assertIncluded("included2")
 					assertIncluded("existinginclusion")
 
 					_, err = recorder.UpdateIncludedInvocations(ctx, req)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					assertIncluded("included")
 					assertIncluded("included2")
 					assertIncluded("existinginclusion")

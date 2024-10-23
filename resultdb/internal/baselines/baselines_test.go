@@ -18,67 +18,67 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 func TestRead(t *testing.T) {
-	Convey(`Invalid`, t, func() {
+	ftt.Run(`Invalid`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Not Found`, func() {
+		t.Run(`Not Found`, func(t *ftt.Test) {
 			_, err := Read(span.Single(ctx), "chromium", "try:linux-rel")
-			So(err, ShouldErrLike, NotFound)
+			assert.Loosely(t, err, should.ErrLike(NotFound))
 		})
 
 	})
 
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		Convey(`Exists`, func() {
+		t.Run(`Exists`, func(t *ftt.Test) {
 			expected := &Baseline{
 				Project:    "chromium",
 				BaselineID: "try:linux-rel",
 			}
-			commitTime := testutil.MustApply(ctx, Create(expected.Project, expected.BaselineID))
+			commitTime := testutil.MustApply(ctx, t, Create(expected.Project, expected.BaselineID))
 
 			res, err := Read(span.Single(ctx), expected.Project, expected.BaselineID)
-			So(err, ShouldBeNil)
-			So(res.Project, ShouldEqual, expected.Project)
-			So(res.BaselineID, ShouldEqual, expected.BaselineID)
-			So(res.LastUpdatedTime, ShouldEqual, commitTime)
-			So(res.CreationTime, ShouldEqual, commitTime)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Project, should.Equal(expected.Project))
+			assert.Loosely(t, res.BaselineID, should.Equal(expected.BaselineID))
+			assert.Loosely(t, res.LastUpdatedTime, should.Match(commitTime))
+			assert.Loosely(t, res.CreationTime, should.Match(commitTime))
 		})
 	})
 }
 
 func TestIsSpinningUp(t *testing.T) {
-	Convey(`IsSpinningUp`, t, func() {
+	ftt.Run(`IsSpinningUp`, t, func(t *ftt.Test) {
 		now := time.Date(2026, 1, 2, 3, 4, 5, 6, time.UTC)
 
-		Convey(`Yes`, func() {
+		t.Run(`Yes`, func(t *ftt.Test) {
 			b := &Baseline{
 				Project:         "chromium",
 				BaselineID:      "try:linux-rel",
 				LastUpdatedTime: now.Add(-time.Hour * 1),
 				CreationTime:    now.Add(-time.Hour * 2),
 			}
-			So(b.IsSpinningUp(now), ShouldBeTrue)
+			assert.Loosely(t, b.IsSpinningUp(now), should.BeTrue)
 		})
 
-		Convey(`No`, func() {
+		t.Run(`No`, func(t *ftt.Test) {
 			b := &Baseline{
 				Project:         "chromium",
 				BaselineID:      "try:linux-rel",
 				LastUpdatedTime: now.Add(-time.Hour * 1),
 				CreationTime:    now.Add(-time.Hour * 100),
 			}
-			So(b.IsSpinningUp(now), ShouldBeFalse)
+			assert.Loosely(t, b.IsSpinningUp(now), should.BeFalse)
 		})
 	})
 }

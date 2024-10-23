@@ -20,24 +20,24 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNotifyInvocationFinalized(t *testing.T) {
 	t.Parallel()
 
-	Convey("With fake task queue scheduler", t, func() {
+	ftt.Run("With fake task queue scheduler", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, tq := tq.TestingContext(ctx, nil)
 
-		Convey("Enqueues a pub/sub notification", func() {
+		t.Run("Enqueues a pub/sub notification", func(t *ftt.Test) {
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 				msg := &pb.InvocationFinalizedNotification{
 					Invocation: "invocations/x",
@@ -46,22 +46,22 @@ func TestNotifyInvocationFinalized(t *testing.T) {
 				NotifyInvocationFinalized(ctx, msg)
 				return nil
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			tasks := tq.Tasks()
-			So(tasks, ShouldHaveLength, 1)
-			t := tasks[0]
+			assert.Loosely(t, tasks, should.HaveLength(1))
+			task := tasks[0]
 
-			attrs := t.Message.GetAttributes()
-			So(attrs, ShouldContainKey, "luci_project")
-			So(attrs["luci_project"], ShouldEqual, "myproject")
+			attrs := task.Message.GetAttributes()
+			assert.Loosely(t, attrs, should.ContainKey("luci_project"))
+			assert.Loosely(t, attrs["luci_project"], should.Equal("myproject"))
 
 			var msg pb.InvocationFinalizedNotification
-			So(protojson.Unmarshal(t.Message.GetData(), &msg), ShouldBeNil)
-			So(&msg, ShouldResembleProto, &pb.InvocationFinalizedNotification{
+			assert.Loosely(t, protojson.Unmarshal(task.Message.GetData(), &msg), should.BeNil)
+			assert.Loosely(t, &msg, should.Resemble(&pb.InvocationFinalizedNotification{
 				Invocation: "invocations/x",
 				Realm:      "myproject:myrealm",
-			})
+			}))
 		})
 	})
 }

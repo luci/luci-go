@@ -30,12 +30,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryTestMetadata(t *testing.T) {
-	Convey(`QueryTestMetadata`, t, func() {
+	ftt.Run(`QueryTestMetadata`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -63,30 +66,30 @@ func TestQueryTestMetadata(t *testing.T) {
 			insert.MakeTestMetadataRow("testprojectother", "test1", "testrealm1", []byte("hash1")), // Different project.
 			insert.MakeTestMetadataRow("testprojectother", "test1", "testrealm3", []byte("hash3")), // Realm with no permission.
 		}
-		testutil.MustApply(ctx, insert.TestMetadataRows(append(expectedT1Rows, expectedT2Rows...))...)
-		testutil.MustApply(ctx, insert.TestMetadataRows(otherRows)...)
+		testutil.MustApply(ctx, t, insert.TestMetadataRows(append(expectedT1Rows, expectedT2Rows...))...)
+		testutil.MustApply(ctx, t, insert.TestMetadataRows(otherRows)...)
 
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{Project: "x"})
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testMetadata.list in any realm in project \"x\"")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testMetadata.list in any realm in project \"x\""))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey(`Invalid request`, func() {
-			Convey("Invalid project name", func() {
+		t.Run(`Invalid request`, func(t *ftt.Test) {
+			t.Run("Invalid project name", func(t *ftt.Test) {
 				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
 					Project: "testproject:testrealm1",
 					Predicate: &pb.TestMetadataPredicate{
 						TestIds: []string{"test"},
 					},
 				})
-				So(err, ShouldBeRPCInvalidArgument, `project: does not match pattern "^[a-z0-9\\-]{1,40}$"`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`project: does not match pattern "^[a-z0-9\\-]{1,40}$"`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("Invalid page size", func() {
+			t.Run("Invalid page size", func(t *ftt.Test) {
 				res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{
 					Project: "testproject",
 					Predicate: &pb.TestMetadataPredicate{
@@ -94,37 +97,37 @@ func TestQueryTestMetadata(t *testing.T) {
 					},
 					PageSize: -1,
 				})
-				So(err, ShouldBeRPCInvalidArgument, `page_size`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_size`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 		})
 
-		Convey(`Valid request`, func() {
-			Convey(`No predicate`, func() {
+		t.Run(`Valid request`, func(t *ftt.Test) {
+			t.Run(`No predicate`, func(t *ftt.Test) {
 				req.Predicate = nil
 
 				res, err := srv.QueryTestMetadata(ctx, req)
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldEqual, "")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 				expected := toTestMetadataDetails(append(expectedT1Rows, expectedT2Rows...))
 				sortMetadata(expected)
-				So(res.TestMetadata, ShouldResembleProto, expected)
+				assert.Loosely(t, res.TestMetadata, should.Resemble(expected))
 
 			})
 
-			Convey(`Filter test id`, func() {
+			t.Run(`Filter test id`, func(t *ftt.Test) {
 				res, err := srv.QueryTestMetadata(ctx, req)
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldEqual, "")
-				So(res.TestMetadata, ShouldResembleProto, toTestMetadataDetails(expectedT1Rows))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, res.TestMetadata, should.Resemble(toTestMetadataDetails(expectedT1Rows)))
 			})
 
-			Convey(`Try next page`, func() {
+			t.Run(`Try next page`, func(t *ftt.Test) {
 				req.PageToken = pagination.Token("test1", hex.EncodeToString([]byte("hash1")))
 				res, err := srv.QueryTestMetadata(ctx, req)
-				So(err, ShouldBeNil)
-				So(res.NextPageToken, ShouldEqual, "")
-				So(res.TestMetadata, ShouldResembleProto, toTestMetadataDetails(expectedT1Rows[1:]))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.NextPageToken, should.BeEmpty)
+				assert.Loosely(t, res.TestMetadata, should.Resemble(toTestMetadataDetails(expectedT1Rows[1:])))
 
 			})
 		})

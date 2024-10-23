@@ -29,13 +29,16 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateCreateTestExonerationRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateCreateTestExonerationRequest`, t, func() {
+	ftt.Run(`TestValidateCreateTestExonerationRequest`, t, func(t *ftt.Test) {
 		req := &pb.CreateTestExonerationRequest{
 			Invocation: "invocations/inv",
 			TestExoneration: &pb.TestExoneration{
@@ -49,73 +52,73 @@ func TestValidateCreateTestExonerationRequest(t *testing.T) {
 			},
 		}
 
-		Convey(`Empty Invocation`, func() {
+		t.Run(`Empty Invocation`, func(t *ftt.Test) {
 			req.Invocation = ""
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `invocation: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`invocation: unspecified`))
 		})
 
-		Convey(`Empty Exoneration`, func() {
+		t.Run(`Empty Exoneration`, func(t *ftt.Test) {
 			req.TestExoneration = nil
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `test_exoneration: test_id: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: test_id: unspecified`))
 		})
 
-		Convey(`NUL in test id`, func() {
+		t.Run(`NUL in test id`, func(t *ftt.Test) {
 			req.TestExoneration.TestId = "\x01"
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, "test_id: non-printable rune")
+			assert.Loosely(t, err, should.ErrLike("test_id: non-printable rune"))
 		})
 
-		Convey(`Invalid variant`, func() {
+		t.Run(`Invalid variant`, func(t *ftt.Test) {
 			req.TestExoneration.Variant = pbutil.Variant("", "")
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `variant: "":"": key: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`variant: "":"": key: unspecified`))
 		})
 
-		Convey(`Reason not specified`, func() {
+		t.Run(`Reason not specified`, func(t *ftt.Test) {
 			req.TestExoneration.Reason = pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `test_exoneration: reason: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: reason: unspecified`))
 		})
 
-		Convey(`Explanation HTML not specified`, func() {
+		t.Run(`Explanation HTML not specified`, func(t *ftt.Test) {
 			req.TestExoneration.ExplanationHtml = ""
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `test_exoneration: explanation_html: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`test_exoneration: explanation_html: unspecified`))
 		})
 
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Mismatching variant hashes`, func() {
+		t.Run(`Mismatching variant hashes`, func(t *ftt.Test) {
 			req.TestExoneration.VariantHash = "doesn't match"
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldErrLike, `computed and supplied variant hash don't match`)
+			assert.Loosely(t, err, should.ErrLike(`computed and supplied variant hash don't match`))
 		})
 
-		Convey(`Matching variant hashes`, func() {
+		t.Run(`Matching variant hashes`, func(t *ftt.Test) {
 			req.TestExoneration.Variant = pbutil.Variant("a", "b")
 			req.TestExoneration.VariantHash = "c467ccce5a16dc72"
 			err := validateCreateTestExonerationRequest(req, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestCreateTestExoneration(t *testing.T) {
-	Convey(`TestCreateTestExoneration`, t, func() {
+	ftt.Run(`TestCreateTestExoneration`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		recorder := newTestRecorderServer()
 
 		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		Convey(`Invalid request`, func() {
+		t.Run(`Invalid request`, func(t *ftt.Test) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
@@ -125,10 +128,10 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `bad request: test_exoneration: test_id: non-printable rune`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: test_exoneration: test_id: non-printable rune`))
 		})
 
-		Convey(`No invocation`, func() {
+		t.Run(`No invocation`, func(t *ftt.Test) {
 			req := &pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
@@ -138,20 +141,20 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/inv not found`))
 		})
 
-		// Insert the invocation.
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
-
 		e2eTest := func(req *pb.CreateTestExonerationRequest, expectedVariantHash, expectedId string) {
+			// Insert the invocation.
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, nil))
+
 			res, err := recorder.CreateTestExoneration(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			if expectedId == "" {
-				So(res.ExonerationId, ShouldStartWith, expectedVariantHash+":")
+				assert.Loosely(t, res.ExonerationId, should.HavePrefix(expectedVariantHash+":"))
 			} else {
-				So(res.ExonerationId, ShouldEqual, expectedVariantHash+":"+expectedId)
+				assert.Loosely(t, res.ExonerationId, should.Equal(expectedVariantHash+":"+expectedId))
 			}
 
 			expected := proto.Clone(req.TestExoneration).(*pb.TestExoneration)
@@ -160,31 +163,31 @@ func TestCreateTestExoneration(t *testing.T) {
 				ExonerationId: res.ExonerationId,
 				VariantHash:   expectedVariantHash,
 			})
-			So(res, ShouldResembleProto, expected)
+			assert.Loosely(t, res, should.Resemble(expected))
 
 			// Now check the database.
 			row, err := exonerations.Read(span.Single(ctx), res.Name)
-			So(err, ShouldBeNil)
-			So(row.Variant, ShouldResembleProto, expected.Variant)
-			So(row.ExplanationHtml, ShouldEqual, expected.ExplanationHtml)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, row.Variant, should.Resemble(expected.Variant))
+			assert.Loosely(t, row.ExplanationHtml, should.Equal(expected.ExplanationHtml))
 
 			// Check variant hash.
 			key := invocations.ID("inv").Key(res.TestId, res.ExonerationId)
 			var variantHash string
-			testutil.MustReadRow(ctx, "TestExonerations", key, map[string]any{
+			testutil.MustReadRow(ctx, t, "TestExonerations", key, map[string]any{
 				"VariantHash": &variantHash,
 			})
-			So(variantHash, ShouldEqual, expectedVariantHash)
+			assert.Loosely(t, variantHash, should.Equal(expectedVariantHash))
 
 			if req.RequestId != "" {
 				// Test idempotency.
 				res2, err := recorder.CreateTestExoneration(ctx, req)
-				So(err, ShouldBeNil)
-				So(res2, ShouldResembleProto, res)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res2, should.Resemble(res))
 			}
 		}
 
-		Convey(`Without request id, e2e`, func() {
+		t.Run(`Without request id, e2e`, func(t *ftt.Test) {
 			e2eTest(&pb.CreateTestExonerationRequest{
 				Invocation: "invocations/inv",
 				TestExoneration: &pb.TestExoneration{
@@ -196,7 +199,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			}, "6408fdc5c36df5df", "")
 		})
 
-		Convey(`With request id, e2e`, func() {
+		t.Run(`With request id, e2e`, func(t *ftt.Test) {
 			e2eTest(&pb.CreateTestExonerationRequest{
 				RequestId:  "request id",
 				Invocation: "invocations/inv",
@@ -209,7 +212,7 @@ func TestCreateTestExoneration(t *testing.T) {
 			}, "6408fdc5c36df5df", "d:2960f0231ce23039cdf7d4a62e31939ecd897bbf465e0fb2d35bf425ae1c5ae14eb0714d6dd0a0c244eaa66ae2b645b0637f58e91ed1b820bb1f01d8d4a72e67")
 		})
 
-		Convey(`With hash but no variant, e2e`, func() {
+		t.Run(`With hash but no variant, e2e`, func(t *ftt.Test) {
 			e2eTest(&pb.CreateTestExonerationRequest{
 				RequestId:  "request id",
 				Invocation: "invocations/inv",

@@ -43,14 +43,17 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
 	t.Parallel()
 	now := testclock.TestRecentTimeUTC
-	Convey(`TestValidateUpdateInvocationRequest`, t, func() {
+	ftt.Run(`TestValidateUpdateInvocationRequest`, t, func(t *ftt.Test) {
 		request := &pb.UpdateInvocationRequest{
 			Invocation: &pb.Invocation{
 				Name: "invocations/inv",
@@ -58,63 +61,63 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 			UpdateMask: &field_mask.FieldMask{Paths: []string{}},
 		}
 
-		Convey(`empty`, func() {
+		t.Run(`empty`, func(t *ftt.Test) {
 			err := validateUpdateInvocationRequest(&pb.UpdateInvocationRequest{}, now)
-			So(err, ShouldErrLike, `invocation: name: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`invocation: name: unspecified`))
 		})
 
-		Convey(`invalid id`, func() {
+		t.Run(`invalid id`, func(t *ftt.Test) {
 			request.Invocation.Name = "1"
 			err := validateUpdateInvocationRequest(request, now)
-			So(err, ShouldErrLike, `invocation: name: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`invocation: name: does not match`))
 		})
 
-		Convey(`empty update mask`, func() {
+		t.Run(`empty update mask`, func(t *ftt.Test) {
 			err := validateUpdateInvocationRequest(request, now)
-			So(err, ShouldErrLike, `update_mask: paths is empty`)
+			assert.Loosely(t, err, should.ErrLike(`update_mask: paths is empty`))
 		})
 
-		Convey(`unsupported update mask`, func() {
+		t.Run(`unsupported update mask`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"name"}
 			err := validateUpdateInvocationRequest(request, now)
-			So(err, ShouldErrLike, `update_mask: unsupported path "name"`)
+			assert.Loosely(t, err, should.ErrLike(`update_mask: unsupported path "name"`))
 		})
 
-		Convey(`submask in update mask`, func() {
-			Convey(`unsupported`, func() {
+		t.Run(`submask in update mask`, func(t *ftt.Test) {
+			t.Run(`unsupported`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = []string{"deadline.seconds"}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `update_mask: "deadline" should not have any submask`)
+				assert.Loosely(t, err, should.ErrLike(`update_mask: "deadline" should not have any submask`))
 			})
 
-			Convey(`supported`, func() {
+			t.Run(`supported`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = []string{"extended_properties.some_key"}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 
-		Convey(`deadline`, func() {
+		t.Run(`deadline`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"deadline"}
 
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				deadline := pbutil.MustTimestampProto(now.Add(-time.Hour))
 				request.Invocation.Deadline = deadline
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: deadline: must be at least 10 seconds in the future`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: deadline: must be at least 10 seconds in the future`))
 			})
 
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				deadline := pbutil.MustTimestampProto(now.Add(time.Hour))
 				request.Invocation.Deadline = deadline
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey(`bigquery exports`, func() {
+		t.Run(`bigquery exports`, func(t *ftt.Test) {
 			request.UpdateMask = &field_mask.FieldMask{Paths: []string{"bigquery_exports"}}
 
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.BigqueryExports = []*pb.BigQueryExport{{
 					Project: "project",
 					Dataset: "dataset",
@@ -123,10 +126,10 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				}}
 				request.UpdateMask.Paths = []string{"bigquery_exports"}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: bigquery_exports[0]: result_type: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: bigquery_exports[0]: result_type: unspecified`))
 			})
 
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.BigqueryExports = []*pb.BigQueryExport{{
 					Project: "project",
 					Dataset: "dataset",
@@ -136,28 +139,29 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`empty`, func() {
+			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BigqueryExports = []*pb.BigQueryExport{}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey(`properties`, func() {
+		t.Run(`properties`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"properties"}
 
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeInvocationProperties)),
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: properties: exceeds the maximum size of`, `bytes`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key_1": structpb.NewStringValue("value_1"),
@@ -169,13 +173,13 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey(`source spec`, func() {
+		t.Run(`source spec`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"source_spec"}
 
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.SourceSpec = &pb.SourceSpec{
 					Sources: &pb.Sources{
 						GitilesCommit: &pb.GitilesCommit{
@@ -197,28 +201,28 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`invalid source spec`, func() {
+			t.Run(`invalid source spec`, func(t *ftt.Test) {
 				request.Invocation.SourceSpec = &pb.SourceSpec{
 					Sources: &pb.Sources{
 						GitilesCommit: &pb.GitilesCommit{},
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: source_spec: sources: gitiles_commit: host: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: source_spec: sources: gitiles_commit: host: unspecified`))
 			})
 		})
-		Convey(`is_source_spec_final`, func() {
+		t.Run(`is_source_spec_final`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"is_source_spec_final"}
 
-			Convey(`true`, func() {
+			t.Run(`true`, func(t *ftt.Test) {
 				request.Invocation.IsSourceSpecFinal = true
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`false`, func() {
+			t.Run(`false`, func(t *ftt.Test) {
 				// If the current field value is true and we are setting
 				// false, a validation error is generated, but outside this
 				// request validation routine.
@@ -227,58 +231,58 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				// its current value.
 				request.Invocation.IsSourceSpecFinal = false
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
-		Convey(`baseline_id`, func() {
+		t.Run(`baseline_id`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"baseline_id"}
 
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = "try:linux-rel"
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`empty`, func() {
+			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = ""
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = "try/linux-rel"
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: baseline_id: does not match`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: baseline_id: does not match`))
 			})
 		})
 
-		Convey(`realm`, func() {
+		t.Run(`realm`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"realm"}
 
-			Convey(`empty`, func() {
+			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.Realm = ""
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: realm: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: realm: unspecified`))
 			})
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.Realm = "testproject:newrealm"
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.Realm = "blah"
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: realm: bad global realm name "blah"`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name "blah"`))
 			})
 		})
 
-		Convey(`instructions`, func() {
+		t.Run(`instructions`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"instructions"}
 
-			Convey(`empty`, func() {
+			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.Instructions = nil
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
@@ -330,9 +334,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`invalid`, func() {
+			t.Run(`invalid`, func(t *ftt.Test) {
 				request.Invocation.Instructions = &pb.Instructions{
 					Instructions: []*pb.Instruction{
 						{
@@ -355,25 +359,25 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				So(err, ShouldErrLike, `invocation: instructions: instructions[1]: id: "instruction1" is re-used at index 0`)
+				assert.Loosely(t, err, should.ErrLike(`invocation: instructions: instructions[1]: id: "instruction1" is re-used at index 0`))
 			})
 		})
 
-		Convey(`extended properties`, func() {
-			Convey(`full update mask`, func() {
+		t.Run(`extended properties`, func(t *ftt.Test) {
+			t.Run(`full update mask`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = []string{"extended_properties"}
 
-				Convey(`empty`, func() {
+				t.Run(`empty`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = nil
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`valid`, func() {
+				t.Run(`valid`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = testutil.TestInvocationExtendedProperties()
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`invalid`, func() {
+				t.Run(`invalid`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
 							Fields: map[string]*structpb.Value{
@@ -382,13 +386,14 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldErrLike, `invocation: extended_properties: ["abc"]: exceeds the maximum size`, `bytes`)
+					assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: ["abc"]: exceeds the maximum size`))
+					assert.Loosely(t, err, should.ErrLike(`bytes`))
 				})
 			})
 
-			Convey(`sub update mask`, func() {
+			t.Run(`sub update mask`, func(t *ftt.Test) {
 
-				Convey(`backticks`, func() {
+				t.Run(`backticks`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.`abc`"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
@@ -399,9 +404,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`valid`, func() {
+				t.Run(`valid`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
@@ -412,9 +417,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`invalid`, func() {
+				t.Run(`invalid`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc_"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc_": &structpb.Struct{
@@ -425,9 +430,9 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldErrLike, `update_mask: extended_properties: key "abc_": does not match`)
+					assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties: key "abc_": does not match`))
 				})
-				Convey(`too deep`, func() {
+				t.Run(`too deep`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc.fields"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
 						"abc": &structpb.Struct{
@@ -437,7 +442,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					So(err, ShouldErrLike, `update_mask: extended_properties["abc"] should not have any submask`)
+					assert.Loosely(t, err, should.ErrLike(`update_mask: extended_properties["abc"] should not have any submask`))
 				})
 			})
 		})
@@ -446,7 +451,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 
 func TestValidateUpdateInvocationPermissions(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateUpdateInvocationPermissions`, t, func() {
+	ftt.Run(`TestValidateUpdateInvocationPermissions`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		authState := &authtest.FakeState{
 			Identity: "user:someone@example.com",
@@ -474,93 +479,93 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 			Realm: "testproject:testrealm",
 		}
 
-		Convey(`realm`, func() {
+		t.Run(`realm`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"realm"}
 			request.Invocation.Realm = "testproject:newrealm"
 
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`no create access`, func() {
+			t.Run(`no create access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
-			Convey(`no include access`, func() {
+			t.Run(`no include access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldHaveAppStatus, codes.PermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
-			Convey(`change of project`, func() {
+			t.Run(`change of project`, func(t *ftt.Test) {
 				request.Invocation.Realm = "newproject:testrealm"
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, `cannot change invocation realm to outside project "testproject"`)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, `cannot change invocation realm to outside project "testproject"`))
 			})
 		})
-		Convey(`baseline_id`, func() {
+		t.Run(`baseline_id`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"baseline_id"}
 			request.Invocation.BaselineId = "try:linux-rel"
 
-			Convey(`empty`, func() {
+			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = ""
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey(`no concurrent change to realm`, func() {
-				Convey(`valid`, func() {
+			t.Run(`no concurrent change to realm`, func(t *ftt.Test) {
+				t.Run(`valid`, func(t *ftt.Test) {
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`no access`, func() {
+				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
-			Convey(`concurrent change to realm`, func() {
+			t.Run(`concurrent change to realm`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = append(request.UpdateMask.Paths, "realm")
 				request.Invocation.Realm = "testproject:newrealm"
 
-				Convey(`valid`, func() {
+				t.Run(`valid`, func(t *ftt.Test) {
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`no access`, func() {
+				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
 		})
-		Convey(`bigquery_exports`, func() {
+		t.Run(`bigquery_exports`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = append(request.UpdateMask.Paths, "bigquery_exports")
 			request.Invocation.BigqueryExports = []*pb.BigQueryExport{
 				createTestBigQueryExportConfig(),
 			}
 
-			Convey(`no permission`, func() {
+			t.Run(`no permission`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
 
-				Convey(`with change`, func() {
+				t.Run(`with change`, func(t *ftt.Test) {
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
-					So(err, ShouldBeRPCPermissionDenied, `updater does not have permission to set bigquery exports in realm "testproject:@root"`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
 				})
-				Convey(`with no change`, func() {
+				t.Run(`with no change`, func(t *ftt.Test) {
 					// If we are not updating anything, we should not need permission.
 					existing.BigqueryExports = []*pb.BigQueryExport{
 						createTestBigQueryExportConfig(),
 					}
 
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 			})
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
@@ -589,7 +594,7 @@ func createTestBigQueryExportConfig() *pb.BigQueryExport {
 }
 
 func TestUpdateInvocation(t *testing.T) {
-	Convey(`TestUpdateInvocation`, t, func() {
+	ftt.Run(`TestUpdateInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = tq.TestingContext(ctx, nil)
 		start := clock.Now(ctx).UTC()
@@ -607,12 +612,12 @@ func TestUpdateInvocation(t *testing.T) {
 		}
 		ctx = auth.WithState(ctx, authState)
 
-		Convey(`invalid request`, func() {
+		t.Run(`invalid request`, func(t *ftt.Test) {
 			req := &pb.UpdateInvocationRequest{}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `bad request: invocation: name: unspecified`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: invocation: name: unspecified`))
 		})
-		Convey(`no update token`, func() {
+		t.Run(`no update token`, func(t *ftt.Test) {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:       "invocations/inv",
@@ -621,11 +626,11 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeRPCUnauthenticated, `missing update-token metadata value in the request`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)(`missing update-token metadata value in the request`))
 		})
-		Convey(`invalid update token`, func() {
+		t.Run(`invalid update token`, func(t *ftt.Test) {
 			token, err := generateInvocationToken(ctx, "inv2")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
 			req := &pb.UpdateInvocationRequest{
@@ -636,14 +641,14 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err = recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, `invalid update token`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`invalid update token`))
 		})
 
 		token, err := generateInvocationToken(ctx, "inv")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-		Convey("no invocation", func() {
+		t.Run("no invocation", func(t *ftt.Test) {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:       "invocations/inv",
@@ -652,15 +657,18 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeRPCNotFound, `invocations/inv not found`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/inv not found`))
 		})
 
-		// Insert the invocation.
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
-			"BaselineId": "existing-baseline",
-		}))
+		doInsert := func() {
+			// Insert the invocation.
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{
+				"BaselineId": "existing-baseline",
+			}))
+		}
 
-		Convey("baseline_id", func() {
+		t.Run("baseline_id", func(t *ftt.Test) {
+			doInsert()
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:       "invocations/inv",
@@ -668,22 +676,24 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"baseline_id"}},
 			}
-			Convey("without permission", func() {
+			t.Run("without permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 
 				inv, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// the caller does not have permissions, so baseline should
 				// be silently reset.
-				So(inv.BaselineId, ShouldEqual, "")
+				assert.Loosely(t, inv.BaselineId, should.BeEmpty)
 			})
-			Convey("with permission", func() {
+			t.Run("with permission", func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeNil)
-				So(inv.BaselineId, ShouldEqual, "try:linux-rel")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.BaselineId, should.Equal("try:linux-rel"))
 			})
 		})
-		Convey("bigquery_exports", func() {
+
+		t.Run("bigquery_exports", func(t *ftt.Test) {
+			doInsert()
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name: "invocations/inv",
@@ -693,21 +703,23 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"bigquery_exports"}},
 			}
-			Convey("without permission", func() {
+			t.Run("without permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `updater does not have permission to set bigquery exports in realm "testproject:@root"`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
 			})
-			Convey("with permission", func() {
+			t.Run("with permission", func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeNil)
-				So(inv.BigqueryExports, ShouldResembleProto, []*pb.BigQueryExport{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.BigqueryExports, should.Resemble([]*pb.BigQueryExport{
 					createTestBigQueryExportConfig(),
-				})
+				}))
 			})
 		})
-		Convey("realm", func() {
+
+		t.Run("realm", func(t *ftt.Test) {
+			doInsert()
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:  "invocations/inv",
@@ -716,90 +728,94 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"realm"}},
 			}
 
-			Convey("missing create invocation permission", func() {
+			t.Run("missing create invocation permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
-			Convey("missing include invocation permission", func() {
+			t.Run("missing include invocation permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
-			Convey(`cannot change realm's project`, func() {
+			t.Run(`cannot change realm's project`, func(t *ftt.Test) {
 				req.Invocation.Realm = "newproject:testrealm"
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `cannot change invocation realm to outside project "testproject"`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`cannot change invocation realm to outside project "testproject"`))
 			})
-			Convey(`cannot change realm on an export root`, func() {
+			t.Run(`cannot change realm on an export root`, func(t *ftt.Test) {
 				// Make the invocation an export root.
-				testutil.MustApply(ctx, spanutil.UpdateMap("Invocations", map[string]any{
+				testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
 					"InvocationId": invocations.ID("inv"),
 					"IsExportRoot": true,
 				}))
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `realm: cannot change realm of an invocation that is an export root`)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`realm: cannot change realm of an invocation that is an export root`))
 			})
-			Convey(`valid`, func() {
+			t.Run(`valid`, func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
-				So(err, ShouldBeNil)
-				So(inv.Realm, ShouldEqual, "testproject:newrealm")
-				So(inv.BaselineId, ShouldEqual, "existing-baseline")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.Realm, should.Equal("testproject:newrealm"))
+				assert.Loosely(t, inv.BaselineId, should.Equal("existing-baseline"))
 			})
 		})
-		Convey("is_source_spec_final", func() {
+
+		t.Run("is_source_spec_final", func(t *ftt.Test) {
+			doInsert()
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name: "invocations/inv",
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"is_source_spec_final"}},
 			}
-			Convey("from non-finalized sources", func() {
-				Convey("to non-finalized sources", func() {
+			t.Run("from non-finalized sources", func(t *ftt.Test) {
+				t.Run("to non-finalized sources", func(t *ftt.Test) {
 					req.Invocation.IsSourceSpecFinal = false
 
 					inv, err := recorder.UpdateInvocation(ctx, req)
-					So(err, ShouldBeNil)
-					So(inv.IsSourceSpecFinal, ShouldEqual, false)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.IsSourceSpecFinal, should.Equal(false))
 				})
-				Convey("to finalized sources", func() {
+				t.Run("to finalized sources", func(t *ftt.Test) {
 					req.Invocation.IsSourceSpecFinal = true
 
 					inv, err := recorder.UpdateInvocation(ctx, req)
-					So(err, ShouldBeNil)
-					So(inv.IsSourceSpecFinal, ShouldEqual, true)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.IsSourceSpecFinal, should.Equal(true))
 				})
 			})
-			Convey("from finalized sources", func() {
-				testutil.MustApply(ctx, insert.Invocation("inv-sources-final", pb.Invocation_ACTIVE, map[string]any{
+			t.Run("from finalized sources", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t, insert.Invocation("inv-sources-final", pb.Invocation_ACTIVE, map[string]any{
 					"IsSourceSpecFinal": spanner.NullBool{Valid: true, Bool: true},
 				}))
 				req.Invocation.Name = "invocations/inv-sources-final"
 
 				token, err := generateInvocationToken(ctx, "inv-sources-final")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 
-				Convey("to finalized sources", func() {
+				t.Run("to finalized sources", func(t *ftt.Test) {
 					req.Invocation.IsSourceSpecFinal = true
 
 					inv, err := recorder.UpdateInvocation(ctx, req)
-					So(err, ShouldBeNil)
-					So(inv.IsSourceSpecFinal, ShouldEqual, true)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, inv.IsSourceSpecFinal, should.Equal(true))
 				})
-				Convey("to non-finalized sources", func() {
+				t.Run("to non-finalized sources", func(t *ftt.Test) {
 					req.Invocation.IsSourceSpecFinal = false
 
 					_, err := recorder.UpdateInvocation(ctx, req)
-					So(err, ShouldBeRPCInvalidArgument, `invocation: is_source_spec_final: cannot unfinalize already finalized sources`)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: is_source_spec_final: cannot unfinalize already finalized sources`))
 				})
 			})
 		})
-		Convey("extended_properties", func() {
+
+		t.Run("extended_properties", func(t *ftt.Test) {
+			doInsert()
 			structValueOrg := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
@@ -816,11 +832,11 @@ func TestUpdateInvocation(t *testing.T) {
 				internalExtendedProperties := &invocationspb.ExtendedProperties{
 					ExtendedProperties: extendedPropertiesOrg,
 				}
-				testutil.MustApply(ctx, insert.Invocation("update_extended_properties", pb.Invocation_ACTIVE, map[string]any{
+				testutil.MustApply(ctx, t, insert.Invocation("update_extended_properties", pb.Invocation_ACTIVE, map[string]any{
 					"ExtendedProperties": spanutil.Compressed(pbutil.MustMarshal(internalExtendedProperties)),
 				}))
 				token, err := generateInvocationToken(ctx, "update_extended_properties")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, token))
 				req := &pb.UpdateInvocationRequest{
 					Invocation: &pb.Invocation{
@@ -832,7 +848,7 @@ func TestUpdateInvocation(t *testing.T) {
 				return recorder.UpdateInvocation(ctx, req)
 			}
 
-			Convey("replace entire field", func() {
+			t.Run("replace entire field", func(t *ftt.Test) {
 				extendedPropertiesOrg := map[string]*structpb.Struct{
 					"old_key": structValueOrg,
 				}
@@ -841,10 +857,10 @@ func TestUpdateInvocation(t *testing.T) {
 				}
 				updateMask := &field_mask.FieldMask{Paths: []string{"extended_properties"}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				So(err, ShouldBeNil)
-				So(inv.ExtendedProperties, ShouldResembleProto, extendedPropertiesNew)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(extendedPropertiesNew))
 			})
-			Convey("add keys to nil field", func() {
+			t.Run("add keys to nil field", func(t *ftt.Test) {
 				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
 				extendedPropertiesNew := map[string]*structpb.Struct{
 					"to_be_added_1": structValueNew,
@@ -855,20 +871,20 @@ func TestUpdateInvocation(t *testing.T) {
 					"extended_properties.to_be_added_2",
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				So(err, ShouldBeNil)
-				So(inv.ExtendedProperties, ShouldResembleProto, extendedPropertiesNew)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(extendedPropertiesNew))
 			})
-			Convey("delete a key to nil field", func() {
+			t.Run("delete a key to nil field", func(t *ftt.Test) {
 				var extendedPropertiesOrg map[string]*structpb.Struct // a nil map
 				var extendedPropertiesNew map[string]*structpb.Struct // a nil map
 				updateMask := &field_mask.FieldMask{Paths: []string{
 					"extended_properties.to_be_deleted",
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				So(err, ShouldBeNil)
-				So(inv.ExtendedProperties, ShouldBeEmpty)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ExtendedProperties, should.BeEmpty)
 			})
-			Convey("add, replace, and delete keys to existing field", func() {
+			t.Run("add, replace, and delete keys to existing field", func(t *ftt.Test) {
 				extendedPropertiesOrg := map[string]*structpb.Struct{
 					"to_be_kept":     structValueOrg,
 					"to_be_replaced": structValueOrg,
@@ -884,14 +900,14 @@ func TestUpdateInvocation(t *testing.T) {
 					"extended_properties.to_be_deleted",
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				So(err, ShouldBeNil)
-				So(inv.ExtendedProperties, ShouldResembleProto, map[string]*structpb.Struct{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, inv.ExtendedProperties, should.Resemble(map[string]*structpb.Struct{
 					"to_be_kept":     structValueOrg,
 					"to_be_added":    structValueNew,
 					"to_be_replaced": structValueNew,
-				})
+				}))
 			})
-			Convey("valid request but overall size exceed limit", func() {
+			t.Run("valid request but overall size exceed limit", func(t *ftt.Test) {
 				structValueLong := &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
@@ -912,12 +928,13 @@ func TestUpdateInvocation(t *testing.T) {
 					"extended_properties.mykey_5",
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				So(err, ShouldBeRPCInvalidArgument, `invocation: extended_properties: exceeds the maximum size of`)
-				So(inv, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: extended_properties: exceeds the maximum size of`))
+				assert.Loosely(t, inv, should.BeNil)
 			})
 		})
 
-		Convey("e2e", func() {
+		t.Run("e2e", func(t *ftt.Test) {
+			doInsert()
 			validDeadline := pbutil.MustTimestampProto(start.Add(day))
 			validBigqueryExports := []*pb.BigQueryExport{
 				{
@@ -1011,7 +1028,7 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: updateMask,
 			}
 			inv, err := recorder.UpdateInvocation(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			expected := &pb.Invocation{
 				Name:            "invocations/inv",
@@ -1028,15 +1045,15 @@ func TestUpdateInvocation(t *testing.T) {
 				Realm:             "testproject:newrealm",
 				Instructions:      instructionutil.InstructionsWithNames(instructions, "inv"),
 			}
-			So(inv.Name, ShouldEqual, expected.Name)
-			So(inv.State, ShouldEqual, pb.Invocation_ACTIVE)
-			So(inv.Deadline, ShouldResembleProto, expected.Deadline)
-			So(inv.Properties, ShouldResembleProto, expected.Properties)
-			So(inv.SourceSpec, ShouldResembleProto, expected.SourceSpec)
-			So(inv.IsSourceSpecFinal, ShouldEqual, expected.IsSourceSpecFinal)
-			So(inv.BaselineId, ShouldEqual, expected.BaselineId)
-			So(inv.Realm, ShouldEqual, expected.Realm)
-			So(inv.Instructions, ShouldResembleProto, expected.Instructions)
+			assert.Loosely(t, inv.Name, should.Equal(expected.Name))
+			assert.Loosely(t, inv.State, should.Equal(pb.Invocation_ACTIVE))
+			assert.Loosely(t, inv.Deadline, should.Resemble(expected.Deadline))
+			assert.Loosely(t, inv.Properties, should.Resemble(expected.Properties))
+			assert.Loosely(t, inv.SourceSpec, should.Resemble(expected.SourceSpec))
+			assert.Loosely(t, inv.IsSourceSpecFinal, should.Equal(expected.IsSourceSpecFinal))
+			assert.Loosely(t, inv.BaselineId, should.Equal(expected.BaselineId))
+			assert.Loosely(t, inv.Realm, should.Equal(expected.Realm))
+			assert.Loosely(t, inv.Instructions, should.Resemble(expected.Instructions))
 
 			// Read from the database.
 			actual := &pb.Invocation{
@@ -1048,7 +1065,7 @@ func TestUpdateInvocation(t *testing.T) {
 			var compressedSources spanutil.Compressed
 			var isSourceSpecFinal spanner.NullBool
 			var compressedInstructions spanutil.Compressed
-			testutil.MustReadRow(ctx, "Invocations", invID.Key(), map[string]any{
+			testutil.MustReadRow(ctx, t, "Invocations", invID.Key(), map[string]any{
 				"Deadline":          &actual.Deadline,
 				"BigQueryExports":   &actual.BigqueryExports,
 				"Properties":        &compressedProperties,
@@ -1061,18 +1078,18 @@ func TestUpdateInvocation(t *testing.T) {
 			})
 			actual.Properties = &structpb.Struct{}
 			err = proto.Unmarshal(compressedProperties, actual.Properties)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual.SourceSpec.Sources = &pb.Sources{}
 			err = proto.Unmarshal(compressedSources, actual.SourceSpec.Sources)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual.Instructions = &pb.Instructions{}
 			err = proto.Unmarshal(compressedInstructions, actual.Instructions)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			if isSourceSpecFinal.Valid && isSourceSpecFinal.Bool {
 				actual.IsSourceSpecFinal = true
 			}
 			expected.Instructions = instructionutil.RemoveInstructionsName(instructions)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 	})
 }

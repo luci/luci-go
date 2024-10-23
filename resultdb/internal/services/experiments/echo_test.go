@@ -24,12 +24,15 @@ import (
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEcho(t *testing.T) {
-	Convey("Given an experiments server", t, func() {
+	ftt.Run("Given an experiments server", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		// For user identification.
@@ -43,7 +46,7 @@ func TestEcho(t *testing.T) {
 
 		server := NewExperimentsServer()
 
-		Convey("Unauthorised requests are rejected", func() {
+		t.Run("Unauthorised requests are rejected", func(t *ftt.Test) {
 			// Not a member of allowedGroup.
 			authState.IdentityGroups = []string{"other-group"}
 
@@ -54,8 +57,8 @@ func TestEcho(t *testing.T) {
 			}
 
 			rsp, err := server.Echo(ctx, request)
-			So(err, ShouldBeRPCPermissionDenied, "not a member of googlers")
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of googlers"))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
 
 		// Valid baseline request.
@@ -63,37 +66,37 @@ func TestEcho(t *testing.T) {
 			Message: "hello",
 		}
 
-		Convey("Invalid requests are rejected", func() {
-			Convey("Message", func() {
-				Convey("Empty", func() {
+		t.Run("Invalid requests are rejected", func(t *ftt.Test) {
+			t.Run("Message", func(t *ftt.Test) {
+				t.Run("Empty", func(t *ftt.Test) {
 					request.Message = ""
 
 					rsp, err := server.Echo(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "message: unspecified")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: unspecified"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
-				Convey("Non-printable", func() {
+				t.Run("Non-printable", func(t *ftt.Test) {
 					request.Message = "\u0001"
 
 					rsp, err := server.Echo(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "message: does not match")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: does not match"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
-				Convey("Too long", func() {
+				t.Run("Too long", func(t *ftt.Test) {
 					request.Message = strings.Repeat("a", 1025)
 
 					rsp, err := server.Echo(ctx, request)
-					So(err, ShouldBeRPCInvalidArgument, "message: exceeds 1024 bytes")
-					So(rsp, ShouldBeNil)
+					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: exceeds 1024 bytes"))
+					assert.Loosely(t, rsp, should.BeNil)
 				})
 			})
 		})
-		Convey("Valid requests", func() {
+		t.Run("Valid requests", func(t *ftt.Test) {
 			rsp, err := server.Echo(ctx, request)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.EchoResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.Resemble(&pb.EchoResponse{
 				Message: "hello",
-			})
+			}))
 		})
 	})
 }

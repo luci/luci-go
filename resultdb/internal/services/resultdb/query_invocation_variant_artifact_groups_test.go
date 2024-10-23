@@ -32,12 +32,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
-	Convey(`TestQueryInvocationVariantArtifactGroups`, t, func() {
+	ftt.Run(`TestQueryInvocationVariantArtifactGroups`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"googlers"},
@@ -91,23 +94,23 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 			PageSize:  1,
 			PageToken: "",
 		}
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			req.Project = "nopermissionproject"
 			res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\"")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\""))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("invalid request", func() {
+		t.Run("invalid request", func(t *ftt.Test) {
 
-			Convey("googler", func() {
+			t.Run("googler", func(t *ftt.Test) {
 				req.StartTime = nil
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`start_time: unspecified`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 
-			Convey("non-googler", func() {
+			t.Run("non-googler", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{
 					Identity:       "user:someone@example.com",
 					IdentityGroups: []string{"other"},
@@ -118,15 +121,15 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 				})
 
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-				So(err, ShouldBeRPCPermissionDenied, `artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
-				So(res, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
+				assert.Loosely(t, res, should.BeNil)
 			})
 		})
 
-		Convey("valid request", func() {
+		t.Run("valid request", func(t *ftt.Test) {
 			rsp, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.QueryInvocationVariantArtifactGroupsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.Resemble(&pb.QueryInvocationVariantArtifactGroupsResponse{
 				Groups: []*pb.QueryInvocationVariantArtifactGroupsResponse_MatchGroup{{
 					ArtifactId:       "artifact1",
 					VariantUnionHash: "variant1",
@@ -143,22 +146,22 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 					MatchingCount: 10,
 				}},
 				NextPageToken: "next_page_token",
-			})
+			}))
 		})
-		Convey("query time out", func() {
+		t.Run("query time out", func(t *ftt.Test) {
 			mockBQClient.ReadArtifactGroupsFunc = func(ctx context.Context, opts artifacts.ReadArtifactGroupsOpts) (groups []*artifacts.ArtifactGroup, nextPageToken string, err error) {
 				return nil, "", artifacts.BQQueryTimeOutErr
 			}
 			rsp, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `query can't finish within the deadline`)
-			So(rsp, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`query can't finish within the deadline`))
+			assert.Loosely(t, rsp, should.BeNil)
 		})
 	})
 }
 
 func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryInvocationVariantArtifactGroupsRequest`, t, func() {
+	ftt.Run(`TestValidateQueryInvocationVariantArtifactGroupsRequest`, t, func(t *ftt.Test) {
 		req := &pb.QueryInvocationVariantArtifactGroupsRequest{
 			Project: "chromium",
 			SearchString: &pb.ArtifactContentMatcher{
@@ -176,67 +179,67 @@ func TestValidateQueryInvocationVariantArtifactGroupsRequest(t *testing.T) {
 			PageSize:  1,
 			PageToken: "",
 		}
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`no project`, func() {
+		t.Run(`no project`, func(t *ftt.Test) {
 			req.Project = ""
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `project: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 		})
 
-		Convey(`invalid page size`, func() {
+		t.Run(`invalid page size`, func(t *ftt.Test) {
 			req.PageSize = -1
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `page_size: negative`)
+			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 		})
 
-		Convey(`no search string`, func() {
+		t.Run(`no search string`, func(t *ftt.Test) {
 			req.SearchString = &pb.ArtifactContentMatcher{}
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `search_string: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`search_string: unspecified`))
 		})
 
-		Convey(`artifact id matcher`, func() {
-			Convey(`invalid artifact id prefix`, func() {
+		t.Run(`artifact id matcher`, func(t *ftt.Test) {
+			t.Run(`invalid artifact id prefix`, func(t *ftt.Test) {
 				req.ArtifactIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
 						HasPrefix: "invalid-artifact-id-\r",
 					},
 				}
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-				So(err, ShouldErrLike, `artifact_id_matcher`)
+				assert.Loosely(t, err, should.ErrLike(`artifact_id_matcher`))
 			})
 
-			Convey(`no artifact id matcher called by googler`, func() {
+			t.Run(`no artifact id matcher called by googler`, func(t *ftt.Test) {
 				req.ArtifactIdMatcher = nil
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`no artifact id matcher called by non-googler`, func() {
+			t.Run(`no artifact id matcher called by non-googler`, func(t *ftt.Test) {
 				req.ArtifactIdMatcher = nil
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `artifact_id_matcher: unspecified: insufficient permission to run this query with current filters`)
+				assert.Loosely(t, err, should.ErrLike(`artifact_id_matcher: unspecified: insufficient permission to run this query with current filters`))
 			})
 
-			Convey(`artifact id prefix called by non-googler`, func() {
+			t.Run(`artifact id prefix called by non-googler`, func(t *ftt.Test) {
 				req.ArtifactIdMatcher = &pb.IDMatcher{
 					Matcher: &pb.IDMatcher_HasPrefix{
 						HasPrefix: "artifact-prefix",
 					},
 				}
 				err := validateQueryInvocationVariantArtifactGroupsRequest(req, false)
-				So(err, ShouldErrLike, `artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`)
+				assert.Loosely(t, err, should.ErrLike(`artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
 			})
 		})
 
-		Convey(`no start time`, func() {
+		t.Run(`no start time`, func(t *ftt.Test) {
 			req.StartTime = nil
 			err := validateQueryInvocationVariantArtifactGroupsRequest(req, true)
-			So(err, ShouldErrLike, `start_time: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`start_time: unspecified`))
 		})
 	})
 }

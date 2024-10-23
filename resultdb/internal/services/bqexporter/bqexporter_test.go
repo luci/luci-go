@@ -30,6 +30,9 @@ import (
 
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq"
 
@@ -42,9 +45,6 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type mockPassInserter struct {
@@ -81,10 +81,10 @@ func (c *fakeInvClient) InsertInvocationRow(ctx context.Context, row *bqpb.Invoc
 }
 
 func TestExportToBigQuery(t *testing.T) {
-	Convey(`TestExportTestResultsToBigQuery`, t, func() {
+	ftt.Run(`TestExportTestResultsToBigQuery`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestTimeUTC)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{
 				"Realm":   "testproject:testrealm",
 				"Sources": spanutil.Compressed(pbutil.MustMarshal(testutil.TestSources())),
@@ -99,19 +99,19 @@ func TestExportToBigQuery(t *testing.T) {
 				"InheritSources": true,
 			}),
 			insert.Inclusion("a", "b"))
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			// Test results and exonerations have the same variants.
-			insert.TestResults("a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "A", pbutil.Variant("k", "v"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("a", "A", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			// Test results and exonerations have different variants.
-			insert.TestResults("b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", "B", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insert.TestExonerations("b", "B", pbutil.Variant("k", "different"), pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			// Passing test result without exoneration.
-			insert.TestResults("a", "C", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "a", "C", nil, pb.TestStatus_PASS),
 			// Test results' parent is different from exported.
-			insert.TestResults("b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insert.TestResults(t, "b", "D", pbutil.Variant("k", "v"), pb.TestStatus_CRASH, pb.TestStatus_PASS),
 			insert.TestExonerations("b", "D", pbutil.Variant("k", "v"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
-			insert.TestResultMessages([]*pb.TestResult{
+			insert.TestResultMessages(t, []*pb.TestResult{
 				{
 					Name:        pbutil.TestResultName("a", "E", "0"),
 					TestId:      "E",
@@ -151,41 +151,41 @@ func TestExportToBigQuery(t *testing.T) {
 			batchSem:   semaphore.NewWeighted(100),
 		}
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			i := &mockPassInserter{}
 			err := b.exportTestResultsToBigQuery(ctx, i, "a", bqExport)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 8)
+			assert.Loosely(t, len(i.insertedMessages), should.Equal(8))
 
 			expectedTestIDs := []string{"A", "B", "C", "D", "E"}
 			for _, m := range i.insertedMessages {
 				tr := m.Message.(*bqpb.TestResultRow)
-				So(tr.TestId, ShouldBeIn, expectedTestIDs)
-				So(tr.Parent.Id, ShouldBeIn, []string{"a", "b"})
-				So(tr.Parent.Realm, ShouldEqual, "testproject:testrealm")
+				assert.Loosely(t, tr.TestId, should.BeIn(expectedTestIDs...))
+				assert.Loosely(t, tr.Parent.Id, should.BeIn([]string{"a", "b"}...))
+				assert.Loosely(t, tr.Parent.Realm, should.Equal("testproject:testrealm"))
 				if tr.Parent.Id == "b" {
-					So(tr.Parent.Properties, ShouldResembleProto, &structpb.Struct{
+					assert.Loosely(t, tr.Parent.Properties, should.Resemble(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key": structpb.NewStringValue("value"),
 						},
-					})
+					}))
 				} else {
-					So(tr.Parent.Properties, ShouldBeNil)
+					assert.Loosely(t, tr.Parent.Properties, should.BeNil)
 				}
 
-				So(tr.Exported.Id, ShouldEqual, "a")
-				So(tr.Exported.Realm, ShouldEqual, "testproject:testrealm")
-				So(tr.Exported.Properties, ShouldBeNil)
-				So(tr.Exonerated, ShouldEqual, tr.TestId == "A" || tr.TestId == "D")
+				assert.Loosely(t, tr.Exported.Id, should.Equal("a"))
+				assert.Loosely(t, tr.Exported.Realm, should.Equal("testproject:testrealm"))
+				assert.Loosely(t, tr.Exported.Properties, should.BeNil)
+				assert.Loosely(t, tr.Exonerated, should.Equal(tr.TestId == "A" || tr.TestId == "D"))
 
-				So(tr.Name, ShouldEqual, pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId))
-				So(tr.InsertTime, ShouldEqual, timestamppb.New(testclock.TestTimeUTC))
+				assert.Loosely(t, tr.Name, should.Equal(pbutil.TestResultName(string(tr.Parent.Id), tr.TestId, tr.ResultId)))
+				assert.Loosely(t, tr.InsertTime, should.Match(timestamppb.New(testclock.TestTimeUTC)))
 
 				if tr.TestId == "E" {
-					So(tr.Properties, ShouldResembleProto, &structpb.Struct{
+					assert.Loosely(t, tr.Properties, should.Resemble(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key_1": structpb.NewStringValue("value_1"),
 							"key_2": structpb.NewStructValue(&structpb.Struct{
@@ -194,32 +194,32 @@ func TestExportToBigQuery(t *testing.T) {
 								},
 							}),
 						},
-					})
-					So(tr.SkipReason, ShouldEqual, pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String())
+					}))
+					assert.Loosely(t, tr.SkipReason, should.Equal(pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS.String()))
 				} else {
-					So(tr.Properties, ShouldResembleProto, &structpb.Struct{
+					assert.Loosely(t, tr.Properties, should.Resemble(&structpb.Struct{
 						Fields: map[string]*structpb.Value{
 							"key": structpb.NewStringValue("value"),
 						},
-					})
-					So(tr.SkipReason, ShouldBeEmpty)
+					}))
+					assert.Loosely(t, tr.SkipReason, should.BeEmpty)
 				}
 
-				So(tr.Sources, ShouldResembleProto, testutil.TestSources())
+				assert.Loosely(t, tr.Sources, should.Resemble(testutil.TestSources()))
 			}
 		})
 
 		// To check when encountering an error, the test can run to the end
 		// without hanging, or race detector does not detect anything.
-		Convey(`fail`, func() {
+		t.Run(`fail`, func(t *ftt.Test) {
 			err := b.exportTestResultsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
-			So(err, ShouldErrLike, "some error")
+			assert.Loosely(t, err, should.ErrLike("some error"))
 		})
 	})
 
-	Convey(`TestExportTextArtifactToBigQuery`, t, func() {
+	ftt.Run(`TestExportTextArtifactToBigQuery`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Invocation("inv1", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 			insert.Inclusion("a", "inv1"),
@@ -253,28 +253,28 @@ func TestExportToBigQuery(t *testing.T) {
 			maxTokenSize: 10,
 		}
 
-		Convey(`success`, func() {
+		t.Run(`success`, func(t *ftt.Test) {
 			i := &mockPassInserter{}
 			err := b.exportTextArtifactsToBigQuery(ctx, i, "a", bqExport)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			i.mu.Lock()
 			defer i.mu.Unlock()
-			So(len(i.insertedMessages), ShouldEqual, 8)
+			assert.Loosely(t, len(i.insertedMessages), should.Equal(8))
 		})
 
-		Convey(`fail`, func() {
+		t.Run(`fail`, func(t *ftt.Test) {
 			err := b.exportTextArtifactsToBigQuery(ctx, &mockFailInserter{}, "a", bqExport)
-			So(err, ShouldErrLike, "some error")
+			assert.Loosely(t, err, should.ErrLike("some error"))
 		})
 	})
 
-	Convey(`TestExportInvocationToBigQuery`, t, func() {
+	ftt.Run(`TestExportInvocationToBigQuery`, t, func(t *ftt.Test) {
 		properties, err := structpb.NewStruct(map[string]interface{}{
 			"num_prop":    123,
 			"string_prop": "ABC",
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		extendedProperties := map[string]*structpb.Struct{
 			"a_key": properties,
 		}
@@ -282,7 +282,7 @@ func TestExportToBigQuery(t *testing.T) {
 			ExtendedProperties: extendedProperties,
 		}
 		ctx := testutil.SpannerTestContext(t)
-		commitTime := testutil.MustApply(ctx,
+		commitTime := testutil.MustApply(ctx, t,
 			insert.Invocation("a", pb.Invocation_FINALIZED, map[string]any{
 				"Realm":              "testproject:testrealm",
 				"Properties":         spanutil.Compressed(pbutil.MustMarshal(properties)),
@@ -299,67 +299,67 @@ func TestExportToBigQuery(t *testing.T) {
 			batchSem:   semaphore.NewWeighted(100),
 		}
 
-		Convey("Invocation not finalized", func() {
+		t.Run("Invocation not finalized", func(t *ftt.Test) {
 			invClient := &fakeInvClient{}
 			err = b.exportInvocationToBigQuery(ctx, "b", invClient)
-			So(err, ShouldErrLike, "invocations/b not finalized")
+			assert.Loosely(t, err, should.ErrLike("invocations/b not finalized"))
 		})
 
-		Convey("Export failed", func() {
+		t.Run("Export failed", func(t *ftt.Test) {
 			invClient := &fakeInvClient{
 				Error: errors.New("bq error"),
 			}
 			err = b.exportInvocationToBigQuery(ctx, "a", invClient)
-			So(err, ShouldErrLike, "bq error")
+			assert.Loosely(t, err, should.ErrLike("bq error"))
 		})
 
-		Convey("Succeed", func() {
+		t.Run("Succeed", func(t *ftt.Test) {
 			invClient := &fakeInvClient{}
 			err = b.exportInvocationToBigQuery(ctx, "a", invClient)
-			So(err, ShouldBeNil)
-			So(len(invClient.Rows), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(invClient.Rows), should.Equal(1))
 			row := invClient.Rows[0]
-			So(row.Project, ShouldEqual, "testproject")
-			So(row.Realm, ShouldEqual, "testrealm")
-			So(row.Id, ShouldEqual, "a")
-			So(row.CreateTime, ShouldResembleProto, timestamppb.New(commitTime))
-			So(row.FinalizeTime, ShouldResembleProto, timestamppb.New(commitTime))
-			So(row.PartitionTime, ShouldResembleProto, timestamppb.New(commitTime))
+			assert.Loosely(t, row.Project, should.Equal("testproject"))
+			assert.Loosely(t, row.Realm, should.Equal("testrealm"))
+			assert.Loosely(t, row.Id, should.Equal("a"))
+			assert.Loosely(t, row.CreateTime, should.Resemble(timestamppb.New(commitTime)))
+			assert.Loosely(t, row.FinalizeTime, should.Resemble(timestamppb.New(commitTime)))
+			assert.Loosely(t, row.PartitionTime, should.Resemble(timestamppb.New(commitTime)))
 
 			// Different implementations may use different spacing between
 			// json elements. Ignore this.
 			rowProp := strings.ReplaceAll(row.Properties, " ", "")
-			So(rowProp, ShouldResemble, `{"num_prop":123,"string_prop":"ABC"}`)
+			assert.Loosely(t, rowProp, should.Match(`{"num_prop":123,"string_prop":"ABC"}`))
 			rowExtProp := strings.ReplaceAll(row.ExtendedProperties, " ", "")
-			So(rowExtProp, ShouldResemble, `{"a_key":{"num_prop":123,"string_prop":"ABC"}}`)
+			assert.Loosely(t, rowExtProp, should.Match(`{"a_key":{"num_prop":123,"string_prop":"ABC"}}`))
 		})
 	})
 }
 
 func TestSchedule(t *testing.T) {
-	Convey(`TestSchedule`, t, func() {
+	ftt.Run(`TestSchedule`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		bqExport1 := &pb.BigQueryExport{Dataset: "dataset", Project: "project", Table: "table", ResultType: &pb.BigQueryExport_TestResults_{}}
 		bqExport2 := &pb.BigQueryExport{Dataset: "dataset2", Project: "project2", Table: "table2", ResultType: &pb.BigQueryExport_TextArtifacts_{}}
 		bqExports := []*pb.BigQueryExport{bqExport1, bqExport2}
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("two-bqx", pb.Invocation_FINALIZED, map[string]any{"BigqueryExports": bqExports}),
 			insert.Invocation("one-bqx", pb.Invocation_FINALIZED, map[string]any{"BigqueryExports": bqExports[:1]}),
 			insert.Invocation("zero-bqx", pb.Invocation_FINALIZED, nil))
 
 		ctx, sched := tq.TestingContext(ctx, nil)
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-			So(Schedule(ctx, "two-bqx"), ShouldBeNil)
-			So(Schedule(ctx, "one-bqx"), ShouldBeNil)
-			So(Schedule(ctx, "zero-bqx"), ShouldBeNil)
+			assert.Loosely(t, Schedule(ctx, "two-bqx"), should.BeNil)
+			assert.Loosely(t, Schedule(ctx, "one-bqx"), should.BeNil)
+			assert.Loosely(t, Schedule(ctx, "zero-bqx"), should.BeNil)
 			return nil
 		})
-		So(err, ShouldBeNil)
-		So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "zero-bqx"})
-		So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "one-bqx"})
-		So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1})
-		So(sched.Tasks().Payloads()[3], ShouldResembleProto, &taskspb.ExportInvocationToBQ{InvocationId: "two-bqx"})
-		So(sched.Tasks().Payloads()[4], ShouldResembleProto, &taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2})
-		So(sched.Tasks().Payloads()[5], ShouldResembleProto, &taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "zero-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "one-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "one-bqx", BqExport: bqExport1}))
+		assert.Loosely(t, sched.Tasks().Payloads()[3], should.Resemble(&taskspb.ExportInvocationToBQ{InvocationId: "two-bqx"}))
+		assert.Loosely(t, sched.Tasks().Payloads()[4], should.Resemble(&taskspb.ExportInvocationArtifactsToBQ{InvocationId: "two-bqx", BqExport: bqExport2}))
+		assert.Loosely(t, sched.Tasks().Payloads()[5], should.Resemble(&taskspb.ExportInvocationTestResultsToBQ{InvocationId: "two-bqx", BqExport: bqExport1}))
 	})
 }

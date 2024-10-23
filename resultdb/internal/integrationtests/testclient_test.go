@@ -22,11 +22,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/services/recorder"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testClient is a convenient resultdb client, to keep tests simple.
@@ -42,8 +43,8 @@ func (c *testClient) CreateInvocation(ctx context.Context, id string) {
 	md := metadata.MD{}
 	req := &pb.CreateInvocationRequest{InvocationId: id, Invocation: &pb.Invocation{Realm: "testproject:testrealm"}}
 	inv, err := c.app.Recorder.CreateInvocation(ctx, req, grpc.Header(&md))
-	So(err, ShouldBeNil)
-	So(md.Get(pb.UpdateTokenMetadataKey), ShouldHaveLength, 1)
+	assert.Loosely(c.app.t, err, should.BeNil, truth.LineContext())
+	assert.Loosely(c.app.t, md.Get(pb.UpdateTokenMetadataKey), should.HaveLength(1))
 
 	if c.updateTokens == nil {
 		c.updateTokens = map[string]string{}
@@ -57,7 +58,7 @@ func (c *testClient) withUpdateTokenFor(ctx context.Context, invocation string) 
 
 func (c *testClient) GetState(ctx context.Context, name string) pb.Invocation_State {
 	inv, err := c.app.ResultDB.GetInvocation(ctx, &pb.GetInvocationRequest{Name: name})
-	So(err, ShouldBeNil)
+	assert.Loosely(c.app.t, err, should.BeNil)
 	return inv.State
 }
 
@@ -67,13 +68,13 @@ func (c *testClient) Include(ctx context.Context, including, included string) {
 		IncludingInvocation: including,
 		AddInvocations:      []string{included},
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(c.app.t, err, should.BeNil)
 }
 
 func (c *testClient) FinalizeInvocation(ctx context.Context, name string) {
 	ctx = c.withUpdateTokenFor(ctx, name)
 	_, err := c.app.Recorder.FinalizeInvocation(ctx, &pb.FinalizeInvocationRequest{Name: name})
-	So(err, ShouldBeNil)
+	assert.Loosely(c.app.t, err, should.BeNil)
 }
 
 // MakeInvocationOverdue uses a magic constant to set an invocation's deadline
@@ -89,5 +90,5 @@ func (c *testClient) MakeInvocationOverdue(ctx context.Context, name string) {
 			Paths: []string{"deadline"},
 		},
 	})
-	So(err, ShouldBeNil)
+	assert.Loosely(c.app.t, err, should.BeNil)
 }

@@ -34,12 +34,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryTestVariantArtifacts(t *testing.T) {
-	Convey("QueryTestVariantArtifacts", t, func() {
+	ftt.Run("QueryTestVariantArtifacts", t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -91,24 +94,24 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
-		Convey("no permission", func() {
+		t.Run("no permission", func(t *ftt.Test) {
 			req.Project = "nopermissionproject"
 			res, err := srv.QueryTestVariantArtifacts(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\"")
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\""))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("invalid request", func() {
+		t.Run("invalid request", func(t *ftt.Test) {
 			req.StartTime = nil
 			res, err := srv.QueryTestVariantArtifacts(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument, `start_time: unspecified`)
-			So(res, ShouldBeNil)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`start_time: unspecified`))
+			assert.Loosely(t, res, should.BeNil)
 		})
 
-		Convey("Valid request", func() {
+		t.Run("Valid request", func(t *ftt.Test) {
 			rsp, err := srv.QueryTestVariantArtifacts(ctx, req)
-			So(err, ShouldBeNil)
-			So(rsp, ShouldResembleProto, &pb.QueryTestVariantArtifactsResponse{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rsp, should.Resemble(&pb.QueryTestVariantArtifactsResponse{
 				Artifacts: []*pb.ArtifactMatchingContent{{
 					Name:          "invocations/12345678901234567890/tests/test_id/results/1/artifacts/artifact_id",
 					PartitionTime: timestamppb.New(time.Date(2024, 5, 6, 5, 58, 57, 490076000, time.UTC)),
@@ -130,10 +133,10 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 						}},
 					}},
 				NextPageToken: "",
-			})
+			}))
 		})
 
-		Convey("BQClient returns error", func() {
+		t.Run("BQClient returns error", func(t *ftt.Test) {
 			bqClient := artifactstestutil.NewMockBQClient(nil,
 				func(ctx context.Context, opts artifacts.ReadArtifactsOpts) ([]*artifacts.MatchingArtifact, string, error) {
 					return nil, "", errors.New("BQClient error")
@@ -143,14 +146,14 @@ func TestQueryTestVariantArtifacts(t *testing.T) {
 				artifactBQClient: bqClient,
 			}
 			_, err := srv.QueryTestVariantArtifacts(ctx, req)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "read test artifacts")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.ContainSubstring("read test artifacts"))
 		})
 	})
 }
 
 func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
-	Convey("ValidateQueryTestVariantArtifactsRequest", t, func() {
+	ftt.Run("ValidateQueryTestVariantArtifactsRequest", t, func(t *ftt.Test) {
 		req := &pb.QueryTestVariantArtifactsRequest{
 			Project:     "testproject",
 			TestId:      "test_id",
@@ -165,59 +168,59 @@ func TestValidateQueryTestVariantArtifactsRequest(t *testing.T) {
 			EndTime:   timestamppb.New(time.Date(2024, 8, 7, 0, 0, 0, 0, time.UTC)),
 			PageSize:  10,
 		}
-		Convey("Valid request", func() {
+		t.Run("Valid request", func(t *ftt.Test) {
 			err := validateQueryTestVariantArtifactsRequest(req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Invalid request", func() {
-			Convey("Invalid project", func() {
+		t.Run("Invalid request", func(t *ftt.Test) {
+			t.Run("Invalid project", func(t *ftt.Test) {
 				req.Project = "invalid_project"
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "project")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("project"))
 			})
 
-			Convey("Search string unspecified", func() {
+			t.Run("Search string unspecified", func(t *ftt.Test) {
 				req.SearchString = &pb.ArtifactContentMatcher{}
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "search_string: unspecified")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("search_string: unspecified"))
 			})
 
-			Convey("Invalid test_id", func() {
+			t.Run("Invalid test_id", func(t *ftt.Test) {
 				req.TestId = "invalid-test-id-\r"
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "test_id")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("test_id"))
 			})
 
-			Convey("Invalid variant hash", func() {
+			t.Run("Invalid variant hash", func(t *ftt.Test) {
 				req.VariantHash = "varianthash"
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "variant_hash")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("variant_hash"))
 			})
 
-			Convey("Invalid artifact_id", func() {
+			t.Run("Invalid artifact_id", func(t *ftt.Test) {
 				req.ArtifactId = "invalid-artifact-id-\r"
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "artifact_id")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("artifact_id"))
 			})
 
-			Convey("Start time unspecified", func() {
+			t.Run("Start time unspecified", func(t *ftt.Test) {
 				req.StartTime = nil
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "start_time: unspecified")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("start_time: unspecified"))
 			})
 
-			Convey("Invalid page size", func() {
+			t.Run("Invalid page size", func(t *ftt.Test) {
 				req.PageSize = -1
 				err := validateQueryTestVariantArtifactsRequest(req)
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "page_size: negative")
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, err.Error(), should.ContainSubstring("page_size: negative"))
 			})
 		})
 	})

@@ -17,9 +17,9 @@ package exonerations
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -30,14 +30,14 @@ import (
 )
 
 func TestRead(t *testing.T) {
-	Convey(`Read`, t, func() {
+	ftt.Run(`Read`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		invID := invocations.ID("inv")
 
-		Convey("Full", func() {
+		t.Run("Full", func(t *ftt.Test) {
 			// Insert a TestExoneration.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":    invID,
@@ -51,8 +51,8 @@ func TestRead(t *testing.T) {
 
 			const name = "invocations/inv/tests/t%20t/exonerations/id"
 			ex, err := Read(span.Single(ctx), name)
-			So(err, ShouldBeNil)
-			So(ex, ShouldResembleProto, &pb.TestExoneration{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ex, should.Resemble(&pb.TestExoneration{
 				Name:            name,
 				ExonerationId:   "id",
 				TestId:          "t t",
@@ -60,12 +60,12 @@ func TestRead(t *testing.T) {
 				ExplanationHtml: "broken",
 				VariantHash:     "deadbeef",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
-			})
+			}))
 		})
-		Convey("Minimal", func() {
+		t.Run("Minimal", func(t *ftt.Test) {
 			// Insert a TestExoneration without reason. This was only possible
 			// prior to May 2022. This test case can be deleted from November 2023.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 				spanutil.InsertMap("TestExonerations", map[string]any{
 					"InvocationId":  invID,
@@ -79,8 +79,8 @@ func TestRead(t *testing.T) {
 
 			const name = "invocations/inv/tests/t%20t/exonerations/id"
 			ex, err := Read(span.Single(ctx), name)
-			So(err, ShouldBeNil)
-			So(ex, ShouldResembleProto, &pb.TestExoneration{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ex, should.Resemble(&pb.TestExoneration{
 				Name:            name,
 				ExonerationId:   "id",
 				TestId:          "t t",
@@ -88,7 +88,7 @@ func TestRead(t *testing.T) {
 				ExplanationHtml: "",
 				VariantHash:     "deadbeef",
 				Reason:          pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED,
-			})
+			}))
 		})
 	})
 }

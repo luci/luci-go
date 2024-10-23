@@ -30,12 +30,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryTestResultStatistics(t *testing.T) {
-	Convey(`QueryTestResultStatistics`, t, func() {
+	ftt.Run(`QueryTestResultStatistics`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -48,10 +51,10 @@ func TestQueryTestResultStatistics(t *testing.T) {
 			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 				return resultcount.IncrementTestResultCount(ctx, invID, count)
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		}
 
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation(
 				"x", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "secretproject:testrealm",
@@ -87,40 +90,40 @@ func TestQueryTestResultStatistics(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			_, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/x"},
 			})
-			So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.testResults.list in realm of invocation x`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission resultdb.testResults.list in realm of invocation x`))
 		})
 
-		Convey(`Valid with included invocation`, func() {
+		t.Run(`Valid with included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TotalTestResults, ShouldEqual, 35)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TotalTestResults, should.Equal(35))
 		})
 
-		Convey(`Valid without included invocation`, func() {
+		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/d"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TotalTestResults, ShouldEqual, 20)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TotalTestResults, should.Equal(20))
 		})
 
-		Convey(`Valid with missing included invocation`, func() {
+		t.Run(`Valid with missing included invocation`, func(t *ftt.Test) {
 			testutil.MustApply(
-				ctx,
+				ctx, t,
 				// The invocation missinginv is missing in Invocations table.
 				insert.Inclusion("a", "missinginv"),
 			)
 			res, err := srv.QueryTestResultStatistics(ctx, &pb.QueryTestResultStatisticsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TotalTestResults, ShouldEqual, 35)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TotalTestResults, should.Equal(35))
 		})
 	})
 }

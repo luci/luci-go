@@ -37,12 +37,15 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQueryTestVariants(t *testing.T) {
-	Convey(`QueryTestVariants`, t, func() {
+	ftt.Run(`QueryTestVariants`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -58,7 +61,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 		// inv0 -> inv1.
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.InvocationWithInclusions("inv0", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testrealm",
 				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(1))),
@@ -73,23 +76,23 @@ func TestQueryTestVariants(t *testing.T) {
 			}, "inv1", "invmissing")...,
 		)
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.Invocation("inv1", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":          "testproject:testrealm",
 				"InheritSources": true,
 			}),
 		)
-		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv0", "T1", nil, pb.TestStatus_FAIL),
-			insert.TestResults("inv0", "T2", nil, pb.TestStatus_FAIL),
-			insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "T1", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 		)...)
 
 		// inv2 -> [inv3, inv4, inv5].
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.InvocationWithInclusions("inv2", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testlimitedrealm",
 				"Sources": spanutil.Compress(pbutil.MustMarshal(testutil.TestSourcesWithChangelistNumbers(2))),
@@ -111,7 +114,7 @@ func TestQueryTestVariants(t *testing.T) {
 			}, "inv3", "inv4", "inv5")...,
 		)
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.Invocation("inv3", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testresultrealm", "InheritSources": true}),
 			insert.Invocation("inv4", pb.Invocation_ACTIVE, map[string]any{
 				"Realm":   "testproject:testexonerationrealm",
@@ -119,11 +122,11 @@ func TestQueryTestVariants(t *testing.T) {
 			}),
 			insert.Invocation("inv5", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testlimitedrealm"}),
 		)
-		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
-			insert.TestResults("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestStatus_FAIL),
-			insert.TestResults("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
-			insert.TestResults("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestStatus_FAIL),
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv2", "T1002", pbutil.Variant("k0", "v0"), pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv3", "T1003", pbutil.Variant("k1", "v1"), pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv4", "T1004", pbutil.Variant("k2", "v2"), pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv5", "T1005", pbutil.Variant("k3", "v3"), pb.TestStatus_FAIL),
 			insert.TestExonerations("inv3", "T1003", pbutil.Variant("k1", "v1"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestExonerations("inv4", "T1004", pbutil.Variant("k2", "v2"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
 			insert.TestExonerations("inv5", "T1005", pbutil.Variant("k3", "v3"), pb.ExonerationReason_OCCURS_ON_OTHER_CLS),
@@ -139,7 +142,7 @@ func TestQueryTestVariants(t *testing.T) {
 			return tvStrings
 		}
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req := &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
 			}
@@ -153,7 +156,7 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err := srv.QueryTestVariants(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "resultdb.testResults.listLimited")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testResults.listLimited"))
 
 			// Test PermListLimitedTestExonerations is required if the user does not
 			// have both PermListTestResults and PermListTestExonerations.
@@ -165,19 +168,19 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err = srv.QueryTestVariants(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "resultdb.testExonerations.listLimited")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testExonerations.listLimited"))
 		})
 
-		Convey(`Valid with limited list permission`, func() {
+		t.Run(`Valid with limited list permission`, func(t *ftt.Test) {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv2"},
 			})
-			So(err, ShouldBeNil)
-			So(len(res.TestVariants), ShouldEqual, 4)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.TestVariants), should.Equal(4))
 
 			// Check the returned test variants are appropriately masked.
 			duration := &durationpb.Duration{Seconds: 0, Nanos: 234567000}
-			So(res.TestVariants, ShouldResembleProto, []*pb.TestVariant{
+			assert.Loosely(t, res.TestVariants, should.Resemble([]*pb.TestVariant{
 				{
 					TestId:      "T1002",
 					VariantHash: pbutil.VariantHash(pbutil.Variant("k0", "v0")),
@@ -292,90 +295,90 @@ func TestQueryTestVariants(t *testing.T) {
 					},
 					IsMasked: true,
 				},
-			})
+			}))
 			expectedSources := []*pb.Sources{
 				testutil.TestSourcesWithChangelistNumbers(2),
 				testutil.TestSourcesWithChangelistNumbers(4),
 			}
-			So(res.Sources, ShouldHaveLength, len(expectedSources))
+			assert.Loosely(t, res.Sources, should.HaveLength(len(expectedSources)))
 			for _, source := range expectedSources {
-				So(res.Sources[graph.HashSources(source).String()], ShouldResembleProto, source)
+				assert.Loosely(t, res.Sources[graph.HashSources(source).String()], should.Resemble(source))
 			}
 		})
 
-		Convey(`Valid with included invocation`, func() {
+		t.Run(`Valid with included invocation`, func(t *ftt.Test) {
 			page, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
 			})
-			So(err, ShouldBeNil)
-			So(page.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, page.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
-			So(len(page.TestVariants), ShouldEqual, 3)
-			So(getTVStrings(page.TestVariants), ShouldResemble, []string{
+			assert.Loosely(t, len(page.TestVariants), should.Equal(3))
+			assert.Loosely(t, getTVStrings(page.TestVariants), should.Resemble([]string{
 				"10/T2/e3b0c44298fc1c14",
 				"30/T1/c467ccce5a16dc72",
 				"40/T1/e3b0c44298fc1c14",
-			})
+			}))
 
 			expectedSources := testutil.TestSourcesWithChangelistNumbers(1)
 			expectedSourceHash := graph.HashSources(expectedSources).String()
 			for _, tv := range page.TestVariants {
-				So(tv.SourcesId, ShouldEqual, expectedSourceHash)
+				assert.Loosely(t, tv.SourcesId, should.Equal(expectedSourceHash))
 			}
 
-			So(page.Sources, ShouldHaveLength, 1)
-			So(page.Sources[expectedSourceHash], ShouldResembleProto, expectedSources)
+			assert.Loosely(t, page.Sources, should.HaveLength(1))
+			assert.Loosely(t, page.Sources[expectedSourceHash], should.Resemble(expectedSources))
 		})
 
-		Convey(`Valid without included invocation`, func() {
+		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv1"},
 			})
-			So(err, ShouldBeNil)
-			So(res.NextPageToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.NextPageToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
-			So(len(res.TestVariants), ShouldEqual, 1)
-			So(getTVStrings(res.TestVariants), ShouldResemble, []string{
+			assert.Loosely(t, len(res.TestVariants), should.Equal(1))
+			assert.Loosely(t, getTVStrings(res.TestVariants), should.Resemble([]string{
 				"30/T1/c467ccce5a16dc72",
-			})
+			}))
 		})
 
-		Convey(`Too many invocations`, func() {
+		t.Run(`Too many invocations`, func(t *ftt.Test) {
 			_, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0", "invocations/inv1"},
 				PageSize:    1,
 			})
 
-			So(err, ShouldBeRPCInvalidArgument, "invocations: only one invocation is allowed")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invocations: only one invocation is allowed"))
 		})
 
-		Convey(`Try next page`, func() {
+		t.Run(`Try next page`, func(t *ftt.Test) {
 			res, err := srv.QueryTestVariants(ctx, &pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/inv0"},
 				PageSize:    3,
 				PageToken:   pagination.Token("EXPECTED", "", ""),
 			})
 
-			So(err, ShouldBeNil)
-			So(len(res.TestVariants), ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res.TestVariants), should.Equal(1))
 		})
 	})
 }
 
 func TestValidateQueryTestVariantsRequest(t *testing.T) {
-	Convey(`validateQueryTestVariantsRequest`, t, func() {
-		Convey(`negative result_limit`, func() {
+	ftt.Run(`validateQueryTestVariantsRequest`, t, func(t *ftt.Test) {
+		t.Run(`negative result_limit`, func(t *ftt.Test) {
 			err := validateQueryTestVariantsRequest(&pb.QueryTestVariantsRequest{
 				Invocations: []string{"invocations/invx"},
 				ResultLimit: -1,
 			})
-			So(err, ShouldErrLike, `result_limit: negative`)
+			assert.Loosely(t, err, should.ErrLike(`result_limit: negative`))
 		})
 	})
 }
 
 func TestDetermineListAccessLevel(t *testing.T) {
-	Convey("determineListAccessLevel", t, func() {
+	ftt.Run("determineListAccessLevel", t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -391,7 +394,7 @@ func TestDetermineListAccessLevel(t *testing.T) {
 			},
 		})
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r0"}),
 			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r1"}),
 			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r2"}),
@@ -400,36 +403,36 @@ func TestDetermineListAccessLevel(t *testing.T) {
 			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
 		)
 
-		Convey("Access denied", func() {
+		t.Run("Access denied", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i0"), invocations.ID("i2"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
 		})
-		Convey("No common access level", func() {
+		t.Run("No common access level", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i3"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
 		})
-		Convey("Limited access", func() {
+		t.Run("Limited access", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i2b"),
 				invocations.ID("i3"), invocations.ID("i3b"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			So(err, ShouldBeNil)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelLimited)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelLimited))
 		})
-		Convey("Full access", func() {
+		t.Run("Full access", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"),
 				invocations.ID("i2b"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			So(err, ShouldBeNil)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelUnrestricted)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelUnrestricted))
 		})
-		Convey("No invocations", func() {
+		t.Run("No invocations", func(t *ftt.Test) {
 			accessLevel, err := determineListAccessLevel(ctx, invocations.NewIDSet())
-			So(err, ShouldBeNil)
-			So(accessLevel, ShouldEqual, testvariants.AccessLevelInvalid)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
 		})
 	})
 }

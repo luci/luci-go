@@ -28,30 +28,33 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateQueryTestExonerationsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		err := validateQueryTestExonerationsRequest(&pb.QueryTestExonerationsRequest{
 			Invocations: []string{"invocations/x"},
 			PageSize:    50,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey(`invalid predicate`, t, func() {
+	ftt.Run(`invalid predicate`, t, func(t *ftt.Test) {
 		err := validateQueryTestExonerationsRequest(&pb.QueryTestExonerationsRequest{
 			Invocations: []string{"x"},
 		})
-		So(err, ShouldErrLike, `invocations: "x": does not match`)
+		assert.Loosely(t, err, should.ErrLike(`invocations: "x": does not match`))
 	})
 }
 
 func TestQueryTestExonerations(t *testing.T) {
-	Convey(`QueryTestExonerations`, t, func() {
+	ftt.Run(`QueryTestExonerations`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -62,7 +65,7 @@ func TestQueryTestExonerations(t *testing.T) {
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertEx := insert.TestExonerations
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insertInv("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
 			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
 			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
@@ -75,18 +78,18 @@ func TestQueryTestExonerations(t *testing.T) {
 
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			_, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 				Invocations: []string{"invocations/x"},
 			})
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.testExonerations.list in realm of invocation x")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testExonerations.list in realm of invocation x"))
 		})
 
-		Convey(`Valid with included invocation`, func() {
+		t.Run(`Valid with included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual := res.TestExonerations
 			sort.Slice(actual, func(i, j int) bool {
 				return actual[i].Name < actual[j].Name
@@ -131,36 +134,36 @@ func TestQueryTestExonerations(t *testing.T) {
 				},
 			}
 
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, actual, should.Resemble(expected))
 
-			Convey(`And with missing included invocation`, func() {
+			t.Run(`And with missing included invocation`, func(t *ftt.Test) {
 				testutil.MustApply(
-					ctx,
+					ctx, t,
 					// The invocation missinginv is missing in Invocations table.
 					insert.Inclusion("a", "missinginv"),
 				)
 				res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 					Invocations: []string{"invocations/a"},
 				})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				actual := res.TestExonerations
 				sort.Slice(actual, func(i, j int) bool {
 					return actual[i].Name < actual[j].Name
 				})
-				So(actual, ShouldResembleProto, expected)
+				assert.Loosely(t, actual, should.Resemble(expected))
 			})
 		})
 
-		Convey(`Valid without included invocation`, func() {
+		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestExonerations(ctx, &pb.QueryTestExonerationsRequest{
 				Invocations: []string{"invocations/c"},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			actual := res.TestExonerations
 			sort.Slice(actual, func(i, j int) bool {
 				return actual[i].Name < actual[j].Name
 			})
-			So(actual, ShouldResembleProto, []*pb.TestExoneration{
+			assert.Loosely(t, actual, should.Resemble([]*pb.TestExoneration{
 				{
 					Name:            "invocations/c/tests/C/exonerations/0",
 					TestId:          "C",
@@ -179,7 +182,7 @@ func TestQueryTestExonerations(t *testing.T) {
 					ExplanationHtml: "explanation 0",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 				},
-			})
+			}))
 		})
 	})
 }

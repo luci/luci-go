@@ -18,20 +18,21 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/server/span"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTestResultCount(t *testing.T) {
-	Convey(`TestRead`, t, func() {
+	ftt.Run(`TestRead`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
 		invID := invocations.ID("inv")
 		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
@@ -45,10 +46,10 @@ func TestTestResultCount(t *testing.T) {
 
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		count, err := ReadTestResultCount(span.Single(ctx), invocations.NewIDSet(invID))
-		So(count, ShouldEqual, 30)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, count, should.Equal(30))
+		assert.Loosely(t, err, should.BeNil)
 	})
 }

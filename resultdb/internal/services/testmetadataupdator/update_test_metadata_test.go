@@ -21,10 +21,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
@@ -35,69 +36,69 @@ import (
 )
 
 func TestFieldExistenceBitField(t *testing.T) {
-	Convey(`FieldExistenceBitField`, t, func() {
-		Convey("full test metadata", func() {
+	ftt.Run(`FieldExistenceBitField`, t, func(t *ftt.Test) {
+		t.Run("full test metadata", func(t *ftt.Test) {
 			md := fakeFullTestMetadata("testname")
 
 			res := fieldExistenceBitField(md)
-			So(res, ShouldEqual, 0b11111)
+			assert.Loosely(t, res, should.Equal(0b11111))
 		})
 
-		Convey("partial test metadata", func() {
+		t.Run("partial test metadata", func(t *ftt.Test) {
 			md := &pb.TestMetadata{
 				Location:     &pb.TestLocation{FileName: "testfilename"},
 				BugComponent: &pb.BugComponent{},
 			}
 
 			res := fieldExistenceBitField(md)
-			So(res, ShouldEqual, 0b10100)
+			assert.Loosely(t, res, should.Equal(0b10100))
 		})
 
-		Convey("empty test metadata", func() {
+		t.Run("empty test metadata", func(t *ftt.Test) {
 			md := &pb.TestMetadata{}
 
 			res := fieldExistenceBitField(md)
-			So(res, ShouldEqual, 0b00000)
+			assert.Loosely(t, res, should.Equal(0b00000))
 		})
 	})
 }
 
 func TestUpdateTestMetadata(t *testing.T) {
 
-	Convey(`Error`, t, func() {
+	ftt.Run(`Error`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		testInvocationID := invocations.ID("inv1")
 
-		Convey(`Invocation not finalized`, func() {
-			testutil.MustApply(ctx, insert.Invocation(testInvocationID, pb.Invocation_FINALIZING, nil))
+		t.Run(`Invocation not finalized`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation(testInvocationID, pb.Invocation_FINALIZING, nil))
 
 			err := updateTestMetadata(ctx, testInvocationID)
-			So(err, ShouldErrLike, "Invocation is not finalized")
+			assert.Loosely(t, err, should.ErrLike("Invocation is not finalized"))
 		})
 	})
 
-	Convey(`Skip invocation`, t, func() {
+	ftt.Run(`Skip invocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		testInvocationID := invocations.ID("inv1")
 
-		Convey(`Invocation has no sourceSpec`, func() {
-			testutil.MustApply(ctx, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, nil))
+		t.Run(`Invocation has no sourceSpec`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, nil))
 
 			err := updateTestMetadata(ctx, testInvocationID)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invocation has sources inherited`, func() {
-			testutil.MustApply(ctx, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
+		t.Run(`Invocation has sources inherited`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Invocation(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
 				"InheritSources": true,
 			}))
 
 			err := updateTestMetadata(ctx, testInvocationID)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey(`No error`, t, func() {
+	ftt.Run(`No error`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		invSources := func(position int64) *pb.Sources {
@@ -136,7 +137,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 			var compressedTestMetadata spanutil.Compressed
 			var compressedSourceRef spanutil.Compressed
 			key := spanner.Key{expected.Project, expected.TestID, expected.RefHash, expected.SubRealm}
-			testutil.MustReadRow(ctx, "TestMetadata", key, map[string]any{
+			testutil.MustReadRow(ctx, t, "TestMetadata", key, map[string]any{
 				"Project":      &row.Project,
 				"TestId":       &row.TestID,
 				"RefHash":      &row.RefHash,
@@ -147,25 +148,25 @@ func TestUpdateTestMetadata(t *testing.T) {
 			})
 			row.TestMetadata = &pb.TestMetadata{}
 			err := proto.Unmarshal(compressedTestMetadata, row.TestMetadata)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			row.SourceRef = &pb.SourceRef{}
 			err = proto.Unmarshal(compressedSourceRef, row.SourceRef)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Validate.
 			// ShouldResemble does not work on struct with nested proto buffer.
 			// So we compare each proto field separately.
-			So(row.TestMetadata, ShouldResembleProto, expected.TestMetadata)
-			So(row.SourceRef, ShouldResembleProto, expected.SourceRef)
+			assert.Loosely(t, row.TestMetadata, should.Resemble(expected.TestMetadata))
+			assert.Loosely(t, row.SourceRef, should.Resemble(expected.SourceRef))
 			row.TestMetadata = nil
 			row.SourceRef = nil
 			expected.TestMetadata = nil
 			expected.SourceRef = nil
 			expected.LastUpdated = time.Time{} // Remove lastupdated.
-			So(row, ShouldResemble, &expected)
+			assert.Loosely(t, row, should.Resemble(&expected))
 		}
-		Convey(`Save test metadata for new test`, func() {
+		t.Run(`Save test metadata for new test`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(2), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "1"),
 					TestMetadata: &pb.TestMetadata{Name: "othertestname"},
@@ -177,16 +178,16 @@ func TestUpdateTestMetadata(t *testing.T) {
 			)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := baseTestMetadata
 			expected.TestMetadata = fakeFullTestMetadata("testname") // From test result.
 			expected.Position = 2                                    //From Invocation sources.
 			verifyDBTestMetadata(ctx, expected)
 		})
 
-		Convey(`Update test metadata - position advanced, less metadata fields, metadata row expired`, func() {
+		t.Run(`Update test metadata - position advanced, less metadata fields, metadata row expired`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(3), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedtestname"},
@@ -196,19 +197,19 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.TestMetadata = fakeFullTestMetadata("testname")
 			existingTestMetadata.LastUpdated = time.Now().Add(-49 * time.Hour)
 			existingTestMetadata.Position = 2
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := baseTestMetadata
 			expected.TestMetadata = &pb.TestMetadata{Name: "updatedtestname"} // From the test result.
 			expected.Position = 3                                             // From the invocation sources.
 			verifyDBTestMetadata(ctx, expected)
 		})
 
-		Convey(`Update test metadata - commit position advanced, same metadata fields`, func() {
+		t.Run(`Update test metadata - commit position advanced, same metadata fields`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(3), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
@@ -218,19 +219,19 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = fakeFullTestMetadata("testname")
 			existingTestMetadata.Position = 2
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := baseTestMetadata
 			expected.TestMetadata = fakeFullTestMetadata("updatedtestname") // From test result.
 			expected.Position = 3                                           // From Invocation sources.
 			verifyDBTestMetadata(ctx, expected)
 		})
 
-		Convey(`Update test metadata - same position more metadata fields`, func() {
+		t.Run(`Update test metadata - same position more metadata fields`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(2), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
@@ -240,19 +241,19 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = &pb.TestMetadata{Name: "testname"}
 			existingTestMetadata.Position = 2
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected := baseTestMetadata
 			expected.TestMetadata = fakeFullTestMetadata("updatedtestname") // From test result.
 			expected.Position = 2                                           // From Invocation sources.
 			verifyDBTestMetadata(ctx, expected)
 		})
 
-		Convey(`No Update - lower position`, func() {
+		t.Run(`No Update - lower position`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(2), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: fakeFullTestMetadata("updatedtestname"),
@@ -262,16 +263,16 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = &pb.TestMetadata{Name: "testname"}
 			existingTestMetadata.Position = math.MaxInt64
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			verifyDBTestMetadata(ctx, existingTestMetadata)
 		})
 
-		Convey(`No Update - same position same metadata fields`, func() {
+		t.Run(`No Update - same position same metadata fields`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(2), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(2), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedTestname"},
@@ -281,16 +282,16 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = &pb.TestMetadata{Name: "testname"}
 			existingTestMetadata.Position = 2
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			verifyDBTestMetadata(ctx, existingTestMetadata)
 		})
 
-		Convey(`No Update -  position advance and less metadata fields`, func() {
+		t.Run(`No Update -  position advance and less metadata fields`, func(t *ftt.Test) {
 			invID := "inv1"
-			insertInvocationWithTestResults(ctx, invID, invSources(3), []*pb.TestResult{
+			insertInvocationWithTestResults(ctx, t, invID, invSources(3), []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(invID, "testID", "0"),
 					TestMetadata: &pb.TestMetadata{Name: "updatedTestname"},
@@ -300,17 +301,17 @@ func TestUpdateTestMetadata(t *testing.T) {
 			existingTestMetadata.LastUpdated = time.Now().Add(-1 * time.Hour)
 			existingTestMetadata.TestMetadata = fakeFullTestMetadata("testname")
 			existingTestMetadata.Position = 2
-			insertTestMetadata(ctx, &existingTestMetadata)
+			insertTestMetadata(ctx, t, &existingTestMetadata)
 
 			err := updateTestMetadata(ctx, invocations.ID(invID))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			verifyDBTestMetadata(ctx, existingTestMetadata)
 		})
 
-		Convey(`Save test metadata for new tests from different invocations`, func() {
+		t.Run(`Save test metadata for new tests from different invocations`, func(t *ftt.Test) {
 			testInvocationID := invocations.ID("inv1")
 			includedInvocationID := invocations.ID("includedinv")
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				testutil.CombineMutations(
 					insert.InvocationWithInclusions(testInvocationID, pb.Invocation_FINALIZED, map[string]any{
 						"Realm":   "testproject:testrealm",
@@ -319,7 +320,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 						"Realm":          "testproject:otherRealm",
 						"InheritSources": true}),
 				)...)
-			testutil.MustApply(ctx, insert.TestResultMessages([]*pb.TestResult{
+			testutil.MustApply(ctx, t, insert.TestResultMessages(t, []*pb.TestResult{
 				{
 					Name:         pbutil.TestResultName(string(testInvocationID), "testID", "1"),
 					TestMetadata: &pb.TestMetadata{Name: "testname"},
@@ -330,7 +331,7 @@ func TestUpdateTestMetadata(t *testing.T) {
 				}})...)
 
 			err := updateTestMetadata(ctx, testInvocationID)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			expected1 := baseTestMetadata
 			expected1.TestMetadata = &pb.TestMetadata{Name: "testname"}
 			expected1.Position = 2
@@ -345,16 +346,17 @@ func TestUpdateTestMetadata(t *testing.T) {
 	})
 }
 
-func insertInvocationWithTestResults(ctx context.Context, invID string, sources *pb.Sources, testResults []*pb.TestResult) {
-	testutil.MustApply(ctx,
+func insertInvocationWithTestResults(ctx context.Context, t testing.TB, invID string, sources *pb.Sources, testResults []*pb.TestResult) {
+	t.Helper()
+	testutil.MustApply(ctx, t,
 		insert.Invocation(invocations.ID(invID), pb.Invocation_FINALIZED, map[string]any{
 			"Realm":   "testproject:testrealm",
 			"Sources": spanutil.Compressed(pbutil.MustMarshal(sources))}))
-	testutil.MustApply(ctx, insert.TestResultMessages(testResults)...)
+	testutil.MustApply(ctx, t, insert.TestResultMessages(t, testResults)...)
 }
 
-func insertTestMetadata(ctx context.Context, tm *testmetadata.TestMetadataRow) {
-	testutil.MustApply(ctx, insert.TestMetadataRows([]*testmetadata.TestMetadataRow{tm})...)
+func insertTestMetadata(ctx context.Context, t testing.TB, tm *testmetadata.TestMetadataRow) {
+	testutil.MustApply(ctx, t, insert.TestMetadataRows([]*testmetadata.TestMetadataRow{tm})...)
 }
 
 func fakeFullTestMetadata(testname string) *pb.TestMetadata {

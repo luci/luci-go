@@ -17,10 +17,13 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -32,7 +35,7 @@ import (
 )
 
 func TestVerifyInvocations(t *testing.T) {
-	Convey(`VerifyInvocations`, t, func() {
+	ftt.Run(`VerifyInvocations`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -45,7 +48,7 @@ func TestVerifyInvocations(t *testing.T) {
 			},
 		})
 		testutil.MustApply(
-			ctx,
+			ctx, t,
 			insert.Invocation("i0", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r0"}),
 			insert.Invocation("i1", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r1"}),
 			insert.Invocation("i2", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r2"}),
@@ -53,72 +56,72 @@ func TestVerifyInvocations(t *testing.T) {
 			insert.Invocation("i3b", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:r3"}),
 		)
 
-		Convey("Access allowed", func() {
+		t.Run("Access allowed", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("Access denied", func() {
+		t.Run("Access denied", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i0"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i0")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i0"))
 
 			ids = invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.testExonerations.list in realm of invocation i1")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of invocation i1"))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
-		Convey("Duplicate invocations", func() {
+		t.Run("Duplicate invocations", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
-		Convey("Duplicate realms", func() {
+		t.Run("Duplicate realms", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, "resultdb.artifacts.list in realm of invocation i3")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
-		Convey("Invocations do not exist", func() {
+		t.Run("Invocations do not exist", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("iX"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
-			So(err, ShouldHaveAppStatus, codes.NotFound)
-			So(err, ShouldErrLike, "invocations/iX not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/iX not found"))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID(""))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
-			So(err, ShouldHaveAppStatus, codes.NotFound)
-			So(err, ShouldErrLike, "invocations/ not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/ not found"))
 		})
-		Convey("No invocations", func() {
+		t.Run("No invocations", func(t *ftt.Test) {
 			ids := invocations.NewIDSet()
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestHasPermissionsInRealms(t *testing.T) {
-	Convey("HasPermissionsInRealms", t, func() {
+	ftt.Run("HasPermissionsInRealms", t, func(t *ftt.Test) {
 		ctx := auth.WithState(context.Background(), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -132,16 +135,16 @@ func TestHasPermissionsInRealms(t *testing.T) {
 			},
 		})
 
-		Convey("Missing permissions", func() {
+		t.Run("Missing permissions", func(t *ftt.Test) {
 			// Case: user has no permissions in one of the realms
 			realms := map[invocations.ID]string{
 				"i0": "testproject:r0",
 			}
 			verified, desc, err := HasPermissionsInRealms(ctx, realms,
 				rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
-			So(verified, ShouldEqual, false)
-			So(desc, ShouldContainSubstring, "resultdb.testResults.list in realm of invocation i0")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verified, should.Equal(false))
+			assert.Loosely(t, desc, should.ContainSubstring("resultdb.testResults.list in realm of invocation i0"))
 
 			// Case: user has some permissions in all realms, but not the specified
 			//       permissions for all realms
@@ -152,11 +155,11 @@ func TestHasPermissionsInRealms(t *testing.T) {
 			}
 			verified, desc, err = HasPermissionsInRealms(ctx, realms,
 				rdbperms.PermListTestResults, rdbperms.PermListLimitedTestResults)
-			So(err, ShouldBeNil)
-			So(verified, ShouldEqual, false)
-			So(desc, ShouldContainSubstring, "resultdb.testResults.listLimited in realm of invocation i1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verified, should.Equal(false))
+			assert.Loosely(t, desc, should.ContainSubstring("resultdb.testResults.listLimited in realm of invocation i1"))
 		})
-		Convey("All permissions present", func() {
+		t.Run("All permissions present", func(t *ftt.Test) {
 			realms := map[invocations.ID]string{
 				"i1":  "testproject:r1",
 				"i2":  "testproject:r2",
@@ -164,28 +167,28 @@ func TestHasPermissionsInRealms(t *testing.T) {
 			}
 			verified, desc, err := HasPermissionsInRealms(ctx, realms,
 				rdbperms.PermListTestResults, rdbperms.PermListTestExonerations)
-			So(err, ShouldBeNil)
-			So(verified, ShouldEqual, true)
-			So(desc, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verified, should.Equal(true))
+			assert.Loosely(t, desc, should.BeEmpty)
 		})
-		Convey("Empty realms", func() {
+		t.Run("Empty realms", func(t *ftt.Test) {
 			realms := map[invocations.ID]string{}
 			verified, desc, err := HasPermissionsInRealms(ctx, realms,
 				rdbperms.PermListTestResults)
-			So(err, ShouldBeNil)
-			So(verified, ShouldEqual, true)
-			So(desc, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verified, should.Equal(true))
+			assert.Loosely(t, desc, should.BeEmpty)
 		})
-		Convey("No permissions specified", func() {
+		t.Run("No permissions specified", func(t *ftt.Test) {
 			realms := map[invocations.ID]string{
 				"i1":  "testproject:r1",
 				"i2":  "testproject:r2",
 				"i2b": "testproject:r2",
 			}
 			verified, desc, err := HasPermissionsInRealms(ctx, realms)
-			So(err, ShouldBeNil)
-			So(verified, ShouldEqual, true)
-			So(desc, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, verified, should.Equal(true))
+			assert.Loosely(t, desc, should.BeEmpty)
 		})
 	})
 }

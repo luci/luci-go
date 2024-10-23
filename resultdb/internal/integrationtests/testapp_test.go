@@ -17,13 +17,13 @@ package integrationtests
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -50,12 +50,13 @@ type testApp struct {
 	servers      []*server.Server
 	shutdownOnce sync.Once
 
+	t          testing.TB
 	tempDir    string
 	authDBPath string
 }
 
-func startTestApp(ctx context.Context) (*testApp, error) {
-	app, err := newTestApp(ctx)
+func startTestApp(ctx context.Context, t testing.TB) (*testApp, error) {
+	app, err := newTestApp(ctx, t)
 	if err != nil {
 		return nil, err
 	}
@@ -65,16 +66,8 @@ func startTestApp(ctx context.Context) (*testApp, error) {
 	return app, nil
 }
 
-func newTestApp(ctx context.Context) (t *testApp, err error) {
-	tempDir, err := ioutil.TempDir("", "resultdb-integration-test")
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err != nil {
-			os.RemoveAll(tempDir)
-		}
-	}()
+func newTestApp(ctx context.Context, t testing.TB) (ta *testApp, err error) {
+	tempDir := t.TempDir()
 
 	const authDBTextProto = `
 		groups: {
@@ -108,17 +101,19 @@ func newTestApp(ctx context.Context) (t *testApp, err error) {
 		return nil, err
 	}
 
-	t = &testApp{
+	ta = &testApp{
+		t:          t,
 		tempDir:    tempDir,
 		authDBPath: authDBPath,
 	}
-	if err := t.initServers(ctx); err != nil {
+	if err := ta.initServers(ctx); err != nil {
 		return nil, err
 	}
-	return t, nil
+	t.Cleanup(ta.shutdown)
+	return ta, nil
 }
 
-func (t *testApp) Shutdown() {
+func (t *testApp) shutdown() {
 	t.shutdownOnce.Do(func() {
 		var wg sync.WaitGroup
 		for _, s := range t.servers {
@@ -237,7 +232,7 @@ func (t *testApp) Serve() error {
 	for _, s := range t.servers {
 		s := s
 		eg.Go(func() error {
-			defer t.Shutdown()
+			defer t.shutdown()
 			return s.Serve()
 		})
 	}

@@ -22,6 +22,9 @@ import (
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -30,39 +33,35 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMustParseName(t *testing.T) {
 	t.Parallel()
 
-	Convey("MustParseName", t, func() {
-		Convey("Parse", func() {
+	ftt.Run("MustParseName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
 			invID, testID, resultID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
-			So(invID, ShouldEqual, invocations.ID("a"))
-			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
-			So(resultID, ShouldEqual, "result5")
+			assert.Loosely(t, invID, should.Equal(invocations.ID("a")))
+			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
+			assert.Loosely(t, resultID, should.Equal("result5"))
 		})
 
-		Convey("Invalid", func() {
+		t.Run("Invalid", func(t *ftt.Test) {
 			invalidNames := []string{
 				"invocations/a/tests/b",
 				"invocations/a/tests/b/exonerations/c",
 			}
 			for _, name := range invalidNames {
 				name := name
-				So(func() { MustParseName(name) }, ShouldPanic)
+				assert.Loosely(t, func() { MustParseName(name) }, should.Panic)
 			}
 		})
 	})
 }
 
 func TestRead(t *testing.T) {
-	Convey(`Read`, t, func() {
+	ftt.Run(`Read`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		invID := invocations.ID("inv")
@@ -71,10 +70,10 @@ func TestRead(t *testing.T) {
 				"key": structpb.NewStringValue("value"),
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Insert a TestResult.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation("inv", pb.Invocation_ACTIVE, nil),
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invID,
@@ -92,8 +91,8 @@ func TestRead(t *testing.T) {
 
 		const name = "invocations/inv/tests/t%20t/results/r"
 		tr, err := Read(span.Single(ctx), name)
-		So(err, ShouldBeNil)
-		So(tr, ShouldResembleProto, &pb.TestResult{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, tr, should.Resemble(&pb.TestResult{
 			Name:        name,
 			TestId:      "t t",
 			ResultId:    "r",
@@ -107,6 +106,6 @@ func TestRead(t *testing.T) {
 					"key": structpb.NewStringValue("value"),
 				},
 			},
-		})
+		}))
 	})
 }

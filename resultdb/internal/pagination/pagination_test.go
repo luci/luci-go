@@ -15,42 +15,43 @@
 package pagination
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPageToken(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Token works`, t, func() {
-		So(Token("v1", "v2"), ShouldResemble, "CgJ2MQoCdjI=")
+	ftt.Run(`Token works`, t, func(t *ftt.Test) {
+		assert.Loosely(t, Token("v1", "v2"), should.Match("CgJ2MQoCdjI="))
 
 		pos, err := ParseToken("CgJ2MQoCdjI=")
-		So(err, ShouldBeNil)
-		So(pos, ShouldResemble, []string{"v1", "v2"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, pos, should.Resemble([]string{"v1", "v2"}))
 
-		Convey(`For fresh token`, func() {
-			So(Token(), ShouldResemble, "")
+		t.Run(`For fresh token`, func(t *ftt.Test) {
+			assert.Loosely(t, Token(), should.BeBlank)
 
 			pos, err := ParseToken("")
-			So(err, ShouldBeNil)
-			So(pos, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pos, should.BeNil)
 		})
 	})
 }
 
 func TestAdjustPageSize(t *testing.T) {
 	t.Parallel()
-	Convey(`AdjustPageSize`, t, func() {
-		Convey(`OK`, func() {
-			So(AdjustPageSize(50), ShouldEqual, 50)
+	ftt.Run(`AdjustPageSize`, t, func(t *ftt.Test) {
+		t.Run(`OK`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustPageSize(50), should.Equal(50))
 		})
-		Convey(`Too big`, func() {
-			So(AdjustPageSize(1e6), ShouldEqual, pageSizeMax)
+		t.Run(`Too big`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustPageSize(1e6), should.Equal(pageSizeMax))
 		})
-		Convey(`Missing or 0`, func() {
-			So(AdjustPageSize(0), ShouldEqual, pageSizeDefault)
+		t.Run(`Missing or 0`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustPageSize(0), should.Equal(pageSizeDefault))
 		})
 	})
 }

@@ -29,55 +29,58 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateQueryRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateQueryRequest`, t, func() {
-		Convey(`no invocations`, func() {
+	ftt.Run(`TestValidateQueryRequest`, t, func(t *ftt.Test) {
+		t.Run(`no invocations`, func(t *ftt.Test) {
 			err := validateQueryRequest(&pb.QueryTestResultsRequest{})
-			So(err, ShouldErrLike, `invocations: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`invocations: unspecified`))
 		})
 
-		Convey(`invalid invocation`, func() {
+		t.Run(`invalid invocation`, func(t *ftt.Test) {
 			err := validateQueryRequest(&pb.QueryTestResultsRequest{
 				Invocations: []string{"x"},
 			})
-			So(err, ShouldErrLike, `invocations: "x": does not match`)
+			assert.Loosely(t, err, should.ErrLike(`invocations: "x": does not match`))
 		})
 
-		Convey(`invalid page size`, func() {
+		t.Run(`invalid page size`, func(t *ftt.Test) {
 			err := validateQueryRequest(&pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/x"},
 				PageSize:    -1,
 			})
-			So(err, ShouldErrLike, `page_size: negative`)
+			assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 		})
 	})
 }
 
 func TestValidateQueryTestResultsRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`Valid`, t, func() {
+	ftt.Run(`Valid`, t, func(t *ftt.Test) {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
 			Invocations: []string{"invocations/x"},
 			PageSize:    50,
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 	})
 
-	Convey(`invalid invocation`, t, func() {
+	ftt.Run(`invalid invocation`, t, func(t *ftt.Test) {
 		err := validateQueryTestResultsRequest(&pb.QueryTestResultsRequest{
 			Invocations: []string{"x"},
 		})
-		So(err, ShouldErrLike, `invocations: "x": does not match`)
+		assert.Loosely(t, err, should.ErrLike(`invocations: "x": does not match`))
 	})
 }
 
 func TestQueryTestResults(t *testing.T) {
-	Convey(`QueryTestResults`, t, func() {
+	ftt.Run(`QueryTestResults`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -88,112 +91,112 @@ func TestQueryTestResults(t *testing.T) {
 
 		insertInv := insert.FinalizedInvocationWithInclusions
 		insertTRs := insert.TestResults
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insertInv("x", map[string]any{"Realm": "secretproject:testrealm"}, "a"),
 			insertInv("a", map[string]any{"Realm": "testproject:testrealm"}, "b"),
 			insertInv("b", map[string]any{"Realm": "otherproject:testrealm"}, "c"),
 			// The invocation c doesn't have any included invocation.
 			insertInv("c", map[string]any{"Realm": "testproject:testrealm"}),
-			insertTRs("a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insertTRs("b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
-			insertTRs("c", "C", nil, pb.TestStatus_PASS),
+			insertTRs(t, "a", "A", nil, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insertTRs(t, "b", "B", nil, pb.TestStatus_CRASH, pb.TestStatus_PASS),
+			insertTRs(t, "c", "C", nil, pb.TestStatus_PASS),
 		)...)
 
 		srv := newTestResultDBService()
 
-		Convey(`Without readMask`, func() {
+		t.Run(`Without readMask`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TestResults, ShouldHaveLength, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TestResults, should.HaveLength(5))
 		})
 
-		Convey(`Permission denied`, func() {
+		t.Run(`Permission denied`, func(t *ftt.Test) {
 			_, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/x"},
 			})
 
-			So(err, ShouldBeRPCPermissionDenied, `caller does not have permission resultdb.testResults.list in realm of invocation x`)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission resultdb.testResults.list in realm of invocation x`))
 		})
 
-		Convey(`Valid with included invocation`, func() {
+		t.Run(`Valid with included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TestResults, ShouldHaveLength, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TestResults, should.HaveLength(5))
 
 			sort.Slice(res.TestResults, func(i, j int) bool {
 				return res.TestResults[i].Name < res.TestResults[j].Name
 			})
 
-			So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
-			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
-			So(res.TestResults[0].SummaryHtml, ShouldEqual, "")
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/a/tests/A/results/0"))
+			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_FAIL))
+			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.BeEmpty)
 
-			So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
-			So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[1].Name, should.Equal("invocations/a/tests/A/results/1"))
+			assert.Loosely(t, res.TestResults[1].Status, should.Equal(pb.TestStatus_PASS))
 
-			So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
-			So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
+			assert.Loosely(t, res.TestResults[2].Name, should.Equal("invocations/b/tests/B/results/0"))
+			assert.Loosely(t, res.TestResults[2].Status, should.Equal(pb.TestStatus_CRASH))
 
-			So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
-			So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[3].Name, should.Equal("invocations/b/tests/B/results/1"))
+			assert.Loosely(t, res.TestResults[3].Status, should.Equal(pb.TestStatus_PASS))
 
-			So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-			So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[4].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[4].Status, should.Equal(pb.TestStatus_PASS))
 		})
 
-		Convey(`Valid without included invocation`, func() {
+		t.Run(`Valid without included invocation`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/c"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TestResults, ShouldHaveLength, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TestResults, should.HaveLength(1))
 
 			sort.Slice(res.TestResults, func(i, j int) bool {
 				return res.TestResults[i].Name < res.TestResults[j].Name
 			})
 
-			So(res.TestResults[0].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_PASS))
 		})
 
-		Convey(`Valid with missing included invocation`, func() {
+		t.Run(`Valid with missing included invocation`, func(t *ftt.Test) {
 			testutil.MustApply(
-				ctx,
+				ctx, t,
 				// The invocation missinginv is missing in Invocations table.
 				insert.Inclusion("a", "missinginv"),
 			)
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 			})
-			So(err, ShouldBeNil)
-			So(res.TestResults, ShouldHaveLength, 5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TestResults, should.HaveLength(5))
 
 			sort.Slice(res.TestResults, func(i, j int) bool {
 				return res.TestResults[i].Name < res.TestResults[j].Name
 			})
 
-			So(res.TestResults[0].Name, ShouldEqual, "invocations/a/tests/A/results/0")
-			So(res.TestResults[0].Status, ShouldEqual, pb.TestStatus_FAIL)
-			So(res.TestResults[0].SummaryHtml, ShouldEqual, "")
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/a/tests/A/results/0"))
+			assert.Loosely(t, res.TestResults[0].Status, should.Equal(pb.TestStatus_FAIL))
+			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.BeEmpty)
 
-			So(res.TestResults[1].Name, ShouldEqual, "invocations/a/tests/A/results/1")
-			So(res.TestResults[1].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[1].Name, should.Equal("invocations/a/tests/A/results/1"))
+			assert.Loosely(t, res.TestResults[1].Status, should.Equal(pb.TestStatus_PASS))
 
-			So(res.TestResults[2].Name, ShouldEqual, "invocations/b/tests/B/results/0")
-			So(res.TestResults[2].Status, ShouldEqual, pb.TestStatus_CRASH)
+			assert.Loosely(t, res.TestResults[2].Name, should.Equal("invocations/b/tests/B/results/0"))
+			assert.Loosely(t, res.TestResults[2].Status, should.Equal(pb.TestStatus_CRASH))
 
-			So(res.TestResults[3].Name, ShouldEqual, "invocations/b/tests/B/results/1")
-			So(res.TestResults[3].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[3].Name, should.Equal("invocations/b/tests/B/results/1"))
+			assert.Loosely(t, res.TestResults[3].Status, should.Equal(pb.TestStatus_PASS))
 
-			So(res.TestResults[4].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-			So(res.TestResults[4].Status, ShouldEqual, pb.TestStatus_PASS)
+			assert.Loosely(t, res.TestResults[4].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[4].Status, should.Equal(pb.TestStatus_PASS))
 		})
 
-		Convey(`With readMask`, func() {
+		t.Run(`With readMask`, func(t *ftt.Test) {
 			res, err := srv.QueryTestResults(ctx, &pb.QueryTestResultsRequest{
 				Invocations: []string{"invocations/a"},
 				PageSize:    1,
@@ -203,10 +206,10 @@ func TestQueryTestResults(t *testing.T) {
 						"summary_html",
 					}},
 			})
-			So(err, ShouldBeNil)
-			So(res.TestResults[0].Name, ShouldEqual, "invocations/c/tests/C/results/0")
-			So(res.TestResults[0].TestId, ShouldEqual, "")
-			So(res.TestResults[0].SummaryHtml, ShouldEqual, "SummaryHtml")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.TestResults[0].Name, should.Equal("invocations/c/tests/C/results/0"))
+			assert.Loosely(t, res.TestResults[0].TestId, should.BeEmpty)
+			assert.Loosely(t, res.TestResults[0].SummaryHtml, should.Equal("SummaryHtml"))
 		})
 	})
 }

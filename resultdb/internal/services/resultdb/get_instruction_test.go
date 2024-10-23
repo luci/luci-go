@@ -28,38 +28,41 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateGetInstructionRequest(t *testing.T) {
-	Convey("ValidateGetInstructionRequest", t, func() {
-		Convey("Empty name", func() {
+	ftt.Run("ValidateGetInstructionRequest", t, func(t *ftt.Test) {
+		t.Run("Empty name", func(t *ftt.Test) {
 			req := &pb.GetInstructionRequest{}
 			_, _, err := validateGetInstructionRequest(req)
-			So(err, ShouldErrLike, "unspecified")
+			assert.Loosely(t, err, should.ErrLike("unspecified"))
 		})
-		Convey("Invalid name", func() {
+		t.Run("Invalid name", func(t *ftt.Test) {
 			req := &pb.GetInstructionRequest{
 				Name: "some invalid name",
 			}
 			_, _, err := validateGetInstructionRequest(req)
-			So(err, ShouldErrLike, "does not match")
+			assert.Loosely(t, err, should.ErrLike("does not match"))
 		})
-		Convey("Instruction name", func() {
+		t.Run("Instruction name", func(t *ftt.Test) {
 			req := &pb.GetInstructionRequest{
 				Name: "invocations/build-8888/instructions/a_simple_instruction",
 			}
 			invocationID, instructionID, err := validateGetInstructionRequest(req)
-			So(err, ShouldBeNil)
-			So(invocationID, ShouldEqual, invocations.ID("build-8888"))
-			So(instructionID, ShouldEqual, "a_simple_instruction")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invocationID, should.Equal(invocations.ID("build-8888")))
+			assert.Loosely(t, instructionID, should.Equal("a_simple_instruction"))
 		})
 	})
 }
 
 func TestGetInstruction(t *testing.T) {
-	Convey(`GetInstruction`, t, func() {
+	ftt.Run(`GetInstruction`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -68,24 +71,24 @@ func TestGetInstruction(t *testing.T) {
 		})
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("build-12345", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 			)
 			req := &pb.GetInstructionRequest{Name: "invocations/build-12345/instructions/test_instruction"}
 			_, err := srv.GetInstruction(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey(`Invalid name`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
 			req := &pb.GetInstructionRequest{Name: "Some invalid name"}
 			_, err := srv.GetInstruction(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey(`Get instruction`, func() {
+		t.Run(`Get instruction`, func(t *ftt.Test) {
 			// Insert an invocation.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("build-12345", pb.Invocation_ACTIVE, map[string]any{
 					"Realm": "testproject:testrealm",
 					"Instructions": spanutil.Compress(pbutil.MustMarshal(&pb.Instructions{
@@ -107,23 +110,23 @@ func TestGetInstruction(t *testing.T) {
 					})),
 				}),
 			)
-			Convey("Invocation not found", func() {
+			t.Run("Invocation not found", func(t *ftt.Test) {
 				req := &pb.GetInstructionRequest{Name: "invocations/build-xxx/instructions/test_instruction"}
 				_, err := srv.GetInstruction(ctx, req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey("Instruction not found", func() {
+			t.Run("Instruction not found", func(t *ftt.Test) {
 				req := &pb.GetInstructionRequest{Name: "invocations/build-12345/instructions/not_found"}
 				_, err := srv.GetInstruction(ctx, req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey("Instruction found", func() {
+			t.Run("Instruction found", func(t *ftt.Test) {
 				req := &pb.GetInstructionRequest{Name: "invocations/build-12345/instructions/my_instruction"}
 				instruction, err := srv.GetInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(instruction, ShouldResembleProto, &pb.Instruction{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, instruction, should.Resemble(&pb.Instruction{
 					Id:              "my_instruction",
 					Type:            pb.InstructionType_TEST_RESULT_INSTRUCTION,
 					DescriptiveName: "My Instruction",
@@ -136,7 +139,7 @@ func TestGetInstruction(t *testing.T) {
 							Content: "this content",
 						},
 					},
-				})
+				}))
 			})
 		})
 	})

@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -31,6 +30,10 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -46,7 +49,7 @@ import (
 )
 
 func TestQueryTestVariants(t *testing.T) {
-	Convey(`QueryTestVariants`, t, func() {
+	ftt.Run(`QueryTestVariants`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -115,14 +118,14 @@ func TestQueryTestVariants(t *testing.T) {
 
 		mustFetch := func(q *Query) Page {
 			page, err := fetch(q)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return page
 		}
 
 		fetchAll := func(q *Query, f func(page Page)) {
 			for {
 				page, err := fetch(q)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				f(page)
 				if page.NextPageToken == "" {
@@ -131,7 +134,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 				// The page token should always advance, it should
 				// never remain the same.
-				So(page.NextPageToken, ShouldNotEqual, q.PageToken)
+				assert.Loosely(t, page.NextPageToken, should.NotEqual(q.PageToken))
 				q.PageToken = page.NextPageToken
 			}
 		}
@@ -145,42 +148,42 @@ func TestQueryTestVariants(t *testing.T) {
 			return keys
 		}
 
-		testutil.MustApply(ctx, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, insert.Invocation("inv3", pb.Invocation_ACTIVE, nil))
-		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResults("inv0", "T2", nil, pb.TestStatus_PASS),
-			insert.TestResults("inv0", "T5", nil, pb.TestStatus_FAIL),
-			insert.TestResults(
+		testutil.MustApply(ctx, t, insert.Invocation("inv0", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv2", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv3", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv0", "T1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv0", "T2", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv0", "T5", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t,
 				"inv0", "T6", nil,
 				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
 				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
 				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
 				pb.TestStatus_PASS, pb.TestStatus_PASS, pb.TestStatus_PASS,
 			),
-			insert.TestResults("inv0", "T7", nil, pb.TestStatus_PASS),
-			insert.TestResults("inv0", "T8", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-			insert.TestResults("inv0", "T9", nil, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "T1", nil, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "T2", nil, pb.TestStatus_FAIL),
-			insert.TestResults("inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults(
+			insert.TestResults(t, "inv0", "T7", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv0", "T8", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv0", "T9", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "T1", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "T2", nil, pb.TestStatus_FAIL),
+			insert.TestResults(t, "inv1", "T3", nil, pb.TestStatus_PASS, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "T5", pbutil.Variant("a", "b"), pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t,
 				"inv1", "Ty", nil,
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 				pb.TestStatus_FAIL, pb.TestStatus_FAIL, pb.TestStatus_FAIL,
 			),
-			insert.TestResults("inv1", "Tx", nil, pb.TestStatus_SKIP),
-			insert.TestResults("inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
+			insert.TestResults(t, "inv1", "Tx", nil, pb.TestStatus_SKIP),
+			insert.TestResults(t, "inv1", "Tz", nil, pb.TestStatus_SKIP, pb.TestStatus_SKIP),
 
 			insert.TestExonerations("inv0", "T1", nil, pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
 				pb.ExonerationReason_NOT_CRITICAL, pb.ExonerationReason_OCCURS_ON_MAINLINE),
 			insert.TestExonerations("inv2", "T2", nil, pb.ExonerationReason_UNEXPECTED_PASS),
-			insert.TestResults("inv3", "Tw", nil, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv3", "Tw", nil, pb.TestStatus_PASS),
 		)...)
 
 		// Insert an additional TestResult for comparing TestVariant.Results.Result.
@@ -223,9 +226,9 @@ func TestQueryTestVariants(t *testing.T) {
 			},
 		}
 		propertiesBytes, err := proto.Marshal(properties)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invocations.ID("inv1"),
 				"TestId":          "T4",
@@ -246,7 +249,7 @@ func TestQueryTestVariants(t *testing.T) {
 		)
 
 		// Tx has an expected skip so it should be FLAKY instead of UNEXPECTEDLY_SKIPPED.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			spanutil.InsertMap("TestResults", map[string]any{
 				"InvocationId":    invocations.ID("inv1"),
 				"TestId":          "Tx",
@@ -265,11 +268,11 @@ func TestQueryTestVariants(t *testing.T) {
 			}),
 		)
 
-		Convey(`Unexpected works`, func() {
+		t.Run(`Unexpected works`, func(t *ftt.Test) {
 			page := mustFetch(q)
 			tvs := page.TestVariants
 			tvStrings := tvStrings(tvs)
-			So(tvStrings, ShouldResemble, []string{
+			assert.Loosely(t, tvStrings, should.Resemble([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -279,9 +282,9 @@ func TestQueryTestVariants(t *testing.T) {
 				"30/Tx/e3b0c44298fc1c14/",
 				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-			})
+			}))
 
-			So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
+			assert.Loosely(t, tvs[0].Results, should.Resemble([]*pb.TestResultBundle{
 				{
 					Result: &pb.TestResult{
 						Name:        "invocations/inv1/tests/T4/results/0",
@@ -307,83 +310,83 @@ func TestQueryTestVariants(t *testing.T) {
 						Tags: strPairs,
 					},
 				},
-			})
-			So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
-			So(tvs[0].SourcesId, ShouldEqual, graph.HashSources(sources).String())
+			}))
+			assert.Loosely(t, tvs[0].TestMetadata, should.Resemble(tmd))
+			assert.Loosely(t, tvs[0].SourcesId, should.Equal(graph.HashSources(sources).String()))
 
 			sort.Slice(tvs[7].Exonerations, func(i, j int) bool {
 				return tvs[7].Exonerations[i].ExplanationHtml < tvs[7].Exonerations[j].ExplanationHtml
 			})
-			So(len(tvs[7].Exonerations), ShouldEqual, 3)
-			So(tvs[7].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+			assert.Loosely(t, len(tvs[7].Exonerations), should.Equal(3))
+			assert.Loosely(t, tvs[7].Exonerations[0], should.Resemble(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_OCCURS_ON_OTHER_CLS,
-			})
+			}))
 
-			So(tvs[7].Exonerations[1], ShouldResembleProto, &pb.TestExoneration{
+			assert.Loosely(t, tvs[7].Exonerations[1], should.Resemble(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/1",
 				ExplanationHtml: "explanation 1",
 				Reason:          pb.ExonerationReason_NOT_CRITICAL,
-			})
-			So(tvs[7].Exonerations[2], ShouldResembleProto, &pb.TestExoneration{
+			}))
+			assert.Loosely(t, tvs[7].Exonerations[2], should.Resemble(&pb.TestExoneration{
 				Name:            "invocations/inv0/tests/T1/exonerations/2",
 				ExplanationHtml: "explanation 2",
 				Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
-			})
-			So(len(tvs[8].Exonerations), ShouldEqual, 1)
-			So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+			}))
+			assert.Loosely(t, len(tvs[8].Exonerations), should.Equal(1))
+			assert.Loosely(t, tvs[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
 				Name:            "invocations/inv2/tests/T2/exonerations/0",
 				ExplanationHtml: "explanation 0",
 				Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-			})
-			So(len(tvs[2].Results), ShouldEqual, 10)
+			}))
+			assert.Loosely(t, len(tvs[2].Results), should.Equal(10))
 
-			So(page.DistinctSources, ShouldHaveLength, 1)
-			So(page.DistinctSources[graph.HashSources(sources).String()], ShouldResembleProto, sources)
+			assert.Loosely(t, page.DistinctSources, should.HaveLength(1))
+			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Resemble(sources))
 		})
 
-		Convey(`Expected works`, func() {
+		t.Run(`Expected works`, func(t *ftt.Test) {
 			q.PageToken = pagination.Token("EXPECTED", "", "")
 			page := mustFetch(q)
 			tvs := page.TestVariants
-			So(tvStrings(tvs), ShouldResemble, []string{
+			assert.Loosely(t, tvStrings(tvs), should.Resemble([]string{
 				"50/T3/e3b0c44298fc1c14/",
 				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
-			})
-			So(len(tvs[0].Results), ShouldEqual, 2)
+			}))
+			assert.Loosely(t, len(tvs[0].Results), should.Equal(2))
 
-			So(tvs[0].SourcesId, ShouldEqual, graph.HashSources(sources).String()) // Sources from inv1.
-			So(tvs[1].SourcesId, ShouldBeEmpty)                                    // Sources from inv0.
-			So(tvs[2].SourcesId, ShouldBeEmpty)                                    // Sources from inv0.
-			So(tvs[3].SourcesId, ShouldBeEmpty)                                    // Sources from inv0.
+			assert.Loosely(t, tvs[0].SourcesId, should.Equal(graph.HashSources(sources).String())) // Sources from inv1.
+			assert.Loosely(t, tvs[1].SourcesId, should.BeEmpty)                                    // Sources from inv0.
+			assert.Loosely(t, tvs[2].SourcesId, should.BeEmpty)                                    // Sources from inv0.
+			assert.Loosely(t, tvs[3].SourcesId, should.BeEmpty)                                    // Sources from inv0.
 
-			So(page.DistinctSources, ShouldHaveLength, 1)
-			So(page.DistinctSources[graph.HashSources(sources).String()], ShouldResembleProto, sources)
+			assert.Loosely(t, page.DistinctSources, should.HaveLength(1))
+			assert.Loosely(t, page.DistinctSources[graph.HashSources(sources).String()], should.Resemble(sources))
 		})
 
-		Convey(`Field mask works`, func() {
-			Convey(`with minimum field mask`, func() {
+		t.Run(`Field mask works`, func(t *ftt.Test) {
+			t.Run(`with minimum field mask`, func(t *ftt.Test) {
 				verifyFields := func(tvs []*pb.TestVariant) {
 					for _, tv := range tvs {
 						// Check all results have and only have .TestId, .VariantHash,
 						// .Status populated.
 						// Those fields should be included even when not specified.
-						So(tv.TestId, ShouldNotBeEmpty)
-						So(tv.VariantHash, ShouldNotBeEmpty)
-						So(tv.Status, ShouldNotBeEmpty)
-						So(tv, ShouldResembleProto, &pb.TestVariant{
+						assert.Loosely(t, tv.TestId, should.NotBeEmpty)
+						assert.Loosely(t, tv.VariantHash, should.NotBeEmpty)
+						assert.Loosely(t, tv.Status, should.NotBeZero)
+						assert.Loosely(t, tv, should.Resemble(&pb.TestVariant{
 							TestId:      tv.TestId,
 							VariantHash: tv.VariantHash,
 							Status:      tv.Status,
-						})
+						}))
 					}
 				}
 
-				Convey(`with non-expected test variants`, func() {
+				t.Run(`with non-expected test variants`, func(t *ftt.Test) {
 					q.Mask = mask.MustFromReadMask(
 						&pb.TestVariant{},
 						"test_id",
@@ -402,11 +405,11 @@ func TestQueryTestVariants(t *testing.T) {
 					verifyFields(tvs)
 				})
 
-				Convey(`with expected test variants`, func() {
+				t.Run(`with expected test variants`, func(t *ftt.Test) {
 					// Ensure the last test result (ordered by TestId, then by VariantHash)
 					// is expected, so we can verify that the tail is trimmed properly.
-					testutil.MustApply(ctx,
-						insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+					testutil.MustApply(ctx, t,
+						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestStatus_PASS)...,
 					)
 					q.PageToken = pagination.Token("EXPECTED", "", "")
 
@@ -417,7 +420,7 @@ func TestQueryTestVariants(t *testing.T) {
 					page := mustFetch(q)
 					tvs := page.TestVariants
 					verifyFields(tvs)
-					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+					assert.Loosely(t, tvs[len(tvs)-1].TestId, should.Equal("Tz0"))
 
 					// TestId should still be populated even when not specified.
 					q.Mask = mask.MustFromReadMask(
@@ -427,12 +430,12 @@ func TestQueryTestVariants(t *testing.T) {
 					page = mustFetch(q)
 					tvs = page.TestVariants
 					verifyFields(tvs)
-					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+					assert.Loosely(t, tvs[len(tvs)-1].TestId, should.Equal("Tz0"))
 				})
 
 			})
 
-			Convey(`with full field mask`, func() {
+			t.Run(`with full field mask`, func(t *ftt.Test) {
 				q.Mask = mask.MustFromReadMask(
 					&pb.TestVariant{},
 					"*",
@@ -440,34 +443,31 @@ func TestQueryTestVariants(t *testing.T) {
 
 				verifyFields := func(tvs []*pb.TestVariant) {
 					for _, tv := range tvs {
-						So(tv.TestId, ShouldNotBeEmpty)
-						So(tv.VariantHash, ShouldNotBeEmpty)
-						So(tv.Status, ShouldNotBeEmpty)
-						So(tv.Variant, ShouldNotBeEmpty)
-						So(tv.Results, ShouldNotBeEmpty)
-						So(tv.TestMetadata, ShouldNotBeEmpty)
+						assert.Loosely(t, tv.TestId, should.NotBeEmpty)
+						assert.Loosely(t, tv.VariantHash, should.NotBeEmpty)
+						assert.That(t, tv.Status, should.NotEqual(pb.TestVariantStatus_TEST_VARIANT_STATUS_UNSPECIFIED))
+						assert.Loosely(t, tv.Results, should.NotBeEmpty)
+						assert.Loosely(t, tv.TestMetadata, should.NotBeNil)
 						if tv.TestId == "T3" {
-							So(tv.SourcesId, ShouldNotBeEmpty)
+							assert.Loosely(t, tv.SourcesId, should.NotBeEmpty)
 						}
 
 						if tv.Status == pb.TestVariantStatus_EXONERATED {
-							So(tv.Exonerations, ShouldNotBeEmpty)
+							assert.Loosely(t, tv.Exonerations, should.NotBeEmpty)
 						}
 
 						for _, result := range tv.Results {
-							So(result.Result.Name, ShouldNotBeEmpty)
-							So(result.Result.ResultId, ShouldNotBeEmpty)
-							So(result.Result.Expected, ShouldNotBeEmpty)
-							So(result.Result.Status, ShouldNotBeEmpty)
-							So(result.Result.SummaryHtml, ShouldNotBeBlank)
-							So(result.Result.Duration, ShouldNotBeNil)
-							So(result.Result.SkipReason, ShouldNotBeEmpty)
-							So(result.Result.Tags, ShouldNotBeNil)
+							assert.Loosely(t, result.Result.Name, should.NotBeEmpty)
+							assert.Loosely(t, result.Result.ResultId, should.NotBeEmpty)
+							assert.Loosely(t, result.Result.Status, should.NotBeZero)
+							assert.Loosely(t, result.Result.SummaryHtml, should.NotBeBlank)
+							assert.Loosely(t, result.Result.Duration, should.NotBeNil)
+							assert.Loosely(t, result.Result.Tags, should.NotBeNil)
 							if tv.TestId == "T4" {
-								So(result.Result.FailureReason, ShouldNotBeNil)
-								So(result.Result.Properties, ShouldNotBeNil)
+								assert.Loosely(t, result.Result.FailureReason, should.NotBeNil)
+								assert.Loosely(t, result.Result.Properties, should.NotBeNil)
 							}
-							So(result, ShouldResembleProto, &pb.TestResultBundle{
+							assert.Loosely(t, result, should.Resemble(&pb.TestResultBundle{
 								Result: &pb.TestResult{
 									Name:          result.Result.Name,
 									ResultId:      result.Result.ResultId,
@@ -481,22 +481,22 @@ func TestQueryTestVariants(t *testing.T) {
 									Properties:    result.Result.Properties,
 									SkipReason:    result.Result.SkipReason,
 								},
-							})
+							}))
 						}
 
 						for _, exoneration := range tv.Exonerations {
-							So(exoneration.ExplanationHtml, ShouldNotBeEmpty)
+							assert.Loosely(t, exoneration.ExplanationHtml, should.NotBeEmpty)
 							if tv.TestId != "T2" {
-								So(exoneration.Reason, ShouldNotBeZeroValue)
+								assert.Loosely(t, exoneration.Reason, should.NotBeZero)
 							}
-							So(exoneration, ShouldResembleProto, &pb.TestExoneration{
+							assert.Loosely(t, exoneration, should.Resemble(&pb.TestExoneration{
 								Name:            exoneration.Name,
 								ExplanationHtml: exoneration.ExplanationHtml,
 								Reason:          exoneration.Reason,
-							})
+							}))
 						}
 
-						So(tv, ShouldResembleProto, &pb.TestVariant{
+						assert.Loosely(t, tv, should.Resemble(&pb.TestVariant{
 							TestId:       tv.TestId,
 							VariantHash:  tv.VariantHash,
 							Status:       tv.Status,
@@ -506,36 +506,36 @@ func TestQueryTestVariants(t *testing.T) {
 							TestMetadata: tv.TestMetadata,
 							SourcesId:    tv.SourcesId,
 							Instruction:  tv.Instruction,
-						})
+						}))
 					}
 				}
 
-				Convey(`with non-expected test variants`, func() {
+				t.Run(`with non-expected test variants`, func(t *ftt.Test) {
 					page := mustFetch(q)
 					tvs := page.TestVariants
 					verifyFields(tvs)
 				})
 
-				Convey(`with expected test variants`, func() {
+				t.Run(`with expected test variants`, func(t *ftt.Test) {
 					// Ensure the last test result (ordered by TestId, then by VariantHash)
 					// is expected, so we can verify that the tail is trimmed properly.
-					testutil.MustApply(ctx,
-						insert.TestResults("inv1", "Tz0", nil, pb.TestStatus_PASS)...,
+					testutil.MustApply(ctx, t,
+						insert.TestResults(t, "inv1", "Tz0", nil, pb.TestStatus_PASS)...,
 					)
 					q.PageToken = pagination.Token("EXPECTED", "", "")
 					page := mustFetch(q)
 					tvs := page.TestVariants
 					verifyFields(tvs)
-					So(tvs[len(tvs)-1].TestId, ShouldEqual, "Tz0")
+					assert.Loosely(t, tvs[len(tvs)-1].TestId, should.Equal("Tz0"))
 				})
 			})
 		})
 
-		Convey(`paging works`, func() {
+		t.Run(`paging works`, func(t *ftt.Test) {
 			page := func(token string, expectedTVLen int32, expectedTVStrings []string) string {
 				q.PageToken = token
 				page := mustFetch(q)
-				So(tvStrings(page.TestVariants), ShouldResemble, expectedTVStrings)
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble(expectedTVStrings))
 				return page.NextPageToken
 			}
 
@@ -551,70 +551,70 @@ func TestQueryTestVariants(t *testing.T) {
 				"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			})
-			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "", ""))
+			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "", "")))
 
 			nextToken = page(nextToken, 1, []string{
 				"50/T3/e3b0c44298fc1c14/",
 			})
-			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14"))
+			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "T5", "e3b0c44298fc1c14")))
 
 			nextToken = page(nextToken, 2, []string{
 				"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 			})
-			So(nextToken, ShouldEqual, pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14"))
+			assert.Loosely(t, nextToken, should.Equal(pagination.Token("EXPECTED", "T8", "e3b0c44298fc1c14")))
 
 			nextToken = page(nextToken, 2, []string{"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test", "50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test"})
-			So(nextToken, ShouldEqual, "CghFWFBFQ1RFRAoCVHkKEGUzYjBjNDQyOThmYzFjMTQ=")
+			assert.Loosely(t, nextToken, should.Equal("CghFWFBFQ1RFRAoCVHkKEGUzYjBjNDQyOThmYzFjMTQ="))
 
 			nextToken = page(nextToken, 0, []string{})
-			So(nextToken, ShouldEqual, "")
+			assert.Loosely(t, nextToken, should.BeEmpty)
 		})
 
-		Convey(`Page Token`, func() {
-			Convey(`wrong number of parts`, func() {
+		t.Run(`Page Token`, func(t *ftt.Test) {
+			t.Run(`wrong number of parts`, func(t *ftt.Test) {
 				q.PageToken = pagination.Token("testId", "variantHash")
 				_, err := q.Fetch(ctx)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 			})
 
-			Convey(`first part not tvStatus`, func() {
+			t.Run(`first part not tvStatus`, func(t *ftt.Test) {
 				q.PageToken = pagination.Token("50", "testId", "variantHash")
 				_, err := q.Fetch(ctx)
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 			})
 		})
 
-		Convey(`status filter works`, func() {
-			Convey(`only unexpected`, func() {
+		t.Run(`status filter works`, func(t *ftt.Test) {
+			t.Run(`only unexpected`, func(t *ftt.Test) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED}
 				page := mustFetch(q)
 				tvStrings := tvStrings(page.TestVariants)
-				So(tvStrings, ShouldResemble, []string{
+				assert.Loosely(t, tvStrings, should.Resemble([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
-				})
-				So(page.NextPageToken, ShouldEqual, "")
+				}))
+				assert.Loosely(t, page.NextPageToken, should.BeEmpty)
 			})
 
-			Convey(`only expected`, func() {
+			t.Run(`only expected`, func(t *ftt.Test) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_EXPECTED}
 				page := mustFetch(q)
-				So(tvStrings(page.TestVariants), ShouldResemble, []string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
 					"50/T3/e3b0c44298fc1c14/",
 					"50/T6/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
-				})
-				So(len(page.TestVariants[0].Results), ShouldEqual, 2)
+				}))
+				assert.Loosely(t, len(page.TestVariants[0].Results), should.Equal(2))
 			})
 
-			Convey(`any unexpected or exonerated`, func() {
+			t.Run(`any unexpected or exonerated`, func(t *ftt.Test) {
 				q.Predicate = &pb.TestVariantPredicate{Status: pb.TestVariantStatus_UNEXPECTED_MASK}
 				page := mustFetch(q)
-				So(tvStrings(page.TestVariants), ShouldResemble, []string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -624,31 +624,31 @@ func TestQueryTestVariants(t *testing.T) {
 					"30/Tx/e3b0c44298fc1c14/",
 					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				})
+				}))
 			})
 		})
 
-		Convey(`ResultLimit works`, func() {
+		t.Run(`ResultLimit works`, func(t *ftt.Test) {
 			q.ResultLimit = 2
 			page := mustFetch(q)
 
 			for _, tv := range page.TestVariants {
-				So(len(tv.Results), ShouldBeLessThanOrEqualTo, q.ResultLimit)
+				assert.Loosely(t, len(tv.Results), should.BeLessThanOrEqual(q.ResultLimit))
 			}
 		})
 
-		Convey(`ResponseLimitBytes works`, func() {
+		t.Run(`ResponseLimitBytes works`, func(t *ftt.Test) {
 			q.ResponseLimitBytes = 1
 
 			var allTVs []*pb.TestVariant
 			fetchAll(q, func(page Page) {
 				// Expect at most one test variant per page.
-				So(len(page.TestVariants), ShouldBeLessThanOrEqualTo, 1)
+				assert.Loosely(t, len(page.TestVariants), should.BeLessThanOrEqual(1))
 				allTVs = append(allTVs, page.TestVariants...)
 			})
 
 			// All test variants should be returned.
-			So(tvStrings(allTVs), ShouldResemble, []string{
+			assert.Loosely(t, tvStrings(allTVs), should.Resemble([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -663,21 +663,21 @@ func TestQueryTestVariants(t *testing.T) {
 				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
-			})
+			}))
 		})
 
-		Convey(`PageSize works`, func() {
+		t.Run(`PageSize works`, func(t *ftt.Test) {
 			q.PageSize = 1
 
 			var allTVs []*pb.TestVariant
 			fetchAll(q, func(page Page) {
 				// Expect at most one test variant per page.
-				So(len(page.TestVariants), ShouldBeLessThanOrEqualTo, 1)
+				assert.Loosely(t, len(page.TestVariants), should.BeLessThanOrEqual(1))
 				allTVs = append(allTVs, page.TestVariants...)
 			})
 
 			// All test variants should be returned.
-			So(tvStrings(allTVs), ShouldResemble, []string{
+			assert.Loosely(t, tvStrings(allTVs), should.Resemble([]string{
 				"10/T4/c467ccce5a16dc72/",
 				"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"10/Ty/e3b0c44298fc1c14/",
@@ -692,15 +692,15 @@ func TestQueryTestVariants(t *testing.T) {
 				"50/T7/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/T9/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 				"50/Tw/e3b0c44298fc1c14/invocations/inv1/instructions/test",
-			})
+			}))
 		})
 
-		Convey(`Querying with limited access works`, func() {
+		t.Run(`Querying with limited access works`, func(t *ftt.Test) {
 			q.AccessLevel = AccessLevelLimited
 
-			Convey(`with only limited access`, func() {
+			t.Run(`with only limited access`, func(t *ftt.Test) {
 				page := mustFetch(q)
-				So(tvStrings(page.TestVariants), ShouldResemble, []string{
+				assert.Loosely(t, tvStrings(page.TestVariants), should.Resemble([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -710,27 +710,27 @@ func TestQueryTestVariants(t *testing.T) {
 					"30/Tx/e3b0c44298fc1c14/",
 					"40/T1/e3b0c44298fc1c14/invocations/inv0/instructions/test",
 					"40/T2/e3b0c44298fc1c14/invocations/inv0/instructions/test",
-				})
+				}))
 
 				// Check the test variant and its test results and test exonerations
 				// have all been masked.
 				for _, tv := range page.TestVariants {
-					So(tv.TestMetadata, ShouldBeNil)
-					So(tv.Variant, ShouldBeNil)
-					So(tv.IsMasked, ShouldBeTrue)
+					assert.Loosely(t, tv.TestMetadata, should.BeNil)
+					assert.Loosely(t, tv.Variant, should.BeNil)
+					assert.Loosely(t, tv.IsMasked, should.BeTrue)
 
 					for _, tr := range tv.Results {
-						So(tr.Result.IsMasked, ShouldBeTrue)
+						assert.Loosely(t, tr.Result.IsMasked, should.BeTrue)
 					}
 
 					for _, te := range tv.Exonerations {
-						So(te.IsMasked, ShouldBeTrue)
+						assert.Loosely(t, te.IsMasked, should.BeTrue)
 					}
 				}
 
 				// Check test results and exonerations for data that should
 				// still be available after masking to limited data.
-				So(page.TestVariants[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
+				assert.Loosely(t, page.TestVariants[0].Results, should.Resemble([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:      "invocations/inv1/tests/T4/results/0",
@@ -750,18 +750,18 @@ func TestQueryTestVariants(t *testing.T) {
 							IsMasked: true,
 						},
 					},
-				})
-				So(len(page.TestVariants[8].Exonerations), ShouldEqual, 1)
-				So(page.TestVariants[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+				}))
+				assert.Loosely(t, len(page.TestVariants[8].Exonerations), should.Equal(1))
+				assert.Loosely(t, page.TestVariants[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
 					Name:            "invocations/inv2/tests/T2/exonerations/0",
 					ExplanationHtml: "explanation 0",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 					IsMasked:        true,
-				})
-				So(len(page.TestVariants[2].Results), ShouldEqual, 10)
+				}))
+				assert.Loosely(t, len(page.TestVariants[2].Results), should.Equal(10))
 			})
 
-			Convey(`with unrestricted test result access`, func() {
+			t.Run(`with unrestricted test result access`, func(t *ftt.Test) {
 				reachableInvs := graph.NewReachableInvocations()
 				reachableInvs.Invocations["inv0"] = graph.ReachableInvocation{
 					HasTestResults:      true,
@@ -780,7 +780,7 @@ func TestQueryTestVariants(t *testing.T) {
 
 				page := mustFetch(q)
 				tvs := page.TestVariants
-				So(tvStrings(tvs), ShouldResemble, []string{
+				assert.Loosely(t, tvStrings(tvs), should.Resemble([]string{
 					"10/T4/c467ccce5a16dc72/",
 					"10/T5/e3b0c44298fc1c14/",
 					"10/Ty/e3b0c44298fc1c14/",
@@ -790,22 +790,22 @@ func TestQueryTestVariants(t *testing.T) {
 					"30/Tx/e3b0c44298fc1c14/",
 					"40/T1/e3b0c44298fc1c14/",
 					"40/T2/e3b0c44298fc1c14/",
-				})
+				}))
 
 				// Check all the test exonerations have been masked.
 				for _, tv := range tvs {
 					for _, te := range tv.Exonerations {
-						So(te.IsMasked, ShouldBeTrue)
+						assert.Loosely(t, te.IsMasked, should.BeTrue)
 					}
 				}
 
 				// The only test result for the below test variant should be unmasked
 				// as the user has access to unrestricted test results in inv1's realm.
 				// Thus, the test variant should also be unmasked.
-				So(tvs[0].IsMasked, ShouldBeFalse)
-				So(tvs[0].TestMetadata, ShouldResembleProto, tmd)
-				So(tvs[0].Variant, ShouldNotBeNil)
-				So(tvs[0].Results, ShouldResembleProto, []*pb.TestResultBundle{
+				assert.Loosely(t, tvs[0].IsMasked, should.BeFalse)
+				assert.Loosely(t, tvs[0].TestMetadata, should.Resemble(tmd))
+				assert.Loosely(t, tvs[0].Variant, should.NotBeNil)
+				assert.Loosely(t, tvs[0].Results, should.Resemble([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:        "invocations/inv1/tests/T4/results/0",
@@ -831,23 +831,23 @@ func TestQueryTestVariants(t *testing.T) {
 							Tags: strPairs,
 						},
 					},
-				})
+				}))
 
 				// Both test results for the below test variant should have been masked.
 				// Thus, the test variant should be masked.
-				So(tvs[5].IsMasked, ShouldBeTrue)
-				So(tvs[5].TestMetadata, ShouldBeNil)
-				So(tvs[5].Variant, ShouldBeNil)
-				So(len(tvs[5].Results), ShouldEqual, 2)
+				assert.Loosely(t, tvs[5].IsMasked, should.BeTrue)
+				assert.Loosely(t, tvs[5].TestMetadata, should.BeNil)
+				assert.Loosely(t, tvs[5].Variant, should.BeNil)
+				assert.Loosely(t, len(tvs[5].Results), should.Equal(2))
 				for _, tr := range tvs[5].Results {
-					So(tr.Result.IsMasked, ShouldBeTrue)
+					assert.Loosely(t, tr.Result.IsMasked, should.BeTrue)
 				}
 
 				// The below test variant should have both a masked and
 				// unmasked test result due to the different invocations' realms.
 				// Thus, the test variant should be unmasked.
-				So(tvs[8].IsMasked, ShouldBeFalse)
-				So(tvs[8].Results, ShouldResembleProto, []*pb.TestResultBundle{
+				assert.Loosely(t, tvs[8].IsMasked, should.BeFalse)
+				assert.Loosely(t, tvs[8].Results, should.Resemble([]*pb.TestResultBundle{
 					{
 						Result: &pb.TestResult{
 							Name:     "invocations/inv0/tests/T2/results/0",
@@ -874,18 +874,18 @@ func TestQueryTestVariants(t *testing.T) {
 							}},
 						},
 					},
-				})
-				So(len(tvs[8].Exonerations), ShouldEqual, 1)
-				So(tvs[8].Exonerations[0], ShouldResembleProto, &pb.TestExoneration{
+				}))
+				assert.Loosely(t, len(tvs[8].Exonerations), should.Equal(1))
+				assert.Loosely(t, tvs[8].Exonerations[0], should.Resemble(&pb.TestExoneration{
 					Name:            "invocations/inv2/tests/T2/exonerations/0",
 					ExplanationHtml: "explanation 0",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
 					IsMasked:        true,
-				})
+				}))
 			})
 		})
 
-		Convey(`Empty Invocation works`, func() {
+		t.Run(`Empty Invocation works`, func(t *ftt.Test) {
 			reachableInvs := graph.NewReachableInvocations()
 			reachableInvs.Invocations["invnotexists"] = graph.ReachableInvocation{}
 			q.ReachableInvocations = reachableInvs
@@ -894,22 +894,22 @@ func TestQueryTestVariants(t *testing.T) {
 			fetchAll(q, func(page Page) {
 				allTVs = append(allTVs, page.TestVariants...)
 			})
-			So(allTVs, ShouldHaveLength, 0)
+			assert.Loosely(t, allTVs, should.HaveLength(0))
 		})
 	})
 }
 
 func TestAdjustResultLimit(t *testing.T) {
 	t.Parallel()
-	Convey(`AdjustResultLimit`, t, func() {
-		Convey(`OK`, func() {
-			So(AdjustResultLimit(50), ShouldEqual, 50)
+	ftt.Run(`AdjustResultLimit`, t, func(t *ftt.Test) {
+		t.Run(`OK`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustResultLimit(50), should.Equal(50))
 		})
-		Convey(`Too big`, func() {
-			So(AdjustResultLimit(1e6), ShouldEqual, resultLimitMax)
+		t.Run(`Too big`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustResultLimit(1e6), should.Equal(resultLimitMax))
 		})
-		Convey(`Missing or 0`, func() {
-			So(AdjustResultLimit(0), ShouldEqual, resultLimitDefault)
+		t.Run(`Missing or 0`, func(t *ftt.Test) {
+			assert.Loosely(t, AdjustResultLimit(0), should.Equal(resultLimitDefault))
 		})
 	})
 }

@@ -18,8 +18,11 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -28,7 +31,7 @@ import (
 )
 
 func TestQueryTestMetadata(t *testing.T) {
-	Convey(`Query`, t, func() {
+	ftt.Run(`Query`, t, func(t *ftt.Test) {
 
 		ctx := testutil.SpannerTestContext(t)
 		q := &Query{
@@ -44,25 +47,25 @@ func TestQueryTestMetadata(t *testing.T) {
 		}
 		mustFetch := func(q *Query) (trs []*pb.TestMetadataDetail, token string) {
 			trs, token, err := fetch(q)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return
 		}
 
-		Convey(`Returns correct rows`, func() {
+		t.Run(`Returns correct rows`, func(t *ftt.Test) {
 			otherProjectRow := makeTestMetadataRow("otherProject", "test1", "testrealm1", []byte{uint8(1)})
 			otherTestRow := makeTestMetadataRow("testproject", "othertest", "testrealm1", []byte{uint8(2)})
 			noPermRealmRow := makeTestMetadataRow("testproject", "test1", "testrealm3", []byte{uint8(4)})
 			expectedRow1 := makeTestMetadataRow("testproject", "test1", "testrealm1", []byte{uint8(0)})
 			expectedRow2 := makeTestMetadataRow("testproject", "test1", "testrealm2", []byte{uint8(3)})
 
-			testutil.MustApply(ctx, insertTestMetadataRows([]*TestMetadataRow{expectedRow1, otherProjectRow, otherTestRow, expectedRow2, noPermRealmRow})...)
+			testutil.MustApply(ctx, t, insertTestMetadataRows([]*TestMetadataRow{expectedRow1, otherProjectRow, otherTestRow, expectedRow2, noPermRealmRow})...)
 
 			actual, token := mustFetch(q)
-			So(token, ShouldEqual, "")
-			So(actual, ShouldResembleProto, toTestMetadataDetails([]*TestMetadataRow{expectedRow1, expectedRow2}))
+			assert.Loosely(t, token, should.BeEmpty)
+			assert.Loosely(t, actual, should.Resemble(toTestMetadataDetails([]*TestMetadataRow{expectedRow1, expectedRow2})))
 		})
 
-		Convey(`Paging`, func() {
+		t.Run(`Paging`, func(t *ftt.Test) {
 			makeTestMetadataWithSubRealm := func(subRealm string, size int) []*TestMetadataRow {
 				rows := make([]*TestMetadataRow, size)
 				for i := range rows {
@@ -73,51 +76,51 @@ func TestQueryTestMetadata(t *testing.T) {
 			realm1Rows := makeTestMetadataWithSubRealm("testrealm1", 5)
 			realm2Rows := makeTestMetadataWithSubRealm("testrealm2", 7) // 2 more rows with different refHash.
 
-			testutil.MustApply(ctx, insertTestMetadataRows(realm1Rows)...)
-			testutil.MustApply(ctx, insertTestMetadataRows(realm2Rows)...)
+			testutil.MustApply(ctx, t, insertTestMetadataRows(realm1Rows)...)
+			testutil.MustApply(ctx, t, insertTestMetadataRows(realm2Rows)...)
 
 			mustReadPage := func(pageToken string, pageSize int, expected []*pb.TestMetadataDetail) string {
 				q2 := q
 				q2.PageToken = pageToken
 				q2.PageSize = pageSize
 				actual, token := mustFetch(q2)
-				So(actual, ShouldResembleProto, expected)
+				assert.Loosely(t, actual, should.Resemble(expected))
 				return token
 			}
 
-			Convey(`All results`, func() {
+			t.Run(`All results`, func(t *ftt.Test) {
 				token := mustReadPage("", 8, toTestMetadataDetails(append(realm1Rows, realm2Rows[5:]...)))
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`With pagination`, func() {
+			t.Run(`With pagination`, func(t *ftt.Test) {
 				token := mustReadPage("", 1, toTestMetadataDetails(realm1Rows[:1])) // From lower subRealm.
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 4, toTestMetadataDetails(realm1Rows[1:5])) // From lower subRealm.
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 2, toTestMetadataDetails(realm2Rows[5:])) // From higher subReam.
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 1, nil)
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`Bad token`, func() {
+			t.Run(`Bad token`, func(t *ftt.Test) {
 				ctx, cancel := span.ReadOnlyTransaction(ctx)
 				defer cancel()
 
-				Convey(`From bad position`, func() {
+				t.Run(`From bad position`, func(t *ftt.Test) {
 					q.PageToken = "CgVoZWxsbw=="
 					_, _, err := q.Fetch(ctx)
-					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 				})
 
-				Convey(`From decoding`, func() {
+				t.Run(`From decoding`, func(t *ftt.Test) {
 					q.PageToken = "%%%"
 					_, _, err := q.Fetch(ctx)
-					So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 				})
 			})
 

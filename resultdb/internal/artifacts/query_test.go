@@ -27,15 +27,18 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQuery(t *testing.T) {
-	Convey(`Query`, t, func() {
+	ftt.Run(`Query`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
-		testutil.MustApply(ctx, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv1", pb.Invocation_ACTIVE, nil))
 		q := &Query{
 			InvocationIDs:       invocations.NewIDSet("inv1"),
 			PageSize:            100,
@@ -47,7 +50,7 @@ func TestQuery(t *testing.T) {
 			ctx, cancel := span.ReadOnlyTransaction(ctx)
 			defer cancel()
 			arts, tok, err := q.FetchProtos(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return arts, tok
 		}
 
@@ -60,34 +63,34 @@ func TestQuery(t *testing.T) {
 			return names
 		}
 
-		Convey(`Populates fields correctly`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Populates fields correctly`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
 				}),
 			)
 			actual, _ := mustFetch(q)
-			So(actual, ShouldHaveLength, 1)
-			So(actual[0].ContentType, ShouldEqual, "text/plain")
-			So(actual[0].SizeBytes, ShouldEqual, 64)
-			So(actual[0].HasLines, ShouldBeTrue)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].ContentType, should.Equal("text/plain"))
+			assert.Loosely(t, actual[0].SizeBytes, should.Equal(64))
+			assert.Loosely(t, actual[0].HasLines, should.BeTrue)
 		})
 
-		Convey(`Reads both invocation and test result artifacts`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Reads both invocation and test result artifacts`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t t/r", "a", nil),
 			)
 			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{
+			assert.Loosely(t, actual, should.Resemble([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t%20t/results/r/artifacts/a",
-			})
+			}))
 		})
 
-		Convey(`Does not fetch artifacts of other invocations`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Does not fetch artifacts of other invocations`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("inv0", pb.Invocation_ACTIVE, nil),
 				insert.Invocation("inv2", pb.Invocation_ACTIVE, nil),
 				insert.Artifact("inv0", "", "a", nil),
@@ -95,11 +98,11 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv2", "", "a", nil),
 			)
 			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{"invocations/inv1/artifacts/a"})
+			assert.Loosely(t, actual, should.Resemble([]string{"invocations/inv1/artifacts/a"}))
 		})
 
-		Convey(`Test ID regexp`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Test ID regexp`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t00/r", "a", nil),
 				insert.Artifact("inv1", "tr/t10/r", "a", nil),
@@ -108,79 +111,79 @@ func TestQuery(t *testing.T) {
 			)
 			q.TestResultPredicate.TestIdRegexp = "t1."
 			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{
+			assert.Loosely(t, actual, should.Resemble([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t10/results/r/artifacts/a",
 				"invocations/inv1/tests/t11/results/r/artifacts/a",
-			})
+			}))
 		})
 
-		Convey(`Follow edges`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Follow edges`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a0", nil),
 				insert.Artifact("inv1", "", "a1", nil),
 				insert.Artifact("inv1", "tr/t/r", "a0", nil),
 				insert.Artifact("inv1", "tr/t/r", "a1", nil),
 			)
 
-			Convey(`Unspecified`, func() {
+			t.Run(`Unspecified`, func(t *ftt.Test) {
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a1",
-				})
+				}))
 			})
 
-			Convey(`Only invocations`, func() {
+			t.Run(`Only invocations`, func(t *ftt.Test) {
 				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					IncludedInvocations: true,
 				}
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
-				})
+				}))
 
-				Convey(`Test result predicate is ignored`, func() {
+				t.Run(`Test result predicate is ignored`, func(t *ftt.Test) {
 					q.TestResultPredicate.TestIdRegexp = "t."
 					actual := mustFetchNames(q)
-					So(actual, ShouldResemble, []string{
+					assert.Loosely(t, actual, should.Resemble([]string{
 						"invocations/inv1/artifacts/a0",
 						"invocations/inv1/artifacts/a1",
-					})
+					}))
 				})
 			})
 
-			Convey(`Only test results`, func() {
+			t.Run(`Only test results`, func(t *ftt.Test) {
 				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					TestResults: true,
 				}
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a1",
-				})
+				}))
 			})
 
-			Convey(`Both`, func() {
+			t.Run(`Both`, func(t *ftt.Test) {
 				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{
 					IncludedInvocations: true,
 					TestResults:         true,
 				}
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/artifacts/a1",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a1",
-				})
+				}))
 			})
 		})
 
-		Convey(`Artifacts of interesting test results`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Artifacts of interesting test results`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t0/0", "a", nil),
 				insert.Artifact("inv1", "tr/t1/0", "a", nil),
@@ -188,31 +191,31 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t1/1", "b", nil),
 				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "t0", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv1", "t2", nil, pb.TestStatus_FAIL),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "t0", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv1", "t2", nil, pb.TestStatus_FAIL),
 			)...)
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_UNEXPECTED_RESULTS
 			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{
+			assert.Loosely(t, actual, should.Resemble([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/a",
 				"invocations/inv1/tests/t1/results/1/artifacts/a",
 				"invocations/inv1/tests/t1/results/1/artifacts/b",
 				"invocations/inv1/tests/t2/results/0/artifacts/a",
-			})
+			}))
 
-			Convey(`Without invocation artifacts`, func() {
+			t.Run(`Without invocation artifacts`, func(t *ftt.Test) {
 				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 				actual := mustFetchNames(q)
-				So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+				assert.Loosely(t, actual, should.NotContain("invocations/inv1/artifacts/a"))
 			})
 		})
 
-		Convey(`Artifacts of unexpected test results`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Artifacts of unexpected test results`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t0/0", "a", nil),
 				insert.Artifact("inv1", "tr/t1/0", "a", nil),
@@ -220,23 +223,23 @@ func TestQuery(t *testing.T) {
 				insert.Artifact("inv1", "tr/t1/1", "b", nil),
 				insert.Artifact("inv1", "tr/t2/0", "a", nil),
 			)
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "t0", nil, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
-				insert.TestResults("inv1", "t2", nil, pb.TestStatus_FAIL),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "t0", nil, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t1", nil, pb.TestStatus_PASS, pb.TestStatus_FAIL),
+				insert.TestResults(t, "inv1", "t2", nil, pb.TestStatus_FAIL),
 			)...)
 
 			q.TestResultPredicate.Expectancy = pb.TestResultPredicate_VARIANTS_WITH_ONLY_UNEXPECTED_RESULTS
 			actual := mustFetchNames(q)
-			So(actual, ShouldResemble, []string{
+			assert.Loosely(t, actual, should.Resemble([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t2/results/0/artifacts/a",
-			})
+			}))
 
 		})
 
-		Convey(`Variant equals`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Variant equals`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t0/0", "a", nil),
 				insert.Artifact("inv1", "tr/t1/0", "a", nil),
@@ -245,30 +248,30 @@ func TestQuery(t *testing.T) {
 			)
 			v1 := pbutil.Variant("k", "1")
 			v2 := pbutil.Variant("k", "2")
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "t0", v1, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t1", v2, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t2", v1, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "t0", v1, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t1", v2, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t2", v1, pb.TestStatus_PASS),
 			)...)
 
 			q.TestResultPredicate.Variant = &pb.VariantPredicate{
 				Predicate: &pb.VariantPredicate_Equals{Equals: v2},
 			}
-			So(mustFetchNames(q), ShouldResemble, []string{
+			assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 				"invocations/inv1/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/a",
 				"invocations/inv1/tests/t1/results/0/artifacts/b",
-			})
+			}))
 
-			Convey(`Without invocation artifacts`, func() {
+			t.Run(`Without invocation artifacts`, func(t *ftt.Test) {
 				q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 				actual := mustFetchNames(q)
-				So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+				assert.Loosely(t, actual, should.NotContain("invocations/inv1/artifacts/a"))
 			})
 		})
 
-		Convey(`Variant contains`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Variant contains`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", nil),
 				insert.Artifact("inv1", "tr/t0/0", "a", nil),
 				insert.Artifact("inv1", "tr/t1/0", "a", nil),
@@ -278,52 +281,52 @@ func TestQuery(t *testing.T) {
 			v00 := pbutil.Variant("k0", "0")
 			v01 := pbutil.Variant("k0", "0", "k1", "1")
 			v10 := pbutil.Variant("k0", "1")
-			testutil.MustApply(ctx, testutil.CombineMutations(
-				insert.TestResults("inv1", "t0", v00, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t1", v01, pb.TestStatus_PASS),
-				insert.TestResults("inv1", "t2", v10, pb.TestStatus_PASS),
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
+				insert.TestResults(t, "inv1", "t0", v00, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t1", v01, pb.TestStatus_PASS),
+				insert.TestResults(t, "inv1", "t2", v10, pb.TestStatus_PASS),
 			)...)
 
-			Convey(`Empty`, func() {
+			t.Run(`Empty`, func(t *ftt.Test) {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: pbutil.Variant()},
 				}
-				So(mustFetchNames(q), ShouldResemble, []string{
+				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 					"invocations/inv1/artifacts/a",
 					"invocations/inv1/tests/t0/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/b",
 					"invocations/inv1/tests/t2/results/0/artifacts/a",
-				})
+				}))
 
-				Convey(`Without invocation artifacts`, func() {
+				t.Run(`Without invocation artifacts`, func(t *ftt.Test) {
 					q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 					actual := mustFetchNames(q)
-					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+					assert.Loosely(t, actual, should.NotContain("invocations/inv1/artifacts/a"))
 				})
 			})
 
-			Convey(`Non-empty`, func() {
+			t.Run(`Non-empty`, func(t *ftt.Test) {
 				q.TestResultPredicate.Variant = &pb.VariantPredicate{
 					Predicate: &pb.VariantPredicate_Contains{Contains: v00},
 				}
-				So(mustFetchNames(q), ShouldResemble, []string{
+				assert.Loosely(t, mustFetchNames(q), should.Resemble([]string{
 					"invocations/inv1/artifacts/a",
 					"invocations/inv1/tests/t0/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/a",
 					"invocations/inv1/tests/t1/results/0/artifacts/b",
-				})
+				}))
 
-				Convey(`Without invocation artifacts`, func() {
+				t.Run(`Without invocation artifacts`, func(t *ftt.Test) {
 					q.FollowEdges = &pb.ArtifactPredicate_EdgeTypeSet{TestResults: true}
 					actual := mustFetchNames(q)
-					So(actual, ShouldNotContain, "invocations/inv1/artifacts/a")
+					assert.Loosely(t, actual, should.NotContain("invocations/inv1/artifacts/a"))
 				})
 			})
 		})
 
-		Convey(`Paging`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Paging`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a0", nil),
 				insert.Artifact("inv1", "", "a1", nil),
 				insert.Artifact("inv1", "", "a2", nil),
@@ -341,36 +344,36 @@ func TestQuery(t *testing.T) {
 				for i, a := range arts {
 					actualArtifactIDs[i] = a.ArtifactId
 				}
-				So(actualArtifactIDs, ShouldResemble, expectedArtifactIDs)
+				assert.Loosely(t, actualArtifactIDs, should.Resemble(expectedArtifactIDs))
 				return token
 			}
 
-			Convey(`All results`, func() {
+			t.Run(`All results`, func(t *ftt.Test) {
 				token := mustReadPage("", 10, "a0", "a1", "a2", "a3", "a4")
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`With pagination`, func() {
+			t.Run(`With pagination`, func(t *ftt.Test) {
 				token := mustReadPage("", 1, "a0")
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 2, "a1", "a2")
-				So(token, ShouldNotEqual, "")
+				assert.Loosely(t, token, should.NotEqual(""))
 
 				token = mustReadPage(token, 3, "a3", "a4")
-				So(token, ShouldEqual, "")
+				assert.Loosely(t, token, should.BeEmpty)
 			})
 
-			Convey(`Bad token`, func() {
+			t.Run(`Bad token`, func(t *ftt.Test) {
 				q.PageToken = "CgVoZWxsbw=="
 				_, _, err := q.FetchProtos(span.Single(ctx))
-				So(err, ShouldHaveAppStatus, codes.InvalidArgument, "invalid page_token")
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
 			})
 		})
 
-		Convey(`ContentTypes`, func() {
-			Convey(`Works`, func() {
-				testutil.MustApply(ctx,
+		t.Run(`ContentTypes`, func(t *ftt.Test) {
+			t.Run(`Works`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Artifact("inv1", "", "a0", map[string]any{"ContentType": "text/plain; encoding=utf-8"}),
 					insert.Artifact("inv1", "tr/t/r", "a0", map[string]any{"ContentType": "text/plain"}),
 					insert.Artifact("inv1", "tr/t/r", "a1", nil),
@@ -379,23 +382,23 @@ func TestQuery(t *testing.T) {
 				q.ContentTypeRegexp = "text/.+"
 
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
-				})
+				}))
 			})
 
-			Convey(`Filter generated conditionally`, func() {
+			t.Run(`Filter generated conditionally`, func(t *ftt.Test) {
 				q.ContentTypeRegexp = ""
 				st, err := q.genStmt(ctx)
-				So(err, ShouldBeNil)
-				So(st.SQL, ShouldNotContainSubstring, "@contentTypeRegexp")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, st.SQL, should.NotContainSubstring("@contentTypeRegexp"))
 			})
 		})
 
-		Convey(`ArtifactIds`, func() {
-			Convey(`Works`, func() {
-				testutil.MustApply(ctx,
+		t.Run(`ArtifactIds`, func(t *ftt.Test) {
+			t.Run(`Works`, func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
 					insert.Artifact("inv1", "", "a0", nil),
 					insert.Artifact("inv1", "tr/t/r", "a0", nil),
 					insert.Artifact("inv1", "tr/t/r", "a1", nil),
@@ -404,22 +407,22 @@ func TestQuery(t *testing.T) {
 				q.ArtifactIDRegexp = "a0"
 
 				actual := mustFetchNames(q)
-				So(actual, ShouldResemble, []string{
+				assert.Loosely(t, actual, should.Resemble([]string{
 					"invocations/inv1/artifacts/a0",
 					"invocations/inv1/tests/t/results/r/artifacts/a0",
-				})
+				}))
 			})
 
-			Convey(`Filter generated conditionally`, func() {
+			t.Run(`Filter generated conditionally`, func(t *ftt.Test) {
 				q.ArtifactIDRegexp = ""
 				st, err := q.genStmt(ctx)
-				So(err, ShouldBeNil)
-				So(st.SQL, ShouldNotContainSubstring, "@artifactIdRegexp")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, st.SQL, should.NotContainSubstring("@artifactIdRegexp"))
 			})
 		})
 
-		Convey(`WithRBECASHash`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`WithRBECASHash`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
@@ -436,13 +439,13 @@ func TestQuery(t *testing.T) {
 				actual = append(actual, a)
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 1)
-			So(actual[0].RBECASHash, ShouldEqual, "deadbeef")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].RBECASHash, should.Equal("deadbeef"))
 		})
 
-		Convey(`WithGcsURI`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`WithGcsURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "tr/t/r", "a", map[string]any{
 					"ContentType": "text/plain",
 					"Size":        64,
@@ -459,23 +462,23 @@ func TestQuery(t *testing.T) {
 				actual = append(actual, a)
 				return nil
 			})
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 1)
-			So(actual[0].GcsUri, ShouldEqual, "gs://bucket/beyondbeef")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].GcsUri, should.Equal("gs://bucket/beyondbeef"))
 		})
 
-		Convey(`Populates HasLines field correctly`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Populates HasLines field correctly`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv1", "", "a", map[string]any{
 					"ContentType": "image/jpeg",
 					"Size":        64,
 				}),
 			)
 			actual, _ := mustFetch(q)
-			So(actual, ShouldHaveLength, 1)
-			So(actual[0].ContentType, ShouldEqual, "image/jpeg")
-			So(actual[0].SizeBytes, ShouldEqual, 64)
-			So(actual[0].HasLines, ShouldBeFalse)
+			assert.Loosely(t, actual, should.HaveLength(1))
+			assert.Loosely(t, actual[0].ContentType, should.Equal("image/jpeg"))
+			assert.Loosely(t, actual[0].SizeBytes, should.Equal(64))
+			assert.Loosely(t, actual[0].HasLines, should.BeFalse)
 		})
 	})
 }

@@ -29,6 +29,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -39,12 +42,10 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerateSignedURL(t *testing.T) {
-	Convey(`TestGenerateSignedURL`, t, func(c C) {
+	ftt.Run(`TestGenerateSignedURL`, t, func(t *ftt.Test) {
 		ctx := testutil.TestingContext()
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -60,24 +61,24 @@ func TestGenerateSignedURL(t *testing.T) {
 			Identity: identity.AnonymousIdentity,
 		})
 
-		Convey(`Basic case`, func() {
+		t.Run(`Basic case`, func(t *ftt.Test) {
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/a")
-			So(err, ShouldBeNil)
-			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/artifacts/a?token=")
-			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/artifacts/a?token="))
+			assert.Loosely(t, exp, should.Resemble(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 
-		Convey(`Escaped test id`, func() {
+		t.Run(`Escaped test id`, func(t *ftt.Test) {
 			url, exp, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t%2Ft/results/r/artifacts/a")
-			So(err, ShouldBeNil)
-			So(url, ShouldStartWith, "https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token=")
-			So(exp, ShouldResemble, clock.Now(ctx).UTC().Add(time.Hour))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, url, should.HavePrefix("https://results.usercontent.example.com/invocations/inv/tests/t%2Ft/results/r/artifacts/a?token="))
+			assert.Loosely(t, exp, should.Resemble(clock.Now(ctx).UTC().Add(time.Hour)))
 		})
 	})
 }
 
 func TestServeContent(t *testing.T) {
-	Convey(`TestServeContent`, t, func(c C) {
+	ftt.Run(`TestServeContent`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
@@ -105,9 +106,9 @@ func TestServeContent(t *testing.T) {
 			Identity: identity.AnonymousIdentity,
 		})
 
-		fetch := func(rawurl string) (res *http.Response, contents string) {
+		fetch := func(t testing.TB, rawurl string) (res *http.Response, contents string) {
 			req, err := http.NewRequest("GET", rawurl, nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			rec := httptest.NewRecorder()
 			s.handleGET(&router.Context{
 				Request: req.WithContext(ctx),
@@ -115,7 +116,7 @@ func TestServeContent(t *testing.T) {
 			})
 			res = rec.Result()
 			rawContents, err := io.ReadAll(res.Body)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer res.Body.Close()
 			return res, string(rawContents)
 		}
@@ -127,7 +128,7 @@ func TestServeContent(t *testing.T) {
 				casReader.Res = append(casReader.Res, &bytestream.ReadResponse{Data: d})
 				sum += len(d)
 			}
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Artifact("inv", parentID, artID, map[string]any{
 					"ContentType": "text/plain",
 					"Size":        sum,
@@ -136,108 +137,108 @@ func TestServeContent(t *testing.T) {
 			)
 		}
 
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
-		Convey(`Invalid resource name`, func() {
-			res, _ := fetch("https://results.usercontent.example.com/invocations/inv")
-			So(res.StatusCode, ShouldEqual, http.StatusBadRequest)
+		t.Run(`Invalid resource name`, func(t *ftt.Test) {
+			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
 		})
 
-		Convey(`Invalid token`, func() {
-			res, _ := fetch("https://results.usercontent.example.com/invocations/inv/artifacts/a?token=bad")
-			So(res.StatusCode, ShouldEqual, http.StatusForbidden)
+		t.Run(`Invalid token`, func(t *ftt.Test) {
+			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv/artifacts/a?token=bad")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusForbidden))
 		})
 
-		Convey(`No token`, func() {
-			res, _ := fetch("https://results.usercontent.example.com/invocations/inv/artifacts/a")
-			So(res.StatusCode, ShouldEqual, http.StatusUnauthorized)
+		t.Run(`No token`, func(t *ftt.Test) {
+			res, _ := fetch(t, "https://results.usercontent.example.com/invocations/inv/artifacts/a")
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusUnauthorized))
 		})
 
-		Convey(`Escaped test id`, func() {
+		t.Run(`Escaped test id`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
-			So(err, ShouldBeNil)
-			res, actualContents := fetch(u)
-			So(res.StatusCode, ShouldEqual, http.StatusOK)
-			So(actualContents, ShouldEqual, "contents")
+			assert.Loosely(t, err, should.BeNil)
+			res, actualContents := fetch(t, u)
+			assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+			assert.Loosely(t, actualContents, should.Equal("contents"))
 		})
 
-		Convey(`limit`, func() {
+		t.Run(`limit`, func(t *ftt.Test) {
 			newArt("tr/t/r", "a", "sha256:deadbeef", []byte("contents"))
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/tests/t/results/r/artifacts/a")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`empty`, func() {
-				res, body := fetch(u + "&n=")
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "contents")
-				So(res.ContentLength, ShouldEqual, len("contents"))
+			t.Run(`empty`, func(t *ftt.Test) {
+				res, body := fetch(t, u+"&n=")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("contents")))
 			})
 
-			Convey(`0`, func() {
-				res, body := fetch(u + "&n=0")
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "contents")
-				So(res.ContentLength, ShouldEqual, len("contents"))
+			t.Run(`0`, func(t *ftt.Test) {
+				res, body := fetch(t, u+"&n=0")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("contents")))
 			})
 
-			Convey("limit < art_size", func() {
-				res, body := fetch(u + "&n=2")
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "co")
-				So(res.ContentLength, ShouldEqual, len("co"))
+			t.Run("limit < art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&n=2")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("co"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("co")))
 			})
 
-			Convey("limit > art_size", func() {
-				res, body := fetch(u + "&n=100")
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "contents")
-				So(res.ContentLength, ShouldEqual, len("contents"))
+			t.Run("limit > art_size", func(t *ftt.Test) {
+				res, body := fetch(t, u+"&n=100")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("contents"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("contents")))
 			})
 
-			Convey(`multiple`, func() {
-				res, body := fetch(u + "&n=4&n=23")
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "cont")
-				So(res.ContentLength, ShouldEqual, len("cont"))
+			t.Run(`multiple`, func(t *ftt.Test) {
+				res, body := fetch(t, u+"&n=4&n=23")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("cont"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("cont")))
 			})
 
-			Convey(`invalid`, func() {
-				res, _ := fetch(u + "&n=limit")
-				So(res.StatusCode, ShouldEqual, http.StatusBadRequest)
+			t.Run(`invalid`, func(t *ftt.Test) {
+				res, _ := fetch(t, u+"&n=limit")
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusBadRequest))
 			})
 		})
 
-		Convey(`E2E with RBE-CAS`, func() {
+		t.Run(`E2E with RBE-CAS`, func(t *ftt.Test) {
 			newArt("", "rbe", "sha256:deadbeef", []byte("first "), []byte("second"))
 			u, _, err := s.GenerateSignedURL(ctx, "request.example.com", "invocations/inv/artifacts/rbe")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			Convey(`Not found`, func() {
+			t.Run(`Not found`, func(t *ftt.Test) {
 				casReadErr = status.Errorf(codes.NotFound, "not found")
-				res, _ := fetch(u)
-				So(res.StatusCode, ShouldEqual, http.StatusNotFound)
+				res, _ := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusNotFound))
 			})
 
-			Convey(`Not found on first chunk`, func() {
+			t.Run(`Not found on first chunk`, func(t *ftt.Test) {
 				casReader.ResErr = status.Errorf(codes.NotFound, "not found")
 				casReader.ResErrIndex = 0
-				res, _ := fetch(u)
-				So(res.StatusCode, ShouldEqual, http.StatusNotFound)
+				res, _ := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusNotFound))
 			})
 
-			Convey(`Recv error`, func() {
+			t.Run(`Recv error`, func(t *ftt.Test) {
 				casReader.ResErr = status.Errorf(codes.Internal, "internal error")
-				res, _ := fetch(u)
-				So(res.StatusCode, ShouldEqual, http.StatusInternalServerError)
+				res, _ := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusInternalServerError))
 			})
 
-			Convey("Succeeds", func() {
-				res, body := fetch(u)
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual, "first second")
-				So(res.Header.Get("Content-Type"), ShouldEqual, "text/plain")
-				So(res.ContentLength, ShouldEqual, len("first second"))
+			t.Run("Succeeds", func(t *ftt.Test) {
+				res, body := fetch(t, u)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal("first second"))
+				assert.Loosely(t, res.Header.Get("Content-Type"), should.Equal("text/plain"))
+				assert.Loosely(t, res.ContentLength, should.Equal(len("first second")))
 			})
 		})
 	})

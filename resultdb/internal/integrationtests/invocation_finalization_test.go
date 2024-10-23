@@ -19,17 +19,18 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInvocationFinalization(t *testing.T) {
-	// https://crbug.com/1116284
-	SkipConvey(`ShouldFinalize`, t, func() {
+	ftt.Run(`ShouldFinalize`, t, func(t *ftt.Test) {
+		t.Skip("https://crbug.com/1116284")
 		ctx := testutil.SpannerTestContext(t)
 
 		// Cancel the test after 20 sec.
@@ -40,9 +41,8 @@ func TestInvocationFinalization(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		go sched.Run(ctx)
 
-		app, err := startTestApp(ctx)
-		So(err, ShouldBeNil)
-		defer app.Shutdown()
+		app, err := startTestApp(ctx, t)
+		assert.Loosely(t, err, should.BeNil)
 		c := testClient{app: app}
 
 		// Create invocations A, B, C.
@@ -55,9 +55,9 @@ func TestInvocationFinalization(t *testing.T) {
 
 		// Finalize A, B and C.
 		c.FinalizeInvocation(ctx, "invocations/u-a")
-		So(c.GetState(ctx, "invocations/u-a"), ShouldEqual, pb.Invocation_FINALIZING)
+		assert.Loosely(t, c.GetState(ctx, "invocations/u-a"), should.Equal(pb.Invocation_FINALIZING))
 		c.FinalizeInvocation(ctx, "invocations/u-b")
-		So(c.GetState(ctx, "invocations/u-b"), ShouldEqual, pb.Invocation_FINALIZING)
+		assert.Loosely(t, c.GetState(ctx, "invocations/u-b"), should.Equal(pb.Invocation_FINALIZING))
 		c.FinalizeInvocation(ctx, "invocations/u-c")
 
 		// Assert that all three invocations are finalized within 10 seconds.
@@ -77,7 +77,9 @@ func TestInvocationFinalization(t *testing.T) {
 		}
 	})
 
-	SkipConvey(`ShouldExpire`, t, func() {
+	ftt.Run(`ShouldExpire`, t, func(t *ftt.Test) {
+		t.Skip()
+
 		ctx := testutil.SpannerTestContext(t)
 
 		// Cancel the test after 30 sec.
@@ -88,9 +90,8 @@ func TestInvocationFinalization(t *testing.T) {
 		ctx, sched := tq.TestingContext(ctx, nil)
 		go sched.Run(ctx)
 
-		app, err := startTestApp(ctx)
-		So(err, ShouldBeNil)
-		defer app.Shutdown()
+		app, err := startTestApp(ctx, t)
+		assert.Loosely(t, err, should.BeNil)
 		c := testClient{app: app}
 
 		// Create invocations A, B, C.

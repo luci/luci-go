@@ -26,31 +26,34 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMustParseName(t *testing.T) {
 	t.Parallel()
 
-	Convey(`MustParseName`, t, func() {
-		Convey(`Parse`, func() {
+	ftt.Run(`MustParseName`, t, func(t *ftt.Test) {
+		t.Run(`Parse`, func(t *ftt.Test) {
 			invID, testID, resultID, artifactID := MustParseName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5/artifacts/a")
-			So(invID, ShouldEqual, invocations.ID("a"))
-			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
-			So(resultID, ShouldEqual, "result5")
-			So(artifactID, ShouldEqual, "a")
+			assert.Loosely(t, invID, should.Equal(invocations.ID("a")))
+			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
+			assert.Loosely(t, resultID, should.Equal("result5"))
+			assert.Loosely(t, artifactID, should.Equal("a"))
 		})
 
-		Convey(`Invalid`, func() {
+		t.Run(`Invalid`, func(t *ftt.Test) {
 			invalidNames := []string{
 				"invocations/a/tests/b",
 				"invocations/a/tests/b/exonerations/c",
 			}
 			for _, name := range invalidNames {
 				name := name
-				So(func() { MustParseName(name) }, ShouldPanic)
+				assert.Loosely(t, func() { MustParseName(name) }, should.Panic)
 			}
 		})
 	})
@@ -58,63 +61,63 @@ func TestMustParseName(t *testing.T) {
 
 func TestParentID(t *testing.T) {
 	t.Parallel()
-	Convey(`TestParentID`, t, func() {
-		Convey(`Invocation level`, func() {
+	ftt.Run(`TestParentID`, t, func(t *ftt.Test) {
+		t.Run(`Invocation level`, func(t *ftt.Test) {
 			id := ParentID("", "")
-			So(id, ShouldEqual, "")
+			assert.Loosely(t, id, should.BeEmpty)
 		})
-		Convey(`Test result level`, func() {
+		t.Run(`Test result level`, func(t *ftt.Test) {
 			id := ParentID("t t", "r")
-			So(id, ShouldEqual, "tr/t t/r")
+			assert.Loosely(t, id, should.Equal("tr/t t/r"))
 		})
 	})
 }
 
 func TestRead(t *testing.T) {
-	Convey(`TestRead`, t, func() {
+	ftt.Run(`TestRead`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
+		testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 
-		Convey(`Does not exist`, func() {
+		t.Run(`Does not exist`, func(t *ftt.Test) {
 			_, err := Read(ctx, "invocations/i/artifacts/a")
-			So(err, ShouldHaveAppStatus, codes.NotFound, "invocations/i/artifacts/a not found")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/i/artifacts/a not found"))
 		})
 
-		Convey(`Exists`, func() {
-			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "a", map[string]any{
+		t.Run(`Exists`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Artifact("inv", "tr/t/r", "a", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 			}))
 			const name = "invocations/inv/tests/t/results/r/artifacts/a"
 			a, err := Read(ctx, name)
-			So(err, ShouldBeNil)
-			So(a.Artifact, ShouldResembleProto, &pb.Artifact{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Artifact, should.Resemble(&pb.Artifact{
 				Name:        name,
 				ArtifactId:  "a",
 				ContentType: "text/plain",
 				SizeBytes:   54,
-			})
+			}))
 		})
 
-		Convey(`Exists with GcsURI`, func() {
-			testutil.MustApply(ctx, insert.Artifact("inv", "tr/t/r", "b", map[string]any{
+		t.Run(`Exists with GcsURI`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, insert.Artifact("inv", "tr/t/r", "b", map[string]any{
 				"ContentType": "text/plain",
 				"Size":        "54",
 				"GcsURI":      "gs://test",
 			}))
 			const name = "invocations/inv/tests/t/results/r/artifacts/b"
 			a, err := Read(ctx, name)
-			So(err, ShouldBeNil)
-			So(a.Artifact, ShouldResembleProto, &pb.Artifact{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, a.Artifact, should.Resemble(&pb.Artifact{
 				Name:        name,
 				ArtifactId:  "b",
 				ContentType: "text/plain",
 				SizeBytes:   54,
 				GcsUri:      "gs://test",
-			})
+			}))
 		})
 	})
 }

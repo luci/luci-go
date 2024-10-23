@@ -31,34 +31,37 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateGetInvocationRequest(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateGetInvocationRequest`, t, func() {
-		Convey(`Valid`, func() {
+	ftt.Run(`ValidateGetInvocationRequest`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			req := &pb.GetInvocationRequest{Name: "invocations/valid_id_0"}
-			So(validateGetInvocationRequest(req), ShouldBeNil)
+			assert.Loosely(t, validateGetInvocationRequest(req), should.BeNil)
 		})
 
-		Convey(`Invalid name`, func() {
-			Convey(`, missing`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
+			t.Run(`, missing`, func(t *ftt.Test) {
 				req := &pb.GetInvocationRequest{}
-				So(validateGetInvocationRequest(req), ShouldErrLike, "name missing")
+				assert.Loosely(t, validateGetInvocationRequest(req), should.ErrLike("name missing"))
 			})
 
-			Convey(`, invalid format`, func() {
+			t.Run(`, invalid format`, func(t *ftt.Test) {
 				req := &pb.GetInvocationRequest{Name: "bad_name"}
-				So(validateGetInvocationRequest(req), ShouldErrLike, "does not match")
+				assert.Loosely(t, validateGetInvocationRequest(req), should.ErrLike("does not match"))
 			})
 		})
 	})
 }
 
 func TestGetInvocation(t *testing.T) {
-	Convey(`GetInvocation`, t, func() {
+	ftt.Run(`GetInvocation`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -69,9 +72,9 @@ func TestGetInvocation(t *testing.T) {
 		deadline := ct.Add(time.Hour)
 		srv := newTestResultDBService()
 
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			// Insert some Invocations.
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("including", pb.Invocation_ACTIVE, map[string]any{
 					"CreateTime":     ct,
 					"Deadline":       deadline,
@@ -90,8 +93,8 @@ func TestGetInvocation(t *testing.T) {
 			// Fetch back the top-level Invocation.
 			req := &pb.GetInvocationRequest{Name: "invocations/including"}
 			inv, err := srv.GetInvocation(ctx, req)
-			So(err, ShouldBeNil)
-			So(inv, ShouldResembleProto, &pb.Invocation{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(&pb.Invocation{
 				Name:                "invocations/including",
 				State:               pb.Invocation_ACTIVE,
 				CreateTime:          pbutil.MustTimestampProto(ct),
@@ -104,18 +107,18 @@ func TestGetInvocation(t *testing.T) {
 					Inherit: true,
 				},
 				BaselineId: "testrealm:testbuilder",
-			})
+			}))
 		})
 
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("secret", pb.Invocation_ACTIVE, map[string]any{
 					"Realm": "secretproject:testrealm",
 				}),
 			)
 			req := &pb.GetInvocationRequest{Name: "invocations/secret"}
 			_, err := srv.GetInvocation(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied, "caller does not have permission resultdb.invocations.get")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.invocations.get"))
 		})
 	})
 }

@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -29,23 +32,20 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestShouldFinalize(t *testing.T) {
-	Convey(`ShouldFinalize`, t, func() {
+	ftt.Run(`ShouldFinalize`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		assertReady := func(invID invocations.ID, expected bool) {
-			should, err := readyToFinalize(ctx, invID)
-			So(err, ShouldBeNil)
-			So(should, ShouldEqual, expected)
+			ready, err := readyToFinalize(ctx, invID)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ready, should.Equal(expected))
 		}
 
-		Convey(`Includes two ACTIVE`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Includes two ACTIVE`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
 				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil),
@@ -54,8 +54,8 @@ func TestShouldFinalize(t *testing.T) {
 			assertReady("a", false)
 		})
 
-		Convey(`Includes ACTIVE and FINALIZED`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Includes ACTIVE and FINALIZED`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
 				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZED, nil),
@@ -64,8 +64,8 @@ func TestShouldFinalize(t *testing.T) {
 			assertReady("a", false)
 		})
 
-		Convey(`INCLUDES ACTIVE and FINALIZING`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`INCLUDES ACTIVE and FINALIZING`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b", "c"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil),
 				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING, nil),
@@ -74,8 +74,8 @@ func TestShouldFinalize(t *testing.T) {
 			assertReady("a", false)
 		})
 
-		Convey(`INCLUDES FINALIZING which includes ACTIVE`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`INCLUDES FINALIZING which includes ACTIVE`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, nil, "c"),
 				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil),
@@ -84,16 +84,16 @@ func TestShouldFinalize(t *testing.T) {
 			assertReady("a", false)
 		})
 
-		Convey(`Cycle with one node`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Cycle with one node`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "a"),
 			)...)
 
 			assertReady("a", true)
 		})
 
-		Convey(`Cycle with two nodes`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Cycle with two nodes`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, nil, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_FINALIZING, nil, "a"),
 			)...)
@@ -104,33 +104,33 @@ func TestShouldFinalize(t *testing.T) {
 }
 
 func TestFinalizeInvocation(t *testing.T) {
-	Convey(`FinalizeInvocation`, t, func() {
+	ftt.Run(`FinalizeInvocation`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 
 		opts := Options{
 			ResultDBHostname: "rdb-host",
 		}
-		Convey(`Changes the state and finalization time`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Changes the state and finalization time`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, nil),
 			)...)
 
 			err := finalizeInvocation(ctx, "x", opts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			var state pb.Invocation_State
 			var finalizeTime time.Time
-			testutil.MustReadRow(ctx, "Invocations", invocations.ID("x").Key(), map[string]any{
+			testutil.MustReadRow(ctx, t, "Invocations", invocations.ID("x").Key(), map[string]any{
 				"State":        &state,
 				"FinalizeTime": &finalizeTime,
 			})
-			So(state, ShouldEqual, pb.Invocation_FINALIZED)
-			So(finalizeTime, ShouldNotResemble, time.Time{})
+			assert.Loosely(t, state, should.Equal(pb.Invocation_FINALIZED))
+			assert.Loosely(t, finalizeTime, should.NotResemble(time.Time{}))
 		})
 
-		Convey(`Enqueues more finalizing tasks`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Enqueues more finalizing tasks`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("active", pb.Invocation_ACTIVE, nil, "x"),
 				insert.InvocationWithInclusions("finalizing1", pb.Invocation_FINALIZING, nil, "x"),
 				insert.InvocationWithInclusions("finalizing2", pb.Invocation_FINALIZING, nil, "x"),
@@ -138,7 +138,7 @@ func TestFinalizeInvocation(t *testing.T) {
 			)...)
 
 			err := finalizeInvocation(ctx, "x", opts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Enqueued TQ tasks.
 			invocations := []string{}
@@ -150,12 +150,12 @@ func TestFinalizeInvocation(t *testing.T) {
 				invocations = append(invocations, payload.InvocationId)
 			}
 			sort.Strings(invocations)
-			So(invocations, ShouldResemble, []string{"finalizing1", "finalizing2"})
+			assert.Loosely(t, invocations, should.Resemble([]string{"finalizing1", "finalizing2"}))
 		})
 
-		Convey(`Enqueues a finalization notification and update test metadata tasks`, func() {
+		t.Run(`Enqueues a finalization notification and update test metadata tasks`, func(t *ftt.Test) {
 			createTime := timestamppb.New(time.Unix(1000, 0))
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"Realm":        "myproject:myrealm",
 					"IsExportRoot": true,
@@ -164,20 +164,20 @@ func TestFinalizeInvocation(t *testing.T) {
 			)
 
 			err := finalizeInvocation(ctx, "x", opts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(sched.Tasks().Payloads(), ShouldHaveLength, 4)
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto, &taskspb.ExportInvocationToBQ{
+			assert.Loosely(t, sched.Tasks().Payloads(), should.HaveLength(4))
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(&taskspb.ExportInvocationToBQ{
 				InvocationId: "x",
-			})
-			So(sched.Tasks().Payloads()[1], ShouldResembleProto, &taskspb.ExportArtifacts{
+			}))
+			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(&taskspb.ExportArtifacts{
 				InvocationId: "x",
-			})
-			So(sched.Tasks().Payloads()[2], ShouldResembleProto, &taskspb.UpdateTestMetadata{
+			}))
+			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(&taskspb.UpdateTestMetadata{
 				InvocationId: "x",
-			})
+			}))
 			// Enqueued pub/sub notification.
-			So(sched.Tasks().Payloads()[3], ShouldResembleProto, &taskspb.NotifyInvocationFinalized{
+			assert.Loosely(t, sched.Tasks().Payloads()[3], should.Resemble(&taskspb.NotifyInvocationFinalized{
 				Message: &pb.InvocationFinalizedNotification{
 					Invocation:   "invocations/x",
 					Realm:        "myproject:myrealm",
@@ -185,10 +185,10 @@ func TestFinalizeInvocation(t *testing.T) {
 					ResultdbHost: "rdb-host",
 					CreateTime:   createTime,
 				},
-			})
+			}))
 		})
 
-		Convey(`Enqueues more bq_export tasks`, func() {
+		t.Run(`Enqueues more bq_export tasks`, func(t *ftt.Test) {
 			bq1, _ := proto.Marshal(&pb.BigQueryExport{
 				Dataset:    "dataset",
 				Project:    "project",
@@ -201,20 +201,20 @@ func TestFinalizeInvocation(t *testing.T) {
 				Table:      "table1",
 				ResultType: &pb.BigQueryExport_TextArtifacts_{},
 			})
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("x", pb.Invocation_FINALIZING, map[string]any{
 					"BigQueryExports": [][]byte{bq1, bq2},
 				}),
 			)
 
 			err := finalizeInvocation(ctx, "x", opts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// Enqueued TQ tasks.
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(
 				&taskspb.ExportInvocationToBQ{
 					InvocationId: "x",
-				})
-			So(sched.Tasks().Payloads()[1], ShouldResembleProto,
+				}))
+			assert.Loosely(t, sched.Tasks().Payloads()[1], should.Resemble(
 				&taskspb.ExportInvocationArtifactsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{
@@ -223,8 +223,8 @@ func TestFinalizeInvocation(t *testing.T) {
 						Table:      "table1",
 						ResultType: &pb.BigQueryExport_TextArtifacts_{},
 					},
-				})
-			So(sched.Tasks().Payloads()[2], ShouldResembleProto,
+				}))
+			assert.Loosely(t, sched.Tasks().Payloads()[2], should.Resemble(
 				&taskspb.ExportInvocationTestResultsToBQ{
 					InvocationId: "x",
 					BqExport: &pb.BigQueryExport{
@@ -233,23 +233,23 @@ func TestFinalizeInvocation(t *testing.T) {
 						Table:      "table",
 						ResultType: &pb.BigQueryExport_TestResults_{},
 					},
-				})
+				}))
 		})
 
-		Convey(`Enqueue mark submitted tasks`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Enqueue mark submitted tasks`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_FINALIZING, map[string]any{
 					"Submitted": true,
 				}),
 			)...)
 
 			err := finalizeInvocation(ctx, "x", opts)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// there should be two tasks ahead, test metadata and notify finalized.
-			So(sched.Tasks().Payloads()[0], ShouldResembleProto,
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.Resemble(
 				&taskspb.MarkInvocationSubmitted{
 					InvocationId: "x",
-				})
+				}))
 		})
 	})
 }

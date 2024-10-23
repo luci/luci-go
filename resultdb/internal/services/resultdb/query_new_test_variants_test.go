@@ -35,20 +35,23 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateNewTestVariantsRequest(t *testing.T) {
 
-	Convey(`Validate Request`, t, func() {
+	ftt.Run(`Validate Request`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
 		req := &pb.QueryNewTestVariantsRequest{}
 
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -57,7 +60,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -70,49 +73,49 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:Linux Asan"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Invocation Bad Format`, func() {
+		t.Run(`Invocation Bad Format`, func(t *ftt.Test) {
 			req.Invocation = "build:12345"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invocation")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invocation"))
 		})
 
-		Convey(`Invocation Unsupported Value`, func() {
+		t.Run(`Invocation Unsupported Value`, func(t *ftt.Test) {
 			req.Invocation = "invocations/build!12345"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "invocation")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invocation"))
 
 		})
 
-		Convey(`Baseline Bad Format`, func() {
+		t.Run(`Baseline Bad Format`, func(t *ftt.Test) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "baseline")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("baseline"))
 		})
 
-		Convey(`Baseline Unsupported Value`, func() {
+		t.Run(`Baseline Unsupported Value`, func(t *ftt.Test) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/-/baselines/try!linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.InvalidArgument)
-			So(err, ShouldErrLike, "baseline")
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("baseline"))
 		})
 
-		Convey(`Invocation Not Found`, func() {
+		t.Run(`Invocation Not Found`, func(t *ftt.Test) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:Linux Asan"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, noPermissionsError)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 
-		Convey(`Missing resultdb.baselines.get`, func() {
+		t.Run(`Missing resultdb.baselines.get`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -120,7 +123,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -133,11 +136,11 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, noPermissionsError)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 
-		Convey(`Missing resultdb.testResults.list`, func() {
+		t.Run(`Missing resultdb.testResults.list`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -145,7 +148,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -158,22 +161,22 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
-			So(err, ShouldHaveAppStatus, codes.PermissionDenied)
-			So(err, ShouldErrLike, noPermissionsError)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 	})
 }
 
 func ValidateCheckBaselineStatus(t *testing.T) {
 
-	Convey(`ValidateCheckBaselineStatus`, t, func() {
+	ftt.Run(`ValidateCheckBaselineStatus`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
 		req := &pb.QueryNewTestVariantsRequest{}
 
-		Convey(`Baseline Not Found`, func() {
+		t.Run(`Baseline Not Found`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -181,7 +184,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -194,10 +197,10 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "try:Linux Asan"
 			_, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Baseline Less Than 72 Hours`, func() {
+		t.Run(`Baseline Less Than 72 Hours`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -205,7 +208,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -224,11 +227,11 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "try:Linux Asan"
 			isReady, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
-			So(err, ShouldBeNil)
-			So(isReady, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isReady, should.BeFalse)
 		})
 
-		Convey(`Baseline Greater Than 72 Hours`, func() {
+		t.Run(`Baseline Greater Than 72 Hours`, func(t *ftt.Test) {
 			tctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -236,7 +239,7 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 				},
 			})
 
-			testutil.MustApply(tctx,
+			testutil.MustApply(tctx, t,
 				insert.Invocation(
 					"build:12345",
 					pb.Invocation_FINALIZED,
@@ -255,26 +258,24 @@ func ValidateCheckBaselineStatus(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "try:Linux Asan"
 			isReady, err := checkBaselineStatus(tctx, "chromium", req.Baseline)
-			So(err, ShouldBeNil)
-			So(isReady, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, isReady, should.BeTrue)
 		})
 	})
 }
 
 func TestFindNewTests(t *testing.T) {
 
-	Convey(`FindNewTests`, t, func() {
+	ftt.Run(`FindNewTests`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
 		idSet := invocations.NewIDSet()
 
-		Convey(`No Invs`, func() {
-			ntvs, err := findNewTests(ctx, "chromium", "baseline_id", idSet)
-			So(ntvs, ShouldBeNil)
-			So(err, ShouldBeNil)
-		})
+		ntvs, err := findNewTests(ctx, "chromium", "baseline_id", idSet)
+		assert.Loosely(t, ntvs, should.BeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		v := &pb.Variant{
 			Def: map[string]string{
@@ -283,12 +284,12 @@ func TestFindNewTests(t *testing.T) {
 			},
 		}
 		vh := pbutil.VariantHash(v)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			btv.Create("chromium", "try:Linux Asan", "X", vh),
 		)
 		invID := invocations.ID("inv0")
 		idSet.Add(invID)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			insert.Invocation(
 				invID,
 				pb.Invocation_FINALIZED,
@@ -297,9 +298,9 @@ func TestFindNewTests(t *testing.T) {
 				},
 			),
 		)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			testutil.CombineMutations(
-				insert.TestResults(
+				insert.TestResults(t,
 					"inv0",
 					"X",
 					v,
@@ -307,17 +308,17 @@ func TestFindNewTests(t *testing.T) {
 				),
 			)...)
 
-		Convey(`No New`, func() {
+		t.Run(`No New`, func(t *ftt.Test) {
 			nt, err := findNewTests(ctx, "chromium", "try:Linux Asan", idSet)
-			So(err, ShouldBeNil)
-			So(len(nt), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(nt), should.BeZero)
 		})
 
 		// Add one test result and re-run. There should be one new.
-		Convey(`One New`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`One New`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				testutil.CombineMutations(
-					insert.TestResults(
+					insert.TestResults(t,
 						"inv0",
 						"Y",
 						v,
@@ -326,13 +327,13 @@ func TestFindNewTests(t *testing.T) {
 				)...)
 
 			nt, err := findNewTests(ctx, "chromium", "try:Linux Asan", idSet)
-			So(err, ShouldBeNil)
-			So(len(nt), ShouldEqual, 1)
-			So(nt[0].TestId, ShouldEqual, "Y")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(nt), should.Equal(1))
+			assert.Loosely(t, nt[0].TestId, should.Equal("Y"))
 		})
 
-		Convey(`# Baselines Test Variants > # Test Results`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`# Baselines Test Variants > # Test Results`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				btv.Create("chromium", "try:Linux Asan", "A", vh),
 				btv.Create("chromium", "try:Linux Asan", "B", vh),
 				btv.Create("chromium", "try:Linux Asan", "C", vh),
@@ -341,15 +342,15 @@ func TestFindNewTests(t *testing.T) {
 			)
 
 			nt, err := findNewTests(ctx, "chromium", "try:Linux Asan", idSet)
-			So(err, ShouldBeNil)
-			So(len(nt), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(nt), should.BeZero)
 		})
 	})
 }
 
 func TestE2E(t *testing.T) {
 
-	Convey(`E2E`, t, func() {
+	ftt.Run(`E2E`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 
 		// Permissions. "resultdb.baselines.get" and "resultdb.testResults.list"
@@ -363,7 +364,7 @@ func TestE2E(t *testing.T) {
 
 		// Invocation with nested invocations. Used as request.
 		invID := invocations.ID("inv0")
-		testutil.MustApply(ctx, testutil.CombineMutations(
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
 			insert.InvocationWithInclusions(invID, pb.Invocation_FINALIZED, map[string]any{"Realm": "chromium:try"}, "inv1", "inv3"),
 			insert.InvocationWithInclusions(invocations.ID("inv1"), pb.Invocation_FINALIZED, nil, "inv2"),
 			insert.InvocationWithInclusions(invocations.ID("inv2"), pb.Invocation_FINALIZED, nil),
@@ -371,7 +372,7 @@ func TestE2E(t *testing.T) {
 		)...)
 
 		// Baseline should be ready, creation time set > 72 hours.
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			spanutil.InsertMap("Baselines", map[string]any{
 				"Project":         "chromium",
 				"BaselineId":      "try:Linux Asan",
@@ -389,18 +390,18 @@ func TestE2E(t *testing.T) {
 		vh := pbutil.VariantHash(v)
 
 		// TestResults for invocation from request
-		testutil.MustApply(ctx, testutil.CombineMutations(
-			insert.TestResults("inv0", "A", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "B", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults("inv1", "C", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults("inv2", "D", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
-			insert.TestResults("inv3", "E", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+		testutil.MustApply(ctx, t, testutil.CombineMutations(
+			insert.TestResults(t, "inv0", "A", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "B", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv1", "C", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv2", "D", v, pb.TestStatus_PASS, pb.TestStatus_PASS),
+			insert.TestResults(t, "inv3", "E", v, pb.TestStatus_FAIL, pb.TestStatus_PASS),
 			// This is Skipped, so F should not be in the final set.
-			insert.TestResults("inv1", "F", v, pb.TestStatus_SKIP),
+			insert.TestResults(t, "inv1", "F", v, pb.TestStatus_SKIP),
 		)...)
 
 		// BaselineTestVariants (meaning that they were run previously with a successful run)
-		testutil.MustApply(ctx,
+		testutil.MustApply(ctx, t,
 			btv.Create("chromium", "try:Linux Asan", "C", vh),
 			btv.Create("chromium", "try:Linux Asan", "D", vh),
 		)
@@ -412,17 +413,17 @@ func TestE2E(t *testing.T) {
 
 		svc := newTestResultDBService()
 		resp, err := svc.QueryNewTestVariants(ctx, req)
-		So(err, ShouldBeNil)
-		So(resp.GetIsBaselineReady(), ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp.GetIsBaselineReady(), should.BeTrue)
 
 		// A, B, E
 		nt := resp.GetNewTestVariants()
-		So(len(nt), ShouldEqual, 3)
+		assert.Loosely(t, len(nt), should.Equal(3))
 		expected := []*pb.QueryNewTestVariantsResponse_NewTestVariant{
 			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "A", VariantHash: vh},
 			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "B", VariantHash: vh},
 			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "E", VariantHash: vh},
 		}
-		So(nt, ShouldResemble, expected)
+		assert.Loosely(t, nt, should.Resemble(expected))
 	})
 }

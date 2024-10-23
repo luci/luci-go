@@ -20,6 +20,9 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -28,97 +31,95 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestFindInheritSourcesDescendants(t *testing.T) {
 
-	Convey(`FindInheritSourcesDescendants`, t, func() {
+	ftt.Run(`FindInheritSourcesDescendants`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		sources := spanutil.Compressed(pbutil.MustMarshal(&pb.Sources{
 			GitilesCommit: &pb.GitilesCommit{Host: "testHost"},
 			IsDirty:       false,
 		}))
-		Convey(`Includes inherited and non-inherted: a->b, a->c`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Includes inherited and non-inherted: a->b, a->c`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, map[string]any{"Sources": sources}, "b", "c"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}),
 				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING, map[string]any{"Sources": sources}),
 			)...)
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, invocations.NewIDSet("a", "b"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b")))
 		})
 
-		Convey(`Includes indirectly inherited a->b->c`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Includes indirectly inherited a->b->c`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, map[string]any{"Sources": sources}, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}, "c"),
 				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}),
 			)...)
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, invocations.NewIDSet("a", "b", "c"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b", "c")))
 		})
 
-		Convey(`Cycle with one node: a->b<->b`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Cycle with one node: a->b<->b`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, map[string]any{"Sources": sources}, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}, "b"),
 			)...)
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, invocations.NewIDSet("a", "b"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b")))
 		})
 
-		Convey(`Cycle with two: a->b<->c`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`Cycle with two: a->b<->c`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_FINALIZING, map[string]any{"Sources": sources}, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, map[string]any{"InheritSources": true}, "c"),
 				insert.InvocationWithInclusions("c", pb.Invocation_FINALIZING, map[string]any{"InheritSources": true}, "b"),
 			)...)
 
 			invs, err := FindInheritSourcesDescendants(ctx, "a")
-			So(err, ShouldBeNil)
-			So(invs, ShouldResemble, invocations.NewIDSet("a", "b", "c"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invs, should.Resemble(invocations.NewIDSet("a", "b", "c")))
 		})
 	})
 }
 
 func TestFindRoot(t *testing.T) {
 
-	Convey(`TestFindRoot`, t, func() {
+	ftt.Run(`TestFindRoot`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, cancel := span.ReadOnlyTransaction(ctx)
 		defer cancel()
 
-		Convey(`invocation is a root by is_export_root a->b*`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`invocation is a root by is_export_root a->b*`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "b"),
 				[]*spanner.Mutation{insert.Invocation("b", pb.Invocation_ACTIVE, map[string]any{"IsExportRoot": true})},
 			)...)
 
 			inv, err := FindRoots(ctx, "b")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, invocations.NewIDSet("b"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("b")))
 		})
 
-		Convey(`invocation has no parent a*-> b`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`invocation has no parent a*-> b`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "b"),
 			)...)
 
 			inv, err := FindRoots(ctx, "a")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, invocations.NewIDSet("a"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a")))
 		})
 
-		Convey(`traverse to root with no parent a->b->c->d*->e`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`traverse to root with no parent a->b->c->d*->e`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil, "c"),
 				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil, "d"),
@@ -126,12 +127,12 @@ func TestFindRoot(t *testing.T) {
 			)...)
 
 			inv, err := FindRoots(ctx, "d")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, invocations.NewIDSet("a"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a")))
 		})
 
-		Convey(`cycle a->b*<->[c, d (r)]`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`cycle a->b*<->[c, d (r)]`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "b"),
 				insert.InvocationWithInclusions("b", pb.Invocation_ACTIVE, nil, "c", "d"),
 				insert.InvocationWithInclusions("c", pb.Invocation_ACTIVE, nil, "b"),
@@ -139,12 +140,12 @@ func TestFindRoot(t *testing.T) {
 			)...)
 
 			inv, err := FindRoots(ctx, "b")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, invocations.NewIDSet("a", "d"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("a", "d")))
 		})
 
-		Convey(`multiple root [x->a, y->b(r)]-> c*<- d <-e (r)`, func() {
-			testutil.MustApply(ctx, testutil.CombineMutations(
+		t.Run(`multiple root [x->a, y->b(r)]-> c*<- d <-e (r)`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t, testutil.CombineMutations(
 				insert.InvocationWithInclusions("x", pb.Invocation_ACTIVE, nil, "a"),
 				insert.InvocationWithInclusions("y", pb.Invocation_ACTIVE, nil, "b"),
 				insert.InvocationWithInclusions("a", pb.Invocation_ACTIVE, nil, "c"),
@@ -155,8 +156,8 @@ func TestFindRoot(t *testing.T) {
 			)...)
 
 			inv, err := FindRoots(ctx, "c")
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, invocations.NewIDSet("x", "b", "e"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Resemble(invocations.NewIDSet("x", "b", "e")))
 		})
 	})
 }

@@ -28,38 +28,41 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateQueryInstructionRequest(t *testing.T) {
-	Convey("Validate Query Instruction Dependencies", t, func() {
-		Convey("Empty name", func() {
+	ftt.Run("Validate Query Instruction Dependencies", t, func(t *ftt.Test) {
+		t.Run("Empty name", func(t *ftt.Test) {
 			req := &pb.QueryInstructionRequest{}
 			_, _, err := validateQueryInstructionRequest(req)
-			So(err, ShouldErrLike, "unspecified")
+			assert.Loosely(t, err, should.ErrLike("unspecified"))
 		})
-		Convey("Invalid name", func() {
+		t.Run("Invalid name", func(t *ftt.Test) {
 			req := &pb.QueryInstructionRequest{
 				Name: "some invalid name",
 			}
 			_, _, err := validateQueryInstructionRequest(req)
-			So(err, ShouldErrLike, "does not match")
+			assert.Loosely(t, err, should.ErrLike("does not match"))
 		})
 	})
 }
 
 func TestAdjustMaxDepth(t *testing.T) {
-	Convey("Adjust max depth", t, func() {
-		So(adjustMaxDepth(-1), ShouldEqual, 5)
-		So(adjustMaxDepth(0), ShouldEqual, 5)
-		So(adjustMaxDepth(3), ShouldEqual, 3)
-		So(adjustMaxDepth(11), ShouldEqual, 10)
+	ftt.Run("Adjust max depth", t, func(t *ftt.Test) {
+		assert.Loosely(t, adjustMaxDepth(-1), should.Equal(5))
+		assert.Loosely(t, adjustMaxDepth(0), should.Equal(5))
+		assert.Loosely(t, adjustMaxDepth(3), should.Equal(3))
+		assert.Loosely(t, adjustMaxDepth(11), should.Equal(10))
 	})
 }
 
 func TestQueryInstruction(t *testing.T) {
-	Convey(`QueryInstruction`, t, func() {
+	ftt.Run(`QueryInstruction`, t, func(t *ftt.Test) {
 		ctx := auth.WithState(testutil.SpannerTestContext(t), &authtest.FakeState{
 			Identity: "user:someone@example.com",
 			IdentityPermissions: []authtest.RealmPermission{
@@ -68,24 +71,24 @@ func TestQueryInstruction(t *testing.T) {
 		})
 		srv := newTestResultDBService()
 
-		Convey(`Permission denied`, func() {
-			testutil.MustApply(ctx,
+		t.Run(`Permission denied`, func(t *ftt.Test) {
+			testutil.MustApply(ctx, t,
 				insert.Invocation("build-12345", pb.Invocation_ACTIVE, map[string]any{"Realm": "secretproject:testrealm"}),
 			)
 			req := &pb.QueryInstructionRequest{
 				Name: "invocations/build-12345/instructions/test_instruction",
 			}
 			_, err := srv.QueryInstruction(ctx, req)
-			So(err, ShouldBeRPCPermissionDenied)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
 		})
 
-		Convey(`Invalid name`, func() {
+		t.Run(`Invalid name`, func(t *ftt.Test) {
 			req := &pb.QueryInstructionRequest{Name: "Some invalid name"}
 			_, err := srv.QueryInstruction(ctx, req)
-			So(err, ShouldBeRPCInvalidArgument)
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
 		})
 
-		Convey(`Query instruction`, func() {
+		t.Run(`Query instruction`, func(t *ftt.Test) {
 			// Insert invocations.
 			myInstruction := &pb.Instruction{
 				Id:              "my_instruction",
@@ -283,7 +286,7 @@ func TestQueryInstruction(t *testing.T) {
 				},
 			}
 
-			testutil.MustApply(ctx,
+			testutil.MustApply(ctx, t,
 				insert.Invocation("build-12345", pb.Invocation_FINALIZED, map[string]any{
 					"Realm": "testproject:testrealm",
 					"Instructions": spanutil.Compress(pbutil.MustMarshal(&pb.Instructions{
@@ -312,29 +315,29 @@ func TestQueryInstruction(t *testing.T) {
 					"Realm": "secretproject:testrealm",
 				}),
 			)
-			Convey("Invocation not found", func() {
+			t.Run("Invocation not found", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-xxx/instructions/test_instruction",
 				}
 				_, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey("Instruction not found", func() {
+			t.Run("Instruction not found", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/not_found",
 				}
 				_, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeRPCNotFound)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
 			})
 
-			Convey("No dependency", func() {
+			t.Run("No dependency", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/my_instruction",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(myInstruction, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -350,16 +353,16 @@ func TestQueryInstruction(t *testing.T) {
 							Nodes:  []*pb.InstructionDependencyChain_Node{},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Instruction the depends on a restricted invocation", func() {
+			t.Run("Instruction the depends on a restricted invocation", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/instruction_that_depends_on_a_restricted_invocation",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instructionDependingOnRestrictedInvocation, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -372,16 +375,16 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Dependency cycle", func() {
+			t.Run("Dependency cycle", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/instruction_cycle_1",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instructionCycle1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -400,16 +403,16 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Dependency target not found", func() {
+			t.Run("Dependency target not found", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/instruction_dep_not_found",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instructionDepNotFound, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -422,16 +425,16 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Dependency on a non-step instruction", func() {
+			t.Run("Dependency on a non-step instruction", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/instruction_depending_on_non_step_instruction",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instructionDependingOnNonStepInstruction, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -445,17 +448,17 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Dependency chain should stop with limit", func() {
+			t.Run("Dependency chain should stop with limit", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name:               "invocations/build-12345/instructions/instruction_1",
 					DependencyMaxDepth: 2,
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -484,16 +487,16 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 
-			Convey("Full instruction chain", func() {
+			t.Run("Full instruction chain", func(t *ftt.Test) {
 				req := &pb.QueryInstructionRequest{
 					Name: "invocations/build-12345/instructions/instruction_1",
 				}
 				res, err := srv.QueryInstruction(ctx, req)
-				So(err, ShouldBeNil)
-				So(res, ShouldResembleProto, &pb.QueryInstructionResponse{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Resemble(&pb.QueryInstructionResponse{
 					Instruction: instructionutil.InstructionWithNames(instruction1, "build-12345"),
 					DependencyChains: []*pb.InstructionDependencyChain{
 						{
@@ -527,7 +530,7 @@ func TestQueryInstruction(t *testing.T) {
 							},
 						},
 					},
-				})
+				}))
 			})
 		})
 	})

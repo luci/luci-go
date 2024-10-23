@@ -30,17 +30,20 @@ import (
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // testQuotaContext returns a context with the given policies.
-func testQuotaContext(ctx context.Context, t *testing.T, policies []*quotapb.Policy) context.Context {
+func testQuotaContext(ctx context.Context, t testing.TB, policies []*quotapb.Policy) context.Context {
 	// Create a miniredis instance for the luci-quota library to use.
 	// Arguably it would be better to stub out the quota implementation
 	// entirely, but that's not cleanly supported by luci-quota.
 	s, err := miniredis.Run()
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	t.Cleanup(s.Close)
 	ctx = redisconn.UsePool(ctx, &redis.Pool{
 		Dial: func() (redis.Conn, error) {
@@ -50,12 +53,12 @@ func testQuotaContext(ctx context.Context, t *testing.T, policies []*quotapb.Pol
 	// Use a simple quota config that grants a generous 1k RPCs (per 10
 	// minutes) to every 'user', which should be plenty for unit tests.
 	quotacfg, err := quotaconfig.NewMemory(ctx, policies)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil)
 	return quota.Use(ctx, quotacfg)
 }
 
 func TestUpdateUserQuota(t *testing.T) {
-	Convey(`SpecificUser`, t, func() {
+	ftt.Run(`SpecificUser`, t, func(t *ftt.Test) {
 		ctx := testQuotaContext(testutil.TestingContext(), t, []*quotapb.Policy{
 			{
 				Name:          "someresource/user/aaa/example/com",
@@ -64,26 +67,26 @@ func TestUpdateUserQuota(t *testing.T) {
 			},
 		})
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: "user:aaa@example.com"})
-		Convey(`Enough quota`, func() {
+		t.Run(`Enough quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 1, "svc", "meth")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey(`Insufficient quota`, func() {
+		t.Run(`Insufficient quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			So(err, ShouldHaveAppStatus, codes.ResourceExhausted)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
 		})
-		Convey(`No matching policy`, func() {
+		t.Run(`No matching policy`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user:bbb@example.com"})
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			So(err, ShouldHaveAppStatus, codes.ResourceExhausted)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
 		})
-		Convey(`Track only`, func() {
+		t.Run(`Track only`, func(t *ftt.Test) {
 			ctx := context.WithValue(ctx, &quotaTrackOnlyKey, true)
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
-	Convey(`WildcardFallback`, t, func() {
+	ftt.Run(`WildcardFallback`, t, func(t *ftt.Test) {
 		ctx := testQuotaContext(testutil.TestingContext(), t, []*quotapb.Policy{
 			{
 				Name:          "someresource/${user}",
@@ -97,13 +100,13 @@ func TestUpdateUserQuota(t *testing.T) {
 			},
 		})
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: "user:bbb@example.com"})
-		Convey(`Enough quota`, func() {
+		t.Run(`Enough quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 1, "svc", "meth")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey(`Insufficient quota`, func() {
+		t.Run(`Insufficient quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			So(err, ShouldHaveAppStatus, codes.ResourceExhausted)
+			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
 		})
 	})
 

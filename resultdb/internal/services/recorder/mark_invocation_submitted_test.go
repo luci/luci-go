@@ -30,31 +30,34 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestMarkInvocationSubmitted(t *testing.T) {
-	Convey(`E2E`, t, func() {
+	ftt.Run(`E2E`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		ctx, sched := tq.TestingContext(ctx, nil)
 		recorder := newTestRecorderServer()
 
-		Convey(`Empty Invocation`, func() {
+		t.Run(`Empty Invocation`, func(t *ftt.Test) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "",
 			})
-			So(err, ShouldBeRPCInvalidArgument, "unspecified")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("unspecified"))
 		})
 
-		Convey(`Invalid Invocation`, func() {
+		t.Run(`Invalid Invocation`, func(t *ftt.Test) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "random/invocation",
 			})
-			So(err, ShouldBeRPCInvalidArgument, "invocation: does not match")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invocation: does not match"))
 		})
 
-		Convey(`Invocation Does Not Exist`, func() {
+		t.Run(`Invocation Does Not Exist`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
@@ -65,10 +68,10 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
-			So(err, ShouldBeRPCPermissionDenied, "Caller does not have permission to mark invocations/inv submitted")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("Caller does not have permission to mark invocations/inv submitted"))
 		})
 
-		Convey(`Insufficient Permissions`, func() {
+		t.Run(`Insufficient Permissions`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity:            "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{},
@@ -77,41 +80,41 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
-			So(err, ShouldBeRPCPermissionDenied, "Caller does not have permission to mark invocations/inv submitted")
+			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("Caller does not have permission to mark invocations/inv submitted"))
 		})
 
-		Convey(`Unfinalized Invocation`, func() {
+		t.Run(`Unfinalized Invocation`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZING, map[string]any{
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZING, map[string]any{
 				"Realm": "chromium:try",
 			}))
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
 
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			// No tasks queued by call if the invocation is yet to be finalized. Should be invoked by
 			// finalizer to mark submitted.
-			So(sched.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 
 			submitted, err := invocations.ReadSubmitted(span.Single(ctx), invocations.ID("inv"))
-			So(err, ShouldBeNil)
-			So(submitted, ShouldBeTrue)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, submitted, should.BeTrue)
 		})
 
-		Convey(`Already submitted`, func() {
+		t.Run(`Already submitted`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
 				"Realm":     "chromium:try",
 				"Submitted": true,
 			}))
@@ -120,29 +123,29 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			})
 
 			// Workflow should terminate early if the invocation is already submitted.
-			So(err, ShouldBeNil)
-			So(sched.Tasks(), ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
 		})
 
-		Convey(`Success`, func() {
+		t.Run(`Success`, func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{
 				Identity: "user:someone@example.com",
 				IdentityPermissions: []authtest.RealmPermission{
 					{Realm: "chromium:@project", Permission: permSetSubmittedInvocation},
 				},
 			})
-			testutil.MustApply(ctx, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
+			testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, map[string]any{
 				"Realm": "chromium:try",
 			}))
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
 
-			So(err, ShouldBeNil)
-			So(sched.Tasks(), ShouldHaveLength, 1)
-			So(sched.Tasks().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&taskspb.MarkInvocationSubmitted{InvocationId: "inv"},
-			})
+			}))
 		})
 	})
 }

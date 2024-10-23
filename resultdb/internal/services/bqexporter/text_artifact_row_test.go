@@ -19,18 +19,19 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	bqpb "go.chromium.org/luci/resultdb/proto/bq"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGenerateArtifactBQRow(t *testing.T) {
 	t.Parallel()
 
-	Convey("GenerateBQRow", t, func() {
+	ftt.Run("GenerateBQRow", t, func(t *ftt.Test) {
 		input := &textArtifactRowInput{
 			exported: &pb.Invocation{
 				Name:       "invocations/exported",
@@ -49,9 +50,9 @@ func TestGenerateArtifactBQRow(t *testing.T) {
 		}
 		row := input.row()
 		actual, ok := row.(*bqpb.TextArtifactRowLegacy)
-		So(ok, ShouldBeTrue)
-		So(actual.Content, ShouldResemble, input.content)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, actual.Content, should.Resemble(input.content))
 
-		So(input.id(), ShouldResemble, []byte(fmt.Sprintf("%s/%d", input.a.Name, input.shardID)))
+		assert.Loosely(t, input.id(), should.Resemble([]byte(fmt.Sprintf("%s/%d", input.a.Name, input.shardID))))
 	})
 }
