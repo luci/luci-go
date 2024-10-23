@@ -22,15 +22,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/mock"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestQuery(t *testing.T) {
 	t.Parallel()
-	Convey(`TestQuery`, t, func() {
+	ftt.Run(`TestQuery`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		ctl := gomock.NewController(t)
@@ -53,18 +53,18 @@ func TestQuery(t *testing.T) {
 			return results, <-errC
 		}
 
-		Convey("One page", func() {
+		t.Run("One page", func(t *ftt.Test) {
 			expected := []*pb.TestResult{{Name: "a"}, {Name: "b"}}
 			client.EXPECT().
 				QueryTestResults(gomock.Any(), mock.EqProto(&pb.QueryTestResultsRequest{})).
 				Return(&pb.QueryTestResultsResponse{TestResults: expected}, nil)
 
 			actual, err := fetch(&pb.QueryTestResultsRequest{})
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble(expected))
 		})
 
-		Convey("Two pages", func() {
+		t.Run("Two pages", func(t *ftt.Test) {
 			firstPage := client.EXPECT().
 				QueryTestResults(gomock.Any(), mock.EqProto(&pb.QueryTestResultsRequest{})).
 				Return(&pb.QueryTestResultsResponse{
@@ -81,8 +81,8 @@ func TestQuery(t *testing.T) {
 				}, nil)
 
 			actual, err := fetch(&pb.QueryTestResultsRequest{})
-			So(err, ShouldBeNil)
-			So(actual, ShouldResembleProto, []*pb.TestResult{{Name: "a"}, {Name: "b"}, {Name: "c"}})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.Resemble([]*pb.TestResult{{Name: "a"}, {Name: "b"}, {Name: "c"}}))
 		})
 	})
 }

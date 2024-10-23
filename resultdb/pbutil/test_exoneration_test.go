@@ -15,30 +15,30 @@
 package pbutil
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTestExonerationName(t *testing.T) {
 	t.Parallel()
-	Convey("ParseTestExonerationName", t, func() {
-		Convey("Parse", func() {
+	ftt.Run("ParseTestExonerationName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
 			inv, testID, ex, err := ParseTestExonerationName("invocations/a/tests/b%2Fc/exonerations/1")
-			So(err, ShouldBeNil)
-			So(inv, ShouldEqual, "a")
-			So(testID, ShouldEqual, "b/c")
-			So(ex, ShouldEqual, "1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inv, should.Equal("a"))
+			assert.Loosely(t, testID, should.Equal("b/c"))
+			assert.Loosely(t, ex, should.Equal("1"))
 		})
 
-		Convey("Invalid", func() {
+		t.Run("Invalid", func(t *ftt.Test) {
 			_, _, _, err := ParseTestExonerationName("invocations/a/tests/b/c/exonerations/1")
-			So(err, ShouldErrLike, `does not match`)
+			assert.Loosely(t, err, should.ErrLike(`does not match`))
 		})
 
-		Convey("Format", func() {
-			So(TestExonerationName("a", "b/c", "d"), ShouldEqual, "invocations/a/tests/b%2Fc/exonerations/d")
+		t.Run("Format", func(t *ftt.Test) {
+			assert.Loosely(t, TestExonerationName("a", "b/c", "d"), should.Equal("invocations/a/tests/b%2Fc/exonerations/d"))
 		})
 	})
 }

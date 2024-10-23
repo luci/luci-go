@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -30,6 +29,10 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -42,14 +45,13 @@ func TestReportTestResults(t *testing.T) {
 		context.Background(),
 		metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
 
-	Convey("ReportTestResults", t, func() {
+	ftt.Run("ReportTestResults", t, func(t *ftt.Test) {
 		// close and drain the server to enforce all the requests processed.
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		cfg := testServerConfig("", "secret")
-		tr, cleanup := validTestResult()
-		defer cleanup()
+		tr := validTestResult(t)
 
 		var sentTRReq *pb.BatchCreateTestResultsRequest
 		cfg.Recorder.(*mockRecorder).batchCreateTestResults = func(c context.Context, in *pb.BatchCreateTestResultsRequest) (*pb.BatchCreateTestResultsResponse, error) {
@@ -85,7 +87,7 @@ func TestReportTestResults(t *testing.T) {
 			sink, err := newSinkServer(ctx, cfg)
 			sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultIDBase = "foo"
 			sink.(*sinkpb.DecoratedSink).Service.(*sinkServer).resultCounter = 100
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer closeSinkServer(ctx, sink)
 
 			req := &sinkpb.ReportTestResultsRequest{
@@ -94,30 +96,30 @@ func TestReportTestResults(t *testing.T) {
 			// Clone because the RPC impl mutates the request objects.
 			req = proto.Clone(req).(*sinkpb.ReportTestResultsRequest)
 			_, err = sink.ReportTestResults(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			closeSinkServer(ctx, sink)
-			So(sentTRReq, ShouldNotBeNil)
-			So(sentTRReq.Requests, ShouldHaveLength, 1)
-			So(sentTRReq.Requests[0].TestResult, ShouldResembleProto, expectedTR)
+			assert.Loosely(t, sentTRReq, should.NotBeNil)
+			assert.Loosely(t, sentTRReq.Requests, should.HaveLength(1))
+			assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Resemble(expectedTR))
 		}
 
-		Convey("works", func() {
-			Convey("with ServerConfig.TestIDPrefix", func() {
+		t.Run("works", func(t *ftt.Test) {
+			t.Run("with ServerConfig.TestIDPrefix", func(t *ftt.Test) {
 				cfg.TestIDPrefix = "ninja://foo/bar/"
 				tr.TestId = "HelloWorld.TestA"
 				expectedTR.TestId = "ninja://foo/bar/HelloWorld.TestA"
 				checkResults()
 			})
 
-			Convey("with ServerConfig.BaseVariant", func() {
+			t.Run("with ServerConfig.BaseVariant", func(t *ftt.Test) {
 				base := []string{"bucket", "try", "builder", "linux-rel"}
 				cfg.BaseVariant = pbutil.Variant(base...)
 				expectedTR.Variant = pbutil.Variant(base...)
 				checkResults()
 			})
 
-			Convey("with ServerConfig.BaseTags", func() {
+			t.Run("with ServerConfig.BaseTags", func(t *ftt.Test) {
 				t1, t2 := pbutil.StringPairs("t1", "v1"), pbutil.StringPairs("t2", "v2")
 				// (nil, nil)
 				cfg.BaseTags, tr.Tags, expectedTR.Tags = nil, nil, nil
@@ -136,7 +138,7 @@ func TestReportTestResults(t *testing.T) {
 				checkResults()
 			})
 
-			Convey("with ServerConfig.BaseVariant and test result variant", func() {
+			t.Run("with ServerConfig.BaseVariant and test result variant", func(t *ftt.Test) {
 				v1, v2 := pbutil.Variant("bucket", "try"), pbutil.Variant("builder", "linux-rel")
 				// (nil, nil)
 				cfg.BaseVariant, tr.Variant, expectedTR.Variant = nil, nil, nil
@@ -156,14 +158,14 @@ func TestReportTestResults(t *testing.T) {
 			})
 		})
 
-		Convey("generates a random ResultID, if omitted", func() {
+		t.Run("generates a random ResultID, if omitted", func(t *ftt.Test) {
 			tr.ResultId = ""
 			expectedTR.ResultId = "foo-00101"
 			checkResults()
 		})
 
-		Convey("duration", func() {
-			Convey("with CoerceNegativeDuration", func() {
+		t.Run("duration", func(t *ftt.Test) {
+			t.Run("with CoerceNegativeDuration", func(t *ftt.Test) {
 				cfg.CoerceNegativeDuration = true
 
 				// duration == nil
@@ -183,20 +185,20 @@ func TestReportTestResults(t *testing.T) {
 				expectedTR.Duration = durationpb.New(0)
 				checkResults()
 			})
-			Convey("without CoerceNegativeDuration", func() {
+			t.Run("without CoerceNegativeDuration", func(t *ftt.Test) {
 				// duration < 0
 				tr.Duration = durationpb.New(-8)
 				sink, err := newSinkServer(ctx, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike, "duration: is < 0")
+				assert.Loosely(t, err, should.ErrLike("duration: is < 0"))
 			})
 		})
 
-		Convey("failure reason", func() {
-			Convey("specified", func() {
+		t.Run("failure reason", func(t *ftt.Test) {
+			t.Run("specified", func(t *ftt.Test) {
 				tr.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: "Example failure reason.",
 					Errors: []*pb.FailureReason_Error{
@@ -216,13 +218,13 @@ func TestReportTestResults(t *testing.T) {
 				checkResults()
 			})
 
-			Convey("nil", func() {
+			t.Run("nil", func(t *ftt.Test) {
 				tr.FailureReason = nil
 				expectedTR.FailureReason = nil
 				checkResults()
 			})
 
-			Convey("primary_error_message too long", func() {
+			t.Run("primary_error_message too long", func(t *ftt.Test) {
 				var b strings.Builder
 				// Make a string that exceeds the 1024-byte length limit
 				// (when encoded as UTF-8).
@@ -234,16 +236,16 @@ func TestReportTestResults(t *testing.T) {
 				}
 
 				sink, err := newSinkServer(ctx, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike,
+				assert.Loosely(t, err, should.ErrLike(
 					"failure_reason: primary_error_message: exceeds the"+
-						" maximum size of 1024 bytes")
+						" maximum size of 1024 bytes"))
 			})
 
-			Convey("error_messages too long", func() {
+			t.Run("error_messages too long", func(t *ftt.Test) {
 				var b strings.Builder
 				// Make a string that exceeds the 1024-byte length limit
 				// (when encoded as UTF-8).
@@ -260,20 +262,20 @@ func TestReportTestResults(t *testing.T) {
 				}
 
 				sink, err := newSinkServer(ctx, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{
 					TestResults: []*sinkpb.TestResult{tr},
 				}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike,
+				assert.Loosely(t, err, should.ErrLike(
 					fmt.Sprintf("errors[1]: message: exceeds the maximum "+
-						"size of 1024 bytes"))
+						"size of 1024 bytes")))
 			})
 		})
 
-		Convey("properties", func() {
-			Convey("specified", func() {
+		t.Run("properties", func(t *ftt.Test) {
+			t.Run("specified", func(t *ftt.Test) {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key_1": structpb.NewStringValue("value_1"),
@@ -297,13 +299,13 @@ func TestReportTestResults(t *testing.T) {
 				checkResults()
 			})
 
-			Convey("nil", func() {
+			t.Run("nil", func(t *ftt.Test) {
 				tr.Properties = nil
 				expectedTR.Properties = nil
 				checkResults()
 			})
 
-			Convey("properties too large", func() {
+			t.Run("properties too large", func(t *ftt.Test) {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeTestResultProperties)),
@@ -311,15 +313,16 @@ func TestReportTestResults(t *testing.T) {
 				}
 
 				sink, err := newSinkServer(ctx, cfg)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				So(err, ShouldErrLike, `properties: exceeds the maximum size of`, `bytes`)
+				assert.Loosely(t, err, should.ErrLike(`properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 		})
 
-		Convey("with ServerConfig.TestLocationBase", func() {
+		t.Run("with ServerConfig.TestLocationBase", func(t *ftt.Test) {
 			cfg.TestLocationBase = "//base/"
 			tr.TestMetadata.Location.FileName = "artifact_dir/a_test.cc"
 			expectedTR.TestMetadata = proto.Clone(expectedTR.TestMetadata).(*pb.TestMetadata)
@@ -354,7 +357,7 @@ func TestReportTestResults(t *testing.T) {
 			},
 		}
 
-		Convey("with ServerConfig.LocationTags", func() {
+		t.Run("with ServerConfig.LocationTags", func(t *ftt.Test) {
 			cfg.LocationTags = &sinkpb.LocationTags{
 				Repos: map[string]*sinkpb.LocationTags_Repo{
 					"https://chromium.googlesource.com/chromium/src": {
@@ -383,7 +386,7 @@ func TestReportTestResults(t *testing.T) {
 			checkResults()
 		})
 
-		Convey("with ServerConfig.LocationTags file based", func() {
+		t.Run("with ServerConfig.LocationTags file based", func(t *ftt.Test) {
 			overriddenTags := pbutil.StringPairs(
 				"featureX", "featureY",
 				"monorail_component", "Monorail>File>Component",
@@ -433,9 +436,9 @@ func TestReportTestResults(t *testing.T) {
 			checkResults()
 		})
 
-		Convey("ReportTestResults", func() {
+		t.Run("ReportTestResults", func(t *ftt.Test) {
 			sink, err := newSinkServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer closeSinkServer(ctx, sink)
 
 			report := func(trs ...*sinkpb.TestResult) error {
@@ -443,84 +446,84 @@ func TestReportTestResults(t *testing.T) {
 				return err
 			}
 
-			Convey("returns an error if the artifact req is invalid", func() {
+			t.Run("returns an error if the artifact req is invalid", func(t *ftt.Test) {
 				tr.Artifacts["art2"] = &sinkpb.Artifact{}
-				So(report(tr), ShouldHaveRPCCode, codes.InvalidArgument,
-					"one of file_path or contents or gcs_uri must be provided")
+				assert.Loosely(t, report(tr), convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument,
+					"one of file_path or contents or gcs_uri must be provided"))
 			})
 
-			Convey("with an inaccesible artifact file", func() {
+			t.Run("with an inaccesible artifact file", func(t *ftt.Test) {
 				tr.Artifacts["art2"] = &sinkpb.Artifact{
 					Body: &sinkpb.Artifact_FilePath{FilePath: "not_exist"}}
 
-				Convey("drops the artifact", func() {
-					So(report(tr), ShouldBeRPCOK)
+				t.Run("drops the artifact", func(t *ftt.Test) {
+					assert.Loosely(t, report(tr), convey.Adapt(ShouldBeRPCOK)())
 
 					// make sure that no TestResults were dropped, and the valid artifact, "art1",
 					// was not dropped, either.
 					closeSinkServer(ctx, sink)
-					So(sentTRReq, ShouldNotBeNil)
-					So(sentTRReq.Requests, ShouldHaveLength, 1)
-					So(sentTRReq.Requests[0].TestResult, ShouldResembleProto, expectedTR)
+					assert.Loosely(t, sentTRReq, should.NotBeNil)
+					assert.Loosely(t, sentTRReq.Requests, should.HaveLength(1))
+					assert.Loosely(t, sentTRReq.Requests[0].TestResult, should.Resemble(expectedTR))
 
-					So(sentArtReq, ShouldNotBeNil)
-					So(sentArtReq.Requests, ShouldHaveLength, 1)
-					So(sentArtReq.Requests[0].Artifact, ShouldResembleProto, &pb.Artifact{
+					assert.Loosely(t, sentArtReq, should.NotBeNil)
+					assert.Loosely(t, sentArtReq.Requests, should.HaveLength(1))
+					assert.Loosely(t, sentArtReq.Requests[0].Artifact, should.Resemble(&pb.Artifact{
 						ArtifactId:  "art1",
 						ContentType: "text/plain",
 						Contents:    []byte("a sample artifact"),
 						SizeBytes:   int64(len("a sample artifact")),
 						TestStatus:  pb.TestStatus_PASS,
-					})
+					}))
 				})
 			})
 		})
 
-		Convey("report exoneration", func() {
+		t.Run("report exoneration", func(t *ftt.Test) {
 			cfg.ExonerateUnexpectedPass = true
 			sink, err := newSinkServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer closeSinkServer(ctx, sink)
 
-			Convey("exonerate unexpected pass", func() {
+			t.Run("exonerate unexpected pass", func(t *ftt.Test) {
 				tr.Expected = false
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				So(err, ShouldBeRPCOK)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 				closeSinkServer(ctx, sink)
-				So(sentExoReq, ShouldNotBeNil)
-				So(sentExoReq.Requests, ShouldHaveLength, 1)
-				So(sentExoReq.Requests[0].TestExoneration, ShouldResembleProto, &pb.TestExoneration{
+				assert.Loosely(t, sentExoReq, should.NotBeNil)
+				assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
+				assert.Loosely(t, sentExoReq.Requests[0].TestExoneration, should.Resemble(&pb.TestExoneration{
 					TestId:          tr.TestId,
 					ExplanationHtml: "Unexpected passes are exonerated",
 					Reason:          pb.ExonerationReason_UNEXPECTED_PASS,
-				})
+				}))
 			})
 
-			Convey("not exonerate unexpected failure", func() {
+			t.Run("not exonerate unexpected failure", func(t *ftt.Test) {
 				tr.Expected = false
 				tr.Status = pb.TestStatus_FAIL
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				So(err, ShouldBeRPCOK)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 				closeSinkServer(ctx, sink)
-				So(sentExoReq, ShouldBeNil)
+				assert.Loosely(t, sentExoReq, should.BeNil)
 			})
 
-			Convey("not exonerate expected pass", func() {
+			t.Run("not exonerate expected pass", func(t *ftt.Test) {
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				So(err, ShouldBeRPCOK)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 				closeSinkServer(ctx, sink)
-				So(sentExoReq, ShouldBeNil)
+				assert.Loosely(t, sentExoReq, should.BeNil)
 			})
 
-			Convey("not exonerate expected failure", func() {
+			t.Run("not exonerate expected failure", func(t *ftt.Test) {
 				tr.Status = pb.TestStatus_FAIL
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				So(err, ShouldBeRPCOK)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 				closeSinkServer(ctx, sink)
-				So(sentExoReq, ShouldBeNil)
+				assert.Loosely(t, sentExoReq, should.BeNil)
 			})
 		})
 	})
@@ -529,7 +532,7 @@ func TestReportTestResults(t *testing.T) {
 func TestReportInvocationLevelArtifacts(t *testing.T) {
 	t.Parallel()
 
-	Convey("ReportInvocationLevelArtifacts", t, func() {
+	ftt.Run("ReportInvocationLevelArtifacts", t, func(t *ftt.Test) {
 		ctx := metadata.NewIncomingContext(
 			context.Background(),
 			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
@@ -538,7 +541,7 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 
 		cfg := testServerConfig("", "secret")
 		sink, err := newSinkServer(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer closeSinkServer(ctx, sink)
 
 		art1 := &sinkpb.Artifact{Body: &sinkpb.Artifact_Contents{Contents: []byte("123")}}
@@ -548,18 +551,18 @@ func TestReportInvocationLevelArtifacts(t *testing.T) {
 			Artifacts: map[string]*sinkpb.Artifact{"art1": art1, "art2": art2},
 		}
 		_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Duplicated artifact will be rejected.
 		_, err = sink.ReportInvocationLevelArtifacts(ctx, req)
-		So(err, ShouldErrLike, ` has already been uploaded`)
+		assert.Loosely(t, err, should.ErrLike(` has already been uploaded`))
 	})
 }
 
 func TestUpdateInvocation(t *testing.T) {
 	t.Parallel()
 
-	Convey("UpdateInvocation", t, func() {
+	ftt.Run("UpdateInvocation", t, func(t *ftt.Test) {
 		ctx := metadata.NewIncomingContext(
 			context.Background(),
 			metadata.Pairs(AuthTokenKey, authTokenValue("secret")))
@@ -568,7 +571,7 @@ func TestUpdateInvocation(t *testing.T) {
 
 		cfg := testServerConfig("", "secret")
 		sink, err := newSinkServer(ctx, cfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer closeSinkServer(ctx, sink)
 
 		sinkInv := &sinkpb.Invocation{
@@ -582,7 +585,7 @@ func TestUpdateInvocation(t *testing.T) {
 			},
 		}
 
-		Convey("invalid update mask", func() {
+		t.Run("invalid update mask", func(t *ftt.Test) {
 			req := &sinkpb.UpdateInvocationRequest{
 				Invocation: sinkInv,
 				UpdateMask: &fieldmaskpb.FieldMask{
@@ -590,10 +593,11 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 			}
 			_, err := sink.UpdateInvocation(ctx, req)
-			So(err, ShouldErrLike, "update_mask", "does not exist in message Invocation")
+			assert.Loosely(t, err, should.ErrLike("update_mask"))
+			assert.Loosely(t, err, should.ErrLike("does not exist in message Invocation"))
 		})
 
-		Convey("valid update mask", func() {
+		t.Run("valid update mask", func(t *ftt.Test) {
 			req := &sinkpb.UpdateInvocationRequest{
 				Invocation: sinkInv,
 				UpdateMask: &fieldmaskpb.FieldMask{
@@ -601,7 +605,7 @@ func TestUpdateInvocation(t *testing.T) {
 				},
 			}
 			_, err := sink.UpdateInvocation(ctx, req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }

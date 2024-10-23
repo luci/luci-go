@@ -23,8 +23,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 )
@@ -32,7 +33,7 @@ import (
 func TestArtifactChannel(t *testing.T) {
 	t.Parallel()
 
-	Convey("schedule", t, func() {
+	ftt.Run("schedule", t, func(t *ftt.Test) {
 		cfg := testServerConfig("127.0.0.1:123", "secret")
 		ctx := context.Background()
 
@@ -51,18 +52,18 @@ func TestArtifactChannel(t *testing.T) {
 		createTask := func(name, content string, status pb.TestStatus) *uploadTask {
 			art := testArtifactWithContents([]byte(content))
 			task, err := newUploadTask(name, art, status)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			return task
 		}
 
-		Convey("with a small artifact", func() {
+		t.Run("with a small artifact", func(t *ftt.Test) {
 			task := createTask("invocations/inv/artifacts/art1", "content", pb.TestStatus_PASS)
 			ac := newArtifactChannel(ctx, &cfg)
 			ac.schedule(task)
 			ac.closeAndDrain(ctx)
 
 			// The artifact should have been sent to the batch channel.
-			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{{
 					Parent: "invocations/inv",
 					Artifact: &pb.Artifact{
@@ -73,10 +74,10 @@ func TestArtifactChannel(t *testing.T) {
 						TestStatus:  pb.TestStatus_PASS,
 					},
 				}},
-			})
+			}))
 		})
 
-		Convey("with multiple, small artifacts", func() {
+		t.Run("with multiple, small artifacts", func(t *ftt.Test) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
@@ -89,7 +90,7 @@ func TestArtifactChannel(t *testing.T) {
 			ac.closeAndDrain(ctx)
 
 			// The 1st request should contain the first two artifacts.
-			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{
 					// art1
 					{
@@ -114,10 +115,10 @@ func TestArtifactChannel(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 
 			// The 2nd request should only contain the last one.
-			So(<-batchCh, ShouldResembleProto, &pb.BatchCreateArtifactsRequest{
+			assert.Loosely(t, <-batchCh, should.Resemble(&pb.BatchCreateArtifactsRequest{
 				Requests: []*pb.CreateArtifactRequest{
 					// art3
 					{
@@ -131,10 +132,10 @@ func TestArtifactChannel(t *testing.T) {
 						},
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("with a large artifact", func() {
+		t.Run("with a large artifact", func(t *ftt.Test) {
 			cfg.MaxBatchableArtifactSize = 10
 			ac := newArtifactChannel(ctx, &cfg)
 
@@ -144,12 +145,12 @@ func TestArtifactChannel(t *testing.T) {
 
 			// The artifact should have been sent to the stream channel.
 			req := <-streamCh
-			So(req, ShouldNotBeNil)
-			So(req.URL.String(), ShouldEqual,
-				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1")
+			assert.Loosely(t, req, should.NotBeNil)
+			assert.Loosely(t, req.URL.String(), should.Equal(
+				"https://"+cfg.ArtifactStreamHost+"/invocations/inv/artifacts/art1"))
 			body, err := io.ReadAll(req.Body)
-			So(err, ShouldBeNil)
-			So(body, ShouldResemble, []byte("content-foo-bar"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, body, should.Resemble([]byte("content-foo-bar")))
 		})
 	})
 
@@ -158,69 +159,69 @@ func TestArtifactChannel(t *testing.T) {
 func TestUploadTask(t *testing.T) {
 	t.Parallel()
 
-	Convey("newUploadTask", t, func() {
+	ftt.Run("newUploadTask", t, func(t *ftt.Test) {
 		name := "invocations/inv/artifacts/art1"
-		fArt := testArtifactWithFile(func(f *os.File) {
+		fArt := testArtifactWithFile(t, func(f *os.File) {
 			_, err := f.Write([]byte("content"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 		fArt.ContentType = "plain/text"
 		defer os.Remove(fArt.GetFilePath())
 
-		Convey("works", func() {
-			t, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
-			So(err, ShouldBeNil)
-			So(t, ShouldResemble, &uploadTask{art: fArt, artName: name, size: int64(len("content")), testStatus: pb.TestStatus_PASS})
+		t.Run("works", func(t *ftt.Test) {
+			tsk, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tsk, should.Resemble(&uploadTask{art: fArt, artName: name, size: int64(len("content")), testStatus: pb.TestStatus_PASS}))
 		})
 
-		Convey("fails", func() {
+		t.Run("fails", func(t *ftt.Test) {
 			// stat error
-			So(os.Remove(fArt.GetFilePath()), ShouldBeNil)
+			assert.Loosely(t, os.Remove(fArt.GetFilePath()), should.BeNil)
 			_, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
-			So(err, ShouldErrLike, "querying file info")
+			assert.Loosely(t, err, should.ErrLike("querying file info"))
 
 			// is a directory
 			path, err := ioutil.TempDir("", "foo")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			defer os.RemoveAll(path)
 			fArt.Body.(*sinkpb.Artifact_FilePath).FilePath = path
 			_, err = newUploadTask(name, fArt, pb.TestStatus_PASS)
-			So(err, ShouldErrLike, "is a directory")
+			assert.Loosely(t, err, should.ErrLike("is a directory"))
 		})
 	})
 
-	Convey("CreateRequest", t, func() {
+	ftt.Run("CreateRequest", t, func(t *ftt.Test) {
 		name := "invocations/inv/tests/t1/results/r1/artifacts/a1"
-		fArt := testArtifactWithFile(func(f *os.File) {
+		fArt := testArtifactWithFile(t, func(f *os.File) {
 			_, err := f.Write([]byte("content"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 		fArt.ContentType = "plain/text"
 		defer os.Remove(fArt.GetFilePath())
 		ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Updates the content type when it is missing", func() {
+		t.Run("Updates the content type when it is missing", func(t *ftt.Test) {
 			fArt.ContentType = ""
 			req, err := ut.CreateRequest()
-			So(err, ShouldBeNil)
-			So(req.Artifact.ContentType, ShouldEqual, "text/plain")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req.Artifact.ContentType, should.Equal("text/plain"))
 		})
 
-		Convey("Fails when the artifact name is too long", func() {
+		t.Run("Fails when the artifact name is too long", func(t *ftt.Test) {
 			artifactID := strings.Repeat("a", 600)
 			name := "invocations/inv/tests/t1/results/r1/artifacts/" + artifactID
 			ut, err := newUploadTask(name, fArt, pb.TestStatus_PASS)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			_, err = ut.CreateRequest()
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("works", func() {
+		t.Run("works", func(t *ftt.Test) {
 			req, err := ut.CreateRequest()
-			So(err, ShouldBeNil)
-			So(req, ShouldResembleProto, &pb.CreateArtifactRequest{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, req, should.Resemble(&pb.CreateArtifactRequest{
 				Parent: "invocations/inv/tests/t1/results/r1",
 				Artifact: &pb.Artifact{
 					ArtifactId:  "a1",
@@ -229,19 +230,19 @@ func TestUploadTask(t *testing.T) {
 					Contents:    []byte("content"),
 					TestStatus:  pb.TestStatus_PASS,
 				},
-			})
+			}))
 		})
 
-		Convey("fails", func() {
+		t.Run("fails", func(t *ftt.Test) {
 			// the artifact content changed.
-			So(os.WriteFile(fArt.GetFilePath(), []byte("surprise!!"), 0), ShouldBeNil)
+			assert.Loosely(t, os.WriteFile(fArt.GetFilePath(), []byte("surprise!!"), 0), should.BeNil)
 			_, err := ut.CreateRequest()
-			So(err, ShouldErrLike, "the size of the artifact contents changed")
+			assert.Loosely(t, err, should.ErrLike("the size of the artifact contents changed"))
 
 			// the file no longer exists.
-			So(os.Remove(fArt.GetFilePath()), ShouldBeNil)
+			assert.Loosely(t, os.Remove(fArt.GetFilePath()), should.BeNil)
 			_, err = ut.CreateRequest()
-			So(err, ShouldErrLike, "open "+fArt.GetFilePath()) // no such file or directory
+			assert.Loosely(t, err, should.ErrLike("open "+fArt.GetFilePath())) // no such file or directory
 		})
 	})
 }

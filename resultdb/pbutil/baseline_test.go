@@ -15,27 +15,27 @@
 package pbutil
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestBaselineID(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateBaselineID`, t, func() {
-		Convey(`Valid`, func() {
-			So(ValidateBaselineID("try:linux-rel"), ShouldBeNil)
-			So(ValidateBaselineID("try:linux asan"), ShouldBeNil)
+	ftt.Run(`ValidateBaselineID`, t, func(t *ftt.Test) {
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateBaselineID("try:linux-rel"), should.BeNil)
+			assert.Loosely(t, ValidateBaselineID("try:linux asan"), should.BeNil)
 		})
 
-		Convey(`Invalid`, func() {
-			Convey(`Empty`, func() {
-				So(ValidateBaselineID(""), ShouldErrLike, `unspecified`)
+		t.Run(`Invalid`, func(t *ftt.Test) {
+			t.Run(`Empty`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateBaselineID(""), should.ErrLike(`unspecified`))
 			})
-			Convey(`Unsupported Symbol`, func() {
-				So(ValidateBaselineID("try/linux-rel"), ShouldErrLike, `does not match`)
-				So(ValidateBaselineID("try :rel"), ShouldErrLike, `does not match`)
+			t.Run(`Unsupported Symbol`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateBaselineID("try/linux-rel"), should.ErrLike(`does not match`))
+				assert.Loosely(t, ValidateBaselineID("try :rel"), should.ErrLike(`does not match`))
 			})
 		})
 	})
@@ -43,17 +43,17 @@ func TestBaselineID(t *testing.T) {
 
 func TestBaselineName(t *testing.T) {
 	t.Parallel()
-	Convey(`ParseBaselineName`, t, func() {
-		Convey(`Parse`, func() {
+	ftt.Run(`ParseBaselineName`, t, func(t *ftt.Test) {
+		t.Run(`Parse`, func(t *ftt.Test) {
 			proj, baseline, err := ParseBaselineName("projects/foo/baselines/bar:baz")
-			So(err, ShouldBeNil)
-			So(proj, ShouldEqual, "foo")
-			So(baseline, ShouldEqual, "bar:baz")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("foo"))
+			assert.Loosely(t, baseline, should.Equal("bar:baz"))
 		})
 
-		Convey("Invalid", func() {
+		t.Run("Invalid", func(t *ftt.Test) {
 			_, _, err := ParseBaselineName("projects/-/baselines/b!z")
-			So(err, ShouldErrLike, `does not match`)
+			assert.Loosely(t, err, should.ErrLike(`does not match`))
 		})
 	})
 }

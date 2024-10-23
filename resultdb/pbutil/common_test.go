@@ -18,14 +18,15 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestValidate(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateGitilesCommit`, t, func() {
+	ftt.Run(`ValidateGitilesCommit`, t, func(t *ftt.Test) {
 		commit := &pb.GitilesCommit{
 			Host:       "chromium.googlesource.com",
 			Project:    "chromium/src",
@@ -33,139 +34,141 @@ func TestValidate(t *testing.T) {
 			CommitHash: "123456789012345678901234567890abcdefabcd",
 			Position:   1,
 		}
-		Convey(`Valid`, func() {
-			So(ValidateGitilesCommit(commit), ShouldBeNil)
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateGitilesCommit(commit), should.BeNil)
 		})
-		Convey(`Nil`, func() {
-			So(ValidateGitilesCommit(nil), ShouldErrLike, `unspecified`)
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateGitilesCommit(nil), should.ErrLike(`unspecified`))
 		})
-		Convey(`Host`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Host`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				commit.Host = ""
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `host: unspecified`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`host: unspecified`))
 			})
-			Convey(`Invalid format`, func() {
+			t.Run(`Invalid format`, func(t *ftt.Test) {
 				commit.Host = "https://somehost.com"
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `host: does not match`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`host: does not match`))
 			})
-			Convey(`Too long`, func() {
+			t.Run(`Too long`, func(t *ftt.Test) {
 				commit.Host = strings.Repeat("a", hostnameMaxLength+1)
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `host: exceeds `, ` characters`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`host: exceeds `))
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(` characters`))
 			})
 		})
-		Convey(`Project`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Project`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				commit.Project = ""
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `project: unspecified`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`project: unspecified`))
 			})
-			Convey(`Too long`, func() {
+			t.Run(`Too long`, func(t *ftt.Test) {
 				commit.Project = strings.Repeat("a", 256)
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `project: exceeds 255 characters`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`project: exceeds 255 characters`))
 			})
 		})
-		Convey(`Refs`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Refs`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				commit.Ref = ""
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `ref: unspecified`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`ref: unspecified`))
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				commit.Ref = "main"
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `ref: does not match refs/.*`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`ref: does not match refs/.*`))
 			})
-			Convey(`Too long`, func() {
+			t.Run(`Too long`, func(t *ftt.Test) {
 				commit.Ref = "refs/" + strings.Repeat("a", 252)
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `ref: exceeds 255 characters`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`ref: exceeds 255 characters`))
 			})
 		})
-		Convey(`Commit Hash`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Commit Hash`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				commit.CommitHash = ""
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `commit_hash: unspecified`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`commit_hash: unspecified`))
 			})
-			Convey(`Invalid (too long)`, func() {
+			t.Run(`Invalid (too long)`, func(t *ftt.Test) {
 				commit.CommitHash = strings.Repeat("a", 41)
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `commit_hash: does not match "^[a-f0-9]{40}$"`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`commit_hash: does not match "^[a-f0-9]{40}$"`))
 			})
-			Convey(`Invalid (too short)`, func() {
+			t.Run(`Invalid (too short)`, func(t *ftt.Test) {
 				commit.CommitHash = strings.Repeat("a", 39)
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `commit_hash: does not match "^[a-f0-9]{40}$"`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`commit_hash: does not match "^[a-f0-9]{40}$"`))
 			})
-			Convey(`Invalid (upper case)`, func() {
+			t.Run(`Invalid (upper case)`, func(t *ftt.Test) {
 				commit.CommitHash = "123456789012345678901234567890ABCDEFABCD"
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `commit_hash: does not match "^[a-f0-9]{40}$"`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`commit_hash: does not match "^[a-f0-9]{40}$"`))
 			})
 		})
-		Convey(`Position`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Position`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				commit.Position = 0
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `position: unspecified`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`position: unspecified`))
 			})
-			Convey(`Negative`, func() {
+			t.Run(`Negative`, func(t *ftt.Test) {
 				commit.Position = -1
-				So(ValidateGitilesCommit(commit), ShouldErrLike, `position: cannot be negative`)
+				assert.Loosely(t, ValidateGitilesCommit(commit), should.ErrLike(`position: cannot be negative`))
 			})
 		})
 	})
-	Convey(`ValidateGerritChange`, t, func() {
+	ftt.Run(`ValidateGerritChange`, t, func(t *ftt.Test) {
 		change := &pb.GerritChange{
 			Host:     "chromium-review.googlesource.com",
 			Project:  "chromium/src",
 			Change:   12345,
 			Patchset: 1,
 		}
-		Convey(`Valid`, func() {
-			So(ValidateGerritChange(change), ShouldBeNil)
+		t.Run(`Valid`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateGerritChange(change), should.BeNil)
 		})
-		Convey(`Nil`, func() {
-			So(ValidateGerritChange(nil), ShouldErrLike, `unspecified`)
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateGerritChange(nil), should.ErrLike(`unspecified`))
 		})
-		Convey(`Host`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Host`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				change.Host = ""
-				So(ValidateGerritChange(change), ShouldErrLike, `host: unspecified`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`host: unspecified`))
 			})
-			Convey(`Invalid format`, func() {
+			t.Run(`Invalid format`, func(t *ftt.Test) {
 				change.Host = "https://somehost.com"
-				So(ValidateGerritChange(change), ShouldErrLike, `host: does not match`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`host: does not match`))
 			})
-			Convey(`Too long`, func() {
+			t.Run(`Too long`, func(t *ftt.Test) {
 				change.Host = strings.Repeat("a", hostnameMaxLength+1)
-				So(ValidateGerritChange(change), ShouldErrLike, `host: exceeds `, ` characters`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`host: exceeds `))
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(` characters`))
 			})
 		})
-		Convey(`Project`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Project`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				change.Project = ""
-				So(ValidateGerritChange(change), ShouldErrLike, `project: unspecified`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`project: unspecified`))
 			})
-			Convey(`Too long`, func() {
+			t.Run(`Too long`, func(t *ftt.Test) {
 				change.Project = strings.Repeat("a", 256)
-				So(ValidateGerritChange(change), ShouldErrLike, `project: exceeds 255 characters`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`project: exceeds 255 characters`))
 			})
 		})
-		Convey(`Change`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Change`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				change.Change = 0
-				So(ValidateGerritChange(change), ShouldErrLike, `change: unspecified`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`change: unspecified`))
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				change.Change = -1
-				So(ValidateGerritChange(change), ShouldErrLike, `change: cannot be negative`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`change: cannot be negative`))
 			})
 		})
-		Convey(`Patchset`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Patchset`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				change.Patchset = 0
-				So(ValidateGerritChange(change), ShouldErrLike, `patchset: unspecified`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`patchset: unspecified`))
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				change.Patchset = -1
-				So(ValidateGerritChange(change), ShouldErrLike, `patchset: cannot be negative`)
+				assert.Loosely(t, ValidateGerritChange(change), should.ErrLike(`patchset: cannot be negative`))
 			})
 		})
 	})
 
-	Convey("ValidateInstruction", t, func() {
+	ftt.Run("ValidateInstruction", t, func(t *ftt.Test) {
 		instructions := &pb.Instructions{
 			Instructions: []*pb.Instruction{
 				{
@@ -228,61 +231,61 @@ func TestValidate(t *testing.T) {
 				},
 			},
 		}
-		Convey("Valid instructions", func() {
-			So(ValidateInstructions(instructions), ShouldBeNil)
+		t.Run("Valid instructions", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateInstructions(instructions), should.BeNil)
 		})
-		Convey("Instructions can be nil", func() {
-			So(ValidateInstructions(nil), ShouldBeNil)
+		t.Run("Instructions can be nil", func(t *ftt.Test) {
+			assert.Loosely(t, ValidateInstructions(nil), should.BeNil)
 		})
-		Convey("Instructions too big", func() {
+		t.Run("Instructions too big", func(t *ftt.Test) {
 			instructions.Instructions[0].Id = strings.Repeat("a", 2*1024*1024)
-			So(ValidateInstructions(instructions), ShouldErrLike, "exceeds 1048576 bytes")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("exceeds 1048576 bytes"))
 		})
-		Convey("No ID", func() {
+		t.Run("No ID", func(t *ftt.Test) {
 			instructions.Instructions[0].Id = ""
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: id: unspecified")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: id: unspecified"))
 		})
-		Convey("ID does not match", func() {
+		t.Run("ID does not match", func(t *ftt.Test) {
 			instructions.Instructions[0].Id = "InstructionWithUpperCase"
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: id: does not match")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: id: does not match"))
 		})
-		Convey("Duplicate ID", func() {
+		t.Run("Duplicate ID", func(t *ftt.Test) {
 			instructions.Instructions[0].Id = "step_instruction2"
-			So(ValidateInstructions(instructions), ShouldErrLike, `instructions[1]: id: "step_instruction2" is re-used at index 0`)
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike(`instructions[1]: id: "step_instruction2" is re-used at index 0`))
 		})
-		Convey("No Type", func() {
+		t.Run("No Type", func(t *ftt.Test) {
 			instructions.Instructions[0].Type = pb.InstructionType_INSTRUCTION_TYPE_UNSPECIFIED
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: type: unspecified")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: type: unspecified"))
 		})
-		Convey("No descriptive name", func() {
+		t.Run("No descriptive name", func(t *ftt.Test) {
 			instructions.Instructions[0].DescriptiveName = ""
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: descriptive_name: unspecified")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: descriptive_name: unspecified"))
 		})
-		Convey("Descriptive name too long", func() {
+		t.Run("Descriptive name too long", func(t *ftt.Test) {
 			instructions.Instructions[0].DescriptiveName = strings.Repeat("a", 101)
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: descriptive_name: exceeds 100 characters")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: descriptive_name: exceeds 100 characters"))
 		})
-		Convey("Empty target", func() {
+		t.Run("Empty target", func(t *ftt.Test) {
 			instructions.Instructions[0].TargetedInstructions[0].Targets = []pb.InstructionTarget{}
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: targeted_instructions[0]: targets: empty")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: targeted_instructions[0]: targets: empty"))
 		})
-		Convey("Unspecified target", func() {
+		t.Run("Unspecified target", func(t *ftt.Test) {
 			instructions.Instructions[0].TargetedInstructions[0].Targets = []pb.InstructionTarget{
 				pb.InstructionTarget_INSTRUCTION_TARGET_UNSPECIFIED,
 			}
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[0]: targeted_instructions[0]: targets[0]: unspecified")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[0]: targeted_instructions[0]: targets[0]: unspecified"))
 		})
-		Convey("Duplicated target", func() {
+		t.Run("Duplicated target", func(t *ftt.Test) {
 			instructions.Instructions[2].TargetedInstructions[0].Targets = []pb.InstructionTarget{
 				pb.InstructionTarget_REMOTE,
 			}
-			So(ValidateInstructions(instructions), ShouldErrLike, `instructions[2]: targeted_instructions[1]: targets[0]: duplicated target "REMOTE"`)
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike(`instructions[2]: targeted_instructions[1]: targets[0]: duplicated target "REMOTE"`))
 		})
-		Convey("Content exceeds size limit", func() {
+		t.Run("Content exceeds size limit", func(t *ftt.Test) {
 			instructions.Instructions[2].TargetedInstructions[0].Content = strings.Repeat("a", 120000)
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: content: exceeds 10240 characters")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[2]: targeted_instructions[0]: content: exceeds 10240 characters"))
 		})
-		Convey("More than 1 dependency", func() {
+		t.Run("More than 1 dependency", func(t *ftt.Test) {
 			instructions.Instructions[2].TargetedInstructions[0].Dependencies = []*pb.InstructionDependency{
 				{
 					InvocationId:  "inv1",
@@ -293,16 +296,16 @@ func TestValidate(t *testing.T) {
 					InstructionId: "instruction",
 				},
 			}
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: dependencies: more than 1")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[2]: targeted_instructions[0]: dependencies: more than 1"))
 		})
-		Convey("Dependency invocation id invalid", func() {
+		t.Run("Dependency invocation id invalid", func(t *ftt.Test) {
 			instructions.Instructions[2].TargetedInstructions[0].Dependencies = []*pb.InstructionDependency{
 				{
 					InvocationId:  strings.Repeat("a", 101),
 					InstructionId: "instruction_id",
 				},
 			}
-			So(ValidateInstructions(instructions), ShouldErrLike, "instructions[2]: targeted_instructions[0]: dependencies: [0]: invocation_id")
+			assert.Loosely(t, ValidateInstructions(instructions), should.ErrLike("instructions[2]: targeted_instructions[0]: dependencies: [0]: invocation_id"))
 		})
 	})
 }

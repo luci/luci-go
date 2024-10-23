@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"testing"
 	"time"
 
 	"google.golang.org/grpc"
@@ -27,13 +28,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/prpc"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func reportTestResults(ctx context.Context, host, authToken string, in *sinkpb.ReportTestResultsRequest) (*sinkpb.ReportTestResultsResponse, error) {
@@ -62,9 +64,11 @@ func testServerConfig(addr, tk string) ServerConfig {
 	}
 }
 
-func testArtifactWithFile(writer func(f *os.File)) *sinkpb.Artifact {
+func testArtifactWithFile(t testing.TB, writer func(f *os.File)) *sinkpb.Artifact {
+	t.Helper()
+
 	f, err := ioutil.TempFile("", "test-artifact")
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	defer f.Close()
 	writer(f)
 
@@ -89,14 +93,18 @@ func testArtifactWithGcs(gcsURI string) *sinkpb.Artifact {
 }
 
 // validTestResult returns a valid sinkpb.TestResult sample message.
-func validTestResult() (*sinkpb.TestResult, func()) {
+func validTestResult(t testing.TB) *sinkpb.TestResult {
+	t.Helper()
 	now := testclock.TestRecentTimeUTC
 	st := timestamppb.New(now.Add(-2 * time.Minute))
-	artf := testArtifactWithFile(func(f *os.File) {
+	artf := testArtifactWithFile(t, func(f *os.File) {
+		t.Helper()
 		_, err := f.WriteString("a sample artifact")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	})
-	cleanup := func() { os.Remove(artf.GetFilePath()) }
+	t.Cleanup(func() {
+		os.Remove(artf.GetFilePath())
+	})
 
 	return &sinkpb.TestResult{
 		TestId:      "this is testID",
@@ -135,7 +143,7 @@ func validTestResult() (*sinkpb.TestResult, func()) {
 			},
 			TruncatedErrorsCount: 0,
 		},
-	}, cleanup
+	}
 }
 
 type mockRecorder struct {

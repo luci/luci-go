@@ -17,22 +17,23 @@ package pbutil
 import (
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestValidateVariant(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateVariant`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`TestValidateVariant`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			err := ValidateVariant(Variant())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`invalid`, func() {
+		t.Run(`invalid`, func(t *ftt.Test) {
 			err := ValidateVariant(Variant("1", "b"))
-			So(err, ShouldErrLike, `key: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`key: does not match`))
 		})
 	})
 }
@@ -40,55 +41,55 @@ func TestValidateVariant(t *testing.T) {
 func TestVariantUtils(t *testing.T) {
 	t.Parallel()
 
-	Convey(`Conversion to pair strings works`, t, func() {
+	ftt.Run(`Conversion to pair strings works`, t, func(t *ftt.Test) {
 		v := Variant(
 			"key/with/part/k3", "v3",
 			"k1", "v1",
 			"key/k2", "v2",
 		)
-		So(VariantToStrings(v), ShouldResemble, []string{
+		assert.Loosely(t, VariantToStrings(v), should.Resemble([]string{
 			"k1:v1", "key/k2:v2", "key/with/part/k3:v3",
-		})
+		}))
 	})
 
-	Convey(`Conversion from pair strings works`, t, func() {
-		Convey(`for valid pairs`, func() {
+	ftt.Run(`Conversion from pair strings works`, t, func(t *ftt.Test) {
+		t.Run(`for valid pairs`, func(t *ftt.Test) {
 			vr, err := VariantFromStrings([]string{"k1:v1", "key/k2:v2", "key/with/part/k3:v3"})
-			So(err, ShouldBeNil)
-			So(vr, ShouldResembleProto, Variant(
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, vr, should.Resemble(Variant(
 				"k1", "v1",
 				"key/k2", "v2",
 				"key/with/part/k3", "v3",
-			))
+			)))
 		})
 
-		Convey(`for empty list returns nil`, func() {
+		t.Run(`for empty list returns nil`, func(t *ftt.Test) {
 			vr, err := VariantFromStrings([]string{})
-			So(vr, ShouldBeNil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, vr, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 
-	Convey(`Key sorting works`, t, func() {
+	ftt.Run(`Key sorting works`, t, func(t *ftt.Test) {
 		vr := Variant(
 			"k2", "v2",
 			"k3", "v3",
 			"k1", "v1",
 		)
-		So(SortedVariantKeys(vr), ShouldResemble, []string{"k1", "k2", "k3"})
+		assert.Loosely(t, SortedVariantKeys(vr), should.Resemble([]string{"k1", "k2", "k3"}))
 	})
 
-	Convey(`VariantToStringPairs`, t, func() {
+	ftt.Run(`VariantToStringPairs`, t, func(t *ftt.Test) {
 		pairs := []string{
 			"k1", "v1",
 			"k2", "v2",
 			"k3", "v3",
 		}
 		vr := Variant(pairs...)
-		So(VariantToStringPairs(vr), ShouldResemble, StringPairs(pairs...))
+		assert.Loosely(t, VariantToStringPairs(vr), should.Resemble(StringPairs(pairs...)))
 	})
 
-	Convey(`CombineVariant`, t, func() {
+	ftt.Run(`CombineVariant`, t, func(t *ftt.Test) {
 		baseVariant := Variant(
 			"key/with/part/k3", "v3",
 		)
@@ -103,10 +104,10 @@ func TestVariantUtils(t *testing.T) {
 			"k1", "v1",
 			"key/k2", "v2",
 		)
-		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
 	})
 
-	Convey(`CombineVariant with nil variant`, t, func() {
+	ftt.Run(`CombineVariant with nil variant`, t, func(t *ftt.Test) {
 		var baseVariant *pb.Variant
 		var additionalVariant *pb.Variant
 		var expectedVariant *pb.Variant
@@ -114,27 +115,27 @@ func TestVariantUtils(t *testing.T) {
 
 		// (nil, nil)
 		baseVariant, additionalVariant, expectedVariant = nil, nil, nil
-		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
 
 		// (variant, nil)
 		baseVariant, additionalVariant, expectedVariant = v1, nil, v1
-		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
 
 		// (nil, variant)
 		baseVariant, additionalVariant, expectedVariant = nil, v2, v2
-		So(CombineVariant(baseVariant, additionalVariant), ShouldResemble, expectedVariant)
+		assert.Loosely(t, CombineVariant(baseVariant, additionalVariant), should.Resemble(expectedVariant))
 	})
 }
 
 func TestVariantToJSON(t *testing.T) {
 	t.Parallel()
-	Convey(`VariantToJSON`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`VariantToJSON`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			result, err := VariantToJSON(nil)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, "{}")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal("{}"))
 		})
-		Convey(`non-empty`, func() {
+		t.Run(`non-empty`, func(t *ftt.Test) {
 			variant := &pb.Variant{
 				Def: map[string]string{
 					"builder":           "linux-rel",
@@ -143,8 +144,8 @@ func TestVariantToJSON(t *testing.T) {
 				},
 			}
 			result, err := VariantToJSON(variant)
-			So(err, ShouldBeNil)
-			So(result, ShouldEqual, `{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Equal(`{"builder":"linux-rel","os":"Ubuntu-18.04","pathological-case":"\u0000\u0001\n\r\f"}`))
 		})
 	})
 }

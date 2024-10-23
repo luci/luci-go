@@ -22,111 +22,111 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestNewServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("NewServer", t, func() {
+	ftt.Run("NewServer", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		cfg := testServerConfig(":42", "my_token")
 
-		Convey("succeeds", func() {
+		t.Run("succeeds", func(t *ftt.Test) {
 			srv, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(srv, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, srv, should.NotBeNil)
 		})
-		Convey("generates a random auth token, if missing", func() {
+		t.Run("generates a random auth token, if missing", func(t *ftt.Test) {
 			cfg.AuthToken = ""
 			srv, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(srv.cfg.AuthToken, ShouldNotEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, srv.cfg.AuthToken, should.NotEqual(""))
 		})
-		Convey("uses the default max leases, if missing or 0", func() {
+		t.Run("uses the default max leases, if missing or 0", func(t *ftt.Test) {
 			srv, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(srv.cfg.ArtChannelMaxLeases, ShouldEqual, DefaultArtChannelMaxLeases)
-			So(srv.cfg.TestResultChannelMaxLeases, ShouldEqual, DefaultTestResultChannelMaxLeases)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, srv.cfg.ArtChannelMaxLeases, should.Equal[uint](DefaultArtChannelMaxLeases))
+			assert.Loosely(t, srv.cfg.TestResultChannelMaxLeases, should.Equal[uint](DefaultTestResultChannelMaxLeases))
 		})
-		Convey("use the custom max leases, if specified", func() {
+		t.Run("use the custom max leases, if specified", func(t *ftt.Test) {
 			cfg.ArtChannelMaxLeases, cfg.TestResultChannelMaxLeases = 123, 456
 			srv, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(srv.cfg.ArtChannelMaxLeases, ShouldEqual, 123)
-			So(srv.cfg.TestResultChannelMaxLeases, ShouldEqual, 456)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, srv.cfg.ArtChannelMaxLeases, should.Equal[uint](123))
+			assert.Loosely(t, srv.cfg.TestResultChannelMaxLeases, should.Equal[uint](456))
 			testServerConfig("", "my_token")
 		})
-		Convey("with TestLocationBase", func() {
+		t.Run("with TestLocationBase", func(t *ftt.Test) {
 			// empty
 			cfg.TestLocationBase = ""
 			_, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// valid
 			cfg.TestLocationBase = "//base"
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// invalid - not starting with double slahes
 			cfg.TestLocationBase = "base"
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldErrLike, "TestLocationBase: doesn't start with //")
+			assert.Loosely(t, err, should.ErrLike("TestLocationBase: doesn't start with //"))
 		})
-		Convey("with BaseTags", func() {
+		t.Run("with BaseTags", func(t *ftt.Test) {
 			// empty
 			cfg.BaseTags = nil
 			_, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// valid - unique keys
 			cfg.BaseTags = pbutil.StringPairs("k1", "v1", "k2", "v2")
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// valid - duplicate keys
 			cfg.BaseTags = pbutil.StringPairs("k1", "v1", "k1", "v2")
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// valid - empty value
 			cfg.BaseTags = pbutil.StringPairs("k1", "")
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// invalid - empty key
 			cfg.BaseTags = pbutil.StringPairs("", "v1")
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldErrLike, "key: unspecified")
+			assert.Loosely(t, err, should.ErrLike("key: unspecified"))
 		})
-		Convey("with MaxBatchableArtifactSize", func() {
+		t.Run("with MaxBatchableArtifactSize", func(t *ftt.Test) {
 			// default
 			cfg.MaxBatchableArtifactSize = 0
 			s, err := NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(s.cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s.cfg.MaxBatchableArtifactSize, should.NotEqual(0))
 
 			// valid
 			cfg.MaxBatchableArtifactSize = 512 * 1024
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.MaxBatchableArtifactSize, should.NotEqual(0))
 
 			cfg.MaxBatchableArtifactSize = 10 * 1024 * 1024
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldBeNil)
-			So(cfg.MaxBatchableArtifactSize, ShouldNotEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, cfg.MaxBatchableArtifactSize, should.NotEqual(0))
 
 			// invalid - too big
 			cfg.MaxBatchableArtifactSize = 10*1024*1024 + 1
 			_, err = NewServer(ctx, cfg)
-			So(err, ShouldErrLike, "is greater than 10MiB")
+			assert.Loosely(t, err, should.ErrLike("is greater than 10MiB"))
 		})
 	})
 }
@@ -134,35 +134,35 @@ func TestNewServer(t *testing.T) {
 func TestServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("Server", t, func() {
+	ftt.Run("Server", t, func(t *ftt.Test) {
 		req := &sinkpb.ReportTestResultsRequest{}
 		ctx := context.Background()
 
 		srvCfg := testServerConfig("", "secret")
 		srv, err := NewServer(ctx, srvCfg)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("Start assigns a random port, if missing cfg.Address", func() {
-			So(srv.Config().Address, ShouldBeEmpty)
-			So(srv.Start(ctx), ShouldBeNil)
-			So(srv.Config().Address, ShouldNotBeEmpty)
+		t.Run("Start assigns a random port, if missing cfg.Address", func(t *ftt.Test) {
+			assert.Loosely(t, srv.Config().Address, should.BeEmpty)
+			assert.Loosely(t, srv.Start(ctx), should.BeNil)
+			assert.Loosely(t, srv.Config().Address, should.NotBeEmpty)
 		})
-		Convey("Start fails", func() {
-			So(srv.Start(ctx), ShouldBeNil)
+		t.Run("Start fails", func(t *ftt.Test) {
+			assert.Loosely(t, srv.Start(ctx), should.BeNil)
 
-			Convey("if called twice", func() {
-				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
+			t.Run("if called twice", func(t *ftt.Test) {
+				assert.Loosely(t, srv.Start(ctx), should.ErrLike("cannot call Start twice"))
 			})
 
-			Convey("after being closed", func() {
-				So(srv.Close(ctx), ShouldBeNil)
-				So(srv.Start(ctx), ShouldErrLike, "cannot call Start twice")
+			t.Run("after being closed", func(t *ftt.Test) {
+				assert.Loosely(t, srv.Close(ctx), should.BeNil)
+				assert.Loosely(t, srv.Start(ctx), should.ErrLike("cannot call Start twice"))
 			})
 		})
 
-		Convey("Close closes the HTTP server", func() {
-			So(srv.Start(ctx), ShouldBeNil)
-			So(srv.Close(ctx), ShouldBeNil)
+		t.Run("Close closes the HTTP server", func(t *ftt.Test) {
+			assert.Loosely(t, srv.Start(ctx), should.BeNil)
+			assert.Loosely(t, srv.Close(ctx), should.BeNil)
 
 			_, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
 			// The error could be a connection error or write-error.
@@ -171,14 +171,14 @@ func TestServer(t *testing.T) {
 			//
 			// The error messages could be different by OS, and this test simply checks
 			// whether err != nil.
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Close fails before Start being called", func() {
-			So(srv.Close(ctx), ShouldErrLike, ErrCloseBeforeStart)
+		t.Run("Close fails before Start being called", func(t *ftt.Test) {
+			assert.Loosely(t, srv.Close(ctx), should.ErrLike(ErrCloseBeforeStart))
 		})
 
-		Convey("Shutdown closes Done", func() {
+		t.Run("Shutdown closes Done", func(t *ftt.Test) {
 			isClosed := func() bool {
 				select {
 				case <-srv.Done():
@@ -187,23 +187,23 @@ func TestServer(t *testing.T) {
 					return false
 				}
 			}
-			So(srv.Start(ctx), ShouldBeNil)
+			assert.Loosely(t, srv.Start(ctx), should.BeNil)
 
 			// wait until the server is up.
 			_, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
-			So(isClosed(), ShouldBeFalse)
-			So(srv.Shutdown(ctx), ShouldBeNil)
-			So(isClosed(), ShouldBeTrue)
+			assert.Loosely(t, isClosed(), should.BeFalse)
+			assert.Loosely(t, srv.Shutdown(ctx), should.BeNil)
+			assert.Loosely(t, isClosed(), should.BeTrue)
 		})
 
-		Convey("Run", func() {
+		t.Run("Run", func(t *ftt.Test) {
 			handlerErr := make(chan error, 1)
 			runErr := make(chan error)
 			expected := errors.New("an error-1")
 
-			Convey("succeeds", func() {
+			t.Run("succeeds", func(t *ftt.Test) {
 				// launch a go routine with Run
 				go func() {
 					runErr <- Run(ctx, srvCfg, func(ctx context.Context, cfg ServerConfig) error {
@@ -214,26 +214,26 @@ func TestServer(t *testing.T) {
 				// finish the callback and verify that srv.Run returned what the callback
 				// returned.
 				handlerErr <- expected
-				So(<-runErr, ShouldEqual, expected)
+				assert.Loosely(t, <-runErr, should.Equal(expected))
 			})
 
-			Convey("serves requests", func() {
-				So(srv.Start(ctx), ShouldBeNil)
+			t.Run("serves requests", func(t *ftt.Test) {
+				assert.Loosely(t, srv.Start(ctx), should.BeNil)
 
-				Convey("with 200 OK", func() {
+				t.Run("with 200 OK", func(t *ftt.Test) {
 					res, err := reportTestResults(ctx, srv.Config().Address, "secret", req)
-					So(err, ShouldBeNil)
-					So(res, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, res, should.NotBeNil)
 				})
 
-				Convey("with 401 Unauthorized if the auth_token missing", func() {
+				t.Run("with 401 Unauthorized if the auth_token missing", func(t *ftt.Test) {
 					_, err := reportTestResults(ctx, srv.Config().Address, "", req)
-					So(status.Code(err), ShouldEqual, codes.Unauthenticated)
+					assert.Loosely(t, status.Code(err), should.Equal(codes.Unauthenticated))
 				})
 
-				Convey("with 403 Forbidden if auth_token mismatched", func() {
+				t.Run("with 403 Forbidden if auth_token mismatched", func(t *ftt.Test) {
 					_, err := reportTestResults(ctx, srv.Config().Address, "not-a-secret", req)
-					So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+					assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 				})
 			})
 		})
@@ -243,16 +243,16 @@ func TestServer(t *testing.T) {
 func TestServerExport(t *testing.T) {
 	t.Parallel()
 
-	Convey("Export returns the configured address and auth_token", t, func() {
+	ftt.Run("Export returns the configured address and auth_token", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		srv, err := NewServer(ctx, testServerConfig(":42", "hello"))
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
-		So(sink, ShouldNotBeNil)
-		So(sink, ShouldNotBeNil)
-		So(sink.Address, ShouldEqual, ":42")
-		So(sink.AuthToken, ShouldEqual, "hello")
+		assert.Loosely(t, sink, should.NotBeNil)
+		assert.Loosely(t, sink, should.NotBeNil)
+		assert.Loosely(t, sink.Address, should.Equal(":42"))
+		assert.Loosely(t, sink.AuthToken, should.Equal("hello"))
 	})
 }

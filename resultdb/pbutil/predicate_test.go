@@ -17,46 +17,46 @@ package pbutil
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateTestObjectPredicate(t *testing.T) {
-	Convey(`TestValidateTestObjectPredicate`, t, func() {
-		Convey(`Empty`, func() {
+	ftt.Run(`TestValidateTestObjectPredicate`, t, func(t *ftt.Test) {
+		t.Run(`Empty`, func(t *ftt.Test) {
 			err := validateTestObjectPredicate(&pb.TestResultPredicate{})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`TestID`, func() {
+		t.Run(`TestID`, func(t *ftt.Test) {
 			validate := func(TestIdRegexp string) error {
 				return validateTestObjectPredicate(&pb.TestResultPredicate{
 					TestIdRegexp: TestIdRegexp,
 				})
 			}
 
-			Convey(`empty`, func() {
-				So(validate(""), ShouldBeNil)
+			t.Run(`empty`, func(t *ftt.Test) {
+				assert.Loosely(t, validate(""), should.BeNil)
 			})
 
-			Convey(`valid`, func() {
-				So(validate("A.+"), ShouldBeNil)
+			t.Run(`valid`, func(t *ftt.Test) {
+				assert.Loosely(t, validate("A.+"), should.BeNil)
 			})
 
-			Convey(`invalid`, func() {
-				So(validate(")"), ShouldErrLike, "test_id_regexp: error parsing regex")
+			t.Run(`invalid`, func(t *ftt.Test) {
+				assert.Loosely(t, validate(")"), should.ErrLike("test_id_regexp: error parsing regex"))
 			})
-			Convey(`^`, func() {
-				So(validate("^a"), ShouldErrLike, "test_id_regexp: must not start with ^")
+			t.Run(`^`, func(t *ftt.Test) {
+				assert.Loosely(t, validate("^a"), should.ErrLike("test_id_regexp: must not start with ^"))
 			})
-			Convey(`$`, func() {
-				So(validate("a$"), ShouldErrLike, "test_id_regexp: must not end with $")
+			t.Run(`$`, func(t *ftt.Test) {
+				assert.Loosely(t, validate("a$"), should.ErrLike("test_id_regexp: must not end with $"))
 			})
 		})
 
-		Convey(`Test variant`, func() {
+		t.Run(`Test variant`, func(t *ftt.Test) {
 			validVariant := Variant("a", "b")
 			invalidVariant := Variant("", "")
 
@@ -66,39 +66,39 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 				})
 			}
 
-			Convey(`Equals`, func() {
-				Convey(`Valid`, func() {
+			t.Run(`Equals`, func(t *ftt.Test) {
+				t.Run(`Valid`, func(t *ftt.Test) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Equals{Equals: validVariant},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Equals{Equals: invalidVariant},
 					})
-					So(err, ShouldErrLike, `variant: equals: "":"": key: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`variant: equals: "":"": key: unspecified`))
 				})
 			})
 
-			Convey(`Contains`, func() {
-				Convey(`Valid`, func() {
+			t.Run(`Contains`, func(t *ftt.Test) {
+				t.Run(`Valid`, func(t *ftt.Test) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Contains{Contains: validVariant},
 					})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
-				Convey(`Invalid`, func() {
+				t.Run(`Invalid`, func(t *ftt.Test) {
 					err := validate(&pb.VariantPredicate{
 						Predicate: &pb.VariantPredicate_Contains{Contains: invalidVariant},
 					})
-					So(err, ShouldErrLike, `variant: contains: "":"": key: unspecified`)
+					assert.Loosely(t, err, should.ErrLike(`variant: contains: "":"": key: unspecified`))
 				})
 			})
 
-			Convey(`Unspecified`, func() {
+			t.Run(`Unspecified`, func(t *ftt.Test) {
 				err := validate(&pb.VariantPredicate{})
-				So(err, ShouldErrLike, `variant: unspecified`)
+				assert.Loosely(t, err, should.ErrLike(`variant: unspecified`))
 			})
 		})
 	})
@@ -106,10 +106,10 @@ func TestValidateTestObjectPredicate(t *testing.T) {
 
 func TestValidateTestResultPredicate(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateTestResultPredicate`, t, func() {
-		Convey(`Expectancy and ExcludeExonerated`, func() {
+	ftt.Run(`ValidateTestResultPredicate`, t, func(t *ftt.Test) {
+		t.Run(`Expectancy and ExcludeExonerated`, func(t *ftt.Test) {
 			err := ValidateTestResultPredicate(&pb.TestResultPredicate{ExcludeExonerated: true})
-			So(err, ShouldErrLike, "mutually exclusive")
+			assert.Loosely(t, err, should.ErrLike("mutually exclusive"))
 		})
 	})
 }

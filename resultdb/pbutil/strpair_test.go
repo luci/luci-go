@@ -19,104 +19,104 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"go.chromium.org/luci/common/data/strpair"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestStringPairs(t *testing.T) {
 	t.Parallel()
-	Convey(`Works`, t, func() {
-		So(StringPairs("k1", "v1", "k2", "v2"), ShouldResemble, []*pb.StringPair{
+	ftt.Run(`Works`, t, func(t *ftt.Test) {
+		assert.Loosely(t, StringPairs("k1", "v1", "k2", "v2"), should.Resemble([]*pb.StringPair{
 			{Key: "k1", Value: "v1"},
 			{Key: "k2", Value: "v2"},
-		})
+		}))
 
-		Convey(`and fails if provided with incomplete pairs`, func() {
+		t.Run(`and fails if provided with incomplete pairs`, func(t *ftt.Test) {
 			tokens := []string{"k1", "v1", "k2"}
-			So(func() { StringPairs(tokens...) }, ShouldPanicWith,
-				fmt.Sprintf("odd number of tokens in %q", tokens))
+			assert.Loosely(t, func() { StringPairs(tokens...) }, should.PanicLikeString(
+				fmt.Sprintf("odd number of tokens in %q", tokens)))
 		})
 
-		Convey(`when provided key:val string`, func() {
+		t.Run(`when provided key:val string`, func(t *ftt.Test) {
 			pair, err := StringPairFromString("key/k:v")
-			So(err, ShouldBeNil)
-			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "v"}))
 		})
 
-		Convey(`when provided multiline value string`, func() {
+		t.Run(`when provided multiline value string`, func(t *ftt.Test) {
 			pair, err := StringPairFromString("key/k:multiline\nstring\nvalue")
-			So(err, ShouldBeNil)
-			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "multiline\nstring\nvalue"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "multiline\nstring\nvalue"}))
 		})
 	})
-	Convey(`StringPairFromStringUnvalidated`, t, func() {
-		Convey(`valid key:val string`, func() {
+	ftt.Run(`StringPairFromStringUnvalidated`, t, func(t *ftt.Test) {
+		t.Run(`valid key:val string`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("key/k:v")
-			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: "v"})
+			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: "v"}))
 		})
 
-		Convey(`invalid string with no colon`, func() {
+		t.Run(`invalid string with no colon`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("key/k")
-			So(pair, ShouldResembleProto, &pb.StringPair{Key: "key/k", Value: ""})
+			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "key/k", Value: ""}))
 		})
 
-		Convey(`invalid chars in key`, func() {
+		t.Run(`invalid chars in key`, func(t *ftt.Test) {
 			pair := StringPairFromStringUnvalidated("##key/k:v")
-			So(pair, ShouldResembleProto, &pb.StringPair{Key: "##key/k", Value: "v"})
+			assert.Loosely(t, pair, should.Resemble(&pb.StringPair{Key: "##key/k", Value: "v"}))
 		})
 	})
 }
 
 func TestValidateStringPair(t *testing.T) {
 	t.Parallel()
-	Convey(`TestValidateStringPairs`, t, func() {
-		Convey(`empty`, func() {
+	ftt.Run(`TestValidateStringPairs`, t, func(t *ftt.Test) {
+		t.Run(`empty`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("", ""))
-			So(err, ShouldErrLike, `key: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`key: unspecified`))
 		})
 
-		Convey(`invalid key`, func() {
+		t.Run(`invalid key`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("1", ""))
-			So(err, ShouldErrLike, `key: does not match`)
+			assert.Loosely(t, err, should.ErrLike(`key: does not match`))
 		})
 
-		Convey(`long key`, func() {
+		t.Run(`long key`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair(strings.Repeat("a", 1000), ""))
-			So(err, ShouldErrLike, `key length must be less or equal to 64`)
+			assert.Loosely(t, err, should.ErrLike(`key length must be less or equal to 64`))
 		})
 
-		Convey(`long value`, func() {
+		t.Run(`long value`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", strings.Repeat("a", 1000)))
-			So(err, ShouldErrLike, `value length must be less or equal to 256`)
+			assert.Loosely(t, err, should.ErrLike(`value length must be less or equal to 256`))
 		})
 
-		Convey(`multiline value`, func() {
+		t.Run(`multiline value`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", "multi\nline\nvalue"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`valid`, func() {
+		t.Run(`valid`, func(t *ftt.Test) {
 			err := ValidateStringPair(StringPair("a", "b"))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
 
 func TestFromStrpairMap(t *testing.T) {
 	t.Parallel()
-	Convey(`FromStrpairMap`, t, func() {
+	ftt.Run(`FromStrpairMap`, t, func(t *ftt.Test) {
 		m := strpair.Map{}
 		m.Add("k1", "v1")
 		m.Add("k2", "v1")
 		m.Add("k2", "v2")
 
-		So(FromStrpairMap(m), ShouldResembleProto, StringPairs(
+		assert.Loosely(t, FromStrpairMap(m), should.Resemble(StringPairs(
 			"k1", "v1",
 			"k2", "v1",
 			"k2", "v2",
-		))
+		)))
 	})
 }

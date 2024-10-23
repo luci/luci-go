@@ -17,15 +17,15 @@ package pbutil
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateBigQueryExport(t *testing.T) {
-	Convey(`ValidateBigQueryExport`, t, func() {
-		Convey(`Valid, Empty TestResults`, func() {
+	ftt.Run(`ValidateBigQueryExport`, t, func(t *ftt.Test) {
+		t.Run(`Valid, Empty TestResults`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
@@ -34,43 +34,43 @@ func TestValidateBigQueryExport(t *testing.T) {
 					TestResults: &pb.BigQueryExport_TestResults{},
 				},
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Missing project`, func() {
+		t.Run(`Missing project`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Dataset: "dataset",
 				Table:   "table",
 			})
-			So(err, ShouldErrLike, `project: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 		})
 
-		Convey(`Missing dataset`, func() {
+		t.Run(`Missing dataset`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Table:   "table",
 			})
-			So(err, ShouldErrLike, `dataset: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`dataset: unspecified`))
 		})
 
-		Convey(`Missing table`, func() {
+		t.Run(`Missing table`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
 			})
-			So(err, ShouldErrLike, `table: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`table: unspecified`))
 		})
 
-		Convey(`Missing ResultType`, func() {
+		t.Run(`Missing ResultType`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
 				Table:   "table",
 			})
-			So(err, ShouldErrLike, `result_type: unspecified`)
+			assert.Loosely(t, err, should.ErrLike(`result_type: unspecified`))
 		})
 
-		Convey(`invalid test result predicate`, func() {
+		t.Run(`invalid test result predicate`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
@@ -83,10 +83,10 @@ func TestValidateBigQueryExport(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `test_results: predicate`)
+			assert.Loosely(t, err, should.ErrLike(`test_results: predicate`))
 		})
 
-		Convey(`invalid artifact predicate`, func() {
+		t.Run(`invalid artifact predicate`, func(t *ftt.Test) {
 			err := ValidateBigQueryExport(&pb.BigQueryExport{
 				Project: "project",
 				Dataset: "dataset",
@@ -101,7 +101,7 @@ func TestValidateBigQueryExport(t *testing.T) {
 					},
 				},
 			})
-			So(err, ShouldErrLike, `artifacts: predicate`)
+			assert.Loosely(t, err, should.ErrLike(`artifacts: predicate`))
 		})
 	})
 }

@@ -24,24 +24,24 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock/testclock"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateTestResult(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateTestResult`, t, func() {
-		tr, cancel := validTestResult()
-		defer cancel()
+	ftt.Run(`ValidateTestResult`, t, func(t *ftt.Test) {
+		tr := validTestResult(t)
 
-		Convey(`TestLocation`, func() {
+		t.Run(`TestLocation`, func(t *ftt.Test) {
 			tr.TestMetadata.Location.FileName = ""
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-			So(err, ShouldErrLike, "test_metadata: location: file_name: unspecified")
+			assert.Loosely(t, err, should.ErrLike("test_metadata: location: file_name: unspecified"))
 		})
 
-		Convey(`TestMetadata`, func() {
+		t.Run(`TestMetadata`, func(t *ftt.Test) {
 			tr.TestMetadata = &pb.TestMetadata{
 				Name: "name",
 				Location: &pb.TestLocation{
@@ -50,11 +50,11 @@ func TestValidateTestResult(t *testing.T) {
 				},
 			}
 			err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey(`Properties`, func() {
-			Convey(`Valid Properties`, func() {
+		t.Run(`Properties`, func(t *ftt.Test) {
+			t.Run(`Valid Properties`, func(t *ftt.Test) {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key_1": structpb.NewStringValue("value_1"),
@@ -66,17 +66,18 @@ func TestValidateTestResult(t *testing.T) {
 					},
 				}
 				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 
-			Convey(`Large Properties`, func() {
+			t.Run(`Large Properties`, func(t *ftt.Test) {
 				tr.Properties = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"key1": structpb.NewStringValue(strings.Repeat("1", pbutil.MaxSizeTestResultProperties)),
 					},
 				}
 				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-				So(err, ShouldErrLike, `properties: exceeds the maximum size of`, `bytes`)
+				assert.Loosely(t, err, should.ErrLike(`properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 		})
 	})
@@ -104,26 +105,26 @@ func TestValidateArtifacts(t *testing.T) {
 		"art1": {ContentType: "text/plain"},
 	}
 
-	Convey("Succeeds", t, func() {
-		Convey("with no artifact", func() {
-			So(validateArtifacts(nil), ShouldBeNil)
+	ftt.Run("Succeeds", t, func(t *ftt.Test) {
+		t.Run("with no artifact", func(t *ftt.Test) {
+			assert.Loosely(t, validateArtifacts(nil), should.BeNil)
 		})
 
-		Convey("with valid artifacts", func() {
-			So(validateArtifacts(validArts), ShouldBeNil)
+		t.Run("with valid artifacts", func(t *ftt.Test) {
+			assert.Loosely(t, validateArtifacts(validArts), should.BeNil)
 		})
 	})
 
-	Convey("Fails", t, func() {
+	ftt.Run("Fails", t, func(t *ftt.Test) {
 		expected := "body: one of file_path or contents or gcs_uri must be provided"
 
-		Convey("with invalid artifacts", func() {
-			So(validateArtifacts(invalidArts), ShouldErrLike, expected)
+		t.Run("with invalid artifacts", func(t *ftt.Test) {
+			assert.Loosely(t, validateArtifacts(invalidArts), should.ErrLike(expected))
 		})
 
-		Convey("with a mix of valid and invalid artifacts", func() {
+		t.Run("with a mix of valid and invalid artifacts", func(t *ftt.Test) {
 			invalidArts["art2"] = validArts["art2"]
-			So(validateArtifacts(invalidArts), ShouldErrLike, expected)
+			assert.Loosely(t, validateArtifacts(invalidArts), should.ErrLike(expected))
 		})
 	})
 }

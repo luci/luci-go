@@ -26,12 +26,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/validate"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 // validTestResult returns a valid TestResult sample.
@@ -79,40 +80,40 @@ func fieldDoesNotMatch(fieldName string, re *regexp.Regexp) string {
 func TestTestResultName(t *testing.T) {
 	t.Parallel()
 
-	Convey("ParseTestResultName", t, func() {
-		Convey("Parse", func() {
+	ftt.Run("ParseTestResultName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
 			invID, testID, resultID, err := ParseTestResultName(
 				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
-			So(err, ShouldBeNil)
-			So(invID, ShouldEqual, "a")
-			So(testID, ShouldEqual, "ninja://chrome/test:foo_tests/BarTest.DoBaz")
-			So(resultID, ShouldEqual, "result5")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invID, should.Equal("a"))
+			assert.Loosely(t, testID, should.Equal("ninja://chrome/test:foo_tests/BarTest.DoBaz"))
+			assert.Loosely(t, resultID, should.Equal("result5"))
 		})
 
-		Convey("Invalid", func() {
-			Convey(`has slashes`, func() {
+		t.Run("Invalid", func(t *ftt.Test) {
+			t.Run(`has slashes`, func(t *ftt.Test) {
 				_, _, _, err := ParseTestResultName(
 					"invocations/inv/tests/ninja://test/results/result1")
-				So(err, ShouldErrLike, validate.DoesNotMatchReErr(testResultNameRe))
+				assert.Loosely(t, err, should.ErrLike("does not match pattern"))
 			})
 
-			Convey(`bad unescape`, func() {
+			t.Run(`bad unescape`, func(t *ftt.Test) {
 				_, _, _, err := ParseTestResultName(
 					"invocations/a/tests/bad_hex_%gg/results/result1")
-				So(err, ShouldErrLike, "test id")
+				assert.Loosely(t, err, should.ErrLike("test id"))
 			})
 
-			Convey(`unescaped unprintable`, func() {
+			t.Run(`unescaped unprintable`, func(t *ftt.Test) {
 				_, _, _, err := ParseTestResultName(
 					"invocations/a/tests/unprintable_%07/results/result1")
-				So(err, ShouldErrLike, "non-printable rune")
+				assert.Loosely(t, err, should.ErrLike("non-printable rune"))
 			})
 		})
 
-		Convey("Format", func() {
-			So(TestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
-				ShouldEqual,
-				"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5")
+		t.Run("Format", func(t *ftt.Test) {
+			assert.Loosely(t, TestResultName("a", "ninja://chrome/test:foo_tests/BarTest.DoBaz", "result5"),
+				should.Equal(
+					"invocations/a/tests/ninja:%2F%2Fchrome%2Ftest:foo_tests%2FBarTest.DoBaz/results/result5"))
 		})
 	})
 }
@@ -124,219 +125,224 @@ func TestValidateTestResult(t *testing.T) {
 		return ValidateTestResult(now, result)
 	}
 
-	Convey("Succeeds", t, func() {
+	ftt.Run("Succeeds", t, func(t *ftt.Test) {
 		msg := validTestResult(now)
-		So(validateTR(msg), ShouldBeNil)
+		assert.Loosely(t, validateTR(msg), should.BeNil)
 
-		Convey("with unicode TestID", func() {
+		t.Run("with unicode TestID", func(t *ftt.Test) {
 			// Uses printable unicode character 'µ'.
 			msg.TestId = "TestVariousDeadlines/5µs"
-			So(ValidateTestID(msg.TestId), ShouldErrLike, nil)
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, ValidateTestID(msg.TestId), should.ErrLike(nil))
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with invalid Name", func() {
+		t.Run("with invalid Name", func(t *ftt.Test) {
 			// ValidateTestResult should skip validating TestResult.Name.
 			msg.Name = "this is not a valid name for TestResult.Name"
-			So(ValidateTestResultName(msg.Name), ShouldErrLike, validate.DoesNotMatchReErr(testResultNameRe))
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, ValidateTestResultName(msg.Name), should.ErrLike("does not match pattern"))
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with no variant", func() {
+		t.Run("with no variant", func(t *ftt.Test) {
 			msg.Variant = nil
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with valid summary", func() {
+		t.Run("with valid summary", func(t *ftt.Test) {
 			msg.SummaryHtml = strings.Repeat("1", maxLenSummaryHTML)
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with empty tags", func() {
+		t.Run("with empty tags", func(t *ftt.Test) {
 			msg.Tags = nil
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with nil start_time", func() {
+		t.Run("with nil start_time", func(t *ftt.Test) {
 			msg.StartTime = nil
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with nil duration", func() {
+		t.Run("with nil duration", func(t *ftt.Test) {
 			msg.Duration = nil
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with valid properties", func() {
+		t.Run("with valid properties", func(t *ftt.Test) {
 			msg.Properties = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue("value"),
 				},
 			}
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 
-		Convey("with skip reason", func() {
+		t.Run("with skip reason", func(t *ftt.Test) {
 			msg.Status = pb.TestStatus_SKIP
 			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			So(validateTR(msg), ShouldBeNil)
+			assert.Loosely(t, validateTR(msg), should.BeNil)
 		})
 	})
 
-	Convey("Fails", t, func() {
+	ftt.Run("Fails", t, func(t *ftt.Test) {
 		msg := validTestResult(now)
-		Convey("with nil", func() {
-			So(validateTR(nil), ShouldErrLike, validate.Unspecified())
+		t.Run("with nil", func(t *ftt.Test) {
+			assert.Loosely(t, validateTR(nil), should.ErrLike(validate.Unspecified()))
 		})
 
-		Convey("with empty TestID", func() {
+		t.Run("with empty TestID", func(t *ftt.Test) {
 			msg.TestId = ""
-			So(validateTR(msg), ShouldErrLike, fieldUnspecified("test_id"))
+			assert.Loosely(t, validateTR(msg), should.ErrLike(fieldUnspecified("test_id")))
 		})
 
-		Convey("with invalid TestID", func() {
-			badInputs := []string{
-				strings.Repeat("1", 512+1),
+		t.Run("with invalid TestID", func(t *ftt.Test) {
+			badInputs := []struct {
+				badID  string
+				errStr string
+			}{
+				// TestID is too long
+				{strings.Repeat("1", 512+1), "longer than 512 bytes"},
 				// [[:print:]] matches with [ -~] and [[:graph:]]
-				string(rune(7)),
-				string("cafe\u0301"), // UTF8 text that is not in normalization form C.
+				{string(rune(7)), "non-printable"},
+				// UTF8 text that is not in normalization form C.
+				{string("cafe\u0301"), "not in unicode normalized form C"},
 			}
-			for _, in := range badInputs {
-				msg.TestId = in
-				So(validateTR(msg), ShouldErrLike, "")
+			for _, tc := range badInputs {
+				msg.TestId = tc.badID
+				check.Loosely(t, validateTR(msg), should.ErrLike(tc.errStr))
 			}
 		})
 
-		Convey("with empty ResultID", func() {
+		t.Run("with empty ResultID", func(t *ftt.Test) {
 			msg.ResultId = ""
-			So(validateTR(msg), ShouldErrLike, fieldUnspecified("result_id"))
+			assert.Loosely(t, validateTR(msg), should.ErrLike(fieldUnspecified("result_id")))
 		})
 
-		Convey("with invalid ResultID", func() {
+		t.Run("with invalid ResultID", func(t *ftt.Test) {
 			badInputs := []string{
 				strings.Repeat("1", 32+1),
 				string(rune(7)),
 			}
 			for _, in := range badInputs {
 				msg.ResultId = in
-				So(validateTR(msg), ShouldErrLike, fieldDoesNotMatch("result_id", resultIDRe))
+				assert.Loosely(t, validateTR(msg), should.ErrLike(fieldDoesNotMatch("result_id", resultIDRe)))
 			}
 		})
 
-		Convey("with invalid Variant", func() {
+		t.Run("with invalid Variant", func(t *ftt.Test) {
 			badInputs := []*pb.Variant{
 				Variant("", ""),
 				Variant("", "val"),
 			}
 			for _, in := range badInputs {
 				msg.Variant = in
-				So(validateTR(msg), ShouldErrLike, fieldUnspecified("key"))
+				assert.Loosely(t, validateTR(msg), should.ErrLike(fieldUnspecified("key")))
 			}
 		})
 
-		Convey("with invalid Status", func() {
+		t.Run("with invalid Status", func(t *ftt.Test) {
 			msg.Status = pb.TestStatus(len(pb.TestStatus_name) + 1)
-			So(validateTR(msg), ShouldErrLike, "status: invalid value")
+			assert.Loosely(t, validateTR(msg), should.ErrLike("status: invalid value"))
 		})
 
-		Convey("with STATUS_UNSPECIFIED", func() {
+		t.Run("with STATUS_UNSPECIFIED", func(t *ftt.Test) {
 			msg.Status = pb.TestStatus_STATUS_UNSPECIFIED
-			So(validateTR(msg), ShouldErrLike, "status: cannot be STATUS_UNSPECIFIED")
+			assert.Loosely(t, validateTR(msg), should.ErrLike("status: cannot be STATUS_UNSPECIFIED"))
 		})
 
-		Convey("with skip reason but not skip status", func() {
+		t.Run("with skip reason but not skip status", func(t *ftt.Test) {
 			msg.Status = pb.TestStatus_ABORT
 			msg.SkipReason = pb.SkipReason_AUTOMATICALLY_DISABLED_FOR_FLAKINESS
-			So(validateTR(msg), ShouldErrLike, "skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP")
+			assert.Loosely(t, validateTR(msg), should.ErrLike("skip_reason: value must be zero (UNSPECIFIED) when status is not SKIP"))
 		})
 
-		Convey("with too big summary", func() {
+		t.Run("with too big summary", func(t *ftt.Test) {
 			msg.SummaryHtml = strings.Repeat("☕", maxLenSummaryHTML)
-			So(validateTR(msg), ShouldErrLike, "summary_html: exceeds the maximum size")
+			assert.Loosely(t, validateTR(msg), should.ErrLike("summary_html: exceeds the maximum size"))
 		})
 
-		Convey("with invalid StartTime and Duration", func() {
-			Convey("because start_time is in the future", func() {
+		t.Run("with invalid StartTime and Duration", func(t *ftt.Test) {
+			t.Run("because start_time is in the future", func(t *ftt.Test) {
 				future := timestamppb.New(now.Add(time.Hour))
 				msg.StartTime = future
-				So(validateTR(msg), ShouldErrLike, fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew))
+				assert.Loosely(t, validateTR(msg), should.ErrLike(fmt.Sprintf("start_time: cannot be > (now + %s)", clockSkew)))
 			})
 
-			Convey("because duration is < 0", func() {
+			t.Run("because duration is < 0", func(t *ftt.Test) {
 				msg.Duration = durationpb.New(-1 * time.Minute)
-				So(validateTR(msg), ShouldErrLike, "duration: is < 0")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("duration: is < 0"))
 			})
 
-			Convey("because (start_time + duration) is in the future", func() {
+			t.Run("because (start_time + duration) is in the future", func(t *ftt.Test) {
 				st := timestamppb.New(now.Add(-1 * time.Hour))
 				msg.StartTime = st
 				msg.Duration = durationpb.New(2 * time.Hour)
 				expected := fmt.Sprintf("start_time + duration: cannot be > (now + %s)", clockSkew)
-				So(validateTR(msg), ShouldErrLike, expected)
+				assert.Loosely(t, validateTR(msg), should.ErrLike(expected))
 			})
 		})
 
-		Convey("with invalid StringPairs", func() {
+		t.Run("with invalid StringPairs", func(t *ftt.Test) {
 			msg.Tags = StringPairs("", "")
-			So(validateTR(msg), ShouldErrLike, `"":"": key: unspecified`)
+			assert.Loosely(t, validateTR(msg), should.ErrLike(`"":"": key: unspecified`))
 		})
 
-		Convey("Test metadata", func() {
-			Convey("filename", func() {
-				Convey("unspecified", func() {
+		t.Run("Test metadata", func(t *ftt.Test) {
+			t.Run("filename", func(t *ftt.Test) {
+				t.Run("unspecified", func(t *ftt.Test) {
 					msg.TestMetadata.Location.FileName = ""
-					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: unspecified")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: file_name: unspecified"))
 				})
-				Convey("too long", func() {
+				t.Run("too long", func(t *ftt.Test) {
 					msg.TestMetadata.Location.FileName = "//" + strings.Repeat("super long", 100)
-					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: length exceeds 512")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: file_name: length exceeds 512"))
 				})
-				Convey("no double slashes", func() {
+				t.Run("no double slashes", func(t *ftt.Test) {
 					msg.TestMetadata.Location.FileName = "file_name"
-					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: doesn't start with //")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: file_name: doesn't start with //"))
 				})
-				Convey("back slash", func() {
+				t.Run("back slash", func(t *ftt.Test) {
 					msg.TestMetadata.Location.FileName = "//dir\\file"
-					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: has \\")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: file_name: has \\"))
 				})
-				Convey("trailing slash", func() {
+				t.Run("trailing slash", func(t *ftt.Test) {
 					msg.TestMetadata.Location.FileName = "//file_name/"
-					So(validateTR(msg), ShouldErrLike, "test_metadata: location: file_name: ends with /")
+					assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: file_name: ends with /"))
 				})
 			})
-			Convey("line", func() {
+			t.Run("line", func(t *ftt.Test) {
 				msg.TestMetadata.Location.Line = -1
-				So(validateTR(msg), ShouldErrLike, "test_metadata: location: line: must not be negative")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: line: must not be negative"))
 			})
-			Convey("repo", func() {
+			t.Run("repo", func(t *ftt.Test) {
 				msg.TestMetadata.Location.Repo = "https://chromium.googlesource.com/chromium/src.git"
-				So(validateTR(msg), ShouldErrLike, "test_metadata: location: repo: must not end with .git")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: must not end with .git"))
 			})
 
-			Convey("no location and no bug component", func() {
+			t.Run("no location and no bug component", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{Name: "name"}
-				So(validateTR(msg), ShouldBeNil)
+				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
-			Convey("location no repo", func() {
+			t.Run("location no repo", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					Location: &pb.TestLocation{
 						FileName: "//file_name",
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "test_metadata: location: repo: required")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("test_metadata: location: repo: required"))
 			})
 
-			Convey("nil bug system in bug component", func() {
+			t.Run("nil bug system in bug component", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
 						System: nil,
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "bug system is required for bug components")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("bug system is required for bug components"))
 			})
-			Convey("valid monorail bug component", func() {
+			t.Run("valid monorail bug component", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -348,9 +354,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldBeNil)
+				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
-			Convey("wrong size monorail bug component value", func() {
+			t.Run("wrong size monorail bug component value", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -362,9 +368,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "monorail.value: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("monorail.value: is invalid"))
 			})
-			Convey("invalid monorail bug component value", func() {
+			t.Run("invalid monorail bug component value", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -376,9 +382,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "monorail.value: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("monorail.value: is invalid"))
 			})
-			Convey("wrong size monorail bug component project", func() {
+			t.Run("wrong size monorail bug component project", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -390,9 +396,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("monorail.project: is invalid"))
 			})
-			Convey("using invalid characters in monorail bug component project", func() {
+			t.Run("using invalid characters in monorail bug component project", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -404,9 +410,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("monorail.project: is invalid"))
 			})
-			Convey("using only numbers in monorail bug component project", func() {
+			t.Run("using only numbers in monorail bug component project", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -418,9 +424,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "monorail.project: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("monorail.project: is invalid"))
 			})
-			Convey("valid buganizer component", func() {
+			t.Run("valid buganizer component", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -431,9 +437,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldBeNil)
+				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
-			Convey("invalid buganizer component id", func() {
+			t.Run("invalid buganizer component id", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Name: "name",
 					BugComponent: &pb.BugComponent{
@@ -444,9 +450,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "issue_tracker.component_id: is invalid")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("issue_tracker.component_id: is invalid"))
 			})
-			Convey("with too big properties", func() {
+			t.Run("with too big properties", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					PropertiesSchema: "package.message",
 					Properties: &structpb.Struct{
@@ -455,9 +461,9 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "properties: exceeds the maximum size")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("properties: exceeds the maximum size"))
 			})
-			Convey("no properties_schema with non-empty properties", func() {
+			t.Run("no properties_schema with non-empty properties", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -465,15 +471,15 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldErrLike, "properties_schema must be specified with non-empty properties")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("properties_schema must be specified with non-empty properties"))
 			})
-			Convey("invalid properties_schema", func() {
+			t.Run("invalid properties_schema", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					PropertiesSchema: "package",
 				}
-				So(validateTR(msg), ShouldErrLike, "properties_schema: does not match")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("properties_schema: does not match"))
 			})
-			Convey("valid properties_schema and non-empty properties", func() {
+			t.Run("valid properties_schema and non-empty properties", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
 					PropertiesSchema: "package.message",
 					Properties: &structpb.Struct{
@@ -482,24 +488,24 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				So(validateTR(msg), ShouldBeNil)
+				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
 		})
 
-		Convey("with too big properties", func() {
+		t.Run("with too big properties", func(t *ftt.Test) {
 			msg.Properties = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestResultProperties)),
 				},
 			}
-			So(validateTR(msg), ShouldErrLike, "properties: exceeds the maximum size")
+			assert.Loosely(t, validateTR(msg), should.ErrLike("properties: exceeds the maximum size"))
 		})
 
-		Convey("Validate failure reason", func() {
+		t.Run("Validate failure reason", func(t *ftt.Test) {
 			errorMessage1 := "error1"
 			errorMessage2 := "error2"
 			longErrorMessage := strings.Repeat("a very long error message", 100)
-			Convey("valid failure reason", func() {
+			t.Run("valid failure reason", func(t *ftt.Test) {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: errorMessage1,
 					Errors: []*pb.FailureReason_Error{
@@ -508,18 +514,18 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validateTR(msg), ShouldBeNil)
+				assert.Loosely(t, validateTR(msg), should.BeNil)
 			})
 
-			Convey("primary_error_message exceeds the maximum limit", func() {
+			t.Run("primary_error_message exceeds the maximum limit", func(t *ftt.Test) {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: longErrorMessage,
 				}
-				So(validateTR(msg), ShouldErrLike, "primary_error_message: "+
-					"exceeds the maximum")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("primary_error_message: "+
+					"exceeds the maximum"))
 			})
 
-			Convey("one of the error messages exceeds the maximum limit", func() {
+			t.Run("one of the error messages exceeds the maximum limit", func(t *ftt.Test) {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: errorMessage1,
 					Errors: []*pb.FailureReason_Error{
@@ -528,12 +534,12 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validateTR(msg), ShouldErrLike,
+				assert.Loosely(t, validateTR(msg), should.ErrLike(
 					"errors[1]: message: exceeds the maximum size of 1024 "+
-						"bytes")
+						"bytes"))
 			})
 
-			Convey("the first error doesn't match primary_error_message", func() {
+			t.Run("the first error doesn't match primary_error_message", func(t *ftt.Test) {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: errorMessage1,
 					Errors: []*pb.FailureReason_Error{
@@ -541,11 +547,11 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 0,
 				}
-				So(validateTR(msg), ShouldErrLike,
-					"errors[0]: message: must match primary_error_message")
+				assert.Loosely(t, validateTR(msg), should.ErrLike(
+					"errors[0]: message: must match primary_error_message"))
 			})
 
-			Convey("the total size of the errors list exceeds the limit", func() {
+			t.Run("the total size of the errors list exceeds the limit", func(t *ftt.Test) {
 				maxErrorMessage := strings.Repeat(".", 1024)
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: maxErrorMessage,
@@ -557,11 +563,11 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: 1,
 				}
-				So(validateTR(msg), ShouldErrLike,
-					"errors: exceeds the maximum total size of 3172 bytes")
+				assert.Loosely(t, validateTR(msg), should.ErrLike(
+					"errors: exceeds the maximum total size of 3172 bytes"))
 			})
 
-			Convey("invalid truncated error count", func() {
+			t.Run("invalid truncated error count", func(t *ftt.Test) {
 				msg.FailureReason = &pb.FailureReason{
 					PrimaryErrorMessage: errorMessage1,
 					Errors: []*pb.FailureReason_Error{
@@ -570,8 +576,8 @@ func TestValidateTestResult(t *testing.T) {
 					},
 					TruncatedErrorsCount: -1,
 				}
-				So(validateTR(msg), ShouldErrLike, "truncated_errors_count: "+
-					"must be non-negative")
+				assert.Loosely(t, validateTR(msg), should.ErrLike("truncated_errors_count: "+
+					"must be non-negative"))
 			})
 		})
 	})

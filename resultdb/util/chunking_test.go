@@ -15,111 +15,112 @@
 package util
 
 import (
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSplitToChunks(t *testing.T) {
-	Convey("chunk content", t, func() {
-		Convey("empty string, 0 chunk", func() {
+	ftt.Run("chunk content", t, func(t *ftt.Test) {
+		t.Run("empty string, 0 chunk", func(t *ftt.Test) {
 			content := []byte("")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(len(chunks), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(chunks), should.BeZero)
 		})
-		Convey("1 character, 1 chunk", func() {
+		t.Run("1 character, 1 chunk", func(t *ftt.Test) {
 			content := []byte("a")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"a"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"a"}))
 		})
-		Convey("maxSize character, 1 chunk", func() {
+		t.Run("maxSize character, 1 chunk", func(t *ftt.Test) {
 			content := []byte("0123456789")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"0123456789"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"0123456789"}))
 		})
-		Convey("No delimiter", func() {
+		t.Run("No delimiter", func(t *ftt.Test) {
 			content := []byte("0123456789abcdefghij")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"0123456789", "abcdefghij"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"0123456789", "abcdefghij"}))
 		})
-		Convey("No delimiter 1", func() {
+		t.Run("No delimiter 1", func(t *ftt.Test) {
 			content := []byte("0123456789abcdefghij0")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"0123456789", "abcdefghij", "0"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"0123456789", "abcdefghij", "0"}))
 		})
-		Convey("No delimiter 2", func() {
+		t.Run("No delimiter 2", func(t *ftt.Test) {
 			content := []byte("0123456789abcdefghij0123456789a")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"0123456789", "abcdefghij", "0123456789", "a"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"0123456789", "abcdefghij", "0123456789", "a"}))
 		})
-		Convey("Delimiter \r\n", func() {
+		t.Run("Delimiter \r\n", func(t *ftt.Test) {
 			content := []byte("012\n34\r\n789a bcd\r\n")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012\n34\r\n", "789a bcd\r\n"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012\n34\r\n", "789a bcd\r\n"}))
 		})
-		Convey("Delimiter \r\n lookback window size 1", func() {
+		t.Run("Delimiter \r\n lookback window size 1", func(t *ftt.Test) {
 			content := []byte("012\n34\r\n789a bcd\r\n")
 			chunks, err := SplitToChunks(content, 10, 1)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012\n34\r\n78", "9a bcd\r\n"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012\n34\r\n78", "9a bcd\r\n"}))
 		})
-		Convey("Delimiter \n or \r", func() {
+		t.Run("Delimiter \n or \r", func(t *ftt.Test) {
 			content := []byte("012\r 345\n6 789 ab\n\ncdef\ng\rhij012")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012\r 345\n", "6 789 ab\n\n", "cdef\ng\r", "hij012"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012\r 345\n", "6 789 ab\n\n", "cdef\ng\r", "hij012"}))
 		})
-		Convey("Delimiter \n or \r lookback window size 1", func() {
+		t.Run("Delimiter \n or \r lookback window size 1", func(t *ftt.Test) {
 			content := []byte("012\r 345\n6 789 ab\n\ncdef\ng\rhij012")
 			chunks, err := SplitToChunks(content, 10, 1)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012\r 345\n6", " 789 ab\n\nc", "def\ng\rhij0", "12"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012\r 345\n6", " 789 ab\n\nc", "def\ng\rhij0", "12"}))
 		})
-		Convey("Whitespace", func() {
+		t.Run("Whitespace", func(t *ftt.Test) {
 			content := []byte("012 345\t6789a\tbc dfe gh ij 01234\t56 789acbdefghij")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012 345\t", "6789a\tbc ", "dfe gh ij ", "01234\t56 ", "789acbdefg", "hij"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012 345\t", "6789a\tbc ", "dfe gh ij ", "01234\t56 ", "789acbdefg", "hij"}))
 		})
-		Convey("Whitespace lookback window size 1", func() {
+		t.Run("Whitespace lookback window size 1", func(t *ftt.Test) {
 			content := []byte("012 345\t6789a\tbc dfe gh ij 01234\t56 789abcdefghij")
 			chunks, err := SplitToChunks(content, 10, 1)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"012 345\t67", "89a\tbc dfe", " gh ij 012", "34\t56 789a", "bcdefghij"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"012 345\t67", "89a\tbc dfe", " gh ij 012", "34\t56 789a", "bcdefghij"}))
 		})
-		Convey("Invalid unicode character", func() {
+		t.Run("Invalid unicode character", func(t *ftt.Test) {
 			content := []byte{0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x88}
 			_, err := SplitToChunks(content, 10, 0)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
-		Convey("Should not break unicode character", func() {
+		t.Run("Should not break unicode character", func(t *ftt.Test) {
 			// € sign is 3 bytes 0xE2, 0x82, 0xAC in UTF-8.
 			content := []byte{0xE2, 0x82, 0xAC, 0xE2, 0x82, 0xAC, 0xE2, 0x82, 0xAC, 0xE2, 0x82, 0xAC}
 			chunks, err := SplitToChunks(content, 10, 0)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"€€€", "€"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"€€€", "€"}))
 		})
-		Convey("Should not break unicode character 1", func() {
+		t.Run("Should not break unicode character 1", func(t *ftt.Test) {
 			// €  is 3 bytes 0xE2, 0x82, 0xAC in UTF-8.
 			// 𐍈 is 4 bytes: 0xF0, 0x90, 0x8D, 0x88.
 			// Ç is 2 bytes: 0xC3 0x87
 			content := []byte{0xF0, 0x90, 0x8D, 0x88, 0xF0, 0x90, 0x8D, 0x88, 0xE2, 0x82, 0xAC, 0xF0, 0x90, 0x8D, 0x88, 0xC3, 0x87, 0xC3, 0x87}
 			chunks, err := SplitToChunks(content, 10, 0)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"𐍈𐍈", "€𐍈Ç", "Ç"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"𐍈𐍈", "€𐍈Ç", "Ç"}))
 		})
-		Convey("Unicode and whitespace and linebreak", func() {
+		t.Run("Unicode and whitespace and linebreak", func(t *ftt.Test) {
 			content := []byte("𐍈 𐍈Ç ÇÇ Ç Ç ÇÇa\r\nbcde")
 			chunks, err := SplitToChunks(content, 10, 10)
-			So(err, ShouldBeNil)
-			So(chunks, ShouldResemble, []string{"𐍈 ", "𐍈Ç ", "ÇÇ Ç ", "Ç ÇÇa\r\n", "bcde"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, chunks, should.Resemble([]string{"𐍈 ", "𐍈Ç ", "ÇÇ Ç ", "Ç ÇÇa\r\n", "bcde"}))
 		})
 	})
 }

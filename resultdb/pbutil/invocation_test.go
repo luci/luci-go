@@ -20,28 +20,28 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInvocationName(t *testing.T) {
 	t.Parallel()
-	Convey("ParseInvocationName", t, func() {
-		Convey("Parse", func() {
+	ftt.Run("ParseInvocationName", t, func(t *ftt.Test) {
+		t.Run("Parse", func(t *ftt.Test) {
 			id, err := ParseInvocationName("invocations/a")
-			So(err, ShouldBeNil)
-			So(id, ShouldEqual, "a")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, id, should.Equal("a"))
 		})
 
-		Convey("Invalid", func() {
+		t.Run("Invalid", func(t *ftt.Test) {
 			_, err := ParseInvocationName("invocations/-")
-			So(err, ShouldErrLike, `does not match`)
+			assert.Loosely(t, err, should.ErrLike(`does not match`))
 		})
 
-		Convey("Format", func() {
-			So(InvocationName("a"), ShouldEqual, "invocations/a")
+		t.Run("Format", func(t *ftt.Test) {
+			assert.Loosely(t, InvocationName("a"), should.Equal("invocations/a"))
 		})
 
 	})
@@ -49,7 +49,7 @@ func TestInvocationName(t *testing.T) {
 
 func TestInvocationUtils(t *testing.T) {
 	t.Parallel()
-	Convey(`Normalization normalizes tags`, t, func() {
+	ftt.Run(`Normalization normalizes tags`, t, func(t *ftt.Test) {
 		inv := &pb.Invocation{
 			Tags: StringPairs(
 				"k2", "v21",
@@ -62,15 +62,15 @@ func TestInvocationUtils(t *testing.T) {
 
 		NormalizeInvocation(inv)
 
-		So(inv.Tags, ShouldResembleProto, StringPairs(
+		assert.Loosely(t, inv.Tags, should.Resemble(StringPairs(
 			"k1", "v1",
 			"k2", "v20",
 			"k2", "v21",
 			"k3", "v30",
 			"k3", "v31",
-		))
+		)))
 	})
-	Convey(`Normalization normalizes gerrit changelists`, t, func() {
+	ftt.Run(`Normalization normalizes gerrit changelists`, t, func(t *ftt.Test) {
 		inv := &pb.Invocation{
 			SourceSpec: &pb.SourceSpec{
 				Sources: &pb.Sources{
@@ -112,7 +112,7 @@ func TestInvocationUtils(t *testing.T) {
 
 		NormalizeInvocation(inv)
 
-		So(inv.SourceSpec.Sources.Changelists, ShouldResembleProto, []*pb.GerritChange{
+		assert.Loosely(t, inv.SourceSpec.Sources.Changelists, should.Resemble([]*pb.GerritChange{
 			{
 				Host:     "a-review.googlesource.com",
 				Project:  "aaa",
@@ -143,13 +143,13 @@ func TestInvocationUtils(t *testing.T) {
 				Change:   333,
 				Patchset: 1,
 			},
-		})
+		}))
 	})
 }
 
 func TestValidateInvocation(t *testing.T) {
 	t.Parallel()
-	Convey(`ValidateSources`, t, func() {
+	ftt.Run(`ValidateSources`, t, func(t *ftt.Test) {
 		sources := &pb.Sources{
 			GitilesCommit: &pb.GitilesCommit{
 				Host:       "chromium.googlesource.com",
@@ -168,33 +168,33 @@ func TestValidateInvocation(t *testing.T) {
 			},
 			IsDirty: true,
 		}
-		Convey(`Valid with sources`, func() {
-			So(ValidateSources(sources), ShouldBeNil)
+		t.Run(`Valid with sources`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSources(sources), should.BeNil)
 		})
-		Convey(`Nil`, func() {
-			So(ValidateSources(nil), ShouldErrLike, `unspecified`)
+		t.Run(`Nil`, func(t *ftt.Test) {
+			assert.Loosely(t, ValidateSources(nil), should.ErrLike(`unspecified`))
 		})
-		Convey(`Gitiles commit`, func() {
-			Convey(`Missing`, func() {
+		t.Run(`Gitiles commit`, func(t *ftt.Test) {
+			t.Run(`Missing`, func(t *ftt.Test) {
 				sources.GitilesCommit = nil
-				So(ValidateSources(sources), ShouldErrLike, `gitiles_commit: unspecified`)
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: unspecified`))
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				// protocol prefix should not be included.
 				sources.GitilesCommit.Host = "https://service"
-				So(ValidateSources(sources), ShouldErrLike, `gitiles_commit: host: does not match`)
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`gitiles_commit: host: does not match`))
 			})
 		})
-		Convey(`Changelists`, func() {
-			Convey(`Zero length`, func() {
+		t.Run(`Changelists`, func(t *ftt.Test) {
+			t.Run(`Zero length`, func(t *ftt.Test) {
 				sources.Changelists = nil
-				So(ValidateSources(sources), ShouldBeNil)
+				assert.Loosely(t, ValidateSources(sources), should.BeNil)
 			})
-			Convey(`Invalid`, func() {
+			t.Run(`Invalid`, func(t *ftt.Test) {
 				sources.Changelists[0].Change = -1
-				So(ValidateSources(sources), ShouldErrLike, `changelists[0]: change: cannot be negative`)
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists[0]: change: cannot be negative`))
 			})
-			Convey(`Too many`, func() {
+			t.Run(`Too many`, func(t *ftt.Test) {
 				sources.Changelists = nil
 				for i := 0; i < 11; i++ {
 					sources.Changelists = append(sources.Changelists,
@@ -206,9 +206,9 @@ func TestValidateInvocation(t *testing.T) {
 						},
 					)
 				}
-				So(ValidateSources(sources), ShouldErrLike, `changelists: exceeds maximum of 10 changelists`)
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists: exceeds maximum of 10 changelists`))
 			})
-			Convey(`Duplicates`, func() {
+			t.Run(`Duplicates`, func(t *ftt.Test) {
 				sources.Changelists = nil
 				for i := 0; i < 2; i++ {
 					sources.Changelists = append(sources.Changelists,
@@ -220,11 +220,11 @@ func TestValidateInvocation(t *testing.T) {
 						},
 					)
 				}
-				So(ValidateSources(sources), ShouldErrLike, `changelists[1]: duplicate change modulo patchset number; same change at changelists[0]`)
+				assert.Loosely(t, ValidateSources(sources), should.ErrLike(`changelists[1]: duplicate change modulo patchset number; same change at changelists[0]`))
 			})
 		})
 	})
-	Convey(`ValidateSourceSpec`, t, func() {
+	ftt.Run(`ValidateSourceSpec`, t, func(t *ftt.Test) {
 		sourceSpec := &pb.SourceSpec{
 			Sources: &pb.Sources{
 				GitilesCommit: &pb.GitilesCommit{
@@ -237,41 +237,41 @@ func TestValidateInvocation(t *testing.T) {
 			},
 			Inherit: false,
 		}
-		Convey(`Valid`, func() {
-			Convey(`Sources only`, func() {
-				So(ValidateSourceSpec(sourceSpec), ShouldBeNil)
+		t.Run(`Valid`, func(t *ftt.Test) {
+			t.Run(`Sources only`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
 			})
-			Convey(`Empty`, func() {
+			t.Run(`Empty`, func(t *ftt.Test) {
 				sourceSpec.Sources = nil
-				So(ValidateSourceSpec(sourceSpec), ShouldBeNil)
+				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
 			})
-			Convey(`Inherit only`, func() {
+			t.Run(`Inherit only`, func(t *ftt.Test) {
 				sourceSpec.Sources = nil
 				sourceSpec.Inherit = true
-				So(ValidateSourceSpec(sourceSpec), ShouldBeNil)
+				assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.BeNil)
 			})
-			Convey(`Nil`, func() {
-				So(ValidateSourceSpec(nil), ShouldBeNil)
+			t.Run(`Nil`, func(t *ftt.Test) {
+				assert.Loosely(t, ValidateSourceSpec(nil), should.BeNil)
 			})
 		})
-		Convey(`Cannot specify inherit concurrently with sources`, func() {
-			So(sourceSpec.Sources, ShouldNotBeNil)
+		t.Run(`Cannot specify inherit concurrently with sources`, func(t *ftt.Test) {
+			assert.Loosely(t, sourceSpec.Sources, should.NotBeNil)
 			sourceSpec.Inherit = true
-			So(ValidateSourceSpec(sourceSpec), ShouldErrLike, `only one of inherit and sources may be set`)
+			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`only one of inherit and sources may be set`))
 		})
-		Convey(`Invalid Sources`, func() {
+		t.Run(`Invalid Sources`, func(t *ftt.Test) {
 			sourceSpec.Sources.GitilesCommit.Host = "b@d"
-			So(ValidateSourceSpec(sourceSpec), ShouldErrLike, `sources: gitiles_commit: host: does not match`)
+			assert.Loosely(t, ValidateSourceSpec(sourceSpec), should.ErrLike(`sources: gitiles_commit: host: does not match`))
 		})
 	})
-	Convey(`ValidateInvocationExtendedPropertyKey`, t, func() {
-		Convey(`Invalid key`, func() {
+	ftt.Run(`ValidateInvocationExtendedPropertyKey`, t, func(t *ftt.Test) {
+		t.Run(`Invalid key`, func(t *ftt.Test) {
 			err := ValidateInvocationExtendedPropertyKey("mykey_")
-			So(err, ShouldErrLike, `does not match`)
+			assert.Loosely(t, err, should.ErrLike(`does not match`))
 		})
 	})
-	Convey(`ValidateInvocationExtendedProperties`, t, func() {
-		Convey(`Invalid key`, func() {
+	ftt.Run(`ValidateInvocationExtendedProperties`, t, func(t *ftt.Test) {
+		t.Run(`Invalid key`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey_": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -281,9 +281,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `key "mykey_": does not match`)
+			assert.Loosely(t, err, should.ErrLike(`key "mykey_": does not match`))
 		})
-		Convey(`Max size of value`, func() {
+		t.Run(`Max size of value`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -293,9 +293,10 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]: exceeds the maximum size of `, `bytes`)
+			assert.Loosely(t, err, should.ErrLike(`["mykey"]: exceeds the maximum size of `))
+			assert.Loosely(t, err, should.ErrLike(`bytes`))
 		})
-		Convey(`Missing @type`, func() {
+		t.Run(`Missing @type`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -304,9 +305,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]: must have a field "@type"`)
+			assert.Loosely(t, err, should.ErrLike(`["mykey"]: must have a field "@type"`))
 		})
-		Convey(`Invalid @type, missing slash`, func() {
+		t.Run(`Invalid @type, missing slash`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -316,9 +317,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]: "@type" value "some.package.MyMessage" must contain at least one "/" character`)
+			assert.Loosely(t, err, should.ErrLike(`["mykey"]: "@type" value "some.package.MyMessage" must contain at least one "/" character`))
 		})
-		Convey(`Invalid @type, invalid type url`, func() {
+		t.Run(`Invalid @type, invalid type url`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -328,9 +329,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]: "@type" value "[::1]/some.package.MyMessage":`)
+			assert.Loosely(t, err, should.ErrLike(`["mykey"]: "@type" value "[::1]/some.package.MyMessage":`))
 		})
-		Convey(`Invalid @type, invalid type name`, func() {
+		t.Run(`Invalid @type, invalid type name`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -340,9 +341,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `["mykey"]: "@type" type name "_some.package.MyMessage": does not match`)
+			assert.Loosely(t, err, should.ErrLike(`["mykey"]: "@type" type name "_some.package.MyMessage": does not match`))
 		})
-		Convey(`Valid @type`, func() {
+		t.Run(`Valid @type`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -352,9 +353,9 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey(`Max size of extended properties`, func() {
+		t.Run(`Max size of extended properties`, func(t *ftt.Test) {
 			structValueLong := &structpb.Struct{
 				Fields: map[string]*structpb.Value{
 					"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
@@ -369,9 +370,10 @@ func TestValidateInvocation(t *testing.T) {
 				"mykey_5": structValueLong,
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldErrLike, `exceeds the maximum size of`, `bytes`)
+			assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
+			assert.Loosely(t, err, should.ErrLike(`bytes`))
 		})
-		Convey(`Valid`, func() {
+		t.Run(`Valid`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
 				"mykey": &structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -381,7 +383,7 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
