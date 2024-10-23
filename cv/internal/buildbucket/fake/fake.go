@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -239,12 +240,10 @@ func (fa *fakeApp) publishToTopicIfNecessary(ctx context.Context, build *bbpb.Bu
 	if topic == nil || !bbutil.IsEnded(build.GetStatus()) {
 		return
 	}
-	data, err := json.Marshal(buildbucket.PubsubMessage{
-		Build: buildbucket.PubsubBuildMessage{
-			ID: build.GetId(),
-		},
-		Hostname: fa.hostname,
-	})
+	msg := &bbpb.BuildsV2PubSub{
+		Build: build,
+	}
+	data, err := protojson.Marshal(msg)
 	if err != nil {
 		panic(errors.Annotate(err, "failed to marshal pubsub message").Err())
 	}

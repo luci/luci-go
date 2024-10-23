@@ -16,7 +16,6 @@ package bbfake
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -29,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -37,7 +37,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/cv/internal/buildbucket"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -373,7 +372,7 @@ func TestCancelBuild(t *testing.T) {
 					SummaryMarkdown: "no longer needed",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Resemble(trimmedBuildWithDefaultMask(t, NewBuildConstructor().
+				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, NewBuildConstructor().
 					WithID(build.GetId()).
 					WithHost(bbHost).
 					WithBuilderID(builderID).
@@ -385,11 +384,9 @@ func TestCancelBuild(t *testing.T) {
 					WithSummaryMarkdown("no longer needed").
 					Construct())))
 				assert.Loosely(t, pubsubSrv.Messages(), should.HaveLength(1))
-				pubsubMsg := &buildbucket.PubsubMessage{}
-				err = json.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pubsubMsg.Hostname, should.Equal(bbHost))
-				assert.Loosely(t, pubsubMsg.Build.ID, should.Equal(build.GetId()))
+				pubsubMsg := &bbpb.BuildsV2PubSub{}
+				assert.That(t, protojson.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg), should.ErrLike(nil))
+				assert.That(t, pubsubMsg.Build.GetId(), should.Equal(build.GetId()))
 			})
 			t.Run("With mask", func(t *ftt.Test) {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{

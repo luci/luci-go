@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
@@ -38,7 +37,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/tq"
 
-	"go.chromium.org/luci/cv/internal/buildbucket"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -201,33 +199,18 @@ func (l *listener) start(ctx context.Context) error {
 }
 
 func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
-	var isV2Msg bool
-	var buildID int64
-	var hostname string
-	var buildsV2Msg *buildbucketpb.BuildsV2PubSub
-	var build *buildbucketpb.Build
-	var err error
-	if v, ok := msg.Attributes["version"]; ok && v == "v2" {
-		isV2Msg = true
-		if buildsV2Msg, err = parseV2Data(msg); err != nil {
-			return err
-		}
-		build = buildsV2Msg.Build
-		hostname, buildID = build.GetInfra().GetBuildbucket().GetHostname(), build.GetId()
-	} else {
-		// TODO(crbug.com/1406393): delete it once the migration is done. And the
-		// above pre-declared variables can also be deleted to make code more clean.
-		parsedMsg, err := parseV1Data(ctx, msg.Data)
-		if err != nil {
-			return err
-		}
-		hostname, buildID = parsedMsg.Hostname, parsedMsg.Build.ID
+	buildsPubsub, err := parsePubSubMsg(msg)
+	if err != nil {
+		return err
 	}
 
+	build := buildsPubsub.Build
+	hostname, buildID := build.GetInfra().GetBuildbucket().GetHostname(), build.GetId()
 	if hostname == "" {
-		logging.Warningf(ctx, "received pubsub message with empty hostname for build %d, using the computed one %s", build.GetId(), l.bbHost)
+		logging.Warningf(ctx, "received pubsub message with empty hostname for build %d, using the computed one %s", buildID, l.bbHost)
 		hostname = l.bbHost
 	}
+
 	eid, err := tryjob.BuildbucketID(hostname, buildID)
 	if err != nil {
 		return err
@@ -235,20 +218,17 @@ func (l *listener) processMsg(ctx context.Context, msg *pubsub.Message) error {
 	switch id, err := eid.Resolve(ctx); {
 	case err != nil:
 		return err
-	case id != 0:
-		// Build is tracked by LUCI CV.
-		if !isV2Msg || buildsV2Msg.GetBuildLargeFieldsDropped() {
+	case id != 0: // Build is tracked by LUCI CV.
+		if buildsPubsub.GetBuildLargeFieldsDropped() {
 			return l.tjNotifier.ScheduleUpdate(ctx, id, eid)
 		}
-		// TODO(crbug.com/1406393): remove the debugging once the migration is done.
-		logging.Debugf(ctx, "builds_v2 pubsub listener: updating tryjob %s", eid)
 		return l.tjUpdater.Update(ctx, eid, build)
 	}
 	return nil
 }
 
-// parseV2Data parses Buildbucket new `builds_v2` pubsub message data.
-func parseV2Data(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) {
+// parsePubSubMsg parses Buildbucket new `builds_v2` pubsub message data.
+func parsePubSubMsg(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) {
 	buildsV2Msg := &buildbucketpb.BuildsV2PubSub{}
 	if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(msg.Data, buildsV2Msg); err != nil {
 		return nil, errors.Annotate(err, "failed to unmarshal pubsub message into BuildsV2PubSub proto").Err()
@@ -268,20 +248,6 @@ func parseV2Data(msg *pubsub.Message) (*buildbucketpb.BuildsV2PubSub, error) {
 	proto.Merge(buildsV2Msg.Build, largeFields)
 
 	return buildsV2Msg, nil
-}
-
-// parseV1Data extracts the relevant information from Buildbucket old `builds`
-// topic Pub/Sub message data.
-func parseV1Data(ctx context.Context, data []byte) (buildbucket.PubsubMessage, error) {
-	message := buildbucket.PubsubMessage{}
-	// Extra fields that are not in the struct are ignored by json.Unmarshal.
-	if err := json.Unmarshal(data, &message); err != nil {
-		return buildbucket.PubsubMessage{}, errors.Annotate(err, "while unmarshalling build pubsub message").Err()
-	}
-	if message.Hostname == "" || message.Build.ID == 0 {
-		return buildbucket.PubsubMessage{}, errors.Reason("missing build details in pubsub message: %s", data).Err()
-	}
-	return message, nil
 }
 
 func (l *listener) reportStats(ctx context.Context) {
