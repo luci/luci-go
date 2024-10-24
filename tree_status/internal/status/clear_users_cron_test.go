@@ -18,60 +18,61 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/tree_status/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestClearStatusUsers(t *testing.T) {
-	Convey(`With Spanner Test Database`, t, func() {
+	ftt.Run(`With Spanner Test Database`, t, func(t *ftt.Test) {
 
 		ctx := testutil.IntegrationTestContext(t)
 
-		Convey(`Status older than 30 days should have their CreateUser cleared`, func() {
+		t.Run(`Status older than 30 days should have their CreateUser cleared`, func(t *ftt.Test) {
 			NewStatusBuilder().
 				WithCreateTime(time.Now().AddDate(0, 0, -31)).
 				WithCreateUser("user@example.com").
 				CreateInDB(ctx)
 
 			rows, err := clearCreateUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.Equal(1))
 
 			status, err := ReadLatest(span.Single(ctx), "chromium")
-			So(err, ShouldBeNil)
-			So(status.CreateUser, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.CreateUser, should.BeEmpty)
 		})
 
-		Convey(`Status created less than 30 days ago should not change`, func() {
+		t.Run(`Status created less than 30 days ago should not change`, func(t *ftt.Test) {
 			NewStatusBuilder().
 				WithCreateTime(time.Now()).
 				WithCreateUser("user@example.com").
 				CreateInDB(ctx)
 
 			rows, err := clearCreateUserColumn(ctx)
-			So(err, ShouldBeNil)
-			So(rows, ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rows, should.BeZero)
 
 			status, err := ReadLatest(span.Single(ctx), "chromium")
-			So(err, ShouldBeNil)
-			So(status.CreateUser, ShouldEqual, "user@example.com")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.CreateUser, should.Equal("user@example.com"))
 		})
 
-		Convey(`ClearStatusUsers clears CreateUser`, func() {
+		t.Run(`ClearStatusUsers clears CreateUser`, func(t *ftt.Test) {
 			NewStatusBuilder().
 				WithCreateTime(time.Now().AddDate(0, 0, -31)).
 				WithCreateUser("user@example.com").
 				CreateInDB(ctx)
 
 			err := ClearStatusUsers(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			status, err := ReadLatest(span.Single(ctx), "chromium")
-			So(err, ShouldBeNil)
-			So(status.CreateUser, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.CreateUser, should.BeEmpty)
 		})
 	})
 }

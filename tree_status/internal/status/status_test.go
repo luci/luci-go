@@ -21,181 +21,181 @@ import (
 
 	"cloud.google.com/go/spanner"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
-	Convey("Validate", t, func() {
-		Convey("valid", func() {
+	ftt.Run("Validate", t, func(t *ftt.Test) {
+		t.Run("valid", func(t *ftt.Test) {
 			err := Validate(NewStatusBuilder().Build())
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
-		Convey("tree_name", func() {
-			Convey("must be specified", func() {
+		t.Run("tree_name", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithTreeName("").Build())
-				So(err, ShouldErrLike, "tree: must be specified")
+				assert.Loosely(t, err, should.ErrLike("tree: must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithTreeName("INVALID").Build())
-				So(err, ShouldErrLike, "tree: expected format")
+				assert.Loosely(t, err, should.ErrLike("tree: expected format"))
 			})
 		})
-		Convey("id", func() {
-			Convey("must be specified", func() {
+		t.Run("id", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithStatusID("").Build())
-				So(err, ShouldErrLike, "id: must be specified")
+				assert.Loosely(t, err, should.ErrLike("id: must be specified"))
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithStatusID("INVALID").Build())
-				So(err, ShouldErrLike, "id: expected format")
+				assert.Loosely(t, err, should.ErrLike("id: expected format"))
 			})
 		})
-		Convey("general_state", func() {
-			Convey("must be specified", func() {
+		t.Run("general_state", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_GENERAL_STATE_UNSPECIFIED).Build())
-				So(err, ShouldErrLike, "general_state: must be specified")
+				assert.Loosely(t, err, should.ErrLike("general_state: must be specified"))
 			})
-			Convey("must be a valid enum value", func() {
+			t.Run("must be a valid enum value", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState(100)).Build())
-				So(err, ShouldErrLike, "general_state: invalid enum value")
+				assert.Loosely(t, err, should.ErrLike("general_state: invalid enum value"))
 			})
 		})
-		Convey("message", func() {
-			Convey("must be specified", func() {
+		t.Run("message", func(t *ftt.Test) {
+			t.Run("must be specified", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithMessage("").Build())
-				So(err, ShouldErrLike, "message: must be specified")
+				assert.Loosely(t, err, should.ErrLike("message: must be specified"))
 			})
-			Convey("must not exceed length", func() {
+			t.Run("must not exceed length", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithMessage(strings.Repeat("a", 1025)).Build())
-				So(err, ShouldErrLike, "message: longer than 1024 bytes")
+				assert.Loosely(t, err, should.ErrLike("message: longer than 1024 bytes"))
 			})
-			Convey("invalid utf-8 string", func() {
+			t.Run("invalid utf-8 string", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithMessage("\xbd").Build())
-				So(err, ShouldErrLike, "message: not a valid utf8 string")
+				assert.Loosely(t, err, should.ErrLike("message: not a valid utf8 string"))
 			})
 			// TODO: unicode tests
 
 		})
-		Convey("closing builder name", func() {
-			Convey("ignored if status is not closed", func() {
+		t.Run("closing builder name", func(t *ftt.Test) {
+			t.Run("ignored if status is not closed", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithClosingBuilderName("some name").Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("must match format", func() {
+			t.Run("must match format", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("some name").Build())
-				So(err, ShouldErrLike, "closing_builder_name: expected format")
+				assert.Loosely(t, err, should.ErrLike("closing_builder_name: expected format"))
 			})
-			Convey("empty closing builder is OK", func() {
+			t.Run("empty closing builder is OK", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("").Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
-			Convey("valid", func() {
+			t.Run("valid", func(t *ftt.Test) {
 				err := Validate(NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").Build())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 			})
 		})
 	})
 }
 
 func TestStatusTable(t *testing.T) {
-	Convey("Create", t, func() {
+	ftt.Run("Create", t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		status := NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").Build()
 
 		m, err := Create(status, status.CreateUser)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 		status.CreateTime = ts.UTC()
 
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		fetched, err := ReadLatest(span.Single(ctx), "chromium")
-		So(err, ShouldBeNil)
-		So(fetched, ShouldEqual, status)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fetched, should.Match(status))
 	})
 
-	Convey("Read", t, func() {
-		Convey("Single", func() {
+	ftt.Run("Read", t, func(t *ftt.Test) {
+		t.Run("Single", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			status := NewStatusBuilder().CreateInDB(ctx)
 
 			fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldEqual, status)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Match(status))
 		})
 
-		Convey("With closing builder", func() {
+		t.Run("With closing builder", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			status := NewStatusBuilder().WithGeneralStatus(pb.GeneralState_CLOSED).WithClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123").CreateInDB(ctx)
 
 			fetched, err := Read(span.Single(ctx), "chromium", status.StatusID)
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldEqual, status)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Match(status))
 		})
 
-		Convey("NotPresent", func() {
+		t.Run("NotPresent", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			_ = NewStatusBuilder().CreateInDB(ctx)
 
 			_, err := Read(span.Single(ctx), "chromium", "1234")
 
-			So(err, ShouldEqual, NotExistsErr)
+			assert.Loosely(t, err, should.Equal(NotExistsErr))
 		})
 	})
 
-	Convey("ReadLatest", t, func() {
-		Convey("Exists", func() {
+	ftt.Run("ReadLatest", t, func(t *ftt.Test) {
+		t.Run("Exists", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			_ = NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
 			expected := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
 
 			fetched, err := ReadLatest(span.Single(ctx), "chromium")
 
-			So(err, ShouldBeNil)
-			So(fetched, ShouldEqual, expected)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetched, should.Match(expected))
 		})
 
-		Convey("NotPresent", func() {
+		t.Run("NotPresent", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 
 			_, err := ReadLatest(span.Single(ctx), "chromium")
 
-			So(err, ShouldEqual, NotExistsErr)
+			assert.Loosely(t, err, should.Equal(NotExistsErr))
 		})
 	})
 
-	Convey("List", t, func() {
-		Convey("Empty", func() {
+	ftt.Run("List", t, func(t *ftt.Test) {
+		t.Run("Empty", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 
 			actual, hasNextPage, err := List(span.Single(ctx), "chromium", nil)
 
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 0)
-			So(hasNextPage, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(0))
+			assert.Loosely(t, hasNextPage, should.BeFalse)
 		})
 
-		Convey("Single page", func() {
+		t.Run("Single page", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			older := NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
 			newer := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
 
 			actual, hasNextPage, err := List(span.Single(ctx), "chromium", nil)
 
-			So(err, ShouldBeNil)
-			So(actual, ShouldHaveLength, 2)
-			So(actual, ShouldEqual, []*Status{newer, older})
-			So(hasNextPage, ShouldBeFalse)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, actual, should.HaveLength(2))
+			assert.Loosely(t, actual, should.Resemble([]*Status{newer, older}))
+			assert.Loosely(t, hasNextPage, should.BeFalse)
 		})
 
-		Convey("Paginated", func() {
+		t.Run("Paginated", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			older := NewStatusBuilder().WithMessage("older").CreateInDB(ctx)
 			newer := NewStatusBuilder().WithMessage("newer").CreateInDB(ctx)
@@ -203,24 +203,24 @@ func TestStatusTable(t *testing.T) {
 			firstPage, hasSecondPage, err1 := List(span.Single(ctx), "chromium", &ListOptions{Offset: 0, Limit: 1})
 			secondPage, hasThirdPage, err2 := List(span.Single(ctx), "chromium", &ListOptions{Offset: 1, Limit: 1})
 
-			So(err1, ShouldBeNil)
-			So(err2, ShouldBeNil)
-			So(firstPage, ShouldEqual, []*Status{newer})
-			So(secondPage, ShouldEqual, []*Status{older})
-			So(hasSecondPage, ShouldBeTrue)
-			So(hasThirdPage, ShouldBeFalse)
+			assert.Loosely(t, err1, should.BeNil)
+			assert.Loosely(t, err2, should.BeNil)
+			assert.Loosely(t, firstPage, should.Resemble([]*Status{newer}))
+			assert.Loosely(t, secondPage, should.Resemble([]*Status{older}))
+			assert.Loosely(t, hasSecondPage, should.BeTrue)
+			assert.Loosely(t, hasThirdPage, should.BeFalse)
 		})
 	})
 
-	Convey("ListAfter", t, func() {
-		Convey("Empty", func() {
+	ftt.Run("ListAfter", t, func(t *ftt.Test) {
+		t.Run("Empty", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			results, err := ListAfter(span.Single(ctx), time.Unix(1000, 0))
-			So(err, ShouldBeNil)
-			So(results, ShouldHaveLength, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.HaveLength(0))
 		})
 
-		Convey("Have data", func() {
+		t.Run("Have data", func(t *ftt.Test) {
 			ctx := testutil.SpannerTestContext(t)
 			NewStatusBuilder().WithMessage("mes1").WithCreateTime(time.Unix(300, 0).UTC()).CreateInDB(ctx)
 			mes2 := NewStatusBuilder().WithMessage("mes2").WithCreateTime(time.Unix(500, 0).UTC()).CreateInDB(ctx)
@@ -228,8 +228,8 @@ func TestStatusTable(t *testing.T) {
 			mes4 := NewStatusBuilder().WithMessage("mes3").WithCreateTime(time.Unix(400, 0).UTC()).CreateInDB(ctx)
 
 			results, err := ListAfter(span.Single(ctx), time.Unix(350, 0))
-			So(err, ShouldBeNil)
-			So(results, ShouldResemble, []*Status{mes4, mes2})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, results, should.Resemble([]*Status{mes4, mes2}))
 		})
 	})
 }

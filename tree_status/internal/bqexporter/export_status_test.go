@@ -20,17 +20,17 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	bqpb "go.chromium.org/luci/tree_status/proto/bq"
 	v1 "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestExportStatus(t *testing.T) {
-	Convey(`Export status`, t, func() {
+	ftt.Run(`Export status`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)
 		client := NewFakeClient()
 		// This should not be exported, because it's earlier than the one in BQ.
@@ -42,8 +42,8 @@ func TestExportStatus(t *testing.T) {
 		status.NewStatusBuilder().WithCreateTime(time.Unix(300, 0).UTC()).WithCreateUser("luci-notify@appspot.gserviceaccount.com").CreateInDB(ctx)
 		status.NewStatusBuilder().WithCreateTime(time.Unix(400, 0).UTC()).WithClosingBuilderName("projects/chromium-m100/buckets/ci/builders/Linux 123").WithGeneralStatus(v1.GeneralState_CLOSED).WithCreateUser("").CreateInDB(ctx)
 		err := export(ctx, client)
-		So(err, ShouldBeNil)
-		So(client.Insertions, ShouldResembleProto, []*bqpb.StatusRow{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, client.Insertions, should.Resemble([]*bqpb.StatusRow{
 			{
 				TreeName:   "chromium",
 				Status:     "open",
@@ -76,6 +76,6 @@ func TestExportStatus(t *testing.T) {
 					Builder: "Linux 123",
 				},
 			},
-		})
+		}))
 	})
 }

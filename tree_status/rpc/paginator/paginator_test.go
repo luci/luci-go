@@ -17,98 +17,98 @@ package paginator
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPaginator(t *testing.T) {
-	Convey("Paginator", t, func() {
+	ftt.Run("Paginator", t, func(t *ftt.Test) {
 		p := &Paginator{
 			DefaultPageSize: 50,
 			MaxPageSize:     1000,
 		}
-		Convey("Limit", func() {
-			Convey("Valid value", func() {
+		t.Run("Limit", func(t *ftt.Test) {
+			t.Run("Valid value", func(t *ftt.Test) {
 				actual := p.Limit(40)
 
-				So(actual, ShouldEqual, 40)
+				assert.Loosely(t, actual, should.Equal(40))
 			})
-			Convey("Zero value", func() {
+			t.Run("Zero value", func(t *ftt.Test) {
 				actual := p.Limit(0)
 
-				So(actual, ShouldEqual, 50)
+				assert.Loosely(t, actual, should.Equal(50))
 			})
-			Convey("Negative value", func() {
+			t.Run("Negative value", func(t *ftt.Test) {
 				actual := p.Limit(-10)
 
-				So(actual, ShouldEqual, 50)
+				assert.Loosely(t, actual, should.Equal(50))
 			})
-			Convey("Too large value", func() {
+			t.Run("Too large value", func(t *ftt.Test) {
 				actual := p.Limit(4000)
 
-				So(actual, ShouldEqual, 1000)
+				assert.Loosely(t, actual, should.Equal(1000))
 			})
 		})
-		Convey("Token", func() {
-			Convey("Is deterministic", func() {
+		t.Run("Token", func(t *ftt.Test) {
+			t.Run("Is deterministic", func(t *ftt.Test) {
 				token1, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent"}, 10)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				token2, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent"}, 10)
-				So(err, ShouldBeNil)
-				So(token1, ShouldEqual, token2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token1, should.Equal(token2))
 			})
 
-			Convey("Ignores page_size and page_token", func() {
+			t.Run("Ignores page_size and page_token", func(t *ftt.Test) {
 				token1, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"}, 10)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				token2, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 20, PageToken: "def"}, 10)
-				So(err, ShouldBeNil)
-				So(token1, ShouldEqual, token2)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, token1, should.Equal(token2))
 			})
 
-			Convey("Encodes correct offset", func() {
+			t.Run("Encodes correct offset", func(t *ftt.Test) {
 				token, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"}, 42)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				offset, err := p.Offset(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: token})
-				So(err, ShouldBeNil)
-				So(offset, ShouldEqual, 42)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, offset, should.Equal(42))
 			})
 		})
-		Convey("Offset", func() {
-			Convey("Rejects bad token", func() {
+		t.Run("Offset", func(t *ftt.Test) {
+			t.Run("Rejects bad token", func(t *ftt.Test) {
 				_, err := p.Offset(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"})
-				So(err, ShouldErrLike, "illegal base64 data")
+				assert.Loosely(t, err, should.ErrLike("illegal base64 data"))
 			})
 
-			Convey("Decodes correct offset", func() {
+			t.Run("Decodes correct offset", func(t *ftt.Test) {
 				token, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"}, 42)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				offset, err := p.Offset(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: token})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(offset, ShouldEqual, 42)
+				assert.Loosely(t, offset, should.Equal(42))
 			})
 
-			Convey("Ignores changed page_size", func() {
+			t.Run("Ignores changed page_size", func(t *ftt.Test) {
 				token, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"}, 42)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				offset, err := p.Offset(&pb.ListStatusRequest{Parent: "parent", PageSize: 100, PageToken: token})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				So(offset, ShouldEqual, 42)
+				assert.Loosely(t, offset, should.Equal(42))
 			})
 
-			Convey("Rejects changes in request", func() {
+			t.Run("Rejects changes in request", func(t *ftt.Test) {
 				token, err := p.NextPageToken(&pb.ListStatusRequest{Parent: "parent", PageSize: 10, PageToken: "abc"}, 42)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				_, err = p.Offset(&pb.ListStatusRequest{Parent: "changed_value", PageSize: 10, PageToken: token})
-				So(err, ShouldErrLike, "request message fields do not match page token")
+				assert.Loosely(t, err, should.ErrLike("request message fields do not match page token"))
 			})
 		})
 	})
