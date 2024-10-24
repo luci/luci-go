@@ -25,8 +25,10 @@ import (
 
 	luajson "github.com/alicebob/gopher-json"
 	lua "github.com/yuin/gopher-lua"
-
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func intMin(a, b int) int {
@@ -95,9 +97,9 @@ func TestLua(t *testing.T) {
 		t.Fatal("found no lua tests")
 	}
 
-	Convey(`lua`, t, func() {
+	ftt.Run(`lua`, t, func(t *ftt.Test) {
 		for _, filename := range matches {
-			Convey(filename, func(c C) {
+			t.Run(filename, func(c *ftt.Test) {
 				L := lua.NewState(lua.Options{})
 				defer L.Close()
 
@@ -108,10 +110,10 @@ func TestLua(t *testing.T) {
 				L.SetGlobal("cjson", mod)
 
 				L.GetGlobal("string").(*lua.LTable).RawSet(lua.LString("format"), L.NewFunction(hackedFormat))
-				So(L.DoFile(filename), ShouldBeNil)
-				SoMsg("luaunit tests failed", L.CheckInt(1), ShouldEqual, 0)
-				_, err := Println() // space between luaunit outputs
-				So(err, ShouldBeNil)
+				assert.Loosely(c, L.DoFile(filename), should.BeNil)
+				assert.Loosely(c, L.CheckInt(1), should.BeZero, truth.Explain("luaunit tests failed"))
+				t.Log() // space between luaunit outputs
+				assert.Loosely(c, err, should.BeNil)
 			})
 		}
 	})

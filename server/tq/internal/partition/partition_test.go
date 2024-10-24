@@ -16,185 +16,186 @@ package partition
 
 import (
 	"encoding/json"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"math/big"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestPartition(t *testing.T) {
 	t.Parallel()
 
-	Convey("Partition", t, func() {
-		Convey("Universe", func() {
+	ftt.Run("Partition", t, func(t *ftt.Test) {
+		t.Run("Universe", func(t *ftt.Test) {
 			u1 := Universe(1) // 1 byte
-			So(u1.Low.Int64(), ShouldEqual, 0)
-			So(u1.High.Int64(), ShouldEqual, 256)
+			assert.Loosely(t, u1.Low.Int64(), should.BeZero)
+			assert.Loosely(t, u1.High.Int64(), should.Equal(256))
 			u4 := Universe(4) // 4 bytes
-			So(u4.Low.Int64(), ShouldEqual, 0)
-			So(u4.High.Int64(), ShouldEqual, int64(1)<<32)
+			assert.Loosely(t, u4.Low.Int64(), should.BeZero)
+			assert.Loosely(t, u4.High.Int64(), should.Equal(int64(1)<<32))
 		})
 
-		Convey("To/From string", func() {
+		t.Run("To/From string", func(t *ftt.Test) {
 			u1 := Universe(1)
-			So(u1.String(), ShouldEqual, "0_100")
+			assert.Loosely(t, u1.String(), should.Equal("0_100"))
 
 			p, err := FromString("f0_ff")
-			So(err, ShouldBeNil)
-			So(p.Low.Int64(), ShouldEqual, 240)
-			So(p.High.Int64(), ShouldEqual, 255)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p.Low.Int64(), should.Equal(240))
+			assert.Loosely(t, p.High.Int64(), should.Equal(255))
 
 			_, err = FromString("_")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			_, err = FromString("10_")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			_, err = FromString("_1")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 			_, err = FromString("10_-1")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("To/From JSON", func() {
-			Convey("works", func() {
+		t.Run("To/From JSON", func(t *ftt.Test) {
+			t.Run("works", func(t *ftt.Test) {
 				in := FromInts(5, 64)
 				bytes, err := json.Marshal(in)
-				So(err, ShouldBeNil)
-				So(string(bytes), ShouldResemble, `"5_40"`)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(bytes), should.Match(`"5_40"`))
 				out := &Partition{}
-				So(json.Unmarshal(bytes, out), ShouldBeNil)
-				So(out, ShouldResemble, in)
+				assert.Loosely(t, json.Unmarshal(bytes, out), should.BeNil)
+				assert.Loosely(t, out, should.Resemble(in))
 			})
-			Convey("null", func() {
+			t.Run("null", func(t *ftt.Test) {
 				p := Partition{}
-				So(json.Unmarshal([]byte(`null`), &p), ShouldBeNil)
-				So(p, ShouldResemble, Partition{})
+				assert.Loosely(t, json.Unmarshal([]byte(`null`), &p), should.BeNil)
+				assert.Loosely(t, p, should.Resemble(Partition{}))
 			})
-			Convey("partial error doesn't mutate passed object", func() {
+			t.Run("partial error doesn't mutate passed object", func(t *ftt.Test) {
 				p := Partition{}
 				err := json.Unmarshal([]byte(`"10_badhighvalue"`), &p)
-				So(err, ShouldNotBeNil)
-				So(p, ShouldResemble, Partition{})
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, p, should.Resemble(Partition{}))
 			})
 		})
 
-		Convey("Span", func() {
+		t.Run("Span", func(t *ftt.Test) {
 			p, err := SpanInclusive("05", "10")
-			So(err, ShouldBeNil)
-			So(p.Low.Int64(), ShouldEqual, 5)
-			So(p.High.Int64(), ShouldEqual, 0x10+1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p.Low.Int64(), should.Equal(5))
+			assert.Loosely(t, p.High.Int64(), should.Equal(0x10+1))
 
 			_, err = SpanInclusive("Not hex", "10")
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 
-		Convey("Copy doesn't share bigInts", func() {
+		t.Run("Copy doesn't share bigInts", func(t *ftt.Test) {
 			var a, b *Partition
 			a = FromInts(1, 10)
 			b = a.Copy()
 			a.Low.SetInt64(100)
-			So(b, ShouldResemble, FromInts(1, 10))
+			assert.Loosely(t, b, should.Resemble(FromInts(1, 10)))
 		})
 
-		Convey("ApplyToQuery", func() {
-			Convey("inKeySpace", func() {
-				So(inKeySpace(big.NewInt(1), 1), ShouldBeTrue)
-				So(inKeySpace(big.NewInt(254), 1), ShouldBeTrue)
-				So(inKeySpace(big.NewInt(255), 1), ShouldBeTrue)
-				So(inKeySpace(big.NewInt(256), 1), ShouldBeFalse)
-				So(inKeySpace(big.NewInt(256), 2), ShouldBeTrue)
+		t.Run("ApplyToQuery", func(t *ftt.Test) {
+			t.Run("inKeySpace", func(t *ftt.Test) {
+				assert.Loosely(t, inKeySpace(big.NewInt(1), 1), should.BeTrue)
+				assert.Loosely(t, inKeySpace(big.NewInt(254), 1), should.BeTrue)
+				assert.Loosely(t, inKeySpace(big.NewInt(255), 1), should.BeTrue)
+				assert.Loosely(t, inKeySpace(big.NewInt(256), 1), should.BeFalse)
+				assert.Loosely(t, inKeySpace(big.NewInt(256), 2), should.BeTrue)
 			})
 
 			u := Universe(1)
 			l, h := u.QueryBounds(1)
-			So(l, ShouldEqual, "00")
-			So(h, ShouldEqual, "g")
+			assert.Loosely(t, l, should.Equal("00"))
+			assert.Loosely(t, h, should.Equal("g"))
 			l, h = u.QueryBounds(2)
-			So(l, ShouldEqual, "0000")
-			So(h, ShouldEqual, "0100")
+			assert.Loosely(t, l, should.Equal("0000"))
+			assert.Loosely(t, h, should.Equal("0100"))
 
 			p := FromInts(10, 255)
 			l, h = p.QueryBounds(1)
-			So(l, ShouldEqual, "0a")
-			So(h, ShouldEqual, "ff")
+			assert.Loosely(t, l, should.Equal("0a"))
+			assert.Loosely(t, h, should.Equal("ff"))
 			l, h = p.QueryBounds(2)
-			So(l, ShouldEqual, "000a")
-			So(h, ShouldEqual, "00ff")
+			assert.Loosely(t, l, should.Equal("000a"))
+			assert.Loosely(t, h, should.Equal("00ff"))
 		})
 
-		Convey("Split", func() {
-			Convey("Exact", func() {
+		t.Run("Split", func(t *ftt.Test) {
+			t.Run("Exact", func(t *ftt.Test) {
 				u1 := Universe(1)
 				ps := u1.Split(2)
-				So(len(ps), ShouldEqual, 2)
-				So(ps[0].Low.Int64(), ShouldEqual, 0)
-				So(ps[0].High.Int64(), ShouldEqual, 128)
-				So(ps[1].Low.Int64(), ShouldEqual, 128)
-				So(ps[1].High.Int64(), ShouldEqual, 256)
+				assert.Loosely(t, len(ps), should.Equal(2))
+				assert.Loosely(t, ps[0].Low.Int64(), should.BeZero)
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].Low.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].High.Int64(), should.Equal(256))
 			})
 
-			Convey("Rounding", func() {
+			t.Run("Rounding", func(t *ftt.Test) {
 				ps := FromInts(0, 10).Split(3)
-				So(len(ps), ShouldEqual, 3)
-				So(ps[0].Low.Int64(), ShouldEqual, 0)
-				So(ps[0].High.Int64(), ShouldEqual, 4)
-				So(ps[1].Low.Int64(), ShouldEqual, 4)
-				So(ps[1].High.Int64(), ShouldEqual, 8)
-				So(ps[2].Low.Int64(), ShouldEqual, 8)
-				So(ps[2].High.Int64(), ShouldEqual, 10)
+				assert.Loosely(t, len(ps), should.Equal(3))
+				assert.Loosely(t, ps[0].Low.Int64(), should.BeZero)
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(4))
+				assert.Loosely(t, ps[1].Low.Int64(), should.Equal(4))
+				assert.Loosely(t, ps[1].High.Int64(), should.Equal(8))
+				assert.Loosely(t, ps[2].Low.Int64(), should.Equal(8))
+				assert.Loosely(t, ps[2].High.Int64(), should.Equal(10))
 			})
 
-			Convey("Degenerate", func() {
+			t.Run("Degenerate", func(t *ftt.Test) {
 				ps := FromInts(0, 1).Split(2)
-				So(len(ps), ShouldEqual, 1)
-				So(ps[0].Low.Int64(), ShouldEqual, 0)
-				So(ps[0].High.Int64(), ShouldEqual, 1)
+				assert.Loosely(t, len(ps), should.Equal(1))
+				assert.Loosely(t, ps[0].Low.Int64(), should.BeZero)
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(1))
 			})
 		})
 
-		Convey("EducatedSplitAfter", func() {
+		t.Run("EducatedSplitAfter", func(t *ftt.Test) {
 			u1 := Universe(1) // 0..256
-			Convey("Ideal", func() {
+			t.Run("Ideal", func(t *ftt.Test) {
 				ps := u1.EducatedSplitAfter(
 					"3f", // cutoff, covers 0..64
 					8,    // items before the cutoff
 					8,    // target per shard
 					100,  // maxShards
 				)
-				So(len(ps), ShouldEqual, 3)
-				So(ps[0].Low.Int64(), ShouldEqual, 64)
-				So(ps[0].High.Int64(), ShouldEqual, 128)
-				So(ps[1].Low.Int64(), ShouldEqual, 128)
-				So(ps[1].High.Int64(), ShouldEqual, 192)
-				So(ps[2].Low.Int64(), ShouldEqual, 192)
-				So(ps[2].High.Int64(), ShouldEqual, 256)
+				assert.Loosely(t, len(ps), should.Equal(3))
+				assert.Loosely(t, ps[0].Low.Int64(), should.Equal(64))
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].Low.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].High.Int64(), should.Equal(192))
+				assert.Loosely(t, ps[2].Low.Int64(), should.Equal(192))
+				assert.Loosely(t, ps[2].High.Int64(), should.Equal(256))
 			})
-			Convey("MaxShards", func() {
+			t.Run("MaxShards", func(t *ftt.Test) {
 				ps := u1.EducatedSplitAfter(
 					"3f", // cutoff, covers 0..64
 					8,    // items before the cutoff
 					8,    // target per shard
 					2,    // maxShards
 				)
-				So(len(ps), ShouldEqual, 2)
-				So(ps[0].Low.Int64(), ShouldEqual, 64)
-				So(ps[0].High.Int64(), ShouldEqual, 160)
-				So(ps[1].Low.Int64(), ShouldEqual, 160)
-				So(ps[1].High.Int64(), ShouldEqual, 256)
+				assert.Loosely(t, len(ps), should.Equal(2))
+				assert.Loosely(t, ps[0].Low.Int64(), should.Equal(64))
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(160))
+				assert.Loosely(t, ps[1].Low.Int64(), should.Equal(160))
+				assert.Loosely(t, ps[1].High.Int64(), should.Equal(256))
 			})
-			Convey("Rounding", func() {
+			t.Run("Rounding", func(t *ftt.Test) {
 				ps := u1.EducatedSplitAfter(
 					"3f", // cutoff, covers 0..64
 					8,    // items before the cutoff => (1/8 density)
 					10,   // target per shard  => range of 80 per shard is ideal.
 					100,  // maxShards
 				)
-				So(len(ps), ShouldEqual, 3)
-				So(ps[0].Low.Int64(), ShouldEqual, 64)
-				So(ps[0].High.Int64(), ShouldEqual, 128)
-				So(ps[1].Low.Int64(), ShouldEqual, 128)
-				So(ps[1].High.Int64(), ShouldEqual, 192)
-				So(ps[2].Low.Int64(), ShouldEqual, 192)
-				So(ps[2].High.Int64(), ShouldEqual, 256)
+				assert.Loosely(t, len(ps), should.Equal(3))
+				assert.Loosely(t, ps[0].Low.Int64(), should.Equal(64))
+				assert.Loosely(t, ps[0].High.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].Low.Int64(), should.Equal(128))
+				assert.Loosely(t, ps[1].High.Int64(), should.Equal(192))
+				assert.Loosely(t, ps[2].Low.Int64(), should.Equal(192))
+				assert.Loosely(t, ps[2].High.Int64(), should.Equal(256))
 			})
 		})
 	})
@@ -203,39 +204,39 @@ func TestPartition(t *testing.T) {
 func TestSortedPartitionsBuilder(t *testing.T) {
 	t.Parallel()
 
-	Convey("SortedPartitionsBuilder", t, func() {
+	ftt.Run("SortedPartitionsBuilder", t, func(t *ftt.Test) {
 		b := NewSortedPartitionsBuilder(FromInts(0, 300))
-		So(b.IsEmpty(), ShouldBeFalse)
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 300)})
+		assert.Loosely(t, b.IsEmpty(), should.BeFalse)
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 300)}))
 
 		b.Exclude(FromInts(100, 200))
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(200, 300)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 100), FromInts(200, 300)}))
 
 		b.Exclude(FromInts(150, 175)) // noop
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(200, 300)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 100), FromInts(200, 300)}))
 
 		b.Exclude(FromInts(150, 250)) // cut front
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(250, 300)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 100), FromInts(250, 300)}))
 
 		b.Exclude(FromInts(275, 400)) // cut back
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 100), FromInts(250, 275)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 100), FromInts(250, 275)}))
 
 		b.Exclude(FromInts(40, 80)) // another split.
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 40), FromInts(80, 100), FromInts(250, 275)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 40), FromInts(80, 100), FromInts(250, 275)}))
 
 		b.Exclude(FromInts(10, 270))
-		So(b.Result(), ShouldResemble, SortedPartitions{FromInts(0, 10), FromInts(270, 275)})
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{FromInts(0, 10), FromInts(270, 275)}))
 
 		b.Exclude(FromInts(0, 4000))
-		So(b.Result(), ShouldResemble, SortedPartitions{})
-		So(b.IsEmpty(), ShouldBeTrue)
+		assert.Loosely(t, b.Result(), should.Resemble(SortedPartitions{}))
+		assert.Loosely(t, b.IsEmpty(), should.BeTrue)
 	})
 }
 
 func TestOnlyIn(t *testing.T) {
 	t.Parallel()
 
-	Convey("SortedPartition.OnlyIn", t, func() {
+	ftt.Run("SortedPartition.OnlyIn", t, func(t *ftt.Test) {
 		var sp SortedPartitions
 
 		const keySpaceBytes = 1
@@ -254,10 +255,10 @@ func TestOnlyIn(t *testing.T) {
 		}
 
 		sp = SortedPartitions{FromInts(1, 3), FromInts(9, 16), FromInts(241, 242)}
-		So(copyIn("00"), ShouldResemble, []string{})
-		So(copyIn("02"), ShouldResemble, []string{"02"})
+		assert.Loosely(t, copyIn("00"), should.Resemble([]string{}))
+		assert.Loosely(t, copyIn("02"), should.Resemble([]string{"02"}))
 
-		So(copyIn(
+		assert.Loosely(t, copyIn(
 			"00",
 			"02",
 			"03",
@@ -267,6 +268,6 @@ func TestOnlyIn(t *testing.T) {
 			"f0", // 240
 			"f1", // 241
 		),
-			ShouldResemble, []string{"02", "0f", "f1"})
+			should.Resemble([]string{"02", "0f", "f1"}))
 	})
 }

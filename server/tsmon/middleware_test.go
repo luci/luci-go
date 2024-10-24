@@ -22,6 +22,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/monitor"
@@ -29,8 +32,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/target"
 
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 var testMetric = metric.NewCounter("test_metric", "", nil)
@@ -45,11 +46,11 @@ func TestMiddleware(t *testing.T) {
 			router.NewMiddlewareChain(state.Middleware),
 			cb,
 		)
-		So(rec.Code, ShouldEqual, http.StatusOK)
+		assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 	}
 
 	incrMetric := func(c *router.Context) {
-		So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeFalse)
+		assert.Loosely(t, store.IsNilStore(tsmon.Store(c.Request.Context())), should.BeFalse)
 		tsmon.Store(c.Request.Context()).Incr(c.Request.Context(), testMetric, time.Time{}, []any{}, int64(1))
 	}
 
@@ -57,12 +58,12 @@ func TestMiddleware(t *testing.T) {
 		return tsmon.Store(c).Get(c, testMetric, time.Time{}, []any{})
 	}
 
-	Convey("With fakes", t, func() {
+	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		c, clock := buildTestContext()
 		state, monitor, allocator := buildTestState()
 
-		Convey("Pings TaskNumAllocator and waits for number", func() {
-			So(allocator.instanceIDs, ShouldHaveLength, 0)
+		t.Run("Pings TaskNumAllocator and waits for number", func(t *ftt.Test) {
+			assert.Loosely(t, allocator.instanceIDs, should.HaveLength(0))
 			allocator.taskNum = -1 // no number yet
 
 			// Do the flush.
@@ -70,9 +71,9 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Called the allocator.
-			So(allocator.instanceIDs, ShouldHaveLength, 1)
+			assert.Loosely(t, allocator.instanceIDs, should.HaveLength(1))
 			// Shouldn't flush since the instance entity doesn't have a task number yet.
-			So(monitor.Cells, ShouldHaveLength, 0)
+			assert.Loosely(t, monitor.Cells, should.HaveLength(0))
 
 			// Wait until next expected flush.
 			clock.Add(time.Minute)
@@ -83,23 +84,23 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// Flushed stuff this time.
-			So(monitor.Cells, ShouldHaveLength, 1)
+			assert.Loosely(t, monitor.Cells, should.HaveLength(1))
 
 			// The value should still be set.
-			So(readMetric(c), ShouldEqual, int64(2))
+			assert.Loosely(t, readMetric(c), should.Equal(int64(2)))
 		})
 
-		Convey("Resets cumulative metrics", func() {
+		t.Run("Resets cumulative metrics", func(t *ftt.Test) {
 			// Do the flush.
 			state.nextFlush = clock.Now()
 			runMiddlware(c, state, incrMetric)
 
 			// Flushed stuff.
-			So(monitor.Cells, ShouldHaveLength, 1)
+			assert.Loosely(t, monitor.Cells, should.HaveLength(1))
 			monitor.Cells = nil
 
 			// The value is set.
-			So(readMetric(c), ShouldEqual, int64(1))
+			assert.Loosely(t, readMetric(c), should.Equal(int64(1)))
 
 			// Lost the task number.
 			allocator.taskNum = -1
@@ -109,24 +110,24 @@ func TestMiddleware(t *testing.T) {
 			runMiddlware(c, state, incrMetric)
 
 			// No stuff is sent, and cumulative metrics are reset.
-			So(monitor.Cells, ShouldHaveLength, 0)
-			So(readMetric(c), ShouldEqual, nil)
+			assert.Loosely(t, monitor.Cells, should.HaveLength(0))
+			assert.Loosely(t, readMetric(c), should.BeNil)
 		})
 
-		Convey("Dynamic enable and disable works", func() {
+		t.Run("Dynamic enable and disable works", func(t *ftt.Test) {
 			// Enabled. Store is not nil.
 			runMiddlware(c, state, func(c *router.Context) {
-				So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeFalse)
+				assert.Loosely(t, store.IsNilStore(tsmon.Store(c.Request.Context())), should.BeFalse)
 			})
 
 			// Disabled. Store is nil.
 			state.Settings.Enabled = false
 			runMiddlware(c, state, func(c *router.Context) {
-				So(store.IsNilStore(tsmon.Store(c.Request.Context())), ShouldBeTrue)
+				assert.Loosely(t, store.IsNilStore(tsmon.Store(c.Request.Context())), should.BeTrue)
 			})
 		})
 
-		Convey("Check error backoff", func() {
+		t.Run("Check error backoff", func(t *ftt.Test) {
 			// Flush now.
 			state.nextFlush = clock.Now()
 			runMiddlware(c, state, incrMetric)
@@ -138,12 +139,12 @@ func TestMiddleware(t *testing.T) {
 			state.nextFlush = flushTime
 			runMiddlware(c, state, incrMetric)
 			// lastFlush should not have changed.
-			So(state.lastFlush, ShouldNotEqual, flushTime)
-			So(state.flushRetry, ShouldEqual, lastRetry*2)
+			assert.Loosely(t, state.lastFlush, should.NotMatch(flushTime))
+			assert.Loosely(t, state.flushRetry, should.Equal(lastRetry*2))
 			clock.Add(time.Minute)
 			runMiddlware(c, state, incrMetric)
 			// Check retry is doubling.
-			So(state.flushRetry, ShouldEqual, lastRetry*4)
+			assert.Loosely(t, state.flushRetry, should.Equal(lastRetry*4))
 		})
 	})
 }

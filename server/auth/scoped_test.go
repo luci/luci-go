@@ -26,11 +26,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type scopedTokenMinterMock struct {
@@ -50,7 +51,7 @@ func (m *scopedTokenMinterMock) MintProjectToken(ctx context.Context, in *minter
 func TestMintServiceOAuthToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("MintProjectToken works", t, func() {
+	ftt.Run("MintProjectToken works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -69,26 +70,26 @@ func TestMintServiceOAuthToken(t *testing.T) {
 			db:   &fakeDB{tokenServiceURL: "https://tokens.example.com"},
 		})
 
-		Convey("Works (including caching)", func(c C) {
+		t.Run("Works (including caching)", func(t *ftt.Test) {
 			tok, err := MintProjectToken(ctx, ProjectTokenParams{
 				MinTTL:      10 * time.Minute,
 				rpcClient:   mockedClient,
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &Token{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.Resemble(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxScopedTokenTTL).Truncate(time.Second),
-			})
-			So(mockedClient.request, ShouldResemble, minter.MintProjectTokenRequest{
+			}))
+			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintProjectTokenRequest{
 				LuciProject:         "infra",
 				OauthScope:          defaultOAuthScopes,
 				MinValidityDuration: 900,
-			})
+			}))
 
 			// Cached now.
-			So(scopedTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
+			assert.Loosely(t, scopedTokenCache.lc.CachedLocally(ctx), should.Equal(1))
 
 			// On subsequence request the cached token is used.
 			mockedClient.response.AccessToken = "another token"
@@ -98,8 +99,8 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok.Token, ShouldResemble, "tok") // old one
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok.Token, should.Match("tok")) // old one
 
 			// Unless it expires sooner than requested TTL.
 			rollTimeForward := MaxDelegationTokenTTL - 30*time.Minute
@@ -112,11 +113,11 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok.Token, ShouldResemble, "another token") // new one
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok.Token, should.Match("another token")) // new one
 		})
 
-		Convey("Project scoped fallback works (including caching)", func(c C) {
+		t.Run("Project scoped fallback works (including caching)", func(t *ftt.Test) {
 			mockedClient = &scopedTokenMinterMock{
 				response: minter.MintProjectTokenResponse{},
 				err:      status.Errorf(codes.NotFound, "unable to find project identity for project"),
@@ -128,8 +129,8 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.BeNil)
 
 			// On subsequence request the cached token is used.
 			mockedClient.response = minter.MintProjectTokenResponse{
@@ -144,8 +145,8 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.BeNil)
 
 			// However requesting for another project produces a different result
 			mockedClient.response = minter.MintProjectTokenResponse{
@@ -161,8 +162,8 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				OAuthScopes: defaultOAuthScopes,
 			})
 
-			So(err, ShouldBeNil)
-			So(tok, ShouldNotBeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.NotBeNil)
 
 			// Simulate cache expiry, check that a new token attempt is sent out
 			tc.Add(5 * time.Minute)
@@ -172,8 +173,8 @@ func TestMintServiceOAuthToken(t *testing.T) {
 				LuciProject: "infra",
 				OAuthScopes: defaultOAuthScopes,
 			})
-			So(err, ShouldBeNil)
-			So(tok.Token, ShouldResemble, "tok")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok.Token, should.Match("tok"))
 		})
 	})
 }

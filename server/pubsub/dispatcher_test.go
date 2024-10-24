@@ -41,8 +41,9 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 // Examples taken from https://cloud.google.com/pubsub/docs/push.
@@ -80,7 +81,7 @@ func validBodyMinimal(payload []byte) string {
 func TestDispatcher(t *testing.T) {
 	t.Parallel()
 
-	Convey("With dispatcher", t, func() {
+	ftt.Run("With dispatcher", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx, _, _ = tsmon.WithFakes(ctx)
@@ -99,7 +100,7 @@ func TestDispatcher(t *testing.T) {
 		metricDist := func(m types.Metric, fieldVals ...any) (count int64) {
 			val := metric(m, fieldVals...)
 			if val != nil {
-				So(val, ShouldHaveSameTypeAs, &distribution.Distribution{})
+				assert.Loosely(t, val, should.HaveType[*distribution.Distribution])
 				count = val.(*distribution.Distribution).Count()
 			}
 			return
@@ -115,7 +116,7 @@ func TestDispatcher(t *testing.T) {
 			return rec.Result().StatusCode
 		}
 
-		Convey("Auth required", func() {
+		t.Run("Auth required", func(t *ftt.Test) {
 			d.InstallPubSubRoutes(srv, "/pubsub")
 
 			called := false
@@ -123,21 +124,21 @@ func TestDispatcher(t *testing.T) {
 				called = true
 				return nil
 			})
-			So(call("/pubsub/somehandler", validBody), ShouldEqual, 403)
-			So(called, ShouldBeFalse)
-			So(metric(callsCounter, "somehandler", "auth"), ShouldEqual, 1)
+			assert.Loosely(t, call("/pubsub/somehandler", validBody), should.Equal(403))
+			assert.Loosely(t, called, should.BeFalse)
+			assert.Loosely(t, metric(callsCounter, "somehandler", "auth"), should.Equal(1))
 		})
-		Convey("With auth", func() {
+		t.Run("With auth", func(t *ftt.Test) {
 			d.DisableAuth = true
 			d.InstallPubSubRoutes(srv, "/pubsub")
 
-			Convey("Handler IDs", func() {
+			t.Run("Handler IDs", func(t *ftt.Test) {
 				d.RegisterHandler("h1", func(ctx context.Context, message Message) error { return nil })
 				d.RegisterHandler("h2", func(ctx context.Context, message Message) error { return nil })
-				So(d.handlerIDs(), ShouldResemble, []string{"h1", "h2"})
+				assert.Loosely(t, d.handlerIDs(), should.Resemble([]string{"h1", "h2"}))
 			})
 
-			Convey("Works", func() {
+			t.Run("Works", func(t *ftt.Test) {
 				called := false
 				var message Message
 				d.RegisterHandler("ok", func(ctx context.Context, m Message) error {
@@ -145,11 +146,11 @@ func TestDispatcher(t *testing.T) {
 					message = m
 					return nil
 				})
-				Convey("With maximal body", func() {
-					So(call("/pubsub/ok?param1=1&param2=2", validBody), ShouldEqual, 200)
-					So(called, ShouldBeTrue)
+				t.Run("With maximal body", func(t *ftt.Test) {
+					assert.Loosely(t, call("/pubsub/ok?param1=1&param2=2", validBody), should.Equal(200))
+					assert.Loosely(t, called, should.BeTrue)
 
-					So(message, ShouldResemble, Message{
+					assert.Loosely(t, message, should.Resemble(Message{
 						Data:         []byte("Hello Cloud Pub/Sub! Here is my message!"),
 						Subscription: "projects/myproject/subscriptions/mysubscription",
 						MessageID:    "2070443601311540",
@@ -159,112 +160,112 @@ func TestDispatcher(t *testing.T) {
 							"param1": []string{"1"},
 							"param2": []string{"2"},
 						},
-					})
-					So(metric(callsCounter, "ok", "OK"), ShouldEqual, 1)
-					So(metricDist(callsDurationMS, "ok", "OK"), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, metric(callsCounter, "ok", "OK"), should.Equal(1))
+					assert.Loosely(t, metricDist(callsDurationMS, "ok", "OK"), should.Equal(1))
 				})
-				Convey("With minimal body", func() {
+				t.Run("With minimal body", func(t *ftt.Test) {
 					payload := []byte("Hello Cloud Pub/Sub! Here is my message!")
-					So(call("/pubsub/ok", validBodyMinimal(payload)), ShouldEqual, 200)
-					So(called, ShouldBeTrue)
-					So(message, ShouldResemble, Message{
+					assert.Loosely(t, call("/pubsub/ok", validBodyMinimal(payload)), should.Equal(200))
+					assert.Loosely(t, called, should.BeTrue)
+					assert.Loosely(t, message, should.Resemble(Message{
 						Data:         payload,
 						Subscription: "projects/myproject/subscriptions/mysubscription",
 						MessageID:    "2070443601311540",
 						PublishTime:  time.Date(2021, 2, 26, 19, 13, 55, 749000000, time.UTC),
 						Attributes:   map[string]string{},
 						Query:        url.Values{},
-					})
-					So(metric(callsCounter, "ok", "OK"), ShouldEqual, 1)
-					So(metricDist(callsDurationMS, "ok", "OK"), ShouldEqual, 1)
+					}))
+					assert.Loosely(t, metric(callsCounter, "ok", "OK"), should.Equal(1))
+					assert.Loosely(t, metricDist(callsDurationMS, "ok", "OK"), should.Equal(1))
 				})
-				Convey("JSONPB handler", func() {
+				t.Run("JSONPB handler", func(t *ftt.Test) {
 					original := timestamppb.New(time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC))
 					payload, err := protojson.Marshal(original)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					var called *timestamppb.Timestamp
 					d.RegisterHandler("json", JSONPB(func(ctx context.Context, m Message, pb *timestamppb.Timestamp) error {
 						called = pb
 						return nil
 					}))
-					So(call("/pubsub/json", validBodyMinimal(payload)), ShouldEqual, 200)
-					So(called, ShouldResembleProto, original)
+					assert.Loosely(t, call("/pubsub/json", validBodyMinimal(payload)), should.Equal(200))
+					assert.Loosely(t, called, should.Resemble(original))
 				})
-				Convey("WirePB handler", func() {
+				t.Run("WirePB handler", func(t *ftt.Test) {
 					original := timestamppb.New(time.Date(2044, time.April, 4, 4, 4, 4, 4, time.UTC))
 					payload, err := proto.Marshal(original)
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 					var called *timestamppb.Timestamp
 					d.RegisterHandler("wire", WirePB(func(ctx context.Context, m Message, pb *timestamppb.Timestamp) error {
 						called = pb
 						return nil
 					}))
-					So(call("/pubsub/wire", validBodyMinimal(payload)), ShouldEqual, 200)
-					So(called, ShouldResembleProto, original)
+					assert.Loosely(t, call("/pubsub/wire", validBodyMinimal(payload)), should.Equal(200))
+					assert.Loosely(t, called, should.Resemble(original))
 				})
 			})
 
-			Convey("Use of unwrapped messages", func() {
+			t.Run("Use of unwrapped messages", func(t *ftt.Test) {
 				d.RegisterHandler("unwrapped", func(ctx context.Context, message Message) error {
 					panic("Should never be reached")
 				})
 				// Unwrapped messages are not supported.
 				invalidBody := `{"field":"This is an unwrapped push subscription message."}`
-				So(call("/pubsub/unwrapped", invalidBody), ShouldEqual, 202)
-				So(metric(callsCounter, "unwrapped", "fatal"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "unwrapped", "fatal"), ShouldEqual, 1)
+				assert.Loosely(t, call("/pubsub/unwrapped", invalidBody), should.Equal(202))
+				assert.Loosely(t, metric(callsCounter, "unwrapped", "fatal"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "unwrapped", "fatal"), should.Equal(1))
 			})
 
-			Convey("Invalid message", func() {
+			t.Run("Invalid message", func(t *ftt.Test) {
 				d.RegisterHandler("invalidcontent", func(ctx context.Context, message Message) error {
 					panic("Should never be reached")
 				})
 				// Cloud Pub/Sub sends an invalid message.
 				invalidBody := `// Invalid contents`
-				So(call("/pubsub/invalidcontent", invalidBody), ShouldEqual, 202)
-				So(metric(callsCounter, "invalidcontent", "fatal"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "invalidcontent", "fatal"), ShouldEqual, 1)
+				assert.Loosely(t, call("/pubsub/invalidcontent", invalidBody), should.Equal(202))
+				assert.Loosely(t, metric(callsCounter, "invalidcontent", "fatal"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "invalidcontent", "fatal"), should.Equal(1))
 			})
 
-			Convey("Fatal error in handler", func() {
+			t.Run("Fatal error in handler", func(t *ftt.Test) {
 				d.RegisterHandler("boom", func(ctx context.Context, message Message) error {
 					return errors.New("boom")
 				})
-				So(call("/pubsub/boom", validBody), ShouldEqual, 202)
-				So(metric(callsCounter, "boom", "fatal"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "boom", "fatal"), ShouldEqual, 1)
+				assert.Loosely(t, call("/pubsub/boom", validBody), should.Equal(202))
+				assert.Loosely(t, metric(callsCounter, "boom", "fatal"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "boom", "fatal"), should.Equal(1))
 			})
 
-			Convey("Transient error in handler", func() {
+			t.Run("Transient error in handler", func(t *ftt.Test) {
 				d.RegisterHandler("smaller-boom", func(ctx context.Context, message Message) error {
 					return transient.Tag.Apply(errors.New("smaller boom"))
 				})
-				So(call("/pubsub/smaller-boom", validBody), ShouldEqual, 500)
-				So(metric(callsCounter, "smaller-boom", "transient"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "smaller-boom", "transient"), ShouldEqual, 1)
+				assert.Loosely(t, call("/pubsub/smaller-boom", validBody), should.Equal(500))
+				assert.Loosely(t, metric(callsCounter, "smaller-boom", "transient"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "smaller-boom", "transient"), should.Equal(1))
 			})
 
-			Convey("Message ignored in handler", func() {
+			t.Run("Message ignored in handler", func(t *ftt.Test) {
 				d.RegisterHandler("ignore-all", func(ctx context.Context, message Message) error {
 					return Ignore.Apply(errors.New("message ignored"))
 				})
-				So(call("/pubsub/ignore-all", validBody), ShouldEqual, 204)
-				So(metric(callsCounter, "ignore-all", "ignore"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "ignore-all", "ignore"), ShouldEqual, 1)
+				assert.Loosely(t, call("/pubsub/ignore-all", validBody), should.Equal(204))
+				assert.Loosely(t, metric(callsCounter, "ignore-all", "ignore"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "ignore-all", "ignore"), should.Equal(1))
 			})
 
-			Convey("Unknown handler", func() {
-				So(call("/pubsub/unknown", validBody), ShouldEqual, 202)
-				So(metric(callsCounter, "unknown", "no_handler"), ShouldEqual, 1)
+			t.Run("Unknown handler", func(t *ftt.Test) {
+				assert.Loosely(t, call("/pubsub/unknown", validBody), should.Equal(202))
+				assert.Loosely(t, metric(callsCounter, "unknown", "no_handler"), should.Equal(1))
 			})
 
-			Convey("Panic", func() {
+			t.Run("Panic", func(t *ftt.Test) {
 				d.RegisterHandler("panic", func(ctx context.Context, message Message) error {
 					panic("boom")
 				})
-				So(func() { call("/pubsub/panic", validBody) }, ShouldPanic)
-				So(metric(callsCounter, "panic", "panic"), ShouldEqual, 1)
-				So(metricDist(callsDurationMS, "panic", "panic"), ShouldEqual, 1)
+				assert.Loosely(t, func() { call("/pubsub/panic", validBody) }, should.Panic)
+				assert.Loosely(t, metric(callsCounter, "panic", "panic"), should.Equal(1))
+				assert.Loosely(t, metricDist(callsDurationMS, "panic", "panic"), should.Equal(1))
 			})
 		})
 	})

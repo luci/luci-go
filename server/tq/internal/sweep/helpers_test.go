@@ -17,10 +17,11 @@ package sweep
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/reminder"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHelpers(t *testing.T) {
@@ -28,7 +29,7 @@ func TestHelpers(t *testing.T) {
 
 	const keySpaceBytes = 16
 
-	Convey("OnlyLeased", t, func() {
+	ftt.Run("OnlyLeased", t, func(t *ftt.Test) {
 		reminders := []*reminder.Reminder{
 			// Each key be exactly 2*keySpaceBytes chars long.
 			{ID: "00000000000000000000000000000001"},
@@ -37,8 +38,8 @@ func TestHelpers(t *testing.T) {
 			{ID: "0000000000000000000000000000000f"}, // ie 15
 		}
 		leased := partition.SortedPartitions{partition.FromInts(5, 9)}
-		So(onlyLeased(reminders, leased, keySpaceBytes), ShouldResemble, []*reminder.Reminder{
+		assert.Loosely(t, onlyLeased(reminders, leased, keySpaceBytes), should.Resemble([]*reminder.Reminder{
 			{ID: "00000000000000000000000000000005"},
-		})
+		}))
 	})
 }

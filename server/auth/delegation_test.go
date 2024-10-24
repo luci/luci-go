@@ -23,12 +23,13 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type delegationTokenMinterMock struct {
@@ -48,7 +49,7 @@ func (m *delegationTokenMinterMock) MintDelegationToken(ctx context.Context, in 
 func TestMintDelegationToken(t *testing.T) {
 	t.Parallel()
 
-	Convey("MintDelegationToken works", t, func() {
+	ftt.Run("MintDelegationToken works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = caching.WithEmptyProcessCache(ctx)
@@ -69,7 +70,7 @@ func TestMintDelegationToken(t *testing.T) {
 			db:   &fakeDB{tokenServiceURL: "https://tokens.example.com"},
 		})
 
-		Convey("Works (including caching)", func(c C) {
+		t.Run("Works (including caching)", func(t *ftt.Test) {
 			tok, err := MintDelegationToken(ctx, DelegationTokenParams{
 				TargetHost: "hostname.example.com",
 				MinTTL:     time.Hour,
@@ -77,22 +78,22 @@ func TestMintDelegationToken(t *testing.T) {
 				Intent:     "intent",
 				rpcClient:  mockedClient,
 			})
-			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &Token{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.Resemble(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
-			})
-			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
+			}))
+			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
 				ValidityDuration:  10800,
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"https://hostname.example.com"},
 				Intent:            "intent",
 				Tags:              []string{"a:b", "c:d"},
-			})
+			}))
 
 			// Cached now.
-			So(delegationTokenCache.lc.CachedLocally(ctx), ShouldEqual, 1)
+			assert.Loosely(t, delegationTokenCache.lc.CachedLocally(ctx), should.Equal(1))
 
 			// On subsequence request the cached token is used.
 			mockedClient.response.Token = "another token"
@@ -103,8 +104,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Tags:       []string{"c:d", "a:b"},
 				rpcClient:  mockedClient,
 			})
-			So(err, ShouldBeNil)
-			So(tok.Token, ShouldResemble, "tok") // old one
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok.Token, should.Match("tok")) // old one
 
 			// Unless it expires sooner than requested TTL.
 			clock.Get(ctx).(testclock.TestClock).Add(MaxDelegationTokenTTL - 30*time.Minute)
@@ -115,29 +116,29 @@ func TestMintDelegationToken(t *testing.T) {
 				Tags:       []string{"c:d", "a:b"},
 				rpcClient:  mockedClient,
 			})
-			So(err, ShouldBeNil)
-			So(tok.Token, ShouldResemble, "another token") // new one
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok.Token, should.Match("another token")) // new one
 		})
 
-		Convey("Untargeted token works", func(c C) {
+		t.Run("Untargeted token works", func(t *ftt.Test) {
 			tok, err := MintDelegationToken(ctx, DelegationTokenParams{
 				Untargeted: true,
 				MinTTL:     time.Hour,
 				Intent:     "intent",
 				rpcClient:  mockedClient,
 			})
-			So(err, ShouldBeNil)
-			So(tok, ShouldResemble, &Token{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tok, should.Resemble(&Token{
 				Token:  "tok",
 				Expiry: testclock.TestRecentTimeUTC.Add(MaxDelegationTokenTTL),
-			})
-			So(mockedClient.request, ShouldResemble, minter.MintDelegationTokenRequest{
+			}))
+			assert.Loosely(t, mockedClient.request, should.Resemble(minter.MintDelegationTokenRequest{
 				DelegatedIdentity: "user:abc@example.com",
 				ValidityDuration:  10800,
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 				Intent:            "intent",
-			})
+			}))
 		})
 	})
 }

@@ -24,16 +24,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestBatching(t *testing.T) {
 	t.Parallel()
 
-	Convey("With BatchProcessor", t, func() {
+	ftt.Run("With BatchProcessor", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		db := &testutil.FakeDB{}
 		sub := &submitter{}
@@ -53,7 +54,7 @@ func TestBatching(t *testing.T) {
 					Parent: id + " body",
 				},
 			})
-			So(db.SaveReminder(ctx, r), ShouldBeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
 			return r
 		}
 
@@ -61,17 +62,17 @@ func TestBatching(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			r = append(r, makeRem(fmt.Sprintf("rem-%d", i)))
 		}
-		So(db.AllReminders(), ShouldHaveLength, len(r))
+		assert.Loosely(t, db.AllReminders(), should.HaveLength(len(r)))
 
-		Convey("Works", func() {
-			So(p.Start(), ShouldBeNil)
+		t.Run("Works", func(t *ftt.Test) {
+			assert.Loosely(t, p.Start(), should.BeNil)
 			p.Enqueue(ctx, r)
-			So(p.Stop(), ShouldEqual, len(r))
-			So(sub.req, ShouldHaveLength, len(r))
-			So(db.AllReminders(), ShouldHaveLength, 0)
+			assert.Loosely(t, p.Stop(), should.Equal(len(r)))
+			assert.Loosely(t, sub.req, should.HaveLength(len(r)))
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(0))
 		})
 
-		Convey("Waits for processing to finish", func() {
+		t.Run("Waits for processing to finish", func(t *ftt.Test) {
 			p.BatchSize = 1000 // to make sure Enqueue doesn't block
 
 			var stopped int32
@@ -85,7 +86,7 @@ func TestBatching(t *testing.T) {
 				return nil
 			}
 
-			So(p.Start(), ShouldBeNil)
+			assert.Loosely(t, p.Start(), should.BeNil)
 			p.Enqueue(ctx, r)
 
 			result := make(chan int, 1)
@@ -97,10 +98,10 @@ func TestBatching(t *testing.T) {
 			for i := 0; i < len(r); i++ {
 				<-ch
 			}
-			So(<-result, ShouldEqual, len(r))
+			assert.Loosely(t, <-result, should.Equal(len(r)))
 		})
 
-		Convey("Context cancel", func() {
+		t.Run("Context cancel", func(t *ftt.Test) {
 			ctx, cancel := context.WithCancel(ctx)
 			p.Context = ctx
 
@@ -124,7 +125,7 @@ func TestBatching(t *testing.T) {
 			p.Stop()
 			atomic.StoreInt32(&stopped, 1)
 
-			So(sub.req, ShouldHaveLength, 50)
+			assert.Loosely(t, sub.req, should.HaveLength(50))
 		})
 	})
 }

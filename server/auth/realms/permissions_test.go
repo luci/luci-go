@@ -18,22 +18,23 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidatePermissionName(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
-		So(ValidatePermissionName("service.subject.verb"), ShouldBeNil)
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, ValidatePermissionName("service.subject.verb"), should.BeNil)
 
-		So(ValidatePermissionName("service.subject.verb.stuff"), ShouldNotBeNil)
-		So(ValidatePermissionName("service.subject"), ShouldNotBeNil)
-		So(ValidatePermissionName("service.subject."), ShouldNotBeNil)
-		So(ValidatePermissionName("service..verb"), ShouldNotBeNil)
-		So(ValidatePermissionName(".subject.verb"), ShouldNotBeNil)
-		So(ValidatePermissionName(""), ShouldNotBeNil)
+		assert.Loosely(t, ValidatePermissionName("service.subject.verb.stuff"), should.NotBeNil)
+		assert.Loosely(t, ValidatePermissionName("service.subject"), should.NotBeNil)
+		assert.Loosely(t, ValidatePermissionName("service.subject."), should.NotBeNil)
+		assert.Loosely(t, ValidatePermissionName("service..verb"), should.NotBeNil)
+		assert.Loosely(t, ValidatePermissionName(".subject.verb"), should.NotBeNil)
+		assert.Loosely(t, ValidatePermissionName(""), should.NotBeNil)
 	})
 }
 
@@ -41,36 +42,36 @@ func TestRegister(t *testing.T) {
 	// This test interacts with the global `perms` cache.
 	// t.Parallel()
 
-	Convey("TestRegister", t, func() {
+	ftt.Run("TestRegister", t, func(t *ftt.Test) {
 		// Make sure the test succeeds when using `go test . -count=2`.
 		clearPermissions()
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			p1 := RegisterPermission("luci.dev.testing1")
-			So(p1.Name(), ShouldEqual, "luci.dev.testing1")
-			So(p1.String(), ShouldEqual, "luci.dev.testing1")
-			So(fmt.Sprintf("%q", p1), ShouldEqual, `"luci.dev.testing1"`)
+			assert.Loosely(t, p1.Name(), should.Equal("luci.dev.testing1"))
+			assert.Loosely(t, p1.String(), should.Equal("luci.dev.testing1"))
+			assert.Loosely(t, fmt.Sprintf("%q", p1), should.Equal(`"luci.dev.testing1"`))
 
 			p2 := RegisterPermission("luci.dev.testing2")
 			p2.AddFlags(UsedInQueryRealms)
 
 			// Reregistering doesn't clear the flags.
 			RegisterPermission("luci.dev.testing2")
-			So(RegisteredPermissions(), ShouldResemble, map[Permission]PermissionFlags{
+			assert.Loosely(t, RegisteredPermissions(), should.Resemble(map[Permission]PermissionFlags{
 				p1: 0,
 				p2: UsedInQueryRealms,
-			})
+			}))
 		})
 
-		Convey("Panics on bad name", func() {
-			So(func() { RegisterPermission(".bad.name") }, ShouldPanic)
+		t.Run("Panics on bad name", func(t *ftt.Test) {
+			assert.Loosely(t, func() { RegisterPermission(".bad.name") }, should.Panic)
 		})
 
-		Convey("Panics on mutation after freeze", func() {
+		t.Run("Panics on mutation after freeze", func(t *ftt.Test) {
 			p1 := RegisterPermission("luci.dev.testing1")
 			_ = RegisteredPermissions()
-			So(func() { RegisterPermission("luci.dev.testing1") }, ShouldPanic)
-			So(func() { p1.AddFlags(UsedInQueryRealms) }, ShouldPanic)
+			assert.Loosely(t, func() { RegisterPermission("luci.dev.testing1") }, should.Panic)
+			assert.Loosely(t, func() { p1.AddFlags(UsedInQueryRealms) }, should.Panic)
 		})
 	})
 }
@@ -79,49 +80,51 @@ func TestGetPermissions(t *testing.T) {
 	// This test interacts with the global `perms` cache.
 	// t.Parallel()
 
-	Convey("TestGetPermissions", t, func() {
+	ftt.Run("TestGetPermissions", t, func(t *ftt.Test) {
 		clearPermissions()
 		RegisterPermission("luci.dev.testing1")
 		RegisterPermission("luci.dev.testing2")
 
-		Convey("Get single permission works", func() {
+		t.Run("Get single permission works", func(t *ftt.Test) {
 			perms, err := GetPermissions("luci.dev.testing1")
-			So(err, ShouldBeNil)
-			So(perms, ShouldHaveLength, 1)
-			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, perms, should.HaveLength(1))
+			assert.Loosely(t, perms[0].Name(), should.Equal("luci.dev.testing1"))
 		})
 
-		Convey("Get multiple permissions works", func() {
+		t.Run("Get multiple permissions works", func(t *ftt.Test) {
 			perms, err := GetPermissions("luci.dev.testing1", "luci.dev.testing2")
-			So(err, ShouldBeNil)
-			So(perms, ShouldHaveLength, 2)
-			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
-			So(perms[1].Name(), ShouldEqual, "luci.dev.testing2")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, perms, should.HaveLength(2))
+			assert.Loosely(t, perms[0].Name(), should.Equal("luci.dev.testing1"))
+			assert.Loosely(t, perms[1].Name(), should.Equal("luci.dev.testing2"))
 
 			// Get in a different order.
 			perms, err = GetPermissions("luci.dev.testing2", "luci.dev.testing1")
-			So(err, ShouldBeNil)
-			So(perms, ShouldHaveLength, 2)
-			So(perms[0].Name(), ShouldEqual, "luci.dev.testing2")
-			So(perms[1].Name(), ShouldEqual, "luci.dev.testing1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, perms, should.HaveLength(2))
+			assert.Loosely(t, perms[0].Name(), should.Equal("luci.dev.testing2"))
+			assert.Loosely(t, perms[1].Name(), should.Equal("luci.dev.testing1"))
 
 			// Get duplicates.
 			perms, err = GetPermissions("luci.dev.testing1", "luci.dev.testing1")
-			So(err, ShouldBeNil)
-			So(perms, ShouldHaveLength, 2)
-			So(perms[0].Name(), ShouldEqual, "luci.dev.testing1")
-			So(perms[1].Name(), ShouldEqual, "luci.dev.testing1")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, perms, should.HaveLength(2))
+			assert.Loosely(t, perms[0].Name(), should.Equal("luci.dev.testing1"))
+			assert.Loosely(t, perms[1].Name(), should.Equal("luci.dev.testing1"))
 		})
 
-		Convey("Get unregistered permission returns error", func() {
+		t.Run("Get unregistered permission returns error", func(t *ftt.Test) {
 			perms, err := GetPermissions("luci.dev.unregistered")
-			So(err, ShouldErrLike, "permission not registered", "luci.dev.unregistered")
-			So(perms, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("permission not registered"))
+			assert.Loosely(t, err, should.ErrLike("luci.dev.unregistered"))
+			assert.Loosely(t, perms, should.BeNil)
 
 			// Mixed with registered permission.
 			perms, err = GetPermissions("luci.dev.testing1", "luci.dev.unregistered")
-			So(err, ShouldErrLike, "permission not registered", "luci.dev.unregistered")
-			So(perms, ShouldBeNil)
+			assert.Loosely(t, err, should.ErrLike("permission not registered"))
+			assert.Loosely(t, err, should.ErrLike("luci.dev.unregistered"))
+			assert.Loosely(t, perms, should.BeNil)
 		})
 	})
 }

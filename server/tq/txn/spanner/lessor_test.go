@@ -23,11 +23,12 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/spantest"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/span"
 	"go.chromium.org/luci/server/tq/internal/partition"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -37,28 +38,26 @@ const (
 
 func TestLeasing(t *testing.T) {
 
-	Convey("leasing works", t, func() {
+	ftt.Run("leasing works", t, func(t *ftt.Test) {
 		ctx := spantest.SpannerTestContext(t, cleanupDatabase)
 		now := clock.Now(ctx).UTC()
 		ctx, tclock := testclock.UseTime(ctx, now)
 		lessor := spanLessor{}
 
-		Convey("noop for save and load", func() {
-			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
-				l := save(ctx, sectionA, now.Add(time.Minute), nil, 1)
-				So(l.LeaseID, ShouldEqual, 0)
+		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+			l := save(ctx, sectionA, now.Add(time.Minute), nil, 1)
+			assert.Loosely(t, l.LeaseID, should.BeZero)
 
-				all, err := loadAll(ctx, sectionA)
-				So(err, ShouldBeNil)
-				So(len(all), ShouldEqual, 0)
-				return nil
-			})
-			So(err, ShouldBeNil)
+			all, err := loadAll(ctx, sectionA)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(all), should.BeZero)
+			return nil
 		})
+		assert.Loosely(t, err, should.BeNil)
 
 		var l1, l2, l3 *lease
 		// Save 3 leases with 1, 2, 3 minutes expiry, respectively.
-		_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+		_, err = span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
 			l1 = save(ctx, sectionA, now.Add(time.Minute), partition.SortedPartitions{
 				partition.FromInts(10, 15),
 			}, 0)
@@ -73,84 +72,84 @@ func TestLeasing(t *testing.T) {
 			l3.parts = nil
 			return nil
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("diff shard", func() {
+		t.Run("diff shard", func(t *ftt.Test) {
 			all, err := loadAll(span.Single(ctx), sectionB)
-			So(err, ShouldBeNil)
-			So(len(all), ShouldEqual, 0)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(all), should.BeZero)
 
-			Convey("WithLease sets context deadline at lease expiry", func() {
+			t.Run("WithLease sets context deadline at lease expiry", func(t *ftt.Test) {
 				i := inLease{}
 				err = lessor.WithLease(ctx, sectionB, partition.FromInts(13, 33), time.Minute, i.clbk)
-				So(err, ShouldBeNil)
-				So(i.deadline(), ShouldEqual, clock.Now(ctx).Add(time.Minute))
-				So(i.parts(), ShouldResemble, partition.SortedPartitions{partition.FromInts(13, 33)})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, i.deadline(), should.Match(clock.Now(ctx).Add(time.Minute)))
+				assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{partition.FromInts(13, 33)}))
 			})
 
-			Convey("WithLease obeys context deadline", func() {
+			t.Run("WithLease obeys context deadline", func(t *ftt.Test) {
 				ctx, cancel := clock.WithTimeout(ctx, time.Second)
 				defer cancel()
 				i := inLease{}
 				err = lessor.WithLease(ctx, sectionB, partition.FromInts(13, 33), time.Minute, i.clbk)
-				So(err, ShouldBeNil)
-				So(i.deadline(), ShouldEqual, clock.Now(ctx).Add(time.Second))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, i.deadline(), should.Match(clock.Now(ctx).Add(time.Second)))
 			})
 		})
 
-		Convey("only active", func() {
+		t.Run("only active", func(t *ftt.Test) {
 			all, err := loadAll(span.Single(ctx), sectionA)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
-			So(sortLeases(active...), ShouldResemble, sortLeases(l1, l2, l3))
-			So(len(expired), ShouldEqual, 0)
+			assert.Loosely(t, sortLeases(active...), should.Resemble(sortLeases(l1, l2, l3)))
+			assert.Loosely(t, len(expired), should.BeZero)
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
-			So(err, ShouldBeNil)
-			So(i.parts(), ShouldResemble, partition.SortedPartitions{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{
 				partition.FromInts(15, 20),
 				partition.FromInts(25, 30),
-			})
+			}))
 
-			Convey("WithLease may lease no partitions", func() {
+			t.Run("WithLease may lease no partitions", func(t *ftt.Test) {
 				i := inLease{}
 				err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 15), time.Minute, i.clbk)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				i.assertCalled()
-				So(len(i.parts()), ShouldEqual, 0)
+				assert.Loosely(t, len(i.parts()), should.BeZero)
 			})
 		})
 
 		tclock.Add(90 * time.Second)
-		Convey("active and expired", func() {
+		t.Run("active and expired", func(t *ftt.Test) {
 			all, err := loadAll(span.Single(ctx), sectionA)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
-			So(sortLeases(active...), ShouldResemble, sortLeases(l2, l3))
-			So(sortLeases(expired...), ShouldResemble, sortLeases(l1))
+			assert.Loosely(t, sortLeases(active...), should.Resemble(sortLeases(l2, l3)))
+			assert.Loosely(t, sortLeases(expired...), should.Resemble(sortLeases(l1)))
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
-			So(err, ShouldBeNil)
-			So(i.parts(), ShouldResemble, partition.SortedPartitions{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{
 				partition.FromInts(13, 20),
 				partition.FromInts(25, 30),
-			})
+			}))
 		})
 
 		tclock.Add(90 * time.Second)
-		Convey("only expired", func() {
+		t.Run("only expired", func(t *ftt.Test) {
 			all, err := loadAll(span.Single(ctx), sectionA)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			active, expired := activeAndExpired(ctx, all)
-			So(len(active), ShouldEqual, 0)
-			So(sortLeases(expired...), ShouldResemble, sortLeases(l1, l2, l3))
+			assert.Loosely(t, len(active), should.BeZero)
+			assert.Loosely(t, sortLeases(expired...), should.Resemble(sortLeases(l1, l2, l3)))
 
 			i := inLease{}
 			err = lessor.WithLease(ctx, sectionA, partition.FromInts(13, 33), time.Minute, i.clbk)
-			So(err, ShouldBeNil)
-			So(i.parts(), ShouldResemble, partition.SortedPartitions{partition.FromInts(13, 33)})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, i.parts(), should.Resemble(partition.SortedPartitions{partition.FromInts(13, 33)}))
 		})
 	})
 }

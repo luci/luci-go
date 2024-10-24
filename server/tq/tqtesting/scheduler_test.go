@@ -34,17 +34,18 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestScheduler(t *testing.T) {
 	t.Parallel()
 
-	Convey("With scheduler", t, func() {
+	ftt.Run("With scheduler", t, func(t *ftt.Test) {
 		var epoch = testclock.TestRecentTimeUTC
 
 		ctx := context.Background()
@@ -74,11 +75,11 @@ func TestScheduler(t *testing.T) {
 				sched.Run(ctx)
 			}()
 
-			exec.waitForTasks(untilCount)
+			exec.waitForTasks(t, untilCount)
 			cancel()
 			<-done
 
-			So(sched.Tasks(), ShouldBeEmpty)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
 		}
 
 		enqueue := func(payload, name string, eta time.Time, taskClassID string) codes.Code {
@@ -107,18 +108,18 @@ func TestScheduler(t *testing.T) {
 			}))
 		}
 
-		Convey("One by one tasks", func() {
-			So(enqueue("1", "name", time.Time{}, ""), ShouldEqual, codes.OK)
-			So(enqueue("2", "name", time.Time{}, ""), ShouldEqual, codes.AlreadyExists)
-			So(enqueue("3", "", time.Time{}, ""), ShouldEqual, codes.OK)
-			So(enqueue("4", "", time.Time{}, ""), ShouldEqual, codes.OK)
+		t.Run("One by one tasks", func(t *ftt.Test) {
+			assert.Loosely(t, enqueue("1", "name", time.Time{}, ""), should.Equal(codes.OK))
+			assert.Loosely(t, enqueue("2", "name", time.Time{}, ""), should.Equal(codes.AlreadyExists))
+			assert.Loosely(t, enqueue("3", "", time.Time{}, ""), should.Equal(codes.OK))
+			assert.Loosely(t, enqueue("4", "", time.Time{}, ""), should.Equal(codes.OK))
 
 			run(3)
 
-			So(orderByPayload(exec.tasks), ShouldResemble, []string{"1", "3", "4"})
+			assert.Loosely(t, orderByPayload(exec.tasks), should.Resemble([]string{"1", "3", "4"}))
 		})
 
-		Convey("Task chain", func() {
+		t.Run("Task chain", func(t *ftt.Test) {
 			exec.execute = func(payload string, t *Task) bool {
 				if len(payload) < 3 {
 					enqueue(payload+".", "", time.Time{}, "")
@@ -127,20 +128,20 @@ func TestScheduler(t *testing.T) {
 			}
 			enqueue(".", "", time.Time{}, "")
 			run(3)
-			So(orderByPayload(exec.tasks), ShouldResemble, []string{".", "..", "..."})
+			assert.Loosely(t, orderByPayload(exec.tasks), should.Resemble([]string{".", "..", "..."}))
 		})
 
-		Convey("Tasks with ETA", func() {
+		t.Run("Tasks with ETA", func(t *ftt.Test) {
 			now := clock.Now(ctx)
 			for i := 2; i >= 0; i-- {
 				enqueue(fmt.Sprintf("B %d", i), fmt.Sprintf("B %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
-			So(payloads(exec.tasks), ShouldResemble, []string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"})
+			assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
 		})
 
-		Convey("Retries", func() {
+		t.Run("Retries", func(t *ftt.Test) {
 			var capturedTask *Task
 			sched.TaskSucceeded = func(_ context.Context, t *Task) {
 				capturedTask = t
@@ -152,13 +153,13 @@ func TestScheduler(t *testing.T) {
 
 			enqueue(".", "", time.Time{}, "")
 			run(4)
-			So(payloads(exec.tasks), ShouldHaveLength, 4)
+			assert.Loosely(t, payloads(exec.tasks), should.HaveLength(4))
 
-			So(capturedTask, ShouldNotBeNil)
-			So(capturedTask.Attempts, ShouldEqual, 4)
+			assert.Loosely(t, capturedTask, should.NotBeNil)
+			assert.Loosely(t, capturedTask.Attempts, should.Equal(4))
 		})
 
-		Convey("Fails after multiple attempts", func() {
+		t.Run("Fails after multiple attempts", func(t *ftt.Test) {
 			sched.MaxAttempts = 10
 
 			var capturedTask *Task
@@ -172,13 +173,13 @@ func TestScheduler(t *testing.T) {
 
 			enqueue(".", "", time.Time{}, "")
 			run(10)
-			So(payloads(exec.tasks), ShouldHaveLength, 10)
+			assert.Loosely(t, payloads(exec.tasks), should.HaveLength(10))
 
-			So(capturedTask, ShouldNotBeNil)
-			So(capturedTask.Attempts, ShouldEqual, 10)
+			assert.Loosely(t, capturedTask, should.NotBeNil)
+			assert.Loosely(t, capturedTask.Attempts, should.Equal(10))
 		})
 
-		Convey("State capture", func() {
+		t.Run("State capture", func(t *ftt.Test) {
 			var captured []*Task
 
 			exec.execute = func(payload string, t *Task) bool {
@@ -194,29 +195,29 @@ func TestScheduler(t *testing.T) {
 				enqueue(fmt.Sprintf("A %d", i), fmt.Sprintf("A %d", i), now.Add(time.Duration(i)*time.Millisecond), "")
 			}
 			run(6)
-			So(payloads(exec.tasks), ShouldResemble, []string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"})
+			assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"A 0", "B 0", "A 1", "B 1", "A 2", "B 2"}))
 
-			So(payloads(captured), ShouldResemble, []string{"A 1", "B 1", "A 2", "B 2"})
-			So(captured[0].Executing, ShouldBeTrue)
-			So(captured[1].Executing, ShouldBeFalse)
+			assert.Loosely(t, payloads(captured), should.Resemble([]string{"A 1", "B 1", "A 2", "B 2"}))
+			assert.Loosely(t, captured[0].Executing, should.BeTrue)
+			assert.Loosely(t, captured[1].Executing, should.BeFalse)
 		})
 
-		Convey("Run(StopWhenDrained)", func() {
-			Convey("Noop if already drained", func() {
+		t.Run("Run(StopWhenDrained)", func(t *ftt.Test) {
+			t.Run("Noop if already drained", func(t *ftt.Test) {
 				exec.execute = func(string, *Task) bool { panic("must no be called") }
 				sched.Run(ctx, StopWhenDrained())
-				So(clock.Now(ctx).Equal(epoch), ShouldBeTrue)
+				assert.Loosely(t, clock.Now(ctx).Equal(epoch), should.BeTrue)
 			})
 
-			Convey("Stops after executing a pending task", func() {
+			t.Run("Stops after executing a pending task", func(t *ftt.Test) {
 				exec.execute = func(string, *Task) bool { return true }
 				enqueue("1", "", epoch.Add(5*time.Second), "")
 				sched.Run(ctx, StopWhenDrained())
-				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 5*time.Second)
-				So(exec.tasks, ShouldHaveLength, 1)
+				assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(5*time.Second))
+				assert.Loosely(t, exec.tasks, should.HaveLength(1))
 			})
 
-			Convey("Stops after draining", func() {
+			t.Run("Stops after draining", func(t *ftt.Test) {
 				exec.execute = func(payload string, _ *Task) bool {
 					if payload == "1" {
 						enqueue("2", "", clock.Now(ctx).Add(5*time.Second), "")
@@ -225,26 +226,26 @@ func TestScheduler(t *testing.T) {
 				}
 				enqueue("1", "", epoch.Add(5*time.Second), "")
 				sched.Run(ctx, StopWhenDrained())
-				So(clock.Now(ctx).Sub(epoch), ShouldEqual, 10*time.Second)
-				So(exec.tasks, ShouldHaveLength, 2)
+				assert.Loosely(t, clock.Now(ctx).Sub(epoch), should.Equal(10*time.Second))
+				assert.Loosely(t, exec.tasks, should.HaveLength(2))
 			})
 		})
 
-		Convey("Run(StopAfterTask)", func() {
-			Convey("Stops immediately after the right task if ran serially", func() {
+		t.Run("Run(StopAfterTask)", func(t *ftt.Test) {
+			t.Run("Stops immediately after the right task if ran serially", func(t *ftt.Test) {
 				enqueue("1", "", epoch.Add(3*time.Second), "classA")
 				enqueue("2", "", epoch.Add(6*time.Second), "classB")
 				enqueue("3", "", epoch.Add(9*time.Second), "classB")
 				sched.Run(ctx, StopAfterTask("classB"))
-				So(payloads(exec.tasks), ShouldResemble, []string{"1", "2"})
+				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2"}))
 
-				Convey("Doesn't take into account previously executed tasks", func() {
+				t.Run("Doesn't take into account previously executed tasks", func(t *ftt.Test) {
 					sched.Run(ctx, StopAfterTask("classB"))
-					So(payloads(exec.tasks), ShouldResemble, []string{"1", "2", "3"})
+					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2", "3"}))
 				})
 			})
 
-			Convey("Stops immediately after the right task in a chain if ran serially", func() {
+			t.Run("Stops immediately after the right task in a chain if ran serially", func(t *ftt.Test) {
 				exec.execute = func(payload string, _ *Task) bool {
 					switch payload {
 					case "1":
@@ -256,10 +257,10 @@ func TestScheduler(t *testing.T) {
 				}
 				enqueue("1", "", time.Time{}, "classA")
 				sched.Run(ctx, StopAfterTask("classB"))
-				So(payloads(exec.tasks), ShouldResemble, []string{"1", "2"})
+				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2"}))
 			})
 
-			Convey("Stops eventually if ran in parallel", func() {
+			t.Run("Stops eventually if ran in parallel", func(t *ftt.Test) {
 				// Generate task tree:
 				//             Z
 				//       ZA         ZB
@@ -275,7 +276,7 @@ func TestScheduler(t *testing.T) {
 
 				sched.Run(ctx, StopAfterTask("classA"), ParallelExecute())
 				// At least Z and at least one of ZA, ZAA, ZBA must have been executed.
-				exec.waitForTasks(2)
+				exec.waitForTasks(t, 2)
 				exec.m.Lock()
 				ps := payloads(exec.tasks)
 				exec.m.Unlock()
@@ -285,27 +286,27 @@ func TestScheduler(t *testing.T) {
 						found = true
 					}
 				}
-				So(found, ShouldBeTrue)
+				assert.Loosely(t, found, should.BeTrue)
 			})
 		})
 
-		Convey("Run(StopBeforeTask)", func() {
-			Convey("Stops after the prior task if ran serially", func() {
+		t.Run("Run(StopBeforeTask)", func(t *ftt.Test) {
+			t.Run("Stops after the prior task if ran serially", func(t *ftt.Test) {
 				enqueue("1", "", epoch.Add(2*time.Second), "classA")
 				enqueue("2", "", epoch.Add(4*time.Second), "classB")
 				enqueue("3", "", epoch.Add(6*time.Second), "classA")
 				enqueue("4", "", epoch.Add(8*time.Second), "classB")
 				sched.Run(ctx, StopBeforeTask("classB"))
-				So(payloads(exec.tasks), ShouldResemble, []string{"1"})
+				assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1"}))
 
-				Convey("Even if it doesn't run anything", func() {
+				t.Run("Even if it doesn't run anything", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"))
 					// The payloasd must be exactly same.
-					So(payloads(exec.tasks), ShouldResemble, []string{"1"})
+					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1"}))
 				})
 			})
 
-			Convey("Takes into account newly scheduled tasks", func() {
+			t.Run("Takes into account newly scheduled tasks", func(t *ftt.Test) {
 				exec.execute = func(payload string, _ *Task) bool {
 					switch payload {
 					case "1":
@@ -320,15 +321,15 @@ func TestScheduler(t *testing.T) {
 				}
 				enqueue("1", "", time.Time{}, "classA")
 
-				Convey("Stops before 3a and 3b if run serially", func() {
+				t.Run("Stops before 3a and 3b if run serially", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"))
-					So(payloads(exec.tasks), ShouldResemble, []string{"1", "2->a", "2->b"})
+					assert.Loosely(t, payloads(exec.tasks), should.Resemble([]string{"1", "2->a", "2->b"}))
 				})
-				Convey("Stops before 3b, but 3a may be executed, if run in parallel", func() {
+				t.Run("Stops before 3b, but 3a may be executed, if run in parallel", func(t *ftt.Test) {
 					sched.Run(ctx, StopBeforeTask("classB"), ParallelExecute())
 					ps := orderByPayload(exec.tasks)
-					So(ps[:3], ShouldResemble, []string{"1", "2->a", "2->b"})
-					So(ps[3:], ShouldNotContain, "3b")
+					assert.Loosely(t, ps[:3], should.Resemble([]string{"1", "2->a", "2->b"}))
+					assert.Loosely(t, ps[3:], should.NotContain("3b"))
 				})
 			})
 		})
@@ -338,7 +339,7 @@ func TestScheduler(t *testing.T) {
 func TestTaskList(t *testing.T) {
 	t.Parallel()
 
-	Convey("With task list", t, func() {
+	ftt.Run("With task list", t, func(t *ftt.Test) {
 		var epoch = time.Unix(1442540000, 0)
 
 		task := func(payload int, exec bool, eta int, class, name string) *Task {
@@ -362,8 +363,8 @@ func TestTaskList(t *testing.T) {
 			task(7, true, 5, "classA", "a"),
 		}
 
-		Convey("Payloads", func() {
-			So(tl.Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		t.Run("Payloads", func(t *ftt.Test) {
+			assert.Loosely(t, tl.Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 1},
 				&durationpb.Duration{Seconds: 2},
@@ -372,27 +373,27 @@ func TestTaskList(t *testing.T) {
 				&durationpb.Duration{Seconds: 5},
 				&durationpb.Duration{Seconds: 6},
 				&durationpb.Duration{Seconds: 7},
-			})
+			}))
 		})
 
-		Convey("Executing/Pending", func() {
-			So(tl.Executing().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		t.Run("Executing/Pending", func(t *ftt.Test) {
+			assert.Loosely(t, tl.Executing().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 2},
 				&durationpb.Duration{Seconds: 4},
 				&durationpb.Duration{Seconds: 5},
 				&durationpb.Duration{Seconds: 6},
 				&durationpb.Duration{Seconds: 7},
-			})
+			}))
 
-			So(tl.Pending().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+			assert.Loosely(t, tl.Pending().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 1},
 				&durationpb.Duration{Seconds: 3},
-			})
+			}))
 		})
 
-		Convey("SortByETA", func() {
-			So(tl.SortByETA().Payloads(), ShouldResembleProto, []protoreflect.ProtoMessage{
+		t.Run("SortByETA", func(t *ftt.Test) {
+			assert.Loosely(t, tl.SortByETA().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&durationpb.Duration{Seconds: 2},
 				&durationpb.Duration{Seconds: 0},
 				&durationpb.Duration{Seconds: 5},
@@ -401,16 +402,16 @@ func TestTaskList(t *testing.T) {
 				&durationpb.Duration{Seconds: 4},
 				&durationpb.Duration{Seconds: 1},
 				&durationpb.Duration{Seconds: 3},
-			})
+			}))
 		})
 	})
 
-	Convey("TasksCollector", t, func() {
+	ftt.Run("TasksCollector", t, func(t *ftt.Test) {
 		var tl TaskList
 		cb := TasksCollector(&tl)
 		cb(context.Background(), &Task{})
 		cb(context.Background(), &Task{})
-		So(tl, ShouldHaveLength, 2)
+		assert.Loosely(t, tl, should.HaveLength(2))
 	})
 }
 
@@ -438,12 +439,14 @@ func (exe *testExecutor) Execute(ctx context.Context, t *Task, done func(retry b
 	done(!success)
 }
 
-func (exe *testExecutor) waitForTasks(n int) {
+func (exe *testExecutor) waitForTasks(t testing.TB, n int) {
+	t.Helper()
+
 	for ; n > 0; n-- {
 		select {
 		case <-exe.ch:
 		case <-exe.ctx.Done():
-			So("the scheduler is stuck", ShouldBeNil)
+			assert.Loosely(t, "the scheduler is stuck", should.BeNil, truth.LineContext())
 		}
 	}
 }

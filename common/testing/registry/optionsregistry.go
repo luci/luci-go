@@ -25,6 +25,7 @@
 //     documented as being comparable with `==`, but by default `cmp` will
 //     recurse into their guts.
 //   - A direct comparison of reflect.Type interfaces.
+//   - Functions will compare by their function pointer.
 package registry
 
 import (
@@ -63,6 +64,14 @@ var globalOptionsRegistry = []cmp.Option{
 		return comparableInterfaces[p.Last().Type()]
 	}, cmp.Comparer(func(a, b any) bool {
 		return a == b
+	})),
+	cmp.FilterPath(func(p cmp.Path) bool {
+		return p.Last().Type().Kind() == reflect.Func
+	}, cmp.Transformer("func.pointer", func(f any) uintptr {
+		if f == nil {
+			return 0
+		}
+		return reflect.ValueOf(f).Pointer()
 	})),
 }
 

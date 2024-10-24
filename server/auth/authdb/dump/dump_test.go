@@ -25,14 +25,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/service/protocol"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestFetcher(t *testing.T) {
@@ -40,7 +41,7 @@ func TestFetcher(t *testing.T) {
 
 	signer := signingtest.NewSigner(nil)
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(c *ftt.Test) {
 		serverAllowAccess := true           // is caller allowed to access authdb?
 		serverHasAccessNow := false         // does caller have access right now?
 		serverDumpPath := "bucket/prefix"   // where server dumps AuthDB
@@ -75,13 +76,13 @@ func TestFetcher(t *testing.T) {
 						serverSignerID, serverSignature, serverLatestRev, serverLatestVal))
 				}
 			default:
-				c.So(r.URL, ShouldEqual, "")
+				assert.Loosely(c, r.URL, should.BeEmpty)
 			}
 		}))
 		defer ts.Close()
 
 		signingCerts, err := signer.Certificates(ctx)
-		So(err, ShouldBeNil)
+		assert.Loosely(c, err, should.BeNil)
 
 		f := Fetcher{
 			StorageDumpPath:    "bucket/prefix",
@@ -95,58 +96,58 @@ func TestFetcher(t *testing.T) {
 			testSigningCerts:  signingCerts,
 		}
 
-		Convey("Fetching works", func() {
+		c.Run("Fetching works", func(c *ftt.Test) {
 			db, err := f.FetchAuthDB(ctx, nil)
-			So(err, ShouldBeNil)
-			assertAuthDB(db, serverLatestRev, serverLatestVal)
+			assert.Loosely(c, err, should.BeNil)
+			assertAuthDB(t, db, serverLatestRev, serverLatestVal)
 
-			Convey("Skips updating if nothing has changed", func() {
+			c.Run("Skips updating if nothing has changed", func(c *ftt.Test) {
 				fetched, err := f.FetchAuthDB(ctx, db)
-				So(err, ShouldBeNil)
-				So(fetched == db, ShouldBeTrue) // the exact same object
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, fetched == db, should.BeTrue) // the exact same object
 			})
 
-			Convey("Updates if the revision goes up", func() {
+			c.Run("Updates if the revision goes up", func(c *ftt.Test) {
 				serverLatestRev++
 				serverLatestVal = "newer"
 
 				fetched, err := f.FetchAuthDB(ctx, db)
-				So(err, ShouldBeNil)
-				assertAuthDB(fetched, serverLatestRev, serverLatestVal)
+				assert.Loosely(c, err, should.BeNil)
+				assertAuthDB(t, fetched, serverLatestRev, serverLatestVal)
 			})
 
-			Convey("Refuses to update if the revision goes down", func() {
+			c.Run("Refuses to update if the revision goes down", func(c *ftt.Test) {
 				serverLatestRev--
 				serverLatestVal = "older"
 
 				fetched, err := f.FetchAuthDB(ctx, db)
-				So(err, ShouldBeNil)
-				So(fetched == db, ShouldBeTrue) // the exact same object
+				assert.Loosely(c, err, should.BeNil)
+				assert.Loosely(c, fetched == db, should.BeTrue) // the exact same object
 			})
 		})
 
-		Convey("Not authorized", func() {
+		c.Run("Not authorized", func(c *ftt.Test) {
 			serverAllowAccess = false
 			_, err := f.FetchAuthDB(ctx, nil)
-			So(err, ShouldErrLike, "HTTP code (403)")
+			assert.Loosely(c, err, should.ErrLike("HTTP code (403)"))
 		})
 
-		Convey("Wrong storage path", func() {
+		c.Run("Wrong storage path", func(c *ftt.Test) {
 			serverDumpPath = "something/else"
 			_, err := f.FetchAuthDB(ctx, nil)
-			So(err, ShouldErrLike, "wrong configuration")
+			assert.Loosely(c, err, should.ErrLike("wrong configuration"))
 		})
 
-		Convey("Unexpected signer", func() {
+		c.Run("Unexpected signer", func(c *ftt.Test) {
 			serverSignerID = "someone-else"
 			_, err := f.FetchAuthDB(ctx, nil)
-			So(err, ShouldErrLike, "the snapshot is signed by")
+			assert.Loosely(c, err, should.ErrLike("the snapshot is signed by"))
 		})
 
-		Convey("Bad signature", func() {
+		c.Run("Bad signature", func(c *ftt.Test) {
 			serverSignature = []byte("bad signature")
 			_, err := f.FetchAuthDB(ctx, nil)
-			So(err, ShouldErrLike, "failed to verify that AuthDB was signed")
+			assert.Loosely(c, err, should.ErrLike("failed to verify that AuthDB was signed"))
 		})
 	})
 }
@@ -184,8 +185,9 @@ func genSignedAuthDB(ctx context.Context, signer *signingtest.Signer, signerID s
 }
 
 // assertAuthDB verifies 'db' was constructed from output of genSignedAuthDB.
-func assertAuthDB(db *authdb.SnapshotDB, rev int64, data string) {
-	So(db.Rev, ShouldEqual, rev)
+func assertAuthDB(t testing.TB, db *authdb.SnapshotDB, rev int64, data string) {
+	t.Helper()
+	assert.Loosely(t, db.Rev, should.Equal(rev), truth.LineContext())
 	d, _ := db.GetTokenServiceURL(nil)
-	So(d, ShouldEqual, data)
+	assert.Loosely(t, d, should.Equal(data), truth.LineContext())
 }

@@ -22,7 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRouter(t *testing.T) {
@@ -60,95 +62,95 @@ func TestRouter(t *testing.T) {
 		c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "handler"))
 	}
 
-	Convey("Router", t, func() {
+	ftt.Run("Router", t, func(t *ftt.Test) {
 		r := New()
 
-		Convey("New", func() {
-			Convey("Should initialize non-nil httprouter.Router", func() {
-				So(r.hrouter, ShouldNotBeNil)
+		t.Run("New", func(t *ftt.Test) {
+			t.Run("Should initialize non-nil httprouter.Router", func(t *ftt.Test) {
+				assert.Loosely(t, r.hrouter, should.NotBeNil)
 			})
 		})
 
-		Convey("Use", func() {
-			Convey("Should append middleware", func() {
-				So(len(r.middleware), ShouldEqual, 0)
+		t.Run("Use", func(t *ftt.Test) {
+			t.Run("Should append middleware", func(t *ftt.Test) {
+				assert.Loosely(t, len(r.middleware), should.BeZero)
 				r.Use(NewMiddlewareChain(a, b))
-				So(len(r.middleware), ShouldEqual, 2)
+				assert.Loosely(t, len(r.middleware), should.Equal(2))
 			})
 		})
 
-		Convey("Subrouter", func() {
-			Convey("Should create new router with values from original router", func() {
+		t.Run("Subrouter", func(t *ftt.Test) {
+			t.Run("Should create new router with values from original router", func(t *ftt.Test) {
 				r.BasePath = "/foo"
 				r.Use(NewMiddlewareChain(a, b))
 				r2 := r.Subrouter("bar")
-				So(r.hrouter, ShouldPointTo, r2.hrouter)
-				So(r2.BasePath, ShouldEqual, "/foo/bar")
-				So(r.middleware, ShouldResemble, r2.middleware)
+				assert.Loosely(t, r.hrouter, should.Equal(r2.hrouter))
+				assert.Loosely(t, r2.BasePath, should.Equal("/foo/bar"))
+				assert.Loosely(t, r.middleware, should.Resemble(r2.middleware))
 			})
 		})
 
-		Convey("Handle", func() {
-			Convey("Should not modify existing empty r.middleware slice", func() {
-				So(len(r.middleware), ShouldEqual, 0)
+		t.Run("Handle", func(t *ftt.Test) {
+			t.Run("Should not modify existing empty r.middleware slice", func(t *ftt.Test) {
+				assert.Loosely(t, len(r.middleware), should.BeZero)
 				r.Handle("GET", "/bar", NewMiddlewareChain(b, c), handler)
-				So(len(r.middleware), ShouldEqual, 0)
+				assert.Loosely(t, len(r.middleware), should.BeZero)
 			})
 
-			Convey("Should not modify existing r.middleware slice", func() {
+			t.Run("Should not modify existing r.middleware slice", func(t *ftt.Test) {
 				r.Use(NewMiddlewareChain(a))
-				So(len(r.middleware), ShouldEqual, 1)
+				assert.Loosely(t, len(r.middleware), should.Equal(1))
 				r.Handle("GET", "/bar", NewMiddlewareChain(b, c), handler)
-				So(len(r.middleware), ShouldEqual, 1)
+				assert.Loosely(t, len(r.middleware), should.Equal(1))
 			})
 		})
 
-		Convey("run", func() {
+		t.Run("run", func(t *ftt.Test) {
 			ctx := &Context{
 				Request: &http.Request{},
 			}
 
-			Convey("Should execute handler when using nil middlewares", func() {
+			t.Run("Should execute handler when using nil middlewares", func(t *ftt.Test) {
 				run(ctx, nil, nil, handler)
-				So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"handler"})
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"handler"}))
 			})
 
-			Convey("Should execute middlewares and handler in order", func() {
+			t.Run("Should execute middlewares and handler in order", func(t *ftt.Test) {
 				m := NewMiddlewareChain(a, b, c)
 				n := NewMiddlewareChain(d)
 				run(ctx, m, n, handler)
-				So(ctx.Request.Context().Value(outputKey), ShouldResemble,
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble(
 					[]string{"a:before", "b:before", "c", "handler", "d", "b:after", "a:after"},
-				)
+				))
 			})
 
-			Convey("Should not execute upcoming middleware/handlers if next is not called", func() {
+			t.Run("Should not execute upcoming middleware/handlers if next is not called", func(t *ftt.Test) {
 				mc := NewMiddlewareChain(a, stop, b)
 				run(ctx, mc, NewMiddlewareChain(), handler)
-				So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "a:after"})
+				assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "a:after"}))
 			})
 
-			Convey("Should execute next middleware when it encounters nil middleware", func() {
-				Convey("At start of first chain", func() {
+			t.Run("Should execute next middleware when it encounters nil middleware", func(t *ftt.Test) {
+				t.Run("At start of first chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(nil, a), NewMiddlewareChain(b), handler)
-					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
-				Convey("At start of second chain", func() {
+				t.Run("At start of second chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(nil, b), handler)
-					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
-				Convey("At end of first chain", func() {
+				t.Run("At end of first chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a, nil), NewMiddlewareChain(b), handler)
-					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
-				Convey("At end of second chain", func() {
+				t.Run("At end of second chain", func(t *ftt.Test) {
 					run(ctx, NewMiddlewareChain(a), NewMiddlewareChain(b, nil), handler)
-					So(ctx.Request.Context().Value(outputKey), ShouldResemble, []string{"a:before", "b:before", "handler", "b:after", "a:after"})
+					assert.Loosely(t, ctx.Request.Context().Value(outputKey), should.Resemble([]string{"a:before", "b:before", "handler", "b:after", "a:after"}))
 				})
 			})
 		})
 
-		Convey("ServeHTTP", func() {
+		t.Run("ServeHTTP", func(t *ftt.Test) {
 			ts := httptest.NewServer(r)
 			a := func(c *Context, next Handler) {
 				c.Request = c.Request.WithContext(appendValue(c.Request.Context(), outputKey, "a:before"))
@@ -157,49 +159,49 @@ func TestRouter(t *testing.T) {
 				io.WriteString(c.Writer, strings.Join(c.Request.Context().Value(outputKey).([]string), ","))
 			}
 
-			Convey("Should execute middleware registered in Use and Handle in order", func() {
+			t.Run("Should execute middleware registered in Use and Handle in order", func(t *ftt.Test) {
 				r.Use(NewMiddlewareChain(a))
 				r.GET("/ab", NewMiddlewareChain(b), handler)
 				res, err := client.Get(ts.URL + "/ab")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer res.Body.Close()
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
 				p, err := io.ReadAll(res.Body)
-				So(err, ShouldBeNil)
-				So(string(p), ShouldEqual, strings.Join(
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(p), should.Equal(strings.Join(
 					[]string{"a:before", "b:before", "handler", "b:after", "a:after"},
 					",",
-				))
+				)))
 			})
 
-			Convey("Should return method not allowed for existing path but wrong method in request", func() {
+			t.Run("Should return method not allowed for existing path but wrong method in request", func(t *ftt.Test) {
 				r.POST("/comment", NewMiddlewareChain(), handler)
 				res, err := client.Get(ts.URL + "/comment")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer res.Body.Close()
-				So(res.StatusCode, ShouldEqual, http.StatusMethodNotAllowed)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusMethodNotAllowed))
 			})
 
-			Convey("Should return expected response from handler", func() {
+			t.Run("Should return expected response from handler", func(t *ftt.Test) {
 				handler := func(c *Context) {
 					c.Writer.Write([]byte("Hello, " + c.Params[0].Value))
 				}
 				r.GET("/hello/:name", NewMiddlewareChain(c, d), handler)
 				res, err := client.Get(ts.URL + "/hello/世界")
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer res.Body.Close()
-				So(res.StatusCode, ShouldEqual, http.StatusOK)
+				assert.Loosely(t, res.StatusCode, should.Equal(http.StatusOK))
 				p, err := io.ReadAll(res.Body)
-				So(err, ShouldBeNil)
-				So(string(p), ShouldEqual, "Hello, 世界")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(p), should.Equal("Hello, 世界"))
 			})
 
-			Reset(func() {
+			t.Cleanup(func() {
 				ts.Close()
 			})
 		})
 
-		Convey("makeBasePath", func() {
+		t.Run("makeBasePath", func(t *ftt.Test) {
 			cases := []struct{ base, relative, result string }{
 				{"/", "", "/"},
 				{"", "", "/"},
@@ -216,7 +218,7 @@ func TestRouter(t *testing.T) {
 				{"//foo//", "///bar///baz/qux/", "/foo/bar/baz/qux/"},
 			}
 			for _, c := range cases {
-				So(makeBasePath(c.base, c.relative), ShouldEqual, c.result)
+				assert.Loosely(t, makeBasePath(c.base, c.relative), should.Equal(c.result))
 			}
 		})
 	})

@@ -25,8 +25,9 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestFetchServiceInfo(t *testing.T) {
@@ -34,16 +35,16 @@ func TestFetchServiceInfo(t *testing.T) {
 
 	const testURL = "https://test.example.com"
 
-	Convey("With empty cache", t, func() {
+	ftt.Run("With empty cache", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = cachingtest.WithGlobalCache(ctx, map[string]caching.BlobCache{
 			infoCacheNamespace: cachingtest.NewBlobCache(),
 		})
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			calls := 0
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
-				So(r.URL.String(), ShouldEqual, testURL)
+				assert.Loosely(t, r.URL.String(), should.Equal(testURL))
 				calls++
 				return 200, `{
 					"app_id": "some-app-id",
@@ -63,32 +64,32 @@ func TestFetchServiceInfo(t *testing.T) {
 			}
 
 			info1, err := FetchServiceInfo(ctx, testURL)
-			So(err, ShouldBeNil)
-			So(info1, ShouldResemble, expected)
-			So(calls, ShouldEqual, 1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info1, should.Resemble(expected))
+			assert.Loosely(t, calls, should.Equal(1))
 
 			// The in-process cache works.
 			info2, err := FetchServiceInfo(ctx, testURL)
-			So(err, ShouldBeNil)
-			So(info2, ShouldEqual, info1) // the exact same object
-			So(calls, ShouldEqual, 1)     // no new calls
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info2, should.Equal(info1)) // the exact same object
+			assert.Loosely(t, calls, should.Equal(1))     // no new calls
 
 			// The global cache works too.
 			ctx = caching.WithEmptyProcessCache(ctx)
 			info3, err := FetchServiceInfo(ctx, testURL)
-			So(err, ShouldBeNil)
-			So(info3, ShouldNotPointTo, info1)  // a new deserialized object
-			So(info3, ShouldResemble, expected) // still has the correct value
-			So(calls, ShouldEqual, 1)           // no new calls
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, info3, should.NotEqual(info1))    // a new deserialized object
+			assert.Loosely(t, info3, should.Resemble(expected)) // still has the correct value
+			assert.Loosely(t, calls, should.Equal(1))           // no new calls
 		})
 
-		Convey("Error", func() {
+		t.Run("Error", func(t *ftt.Test) {
 			ctx := internal.WithTestTransport(ctx, func(r *http.Request, body string) (int, string) {
 				return 500, "error"
 			})
 			info, err := FetchServiceInfo(ctx, testURL)
-			So(info, ShouldBeNil)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, info, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 		})
 	})
 }
@@ -96,7 +97,7 @@ func TestFetchServiceInfo(t *testing.T) {
 func TestFetchLUCIServiceIdentity(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := caching.WithEmptyProcessCache(context.Background())
 		ctx = internal.WithTestTransport(ctx, func(r *http.Request, body string) (code int, response string) {
 			if r.URL.String() != "https://blah/auth/api/v1/server/info" {
@@ -106,16 +107,16 @@ func TestFetchLUCIServiceIdentity(t *testing.T) {
 		})
 
 		id, err := FetchLUCIServiceIdentity(ctx, "https://blah")
-		So(err, ShouldBeNil)
-		So(id, ShouldEqual, identity.Identity("service:blah-app-id"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, id, should.Equal(identity.Identity("service:blah-app-id")))
 
 		_, err = FetchLUCIServiceIdentity(ctx, "http://blah")
-		So(err, ShouldErrLike, "not an https:// URL")
+		assert.Loosely(t, err, should.ErrLike("not an https:// URL"))
 
 		_, err = FetchLUCIServiceIdentity(ctx, "https://blah/blah")
-		So(err, ShouldErrLike, "not a root URL")
+		assert.Loosely(t, err, should.ErrLike("not a root URL"))
 
 		_, err = FetchLUCIServiceIdentity(ctx, "https://")
-		So(err, ShouldErrLike, "not a root URL")
+		assert.Loosely(t, err, should.ErrLike("not a root URL"))
 	})
 }

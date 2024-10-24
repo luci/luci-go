@@ -21,13 +21,14 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAcceptance(t *testing.T) {
@@ -44,7 +45,7 @@ func TestAcceptance(t *testing.T) {
 func TestAcceptablePrecision(t *testing.T) {
 	t.Parallel()
 
-	Convey("ds supports up to Microsecond precision", t, func() {
-		So(reminder.FreshUntilPrecision, ShouldBeGreaterThanOrEqualTo, time.Microsecond)
+	ftt.Run("ds supports up to Microsecond precision", t, func(t *ftt.Test) {
+		assert.Loosely(t, reminder.FreshUntilPrecision, should.BeGreaterThanOrEqual(time.Microsecond))
 	})
 }

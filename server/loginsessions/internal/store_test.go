@@ -22,114 +22,114 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/server/loginsessions/internal/statepb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func testStore(ctx context.Context, store SessionStore) {
-	Convey("Create", func() {
-		So(store.Create(ctx, &statepb.LoginSession{Id: "session-0"}), ShouldBeNil)
-		So(store.Create(ctx, &statepb.LoginSession{Id: "session-0"}), ShouldNotBeNil)
+func testStore(ctx context.Context, t *ftt.Test, store SessionStore) {
+	t.Run("Create", func(t *ftt.Test) {
+		assert.Loosely(t, store.Create(ctx, &statepb.LoginSession{Id: "session-0"}), should.BeNil)
+		assert.Loosely(t, store.Create(ctx, &statepb.LoginSession{Id: "session-0"}), should.NotBeNil)
 	})
 
-	Convey("Get", func() {
+	t.Run("Get", func(t *ftt.Test) {
 		stored := &statepb.LoginSession{
 			Id:                     "session-0",
 			OauthS256CodeChallenge: "some-string",
 		}
-		So(store.Create(ctx, stored), ShouldBeNil)
+		assert.Loosely(t, store.Create(ctx, stored), should.BeNil)
 
 		session, err := store.Get(ctx, "session-0")
-		So(err, ShouldBeNil)
-		So(session, ShouldResembleProto, stored)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, session, should.Resemble(stored))
 
 		session, err = store.Get(ctx, "another")
-		So(err, ShouldEqual, ErrNoSession)
-		So(session, ShouldBeNil)
+		assert.Loosely(t, err, should.Equal(ErrNoSession))
+		assert.Loosely(t, session, should.BeNil)
 	})
 
-	Convey("Update", func() {
+	t.Run("Update", func(t *ftt.Test) {
 		stored := &statepb.LoginSession{
 			Id:                     "session-0",
 			OauthS256CodeChallenge: "some-string",
 		}
-		So(store.Create(ctx, stored), ShouldBeNil)
+		assert.Loosely(t, store.Create(ctx, stored), should.BeNil)
 
 		unchanged, err := store.Update(ctx, "session-0", func(session *statepb.LoginSession) {
-			So(session, ShouldResembleProto, stored)
+			assert.Loosely(t, session, should.Resemble(stored))
 		})
-		So(err, ShouldBeNil)
-		So(unchanged, ShouldResembleProto, stored)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unchanged, should.Resemble(stored))
 
 		updated, err := store.Update(ctx, "session-0", func(session *statepb.LoginSession) {
 			session.OauthS256CodeChallenge = "updated-string"
 		})
-		So(err, ShouldBeNil)
-		So(updated, ShouldResembleProto, &statepb.LoginSession{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, updated, should.Resemble(&statepb.LoginSession{
 			Id:                     "session-0",
 			OauthS256CodeChallenge: "updated-string",
-		})
+		}))
 
 		fetched, err := store.Get(ctx, "session-0")
-		So(err, ShouldBeNil)
-		So(fetched, ShouldResembleProto, updated)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, fetched, should.Resemble(updated))
 	})
 
-	Convey("Update missing", func() {
+	t.Run("Update missing", func(t *ftt.Test) {
 		_, err := store.Update(ctx, "session-0", func(*statepb.LoginSession) {
 			panic("must not be called")
 		})
-		So(err, ShouldEqual, ErrNoSession)
+		assert.Loosely(t, err, should.Equal(ErrNoSession))
 	})
 
-	Convey("Update ID change", func() {
-		So(store.Create(ctx, &statepb.LoginSession{
+	t.Run("Update ID change", func(t *ftt.Test) {
+		assert.Loosely(t, store.Create(ctx, &statepb.LoginSession{
 			Id:                     "session-0",
 			OauthS256CodeChallenge: "some-string",
-		}), ShouldBeNil)
+		}), should.BeNil)
 
-		So(func() {
+		assert.Loosely(t, func() {
 			store.Update(ctx, "session-0", func(session *statepb.LoginSession) {
 				session.Id = "another"
 			})
-		}, ShouldPanic)
+		}, should.Panic)
 	})
 }
 
 func TestMemorySessionStore(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		testStore(ctx, &MemorySessionStore{})
+		testStore(ctx, t, &MemorySessionStore{})
 	})
 }
 
 func TestDatastoreSessionStore(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		var now = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 		ctx, tc := testclock.UseTime(memory.Use(context.Background()), now)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		testStore(ctx, &DatastoreSessionStore{})
+		testStore(ctx, t, &DatastoreSessionStore{})
 
-		Convey("Cleanup", func() {
+		t.Run("Cleanup", func(t *ftt.Test) {
 			store := &DatastoreSessionStore{}
 
 			put := func(id string, dur time.Duration) {
-				So(store.Create(ctx, &statepb.LoginSession{
+				assert.Loosely(t, store.Create(ctx, &statepb.LoginSession{
 					Id:     id,
 					Expiry: timestamppb.New(now.Add(dur)),
-				}), ShouldBeNil)
+				}), should.BeNil)
 			}
 
 			put("keep", time.Minute)
@@ -140,18 +140,18 @@ func TestDatastoreSessionStore(t *testing.T) {
 			_, err := store.Update(ctx, "delete-2", func(s *statepb.LoginSession) {
 				s.Expiry = timestamppb.New(now.Add(time.Second))
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			tc.Add(sessionCleanupDelay + 2*time.Second)
-			So(store.Cleanup(ctx), ShouldBeNil)
+			assert.Loosely(t, store.Cleanup(ctx), should.BeNil)
 
 			get := func(id string) bool {
 				_, err := store.Get(ctx, id)
 				return err == nil
 			}
-			So(get("keep"), ShouldBeTrue)
-			So(get("delete-1"), ShouldBeFalse)
-			So(get("delete-2"), ShouldBeFalse)
+			assert.Loosely(t, get("keep"), should.BeTrue)
+			assert.Loosely(t, get("delete-1"), should.BeFalse)
+			assert.Loosely(t, get("delete-2"), should.BeFalse)
 		})
 	})
 }

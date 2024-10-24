@@ -26,14 +26,15 @@ import (
 
 	"go.chromium.org/luci/server/caching"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestAEAD(t *testing.T) {
 	t.Parallel()
 
-	Convey("With context", t, func() {
+	ftt.Run("With context", t, func(t *ftt.Test) {
 		const secretName = "some-secret-name"
 
 		goodKey, _ := genTestKeySet(2)
@@ -46,97 +47,97 @@ func TestAEAD(t *testing.T) {
 			store.secret = Secret{Active: val}
 		}
 
-		Convey("PrimaryTinkAEADKey works", func() {
-			So(PrimaryTinkAEAD(ctx), ShouldBeNil)
+		t.Run("PrimaryTinkAEADKey works", func(t *ftt.Test) {
+			assert.Loosely(t, PrimaryTinkAEAD(ctx), should.BeNil)
 			_, err := Encrypt(ctx, []byte("ignored"), []byte("ignored"))
-			So(err, ShouldEqual, ErrNoPrimaryAEAD)
+			assert.Loosely(t, err, should.Equal(ErrNoPrimaryAEAD))
 			_, err = Decrypt(ctx, []byte("ignored"), []byte("ignored"))
-			So(err, ShouldEqual, ErrNoPrimaryAEAD)
+			assert.Loosely(t, err, should.Equal(ErrNoPrimaryAEAD))
 
 			ctx = GeneratePrimaryTinkAEADForTest(ctx)
-			So(PrimaryTinkAEAD(ctx).Unwrap(), ShouldNotBeNil)
+			assert.Loosely(t, PrimaryTinkAEAD(ctx).Unwrap(), should.NotBeNil)
 
 			ciphertext, err := Encrypt(ctx,
 				[]byte("secret-to-be-encrypted"),
 				[]byte("authenticated-only-must-match-in-decrypt"),
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cleartext, err := Decrypt(ctx,
 				ciphertext,
 				[]byte("authenticated-only-must-match-in-decrypt"),
 			)
-			So(err, ShouldBeNil)
-			So(string(cleartext), ShouldEqual, "secret-to-be-encrypted")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, string(cleartext), should.Equal("secret-to-be-encrypted"))
 		})
 
-		Convey("Without process cache", func() {
-			Convey("Good keyset", func() {
+		t.Run("Without process cache", func(t *ftt.Test) {
+			t.Run("Good keyset", func(t *ftt.Test) {
 				putSecret(goodKey)
 
 				k1, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldBeNil)
-				So(k1, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, k1, should.NotBeNil)
 
 				k2, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldBeNil)
-				So(k2, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, k2, should.NotBeNil)
 
 				// Got different objects.
-				So(k1, ShouldNotPointTo, k2)
-				So(k1.Unwrap(), ShouldNotPointTo, k2.Unwrap())
+				assert.Loosely(t, k1, should.NotEqual(k2))
+				assert.Loosely(t, k1.Unwrap(), should.NotEqual(k2.Unwrap()))
 			})
 
-			Convey("Bad keyset", func() {
+			t.Run("Bad keyset", func(t *ftt.Test) {
 				putSecret(badKey)
 				_, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldErrLike, "failed to deserialize")
+				assert.Loosely(t, err, should.ErrLike("failed to deserialize"))
 			})
 		})
 
-		Convey("With process cache", func() {
+		t.Run("With process cache", func(t *ftt.Test) {
 			ctx := caching.WithEmptyProcessCache(ctx)
 
-			Convey("Caching", func() {
+			t.Run("Caching", func(t *ftt.Test) {
 				putSecret(goodKey)
 
 				k1, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldBeNil)
-				So(k1, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, k1, should.NotBeNil)
 
 				k2, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldBeNil)
-				So(k2, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, k2, should.NotBeNil)
 
 				// Got the exact same object.
-				So(k1, ShouldEqual, k2)
+				assert.Loosely(t, k1, should.Equal(k2))
 			})
 
-			Convey("Rotation", func() {
+			t.Run("Rotation", func(t *ftt.Test) {
 				putSecret(goodKey)
 
 				k, err := LoadTinkAEAD(ctx, secretName)
-				So(err, ShouldBeNil)
-				So(k, ShouldNotBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, k, should.NotBeNil)
 
 				// Remember the tink.AEAD pre rotation.
 				pre := k.Unwrap()
 
-				Convey("Good new key", func() {
+				t.Run("Good new key", func(t *ftt.Test) {
 					// Call the handler with a valid secret value (reuse the current one,
 					// this is not essential for the test).
 					putSecret(goodKey)
 					store.handler(ctx, store.secret)
 					// Got a different tink.AEAD now.
-					So(k.Unwrap(), ShouldNotPointTo, pre)
+					assert.Loosely(t, k.Unwrap(), should.NotEqual(pre))
 				})
 
-				Convey("Bad new key", func() {
+				t.Run("Bad new key", func(t *ftt.Test) {
 					// Call the handler with a bad secret value.
 					putSecret(badKey)
 					store.handler(ctx, store.secret)
 					// tink.AEAD is unchanged.
-					So(k.Unwrap(), ShouldEqual, pre)
+					assert.Loosely(t, k.Unwrap(), should.Equal(pre))
 				})
 			})
 		})
@@ -146,7 +147,7 @@ func TestAEAD(t *testing.T) {
 func TestMergedKeyset(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ks1, info1 := genTestKeySet(2)
 		ks2, info2 := genTestKeySet(3)
 		ks3, info3 := genTestKeySet(1)
@@ -159,18 +160,18 @@ func TestMergedKeyset(t *testing.T) {
 				ks1, // will be ignored
 			},
 		})
-		So(err, ShouldBeNil)
-		So(merged, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, merged, should.NotBeNil)
 
-		So(mergedInfo.PrimaryKeyId, ShouldEqual, info3.PrimaryKeyId)
-		So(mergedInfo.KeyInfo, ShouldResembleProto, []*tinkpb.KeysetInfo_KeyInfo{
+		assert.Loosely(t, mergedInfo.PrimaryKeyId, should.Equal(info3.PrimaryKeyId))
+		assert.Loosely(t, mergedInfo.KeyInfo, should.Resemble([]*tinkpb.KeysetInfo_KeyInfo{
 			info1.KeyInfo[0],
 			info1.KeyInfo[1],
 			info2.KeyInfo[0],
 			info2.KeyInfo[1],
 			info2.KeyInfo[2],
 			info3.KeyInfo[0],
-		})
+		}))
 	})
 }
 

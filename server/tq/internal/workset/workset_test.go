@@ -16,16 +16,17 @@ package workset
 
 import (
 	"context"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"sync"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestWorkSet(t *testing.T) {
 	t.Parallel()
 
-	Convey("Smoke test", t, func() {
+	ftt.Run("Smoke test", t, func(t *ftt.Test) {
 		const N = 100
 
 		items := []Item{}
@@ -64,18 +65,18 @@ func TestWorkSet(t *testing.T) {
 			close(results)
 			processed := map[int]bool{}
 			for i := range results {
-				So(processed[i], ShouldBeFalse) // no dups
+				assert.Loosely(t, processed[i], should.BeFalse) // no dups
 				processed[i] = true
 			}
-			So(processed, ShouldHaveLength, 4*N) // finished everything
+			assert.Loosely(t, processed, should.HaveLength(4*N)) // finished everything
 		}
 
-		Convey("Single worker", func() {
+		t.Run("Single worker", func(t *ftt.Test) {
 			worker(context.Background())
 			checkResult()
 		})
 
-		Convey("Many workers", func() {
+		t.Run("Many workers", func(t *ftt.Test) {
 			wg := sync.WaitGroup{}
 			wg.Add(5)
 			for i := 0; i < 5; i++ {
@@ -89,7 +90,7 @@ func TestWorkSet(t *testing.T) {
 		})
 	})
 
-	Convey("Many waiters", t, func() {
+	ftt.Run("Many waiters", t, func(t *ftt.Test) {
 		results := make(chan int, 1000)
 
 		ws := New([]Item{0}, nil)
@@ -116,7 +117,7 @@ func TestWorkSet(t *testing.T) {
 
 		// The producer.
 		item, done := ws.Pop(context.Background())
-		So(item.(int), ShouldEqual, 0)
+		assert.Loosely(t, item.(int), should.BeZero)
 		close(startConsumers)
 		done([]Item{1, 2, 3, 4, 5, 6, 7, 8})
 
@@ -125,17 +126,17 @@ func TestWorkSet(t *testing.T) {
 		close(results)
 		processed := map[int]bool{}
 		for i := range results {
-			So(processed[i], ShouldBeFalse) // no dups
+			assert.Loosely(t, processed[i], should.BeFalse) // no dups
 			processed[i] = true
 		}
-		So(len(processed), ShouldEqual, 8)
+		assert.Loosely(t, len(processed), should.Equal(8))
 	})
 
-	Convey("Context cancellation", t, func() {
+	ftt.Run("Context cancellation", t, func(t *ftt.Test) {
 		ws := New([]Item{0}, nil)
 
 		item, done := ws.Pop(context.Background())
-		So(item.(int), ShouldEqual, 0)
+		assert.Loosely(t, item.(int), should.BeZero)
 
 		got := make(chan Item, 1)
 
@@ -151,7 +152,7 @@ func TestWorkSet(t *testing.T) {
 		// The gorouting is stuck waiting until there are new items in the set (i.e.
 		// `done` is called) or the context is canceled.
 		cancel()
-		So(<-got, ShouldBeNil) // unblocked and finished with nil
+		assert.Loosely(t, <-got, should.BeNil) // unblocked and finished with nil
 
 		// Make sure the workset is still functional.
 		go func() {
@@ -161,6 +162,6 @@ func TestWorkSet(t *testing.T) {
 		}()
 
 		done([]Item{111})
-		So((<-got).(int), ShouldEqual, 111)
+		assert.Loosely(t, (<-got).(int), should.Equal(111))
 	})
 }

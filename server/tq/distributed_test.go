@@ -19,17 +19,17 @@ import (
 	"sync"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
 	"go.chromium.org/luci/server/tq/tqtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSweepRouting(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		disp := Dispatcher{}
@@ -52,7 +52,7 @@ func TestSweepRouting(t *testing.T) {
 		enqueue(ctx, submitted)
 
 		sched.Run(ctx, tqtesting.StopWhenDrained())
-		So(calls, ShouldHaveLength, 1)
-		So(calls[0], ShouldResembleProto, submitted)
+		assert.Loosely(t, calls, should.HaveLength(1))
+		assert.Loosely(t, calls[0], should.Resemble(submitted))
 	})
 }

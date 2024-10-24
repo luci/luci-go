@@ -16,11 +16,9 @@ package dispatcher
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
 	"go.chromium.org/luci/common/sync/dispatcher/buffer"
@@ -60,16 +58,6 @@ func TestOptionValidationGood(t *testing.T) {
 		},
 	}
 
-	funcCheck := cmp.FilterPath(
-		func(p cmp.Path) bool {
-			return p.Last().Type().Kind() == reflect.Func
-		}, cmp.Transformer("func.pointer", func(fn any) uintptr {
-			if fn == nil {
-				return 0
-			}
-			return reflect.ValueOf(fn).Pointer()
-		}))
-
 	ftt.Run(`test good option groups`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		for _, options := range goodOptions {
@@ -87,7 +75,7 @@ func TestOptionValidationGood(t *testing.T) {
 				if expect.ErrorFn == nil {
 					assert.Loosely(t, myOptions.ErrorFn, should.NotBeNil) // default is non-nil
 				} else {
-					assert.That(t, myOptions.ErrorFn, should.Match(expect.ErrorFn, funcCheck))
+					assert.That(t, myOptions.ErrorFn, should.Match(expect.ErrorFn))
 					expect.ErrorFn = nil
 				}
 				myOptions.ErrorFn = nil
@@ -95,7 +83,7 @@ func TestOptionValidationGood(t *testing.T) {
 				if expect.DropFn == nil {
 					assert.Loosely(t, myOptions.DropFn, should.NotBeNil) // default is non-nil
 				} else {
-					assert.That(t, &myOptions.DropFn, should.Match(&expect.DropFn, funcCheck))
+					assert.That(t, &myOptions.DropFn, should.Match(&expect.DropFn))
 					expect.DropFn = nil
 				}
 				myOptions.DropFn = nil
@@ -103,7 +91,7 @@ func TestOptionValidationGood(t *testing.T) {
 				if expect.ItemSizeFunc == nil {
 					assert.Loosely(t, myOptions.ItemSizeFunc, should.BeNil)
 				} else {
-					assert.Loosely(t, &myOptions.ItemSizeFunc, should.Match(&expect.ItemSizeFunc, funcCheck))
+					assert.Loosely(t, &myOptions.ItemSizeFunc, should.Match(&expect.ItemSizeFunc))
 					expect.ItemSizeFunc = nil
 				}
 				myOptions.ItemSizeFunc = nil

@@ -22,7 +22,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestRender(t *testing.T) {
@@ -40,46 +43,47 @@ content {{.arg1}} {{.arg2}}
 `,
 	}
 
-	Convey("AssetsLoader works", t, func(conv C) {
-		loaderTest(conv, AssetsLoader(assets))
+	ftt.Run("AssetsLoader works", t, func(t *ftt.Test) {
+		loaderTest(t, AssetsLoader(assets))
 	})
 
-	Convey("FileSystemLoader works", t, func(conv C) {
+	ftt.Run("FileSystemLoader works", t, func(t *ftt.Test) {
 		dir, err := os.MkdirTemp("", "luci-go-templates")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer os.RemoveAll(dir)
 
 		for k, v := range assets {
 			path := filepath.Join(dir, filepath.FromSlash(k))
-			So(os.MkdirAll(filepath.Dir(path), 0777), ShouldBeNil)
-			So(os.WriteFile(path, []byte(v), 0666), ShouldBeNil)
+			assert.Loosely(t, os.MkdirAll(filepath.Dir(path), 0777), should.BeNil)
+			assert.Loosely(t, os.WriteFile(path, []byte(v), 0666), should.BeNil)
 		}
-		loaderTest(conv, FileSystemLoader(os.DirFS(dir)))
+		loaderTest(t, FileSystemLoader(os.DirFS(dir)))
 	})
 }
 
-func loaderTest(conv C, l Loader) {
+func loaderTest(t testing.TB, l Loader) {
+	t.Helper()
 	b := Bundle{
 		Loader:          l,
 		DefaultTemplate: "base",
 		DefaultArgs: func(c context.Context, e *Extra) (Args, error) {
-			conv.So(e.Request.Host, ShouldEqual, "hi.example.com")
+			assert.That(t, e.Request.Host, should.Equal("hi.example.com"), truth.LineContext())
 			return Args{"arg1": "val1"}, nil
 		},
 	}
-	c := Use(context.Background(), &b, &Extra{
+	ctx := Use(context.Background(), &b, &Extra{
 		Request: &http.Request{Host: "hi.example.com"},
 	})
 
-	tmpl, err := Get(c, "pages/page")
-	conv.So(tmpl, ShouldNotBeNil)
-	conv.So(err, ShouldBeNil)
+	tmpl, err := Get(ctx, "pages/page")
+	assert.Loosely(t, tmpl, should.NotBeNilInterface, truth.LineContext())
+	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
 
-	blob, err := Render(c, "pages/page", Args{"arg2": "val2"})
-	conv.So(err, ShouldBeNil)
-	conv.So(string(blob), ShouldEqual, "\nbase\n\ncontent val1 val2\n\n")
+	blob, err := Render(ctx, "pages/page", Args{"arg2": "val2"})
+	assert.That(t, err, should.ErrLike(nil), truth.LineContext())
+	assert.That(t, string(blob), should.Equal("\nbase\n\ncontent val1 val2\n\n"), truth.LineContext())
 
 	buf := bytes.Buffer{}
-	MustRender(c, &buf, "pages/page", Args{"arg2": "val2"})
-	conv.So(buf.String(), ShouldEqual, "\nbase\n\ncontent val1 val2\n\n")
+	MustRender(ctx, &buf, "pages/page", Args{"arg2": "val2"})
+	assert.That(t, buf.String(), should.Equal("\nbase\n\ncontent val1 val2\n\n"), truth.LineContext())
 }

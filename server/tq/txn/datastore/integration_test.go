@@ -31,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/featureBreaker/flaky"
 	"go.chromium.org/luci/gae/filter/txndefer"
@@ -40,21 +42,17 @@ import (
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/tqtesting"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDistributedSweeping(t *testing.T) {
 	t.Parallel()
 
-	Convey("Distributed sweeping", t, func() {
-		RunTest(t, func(disp *tq.Dispatcher) tq.Sweeper {
-			// Use smaller sweep tasks to hit more edge cases.
-			return tq.NewDistributedSweeper(disp, tq.DistributedSweeperOptions{
-				SweepShards:         4,
-				TasksPerScan:        10,
-				SecondaryScanShards: 4,
-			})
+	RunTest(t, func(disp *tq.Dispatcher) tq.Sweeper {
+		// Use smaller sweep tasks to hit more edge cases.
+		return tq.NewDistributedSweeper(disp, tq.DistributedSweeperOptions{
+			SweepShards:         4,
+			TasksPerScan:        10,
+			SecondaryScanShards: 4,
 		})
 	})
 }
@@ -62,16 +60,14 @@ func TestDistributedSweeping(t *testing.T) {
 func TestInProcSweeping(t *testing.T) {
 	t.Parallel()
 
-	Convey("Inproc sweeping", t, func() {
-		RunTest(t, func(disp *tq.Dispatcher) tq.Sweeper {
-			// Use smaller sweep tasks to hit more edge cases.
-			return tq.NewInProcSweeper(tq.InProcSweeperOptions{
-				SweepShards:             4,
-				TasksPerScan:            10,
-				SecondaryScanShards:     4,
-				SubmitBatchSize:         4,
-				SubmitConcurrentBatches: 2,
-			})
+	RunTest(t, func(disp *tq.Dispatcher) tq.Sweeper {
+		// Use smaller sweep tasks to hit more edge cases.
+		return tq.NewInProcSweeper(tq.InProcSweeperOptions{
+			SweepShards:             4,
+			TasksPerScan:            10,
+			SecondaryScanShards:     4,
+			SubmitBatchSize:         4,
+			SubmitConcurrentBatches: 2,
 		})
 	})
 }
@@ -181,8 +177,8 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 
 	// See how many transactions really landed.
 	var landed []*testEntity
-	So(datastore.GetAll(ctx, datastore.NewQuery("testEntity"), &landed), ShouldBeNil)
-	So(len(landed), ShouldBeGreaterThan, 5) // it is usually much larger (but still random)
+	assert.Loosely(t, datastore.GetAll(ctx, datastore.NewQuery("testEntity"), &landed), should.BeNil)
+	assert.Loosely(t, len(landed), should.BeGreaterThan(5)) // it is usually much larger (but still random)
 
 	// Run rounds of sweeps until there are no reminders left or we appear to
 	// be stuck. Use panics instead of So(...) to avoid spamming goconvey with
@@ -218,7 +214,7 @@ func RunTest(t *testing.T, sweeper func(*tq.Dispatcher) tq.Sweeper) {
 	}
 
 	// All transactionally submitted tasks should have been executed.
-	So(len(execed), ShouldEqual, len(landed))
+	assert.Loosely(t, len(execed), should.Equal(len(landed)))
 	// And at most once.
 	for k, v := range execed {
 		if v != 1 {

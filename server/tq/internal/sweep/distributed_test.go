@@ -27,21 +27,21 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/tq/internal/lessor"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
 	"go.chromium.org/luci/server/tq/internal/tqpb"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDistributed(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		var epoch = testclock.TestRecentTimeLocal
 		const keySpaceBytes = 2
 
@@ -99,75 +99,75 @@ func TestDistributed(t *testing.T) {
 			return rem
 		}
 
-		Convey("No reminders", func() {
+		t.Run("No reminders", func(t *ftt.Test) {
 			err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-			So(err, ShouldBeNil)
-			So(enqueued, ShouldBeEmpty)
-			So(sub.req, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, enqueued, should.BeEmpty)
+			assert.Loosely(t, sub.req, should.BeEmpty)
 		})
 
-		Convey("Two reminders, one still fresh", func() {
-			So(db.SaveReminder(ctx, mkReminder(77, true, "r1")), ShouldBeNil)
-			So(db.SaveReminder(ctx, mkReminder(111, false, "r2")), ShouldBeNil)
+		t.Run("Two reminders, one still fresh", func(t *ftt.Test) {
+			assert.Loosely(t, db.SaveReminder(ctx, mkReminder(77, true, "r1")), should.BeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, mkReminder(111, false, "r2")), should.BeNil)
 
 			err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-			So(err, ShouldBeNil)
-			So(enqueued, ShouldBeEmpty)
-			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "r2")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, enqueued, should.BeEmpty)
+			assert.Loosely(t, sub.req, should.HaveLength(1))
+			assert.Loosely(t, sub.req[0].CreateTaskRequest.Parent, should.Equal("r2"))
 
-			So(db.AllReminders(), ShouldHaveLength, 1)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(1))
 		})
 
-		Convey("With follow up tasks", func() {
+		t.Run("With follow up tasks", func(t *ftt.Test) {
 			for i := 0; i < 64; i++ {
-				So(db.SaveReminder(ctx, mkReminder(i, false, "")), ShouldBeNil)
+				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, "")), should.BeNil)
 			}
 
 			tasksPerScan = 32
 			secondaryScanShards = 2
 
 			err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			sort.Slice(enqueued, func(i, j int) bool {
 				return enqueued[i].Partition < enqueued[j].Partition
 			})
-			So(enqueued, ShouldHaveLength, 2)
-			So(enqueued[0], ShouldResembleProto, sweepTask(32, 144, 1))
-			So(enqueued[1], ShouldResembleProto, sweepTask(144, 256, 1))
+			assert.Loosely(t, enqueued, should.HaveLength(2))
+			assert.Loosely(t, enqueued[0], should.Resemble(sweepTask(32, 144, 1)))
+			assert.Loosely(t, enqueued[1], should.Resemble(sweepTask(144, 256, 1)))
 
-			So(sub.req, ShouldHaveLength, 32)           // submitted up to the limit
-			So(db.AllReminders(), ShouldHaveLength, 32) // the rest are still there
+			assert.Loosely(t, sub.req, should.HaveLength(32))           // submitted up to the limit
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(32)) // the rest are still there
 		})
 
-		Convey("With batching", func() {
+		t.Run("With batching", func(t *ftt.Test) {
 			for i := 0; i < 100; i++ {
-				So(db.SaveReminder(ctx, mkReminder(i, false, "")), ShouldBeNil)
+				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, "")), should.BeNil)
 			}
 
-			Convey("Success", func() {
+			t.Run("Success", func(t *ftt.Test) {
 				err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-				So(err, ShouldBeNil)
-				So(enqueued, ShouldBeEmpty)
-				So(sub.req, ShouldHaveLength, 100)
-				So(db.AllReminders(), ShouldBeEmpty) // submitted everything
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, enqueued, should.BeEmpty)
+				assert.Loosely(t, sub.req, should.HaveLength(100))
+				assert.Loosely(t, db.AllReminders(), should.BeEmpty) // submitted everything
 			})
 
-			Convey("Transient errors", func() {
+			t.Run("Transient errors", func(t *ftt.Test) {
 				sub.err = status.Errorf(codes.Internal, "boo")
 
 				err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-				So(err, ShouldNotBeNil)
-				So(enqueued, ShouldBeEmpty)
-				So(sub.req, ShouldHaveLength, 100)           // tried
-				So(db.AllReminders(), ShouldHaveLength, 100) // but failed and kept reminders
+				assert.Loosely(t, err, should.NotBeNil)
+				assert.Loosely(t, enqueued, should.BeEmpty)
+				assert.Loosely(t, sub.req, should.HaveLength(100))           // tried
+				assert.Loosely(t, db.AllReminders(), should.HaveLength(100)) // but failed and kept reminders
 			})
 		})
 
-		Convey("Partial lease", func() {
+		t.Run("Partial lease", func(t *ftt.Test) {
 			for i := 0; i < 100; i++ {
-				So(db.SaveReminder(ctx, mkReminder(i, false, fmt.Sprintf("%04d", i))), ShouldBeNil)
+				assert.Loosely(t, db.SaveReminder(ctx, mkReminder(i, false, fmt.Sprintf("%04d", i))), should.BeNil)
 			}
 
 			lessor.leased = partition.SortedPartitions{
@@ -177,20 +177,20 @@ func TestDistributed(t *testing.T) {
 			}
 
 			err := dist.ExecSweepTask(ctx, sweepTask(0, 256, 0))
-			So(err, ShouldBeNil)
-			So(enqueued, ShouldBeEmpty)
-			So(sub.req, ShouldHaveLength, 5+1+5)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, enqueued, should.BeEmpty)
+			assert.Loosely(t, sub.req, should.HaveLength(5+1+5))
 
 			submitted := []string{}
 			for _, r := range sub.req {
 				submitted = append(submitted, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(submitted)
-			So(submitted, ShouldResemble, []string{
+			assert.Loosely(t, submitted, should.Resemble([]string{
 				"0000", "0001", "0002", "0003", "0004",
 				"0015",
 				"0020", "0021", "0022", "0023", "0024",
-			})
+			}))
 		})
 	})
 }

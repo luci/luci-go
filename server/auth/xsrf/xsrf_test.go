@@ -16,6 +16,7 @@ package xsrf
 
 import (
 	"context"
+	"encoding/base64"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -25,31 +26,32 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestXsrf(t *testing.T) {
-	Convey("Token + Check", t, func() {
+	ftt.Run("Token + Check", t, func(t *ftt.Test) {
 		c := makeContext()
 		tok, err := Token(c)
-		So(err, ShouldBeNil)
-		So(Check(c, tok), ShouldBeNil)
-		So(Check(c, tok+"abc"), ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, Check(c, tok), should.BeNil)
+		assert.Loosely(t, Check(c, tok+"abc"), should.ErrLike(base64.CorruptInputError(76)))
 	})
 
-	Convey("TokenField works", t, func() {
+	ftt.Run("TokenField works", t, func(t *ftt.Test) {
 		c := makeContext()
-		So(TokenField(c), ShouldResemble,
+		assert.Loosely(t, TokenField(c), should.Resemble(
 			template.HTML("<input type=\"hidden\" name=\"xsrf_token\" "+
-				"value=\"AXsiX2kiOiIxNDQyMjcwNTIwMDAwIn1ceiDv1yfNK9OHcdb209l3fM4p_gn-Uaembaa8gr3WXg\">"))
+				"value=\"AXsiX2kiOiIxNDQyMjcwNTIwMDAwIn1ceiDv1yfNK9OHcdb209l3fM4p_gn-Uaembaa8gr3WXg\">")))
 	})
 
-	Convey("Middleware works", t, func() {
+	ftt.Run("Middleware works", t, func(t *ftt.Test) {
 		c := makeContext()
 		tok, _ := Token(c)
 
@@ -65,7 +67,7 @@ func TestXsrf(t *testing.T) {
 			Writer:  rec,
 			Request: req,
 		}, mc, h)
-		So(rec.Code, ShouldEqual, 200)
+		assert.Loosely(t, rec.Code, should.Equal(200))
 
 		// No token.
 		rec = httptest.NewRecorder()
@@ -74,7 +76,7 @@ func TestXsrf(t *testing.T) {
 			Writer:  rec,
 			Request: req,
 		}, mc, h)
-		So(rec.Code, ShouldEqual, 403)
+		assert.Loosely(t, rec.Code, should.Equal(403))
 
 		// Bad token.
 		rec = httptest.NewRecorder()
@@ -83,7 +85,7 @@ func TestXsrf(t *testing.T) {
 			Writer:  rec,
 			Request: req,
 		}, mc, h)
-		So(rec.Code, ShouldEqual, 403)
+		assert.Loosely(t, rec.Code, should.Equal(403))
 	})
 }
 

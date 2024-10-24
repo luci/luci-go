@@ -39,6 +39,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -48,14 +51,12 @@ import (
 	"go.chromium.org/luci/server/encryptedcookies/internal"
 	"go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMethod(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func(c C) {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		// Instantiate ID provider with mocked time only. It doesn't need other
 		// context features.
 		ctx := context.Background()
@@ -70,14 +71,14 @@ func TestMethod(t *testing.T) {
 			UserPicture:          "https://example.com/picture",
 			RefreshToken:         "good_refresh_token",
 		}
-		provider.Init(ctx, c)
+		provider.Init(ctx, t)
 		defer provider.Close()
 
 		// Primary encryption keys used to encrypt cookies.
 		kh, err := keyset.NewHandle(aead.AES256GCMKeyTemplate())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		ae, err := aead.New(kh)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Install the rest of the context stuff used by AuthMethod.
 		ctx = memory.Use(ctx)
@@ -121,19 +122,19 @@ func TestMethod(t *testing.T) {
 		}
 
 		performLogin := func(method *AuthMethod) (callbackRawQuery string) {
-			So(method.Warmup(ctx), ShouldBeNil)
+			assert.Loosely(t, method.Warmup(ctx), should.BeNil)
 
 			loginURL, err := method.LoginURL(ctx, "/some/dest")
-			So(err, ShouldBeNil)
-			So(loginURL, ShouldEqual, "/auth/openid/login?r=%2Fsome%2Fdest")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, loginURL, should.Equal("/auth/openid/login?r=%2Fsome%2Fdest"))
 			parsed, _ := url.Parse(loginURL)
 
 			// Hitting the generated login URL generates a redirect to the provider.
 			resp := call(method.loginHandler, "dest.example.com", parsed, nil)
-			So(resp.StatusCode, ShouldEqual, http.StatusFound)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
 			authURL, _ := url.Parse(resp.Header.Get("Location"))
-			So(authURL.Host, ShouldEqual, provider.Host())
-			So(authURL.Path, ShouldEqual, "/authorization")
+			assert.Loosely(t, authURL.Host, should.Equal(provider.Host()))
+			assert.Loosely(t, authURL.Path, should.Equal("/authorization"))
 
 			// After the user logs in, the provider generates a redirect to the
 			// callback URI with some query parameters.
@@ -147,8 +148,8 @@ func TestMethod(t *testing.T) {
 			}, nil)
 
 			// We got a redirect to "dest.example.com".
-			So(resp.StatusCode, ShouldEqual, http.StatusFound)
-			So(resp.Header.Get("Location"), ShouldEqual, "https://dest.example.com?"+callbackRawQuery)
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, resp.Header.Get("Location"), should.Equal("https://dest.example.com?"+callbackRawQuery))
 
 			// Now hitting the same callback on "dest.example.com".
 			resp = call(method.callbackHandler, "dest.example.com", &url.URL{
@@ -156,8 +157,8 @@ func TestMethod(t *testing.T) {
 			}, nil)
 
 			// Got a redirect to the final destination URL.
-			So(resp.StatusCode, ShouldEqual, http.StatusFound)
-			So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
+			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
+			assert.Loosely(t, resp.Header.Get("Location"), should.Equal("/some/dest"))
 
 			// And we've got some session cookie!
 			for _, c := range resp.Cookies() {
@@ -165,11 +166,11 @@ func TestMethod(t *testing.T) {
 					deleted = append(deleted, c)
 				} else {
 					// Should have at most one new cookie.
-					So(cookie, ShouldBeNil)
+					assert.Loosely(t, cookie, should.BeNil)
 					cookie = c
 				}
 			}
-			So(cookie, ShouldNotBeNil)
+			assert.Loosely(t, cookie, should.NotBeNil)
 			return
 		}
 
@@ -181,133 +182,133 @@ func TestMethod(t *testing.T) {
 			return auth.RequestMetadataForHTTP(req)
 		}
 
-		Convey("Full flow", func() {
+		t.Run("Full flow", func(t *ftt.Test) {
 			callbackRawQueryV1 := performLogin(methodV1)
 			cookieV1, deleted := performCallback(methodV1, callbackRawQueryV1)
 
 			// Set the cookie on the correct path.
-			So(cookieV1.Path, ShouldEqual, internal.UnlimitedCookiePath)
+			assert.Loosely(t, cookieV1.Path, should.Equal(internal.UnlimitedCookiePath))
 
 			// Removed a potentially stale cookie on a different path.
-			So(deleted, ShouldHaveLength, 1)
-			So(deleted[0].Path, ShouldEqual, internal.LimitedCookiePath)
+			assert.Loosely(t, deleted, should.HaveLength(1))
+			assert.Loosely(t, deleted[0].Path, should.Equal(internal.LimitedCookiePath))
 
 			// Handed out 1 access token thus far.
-			So(provider.AccessTokensMinted(), ShouldEqual, 1)
+			assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(1))
 
-			Convey("Code reuse is forbidden", func() {
+			t.Run("Code reuse is forbidden", func(t *ftt.Test) {
 				// Trying to use the authorization code again fails.
 				resp := call(methodV1.callbackHandler, "dest.example.com", &url.URL{
 					RawQuery: callbackRawQueryV1,
 				}, nil)
-				So(resp.StatusCode, ShouldEqual, http.StatusBadRequest)
+				assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusBadRequest))
 			})
 
-			Convey("No cookies => method is skipped", func() {
+			t.Run("No cookies => method is skipped", func(t *ftt.Test) {
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(nil))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 			})
 
-			Convey("Good cookie works", func() {
+			t.Run("Good cookie works", func(t *ftt.Test) {
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldResemble, &auth.User{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.Resemble(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
 					Picture:  provider.UserPicture,
-				})
-				So(session, ShouldNotBeNil)
+				}))
+				assert.Loosely(t, session, should.NotBeNil)
 
 				// Can grab the stored access token.
 				tok, err := session.AccessToken(ctx)
-				So(err, ShouldBeNil)
-				So(tok.AccessToken, ShouldEqual, "access_token_1")
-				So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, time.Hour)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tok.AccessToken, should.Equal("access_token_1"))
+				assert.Loosely(t, tok.Expiry.Sub(testclock.TestRecentTimeUTC), should.Equal(time.Hour))
 
 				// Can grab the stored ID token.
 				tok, err = session.IDToken(ctx)
-				So(err, ShouldBeNil)
-				So(tok.AccessToken, ShouldStartWith, "eyJhbG") // JWT header
-				So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, time.Hour)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, tok.AccessToken, should.HavePrefix("eyJhbG")) // JWT header
+				assert.Loosely(t, tok.Expiry.Sub(testclock.TestRecentTimeUTC), should.Equal(time.Hour))
 			})
 
-			Convey("Malformed cookie is ignored", func() {
+			t.Run("Malformed cookie is ignored", func(t *ftt.Test) {
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(&http.Cookie{
 					Name:  cookieV1.Name,
 					Value: cookieV1.Value[:20],
 				}))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 			})
 
-			Convey("Missing datastore session", func() {
+			t.Run("Missing datastore session", func(t *ftt.Test) {
 				methodV1.Sessions.(*datastore.Store).Namespace = "another"
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 			})
 
-			Convey("After short-lived tokens expire", func() {
+			t.Run("After short-lived tokens expire", func(t *ftt.Test) {
 				tc.Add(2 * time.Hour)
 
-				Convey("Session refresh OK", func() {
+				t.Run("Session refresh OK", func(t *ftt.Test) {
 					// The session is still valid.
 					user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-					So(err, ShouldBeNil)
-					So(user, ShouldNotBeNil)
-					So(session, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, user, should.NotBeNil)
+					assert.Loosely(t, session, should.NotBeNil)
 
 					// Tokens have been refreshed.
-					So(provider.AccessTokensMinted(), ShouldEqual, 2)
+					assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(2))
 
 					// auth.Session returns the refreshed token.
 					tok, err := session.AccessToken(ctx)
-					So(err, ShouldBeNil)
-					So(tok.AccessToken, ShouldEqual, "access_token_2")
-					So(tok.Expiry.Sub(testclock.TestRecentTimeUTC), ShouldEqual, 3*time.Hour)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, tok.AccessToken, should.Equal("access_token_2"))
+					assert.Loosely(t, tok.Expiry.Sub(testclock.TestRecentTimeUTC), should.Equal(3*time.Hour))
 
 					// No need to refresh anymore.
 					user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-					So(err, ShouldBeNil)
-					So(user, ShouldNotBeNil)
-					So(session, ShouldNotBeNil)
-					So(provider.AccessTokensMinted(), ShouldEqual, 2)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, user, should.NotBeNil)
+					assert.Loosely(t, session, should.NotBeNil)
+					assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(2))
 				})
 
-				Convey("Session refresh transient fail", func() {
+				t.Run("Session refresh transient fail", func(t *ftt.Test) {
 					provider.TransientErr = errors.New("boom")
 
 					_, _, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-					So(err, ShouldNotBeNil)
-					So(transient.Tag.In(err), ShouldBeTrue)
+					assert.Loosely(t, err, should.NotBeNil)
+					assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 				})
 
-				Convey("Session refresh fatal fail", func() {
+				t.Run("Session refresh fatal fail", func(t *ftt.Test) {
 					provider.RefreshToken = "another-token"
 
 					// Refresh fails and closes the session.
 					user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-					So(err, ShouldBeNil)
-					So(user, ShouldBeNil)
-					So(session, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, user, should.BeNil)
+					assert.Loosely(t, session, should.BeNil)
 
 					// Using the closed session is unsuccessful.
 					user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-					So(err, ShouldBeNil)
-					So(user, ShouldBeNil)
-					So(session, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, user, should.BeNil)
+					assert.Loosely(t, session, should.BeNil)
 				})
 			})
 
-			Convey("Logout works", func() {
+			t.Run("Logout works", func(t *ftt.Test) {
 				logoutURL, err := methodV1.LogoutURL(ctx, "/some/dest")
-				So(err, ShouldBeNil)
-				So(logoutURL, ShouldEqual, "/auth/openid/logout?r=%2Fsome%2Fdest")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, logoutURL, should.Equal("/auth/openid/logout?r=%2Fsome%2Fdest"))
 				parsed, _ := url.Parse(logoutURL)
 
 				resp := call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
@@ -315,82 +316,82 @@ func TestMethod(t *testing.T) {
 				})
 
 				// Got a redirect to the final destination URL.
-				So(resp.StatusCode, ShouldEqual, http.StatusFound)
-				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
+				assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
+				assert.Loosely(t, resp.Header.Get("Location"), should.Equal("/some/dest"))
 
 				// Cookies are removed.
 				cookies := resp.Cookies()
 				paths := []string{}
 				for _, c := range cookies {
-					So(c.Name, ShouldEqual, internal.SessionCookieName)
-					So(c.Value, ShouldEqual, "deleted")
-					So(c.MaxAge, ShouldEqual, -1)
+					assert.Loosely(t, c.Name, should.Equal(internal.SessionCookieName))
+					assert.Loosely(t, c.Value, should.Equal("deleted"))
+					assert.Loosely(t, c.MaxAge, should.Equal(-1))
 					paths = append(paths, c.Path)
 				}
-				So(paths, ShouldResemble, []string{internal.UnlimitedCookiePath, internal.LimitedCookiePath})
+				assert.Loosely(t, paths, should.Resemble([]string{internal.UnlimitedCookiePath, internal.LimitedCookiePath}))
 
 				// It also no longer works.
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 
 				// The refresh token was not revoked.
-				So(provider.Revoked, ShouldBeNil)
+				assert.Loosely(t, provider.Revoked, should.BeNil)
 
 				// Hitting logout again (resending the cookie) succeeds.
 				resp = call(methodV1.logoutHandler, "primary.example.com", parsed, http.Header{
 					"Cookie": {fmt.Sprintf("%s=%s", cookieV1.Name, cookieV1.Value)},
 				})
-				So(resp.StatusCode, ShouldEqual, http.StatusFound)
-				So(resp.Header.Get("Location"), ShouldEqual, "/some/dest")
-				So(provider.Revoked, ShouldBeNil)
+				assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
+				assert.Loosely(t, resp.Header.Get("Location"), should.Equal("/some/dest"))
+				assert.Loosely(t, provider.Revoked, should.BeNil)
 			})
 
-			Convey("Add additional optional scope works", func() {
+			t.Run("Add additional optional scope works", func(t *ftt.Test) {
 				methodV2 := makeMethod([]string{"scope1"}, []string{"scope2", "scope3"})
 
 				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldResemble, &auth.User{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.Resemble(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
 					Picture:  provider.UserPicture,
-				})
-				So(session, ShouldNotBeNil)
+				}))
+				assert.Loosely(t, session, should.NotBeNil)
 			})
 
-			Convey("Promote optional scope works", func() {
+			t.Run("Promote optional scope works", func(t *ftt.Test) {
 				methodV2 := makeMethod([]string{"scope1", "scope2"}, nil)
 
 				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldResemble, &auth.User{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.Resemble(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
 					Picture:  provider.UserPicture,
-				})
-				So(session, ShouldNotBeNil)
+				}))
+				assert.Loosely(t, session, should.NotBeNil)
 			})
 
-			Convey("Add additional required scope invalidates old sessions", func() {
+			t.Run("Add additional required scope invalidates old sessions", func(t *ftt.Test) {
 				methodV2 := makeMethod([]string{"scope1", "scope3"}, []string{"scope2"})
 
 				user, session, err := methodV2.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 
 				// The cookie no longer works with the old method.
 				user, session, err = methodV1.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 			})
 
-			Convey("Additional scopes are decided during login not callback", func() {
+			t.Run("Additional scopes are decided during login not callback", func(t *ftt.Test) {
 				methodV2 := makeMethod([]string{"scope1"}, []string{"scope2", "scope3"})
 				methodV3 := makeMethod([]string{"scope1", "scope3"}, []string{"scope2"})
 
@@ -402,9 +403,9 @@ func TestMethod(t *testing.T) {
 				// Cookies produced by login requests in methodV1 does not have the
 				// added scope.
 				user, session, err := methodV3.Authenticate(ctx, phonyRequest(cookieV1))
-				So(err, ShouldBeNil)
-				So(user, ShouldBeNil)
-				So(session, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.BeNil)
+				assert.Loosely(t, session, should.BeNil)
 
 				// User hit the login handle in the v2 but the callback is handled by
 				// v1.
@@ -414,41 +415,41 @@ func TestMethod(t *testing.T) {
 				// Cookies produced by login requests in methodV2 does have the added
 				// scope.
 				user, session, err = methodV3.Authenticate(ctx, phonyRequest(cookieV2))
-				So(err, ShouldBeNil)
-				So(user, ShouldResemble, &auth.User{
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, user, should.Resemble(&auth.User{
 					Identity: identity.Identity("user:" + provider.UserEmail),
 					Email:    provider.UserEmail,
 					Name:     provider.UserName,
 					Picture:  provider.UserPicture,
-				})
-				So(session, ShouldNotBeNil)
+				}))
+				assert.Loosely(t, session, should.NotBeNil)
 			})
 		})
 
-		Convey("LimitCookieExposure cookie works", func() {
+		t.Run("LimitCookieExposure cookie works", func(t *ftt.Test) {
 			method := makeMethod([]string{"scope1"}, []string{"scope2"})
 			method.LimitCookieExposure = true
 
 			cookie, deleted := performCallback(method, performLogin(method))
 
 			// Set the cookie on the correct path.
-			So(cookie.Path, ShouldEqual, internal.LimitedCookiePath)
-			So(cookie.SameSite, ShouldEqual, http.SameSiteStrictMode)
+			assert.Loosely(t, cookie.Path, should.Equal(internal.LimitedCookiePath))
+			assert.Loosely(t, cookie.SameSite, should.Equal(http.SameSiteStrictMode))
 
 			// Removed a potentially stale cookie on a different path.
-			So(deleted, ShouldHaveLength, 1)
-			So(deleted[0].Path, ShouldEqual, internal.UnlimitedCookiePath)
+			assert.Loosely(t, deleted, should.HaveLength(1))
+			assert.Loosely(t, deleted[0].Path, should.Equal(internal.UnlimitedCookiePath))
 
 			user, _, _ := method.Authenticate(ctx, phonyRequest(cookie))
-			So(user, ShouldResemble, &auth.User{
+			assert.Loosely(t, user, should.Resemble(&auth.User{
 				Identity: identity.Identity("user:" + provider.UserEmail),
 				Email:    provider.UserEmail,
 				Name:     provider.UserName,
 				Picture:  provider.UserPicture,
-			})
+			}))
 		})
 
-		Convey("State endpoint works", func() {
+		t.Run("State endpoint works", func(t *ftt.Test) {
 			r := router.New()
 			r.Use(router.MiddlewareChain{
 				func(rc *router.Context, next router.Handler) {
@@ -470,25 +471,25 @@ func TestMethod(t *testing.T) {
 				code = res.StatusCode
 				if code == 200 {
 					state = &auth.StateEndpointResponse{}
-					So(json.NewDecoder(res.Body).Decode(&state), ShouldBeNil)
+					assert.Loosely(t, json.NewDecoder(res.Body).Decode(&state), should.BeNil)
 				}
 				return
 			}
 
 			goodCookie, _ := performCallback(methodV1, performLogin(methodV1))
-			So(provider.AccessTokensMinted(), ShouldEqual, 1)
+			assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(1))
 			tc.Add(30 * time.Minute)
 
-			Convey("No cookie", func() {
+			t.Run("No cookie", func(t *ftt.Test) {
 				code, state := callState(nil)
-				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &auth.StateEndpointResponse{Identity: "anonymous:anonymous"})
+				assert.Loosely(t, code, should.Equal(200))
+				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{Identity: "anonymous:anonymous"}))
 			})
 
-			Convey("Valid cookie", func() {
+			t.Run("Valid cookie", func(t *ftt.Test) {
 				code, state := callState(goodCookie)
-				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &auth.StateEndpointResponse{
+				assert.Loosely(t, code, should.Equal(200))
+				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",
@@ -498,19 +499,19 @@ func TestMethod(t *testing.T) {
 					IDToken:              state.IDToken, // checked separately
 					IDTokenExpiry:        testclock.TestRecentTimeUTC.Add(time.Hour).Unix(),
 					IDTokenExpiresIn:     1800,
-				})
-				So(state.IDToken, ShouldStartWith, "eyJhbG") // JWT header
+				}))
+				assert.Loosely(t, state.IDToken, should.HavePrefix("eyJhbG")) // JWT header
 
 				// Still only 1 token minted overall.
-				So(provider.AccessTokensMinted(), ShouldEqual, 1)
+				assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(1))
 			})
 
-			Convey("Refreshes tokens", func() {
+			t.Run("Refreshes tokens", func(t *ftt.Test) {
 				tc.Add(time.Hour) // make sure existing tokens expire
 
 				code, state := callState(goodCookie)
-				So(code, ShouldEqual, 200)
-				So(state, ShouldResemble, &auth.StateEndpointResponse{
+				assert.Loosely(t, code, should.Equal(200))
+				assert.Loosely(t, state, should.Resemble(&auth.StateEndpointResponse{
 					Identity:             "user:someone@example.com",
 					Email:                "someone@example.com",
 					Picture:              "https://example.com/picture",
@@ -520,11 +521,11 @@ func TestMethod(t *testing.T) {
 					IDToken:              state.IDToken, // checked separately
 					IDTokenExpiry:        testclock.TestRecentTimeUTC.Add(2*time.Hour + 30*time.Minute).Unix(),
 					IDTokenExpiresIn:     3600,
-				})
-				So(state.IDToken, ShouldStartWith, "eyJhbG") // JWT header
+				}))
+				assert.Loosely(t, state.IDToken, should.HavePrefix("eyJhbG")) // JWT header
 
 				// Minted a new token.
-				So(provider.AccessTokensMinted(), ShouldEqual, 2)
+				assert.Loosely(t, provider.AccessTokensMinted(), should.Equal(2))
 			})
 		})
 	})
@@ -552,19 +553,19 @@ type openIDProviderFake struct {
 
 	TransientErr error
 
-	c             C
+	t             testing.TB
 	srv           *httptest.Server
 	signer        *signingtest.Signer
 	nextAccessTok int64
 }
 
-func (f *openIDProviderFake) Init(ctx context.Context, c C) {
+func (f *openIDProviderFake) Init(ctx context.Context, t testing.TB) {
 	r := router.New()
 	r.GET("/discovery", nil, f.discoveryHandler)
 	r.GET("/jwks", nil, f.jwksHandler)
 	r.POST("/token", nil, f.tokenHandler)
 	r.POST("/revocation", nil, f.revocationHandler)
-	f.c = c
+	f.t = t
 	f.srv = httptest.NewServer(r)
 	f.signer = signingtest.NewSigner(nil)
 }
@@ -582,11 +583,11 @@ func (f *openIDProviderFake) DiscoveryURL() string {
 }
 
 func (f *openIDProviderFake) CallbackRawQuery(q url.Values) string {
-	f.c.So(q.Get("client_id"), ShouldEqual, f.ExpectedClientID)
-	f.c.So(q.Get("redirect_uri"), ShouldEqual, f.ExpectedRedirectURI)
-	f.c.So(q.Get("nonce"), ShouldNotEqual, "")
-	f.c.So(q.Get("code_challenge_method"), ShouldEqual, "S256")
-	f.c.So(q.Get("code_challenge"), ShouldNotEqual, "")
+	assert.That(f.t, q.Get("client_id"), should.Equal(f.ExpectedClientID))
+	assert.That(f.t, q.Get("redirect_uri"), should.Equal(f.ExpectedRedirectURI))
+	assert.That(f.t, q.Get("nonce"), should.NotEqual(""))
+	assert.That(f.t, q.Get("code_challenge_method"), should.Equal("S256"))
+	assert.That(f.t, q.Get("code_challenge"), should.NotEqual(""))
 
 	// Remember the nonce and the code verifier challenge just by encoding them
 	// in the resulting authorization code. This code is opaque to the ID

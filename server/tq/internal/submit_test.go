@@ -26,17 +26,18 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestSubmit(t *testing.T) {
 	t.Parallel()
 
-	Convey("With mocks", t, func() {
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		db := testutil.FakeDB{}
 		sub := submitter{}
@@ -49,7 +50,7 @@ func TestSubmit(t *testing.T) {
 					Parent: id + " body",
 				},
 			})
-			So(db.SaveReminder(ctx, r), ShouldBeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
 			return r
 		}
 
@@ -58,35 +59,35 @@ func TestSubmit(t *testing.T) {
 		}
 
 		r := makeRem("rem")
-		So(db.AllReminders(), ShouldHaveLength, 1)
+		assert.Loosely(t, db.AllReminders(), should.HaveLength(1))
 
-		Convey("Success, have payload deserialized", func() {
-			So(call(r), ShouldBeNil)
-			So(db.AllReminders(), ShouldHaveLength, 0)
-			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "rem body")
+		t.Run("Success, have payload deserialized", func(t *ftt.Test) {
+			assert.Loosely(t, call(r), should.BeNil)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(0))
+			assert.Loosely(t, sub.req, should.HaveLength(1))
+			assert.Loosely(t, sub.req[0].CreateTaskRequest.Parent, should.Equal("rem body"))
 		})
 
-		Convey("Success, from raw reminder payload", func() {
-			So(call(r.DropPayload()), ShouldBeNil)
-			So(db.AllReminders(), ShouldHaveLength, 0)
-			So(sub.req, ShouldHaveLength, 1)
-			So(sub.req[0].CreateTaskRequest.Parent, ShouldEqual, "rem body")
+		t.Run("Success, from raw reminder payload", func(t *ftt.Test) {
+			assert.Loosely(t, call(r.DropPayload()), should.BeNil)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(0))
+			assert.Loosely(t, sub.req, should.HaveLength(1))
+			assert.Loosely(t, sub.req[0].CreateTaskRequest.Parent, should.Equal("rem body"))
 		})
 
-		Convey("Transient err", func() {
+		t.Run("Transient err", func(t *ftt.Test) {
 			sub.err = status.Errorf(codes.Internal, "boo")
-			So(call(r), ShouldNotBeNil)
-			So(db.AllReminders(), ShouldHaveLength, 1) // kept it
+			assert.Loosely(t, call(r), should.NotBeNil)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(1)) // kept it
 		})
 
-		Convey("Fatal err", func() {
+		t.Run("Fatal err", func(t *ftt.Test) {
 			sub.err = status.Errorf(codes.PermissionDenied, "boo")
-			So(call(r), ShouldNotBeNil)
-			So(db.AllReminders(), ShouldHaveLength, 0) // deleted it
+			assert.Loosely(t, call(r), should.NotBeNil)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(0)) // deleted it
 		})
 
-		Convey("Batch", func() {
+		t.Run("Batch", func(t *ftt.Test) {
 			for i := 0; i < 5; i++ {
 				makeRem(fmt.Sprintf("more-%d", i))
 			}
@@ -95,14 +96,14 @@ func TestSubmit(t *testing.T) {
 			for _, r := range batch {
 				r.RawPayload = nil
 			}
-			So(batch, ShouldHaveLength, 6)
+			assert.Loosely(t, batch, should.HaveLength(6))
 
 			// Reject `rem`, keep only `more-...`.
 			sub.ban = stringset.NewFromSlice("rem body")
 
 			n, err := SubmitBatch(ctx, &sub, &db, batch)
-			So(err, ShouldNotBeNil) // had failing requests
-			So(n, ShouldEqual, 5)   // still submitted 5 tasks
+			assert.Loosely(t, err, should.NotBeNil) // had failing requests
+			assert.Loosely(t, n, should.Equal(5))   // still submitted 5 tasks
 
 			// Verify they had correct payloads.
 			var bodies []string
@@ -110,12 +111,12 @@ func TestSubmit(t *testing.T) {
 				bodies = append(bodies, r.CreateTaskRequest.Parent)
 			}
 			sort.Strings(bodies)
-			So(bodies, ShouldResemble, []string{
+			assert.Loosely(t, bodies, should.Resemble([]string{
 				"more-0 body", "more-1 body", "more-2 body", "more-3 body", "more-4 body",
-			})
+			}))
 
 			// All reminders are deleted, even the one that matches the failed task.
-			So(db.AllReminders(), ShouldHaveLength, 0)
+			assert.Loosely(t, db.AllReminders(), should.HaveLength(0))
 		})
 	})
 }

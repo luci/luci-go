@@ -17,26 +17,13 @@ package buffer
 import (
 	"container/heap"
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
-
-func init() {
-	registry.RegisterCmpOption(cmp.FilterPath(
-		func(p cmp.Path) bool {
-			return p.Last().Type().Kind() == reflect.Func
-		}, cmp.Transformer("func.pointer", func(f any) uintptr {
-			return reflect.ValueOf(f).Pointer()
-		}),
-	))
-}
 
 func TestBatchHeap(t *testing.T) {
 	ftt.Run(`batchHeap`, t, func(t *ftt.Test) {

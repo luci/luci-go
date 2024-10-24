@@ -23,6 +23,9 @@ import (
 
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/store"
@@ -30,14 +33,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 
 	"go.chromium.org/luci/server/router"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDispatcher(t *testing.T) {
 	t.Parallel()
 
-	Convey("With dispatcher", t, func() {
+	ftt.Run("With dispatcher", t, func(t *ftt.Test) {
 		ctx := context.Background()
 		ctx = gologger.StdConfig.Use(ctx)
 		ctx, _, _ = tsmon.WithFakes(ctx)
@@ -50,7 +51,7 @@ func TestDispatcher(t *testing.T) {
 		metricDist := func(m types.Metric, fieldVals ...any) (count int64) {
 			val := metric(m, fieldVals...)
 			if val != nil {
-				So(val, ShouldHaveSameTypeAs, &distribution.Distribution{})
+				assert.Loosely(t, val, should.HaveType[*distribution.Distribution])
 				count = val.(*distribution.Distribution).Count()
 			}
 			return
@@ -68,54 +69,54 @@ func TestDispatcher(t *testing.T) {
 			return rec.Result().StatusCode
 		}
 
-		Convey("Handler IDs", func() {
+		t.Run("Handler IDs", func(t *ftt.Test) {
 			d.RegisterHandler("h1", func(ctx context.Context) error { return nil })
 			d.RegisterHandler("h2", func(ctx context.Context) error { return nil })
-			So(d.handlerIDs(), ShouldResemble, []string{"h1", "h2"})
+			assert.Loosely(t, d.handlerIDs(), should.Resemble([]string{"h1", "h2"}))
 		})
 
-		Convey("Works", func() {
+		t.Run("Works", func(t *ftt.Test) {
 			called := false
 			d.RegisterHandler("ok", func(ctx context.Context) error {
 				called = true
 				return nil
 			})
-			So(call("/crons/ok"), ShouldEqual, 200)
-			So(called, ShouldBeTrue)
-			So(metric(callsCounter, "ok", "OK"), ShouldEqual, 1)
-			So(metricDist(callsDurationMS, "ok", "OK"), ShouldEqual, 1)
+			assert.Loosely(t, call("/crons/ok"), should.Equal(200))
+			assert.Loosely(t, called, should.BeTrue)
+			assert.Loosely(t, metric(callsCounter, "ok", "OK"), should.Equal(1))
+			assert.Loosely(t, metricDist(callsDurationMS, "ok", "OK"), should.Equal(1))
 		})
 
-		Convey("Fatal error", func() {
+		t.Run("Fatal error", func(t *ftt.Test) {
 			d.RegisterHandler("boom", func(ctx context.Context) error {
 				return errors.New("boom")
 			})
-			So(call("/crons/boom"), ShouldEqual, 202)
-			So(metric(callsCounter, "boom", "fatal"), ShouldEqual, 1)
-			So(metricDist(callsDurationMS, "boom", "fatal"), ShouldEqual, 1)
+			assert.Loosely(t, call("/crons/boom"), should.Equal(202))
+			assert.Loosely(t, metric(callsCounter, "boom", "fatal"), should.Equal(1))
+			assert.Loosely(t, metricDist(callsDurationMS, "boom", "fatal"), should.Equal(1))
 		})
 
-		Convey("Transient error", func() {
+		t.Run("Transient error", func(t *ftt.Test) {
 			d.RegisterHandler("smaller-boom", func(ctx context.Context) error {
 				return transient.Tag.Apply(errors.New("smaller boom"))
 			})
-			So(call("/crons/smaller-boom"), ShouldEqual, 500)
-			So(metric(callsCounter, "smaller-boom", "transient"), ShouldEqual, 1)
-			So(metricDist(callsDurationMS, "smaller-boom", "transient"), ShouldEqual, 1)
+			assert.Loosely(t, call("/crons/smaller-boom"), should.Equal(500))
+			assert.Loosely(t, metric(callsCounter, "smaller-boom", "transient"), should.Equal(1))
+			assert.Loosely(t, metricDist(callsDurationMS, "smaller-boom", "transient"), should.Equal(1))
 		})
 
-		Convey("Unknown handler", func() {
-			So(call("/crons/unknown"), ShouldEqual, 202)
-			So(metric(callsCounter, "unknown", "no_handler"), ShouldEqual, 1)
+		t.Run("Unknown handler", func(t *ftt.Test) {
+			assert.Loosely(t, call("/crons/unknown"), should.Equal(202))
+			assert.Loosely(t, metric(callsCounter, "unknown", "no_handler"), should.Equal(1))
 		})
 
-		Convey("Panic", func() {
+		t.Run("Panic", func(t *ftt.Test) {
 			d.RegisterHandler("panic", func(ctx context.Context) error {
 				panic("boom")
 			})
-			So(func() { call("/crons/panic") }, ShouldPanic)
-			So(metric(callsCounter, "panic", "panic"), ShouldEqual, 1)
-			So(metricDist(callsDurationMS, "panic", "panic"), ShouldEqual, 1)
+			assert.Loosely(t, func() { call("/crons/panic") }, should.Panic)
+			assert.Loosely(t, metric(callsCounter, "panic", "panic"), should.Equal(1))
+			assert.Loosely(t, metricDist(callsDurationMS, "panic", "panic"), should.Equal(1))
 		})
 	})
 }

@@ -27,17 +27,18 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestInProcSweeper(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		var epoch = testclock.TestRecentTimeUTC
 		const reminderKeySpaceBytes = 8
 		const count = 200
@@ -63,9 +64,9 @@ func TestInProcSweeper(t *testing.T) {
 					Parent: num,
 				},
 			})
-			So(db.SaveReminder(ctx, r), ShouldBeNil)
+			assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
 		}
-		So(db.AllReminders(), ShouldHaveLength, count)
+		assert.Loosely(t, db.AllReminders(), should.HaveLength(count))
 
 		sw := NewInProcSweeper(InProcSweeperOptions{
 			SweepShards:             4,
@@ -75,9 +76,9 @@ func TestInProcSweeper(t *testing.T) {
 			SubmitConcurrentBatches: 3,
 		})
 
-		So(sw.sweep(ctx, sub, reminderKeySpaceBytes), ShouldBeNil)
+		assert.Loosely(t, sw.sweep(ctx, sub, reminderKeySpaceBytes), should.BeNil)
 
-		So(db.AllReminders(), ShouldHaveLength, 0)
-		So(sub.reqs, ShouldHaveLength, count)
+		assert.Loosely(t, db.AllReminders(), should.HaveLength(0))
+		assert.Loosely(t, sub.reqs, should.HaveLength(count))
 	})
 }

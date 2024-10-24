@@ -31,6 +31,9 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/auth/authdb/internal/graph"
 	"go.chromium.org/luci/server/auth/authdb/internal/legacy"
@@ -42,9 +45,6 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 	"go.chromium.org/luci/server/caching"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var (
@@ -62,7 +62,7 @@ func init() {
 }
 
 func TestSnapshotDB(t *testing.T) {
-	c := context.Background()
+	ctx := context.Background()
 
 	securityConfig, _ := proto.Marshal(&protocol.SecurityConfig{
 		InternalServiceRegexp: []string{
@@ -127,92 +127,92 @@ func TestSnapshotDB(t *testing.T) {
 		panic(err)
 	}
 
-	Convey("IsAllowedOAuthClientID works", t, func() {
+	ftt.Run("IsAllowedOAuthClientID works", t, func(t *ftt.Test) {
 		call := func(email, clientID string) bool {
-			res, err := db.IsAllowedOAuthClientID(c, email, clientID)
-			So(err, ShouldBeNil)
+			res, err := db.IsAllowedOAuthClientID(ctx, email, clientID)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		So(call("dude@example.com", ""), ShouldBeFalse)
-		So(call("dude@example.com", oauthid.GoogleAPIExplorerClientID), ShouldBeTrue)
-		So(call("dude@example.com", "primary-client-id"), ShouldBeTrue)
-		So(call("dude@example.com", "additional-client-id-2"), ShouldBeTrue)
-		So(call("dude@example.com", "unknown-client-id"), ShouldBeFalse)
+		assert.Loosely(t, call("dude@example.com", ""), should.BeFalse)
+		assert.Loosely(t, call("dude@example.com", oauthid.GoogleAPIExplorerClientID), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "primary-client-id"), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "additional-client-id-2"), should.BeTrue)
+		assert.Loosely(t, call("dude@example.com", "unknown-client-id"), should.BeFalse)
 	})
 
-	Convey("IsInternalService works", t, func() {
+	ftt.Run("IsInternalService works", t, func(t *ftt.Test) {
 		call := func(hostname string) bool {
-			res, err := db.IsInternalService(c, hostname)
-			So(err, ShouldBeNil)
+			res, err := db.IsInternalService(ctx, hostname)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		So(call("i1.example.com"), ShouldBeTrue)
-		So(call("i2.example.com"), ShouldBeTrue)
-		So(call("abc-dot-i1.example.com"), ShouldBeTrue)
-		So(call("external.example.com"), ShouldBeFalse)
-		So(call("something-i1.example.com"), ShouldBeFalse)
-		So(call("i1.example.com-something"), ShouldBeFalse)
+		assert.Loosely(t, call("i1.example.com"), should.BeTrue)
+		assert.Loosely(t, call("i2.example.com"), should.BeTrue)
+		assert.Loosely(t, call("abc-dot-i1.example.com"), should.BeTrue)
+		assert.Loosely(t, call("external.example.com"), should.BeFalse)
+		assert.Loosely(t, call("something-i1.example.com"), should.BeFalse)
+		assert.Loosely(t, call("i1.example.com-something"), should.BeFalse)
 	})
 
-	Convey("IsMember works", t, func() {
+	ftt.Run("IsMember works", t, func(t *ftt.Test) {
 		call := func(ident string, groups ...string) bool {
-			res, err := db.IsMember(c, identity.Identity(ident), groups)
-			So(err, ShouldBeNil)
+			res, err := db.IsMember(ctx, identity.Identity(ident), groups)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		So(call("user:abc@example.com", "direct"), ShouldBeTrue)
-		So(call("user:another@example.com", "direct"), ShouldBeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:another@example.com", "direct"), should.BeFalse)
 
-		So(call("user:abc@example.com", "via glob"), ShouldBeTrue)
-		So(call("user:abc@another.com", "via glob"), ShouldBeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@another.com", "via glob"), should.BeFalse)
 
-		So(call("user:abc@example.com", "via nested"), ShouldBeTrue)
-		So(call("user:another@example.com", "via nested"), ShouldBeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.BeTrue)
+		assert.Loosely(t, call("user:another@example.com", "via nested"), should.BeFalse)
 
-		So(call("user:abc@example.com", "cycle"), ShouldBeFalse)
-		So(call("user:abc@example.com", "unknown"), ShouldBeFalse)
-		So(call("user:abc@example.com", "unknown nested"), ShouldBeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "cycle"), should.BeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "unknown"), should.BeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "unknown nested"), should.BeFalse)
 
-		So(call("user:abc@example.com"), ShouldBeFalse)
-		So(call("user:abc@example.com", "unknown", "direct"), ShouldBeTrue)
-		So(call("user:abc@example.com", "via glob", "direct"), ShouldBeTrue)
+		assert.Loosely(t, call("user:abc@example.com"), should.BeFalse)
+		assert.Loosely(t, call("user:abc@example.com", "unknown", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.BeTrue)
 	})
 
-	Convey("CheckMembership works", t, func() {
+	ftt.Run("CheckMembership works", t, func(t *ftt.Test) {
 		call := func(ident string, groups ...string) []string {
-			res, err := db.CheckMembership(c, identity.Identity(ident), groups)
-			So(err, ShouldBeNil)
+			res, err := db.CheckMembership(ctx, identity.Identity(ident), groups)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		So(call("user:abc@example.com", "direct"), ShouldResemble, []string{"direct"})
-		So(call("user:another@example.com", "direct"), ShouldBeNil)
+		assert.Loosely(t, call("user:abc@example.com", "direct"), should.Resemble([]string{"direct"}))
+		assert.Loosely(t, call("user:another@example.com", "direct"), should.BeNil)
 
-		So(call("user:abc@example.com", "via glob"), ShouldResemble, []string{"via glob"})
-		So(call("user:abc@another.com", "via glob"), ShouldBeNil)
+		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.Resemble([]string{"via glob"}))
+		assert.Loosely(t, call("user:abc@another.com", "via glob"), should.BeNil)
 
-		So(call("user:abc@example.com", "via nested"), ShouldResemble, []string{"via nested"})
-		So(call("user:another@example.com", "via nested"), ShouldBeNil)
+		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.Resemble([]string{"via nested"}))
+		assert.Loosely(t, call("user:another@example.com", "via nested"), should.BeNil)
 
-		So(call("user:abc@example.com", "cycle"), ShouldBeNil)
-		So(call("user:abc@example.com", "unknown"), ShouldBeNil)
-		So(call("user:abc@example.com", "unknown nested"), ShouldBeNil)
+		assert.Loosely(t, call("user:abc@example.com", "cycle"), should.BeNil)
+		assert.Loosely(t, call("user:abc@example.com", "unknown"), should.BeNil)
+		assert.Loosely(t, call("user:abc@example.com", "unknown nested"), should.BeNil)
 
-		So(call("user:abc@example.com"), ShouldBeNil)
-		So(call("user:abc@example.com", "unknown", "direct"), ShouldResemble, []string{"direct"})
-		So(call("user:abc@example.com", "via glob", "direct"), ShouldResemble, []string{"via glob", "direct"})
+		assert.Loosely(t, call("user:abc@example.com"), should.BeNil)
+		assert.Loosely(t, call("user:abc@example.com", "unknown", "direct"), should.Resemble([]string{"direct"}))
+		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.Resemble([]string{"via glob", "direct"}))
 	})
 
-	Convey("FilterKnownGroups works", t, func() {
-		known, err := db.FilterKnownGroups(c, []string{"direct", "unknown", "empty", "direct", "unknown"})
-		So(err, ShouldBeNil)
-		So(known, ShouldResemble, []string{"direct", "empty", "direct"})
+	ftt.Run("FilterKnownGroups works", t, func(t *ftt.Test) {
+		known, err := db.FilterKnownGroups(ctx, []string{"direct", "unknown", "empty", "direct", "unknown"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, known, should.Resemble([]string{"direct", "empty", "direct"}))
 	})
 
-	Convey("With realms", t, func() {
+	ftt.Run("With realms", t, func(t *ftt.Test) {
 		db, err := NewSnapshotDB(&protocol.AuthDB{
 			Groups: []*protocol.AuthGroup{
 				{
@@ -281,136 +281,136 @@ func TestSnapshotDB(t *testing.T) {
 				},
 			},
 		}, "http://auth-service", 1234, false)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
-		Convey("HasPermission works", func() {
+		t.Run("HasPermission works", func(t *ftt.Test) {
 			// A direct hit.
-			ok, err := db.HasPermission(c, "user:realm@example.com", perm1, "proj:some/realm", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			ok, err := db.HasPermission(ctx, "user:realm@example.com", perm1, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			// A hit through a group.
-			ok, err = db.HasPermission(c, "user:abc@example.com", perm1, "proj:some/realm", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			ok, err = db.HasPermission(ctx, "user:abc@example.com", perm1, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			// Fallback to the root.
-			ok, err = db.HasPermission(c, "user:root@example.com", perm1, "proj:unknown", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			ok, err = db.HasPermission(ctx, "user:root@example.com", perm1, "proj:unknown", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
 			// No permission.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm2, "proj:some/realm", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:realm@example.com", perm2, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			// Unknown root realm.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "unknown:@root", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:realm@example.com", perm1, "unknown:@root", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			// Unknown permission.
-			ok, err = db.HasPermission(c, "user:realm@example.com", unknownPerm, "proj:some/realm", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:realm@example.com", unknownPerm, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			// Empty realm.
-			ok, err = db.HasPermission(c, "user:realm@example.com", perm1, "proj:empty", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:realm@example.com", perm1, "proj:empty", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
 			// Invalid realm name.
-			_, err = db.HasPermission(c, "user:realm@example.com", perm1, "@root", nil)
-			So(err, ShouldErrLike, "bad global realm name")
+			_, err = db.HasPermission(ctx, "user:realm@example.com", perm1, "@root", nil)
+			assert.Loosely(t, err, should.ErrLike("bad global realm name"))
 		})
 
-		Convey("Conditional bindings", func() {
-			ok, err := db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", nil)
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+		t.Run("Conditional bindings", func(t *ftt.Test) {
+			ok, err := db.HasPermission(ctx, "user:cond@example.com", perm1, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
-			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_1"})
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			ok, err = db.HasPermission(ctx, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_1"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_2"})
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeTrue)
+			ok, err = db.HasPermission(ctx, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "ok_2"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
 
-			ok, err = db.HasPermission(c, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "???"})
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:cond@example.com", perm1, "proj:some/realm", realms.Attrs{"a": "???"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 
-			ok, err = db.HasPermission(c, "user:cond@example.com", perm2, "proj:some/realm", realms.Attrs{"a": "ok_1"})
-			So(err, ShouldBeNil)
-			So(ok, ShouldBeFalse)
+			ok, err = db.HasPermission(ctx, "user:cond@example.com", perm2, "proj:some/realm", realms.Attrs{"a": "ok_1"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeFalse)
 		})
 
-		Convey("QueryRealms works", func() {
+		t.Run("QueryRealms works", func(t *ftt.Test) {
 			// A direct hit.
-			r, err := db.QueryRealms(c, "user:realm@example.com", perm1, "", nil)
+			r, err := db.QueryRealms(ctx, "user:realm@example.com", perm1, "", nil)
 			sort.Strings(r)
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, []string{"another:realm", "proj:some/realm"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble([]string{"another:realm", "proj:some/realm"}))
 
 			// Filtering by project.
-			r, err = db.QueryRealms(c, "user:realm@example.com", perm1, "proj", nil)
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, []string{"proj:some/realm"})
+			r, err = db.QueryRealms(ctx, "user:realm@example.com", perm1, "proj", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
 
 			// A hit through a group.
-			r, err = db.QueryRealms(c, "user:abc@example.com", perm1, "", nil)
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, []string{"proj:some/realm"})
+			r, err = db.QueryRealms(ctx, "user:abc@example.com", perm1, "", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
 		})
 
-		Convey("QueryRealms with conditional bindings", func() {
-			r, err := db.QueryRealms(c, "user:cond@example.com", perm1, "", nil)
-			So(err, ShouldBeNil)
-			So(r, ShouldBeEmpty)
+		t.Run("QueryRealms with conditional bindings", func(t *ftt.Test) {
+			r, err := db.QueryRealms(ctx, "user:cond@example.com", perm1, "", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.BeEmpty)
 
-			r, err = db.QueryRealms(c, "user:cond@example.com", perm1, "", realms.Attrs{"a": "ok_1"})
-			So(err, ShouldBeNil)
-			So(r, ShouldResemble, []string{"proj:some/realm"})
+			r, err = db.QueryRealms(ctx, "user:cond@example.com", perm1, "", realms.Attrs{"a": "ok_1"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
 
-			r, err = db.QueryRealms(c, "user:cond@example.com", perm1, "", realms.Attrs{"a": "???"})
-			So(err, ShouldBeNil)
-			So(r, ShouldBeEmpty)
+			r, err = db.QueryRealms(ctx, "user:cond@example.com", perm1, "", realms.Attrs{"a": "???"})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.BeEmpty)
 		})
 
-		Convey("QueryRealms with unindexed permission", func() {
-			_, err := db.QueryRealms(c, "user:realm@example.com", perm2, "", nil)
-			So(err, ShouldErrLike, "permission luci.dev.testing2 cannot be used in QueryRealms")
+		t.Run("QueryRealms with unindexed permission", func(t *ftt.Test) {
+			_, err := db.QueryRealms(ctx, "user:realm@example.com", perm2, "", nil)
+			assert.Loosely(t, err, should.ErrLike("permission luci.dev.testing2 cannot be used in QueryRealms"))
 		})
 
-		Convey("GetRealmData works", func() {
+		t.Run("GetRealmData works", func(t *ftt.Test) {
 			// Known realm with data.
-			d, err := db.GetRealmData(c, "proj:some/realm")
-			So(err, ShouldBeNil)
-			So(d, ShouldResembleProto, &protocol.RealmData{
+			d, err := db.GetRealmData(ctx, "proj:some/realm")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{
 				EnforceInService: []string{"some"},
-			})
+			}))
 
 			// Known realm, with no data.
-			d, err = db.GetRealmData(c, "proj:empty")
-			So(err, ShouldBeNil)
-			So(d, ShouldResembleProto, &protocol.RealmData{})
+			d, err = db.GetRealmData(ctx, "proj:empty")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{}))
 
 			// Fallback to root.
-			d, err = db.GetRealmData(c, "proj:unknown")
-			So(err, ShouldBeNil)
-			So(d, ShouldResembleProto, &protocol.RealmData{
+			d, err = db.GetRealmData(ctx, "proj:unknown")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{
 				EnforceInService: []string{"root"},
-			})
+			}))
 
 			// Completely unknown.
-			d, err = db.GetRealmData(c, "unknown:unknown")
-			So(err, ShouldBeNil)
-			So(d, ShouldBeNil)
+			d, err = db.GetRealmData(ctx, "unknown:unknown")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, d, should.BeNil)
 		})
 	})
 
-	Convey("GetCertificates works", t, func(c C) {
+	ftt.Run("GetCertificates works", t, func(t *ftt.Test) {
 		tokenService := signingtest.NewSigner(&signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
@@ -438,68 +438,68 @@ func TestSnapshotDB(t *testing.T) {
 		})
 
 		certs, err := db.GetCertificates(ctx, "user:token-server-account@example.com")
-		So(err, ShouldBeNil)
-		So(certs, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, certs, should.NotBeNil)
 
 		// Fetched one bundle.
-		So(calls, ShouldEqual, 1)
+		assert.Loosely(t, calls, should.Equal(1))
 
 		// For unknown signer returns (nil, nil).
 		certs, err = db.GetCertificates(ctx, "user:unknown@example.com")
-		So(err, ShouldBeNil)
-		So(certs, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, certs, should.BeNil)
 	})
 
-	Convey("IsAllowedIP works", t, func() {
-		l, err := db.GetAllowlistForIdentity(c, "user:abc@example.com")
-		So(err, ShouldBeNil)
-		So(l, ShouldEqual, "allowlist")
+	ftt.Run("IsAllowedIP works", t, func(t *ftt.Test) {
+		l, err := db.GetAllowlistForIdentity(ctx, "user:abc@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l, should.Equal("allowlist"))
 
-		l, err = db.GetAllowlistForIdentity(c, "user:unknown@example.com")
-		So(err, ShouldBeNil)
-		So(l, ShouldEqual, "")
+		l, err = db.GetAllowlistForIdentity(ctx, "user:unknown@example.com")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, l, should.BeEmpty)
 
 		call := func(ip, allowlist string) bool {
 			ipaddr := net.ParseIP(ip)
-			So(ipaddr, ShouldNotBeNil)
-			res, err := db.IsAllowedIP(c, ipaddr, allowlist)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, ipaddr, should.NotBeNil)
+			res, err := db.IsAllowedIP(ctx, ipaddr, allowlist)
+			assert.Loosely(t, err, should.BeNil)
 			return res
 		}
 
-		So(call("1.2.3.4", "allowlist"), ShouldBeTrue)
-		So(call("10.255.255.255", "allowlist"), ShouldBeTrue)
-		So(call("9.255.255.255", "allowlist"), ShouldBeFalse)
-		So(call("1.2.3.4", "empty"), ShouldBeFalse)
+		assert.Loosely(t, call("1.2.3.4", "allowlist"), should.BeTrue)
+		assert.Loosely(t, call("10.255.255.255", "allowlist"), should.BeTrue)
+		assert.Loosely(t, call("9.255.255.255", "allowlist"), should.BeFalse)
+		assert.Loosely(t, call("1.2.3.4", "empty"), should.BeFalse)
 	})
 
-	Convey("Revision works", t, func() {
-		So(Revision(&SnapshotDB{Rev: 123}), ShouldEqual, 123)
-		So(Revision(ErroringDB{}), ShouldEqual, 0)
-		So(Revision(nil), ShouldEqual, 0)
+	ftt.Run("Revision works", t, func(t *ftt.Test) {
+		assert.Loosely(t, Revision(&SnapshotDB{Rev: 123}), should.Equal(123))
+		assert.Loosely(t, Revision(ErroringDB{}), should.BeZero)
+		assert.Loosely(t, Revision(nil), should.BeZero)
 	})
 
-	Convey("SnapshotDBFromTextProto works", t, func() {
+	ftt.Run("SnapshotDBFromTextProto works", t, func(t *ftt.Test) {
 		db, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groups {
 				name: "group"
 				members: "user:a@example.com"
 			}
 		`))
-		So(err, ShouldBeNil)
-		yes, err := db.IsMember(c, "user:a@example.com", []string{"group"})
-		So(err, ShouldBeNil)
-		So(yes, ShouldBeTrue)
+		assert.Loosely(t, err, should.BeNil)
+		yes, err := db.IsMember(ctx, "user:a@example.com", []string{"group"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, yes, should.BeTrue)
 	})
 
-	Convey("SnapshotDBFromTextProto bad proto", t, func() {
+	ftt.Run("SnapshotDBFromTextProto bad proto", t, func(t *ftt.Test) {
 		_, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groupz {}
 		`))
-		So(err, ShouldErrLike, "not a valid AuthDB text proto file")
+		assert.Loosely(t, err, should.ErrLike("not a valid AuthDB text proto file"))
 	})
 
-	Convey("SnapshotDBFromTextProto bad structure", t, func() {
+	ftt.Run("SnapshotDBFromTextProto bad structure", t, func(t *ftt.Test) {
 		_, err := SnapshotDBFromTextProto(strings.NewReader(`
 			groups {
 				name: "group 1"
@@ -510,7 +510,7 @@ func TestSnapshotDB(t *testing.T) {
 				nested: "group 1"
 			}
 		`))
-		So(err, ShouldErrLike, "dependency cycle found")
+		assert.Loosely(t, err, should.ErrLike("dependency cycle found"))
 	})
 }
 

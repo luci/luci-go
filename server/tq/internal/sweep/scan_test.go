@@ -25,13 +25,14 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/server/tq/internal/db"
 	"go.chromium.org/luci/server/tq/internal/partition"
 	"go.chromium.org/luci/server/tq/internal/reminder"
 	"go.chromium.org/luci/server/tq/internal/testutil"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestScan(t *testing.T) {
@@ -39,7 +40,7 @@ func TestScan(t *testing.T) {
 
 	const keySpaceBytes = 16
 
-	Convey("Scan works", t, func() {
+	ftt.Run("Scan works", t, func(t *ftt.Test) {
 		epoch := testclock.TestRecentTimeLocal
 		ctx, tclock := testclock.UseTime(context.Background(), epoch)
 		db := db.DB(&testutil.FakeDB{})
@@ -63,11 +64,11 @@ func TestScan(t *testing.T) {
 			})
 		}
 
-		Convey("Normal operation", func() {
-			Convey("Empty", func() {
+		t.Run("Normal operation", func(t *ftt.Test) {
+			t.Run("Empty", func(t *ftt.Test) {
 				rems, more := scan(ctx, part0to10)
-				So(rems, ShouldBeEmpty)
-				So(more, ShouldBeEmpty)
+				assert.Loosely(t, rems, should.BeEmpty)
+				assert.Loosely(t, more, should.BeEmpty)
 			})
 
 			stale := epoch.Add(30 * time.Second)
@@ -79,28 +80,28 @@ func TestScan(t *testing.T) {
 				mkReminder(4, stale),
 			}
 			for _, r := range savedReminders {
-				So(db.SaveReminder(ctx, r), ShouldBeNil)
+				assert.Loosely(t, db.SaveReminder(ctx, r), should.BeNil)
 			}
 			tclock.Set(epoch.Add(60 * time.Second))
 
-			Convey("Scan complete partition", func() {
+			t.Run("Scan complete partition", func(t *ftt.Test) {
 				tasksPerScan = 10
 
 				rems, more := scan(ctx, part0to10)
-				So(more, ShouldBeEmpty)
-				So(rems, ShouldResemble, []*reminder.Reminder{
+				assert.Loosely(t, more, should.BeEmpty)
+				assert.Loosely(t, rems, should.Resemble([]*reminder.Reminder{
 					mkReminder(2, stale),
 					mkReminder(4, stale),
-				})
+				}))
 
-				Convey("but only within given partition", func() {
+				t.Run("but only within given partition", func(t *ftt.Test) {
 					rems, more := scan(ctx, partition.FromInts(0, 4))
-					So(more, ShouldBeEmpty)
-					So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
+					assert.Loosely(t, more, should.BeEmpty)
+					assert.Loosely(t, rems, should.Resemble([]*reminder.Reminder{mkReminder(2, stale)}))
 				})
 			})
 
-			Convey("Scan reaches TasksPerScan limit", func() {
+			t.Run("Scan reaches TasksPerScan limit", func(t *ftt.Test) {
 				// Only Reminders 01..03 will be fetched. 02 is stale.
 				// Follow up scans should start from 04.
 				tasksPerScan = 3
@@ -108,18 +109,18 @@ func TestScan(t *testing.T) {
 
 				rems, more := scan(ctx, part0to10)
 
-				So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
+				assert.Loosely(t, rems, should.Resemble([]*reminder.Reminder{mkReminder(2, stale)}))
 
-				Convey("Scan returns correct follow up ScanItems", func() {
-					So(len(more), ShouldEqual, secondaryScanShards)
-					So(more[0].Low, ShouldResemble, *big.NewInt(3 + 1))
-					So(more[0].High, ShouldResemble, more[1].Low)
-					So(more[1].High, ShouldResemble, *big.NewInt(10))
+				t.Run("Scan returns correct follow up ScanItems", func(t *ftt.Test) {
+					assert.Loosely(t, len(more), should.Equal(secondaryScanShards))
+					assert.Loosely(t, more[0].Low, should.Resemble(*big.NewInt(3 + 1)))
+					assert.Loosely(t, more[0].High, should.Resemble(more[1].Low))
+					assert.Loosely(t, more[1].High, should.Resemble(*big.NewInt(10)))
 				})
 			})
 		})
 
-		Convey("Abnormal operation", func() {
+		t.Run("Abnormal operation", func(t *ftt.Test) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockDB := testutil.NewMockDB(ctrl)
@@ -142,30 +143,30 @@ func TestScan(t *testing.T) {
 			// realistic test.
 			ctx, cancel := clock.WithDeadline(ctx, epoch)
 			defer cancel()
-			So(ctx.Err(), ShouldResemble, context.DeadlineExceeded)
+			assert.Loosely(t, ctx.Err(), should.Resemble(context.DeadlineExceeded))
 
-			Convey("Timeout without anything fetched", func() {
+			t.Run("Timeout without anything fetched", func(t *ftt.Test) {
 				mockDB.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.Annotate(ctx.Err(), "failed to fetch all").Err())
 
 				rems, more := scan(ctx, part0to10)
 
-				So(rems, ShouldBeEmpty)
-				So(len(more), ShouldEqual, secondaryScanShards)
-				So(more[0].Low, ShouldResemble, *big.NewInt(0))
-				So(more[1].High, ShouldResemble, *big.NewInt(10))
+				assert.Loosely(t, rems, should.BeEmpty)
+				assert.Loosely(t, len(more), should.Equal(secondaryScanShards))
+				assert.Loosely(t, more[0].Low, should.Resemble(*big.NewInt(0)))
+				assert.Loosely(t, more[1].High, should.Resemble(*big.NewInt(10)))
 			})
 
-			Convey("Timeout after fetching some", func() {
+			t.Run("Timeout after fetching some", func(t *ftt.Test) {
 				mockDB.EXPECT().FetchRemindersMeta(ctx, gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(someReminders, ctx.Err())
 
 				rems, more := scan(ctx, part0to10)
 
-				So(rems, ShouldResemble, []*reminder.Reminder{mkReminder(2, stale)})
-				So(more, ShouldHaveLength, 1) // partition is so small, only 1 follow up scan suffices.
-				So(more[0].Low, ShouldResemble, *big.NewInt(2 + 1))
-				So(more[0].High, ShouldResemble, *big.NewInt(10))
+				assert.Loosely(t, rems, should.Resemble([]*reminder.Reminder{mkReminder(2, stale)}))
+				assert.Loosely(t, more, should.HaveLength(1)) // partition is so small, only 1 follow up scan suffices.
+				assert.Loosely(t, more[0].Low, should.Resemble(*big.NewInt(2 + 1)))
+				assert.Loosely(t, more[0].High, should.Resemble(*big.NewInt(10)))
 			})
 		})
 	})

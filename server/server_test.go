@@ -63,8 +63,12 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 var fakeUser = &auth.User{
@@ -88,14 +92,14 @@ const (
 func TestServer(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 		srv, err := newTestServer(ctx, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer srv.cleanup()
 
-		Convey("VirtualHost", func() {
+		t.Run("VirtualHost", func(t *ftt.Test) {
 			srv.Routes.GET("/test", nil, func(c *router.Context) {
 				c.Writer.Write([]byte("default-router"))
 			})
@@ -110,23 +114,23 @@ func TestServer(t *testing.T) {
 			resp, err := srv.GetMain("/test", map[string]string{
 				"Host": "unknown.example.com",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "default-router")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("default-router"))
 
 			// Requests with NO Host header go to the default router as well.
 			resp, err = srv.GetMain("/test", map[string]string{})
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "default-router")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("default-router"))
 
 			// Requests that match a registered virtual host go to its router.
 			resp, err = srv.GetMain("/test", map[string]string{
 				"Host": "test-host.example.com",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "test-host-router")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("test-host-router"))
 		})
 
-		Convey("Logging", func() {
+		t.Run("Logging", func(t *ftt.Test) {
 			srv.Routes.GET("/test", nil, func(c *router.Context) {
 				logging.Infof(c.Request.Context(), "Info log")
 				tc.Add(time.Second)
@@ -142,12 +146,12 @@ func TestServer(t *testing.T) {
 				"User-Agent":      "Test-user-agent",
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "Hello, world")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("Hello, world"))
 
 			// Stderr log captures details about the request.
 			const traceID = "projects/cloud-project-id/traces/680b4e7c8b763a1b1d49d4955c848621"
-			So(srv.stderr.Last(1), ShouldResemble, []sdlogger.LogEntry{
+			assert.Loosely(t, srv.stderr.Last(1), should.Resemble([]sdlogger.LogEntry{
 				{
 					Severity:  sdlogger.WarningSeverity,
 					Timestamp: sdlogger.Timestamp{Seconds: 1454472307, Nanos: 7},
@@ -163,9 +167,9 @@ func TestServer(t *testing.T) {
 						Latency:      "1.000000s",
 					},
 				},
-			})
+			}))
 			// Stdout log captures individual log lines.
-			So(srv.stdout.Last(2), ShouldResemble, []sdlogger.LogEntry{
+			assert.Loosely(t, srv.stdout.Last(2), should.Resemble([]sdlogger.LogEntry{
 				{
 					Severity:  sdlogger.InfoSeverity,
 					Message:   "Info log",
@@ -184,11 +188,11 @@ func TestServer(t *testing.T) {
 						ID: "6325253fec738dd7a9e28bf921119c16",
 					},
 				},
-			})
+			}))
 		})
 
-		Convey("Context features", func() {
-			So(testContextFeatures(srv.Context, false), ShouldBeNil)
+		t.Run("Context features", func(t *ftt.Test) {
+			assert.Loosely(t, testContextFeatures(srv.Context, false), should.BeNil)
 			srv.Routes.GET("/request", nil, func(c *router.Context) {
 				if err := testContextFeatures(c.Request.Context(), true); err != nil {
 					http.Error(c.Writer, err.Error(), 500)
@@ -199,10 +203,10 @@ func TestServer(t *testing.T) {
 			defer srv.StopBackgroundServing()
 
 			_, err := srv.GetMain("/request", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Context cancellation on client timeout", func() {
+		t.Run("Context cancellation on client timeout", func(t *ftt.Test) {
 			cancelled := make(chan struct{})
 			srv.Routes.GET("/request", nil, func(c *router.Context) {
 				select {
@@ -217,7 +221,7 @@ func TestServer(t *testing.T) {
 			defer srv.StopBackgroundServing()
 
 			_, err := srv.GetMainWithTimeout("/request", nil, time.Second)
-			So(err, ShouldNotBeNil)
+			assert.Loosely(t, err, should.NotBeNil)
 
 			wasCancelled := false
 			select {
@@ -225,10 +229,10 @@ func TestServer(t *testing.T) {
 				wasCancelled = true
 			case <-time.After(time.Minute):
 			}
-			So(wasCancelled, ShouldBeTrue)
+			assert.Loosely(t, wasCancelled, should.BeTrue)
 		})
 
-		Convey("Warmup and cleanup callbacks", func() {
+		t.Run("Warmup and cleanup callbacks", func(t *ftt.Test) {
 			var warmups []string
 			var cleanups []string
 
@@ -254,16 +258,16 @@ func TestServer(t *testing.T) {
 
 			srv.ServeInBackground()
 
-			So(warmups, ShouldResemble, []string{"a", "b"})
-			So(cleanups, ShouldBeNil)
+			assert.Loosely(t, warmups, should.Resemble([]string{"a", "b"}))
+			assert.Loosely(t, cleanups, should.BeNil)
 
 			srv.StopBackgroundServing()
 
-			So(warmups, ShouldResemble, []string{"a", "b"})
-			So(cleanups, ShouldResemble, []string{"b", "a"})
+			assert.Loosely(t, warmups, should.Resemble([]string{"a", "b"}))
+			assert.Loosely(t, cleanups, should.Resemble([]string{"b", "a"}))
 		})
 
-		Convey("RunInBackground", func() {
+		t.Run("RunInBackground", func(t *ftt.Test) {
 			// Queue one activity before starting the serving loop to verify this code
 			// path works.
 			type nameErrPair struct {
@@ -299,7 +303,7 @@ func TestServer(t *testing.T) {
 			wait()
 		})
 
-		Convey("Client auth", func() {
+		t.Run("Client auth", func(t *ftt.Test) {
 			srv.Routes.GET("/client-auth", nil, func(c *router.Context) {
 				scopes := strings.Split(c.Request.Header.Get("Ask-Scope"), " ")
 				ts, err := auth.GetTokenSource(c.Request.Context(), auth.AsSelf, auth.WithScopes(scopes...))
@@ -317,7 +321,7 @@ func TestServer(t *testing.T) {
 
 			call := func(scope string) string {
 				resp, err := srv.GetMain("/client-auth", map[string]string{"Ask-Scope": scope})
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				// If something is really-really broken, the test can theoretically
 				// pick up *real* LUCI_CONTEXT auth and somehow see real tokens. This
 				// is unlikely (if anything, scopes like "A" are not valid). But if
@@ -331,18 +335,18 @@ func TestServer(t *testing.T) {
 			srv.ServeInBackground()
 			defer srv.StopBackgroundServing()
 
-			So(call("A B"), ShouldEqual, "fake_token_1")
-			So(call("B C"), ShouldEqual, "fake_token_2")
-			So(call("A B"), ShouldEqual, "fake_token_1") // reused the cached token
+			assert.Loosely(t, call("A B"), should.Equal("fake_token_1"))
+			assert.Loosely(t, call("B C"), should.Equal("fake_token_2"))
+			assert.Loosely(t, call("A B"), should.Equal("fake_token_1")) // reused the cached token
 
 			// 0-th token is generated during startup in initAuth() to test creds.
-			So(srv.tokens.TokenScopes("fake_token_0"), ShouldResemble, auth.CloudOAuthScopes)
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_0"), should.Resemble(auth.CloudOAuthScopes))
 			// Tokens generated via calls above.
-			So(srv.tokens.TokenScopes("fake_token_1"), ShouldResemble, []string{"A", "B"})
-			So(srv.tokens.TokenScopes("fake_token_2"), ShouldResemble, []string{"B", "C"})
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_1"), should.Resemble([]string{"A", "B"}))
+			assert.Loosely(t, srv.tokens.TokenScopes("fake_token_2"), should.Resemble([]string{"B", "C"}))
 		})
 
-		Convey("Auth state", func(c C) {
+		t.Run("Auth state", func(t *ftt.Test) {
 			authn := auth.Authenticator{
 				Methods: []auth.Method{
 					authtest.FakeAuth{User: fakeUser},
@@ -351,14 +355,14 @@ func TestServer(t *testing.T) {
 			mw := router.NewMiddlewareChain(authn.GetMiddleware())
 			srv.Routes.GET("/auth-state", mw, func(rc *router.Context) {
 				state := auth.GetState(rc.Request.Context())
-				c.So(state.DB(), ShouldEqual, fakeAuthDB)
-				c.So(state.PeerIdentity(), ShouldEqual, fakeUser.Identity)
-				c.So(state.PeerIP().String(), ShouldEqual, "2.2.2.2")
-				c.So(auth.CurrentUser(rc.Request.Context()), ShouldEqual, fakeUser)
-				c.So(auth.CurrentIdentity(rc.Request.Context()), ShouldEqual, fakeUser.Identity)
+				assert.Loosely(t, state.DB(), should.Equal(fakeAuthDB))
+				assert.Loosely(t, state.PeerIdentity(), should.Equal(fakeUser.Identity))
+				assert.Loosely(t, state.PeerIP().String(), should.Equal("2.2.2.2"))
+				assert.Loosely(t, auth.CurrentUser(rc.Request.Context()), should.Equal(fakeUser))
+				assert.Loosely(t, auth.CurrentIdentity(rc.Request.Context()), should.Equal(fakeUser.Identity))
 				yes, err := auth.IsMember(rc.Request.Context(), "group-1")
-				c.So(err, ShouldBeNil)
-				c.So(yes, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, yes, should.BeTrue)
 			})
 
 			srv.ServeInBackground()
@@ -367,10 +371,10 @@ func TestServer(t *testing.T) {
 			_, err := srv.GetMain("/auth-state", map[string]string{
 				"X-Forwarded-For": "1.1.1.1,2.2.2.2,3.3.3.3",
 			})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Egress", func(c C) {
+		t.Run("Egress", func(t *ftt.Test) {
 			request := make(chan *http.Request, 1)
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				request <- r.Clone(context.Background())
@@ -381,12 +385,12 @@ func TestServer(t *testing.T) {
 				req, _ := http.NewRequest("GET", ts.URL, nil)
 				req.Header.Add("User-Agent", "zzz")
 
-				t, err := auth.GetRPCTransport(rc.Request.Context(), auth.NoAuth)
-				c.So(err, ShouldBeNil)
-				client := http.Client{Transport: t}
+				transp, err := auth.GetRPCTransport(rc.Request.Context(), auth.NoAuth)
+				assert.Loosely(t, err, should.BeNil)
+				client := http.Client{Transport: transp}
 
 				resp, err := client.Do(req)
-				c.So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				io.ReadAll(resp.Body)
 				resp.Body.Close()
 			})
@@ -395,34 +399,34 @@ func TestServer(t *testing.T) {
 			defer srv.StopBackgroundServing()
 
 			_, err := srv.GetMain("/test-egress", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			var req *http.Request
 			select {
 			case req = <-request:
 			default:
 			}
-			So(req, ShouldNotBeNil)
-			So(req.UserAgent(), ShouldEqual,
-				fmt.Sprintf("LUCI-Server (service: service-name; job: namespace/job; ver: %s); zzz", testImageVersion))
+			assert.Loosely(t, req, should.NotBeNil)
+			assert.Loosely(t, req.UserAgent(), should.Equal(
+				fmt.Sprintf("LUCI-Server (service: service-name; job: namespace/job; ver: %s); zzz", testImageVersion)))
 		})
 
-		Convey("/auth/api/v1/server/* handlers", func(c C) {
+		t.Run("/auth/api/v1/server/* handlers", func(t *ftt.Test) {
 			srv.ServeInBackground()
 			defer srv.StopBackgroundServing()
 
 			resp, err := srv.GetMain("/auth/api/v1/server/info", nil)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			info := signing.ServiceInfo{}
-			So(json.Unmarshal([]byte(resp), &info), ShouldBeNil)
-			So(info, ShouldResemble, signing.ServiceInfo{
+			assert.Loosely(t, json.Unmarshal([]byte(resp), &info), should.BeNil)
+			assert.Loosely(t, info, should.Resemble(signing.ServiceInfo{
 				AppID:              testCloudProjectID,
 				AppRuntime:         "go",
 				AppRuntimeVersion:  runtime.Version(),
 				AppVersion:         testImageVersion,
 				ServiceAccountName: testServerAccountEmail,
-			})
+			}))
 
 			// TODO(vadimsh): Add a test for /.../certificates once implemented.
 			// TODO(vadimsh): Add a test for /.../client_id once implemented.
@@ -433,11 +437,11 @@ func TestServer(t *testing.T) {
 func TestH2C(t *testing.T) {
 	t.Parallel()
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		srv, err := newTestServer(ctx, &Options{AllowH2C: true})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer srv.cleanup()
 
 		srv.Routes.GET("/test", nil, func(c *router.Context) {
@@ -452,14 +456,14 @@ func TestH2C(t *testing.T) {
 		srv.ServeInBackground()
 		defer srv.StopBackgroundServing()
 
-		Convey("HTTP/1", func() {
+		t.Run("HTTP/1", func(t *ftt.Test) {
 			srv.client = http.DefaultClient
 			resp, err := srv.GetMain("/test", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "Hello, world")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("Hello, world"))
 		})
 
-		Convey("HTTP/2 Cleartext", func() {
+		t.Run("HTTP/2 Cleartext", func(t *ftt.Test) {
 			// See https://medium.com/@thrawn01/http-2-cleartext-h2c-client-example-in-go-8167c7a4181e
 			srv.client = &http.Client{
 				Transport: &http2.Transport{
@@ -473,8 +477,8 @@ func TestH2C(t *testing.T) {
 				},
 			}
 			resp, err := srv.GetMain("/test", nil)
-			So(err, ShouldBeNil)
-			So(resp, ShouldEqual, "Hello, world")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Equal("Hello, world"))
 		})
 	})
 }
@@ -499,11 +503,11 @@ func TestRPCServers(t *testing.T) {
 		}
 	}
 
-	Convey("With server", t, func() {
+	ftt.Run("With server", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		srv, err := newTestServer(ctx, nil)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer srv.cleanup()
 
 		rpcSvc := &testRPCServer{}
@@ -531,8 +535,8 @@ func TestRPCServers(t *testing.T) {
 			protocol := cl.protocol
 			rpcClient := cl.impl
 
-			Convey(protocol+" client", func() {
-				Convey("Context features", func() {
+			t.Run(protocol+" client", func(t *ftt.Test) {
+				t.Run("Context features", func(t *ftt.Test) {
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
 						if err := testContextFeatures(ctx, true); err != nil {
 							return nil, err
@@ -544,10 +548,10 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 				})
 
-				Convey("Non-nil OK errors", func() {
+				t.Run("Non-nil OK errors", func(t *ftt.Test) {
 					// See https://github.com/grpc/grpc-go/pull/6374.
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
 						return nil, malformedGrpcError{}
@@ -557,10 +561,10 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					So(err, ShouldHaveGRPCStatus, codes.Unknown)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unknown))
 				})
 
-				Convey("Panic catcher is installed", func() {
+				t.Run("Panic catcher is installed", func(t *ftt.Test) {
 					rpcSvc.unary = func(ctx context.Context, _ *testpb.Request) (*testpb.Response, error) {
 						panic("BOOM")
 					}
@@ -569,13 +573,13 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					So(err, ShouldHaveGRPCStatus, codes.Internal)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
 
 					// Logged the panic.
-					So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
+					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))
 				})
 
-				Convey("Unary interceptors", func() {
+				t.Run("Unary interceptors", func(t *ftt.Test) {
 					srv.RegisterStreamServerInterceptors(
 						addingIntr("ignore").Stream(),
 					)
@@ -596,15 +600,15 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					resp, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					So(err, ShouldBeNil)
-					So(resp.Text, ShouldEqual, "root:1:2:3:4")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp.Text, should.Equal("root:1:2:3:4"))
 				})
 
 				if protocol == "prpc" {
 					return // streaming is not support by prpc
 				}
 
-				Convey("Context features in stream RPCs", func() {
+				t.Run("Context features in stream RPCs", func(t *ftt.Test) {
 					rpcSvc.clientServerStream = func(ss testpb.Test_ClientServerStreamServer) error {
 						if err := testContextFeatures(ss.Context(), true); err != nil {
 							return err
@@ -627,22 +631,22 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					cs, err := rpcClient.ClientServerStream(context.Background())
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					for i := 0; i < 5; i++ {
 						ping := fmt.Sprintf("ping-%d", i)
-						So(cs.Send(&testpb.Request{Text: ping}), ShouldBeNil)
+						assert.Loosely(t, cs.Send(&testpb.Request{Text: ping}), should.BeNil)
 						res, err := cs.Recv()
-						So(err, ShouldBeNil)
-						So(res.Text, ShouldEqual, ping+":pong")
+						assert.Loosely(t, err, should.BeNil)
+						assert.Loosely(t, res.Text, should.Equal(ping+":pong"))
 					}
-					So(cs.CloseSend(), ShouldBeNil)
+					assert.Loosely(t, cs.CloseSend(), should.BeNil)
 
 					_, err = cs.Recv()
-					So(err, ShouldEqual, io.EOF)
+					assert.Loosely(t, err, should.Equal(io.EOF))
 				})
 
-				Convey("Panic catcher in stream RPCs", func() {
+				t.Run("Panic catcher in stream RPCs", func(t *ftt.Test) {
 					rpcSvc.serverStream = func(req *testpb.Request, ss testpb.Test_ServerStreamServer) error {
 						_ = ss.Send(&testpb.Response{Text: req.Text + ":pong"})
 						panic("BOOM")
@@ -652,20 +656,20 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					ss, err := rpcClient.ServerStream(context.Background(), &testpb.Request{Text: "ping"})
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
 					resp, err := ss.Recv()
-					So(err, ShouldBeNil)
-					So(resp.Text, ShouldEqual, "ping:pong")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp.Text, should.Equal("ping:pong"))
 
 					_, err = ss.Recv()
-					So(err, ShouldHaveGRPCStatus, codes.Internal)
+					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
 
 					// Logged the panic.
-					So(srv.stdout.Last(2)[0].Fields["panic.error"], ShouldEqual, "BOOM")
+					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))
 				})
 
-				Convey("Stream interceptors", func() {
+				t.Run("Stream interceptors", func(t *ftt.Test) {
 					srv.RegisterUnaryServerInterceptors(
 						addingIntr("ignore").Unary(),
 					)
@@ -697,14 +701,14 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					cs, err := rpcClient.ClientStream(context.Background())
-					So(err, ShouldBeNil)
+					assert.Loosely(t, err, should.BeNil)
 
-					So(cs.Send(&testpb.Request{Text: "a"}), ShouldBeNil)
-					So(cs.Send(&testpb.Request{Text: "b"}), ShouldBeNil)
+					assert.Loosely(t, cs.Send(&testpb.Request{Text: "a"}), should.BeNil)
+					assert.Loosely(t, cs.Send(&testpb.Request{Text: "b"}), should.BeNil)
 
 					resp, err := cs.CloseAndRecv()
-					So(err, ShouldBeNil)
-					So(resp.Text, ShouldEqual, "a:b:root:1:2:3:4")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, resp.Text, should.Equal("a:b:root:1:2:3:4"))
 				})
 			})
 		}
@@ -773,25 +777,25 @@ func testContextFeatures(ctx context.Context, hasTraceID bool) (err error) {
 func TestOptions(t *testing.T) {
 	t.Parallel()
 
-	Convey("With temp dir", t, func() {
+	ftt.Run("With temp dir", t, func(t *ftt.Test) {
 		tmpDir, err := ioutil.TempDir("", "luci-server-test")
-		So(err, ShouldBeNil)
-		Reset(func() { os.RemoveAll(tmpDir) })
+		assert.Loosely(t, err, should.BeNil)
+		t.Cleanup(func() { os.RemoveAll(tmpDir) })
 
-		Convey("AuthDBPath works", func(c C) {
+		t.Run("AuthDBPath works", func(t *ftt.Test) {
 			body := `groups {
 				name: "group"
 				members: "user:a@example.com"
 			}`
 
 			opts := Options{AuthDBPath: filepath.Join(tmpDir, "authdb.textpb")}
-			So(os.WriteFile(opts.AuthDBPath, []byte(body), 0600), ShouldBeNil)
+			assert.Loosely(t, os.WriteFile(opts.AuthDBPath, []byte(body), 0600), should.BeNil)
 
-			testRequestHandler(&opts, func(rc *router.Context) {
+			testRequestHandler(t, &opts, func(rc *router.Context) {
 				db := auth.GetState(rc.Request.Context()).DB()
 				yes, err := db.IsMember(rc.Request.Context(), "user:a@example.com", []string{"group"})
-				c.So(err, ShouldBeNil)
-				c.So(yes, ShouldBeTrue)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, yes, should.BeTrue)
 			})
 		})
 	})
@@ -800,8 +804,8 @@ func TestOptions(t *testing.T) {
 func TestUniqueServerlessHostname(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
-		So(uniqueServerlessHostname("a", "b", "cccc"), ShouldEqual, "a-b-b6fbd675f98e2abd")
+	ftt.Run("Works", t, func(t *ftt.Test) {
+		assert.Loosely(t, uniqueServerlessHostname("a", "b", "cccc"), should.Equal("a-b-b6fbd675f98e2abd"))
 	})
 }
 
@@ -834,71 +838,71 @@ func TestResolveDependencies(t *testing.T) {
 		return names, nil
 	}
 
-	Convey("Works at all", t, func() {
+	ftt.Run("Works at all", t, func(t *ftt.Test) {
 		names, err := resolve(
 			mod(a, module.RequiredDependency(c), module.RequiredDependency(b)),
 			mod(b, module.RequiredDependency(c)),
 			mod(c),
 		)
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"c", "b", "a"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"c", "b", "a"}))
 	})
 
-	Convey("Preserves original order if no deps", t, func() {
+	ftt.Run("Preserves original order if no deps", t, func(t *ftt.Test) {
 		names, err := resolve(mod(a), mod(b), mod(c))
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"a", "b", "c"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"a", "b", "c"}))
 	})
 
-	Convey("Two disjoint trees", t, func() {
+	ftt.Run("Two disjoint trees", t, func(t *ftt.Test) {
 		names, err := resolve(
 			mod(a, module.RequiredDependency(b)), mod(b),
 			mod(c, module.RequiredDependency(d)), mod(d),
 		)
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"b", "a", "d", "c"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"b", "a", "d", "c"}))
 	})
 
-	Convey("Dup dependency is fine", t, func() {
+	ftt.Run("Dup dependency is fine", t, func(t *ftt.Test) {
 		names, err := resolve(
 			mod(a, module.RequiredDependency(c), module.RequiredDependency(c)),
 			mod(b, module.RequiredDependency(c), module.RequiredDependency(c)),
 			mod(c),
 		)
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"c", "a", "b"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"c", "a", "b"}))
 	})
 
-	Convey("Cycle", t, func() {
+	ftt.Run("Cycle", t, func(t *ftt.Test) {
 		names, err := resolve(
 			mod(a, module.RequiredDependency(b)),
 			mod(b, module.RequiredDependency(c)),
 			mod(c, module.RequiredDependency(a)),
 		)
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"c", "b", "a"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"c", "b", "a"}))
 	})
 
-	Convey("Skips optional missing deps", t, func() {
+	ftt.Run("Skips optional missing deps", t, func(t *ftt.Test) {
 		names, err := resolve(
 			mod(a, module.OptionalDependency(c), module.RequiredDependency(b)),
 			mod(b, module.OptionalDependency(c)),
 		)
-		So(err, ShouldBeNil)
-		So(names, ShouldResemble, []string{"b", "a"})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, names, should.Resemble([]string{"b", "a"}))
 	})
 
-	Convey("Detects dups", t, func() {
+	ftt.Run("Detects dups", t, func(t *ftt.Test) {
 		_, err := resolve(mod(a), mod(b), mod(a))
-		So(err, ShouldErrLike, "duplicate module")
+		assert.Loosely(t, err, should.ErrLike("duplicate module"))
 	})
 
-	Convey("Checks required deps", t, func() {
+	ftt.Run("Checks required deps", t, func(t *ftt.Test) {
 		_, err := resolve(
 			mod(a, module.RequiredDependency(b), module.RequiredDependency(c)),
 			mod(b, module.RequiredDependency(c)),
 		)
-		So(err, ShouldErrLike, `module "a" requires module "c"`)
+		assert.Loosely(t, err, should.ErrLike(`module "a" requires module "c"`))
 	})
 }
 
@@ -1179,11 +1183,12 @@ func (m *testModule) Initialize(ctx context.Context, host module.Host, opts modu
 // request handler, kills the server.
 //
 // Useful for testing how server options influence request handler environment.
-func testRequestHandler(o *Options, handler func(rc *router.Context)) {
+func testRequestHandler(t testing.TB, o *Options, handler func(rc *router.Context)) {
+	t.Helper()
 	ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
 
 	srv, err := newTestServer(ctx, o)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 	defer srv.cleanup()
 
 	srv.ServeInBackground()
@@ -1191,7 +1196,7 @@ func testRequestHandler(o *Options, handler func(rc *router.Context)) {
 
 	srv.Routes.GET("/test", nil, handler)
 	_, err = srv.GetMain("/test", nil)
-	So(err, ShouldBeNil)
+	assert.Loosely(t, err, should.BeNil, truth.LineContext())
 }
 
 ////////////////////////////////////////////////////////////////////////////////

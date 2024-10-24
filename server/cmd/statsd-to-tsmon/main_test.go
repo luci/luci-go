@@ -21,18 +21,19 @@ import (
 	"testing"
 	"time"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
 
 	"go.chromium.org/luci/server/cmd/statsd-to-tsmon/config"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestEndToEnd(t *testing.T) {
 	t.Parallel()
 
-	Convey("Works", t, func() {
+	ftt.Run("Works", t, func(t *ftt.Test) {
 		cfg, err := loadConfig(&config.Config{
 			Metrics: []*config.Metric{
 				{
@@ -70,7 +71,7 @@ func TestEndToEnd(t *testing.T) {
 				},
 			},
 		})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		ctx, _ = tsmon.WithDummyInMemory(ctx)
@@ -78,12 +79,12 @@ func TestEndToEnd(t *testing.T) {
 
 		// The listening socket.
 		pc, err := net.ListenPacket("udp", "localhost:0")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer pc.Close()
 
 		// The socket used by the test to send packets.
 		con, err := net.Dial("udp", pc.LocalAddr().String())
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		defer con.Close()
 
 		// Tick is signaled after each processed UDP packet.
@@ -104,7 +105,7 @@ func TestEndToEnd(t *testing.T) {
 		// Sends a statsd UDP packet and waits until it is processed.
 		send := func(packet string) {
 			_, err := con.Write([]byte(packet))
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			select {
 			case <-tick:
 			case <-time.After(5 * time.Second):
@@ -121,18 +122,18 @@ func TestEndToEnd(t *testing.T) {
 
 		// Parsed successfully.
 		val := store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "a"})
-		So(val, ShouldEqual, 2)
+		assert.Loosely(t, val, should.Equal(2))
 		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "b"})
-		So(val, ShouldEqual, 1)
+		assert.Loosely(t, val, should.Equal(1))
 		val = store.Get(ctx, cfg.metrics["e2e/gauge"], time.Time{}, []any{"static", "a"})
-		So(val, ShouldEqual, 123)
+		assert.Loosely(t, val, should.Equal(123))
 		val = store.Get(ctx, cfg.metrics["e2e/timer"], time.Time{}, []any{"static", "a"})
-		So(val.(*distribution.Distribution).Sum(), ShouldEqual, 123)
+		assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(123.))
 
 		// Updated its own internal metric.
-		So(getStatsdMetricsProcessed(ctx), ShouldResemble, map[string]int64{
+		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Resemble(map[string]int64{
 			"OK": 5,
-		})
+		}))
 
 		// Send a bunch of metrics in a single packet. Intermix some broken metrics.
 		send(strings.Join([]string{
@@ -146,18 +147,18 @@ func TestEndToEnd(t *testing.T) {
 
 		// Tsmon metrics are updated now.
 		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "a"})
-		So(val, ShouldEqual, 3)
+		assert.Loosely(t, val, should.Equal(3))
 		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "b"})
-		So(val, ShouldEqual, 2)
+		assert.Loosely(t, val, should.Equal(2))
 
 		// Updated its own internal metric.
-		So(getStatsdMetricsProcessed(ctx), ShouldResemble, map[string]int64{
+		assert.Loosely(t, getStatsdMetricsProcessed(ctx), should.Resemble(map[string]int64{
 			"OK":          7,
 			"MALFORMED":   1,
 			"UNSUPPORTED": 1,
 			"UNEXPECTED":  1,
 			"SKIPPED":     1,
-		})
+		}))
 	})
 }
 
