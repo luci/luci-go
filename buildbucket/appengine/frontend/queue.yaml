@@ -4,45 +4,45 @@ queue:
   target: default
   rate: 500/s
 - name: backend-go-default
-  target: default-go
+  target: default
   rate: 500/s
 - name: swarming-build-create-go
-  target: default-go
+  target: default
   rate: 500/s
 - name: swarming-build-sync-go
-  target: default-go
+  target: default
   rate: 500/s
 - name: notify-pubsub-go
-  target: default-go
+  target: default
   rate: 500/s
   retry_parameters:
     task_age_limit: 7d
 - name: finalize-resultdb-go
-  target: default-go
+  target: default
   rate: 500/s
 - name: cancel-build
-  target: default-go
+  target: default
   rate: 500/s
 - name: export-bigquery-go
-  target: default-go
+  target: default
   rate: 500/s
   retry_parameters:
     task_age_limit: 7d
 - name: check-build-liveness
-  target: default-go
+  target: default
   rate: 500/s
 - name: create-backend-task-go
-  target: default-go
+  target: default
   rate: 500/s
 - name: sync-builds-with-backend-tasks
-  target: default-go
+  target: default
   rate: 500/s
 - name: cancel-backend-task
-  target: default-go
+  target: default
   rate: 500/s
 - name: push-pending-builds
-  target: default-go
+  target: default
   rate: 500/s
 - name: pop-pending-builds
-  target: default-go
+  target: default
   rate: 500/s
