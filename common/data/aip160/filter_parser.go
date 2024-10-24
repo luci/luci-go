@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package aip contains utilities used to comply with API Improvement
-// Proposals (AIPs) from https://google.aip.dev/. This includes
-// an AIP-160 filter parser and AIP-132 order by clause parser.
-package aip
+package aip160
 
 // This file contains a lexer and parser for AIP-160 filter expressions.
 // The EBNF is at https://google.aip.dev/assets/misc/ebnf-filtering.txt

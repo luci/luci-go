@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 
 	spanutil "go.chromium.org/luci/analysis/internal/span"
@@ -47,7 +48,7 @@ type QueryParameter struct {
 //
 // All field names are replaced with the safe database column names from the specified table.
 // All user input strings are passed via query parameters, so the returned query is SQL injection safe.
-func (t *Table) WhereClause(filter *Filter, parameterPrefix string) (string, []QueryParameter, error) {
+func (t *Table) WhereClause(filter *aip160.Filter, parameterPrefix string) (string, []QueryParameter, error) {
 	if filter.Expression == nil {
 		return "(TRUE)", []QueryParameter{}, nil
 	}
@@ -70,7 +71,7 @@ func (t *Table) WhereClause(filter *Filter, parameterPrefix string) (string, []Q
 // sequence.
 //
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) expressionQuery(expression *Expression) (string, error) {
+func (w *whereClause) expressionQuery(expression *aip160.Expression) (string, error) {
 	factors := []string{}
 	// Both Sequence and Factor is equivalent to AND of the
 	// component Sequences and Factors (respectively), as we implement
@@ -95,7 +96,7 @@ func (w *whereClause) expressionQuery(expression *Expression) (string, error) {
 // factor. A factor is a disjunction (OR) of terms or a simple term.
 //
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) factorQuery(factor *Factor) (string, error) {
+func (w *whereClause) factorQuery(factor *aip160.Factor) (string, error) {
 	terms := []string{}
 	for _, term := range factor.Terms {
 		tq, err := w.termQuery(term)
@@ -114,7 +115,7 @@ func (w *whereClause) factorQuery(factor *Factor) (string, error) {
 // term.
 //
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) termQuery(term *Term) (string, error) {
+func (w *whereClause) termQuery(term *aip160.Term) (string, error) {
 	simpleQuery, err := w.simpleQuery(term.Simple)
 	if err != nil {
 		return "", err
@@ -128,7 +129,7 @@ func (w *whereClause) termQuery(term *Term) (string, error) {
 // simpleQuery returns the SQL expression equivalent to the given simple
 // filter.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) simpleQuery(simple *Simple) (string, error) {
+func (w *whereClause) simpleQuery(simple *aip160.Simple) (string, error) {
 	if simple.Restriction != nil {
 		return w.restrictionQuery(simple.Restriction)
 	} else if simple.Composite != nil {
@@ -141,7 +142,7 @@ func (w *whereClause) simpleQuery(simple *Simple) (string, error) {
 // restrictionQuery returns the SQL expression equivalent to the given
 // restriction.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error) {
+func (w *whereClause) restrictionQuery(restriction *aip160.Restriction) (string, error) {
 	if restriction.Comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
@@ -234,7 +235,7 @@ func (w *whereClause) restrictionQuery(restriction *Restriction) (string, error)
 // argValue returns a SQL expression representing the value of the specified
 // arg.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) argValue(arg *Arg, column *Column) (string, error) {
+func (w *whereClause) argValue(arg *aip160.Arg, column *Column) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions in arguments not implemented yet")
 	}
@@ -247,7 +248,7 @@ func (w *whereClause) argValue(arg *Arg, column *Column) (string, error) {
 // argValue returns a SQL expression representing the value of the specified
 // comparable.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) comparableValue(comparable *Comparable, column *Column) (string, error) {
+func (w *whereClause) comparableValue(comparable *aip160.Comparable, column *Column) (string, error) {
 	if comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}
@@ -277,7 +278,7 @@ func (w *whereClause) comparableValue(comparable *Comparable, column *Column) (s
 // right hand side of a LIKE operator, performs substring matching against
 // the value of the argument.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeArgValue(arg *Arg, column *Column) (string, error) {
+func (w *whereClause) likeArgValue(arg *aip160.Arg, column *Column) (string, error) {
 	if arg.Composite != nil {
 		return "", fmt.Errorf("composite expressions are not allowed as RHS to has (:) operator")
 	}
@@ -297,7 +298,7 @@ func (w *whereClause) likeArgValue(arg *Arg, column *Column) (string, error) {
 // right hand side of a LIKE operator, performs substring matching against
 // the value of the comparable.
 // The returned string is an injection-safe SQL expression.
-func (w *whereClause) likeComparableValue(comparable *Comparable) (string, error) {
+func (w *whereClause) likeComparableValue(comparable *aip160.Comparable) (string, error) {
 	if comparable.Member == nil {
 		return "", fmt.Errorf("invalid comparable")
 	}

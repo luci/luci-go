@@ -17,6 +17,7 @@ package aip
 import (
 	"testing"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -43,14 +44,14 @@ func TestWhereClause(t *testing.T) {
 		).Build()
 
 		t.Run("Empty filter", func(t *ftt.Test) {
-			result, pars, err := table.WhereClause(&Filter{}, "p_")
+			result, pars, err := table.WhereClause(&aip160.Filter{}, "p_")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, pars, should.HaveLength(0))
 			assert.Loosely(t, result, should.Equal("(TRUE)"))
 		})
 		t.Run("Simple filter", func(t *ftt.Test) {
 			t.Run("has operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo:somevalue")
+				filter, err := aip160.ParseFilter("foo:somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -64,7 +65,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(db_foo LIKE @p_0)"))
 			})
 			t.Run("equals operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo = somevalue")
+				filter, err := aip160.ParseFilter("foo = somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -78,7 +79,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(db_foo = @p_0)"))
 			})
 			t.Run("equals operator on bool column", func(t *ftt.Test) {
-				filter, err := ParseFilter("bool = true AND bool = false")
+				filter, err := aip160.ParseFilter("bool = true AND bool = false")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -87,7 +88,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("((db_bool = TRUE) AND (db_bool = FALSE))"))
 			})
 			t.Run("not equals operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo != somevalue")
+				filter, err := aip160.ParseFilter("foo != somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -101,7 +102,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(db_foo <> @p_0)"))
 			})
 			t.Run("not equals operator on bool column", func(t *ftt.Test) {
-				filter, err := ParseFilter("bool != true AND bool != false")
+				filter, err := aip160.ParseFilter("bool != true AND bool != false")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -110,7 +111,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("((db_bool <> TRUE) AND (db_bool <> FALSE))"))
 			})
 			t.Run("implicit match operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("somevalue")
+				filter, err := aip160.ParseFilter("somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -124,7 +125,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(db_foo LIKE @p_0 OR db_bar LIKE @p_0)"))
 			})
 			t.Run("key value contains operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("kv.key:somevalue")
+				filter, err := aip160.ParseFilter("kv.key:somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -142,7 +143,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value LIKE @p_1))"))
 			})
 			t.Run("key value equal operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("kv.key=somevalue")
+				filter, err := aip160.ParseFilter("kv.key=somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -160,7 +161,7 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value = @p_1))"))
 			})
 			t.Run("key value not equal operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("kv.key!=somevalue")
+				filter, err := aip160.ParseFilter("kv.key!=somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -178,14 +179,14 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT key, value FROM UNNEST(db_kv) WHERE key = @p_0 AND value <> @p_1))"))
 			})
 			t.Run("key value missing key contains operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("kv:somevalue")
+				filter, err := aip160.ParseFilter("kv:somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("key value columns must specify the key to search on"))
 			})
 			t.Run("array contains operator", func(t *ftt.Test) {
-				filter, err := ParseFilter("array:somevalue")
+				filter, err := aip160.ParseFilter("array:somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -199,42 +200,42 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(EXISTS (SELECT value FROM UNNEST(db_array) as value WHERE value LIKE @p_0))"))
 			})
 			t.Run("unsupported composite to LIKE", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo:(somevalue)")
+				filter, err := aip160.ParseFilter("foo:(somevalue)")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("composite expressions are not allowed as RHS to has (:) operator"))
 			})
 			t.Run("unsupported composite to equals", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo=(somevalue)")
+				filter, err := aip160.ParseFilter("foo=(somevalue)")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("composite expressions in arguments not implemented yet"))
 			})
 			t.Run("unsupported field LHS", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo.baz=blah")
+				filter, err := aip160.ParseFilter("foo.baz=blah")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("fields are only supported for key value columns"))
 			})
 			t.Run("unsupported field RHS", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo=blah.baz")
+				filter, err := aip160.ParseFilter("foo=blah.baz")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("fields not implemented yet"))
 			})
 			t.Run("field on RHS of has", func(t *ftt.Test) {
-				filter, err := ParseFilter("foo:blah.baz")
+				filter, err := aip160.ParseFilter("foo:blah.baz")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("fields are not allowed on the RHS of has (:) operator"))
 			})
 			t.Run("WithArgumentSubstitutor filter substituted", func(t *ftt.Test) {
-				filter, err := ParseFilter("qux=somevalue")
+				filter, err := aip160.ParseFilter("qux=somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -248,14 +249,14 @@ func TestWhereClause(t *testing.T) {
 				assert.Loosely(t, result, should.Equal("(db_qux = @p_0)"))
 			})
 			t.Run("WithArgumentSubstitutor filter not supported", func(t *ftt.Test) {
-				filter, err := ParseFilter("qux:some")
+				filter, err := aip160.ParseFilter("qux:some")
 				assert.Loosely(t, err, should.BeNil)
 
 				_, _, err = table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.ErrLike("cannot use has (:) operator on a field that have argSubstitute function"))
 			})
 			t.Run("WithArgumentSubstitutor filter key value", func(t *ftt.Test) {
-				filter, err := ParseFilter("quux.somekey=somevalue")
+				filter, err := aip160.ParseFilter("quux.somekey=somevalue")
 				assert.Loosely(t, err, should.BeNil)
 
 				result, pars, err := table.WhereClause(filter, "p_")
@@ -274,7 +275,7 @@ func TestWhereClause(t *testing.T) {
 			})
 		})
 		t.Run("Complex filter", func(t *ftt.Test) {
-			filter, err := ParseFilter("implicit (foo=explicitone) OR -bar=explicittwo AND foo!=explicitthree OR baz:explicitfour")
+			filter, err := aip160.ParseFilter("implicit (foo=explicitone) OR -bar=explicittwo AND foo!=explicitthree OR baz:explicitfour")
 			assert.Loosely(t, err, should.BeNil)
 
 			result, pars, err := table.WhereClause(filter, "p_")

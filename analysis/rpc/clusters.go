@@ -23,6 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -447,7 +448,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 			}
 			var err error
 
-			opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
+			opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 			if err != nil {
 				bqErr = invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
 				return nil
@@ -813,7 +814,7 @@ func (c *clustersServer) QueryHistory(ctx context.Context, req *pb.QueryClusterH
 		Days:    req.Days,
 	}
 
-	opts.FailureFilter, err = aip.ParseFilter(req.FailureFilter)
+	opts.FailureFilter, err = aip160.ParseFilter(req.FailureFilter)
 	if err != nil {
 		return nil, invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
 	}

@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/analysis/internal/aip"
@@ -67,7 +68,7 @@ const metricByDayColumnSuffix = "by_day"
 
 type QueryClusterSummariesOptions struct {
 	// A filter on the underlying failures to include in the clusters.
-	FailureFilter *aip.Filter
+	FailureFilter *aip160.Filter
 	OrderBy       []aip.OrderBy
 	Realms        []string
 	// Metrics is the set of metrics to query. If a metric is referenced
@@ -107,7 +108,7 @@ type ClusterSummary struct {
 
 type QueryClusterMetricBreakdownsOptions struct {
 	// A filter on the underlying failures to include in the clusters.
-	FailureFilter *aip.Filter
+	FailureFilter *aip160.Filter
 	OrderBy       []aip.OrderBy
 	Realms        []string
 	// Metrics is the set of metrics to query. If a metric is referenced
