@@ -1,14 +1,8 @@
 queue:
 
 - name: tq-sweep
-  # TODO(crbug/1042991): Target backend-go once it exists.
-  target: default-go
+  target: default
   rate: 500/s
-- name: backend-default
-  target: backend
-  rate: 500/s
-- name: bq-export
-  mode: pull
 - name: backend-go-default
   target: default-go
   rate: 500/s

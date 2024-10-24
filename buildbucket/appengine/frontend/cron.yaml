@@ -1,27 +1,27 @@
 cron:
 
 - description: TQ sweeper
-  target: default-go
+  target: default
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
 
 - description: update the service config from luci-config
-  target: default-go
+  target: default
   url: /internal/cron/update_config
   schedule: every 10 minutes
 
 - description: expire builds
-  target: default-go
+  target: default
   url: /internal/cron/expire_builds
   schedule: every 1 minutes
 
 - description: delete builds
-  target: default-go
+  target: default
   url: /internal/cron/delete_builds
   schedule: every 1 minutes
 
 - description: update buckets and builders from all project configs
-  target: default-go
+  target: default
   url: /internal/cron/update_project_config
   schedule: every 1 minutes
 
@@ -33,12 +33,12 @@ cron:
 ## cleanup builders
 
 - description: removes inactive BuilderStats
-  target: default-go
+  target: default
   url: /internal/cron/remove_inactive_builder_stats
   schedule: every 1 hours
 
 ### trigger cloud tasks to sync builds with backend tasks
 - description: trigger cloud tasks to sync builds with backend tasks
-  target: default-go
+  target: default
   url: /internal/cron/sync_backend_tasks
   schedule: every 1 minutes
