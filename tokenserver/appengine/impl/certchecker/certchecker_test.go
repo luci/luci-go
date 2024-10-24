@@ -29,23 +29,23 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCertChecker(t *testing.T) {
-	Convey("CertChecker works", t, func() {
+	ftt.Run("CertChecker works", t, func(t *ftt.Test) {
 		ctx := gaetesting.TestingContext()
 		ctx = cryptorand.MockForTest(ctx, 0)
 		ctx, clk := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
 		// Generate new CA private key and certificate.
 		pkey, caCert, err := generateCA(ctx, "Some CA: ca-name.fake")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Generate phony CA config.
 		configBlob, _ := proto.Marshal(&admin.CertificateAuthorityConfig{
@@ -56,7 +56,7 @@ func TestCertChecker(t *testing.T) {
 
 		// Nothing in the datastore yet.
 		checker, err := GetCertChecker(ctx, "Some CA: ca-name.fake")
-		So(err, ShouldNotBeNil)
+		assert.Loosely(t, err, should.ErrLike("no such CA"))
 
 		// Put it into the datastore.
 		caEntity := certconfig.CA{
@@ -66,31 +66,31 @@ func TestCertChecker(t *testing.T) {
 			Ready:  true,
 		}
 		err = datastore.Put(ctx, &caEntity)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// In the datastore now.
 		checker, err = GetCertChecker(ctx, "Some CA: ca-name.fake")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Update associated CRL (it's empty).
 		err = certconfig.UpdateCRLSet(ctx, "Some CA: ca-name.fake",
 			certconfig.CRLShardCount, &pkix.CertificateList{})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Generate some certificate signed by the CA.
 		certDer, err := generateCert(ctx, 2, "some-cert-name.fake", caCert, pkey)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Use CertChecker to check its validity. Need to parse DER first.
 		parsedCert, err := x509.ParseCertificate(certDer)
-		So(err, ShouldBeNil)
-		So(parsedCert.Issuer.CommonName, ShouldEqual, "Some CA: ca-name.fake")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, parsedCert.Issuer.CommonName, should.Equal("Some CA: ca-name.fake"))
 
 		// Valid!
 		ca, err := checker.CheckCertificate(ctx, parsedCert)
-		So(err, ShouldBeNil)
-		So(ca.CN, ShouldEqual, "Some CA: ca-name.fake")
-		So(ca.ParsedConfig, ShouldNotBeNil)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ca.CN, should.Equal("Some CA: ca-name.fake"))
+		assert.Loosely(t, ca.ParsedConfig, should.NotBeNil)
 
 		// Revoke the certificate by generating new CRL and putting it into the
 		// datastore.
@@ -102,33 +102,33 @@ func TestCertChecker(t *testing.T) {
 					},
 				},
 			})
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// Bump time to invalidate cert checker caches.
 		clk.Add(10 * time.Minute)
 
 		// Check same cert again. Should be rejected now as revoked.
 		_, err = checker.CheckCertificate(ctx, parsedCert)
-		So(err, ShouldErrLike, "certificate with SN 2 has been revoked")
+		assert.Loosely(t, err, should.ErrLike("certificate with SN 2 has been revoked"))
 
 		// Fast forward past cert expiration time.
 		clk.Add(6 * time.Hour)
 
 		// Should be rejected as expired now.
 		_, err = checker.CheckCertificate(ctx, parsedCert)
-		So(err, ShouldErrLike, "certificate has expired")
+		assert.Loosely(t, err, should.ErrLike("certificate has expired"))
 
 		// Generate a cert signed by a CA with the same name, but with different
 		// unexpected CA keys.
 		phonyCAKey, phonyCACert, err := generateCA(ctx, "Some CA: ca-name.fake")
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 		certDer, err = generateCert(ctx, 3, "some-name", phonyCACert, phonyCAKey)
-		So(err, ShouldBeNil)
+		assert.Loosely(t, err, should.BeNil)
 
 		// CertChecker rejects it.
 		parsedCert, _ = x509.ParseCertificate(certDer)
 		_, err = checker.CheckCertificate(ctx, parsedCert)
-		So(err, ShouldErrLike, "crypto/rsa: verification error")
+		assert.Loosely(t, err, should.ErrLike("crypto/rsa: verification error"))
 	})
 }
 

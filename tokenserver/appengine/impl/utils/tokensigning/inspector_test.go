@@ -28,8 +28,9 @@ import (
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestInspectToken(t *testing.T) {
@@ -53,68 +54,68 @@ func TestInspectToken(t *testing.T) {
 	}
 	good, _ := signerForTest(signer, "").SignToken(ctx, original)
 
-	Convey("Happy path", t, func() {
+	ftt.Run("Happy path", t, func(t *ftt.Test) {
 		ins, err := inspector.InspectToken(ctx, good)
-		So(err, ShouldBeNil)
-		So(ins.Signed, ShouldBeTrue)
-		So(ins.NonExpired, ShouldBeTrue)
-		So(ins.InvalidityReason, ShouldEqual, "")
-		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResembleProto, original)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins.Signed, should.BeTrue)
+		assert.Loosely(t, ins.NonExpired, should.BeTrue)
+		assert.Loosely(t, ins.InvalidityReason, should.BeEmpty)
+		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
+		assert.Loosely(t, ins.Body, should.Resemble(original))
 	})
 
-	Convey("Not base64", t, func() {
+	ftt.Run("Not base64", t, func(t *ftt.Test) {
 		ins, err := inspector.InspectToken(ctx, "@@@@@@@@@@@@@")
-		So(err, ShouldBeNil)
-		So(ins, ShouldResemble, &Inspection{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins, should.Resemble(&Inspection{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
-		})
+		}))
 	})
 
-	Convey("Not valid envelope proto", t, func() {
+	ftt.Run("Not valid envelope proto", t, func(t *ftt.Test) {
 		ins, err := inspector.InspectToken(ctx, "zzzz")
-		So(err, ShouldBeNil)
-		So(ins.InvalidityReason, ShouldStartWith, "can't unmarshal the envelope - proto")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins.InvalidityReason, should.HavePrefix("can't unmarshal the envelope - proto"))
 	})
 
-	Convey("Bad signature", t, func() {
+	ftt.Run("Bad signature", t, func(t *ftt.Test) {
 		env, _, _ := deserializeForTest(ctx, good, signer)
 		env.Pkcs1Sha256Sig = []byte("lalala")
 		blob, _ := proto.Marshal(env)
 		tok := base64.RawURLEncoding.EncodeToString(blob)
 
 		ins, err := inspector.InspectToken(ctx, tok)
-		So(err, ShouldBeNil)
-		So(ins.Signed, ShouldBeFalse)
-		So(ins.NonExpired, ShouldBeTrue)
-		So(ins.InvalidityReason, ShouldEqual, "bad signature - crypto/rsa: verification error")
-		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResembleProto, original) // recovered the token body nonetheless
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins.Signed, should.BeFalse)
+		assert.Loosely(t, ins.NonExpired, should.BeTrue)
+		assert.Loosely(t, ins.InvalidityReason, should.Equal("bad signature - crypto/rsa: verification error"))
+		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
+		assert.Loosely(t, ins.Body, should.Resemble(original)) // recovered the token body nonetheless
 	})
 
-	Convey("Wrong SigningContext", t, func() {
+	ftt.Run("Wrong SigningContext", t, func(t *ftt.Test) {
 		inspectorWithCtx := inspectorForTest(signer, "Some context")
 
 		// Symptoms are same as in "Bad signature".
 		ins, err := inspectorWithCtx.InspectToken(ctx, good)
-		So(err, ShouldBeNil)
-		So(ins.Signed, ShouldBeFalse)
-		So(ins.NonExpired, ShouldBeTrue)
-		So(ins.InvalidityReason, ShouldEqual, "bad signature - crypto/rsa: verification error")
-		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResembleProto, original) // recovered the token body nonetheless
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins.Signed, should.BeFalse)
+		assert.Loosely(t, ins.NonExpired, should.BeTrue)
+		assert.Loosely(t, ins.InvalidityReason, should.Equal("bad signature - crypto/rsa: verification error"))
+		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
+		assert.Loosely(t, ins.Body, should.Resemble(original)) // recovered the token body nonetheless
 	})
 
-	Convey("Expired", t, func() {
+	ftt.Run("Expired", t, func(t *ftt.Test) {
 		tc.Add(2 * time.Hour)
 
 		ins, err := inspector.InspectToken(ctx, good)
-		So(err, ShouldBeNil)
-		So(ins.Signed, ShouldBeTrue)
-		So(ins.NonExpired, ShouldBeFalse)
-		So(ins.InvalidityReason, ShouldEqual, "expired")
-		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResembleProto, original)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ins.Signed, should.BeTrue)
+		assert.Loosely(t, ins.NonExpired, should.BeFalse)
+		assert.Loosely(t, ins.InvalidityReason, should.Equal("expired"))
+		assert.Loosely(t, ins.Envelope, should.HaveType[*messages.DelegationToken])
+		assert.Loosely(t, ins.Body, should.Resemble(original))
 	})
 }
 
