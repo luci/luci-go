@@ -30,12 +30,15 @@ import (
 	"go.chromium.org/luci/teams/internal/testutil"
 	pb "go.chromium.org/luci/teams/proto/v1"
 
-	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestTeams(t *testing.T) {
-	Convey("With a Teams server", t, func() {
+	ftt.Run("With a Teams server", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 		ctx = caching.WithEmptyProcessCache(ctx)
 
@@ -49,8 +52,8 @@ func TestTeams(t *testing.T) {
 		ctx = secrets.Use(ctx, &testsecrets.Store{})
 
 		server := NewTeamsServer()
-		Convey("Get", func() {
-			Convey("Anonymous rejected", func() {
+		t.Run("Get", func(t *ftt.Test) {
+			t.Run("Anonymous rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().anonymous().setInContext(ctx)
 
 				request := &pb.GetTeamRequest{
@@ -58,10 +61,10 @@ func TestTeams(t *testing.T) {
 				}
 				status, err := server.Get(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "log in")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("Users without app access rejected", func() {
+			t.Run("Users without app access rejected", func(t *ftt.Test) {
 				ctx = fakeAuth().setInContext(ctx)
 
 				request := &pb.GetTeamRequest{
@@ -69,25 +72,25 @@ func TestTeams(t *testing.T) {
 				}
 				status, err := server.Get(ctx, request)
 
-				So(err, ShouldBeRPCPermissionDenied, "not a member of luci-teams-access")
-				So(status, ShouldBeNil)
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-teams-access"))
+				assert.Loosely(t, status, should.BeNil)
 			})
-			Convey("Read team that exists", func() {
+			t.Run("Read team that exists", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
 
-				t, err := teams.NewTeamBuilder().WithID("1234567890abcdef1234567890abcdef").CreateInDB(ctx)
-				So(err, ShouldBeNil)
+				tb, err := teams.NewTeamBuilder().WithID("1234567890abcdef1234567890abcdef").CreateInDB(ctx)
+				assert.Loosely(t, err, should.BeNil)
 
 				request := &pb.GetTeamRequest{
 					Name: "teams/1234567890abcdef1234567890abcdef",
 				}
 				team, err := server.Get(ctx, request)
 
-				So(err, ShouldBeNil)
-				So(team.Name, ShouldEqual, "teams/1234567890abcdef1234567890abcdef")
-				So(team.CreateTime.AsTime(), ShouldEqual, t.CreateTime)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, team.Name, should.Equal("teams/1234567890abcdef1234567890abcdef"))
+				assert.Loosely(t, team.CreateTime.AsTime(), should.Match(tb.CreateTime))
 			})
-			Convey("Read own team", func() {
+			t.Run("Read own team", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
 
 				request := &pb.GetTeamRequest{
@@ -95,9 +98,9 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				So(err, ShouldHaveRPCCode, codes.Unimplemented)
+				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.Unimplemented))
 			})
-			Convey("Read of invalid id", func() {
+			t.Run("Read of invalid id", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
 
 				request := &pb.GetTeamRequest{
@@ -105,9 +108,9 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				So(err, ShouldBeRPCInvalidArgument, "name: expected format")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
 			})
-			Convey("Read of non existing valid id", func() {
+			t.Run("Read of non existing valid id", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
 
 				request := &pb.GetTeamRequest{
@@ -115,7 +118,7 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				So(err, ShouldBeRPCNotFound, "team was not found")
+				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("team was not found"))
 			})
 		})
 	})
