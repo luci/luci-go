@@ -68,9 +68,7 @@ func (to *testOutput) SendBundle(b *logpb.ButlerLogBundle) error {
 		name := string(be.Desc.Name)
 
 		to.streams[name] = append(to.streams[name], be.Logs...)
-		if be.TerminalIndex >= 0 {
-			to.terminal[name] = struct{}{}
-		}
+		to.terminal[name] = struct{}{}
 	}
 	return nil
 }
