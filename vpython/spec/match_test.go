@@ -19,9 +19,10 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/vpython/api/vpython"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func mkTag(python, abi, platform string) *vpython.PEP425Tag {
@@ -89,18 +90,18 @@ func TestPEP425Matches(t *testing.T) {
 		},
 	}
 
-	Convey(`Test cases for PEP425 tag matching`, t, func() {
+	ftt.Run(`Test cases for PEP425 tag matching`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			Convey(fmt.Sprintf(`With system tags: %s`, tagString(tc.tags)), func() {
+			t.Run(fmt.Sprintf(`With system tags: %s`, tagString(tc.tags)), func(t *ftt.Test) {
 				for _, m := range tc.matches {
-					Convey(fmt.Sprintf(`Tag matches: %s`, m.TagString()), func() {
-						So(PEP425Matches(m, tc.tags), ShouldBeTrue)
+					t.Run(fmt.Sprintf(`Tag matches: %s`, m.TagString()), func(t *ftt.Test) {
+						assert.Loosely(t, PEP425Matches(m, tc.tags), should.BeTrue)
 					})
 				}
 
 				for _, m := range tc.notMatches {
-					Convey(fmt.Sprintf(`Tag doesn't match: %s`, m.TagString()), func() {
-						So(PEP425Matches(m, tc.tags), ShouldBeFalse)
+					t.Run(fmt.Sprintf(`Tag doesn't match: %s`, m.TagString()), func(t *ftt.Test) {
+						assert.Loosely(t, PEP425Matches(m, tc.tags), should.BeFalse)
 					})
 				}
 			})
@@ -173,18 +174,18 @@ func TestPackageMatches(t *testing.T) {
 		},
 	}
 
-	Convey(`Test cases for package tag matching`, t, func() {
+	ftt.Run(`Test cases for package tag matching`, t, func(t *ftt.Test) {
 		for _, tc := range testCases {
-			Convey(fmt.Sprintf(`With system tags: %s`, tagString(tc.tags)), func() {
+			t.Run(fmt.Sprintf(`With system tags: %s`, tagString(tc.tags)), func(t *ftt.Test) {
 				for _, m := range tc.matchPkgs {
-					Convey(fmt.Sprintf(`Package %q matches: %s`, m.Name, tagString(m.MatchTag)), func() {
-						So(PackageMatches(m, tc.tags), ShouldBeTrue)
+					t.Run(fmt.Sprintf(`Package %q matches: %s`, m.Name, tagString(m.MatchTag)), func(t *ftt.Test) {
+						assert.Loosely(t, PackageMatches(m, tc.tags), should.BeTrue)
 					})
 				}
 
 				for _, m := range tc.notMatchPkgs {
-					Convey(fmt.Sprintf(`Package %q doesn't match: %s`, m.Name, tagString(m.MatchTag)), func() {
-						So(PackageMatches(m, tc.tags), ShouldBeFalse)
+					t.Run(fmt.Sprintf(`Package %q doesn't match: %s`, m.Name, tagString(m.MatchTag)), func(t *ftt.Test) {
+						assert.Loosely(t, PackageMatches(m, tc.tags), should.BeFalse)
 					})
 				}
 			})

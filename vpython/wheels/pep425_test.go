@@ -16,15 +16,14 @@ package wheels
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/template"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/api/vpython"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPEP425TagSelector(t *testing.T) {
@@ -276,44 +275,43 @@ func TestPEP425TagSelector(t *testing.T) {
 		},
 	}
 
-	Convey(`Testing PEP425 tag selection`, t, func() {
+	ftt.Run(`Testing PEP425 tag selection`, t, func(t *ftt.Test) {
 		for i, tc := range testCases {
-			tagsStr := make([]string, len(tc.tags))
-			for i, tag := range tc.tags {
-				tagsStr[i] = tag.TagString()
-			}
-			t.Logf("Test case #%d, using tags: %v", i, tagsStr)
+			t.Run(fmt.Sprintf(`case #%d`, i), func(t *ftt.Test) {
+				tagsStr := make([]string, len(tc.tags))
+				for i, tag := range tc.tags {
+					tagsStr[i] = tag.TagString()
+				}
 
-			tagsList := strings.Join(tagsStr, ", ")
-			Convey(fmt.Sprintf(`Generates template for [%s]`, tagsList), func() {
+				t.Log("TagsStr", tagsStr)
 				tag := pep425TagSelector(tc.tags)
 
 				expander := make(template.Expander)
 				err := addPEP425CIPDTemplateForTag(expander, tag)
-				So(err, ShouldBeNil)
-				So(map[string]string(expander), ShouldResemble, tc.template)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, map[string]string(expander), should.Resemble(tc.template))
 			})
 		}
 
-		Convey(`Returns an error when no tag is selected.`, func() {
+		t.Run(`Returns an error when no tag is selected.`, func(t *ftt.Test) {
 			tag := pep425TagSelector(nil)
-			So(tag, ShouldBeNil)
+			assert.Loosely(t, tag, should.BeNil)
 
 			expander := make(template.Expander)
 			err := addPEP425CIPDTemplateForTag(expander, tag)
-			So(err, ShouldErrLike, "no PEP425 tag")
+			assert.Loosely(t, err, should.ErrLike("no PEP425 tag"))
 		})
 
-		Convey(`Returns an error when an unknown platform is selected.`, func() {
+		t.Run(`Returns an error when an unknown platform is selected.`, func(t *ftt.Test) {
 			tag := pep425TagSelector([]*vpython.PEP425Tag{
 				{Python: "py27", Abi: "none", Platform: "any"},
 				{Python: "py27", Abi: "foo", Platform: "bar"},
 			})
-			So(tag, ShouldResembleProto, &vpython.PEP425Tag{Python: "py27", Abi: "foo", Platform: "bar"})
+			assert.Loosely(t, tag, should.Resemble(&vpython.PEP425Tag{Python: "py27", Abi: "foo", Platform: "bar"}))
 
 			expander := make(template.Expander)
 			err := addPEP425CIPDTemplateForTag(expander, tag)
-			So(err, ShouldErrLike, "failed to infer CIPD platform for tag")
+			assert.Loosely(t, err, should.ErrLike("failed to infer CIPD platform for tag"))
 		})
 	})
 }

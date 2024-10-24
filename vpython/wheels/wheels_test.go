@@ -18,76 +18,77 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/api/vpython"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGeneratingEnsureFile(t *testing.T) {
-	Convey("Test generate ensure file", t, func() {
+	ftt.Run("Test generate ensure file", t, func(t *ftt.Test) {
 		ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
 			Wheel: []*vpython.Spec_Package{
 				{Name: "pkg1", Version: "version1"},
 				{Name: "pkg2", Version: "version2"},
 			},
 		}, nil)
-		So(err, ShouldBeNil)
-		So(ef.PackagesBySubdir["wheels"], ShouldResemble, ensure.PackageSlice{
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
 			{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 			{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
-		})
+		}))
 
 	})
-	Convey("Test duplicated wheels", t, func() {
-		Convey("Same version", func() {
+	ftt.Run("Test duplicated wheels", t, func(t *ftt.Test) {
+		t.Run("Same version", func(t *ftt.Test) {
 			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1"},
 					{Name: "pkg1", Version: "version1"},
 				},
 			}, nil)
-			So(err, ShouldBeNil)
-			So(ef.PackagesBySubdir["wheels"], ShouldResemble, ensure.PackageSlice{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
 				{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
-			})
+			}))
 		})
-		Convey("Different version", func() {
+		t.Run("Different version", func(t *ftt.Test) {
 			_, err := ensureFileFromVPythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1"},
 					{Name: "pkg1", Version: "version2"},
 				},
 			}, nil)
-			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldStartWith, "multiple versions for package")
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.Error(), should.HavePrefix("multiple versions for package"))
 		})
 	})
-	Convey("Test match tag", t, func() {
-		Convey("match", func() {
+	ftt.Run("Test match tag", t, func(t *ftt.Test) {
+		t.Run("match", func(t *ftt.Test) {
 			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1", MatchTag: []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}},
 					{Name: "pkg2", Version: "version2"},
 				},
 			}, []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}})
-			So(err, ShouldBeNil)
-			So(ef.PackagesBySubdir["wheels"], ShouldResemble, ensure.PackageSlice{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
 				{PackageTemplate: "pkg1", UnresolvedVersion: "version1"},
 				{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
-			})
+			}))
 		})
-		Convey("mismatch", func() {
+		t.Run("mismatch", func(t *ftt.Test) {
 			ef, err := ensureFileFromVPythonSpec(&vpython.Spec{
 				Wheel: []*vpython.Spec_Package{
 					{Name: "pkg1", Version: "version1", MatchTag: []*vpython.PEP425Tag{{Platform: "manylinux1_x86_64"}}},
 					{Name: "pkg2", Version: "version2"},
 				},
 			}, []*vpython.PEP425Tag{{Platform: "manylinux1_aarch64"}})
-			So(err, ShouldBeNil)
-			So(ef.PackagesBySubdir["wheels"], ShouldResemble, ensure.PackageSlice{
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ef.PackagesBySubdir["wheels"], should.Resemble(ensure.PackageSlice{
 				{PackageTemplate: "pkg2", UnresolvedVersion: "version2"},
-			})
+			}))
 		})
 	})
 }

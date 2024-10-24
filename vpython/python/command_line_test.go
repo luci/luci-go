@@ -16,10 +16,10 @@ package python
 
 import (
 	"fmt"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func f(flag string, arg ...string) (result CommandLineFlag) {
@@ -214,30 +214,30 @@ func TestParseCommandLine(t *testing.T) {
 		{[]string{"-\x80"}, "invalid rune in flag"},
 	}
 
-	Convey(`Testing Python command-line parsing`, t, func() {
+	ftt.Run(`Testing Python command-line parsing`, t, func(t *ftt.Test) {
 		for i, tc := range successes {
-			Convey(fmt.Sprintf(`Success case #%d: %v`, i, tc.args), func() {
+			t.Run(fmt.Sprintf(`Success case #%d: %v`, i, tc.args), func(t *ftt.Test) {
 				cmd, err := ParseCommandLine(tc.args)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				builtArgs := cmd.BuildArgs()
-				So(cmd, ShouldResemble, &tc.cmd)
-				So(builtArgs, ShouldResemble, tc.build)
+				assert.Loosely(t, cmd, should.Resemble(&tc.cmd))
+				assert.Loosely(t, builtArgs, should.Resemble(tc.build))
 
 				// Round-trip!
 				roundTripBuiltArgs := cmd.BuildArgs()
 				cmd, err = ParseCommandLine(builtArgs)
-				So(err, ShouldBeNil)
-				So(cmd, ShouldResemble, &tc.cmd)
-				So(roundTripBuiltArgs, ShouldResemble, tc.build)
-				So(roundTripBuiltArgs, ShouldResemble, builtArgs)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, cmd, should.Resemble(&tc.cmd))
+				assert.Loosely(t, roundTripBuiltArgs, should.Resemble(tc.build))
+				assert.Loosely(t, roundTripBuiltArgs, should.Resemble(builtArgs))
 			})
 		}
 
 		for i, tc := range failures {
-			Convey(fmt.Sprintf(`Error case #%d: %v`, i, tc.args), func() {
+			t.Run(fmt.Sprintf(`Error case #%d: %v`, i, tc.args), func(t *ftt.Test) {
 				_, err := ParseCommandLine(tc.args)
-				So(err, ShouldErrLike, tc.err)
+				assert.Loosely(t, err, should.ErrLike(tc.err))
 			})
 		}
 	})
@@ -290,18 +290,18 @@ func TestCommandLine(t *testing.T) {
 		},
 	}
 
-	Convey(`Testing CommandLine functionality`, t, func() {
+	ftt.Run(`Testing CommandLine functionality`, t, func(t *ftt.Test) {
 		for i, tc := range testCases {
-			Convey(fmt.Sprintf(`Test case #%d: %v`, i, tc.desc), func() {
+			t.Run(fmt.Sprintf(`Test case #%d: %v`, i, tc.desc), func(t *ftt.Test) {
 				cl := CommandLine{
 					Flags: tc.flags,
 				}
 				tc.actionFn(&cl)
-				So(cl.Flags, ShouldResemble, tc.expected)
+				assert.Loosely(t, cl.Flags, should.Resemble(tc.expected))
 			})
 		}
 
-		Convey(`Testing Clone`, func() {
+		t.Run(`Testing Clone`, func(t *ftt.Test) {
 			// Create a command-line with all fields populated.
 			cmd := CommandLine{
 				Target: ScriptTarget{"script", false},
@@ -310,36 +310,36 @@ func TestCommandLine(t *testing.T) {
 			}
 
 			clone := cmd.Clone()
-			So(clone, ShouldResemble, &cmd)
+			assert.Loosely(t, clone, should.Resemble(&cmd))
 
 			clone.Flags = append(clone.Flags[:0], f("B"), f("d"), f("E"), f("H"))
 			clone.Args = append(clone.Args[:0], "bar", "baz")
-			So(clone, ShouldNotResemble, &cmd)
+			assert.Loosely(t, clone, should.NotResemble(&cmd))
 		})
 
-		Convey(`Adding a flag with a '-' causes a panic.`, func() {
+		t.Run(`Adding a flag with a '-' causes a panic.`, func(t *ftt.Test) {
 			var cl CommandLine
-			So(func() { cl.AddSingleFlag("-") }, ShouldPanic)
-			So(func() { cl.AddFlag(f("-W", "all")) }, ShouldPanic)
+			assert.Loosely(t, func() { cl.AddSingleFlag("-") }, should.Panic)
+			assert.Loosely(t, func() { cl.AddFlag(f("-W", "all")) }, should.Panic)
 		})
 
-		Convey(`Adding a flag to a command-line with a flag separator`, func() {
+		t.Run(`Adding a flag to a command-line with a flag separator`, func(t *ftt.Test) {
 			cl, err := ParseCommandLine([]string{"--", "foo", "bar"})
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			cl.AddSingleFlag("B")
 			cl.AddSingleFlag("E")
 
-			So(cl.BuildArgs(), ShouldResemble, []string{"-B", "-E", "--", "foo", "bar"})
+			assert.Loosely(t, cl.BuildArgs(), should.Resemble([]string{"-B", "-E", "--", "foo", "bar"}))
 		})
 
-		Convey(`Setting FlagSeparator with a flag target includes the flag in the proper section.`, func() {
+		t.Run(`Setting FlagSeparator with a flag target includes the flag in the proper section.`, func(t *ftt.Test) {
 			cl := CommandLine{
 				Target:        ModuleTarget{Module: "<module>"},
 				FlagSeparator: true,
 				Args:          []string{"foo", "bar"},
 			}
-			So(cl.BuildArgs(), ShouldResemble, []string{"-m", "<module>", "--", "foo", "bar"})
+			assert.Loosely(t, cl.BuildArgs(), should.Resemble([]string{"-m", "<module>", "--", "foo", "bar"}))
 		})
 	})
 }

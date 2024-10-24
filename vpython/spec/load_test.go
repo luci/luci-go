@@ -23,12 +23,12 @@ import (
 
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/testfs"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/api/vpython"
-
-	. "github.com/smartystreets/goconvey/convey"
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLoadForScript(t *testing.T) {
@@ -48,7 +48,7 @@ func TestLoadForScript(t *testing.T) {
 		CommonFilesystemBarriers: []string{"BARRIER"},
 	}
 
-	Convey(`Test LoadForScript`, t, func() {
+	ftt.Run(`Test LoadForScript`, t, func(t *ftt.Test) {
 		tdir := t.TempDir()
 		c := context.Background()
 
@@ -71,7 +71,7 @@ func TestLoadForScript(t *testing.T) {
 			}
 		}
 
-		Convey(`Layout: module with a good spec file`, func() {
+		t.Run(`Layout: module with a good spec file`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": "main",
 				"foo/bar/baz/__init__.py": "",
@@ -79,12 +79,12 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar.vpython":         goodSpecData,
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("foo/bar.vpython"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("foo/bar.vpython")))
 		})
 
-		Convey(`Layout: module with a bad spec file`, func() {
+		t.Run(`Layout: module with a bad spec file`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": "main",
 				"foo/bar/baz/__init__.py": "",
@@ -92,10 +92,10 @@ func TestLoadForScript(t *testing.T) {
 				"foo/bar.vpython":         badSpecData,
 			})
 			_, _, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
-			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal vpython.Spec"))
 		})
 
-		Convey(`Layout: module with no spec file`, func() {
+		t.Run(`Layout: module with no spec file`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": "main",
 				"foo/bar/baz/__init__.py": "",
@@ -103,42 +103,42 @@ func TestLoadForScript(t *testing.T) {
 				"foo/__init__.py":         "",
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
-			So(err, ShouldBeNil)
-			So(spec, ShouldBeNil)
-			So(path, ShouldEqual, "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.BeNil)
+			assert.Loosely(t, path, should.BeEmpty)
 		})
 
-		Convey(`Layout: individual file with a good spec file`, func() {
+		t.Run(`Layout: individual file with a good spec file`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py":         "PANTS!",
 				"pants.py.vpython": goodSpecData,
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("pants.py.vpython"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("pants.py.vpython")))
 		})
 
-		Convey(`Layout: individual file with a bad spec file`, func() {
+		t.Run(`Layout: individual file with a bad spec file`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py":         "PANTS!",
 				"pants.py.vpython": badSpecData,
 			})
 			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal vpython.Spec"))
 		})
 
-		Convey(`Layout: individual file with no spec (inline or file)`, func() {
+		t.Run(`Layout: individual file with no spec (inline or file)`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py": "PANTS!",
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldBeNil)
-			So(path, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.BeNil)
+			assert.Loosely(t, path, should.BeEmpty)
 		})
 
-		Convey(`Layout: module with good inline spec`, func() {
+		t.Run(`Layout: module with good inline spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": strings.Join([]string{
 					"#!/usr/bin/env vpython",
@@ -155,12 +155,12 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("foo/bar/baz/__main__.py"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("foo/bar/baz/__main__.py")))
 		})
 
-		Convey(`Layout: individual file with good inline spec`, func() {
+		t.Run(`Layout: individual file with good inline spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py": strings.Join([]string{
 					"#!/usr/bin/env vpython",
@@ -177,12 +177,12 @@ func TestLoadForScript(t *testing.T) {
 				}, "\n"),
 			})
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("pants.py"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("pants.py")))
 		})
 
-		Convey(`Layout: individual file with good inline spec with a prefix`, func() {
+		t.Run(`Layout: individual file with good inline spec with a prefix`, func(t *ftt.Test) {
 			specParts := strings.Split(goodSpecData, "\n")
 			for i, line := range specParts {
 				specParts[i] = strings.TrimSpace("# " + line)
@@ -203,12 +203,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("pants.py"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("pants.py")))
 		})
 
-		Convey(`Layout: individual file with bad inline spec`, func() {
+		t.Run(`Layout: individual file with bad inline spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py": strings.Join([]string{
 					"#!/usr/bin/env vpython",
@@ -226,10 +226,10 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal vpython.Spec"))
 		})
 
-		Convey(`Layout: individual file with inline spec, missing end barrier`, func() {
+		t.Run(`Layout: individual file with inline spec, missing end barrier`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"pants.py": strings.Join([]string{
 					"#!/usr/bin/env vpython",
@@ -246,10 +246,10 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			_, _, err := l.LoadForScript(c, makePath("pants.py"), false)
-			So(err, ShouldErrLike, "unterminated inline spec file")
+			assert.Loosely(t, err, should.ErrLike("unterminated inline spec file"))
 		})
 
-		Convey(`Layout: individual file with a common spec`, func() {
+		t.Run(`Layout: individual file with a common spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz.py":      "main",
 				"foo/bar/__init__.py": "",
@@ -257,12 +257,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("common.vpython"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 
-		Convey(`Layout: individual file with a custom common spec`, func() {
+		t.Run(`Layout: individual file with a custom common spec`, func(t *ftt.Test) {
 			l.CommonSpecNames = []string{"ohaithere.friend", "common.vpython"}
 
 			mustBuild(map[string]string{
@@ -273,12 +273,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("ohaithere.friend"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("ohaithere.friend")))
 		})
 
-		Convey(`Layout: individual file with a common spec behind a barrier`, func() {
+		t.Run(`Layout: individual file with a common spec behind a barrier`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz.py":      "main",
 				"foo/bar/__init__.py": "",
@@ -287,12 +287,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldBeNil)
-			So(path, ShouldBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.BeNil)
+			assert.Loosely(t, path, should.BeEmpty)
 		})
 
-		Convey(`Layout: individual file with a spec and barrier sharing a folder`, func() {
+		t.Run(`Layout: individual file with a spec and barrier sharing a folder`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz.py":      "main",
 				"foo/bar/__init__.py": "",
@@ -301,12 +301,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("common.vpython"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 
-		Convey(`Layout: module with a common spec`, func() {
+		t.Run(`Layout: module with a common spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz/__main__.py": "main",
 				"foo/bar/baz/__init__.py": "",
@@ -315,12 +315,12 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			spec, path, err := l.LoadForScript(c, makePath("foo/bar/baz"), true)
-			So(err, ShouldBeNil)
-			So(spec, ShouldResembleProto, goodSpec)
-			So(path, ShouldEqual, makePath("common.vpython"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, spec, should.Resemble(goodSpec))
+			assert.Loosely(t, path, should.Equal(makePath("common.vpython")))
 		})
 
-		Convey(`Layout: individual file with a bad common spec`, func() {
+		t.Run(`Layout: individual file with a bad common spec`, func(t *ftt.Test) {
 			mustBuild(map[string]string{
 				"foo/bar/baz.py":      "main",
 				"foo/bar/__init__.py": "",
@@ -328,7 +328,7 @@ func TestLoadForScript(t *testing.T) {
 			})
 
 			_, _, err := l.LoadForScript(c, makePath("foo/bar/baz.py"), false)
-			So(err, ShouldErrLike, "failed to unmarshal vpython.Spec")
+			assert.Loosely(t, err, should.ErrLike("failed to unmarshal vpython.Spec"))
 		})
 	})
 }

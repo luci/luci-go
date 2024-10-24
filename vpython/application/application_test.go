@@ -26,14 +26,15 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/api/vpython"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParseArguments(t *testing.T) {
-	Convey("Test parse arguments", t, func() {
+	ftt.Run("Test parse arguments", t, func(t *ftt.Test) {
 		ctx := context.Background()
 
 		app := &Application{}
@@ -41,117 +42,117 @@ func TestParseArguments(t *testing.T) {
 
 		parseArgs := func(args ...string) error {
 			app.Arguments = args
-			So(app.ParseEnvs(ctx), ShouldBeNil)
+			assert.Loosely(t, app.ParseEnvs(ctx), should.BeNil)
 			return app.ParseArgs(ctx)
 		}
 
-		Convey("Test log level", func() {
+		t.Run("Test log level", func(t *ftt.Test) {
 			err := parseArgs(
 				"-vpython-log-level",
 				"warning",
 			)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			ctx = app.SetLogLevel(ctx)
-			So(logging.GetLevel(ctx), ShouldEqual, logging.Warning)
+			assert.Loosely(t, logging.GetLevel(ctx), should.Equal(logging.Warning))
 		})
 
-		Convey("Test unknown argument", func() {
+		t.Run("Test unknown argument", func(t *ftt.Test) {
 			const unknownErr = "failed to extract flags: unknown flag: vpython-test"
 
 			// Care but only care arguments begin with "-" or "--".
 			err := parseArgs("-vpython-test")
-			So(err, ShouldBeError, unknownErr)
+			assert.Loosely(t, err, should.ErrLike(unknownErr))
 			err = parseArgs("--vpython-test")
-			So(err, ShouldBeError, unknownErr)
+			assert.Loosely(t, err, should.ErrLike(unknownErr))
 			err = parseArgs("-vpython-root", "root", "vpython-test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// All arguments after the script file should be bypassed.
 			err = parseArgs("-vpython-test", "test.py")
-			So(err, ShouldBeError, unknownErr)
+			assert.Loosely(t, err, should.ErrLike(unknownErr))
 			err = parseArgs("test.py", "-vpython-test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 
 			// Stop parsing arguments when seen --
 			err = parseArgs("--", "-vpython-test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 		})
 
-		Convey("Test default cache dir", func() {
+		t.Run("Test default cache dir", func(t *ftt.Test) {
 			app.userCacheDir = func() (string, error) { return "<CACHE>", nil }
 			app.getuid = func() int { return 10 }
 
 			err := app.ParseEnvs(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = app.ParseArgs(ctx)
-			So(err, ShouldBeNil)
-			So(app.VpythonRoot, ShouldEndWith, filepath.Join("<CACHE>", "vpython-root.10"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, app.VpythonRoot, should.HaveSuffix(filepath.Join("<CACHE>", "vpython-root.10")))
 		})
 
-		Convey("Test no user cache dir - with uid", func() {
+		t.Run("Test no user cache dir - with uid", func(t *ftt.Test) {
 			app.userCacheDir = func() (string, error) { return "", errors.New("error") }
 			app.getuid = func() int { return 10 }
 
 			err := app.ParseEnvs(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = app.ParseArgs(ctx)
-			So(err, ShouldBeNil)
-			So(app.VpythonRoot, ShouldEndWith, "vpython-root_10")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, app.VpythonRoot, should.HaveSuffix("vpython-root_10"))
 		})
 
-		Convey("Test no user cache dir - without uid", func() {
+		t.Run("Test no user cache dir - without uid", func(t *ftt.Test) {
 			app.userCacheDir = func() (string, error) { return "", errors.New("error") }
 			app.getuid = func() int { return -1 }
 
 			err := app.ParseEnvs(ctx)
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			err = app.ParseArgs(ctx)
-			So(err, ShouldBeNil)
-			So(app.VpythonRoot, ShouldNotBeEmpty)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, app.VpythonRoot, should.NotBeEmpty)
 		})
 
-		Convey("Test cipd cache dir", func() {
+		t.Run("Test cipd cache dir", func(t *ftt.Test) {
 			err := parseArgs("-vpython-root", "root", "vpython-test")
-			So(err, ShouldBeNil)
+			assert.Loosely(t, err, should.BeNil)
 			wd, err := os.Getwd()
-			So(err, ShouldBeNil)
-			So(app.CIPDCacheDir, ShouldStartWith, filepath.Join(wd, "root"))
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, app.CIPDCacheDir, should.HavePrefix(filepath.Join(wd, "root")))
 		})
 
-		Convey("Test cipd cache dir with env", func() {
+		t.Run("Test cipd cache dir with env", func(t *ftt.Test) {
 			// Don't set cipd cache dir if env provides one
 			app.Environments = append(app.Environments, fmt.Sprintf("%s=%s", cipd.EnvCacheDir, "something"))
 			err := parseArgs("-vpython-root", "root", "vpython-test")
-			So(err, ShouldBeNil)
-			So(app.CIPDCacheDir, ShouldStartWith, "something")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, app.CIPDCacheDir, should.HavePrefix("something"))
 		})
 
-		Convey("Test spec load", func() {
-			Convey("not found", func() {
+		t.Run("Test spec load", func(t *ftt.Test) {
+			t.Run("not found", func(t *ftt.Test) {
 				wd, err := os.Getwd()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 				defer os.Chdir(wd)
 				err = os.Chdir(t.TempDir())
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				// CommonFilesystemBarrier for spec loader
 				err = filesystem.Touch(".gclient", time.Time{}, fs.ModePerm)
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
 				err = parseArgs()
-				So(err, ShouldBeNil)
+				assert.Loosely(t, err, should.BeNil)
 
-				Convey("default", func() {
+				t.Run("default", func(t *ftt.Test) {
 					app.VpythonSpec = &vpython.Spec{PythonVersion: "something"}
 					err = app.LoadSpec(ctx)
-					So(err, ShouldBeNil)
-					So(app.VpythonSpec.GetPythonVersion(), ShouldEqual, "something")
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, app.VpythonSpec.GetPythonVersion(), should.Equal("something"))
 				})
 
-				Convey("no default", func() {
+				t.Run("no default", func(t *ftt.Test) {
 					err = app.LoadSpec(ctx)
-					So(err, ShouldBeNil)
-					So(app.VpythonSpec, ShouldNotBeNil)
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, app.VpythonSpec, should.NotBeNil)
 				})
 			})
 		})
