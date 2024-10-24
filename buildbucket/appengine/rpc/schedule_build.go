@@ -1994,7 +1994,7 @@ func (*Builds) scheduleBuilds(ctx context.Context, globalCfg *pb.SettingsCfg, re
 	pMap, err := validateParents(ctx, pIDs)
 	if err != nil {
 		return nil, errorInBatch(err, func(err error) error {
-			return appstatus.BadRequest(errors.Annotate(err, "error in schedule batch").Err())
+			return errors.Annotate(err, "error in schedule batch").Err()
 		})
 	}
 
