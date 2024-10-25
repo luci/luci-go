@@ -29,10 +29,10 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -41,8 +41,6 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestAuthDBServing(t *testing.T) {
@@ -87,13 +85,13 @@ func TestAuthDBServing(t *testing.T) {
 				Revision: -1,
 			}
 			_, err := server.GetSnapshot(ctx, requestNegative)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 
 			requestNotPresent := &rpcpb.GetSnapshotRequest{
 				Revision: 42,
 			}
 			_, err = server.GetSnapshot(ctx, requestNotPresent)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("Testing valid revision ID", func(t *ftt.Test) {
@@ -261,7 +259,7 @@ func TestAuthDBServing(t *testing.T) {
 				Writer: rw,
 			}
 			err := server.HandleLegacyAuthDBServing(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("invalid negative revision", func(t *ftt.Test) {
@@ -274,7 +272,7 @@ func TestAuthDBServing(t *testing.T) {
 				Writer: rw,
 			}
 			err := server.HandleLegacyAuthDBServing(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("revision not found", func(t *ftt.Test) {
@@ -287,7 +285,7 @@ func TestAuthDBServing(t *testing.T) {
 				Writer: rw,
 			}
 			err := server.HandleLegacyAuthDBServing(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 	})
 }
@@ -328,7 +326,7 @@ func TestMembershipsServing(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.CheckLegacyMembership(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("validates groups", func(t *ftt.Test) {
@@ -342,7 +340,7 @@ func TestMembershipsServing(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.CheckLegacyMembership(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("not a member for unknown group", func(t *ftt.Test) {

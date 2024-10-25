@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/xsrf"
@@ -28,10 +29,8 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/internalspb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -62,7 +61,7 @@ func TestInternalsServer(t *testing.T) {
 			_, err := srv.RefreshXSRFToken(ctx, &internalspb.RefreshXSRFTokenRequest{
 				XsrfToken: "bad token",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 	})
 }

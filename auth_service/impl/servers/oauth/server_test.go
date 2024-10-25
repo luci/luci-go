@@ -27,14 +27,13 @@ import (
 
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/impl/model"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -105,14 +104,14 @@ func TestOAuthServing(t *testing.T) {
 		t.Run("AuthReplicationState entity not found", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, testGlobalConfig), should.BeNil)
 			_, err := legacyCall(ctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			assert.Loosely(t, err.Error(), should.ContainSubstring("no Replication State entity found in datastore."))
 		})
 
 		t.Run("AuthGlobalConfig entity not found", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, testAuthReplicationState(ctx)), should.BeNil)
 			_, err := legacyCall(ctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			assert.Loosely(t, err.Error(), should.ContainSubstring("no Global Config entity found in datastore."))
 		})
 

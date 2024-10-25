@@ -30,11 +30,11 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -43,8 +43,6 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGroupsServer(t *testing.T) {
@@ -202,11 +200,11 @@ func TestGroupsServer(t *testing.T) {
 		request := &rpcpb.GetGroupRequest{}
 
 		_, err := srv.GetGroup(ctx, request)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 
 		request.Name = "test-group"
 		_, err = srv.GetGroup(ctx, request)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 
 		// Groups built from model.AuthGroup definition.
 		assert.Loosely(t, datastore.Put(ctx,
@@ -265,7 +263,7 @@ func TestGroupsServer(t *testing.T) {
 				Name: "google/test-group",
 			}
 			_, err := srv.GetGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, datastore.Put(ctx,
 				&model.AuthGroup{
 					ID:     "google/test-group",
@@ -308,7 +306,7 @@ func TestGroupsServer(t *testing.T) {
 				Name: "google/test-group",
 			}
 			_, err := srv.GetGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, datastore.Put(ctx,
 				&model.AuthGroup{
 					ID:     "google/test-group",
@@ -361,7 +359,7 @@ func TestGroupsServer(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.GetLegacyAuthGroup(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
@@ -375,7 +373,7 @@ func TestGroupsServer(t *testing.T) {
 				Writer: rw,
 			}
 			err := srv.GetLegacyAuthGroup(rctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 		})
 
@@ -455,7 +453,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Invalid name (looks like external group)", func(t *ftt.Test) {
@@ -466,7 +464,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Invalid members", func(t *ftt.Test) {
@@ -479,7 +477,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Invalid globs", func(t *ftt.Test) {
@@ -492,7 +490,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Group already exists", func(t *ftt.Test) {
@@ -513,7 +511,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.AlreadyExists))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 		})
 
 		t.Run("Group refers to another group that doesn't exist", func(t *ftt.Test) {
@@ -526,7 +524,7 @@ func TestGroupsServer(t *testing.T) {
 				},
 			}
 			_, err := srv.CreateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist: bad1, bad2, invalid-owner"))
 		})
 
@@ -591,7 +589,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("cannot update external group"))
 		})
 
@@ -604,7 +602,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("Invalid field mask", func(t *ftt.Test) {
@@ -617,7 +615,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Set owners to group that doesn't exist", func(t *ftt.Test) {
@@ -630,7 +628,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Set invalid member identity", func(t *ftt.Test) {
@@ -643,7 +641,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Cyclic dependency", func(t *ftt.Test) {
@@ -656,7 +654,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.UpdateGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 		})
 
 		t.Run("Permissions", func(t *ftt.Test) {
@@ -670,7 +668,7 @@ func TestGroupsServer(t *testing.T) {
 			t.Run("Anonymous is denied", func(t *ftt.Test) {
 				ctx := auth.WithState(ctx, &authtest.FakeState{})
 				_, err := srv.UpdateGroup(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("Normal user is denied", func(t *ftt.Test) {
@@ -678,7 +676,7 @@ func TestGroupsServer(t *testing.T) {
 					Identity: "user:someone@example.com",
 				})
 				_, err := srv.UpdateGroup(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("Group owner succeeds", func(t *ftt.Test) {
@@ -712,7 +710,7 @@ func TestGroupsServer(t *testing.T) {
 			t.Run("Incorrect etag is aborted", func(t *ftt.Test) {
 				request.Group.Etag = "blah"
 				_, err := srv.UpdateGroup(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Aborted))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Aborted))
 			})
 
 			t.Run("Empty etag succeeds", func(t *ftt.Test) {
@@ -765,7 +763,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("cannot delete external group"))
 		})
 
@@ -775,7 +773,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("Group referenced elsewhere", func(t *ftt.Test) {
@@ -796,7 +794,7 @@ func TestGroupsServer(t *testing.T) {
 			}
 
 			_, err := srv.DeleteGroup(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 		})
 
 		t.Run("Permissions", func(t *ftt.Test) {
@@ -806,7 +804,7 @@ func TestGroupsServer(t *testing.T) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("Normal user is denied", func(t *ftt.Test) {
@@ -816,7 +814,7 @@ func TestGroupsServer(t *testing.T) {
 				_, err := srv.DeleteGroup(ctx, &rpcpb.DeleteGroupRequest{
 					Name: "test-group",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("Group owner succeeds", func(t *ftt.Test) {
@@ -853,7 +851,7 @@ func TestGroupsServer(t *testing.T) {
 					Name: "test-group",
 					Etag: "blah",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Aborted))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Aborted))
 			})
 
 			t.Run("Empty etag succeeds", func(t *ftt.Test) {
@@ -932,7 +930,7 @@ func TestGroupsServer(t *testing.T) {
 			t.Run("unknown group is not found", func(t *ftt.Test) {
 				request := &rpcpb.GetGroupRequest{Name: "unknown"}
 				_, err := srv.GetExpandedGroup(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 
 			t.Run("works for standalone group", func(t *ftt.Test) {
@@ -980,7 +978,7 @@ func TestGroupsServer(t *testing.T) {
 					Writer: rw,
 				}
 				err := srv.GetLegacyListing(rctx)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 			})
 
@@ -994,7 +992,7 @@ func TestGroupsServer(t *testing.T) {
 					Writer: rw,
 				}
 				err := srv.GetLegacyListing(rctx)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, rw.Body.Bytes(), should.BeEmpty)
 			})
 

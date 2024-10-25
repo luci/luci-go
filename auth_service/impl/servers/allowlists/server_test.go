@@ -26,16 +26,15 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/allowlistcfg"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -52,7 +51,7 @@ func TestAllowlistsServer(t *testing.T) {
 		}
 
 		_, err := srv.GetAllowlist(ctx, request)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 
 		// Allowlist built from model.AuthIPAllowlist definition.
 		assert.Loosely(t, datastore.Put(ctx,
@@ -123,7 +122,7 @@ func TestAllowlistsServer(t *testing.T) {
 			}), should.BeNil)
 
 		_, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 		assert.Loosely(t, err, should.ErrLike("failed to get config metadata"))
 
 		// Set up the allowlist config and its metadata.

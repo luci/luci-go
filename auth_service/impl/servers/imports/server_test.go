@@ -27,9 +27,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -40,12 +44,6 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
-
-	. "go.chromium.org/luci/common/testing/assertions"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestIngestTarball(t *testing.T) {
@@ -107,7 +105,7 @@ func TestIngestTarball(t *testing.T) {
 
 		t.Run("not configured", func(t *ftt.Test) {
 			_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with importer configuration", func(t *ftt.Test) {
@@ -118,17 +116,17 @@ func TestIngestTarball(t *testing.T) {
 					Identity: "user:somebody@example.com",
 				})
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("empty tarball", func(t *ftt.Test) {
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(nil)))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("aborts if admin group doesn't exist", func(t *ftt.Test) {
 				_, err := callEndpoint(ctx, "test_groups.tar.gz", io.NopCloser(bytes.NewReader(tarfile)))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 
 			t.Run("groups actually imported", func(t *ftt.Test) {
