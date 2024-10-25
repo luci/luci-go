@@ -74,8 +74,8 @@ func TestExpiredInvocations(t *testing.T) {
 		})
 		assert.Loosely(t, state, should.Equal(resultpb.Invocation_ACTIVE))
 
-		assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, time.Time{}, []any{insert.TestRealm}), should.Equal(1))
-		d := store.Get(ctx, timeOverdue, time.Time{}, []any{insert.TestRealm}).(*distribution.Distribution)
+		assert.Loosely(t, store.Get(ctx, overdueInvocationsFinalized, []any{insert.TestRealm}), should.Equal(1))
+		d := store.Get(ctx, timeOverdue, []any{insert.TestRealm}).(*distribution.Distribution)
 		// The 10 minute (600 s) delay should fall into bucket 29 (~400k - ~630k ms).
 		// allow +/- 1 bucket for clock shenanigans.
 		assert.Loosely(t, d.Buckets()[28] == 1 || d.Buckets()[29] == 1 || d.Buckets()[30] == 1, should.BeTrue)

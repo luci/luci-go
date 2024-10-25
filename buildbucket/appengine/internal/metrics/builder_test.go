@@ -82,15 +82,15 @@ func TestReportBuilderMetrics(t *testing.T) {
 			assert.Loosely(t, createBuilder("b1"), should.BeNil)
 			assert.Loosely(t, createBuilder("b2"), should.BeNil)
 			assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
-			assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
-			assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
-			assert.Loosely(t, store.Get(target("b3"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
+			assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, nil), should.Equal(true))
+			assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, nil), should.Equal(true))
+			assert.Loosely(t, store.Get(target("b3"), V2.BuilderPresence, nil), should.BeNil)
 
 			t.Run("w/o removed builder", func(t *ftt.Test) {
 				assert.Loosely(t, deleteBuilder("b1"), should.BeNil)
 				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
-				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
-				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
+				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, nil), should.BeNil)
+				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, nil), should.Equal(true))
 			})
 
 			t.Run("w/o inactive builder", func(t *ftt.Test) {
@@ -99,8 +99,8 @@ func TestReportBuilderMetrics(t *testing.T) {
 				assert.Loosely(t, datastore.Delete(ctx, &model.BuilderStat{ID: prj + ":" + bkt + ":b1"}), should.BeNil)
 				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 				// b1 should no longer be reported in the presence metric.
-				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, time.Time{}, nil), should.BeNil)
-				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, time.Time{}, nil), should.Equal(true))
+				assert.Loosely(t, store.Get(target("b1"), V2.BuilderPresence, nil), should.BeNil)
+				assert.Loosely(t, store.Get(target("b2"), V2.BuilderPresence, nil), should.Equal(true))
 			})
 		})
 
@@ -136,13 +136,13 @@ func TestReportBuilderMetrics(t *testing.T) {
 				t.Run("v1", func(t *ftt.Test) {
 					// the ages should be the same.
 					fields := []any{bkt, "b1", true}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.Equal(age))
 					fields = []any{bkt, "b1", false}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.Equal(age))
 				})
 
 				t.Run("v2", func(t *ftt.Test) {
-					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.Equal(age))
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, nil), should.Equal(age))
 				})
 			})
 
@@ -157,13 +157,13 @@ func TestReportBuilderMetrics(t *testing.T) {
 				t.Run("v1", func(t *ftt.Test) {
 					// the ages should be different.
 					fields := []any{bkt, "b1", true}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(age))
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.Equal(age))
 					fields = []any{bkt, "b1", false}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.Equal(2*age))
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.Equal(2*age))
 				})
 
 				t.Run("v2", func(t *ftt.Test) {
-					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.Equal(2*age))
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, nil), should.Equal(2*age))
 				})
 
 				t.Run("custom", func(t *ftt.Test) {
@@ -185,7 +185,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 
 					t.Run("builder no custom metric", func(t *ftt.Test) {
 						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
-						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						res, err := GetCustomMetricsData(ctx, base, name, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, res, should.BeNil)
 					})
@@ -223,7 +223,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 					assert.Loosely(t, datastore.Put(ctx, bldrMetrics), should.BeNil)
 					t.Run("no build populates the metric", func(t *ftt.Test) {
 						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
-						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						res, err := GetCustomMetricsData(ctx, base, name, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, res, should.BeNil)
 					})
@@ -233,7 +233,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 						assert.Loosely(t, datastore.Put(ctx, builds[0]), should.BeNil)
 						assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
 
-						res, err := GetCustomMetricsData(ctx, base, name, time.Time{}, nil)
+						res, err := GetCustomMetricsData(ctx, base, name, nil)
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, res, should.Equal(age))
 					})
@@ -251,14 +251,14 @@ func TestReportBuilderMetrics(t *testing.T) {
 				t.Run("v1", func(t *ftt.Test) {
 					// Data should have been reported with "luci.$project.$bucket"
 					fields := []any{bkt, "b1", true}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.BeNil)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.BeNil)
 					fields = []any{"luci." + prj + "." + bkt, "b1", true}
-					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, time.Time{}, fields), should.NotBeNilInterface)
+					assert.Loosely(t, store.Get(ctx, V1.MaxAgeScheduled, fields), should.NotBeNilInterface)
 				})
 
 				t.Run("v2", func(t *ftt.Test) {
 					// V2 doesn't care. It always reports the bucket name as it is.
-					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, time.Time{}, nil), should.NotBeNilInterface)
+					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, nil), should.NotBeNilInterface)
 				})
 			})
 		})
@@ -279,7 +279,7 @@ func TestReportBuilderMetrics(t *testing.T) {
 				}
 			}
 			count := func(s string) any {
-				return store.Get(target("b1"), V2.ConsecutiveFailureCount, time.Time{}, []any{s})
+				return store.Get(target("b1"), V2.ConsecutiveFailureCount, []any{s})
 			}
 			ts := clock.Now()
 
@@ -388,19 +388,19 @@ func TestReportBuilderMetrics(t *testing.T) {
 					builds[2].CustomBuilderConsecutiveFailuresMetrics = append(builds[2].CustomBuilderConsecutiveFailuresMetrics, name2)
 					assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
 					assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
-					res, err := GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"FAILURE"})
+					res, err := GetCustomMetricsData(ctx, base, name1, []any{"FAILURE"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.Equal(2))
-					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"INFRA_FAILURE"})
+					res, err = GetCustomMetricsData(ctx, base, name1, []any{"INFRA_FAILURE"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.Equal(1))
-					res, err = GetCustomMetricsData(ctx, base, name1, time.Time{}, []any{"CANCELED"})
+					res, err = GetCustomMetricsData(ctx, base, name1, []any{"CANCELED"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.Equal(1))
-					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"FAILURE"})
+					res, err = GetCustomMetricsData(ctx, base, name2, []any{"FAILURE"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.Equal(1))
-					res, err = GetCustomMetricsData(ctx, base, name2, time.Time{}, []any{"INFRA_FAILURE"})
+					res, err = GetCustomMetricsData(ctx, base, name2, []any{"INFRA_FAILURE"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.BeZero)
 				})

@@ -219,10 +219,10 @@ func TestTimeoutExpiredBuilds(t *testing.T) {
 					"INFRA_FAILURE", /* metric:status */
 					"None",          /* metric:experiments */
 				}
-				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, fv), should.Equal(2))
+				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, fv), should.Equal(2))
 
 				// Custom metrics
-				res, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, fv)
+				res, err := metrics.GetCustomMetricsData(ctx, base, name, fv)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Equal(2))
 			})

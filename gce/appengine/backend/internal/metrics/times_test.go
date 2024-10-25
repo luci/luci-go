@@ -18,7 +18,6 @@ import (
 	"context"
 	"math"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -37,17 +36,17 @@ func TestTimes(t *testing.T) {
 		fields := []any{"prefix", "project", "zone"}
 
 		ReportCreationTime(c, 60.0, "prefix", "project", "zone")
-		d := s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
+		d := s.Get(c, creationTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(1))
 		assert.Loosely(t, d.Sum(), should.Equal(60.0))
 
 		ReportCreationTime(c, 120.0, "prefix", "project", "zone")
-		d = s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, creationTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(2))
 		assert.Loosely(t, d.Sum(), should.Equal(180.0))
 
 		ReportCreationTime(c, math.Inf(1), "prefix", "project", "zone")
-		d = s.Get(c, creationTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, creationTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(3))
 		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
@@ -59,17 +58,17 @@ func TestTimes(t *testing.T) {
 		fields := []any{"prefix", "project", "server", "zone"}
 
 		ReportConnectionTime(c, 120.0, "prefix", "project", "server", "zone")
-		d := s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d := s.Get(c, connectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(1))
 		assert.Loosely(t, d.Sum(), should.Equal(120.0))
 
 		ReportConnectionTime(c, 180.0, "prefix", "project", "server", "zone")
-		d = s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, connectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(2))
 		assert.Loosely(t, d.Sum(), should.Equal(300.0))
 
 		ReportConnectionTime(c, math.Inf(1), "prefix", "project", "server", "zone")
-		d = s.Get(c, connectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, connectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(3))
 		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
@@ -81,17 +80,17 @@ func TestTimes(t *testing.T) {
 		fields := []any{"prefix", "project", "resource_group", "server", "zone"}
 
 		ReportBotConnectionTime(c, 120.0, "prefix", "project", "resource_group", "server", "zone")
-		d := s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d := s.Get(c, botConnectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(1))
 		assert.Loosely(t, d.Sum(), should.Equal(120.0))
 
 		ReportBotConnectionTime(c, 180.0, "prefix", "project", "resource_group", "server", "zone")
-		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, botConnectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(2))
 		assert.Loosely(t, d.Sum(), should.Equal(300.0))
 
 		ReportBotConnectionTime(c, math.Inf(1), "prefix", "project", "resource_group", "server", "zone")
-		d = s.Get(c, botConnectionTime, time.Time{}, fields).(*distribution.Distribution)
+		d = s.Get(c, botConnectionTime, fields).(*distribution.Distribution)
 		assert.Loosely(t, d.Count(), should.Equal(3))
 		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})

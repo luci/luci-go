@@ -33,11 +33,10 @@ import (
 type inMemoryStore struct {
 	defaultTarget atomic.Value
 
-	data     map[dataKey]*metricData
-	dataLock sync.RWMutex
+	clock *monotonicClock
 
-	lastNow     time.Time
-	lastNowLock sync.Mutex
+	dataLock sync.RWMutex
+	data     map[dataKey]*metricData
 }
 
 type cellKey struct {
@@ -53,8 +52,15 @@ type metricData struct {
 	types.MetricInfo
 	types.MetricMetadata
 
-	cells map[cellKey][]*types.CellData
+	clock *monotonicClock
+
 	lock  sync.Mutex
+	cells map[cellKey][]*types.CellData
+}
+
+type monotonicClock struct {
+	lock sync.Mutex
+	last time.Time
 }
 
 // findTarget returns the target instance for the given metric.
@@ -108,7 +114,7 @@ func (s *inMemoryStore) findTarget(ctx context.Context, m *metricData) types.Tar
 	))
 }
 
-func (m *metricData) get(fieldVals []any, t types.Target, resetTime time.Time) *types.CellData {
+func (m *metricData) get(ctx context.Context, fieldVals []any, t types.Target) *types.CellData {
 	fieldVals, err := field.Canonicalize(m.Fields, fieldVals)
 	if err != nil {
 		panic(err) // bad field types, can only happen if the code is wrong
@@ -132,7 +138,7 @@ func (m *metricData) get(fieldVals []any, t types.Target, resetTime time.Time) *
 	cell := &types.CellData{
 		FieldVals: fieldVals,
 		Target:    t,
-		ResetTime: resetTime,
+		ResetTime: m.clock.now(ctx),
 	}
 	m.cells[key] = append(cells, cell)
 	return cell
@@ -165,14 +171,14 @@ func (m *metricData) del(fieldVals []any, t types.Target) {
 			}
 		}
 	}
-	return
 }
 
 // NewInMemory creates a new metric store that holds metric data in this
 // process' memory.
 func NewInMemory(defaultTarget types.Target) Store {
 	s := &inMemoryStore{
-		data: map[dataKey]*metricData{},
+		data:  map[dataKey]*metricData{},
+		clock: &monotonicClock{},
 	}
 	s.SetDefaultTarget(defaultTarget)
 	return s
@@ -198,6 +204,7 @@ func (s *inMemoryStore) getOrCreateData(m types.Metric) *metricData {
 	d = &metricData{
 		MetricInfo:     m.Info(),
 		MetricMetadata: m.Metadata(),
+		clock:          s.clock,
 		cells:          map[cellKey][]*types.CellData{},
 	}
 
@@ -214,16 +221,12 @@ func (s *inMemoryStore) SetDefaultTarget(t types.Target) {
 }
 
 // Get returns the value for a given metric cell.
-func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any) any {
-	if resetTime.IsZero() {
-		resetTime = s.Now(ctx)
-	}
-
+func (s *inMemoryStore) Get(ctx context.Context, h types.Metric, fieldVals []any) any {
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.get(fieldVals, t, resetTime).Value
+	return m.get(ctx, fieldVals, t).Value
 }
 
 func isLessThan(a, b any) bool {
@@ -240,16 +243,13 @@ func isLessThan(a, b any) bool {
 }
 
 // Set writes the value into the given metric cell.
-func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, value any) {
-	if resetTime.IsZero() {
-		resetTime = s.Now(ctx)
-	}
+func (s *inMemoryStore) Set(ctx context.Context, h types.Metric, fieldVals []any, value any) {
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c := m.get(fieldVals, t, resetTime)
+	c := m.get(ctx, fieldVals, t)
 
 	if m.ValueType.IsCumulative() && isLessThan(value, c.Value) {
 		logging.Errorf(ctx,
@@ -268,20 +268,16 @@ func (s *inMemoryStore) Del(ctx context.Context, h types.Metric, fieldVals []any
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	m.del(fieldVals, t)
-	return
 }
 
 // Incr increments the value in a given metric cell by the given delta.
-func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, resetTime time.Time, fieldVals []any, delta any) {
-	if resetTime.IsZero() {
-		resetTime = s.Now(ctx)
-	}
+func (s *inMemoryStore) Incr(ctx context.Context, h types.Metric, fieldVals []any, delta any) {
 	m := s.getOrCreateData(h)
 	t := s.findTarget(ctx, m)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	c := m.get(fieldVals, t, resetTime)
+	c := m.get(ctx, fieldVals, t)
 
 	switch m.ValueType {
 	case types.CumulativeDistributionType:
@@ -374,14 +370,19 @@ func (s *inMemoryStore) Reset(ctx context.Context, h types.Metric) {
 // reported points), which triggers validation errors in the ProdX backend,
 // eventually resulting in alerts.
 func (s *inMemoryStore) Now(ctx context.Context) time.Time {
+	return s.clock.now(ctx)
+}
+
+// now actually implements inMemoryStore.Now.
+func (c *monotonicClock) now(ctx context.Context) time.Time {
 	now := clock.Now(ctx).Truncate(time.Microsecond)
 
-	s.lastNowLock.Lock()
-	defer s.lastNowLock.Unlock()
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
-	if s.lastNow.IsZero() || now.After(s.lastNow) {
+	if c.last.IsZero() || now.After(c.last) {
 		// If the real clock has caught up with us, just use it.
-		s.lastNow = now
+		c.last = now
 	} else {
 		// The real clock was moved back and it is still catching up to us. We need
 		// to keep returning monotonically advancing "fake" time until the real
@@ -389,8 +390,8 @@ func (s *inMemoryStore) Now(ctx context.Context) time.Time {
 		// infrequently (mush less frequently than once per microsecond). Otherwise
 		// this "fake" time can end up ticking faster than the real time and the
 		// real clock will never catch up to us.
-		s.lastNow = s.lastNow.Add(time.Microsecond)
+		c.last = c.last.Add(time.Microsecond)
 	}
 
-	return s.lastNow
+	return c.last
 }

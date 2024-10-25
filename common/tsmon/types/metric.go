@@ -15,8 +15,6 @@
 package types
 
 import (
-	"time"
-
 	"go.chromium.org/luci/common/tsmon/distribution"
 )
 
@@ -25,11 +23,6 @@ import (
 type Metric interface {
 	Info() MetricInfo
 	Metadata() MetricMetadata
-
-	// SetFixedResetTime overrides the reset time for this metric.  Usually cells
-	// take the current time when they're first assigned a value, but it can be
-	// useful to override the reset time when tracking an external counter.
-	SetFixedResetTime(t time.Time)
 }
 
 // DistributionMetric is the low-level interface provided by all distribution

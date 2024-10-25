@@ -27,10 +27,10 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any) any
-	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, value any)
+	Get(ctx context.Context, m types.Metric, fieldVals []any) any
+	Set(ctx context.Context, m types.Metric, fieldVals []any, value any)
 	Del(ctx context.Context, m types.Metric, fieldVals []any)
-	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any)
+	Incr(ctx context.Context, m types.Metric, fieldVals []any, delta any)
 
 	GetAll(ctx context.Context) []types.Cell
 	Reset(ctx context.Context, m types.Metric)

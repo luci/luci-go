@@ -16,7 +16,6 @@ package registry
 
 import (
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -28,12 +27,10 @@ import (
 type metricDef struct {
 	types.MetricInfo
 	types.MetricMetadata
-	fixedResetTime time.Time
 }
 
 func (m *metricDef) Info() types.MetricInfo         { return m.MetricInfo }
 func (m *metricDef) Metadata() types.MetricMetadata { return m.MetricMetadata }
-func (m *metricDef) SetFixedResetTime(t time.Time)  { m.fixedResetTime = t }
 
 func TestAdd(t *testing.T) {
 	t.Parallel()

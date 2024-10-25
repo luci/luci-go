@@ -1037,7 +1037,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// no metric update, either.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, fv(false)), should.BeNil)
 			})
 
 			t.Run("Status_STARTED w/ status change", func(t *ftt.Test) {
@@ -1067,7 +1067,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, fv(false)), should.Equal(1))
 
 				// BuildStatus should be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
@@ -1084,7 +1084,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// no metric update, either.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, fv(false)), should.BeNil)
 			})
 
 			t.Run("output.status Status_STARTED w/ status change", func(t *ftt.Test) {
@@ -1114,7 +1114,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, tasks[0].Payload.(*taskdefs.NotifyPubSubGoProxy).GetProject(), should.Equal("project"))
 
 				// BuildStarted metric should be set 1.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, time.Time{}, fv(false)), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountStarted, fv(false)), should.Equal(1))
 
 				// BuildStatus should be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
@@ -1187,12 +1187,12 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildCompleted metric should be set to 1 with SUCCESS.
 				fvs := fv(model.Success.String(), "", "", false)
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, fvs), should.Equal(1))
 
 				ctx = metrics.WithBuilder(ctx, "project", "bucket", "builder")
-				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, []any{"SUCCESS", "None"}), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, []any{"SUCCESS", "None"}), should.Equal(1))
 
-				val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"SUCCESS", "None"})
+				val, err := metrics.GetCustomMetricsData(ctx, base, name, []any{"SUCCESS", "None"})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, val, should.Equal(1))
 			})
@@ -1213,7 +1213,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildCompleted metric should not be set.
 				fvs := fv(model.Success.String(), "", "", false)
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, fvs), should.BeNil)
 
 				// BuildStatus should not be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
@@ -1241,7 +1241,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// BuildCompleted metric should not be set.
 				fvs := fv(model.Success.String(), "", "", false)
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, fvs), should.BeNil)
 
 				// BuildStatus should not be updated.
 				buildStatus = &model.BuildStatus{Build: datastore.KeyForObj(ctx, build)}
@@ -1451,7 +1451,7 @@ func TestUpdateBuild(t *testing.T) {
 
 					// BuildCompleted metric should be set to 1 with SUCCESS.
 					fvs := fv(model.Success.String(), "", "", false)
-					assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, time.Time{}, fvs), should.Equal(1))
+					assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCompleted, fvs), should.Equal(1))
 				})
 
 				t.Run("start the cancel process if parent has ended", func(t *ftt.Test) {

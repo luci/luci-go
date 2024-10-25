@@ -51,11 +51,11 @@ func TestMiddleware(t *testing.T) {
 
 	incrMetric := func(c *router.Context) {
 		assert.Loosely(t, store.IsNilStore(tsmon.Store(c.Request.Context())), should.BeFalse)
-		tsmon.Store(c.Request.Context()).Incr(c.Request.Context(), testMetric, time.Time{}, []any{}, int64(1))
+		tsmon.Store(c.Request.Context()).Incr(c.Request.Context(), testMetric, []any{}, int64(1))
 	}
 
 	readMetric := func(c context.Context) any {
-		return tsmon.Store(c).Get(c, testMetric, time.Time{}, []any{})
+		return tsmon.Store(c).Get(c, testMetric, []any{})
 	}
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {

@@ -112,8 +112,7 @@ func TestInstrumentedFactory(t *testing.T) {
 }
 
 func tsmonSentCounter(ctx context.Context, m types.Metric, fieldVals ...any) int64 {
-	resetTime := time.Time{}
-	v, ok := tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(int64)
+	v, ok := tsmon.GetState(ctx).Store().Get(ctx, m, fieldVals).(int64)
 	if !ok {
 		panic(fmt.Errorf("either metric isn't a Counter or nothing sent with metric fields %s", fieldVals))
 	}
@@ -121,8 +120,7 @@ func tsmonSentCounter(ctx context.Context, m types.Metric, fieldVals ...any) int
 }
 
 func tsmonSentDistr(ctx context.Context, m types.Metric, fieldVals ...any) *distribution.Distribution {
-	resetTime := time.Time{}
-	d, ok := tsmon.GetState(ctx).Store().Get(ctx, m, resetTime, fieldVals).(*distribution.Distribution)
+	d, ok := tsmon.GetState(ctx).Store().Get(ctx, m, fieldVals).(*distribution.Distribution)
 	if !ok {
 		panic(fmt.Errorf("either metric isn't a Distribution or nothing sent with metric fields %s", fieldVals))
 	}

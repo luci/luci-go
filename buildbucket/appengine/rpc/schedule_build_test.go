@@ -438,7 +438,7 @@ func TestScheduleBuild(t *testing.T) {
 				assert.Loosely(t, blds, should.HaveLength(1))
 				assert.Loosely(t, blds[0], should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("")), should.BeNil)
 			})
 
 			t.Run("dynamic", func(t *ftt.Test) {
@@ -560,7 +560,7 @@ func TestScheduleBuild(t *testing.T) {
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 
 				// dry-run should not increase the build creation counter metric.
-				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("")), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("")), should.BeNil)
 			})
 
 			t.Run("one", func(t *ftt.Test) {
@@ -677,7 +677,7 @@ func TestScheduleBuild(t *testing.T) {
 
 			blds, err := scheduleBuilds(ctx, globalCfg, nil, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
@@ -854,9 +854,9 @@ func TestScheduleBuild(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			fvs := []any{"luci.project.static bucket", "static builder", ""}
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), should.Equal(2))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fvs), should.Equal(2))
 			fvs = []any{"luci.project.dynamic bucket", "dynamic builder", ""}
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fvs), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fvs), should.Equal(1))
 
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
@@ -1192,7 +1192,7 @@ func TestScheduleBuild(t *testing.T) {
 			blds, err := scheduleBuilds(ctx, globalCfg, nil, reqs...)
 			assert.Loosely(t, err.(errors.MultiError), should.HaveLength(2))
 			assert.Loosely(t, err.(errors.MultiError)[1], should.ErrLike("failed to fetch deduplicated build"))
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{
@@ -1379,7 +1379,7 @@ func TestScheduleBuild(t *testing.T) {
 			}
 			blds, err := scheduleBuilds(ctx, globalCfg, pMap, req)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, time.Time{}, fv("gerrit")), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, metrics.V1.BuildCountCreated, fv("gerrit")), should.Equal(1))
 			assert.Loosely(t, stripProtos(blds), should.Resemble([]*pb.Build{
 				{
 					Builder: &pb.BuilderID{

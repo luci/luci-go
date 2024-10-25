@@ -155,10 +155,10 @@ func TestInstances(t *testing.T) {
 			ic.Computed = time.Time{}
 			assert.Loosely(t, datastore.Put(c, ic), should.BeNil)
 			updateInstances(c)
-			assert.Loosely(t, s.Get(c, configuredInstances, time.Time{}, confFields), should.BeNil)
-			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields1), should.BeNil)
-			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields2), should.BeNil)
-			assert.Loosely(t, s.Get(c, connectedInstances, time.Time{}, connFields), should.BeNil)
+			assert.Loosely(t, s.Get(c, configuredInstances, confFields), should.BeNil)
+			assert.Loosely(t, s.Get(c, createdInstances, creaFields1), should.BeNil)
+			assert.Loosely(t, s.Get(c, createdInstances, creaFields2), should.BeNil)
+			assert.Loosely(t, s.Get(c, connectedInstances, connFields), should.BeNil)
 			assert.Loosely(t, datastore.Get(c, &InstanceCount{
 				ID: ic.ID,
 			}), should.Equal(datastore.ErrNoSuchEntity))
@@ -166,10 +166,10 @@ func TestInstances(t *testing.T) {
 			ic.Computed = time.Now().UTC()
 			assert.Loosely(t, datastore.Put(c, ic), should.BeNil)
 			updateInstances(c)
-			assert.Loosely(t, s.Get(c, configuredInstances, time.Time{}, confFields).(int64), should.Equal(3))
-			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields1).(int64), should.Equal(2))
-			assert.Loosely(t, s.Get(c, createdInstances, time.Time{}, creaFields2).(int64), should.Equal(1))
-			assert.Loosely(t, s.Get(c, connectedInstances, time.Time{}, connFields).(int64), should.Equal(1))
+			assert.Loosely(t, s.Get(c, configuredInstances, confFields).(int64), should.Equal(3))
+			assert.Loosely(t, s.Get(c, createdInstances, creaFields1).(int64), should.Equal(2))
+			assert.Loosely(t, s.Get(c, createdInstances, creaFields2).(int64), should.Equal(1))
+			assert.Loosely(t, s.Get(c, connectedInstances, connFields).(int64), should.Equal(1))
 			assert.Loosely(t, datastore.Get(c, &InstanceCount{
 				ID: ic.ID,
 			}), should.BeNil)

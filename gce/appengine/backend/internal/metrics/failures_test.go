@@ -17,7 +17,6 @@ package metrics
 import (
 	"context"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -49,7 +48,7 @@ func TestFailures(t *testing.T) {
 			Hostname: "name-1",
 			Prefix:   "prefix",
 		})
-		assert.Loosely(t, s.Get(c, creationFailures, time.Time{}, fields).(int64), should.Equal(1))
+		assert.Loosely(t, s.Get(c, creationFailures, fields).(int64), should.Equal(1))
 
 		UpdateFailures(c, 400, &model.VM{
 			Attributes: config.VM{
@@ -59,6 +58,6 @@ func TestFailures(t *testing.T) {
 			Hostname: "name-1",
 			Prefix:   "prefix",
 		})
-		assert.Loosely(t, s.Get(c, creationFailures, time.Time{}, fields).(int64), should.Equal(2))
+		assert.Loosely(t, s.Get(c, creationFailures, fields).(int64), should.Equal(2))
 	})
 }

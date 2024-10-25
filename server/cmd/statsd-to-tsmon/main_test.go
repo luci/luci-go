@@ -121,13 +121,13 @@ func TestEndToEnd(t *testing.T) {
 		send("statsd.a.timer:123|ms")
 
 		// Parsed successfully.
-		val := store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "a"})
+		val := store.Get(ctx, cfg.metrics["e2e/counter"], []any{"static", "a"})
 		assert.Loosely(t, val, should.Equal(2))
-		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "b"})
+		val = store.Get(ctx, cfg.metrics["e2e/counter"], []any{"static", "b"})
 		assert.Loosely(t, val, should.Equal(1))
-		val = store.Get(ctx, cfg.metrics["e2e/gauge"], time.Time{}, []any{"static", "a"})
+		val = store.Get(ctx, cfg.metrics["e2e/gauge"], []any{"static", "a"})
 		assert.Loosely(t, val, should.Equal(123))
-		val = store.Get(ctx, cfg.metrics["e2e/timer"], time.Time{}, []any{"static", "a"})
+		val = store.Get(ctx, cfg.metrics["e2e/timer"], []any{"static", "a"})
 		assert.Loosely(t, val.(*distribution.Distribution).Sum(), should.Equal(123.))
 
 		// Updated its own internal metric.
@@ -146,9 +146,9 @@ func TestEndToEnd(t *testing.T) {
 		}, "\n"))
 
 		// Tsmon metrics are updated now.
-		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "a"})
+		val = store.Get(ctx, cfg.metrics["e2e/counter"], []any{"static", "a"})
 		assert.Loosely(t, val, should.Equal(3))
-		val = store.Get(ctx, cfg.metrics["e2e/counter"], time.Time{}, []any{"static", "b"})
+		val = store.Get(ctx, cfg.metrics["e2e/counter"], []any{"static", "b"})
 		assert.Loosely(t, val, should.Equal(2))
 
 		// Updated its own internal metric.
@@ -173,7 +173,7 @@ func getStatsdMetricsProcessed(ctx context.Context) map[string]int64 {
 		"SKIPPED",
 		"UNKNOWN",
 	} {
-		val := store.Get(ctx, statsdMetricsProcessed, time.Time{}, []any{f})
+		val := store.Get(ctx, statsdMetricsProcessed, []any{f})
 		if val != nil {
 			out[f] = val.(int64)
 		}

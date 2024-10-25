@@ -16,7 +16,6 @@ package metrics
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
@@ -31,7 +30,7 @@ func getCustomMetricsAndState(ctx context.Context) (map[pb.CustomMetricBase]map[
 	return cms.metrics, cms.state
 }
 
-func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name string, resetTime time.Time, fvs []any) (any, error) {
+func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name string, fvs []any) (any, error) {
 	metrics, state := getCustomMetricsAndState(ctx)
 	store := state.Store()
 	cm, ok := metrics[base][name]
@@ -43,19 +42,19 @@ func GetCustomMetricsData(ctx context.Context, base pb.CustomMetricBase, name st
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CREATED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_STARTED,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED:
-		return store.Get(ctx, cm.(*counter), resetTime, fvs), nil
+		return store.Get(ctx, cm.(*counter), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_CYCLE_DURATIONS,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_RUN_DURATIONS,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_SCHEDULING_DURATIONS:
-		return store.Get(ctx, cm.(*cumulativeDistribution), resetTime, fvs), nil
+		return store.Get(ctx, cm.(*cumulativeDistribution), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED:
-		return store.Get(ctx, cm.(*float), resetTime, fvs), nil
+		return store.Get(ctx, cm.(*float), fvs), nil
 
 	case pb.CustomMetricBase_CUSTOM_METRIC_BASE_COUNT,
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
-		return store.Get(ctx, cm.(*int), resetTime, fvs), nil
+		return store.Get(ctx, cm.(*int), fvs), nil
 
 	default:
 		return nil, errors.Reason("invalid metric base %s", base).Err()

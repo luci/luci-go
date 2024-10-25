@@ -237,8 +237,7 @@ func (t *Test) GFactory() gerrit.Factory {
 //
 // If not set, returns nil.
 func (t *Test) TSMonSentValue(ctx context.Context, m types.Metric, fieldVals ...any) any {
-	resetTime := time.Time{}
-	return t.TSMonStore.Get(ctx, m, resetTime, fieldVals)
+	return t.TSMonStore.Get(ctx, m, fieldVals)
 }
 
 // TSMonSentDistr returns the latest distr value of the given metric.

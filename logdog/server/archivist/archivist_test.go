@@ -713,11 +713,11 @@ func TestHandleArchive(t *testing.T) {
 						return nil, errors.New("beep")
 					}
 					assert.Loosely(t, ar.ArchiveTask(c, task), should.ErrLike("beep"))
-					assert.Loosely(t, ms.Get(c, tsCount, time.Time{}, fv(false)), should.Equal(1))
+					assert.Loosely(t, ms.Get(c, tsCount, fv(false)), should.Equal(1))
 				})
 				t.Run(`With success`, func(t *ftt.Test) {
 					assert.Loosely(t, ar.ArchiveTask(c, task), should.BeNil)
-					assert.Loosely(t, ms.Get(c, tsCount, time.Time{}, fv(true)), should.Equal(1))
+					assert.Loosely(t, ms.Get(c, tsCount, fv(true)), should.Equal(1))
 				})
 			})
 
@@ -726,12 +726,12 @@ func TestHandleArchive(t *testing.T) {
 				assert.Loosely(t, ar.ArchiveTask(c, task), should.BeNil)
 
 				st := logpb.StreamType_TEXT.String()
-				assert.That(t, dSum(ms.Get(c, tsSize, time.Time{}, fv("entries", st))), should.Equal(116.))
-				assert.That(t, dSum(ms.Get(c, tsSize, time.Time{}, fv("index", st))), should.Equal(58.))
-				assert.Loosely(t, ms.Get(c, tsTotalBytes, time.Time{}, fv("entries", st)), should.Equal(116))
-				assert.Loosely(t, ms.Get(c, tsTotalBytes, time.Time{}, fv("index", st)), should.Equal(58))
-				assert.That(t, dSum(ms.Get(c, tsLogEntries, time.Time{}, fv(st))), should.Equal(5.))
-				assert.Loosely(t, ms.Get(c, tsTotalLogEntries, time.Time{}, fv(st)), should.Equal(5))
+				assert.That(t, dSum(ms.Get(c, tsSize, fv("entries", st))), should.Equal(116.))
+				assert.That(t, dSum(ms.Get(c, tsSize, fv("index", st))), should.Equal(58.))
+				assert.Loosely(t, ms.Get(c, tsTotalBytes, fv("entries", st)), should.Equal(116))
+				assert.Loosely(t, ms.Get(c, tsTotalBytes, fv("index", st)), should.Equal(58))
+				assert.That(t, dSum(ms.Get(c, tsLogEntries, fv(st))), should.Equal(5.))
+				assert.Loosely(t, ms.Get(c, tsTotalLogEntries, fv(st)), should.Equal(5))
 			})
 		})
 

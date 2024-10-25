@@ -50,10 +50,10 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
+		count := memStore.Get(c, grpcServerCount, []any{"/service/method", 13, "INTERNAL"})
 		assert.Loosely(t, count, should.Equal(1))
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
+		duration := memStore.Get(c, grpcServerDuration, []any{"/service/method", 13, "INTERNAL"})
 		assert.Loosely(t, duration.(*distribution.Distribution).Sum(), should.Equal(500.0))
 	})
 }
@@ -73,10 +73,10 @@ func TestStreamServerInterceptor(t *testing.T) {
 			FullMethod: "/service/method",
 		}, handler)
 
-		count := memStore.Get(c, grpcServerCount, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
+		count := memStore.Get(c, grpcServerCount, []any{"/service/method", 13, "INTERNAL"})
 		assert.Loosely(t, count, should.Equal(1))
 
-		duration := memStore.Get(c, grpcServerDuration, time.Time{}, []any{"/service/method", 13, "INTERNAL"})
+		duration := memStore.Get(c, grpcServerDuration, []any{"/service/method", 13, "INTERNAL"})
 		assert.Loosely(t, duration.(*distribution.Distribution).Sum(), should.Equal(500.0))
 	})
 }

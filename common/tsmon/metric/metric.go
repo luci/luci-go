@@ -44,7 +44,6 @@ package metric
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"
@@ -368,7 +367,7 @@ func NewNonCumulativeDistributionWithOptions(name string, opt *Options, descript
 // genericGet is a convenience function that tries to get a metric value from
 // the store and returns the zero value if it didn't exist.
 func (m *metric) genericGet(zero any, ctx context.Context, fieldVals []any) any {
-	if ret := tsmon.Store(ctx).Get(ctx, m, m.fixedResetTime, fieldVals); ret != nil {
+	if ret := tsmon.Store(ctx).Get(ctx, m, fieldVals); ret != nil {
 		return ret
 	}
 	return zero
@@ -377,12 +376,10 @@ func (m *metric) genericGet(zero any, ctx context.Context, fieldVals []any) any 
 type metric struct {
 	types.MetricInfo
 	types.MetricMetadata
-	fixedResetTime time.Time
 }
 
 func (m *metric) Info() types.MetricInfo         { return m.MetricInfo }
 func (m *metric) Metadata() types.MetricMetadata { return m.MetricMetadata }
-func (m *metric) SetFixedResetTime(t time.Time)  { m.fixedResetTime = t }
 
 type intMetric struct{ metric }
 
@@ -391,13 +388,13 @@ func (m *intMetric) Get(ctx context.Context, fieldVals ...any) int64 {
 }
 
 func (m *intMetric) Set(ctx context.Context, v int64, fieldVals ...any) {
-	tsmon.Store(ctx).Set(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Set(ctx, m, fieldVals, v)
 }
 
 type counter struct{ intMetric }
 
 func (m *counter) Add(ctx context.Context, n int64, fieldVals ...any) {
-	tsmon.Store(ctx).Incr(ctx, m, m.fixedResetTime, fieldVals, n)
+	tsmon.Store(ctx).Incr(ctx, m, fieldVals, n)
 }
 
 type floatMetric struct{ metric }
@@ -407,13 +404,13 @@ func (m *floatMetric) Get(ctx context.Context, fieldVals ...any) float64 {
 }
 
 func (m *floatMetric) Set(ctx context.Context, v float64, fieldVals ...any) {
-	tsmon.Store(ctx).Set(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Set(ctx, m, fieldVals, v)
 }
 
 type floatCounter struct{ floatMetric }
 
 func (m *floatCounter) Add(ctx context.Context, n float64, fieldVals ...any) {
-	tsmon.Store(ctx).Incr(ctx, m, m.fixedResetTime, fieldVals, n)
+	tsmon.Store(ctx).Incr(ctx, m, fieldVals, n)
 }
 
 type stringMetric struct{ metric }
@@ -423,7 +420,7 @@ func (m *stringMetric) Get(ctx context.Context, fieldVals ...any) string {
 }
 
 func (m *stringMetric) Set(ctx context.Context, v string, fieldVals ...any) {
-	tsmon.Store(ctx).Set(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Set(ctx, m, fieldVals, v)
 }
 
 type boolMetric struct{ metric }
@@ -433,7 +430,7 @@ func (m *boolMetric) Get(ctx context.Context, fieldVals ...any) bool {
 }
 
 func (m *boolMetric) Set(ctx context.Context, v bool, fieldVals ...any) {
-	tsmon.Store(ctx).Set(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Set(ctx, m, fieldVals, v)
 }
 
 type nonCumulativeDistributionMetric struct {
@@ -449,7 +446,7 @@ func (m *nonCumulativeDistributionMetric) Get(ctx context.Context, fieldVals ...
 }
 
 func (m *nonCumulativeDistributionMetric) Set(ctx context.Context, v *distribution.Distribution, fieldVals ...any) {
-	tsmon.Store(ctx).Set(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Set(ctx, m, fieldVals, v)
 }
 
 type cumulativeDistributionMetric struct {
@@ -457,5 +454,5 @@ type cumulativeDistributionMetric struct {
 }
 
 func (m *cumulativeDistributionMetric) Add(ctx context.Context, v float64, fieldVals ...any) {
-	tsmon.Store(ctx).Incr(ctx, m, m.fixedResetTime, fieldVals, v)
+	tsmon.Store(ctx).Incr(ctx, m, fieldVals, v)
 }

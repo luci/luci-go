@@ -355,7 +355,7 @@ func TestPushHandler(t *testing.T) {
 		tsmon.GetState(ctx).SetStore(store.NewInMemory(&target.Task{}))
 
 		metric := func(m types.Metric, fieldVals ...any) any {
-			return tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals)
+			return tsmon.GetState(ctx).Store().Get(ctx, m, fieldVals)
 		}
 
 		metricDist := func(m types.Metric, fieldVals ...any) (count int64, sum float64) {

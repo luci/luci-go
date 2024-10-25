@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
-	"time"
 
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
@@ -175,7 +174,7 @@ func TestCreate(t *testing.T) {
 
 			t.Run("created", func(t *ftt.Test) {
 				confFields := []any{"", "", "", "", "name"}
-				assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), should.BeNil)
+				assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, confFields), should.BeNil)
 				t.Run("pending", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {
 						inst, ok := req.(*compute.Instance)
@@ -276,7 +275,7 @@ func TestCreate(t *testing.T) {
 						},
 					}))
 					assert.Loosely(t, v.URL, should.Equal("url"))
-					assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, time.Time{}, confFields), should.Equal(1))
+					assert.Loosely(t, s.Get(c, metrics.CreatedInstanceChecked, confFields), should.Equal(1))
 				})
 			})
 		})

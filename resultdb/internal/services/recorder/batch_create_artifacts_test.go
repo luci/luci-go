@@ -359,7 +359,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			assert.Loosely(t, gcsURI, should.Equal("gs://testbucket/art4"))
 
 			// RowCount metric should be increased by 5.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(5))
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(5))
 		})
 
 		t.Run("BatchUpdateBlobs fails", func(t *ftt.Test) {
@@ -386,7 +386,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
 
 		t.Run("Token", func(t *ftt.Test) {
@@ -488,7 +488,7 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
 
 		t.Run("Too many requests", func(t *ftt.Test) {

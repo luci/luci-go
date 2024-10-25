@@ -17,7 +17,6 @@ package monitoring
 import (
 	"context"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -50,7 +49,7 @@ func TestMetrics(t *testing.T) {
 		t.Run("not configured", func(t *ftt.Test) {
 			ctx = auth.WithState(ctx, &authtest.FakeState{})
 			FileSize(ctx, 123)
-			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields), should.BeNil)
+			assert.Loosely(t, s.Get(ctx, bytesRequested, fields), should.BeNil)
 		})
 
 		t.Run("configured", func(t *ftt.Test) {
@@ -58,9 +57,9 @@ func TestMetrics(t *testing.T) {
 				PeerIPAllowlist: []string{"bots"},
 			})
 			FileSize(ctx, 123)
-			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), should.Equal(123))
+			assert.Loosely(t, s.Get(ctx, bytesRequested, fields).(int64), should.Equal(123))
 			FileSize(ctx, 1)
-			assert.Loosely(t, s.Get(ctx, bytesRequested, time.Time{}, fields).(int64), should.Equal(124))
+			assert.Loosely(t, s.Get(ctx, bytesRequested, fields).(int64), should.Equal(124))
 		})
 	})
 }

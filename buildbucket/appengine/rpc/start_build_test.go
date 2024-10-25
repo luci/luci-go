@@ -17,7 +17,6 @@ package rpc
 import (
 	"context"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc/metadata"
 
@@ -215,8 +214,8 @@ func TestStartBuild(t *testing.T) {
 					assert.Loosely(t, tasks, should.HaveLength(1))
 
 					// metrics
-					assert.Loosely(t, tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
-					val, err := metrics.GetCustomMetricsData(ctx, base, name, time.Time{}, []any{"Linux"})
+					assert.Loosely(t, tsmon.Store(ctx).Get(ctx, metrics.V2.BuildCountStarted, []any{"None"}), should.Equal(1))
+					val, err := metrics.GetCustomMetricsData(ctx, base, name, []any{"Linux"})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, val, should.Equal(1))
 				})

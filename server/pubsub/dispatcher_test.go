@@ -94,7 +94,7 @@ func TestDispatcher(t *testing.T) {
 		ctx = auth.WithState(ctx, authState)
 
 		metric := func(m types.Metric, fieldVals ...any) any {
-			return tsmon.GetState(ctx).Store().Get(ctx, m, time.Time{}, fieldVals)
+			return tsmon.GetState(ctx).Store().Get(ctx, m, fieldVals)
 		}
 
 		metricDist := func(m types.Metric, fieldVals ...any) (count int64) {

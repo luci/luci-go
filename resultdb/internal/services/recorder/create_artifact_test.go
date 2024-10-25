@@ -186,7 +186,7 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
 
 		t.Run(`Verify state`, func(t *ftt.Test) {
@@ -234,7 +234,7 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
 
 		t.Run(`Write to CAS`, func(t *ftt.Test) {
@@ -262,7 +262,7 @@ func TestCreateArtifact(t *testing.T) {
 				assert.Loosely(t, w.requests, should.HaveLength(2))
 				assert.Loosely(t, string(w.requests[0].Data), should.Equal("hel"))
 				assert.Loosely(t, string(w.requests[1].Data), should.Equal("lo"))
-				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(1))
 			})
 
 			t.Run(`Invalid digest`, func(t *ftt.Test) {
@@ -270,7 +270,7 @@ func TestCreateArtifact(t *testing.T) {
 				rec := casSend()
 				assert.Loosely(t, rec.Code, should.Equal(http.StatusBadRequest))
 				assert.Loosely(t, rec.Body.String(), should.Equal("Content-Hash and/or Content-Length do not match the request body\n"))
-				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 			})
 
 			t.Run(`RBE-CAS stops request early`, func(t *ftt.Test) {
@@ -282,7 +282,7 @@ func TestCreateArtifact(t *testing.T) {
 				// Must not continue requests after receiving io.EOF in the first
 				// request.
 				assert.Loosely(t, w.requests, should.HaveLength(1))
-				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
+				assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(1))
 			})
 
 		})
@@ -312,7 +312,7 @@ func TestCreateArtifact(t *testing.T) {
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.BeNil)
 		})
 
 		t.Run(`e2e`, func(t *ftt.Test) {
@@ -332,7 +332,7 @@ func TestCreateArtifact(t *testing.T) {
 			assert.Loosely(t, actualSize, should.Equal(5))
 			assert.Loosely(t, actualHash, should.Equal("sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"))
 			assert.Loosely(t, actualContentType, should.Equal("text/plain"))
-			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, time.Time{}, artMFVs), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, spanutil.RowCounter, artMFVs), should.Equal(1))
 		})
 	})
 }

@@ -44,10 +44,10 @@ type Store interface {
 	DefaultTarget() types.Target
 	SetDefaultTarget(t types.Target)
 
-	Get(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any) any
-	Set(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, value any)
+	Get(ctx context.Context, m types.Metric, fieldVals []any) any
+	Set(ctx context.Context, m types.Metric, fieldVals []any, value any)
 	Del(ctx context.Context, m types.Metric, fieldVals []any)
-	Incr(ctx context.Context, m types.Metric, resetTime time.Time, fieldVals []any, delta any)
+	Incr(ctx context.Context, m types.Metric, fieldVals []any, delta any)
 
 	GetAll(ctx context.Context) []types.Cell
 
@@ -178,12 +178,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					v := s.Get(ctx, m, time.Time{}, []any{})
+					v := s.Get(ctx, m, []any{})
 					assert.Loosely(t, v, should.BeNil)
 
 					// Set and get the value.
-					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
-					v = s.Get(ctx, m, time.Time{}, []any{})
+					s.Set(ctx, m, []any{}, test.values[0])
+					v = s.Get(ctx, m, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
@@ -210,70 +210,27 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					v := s.Get(ctx, m, makeInterfaceSlice("one"))
 					assert.Loosely(t, v, should.BeNil)
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					v = s.Get(ctx, m, makeInterfaceSlice("two"))
 					assert.Loosely(t, v, should.BeNil)
 
 					// Set and get the values.
-					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
-					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
+					s.Set(ctx, m, makeInterfaceSlice("one"), test.values[0])
+					s.Set(ctx, m, makeInterfaceSlice("two"), test.values[1])
 
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					v = s.Get(ctx, m, makeInterfaceSlice("one"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
 						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					v = s.Get(ctx, m, makeInterfaceSlice("two"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
 						assert.Loosely(t, v, should.Equal(test.values[1]))
-					}
-				})
-			}
-		})
-
-		t.Run("With a fixed reset time", func(t *ftt.Test) {
-			for i, test := range tests {
-				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
-					var m types.Metric
-					if test.bucketer != nil {
-						m = &fakeDistributionMetric{FakeMetric{
-							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
-							types.MetricMetadata{}}, test.bucketer}
-					} else {
-						m = &FakeMetric{
-							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
-							types.MetricMetadata{}}
-					}
-
-					s := opts.Factory()
-					opts.RegistrationFinished(s)
-
-					// Do the set with a fixed time.
-					tZero := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					s.Set(ctx, m, tZero, []any{}, test.values[0])
-
-					v := s.Get(ctx, m, time.Time{}, []any{})
-					if test.wantSetValidator != nil {
-						test.wantSetValidator(v, test.values[0])
-					} else {
-						assert.Loosely(t, v, should.Equal(test.values[0]))
-					}
-
-					// Check the time in the Cell is the same.
-					all := s.GetAll(ctx)
-					assert.Loosely(t, len(all), should.Equal(1))
-
-					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
-					ts := msg.GetStartTimestamp()
-					if test.wantStartTimestamp {
-						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(tZero.String()))
-					} else {
-						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(testclock.TestRecentTimeUTC.String()))
 					}
 				})
 			}
@@ -302,18 +259,18 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Set the first value on the default target, second value on the
 					// different target.
-					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
-					s.Set(ctxWithTarget, m, time.Time{}, []any{}, test.values[1])
+					s.Set(ctx, m, []any{}, test.values[0])
+					s.Set(ctxWithTarget, m, []any{}, test.values[1])
 
 					// Get should return different values for different contexts.
-					v := s.Get(ctx, m, time.Time{}, []any{})
+					v := s.Get(ctx, m, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
 						assert.Loosely(t, v, should.Equal(test.values[0]))
 					}
 
-					v = s.Get(ctxWithTarget, m, time.Time{}, []any{})
+					v = s.Get(ctxWithTarget, m, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
@@ -365,12 +322,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Set the bigger value.
-					s.Set(ctx, m, time.Time{}, []any{}, test.values[1])
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.Resemble(test.values[1]))
+					s.Set(ctx, m, []any{}, test.values[1])
+					assert.Loosely(t, s.Get(ctx, m, []any{}), should.Resemble(test.values[1]))
 
 					// Setting the smaller value should be ignored.
-					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.Resemble(test.values[1]))
+					s.Set(ctx, m, []any{}, test.values[0])
+					assert.Loosely(t, s.Get(ctx, m, []any{}), should.Resemble(test.values[1]))
 				})
 			}
 		})
@@ -395,12 +352,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					v := s.Get(ctx, m, time.Time{}, []any{})
+					v := s.Get(ctx, m, []any{})
 					assert.Loosely(t, v, should.BeNil)
 
 					// Increment the metric.
 					for _, delta := range test.deltas {
-						call := func() { s.Incr(ctx, m, time.Time{}, []any{}, delta) }
+						call := func() { s.Incr(ctx, m, []any{}, delta) }
 						if test.wantIncrPanic {
 							assert.Loosely(t, call, should.Panic)
 						} else {
@@ -409,7 +366,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					// Get the final value.
-					v = s.Get(ctx, m, time.Time{}, []any{})
+					v = s.Get(ctx, m, []any{})
 					if test.wantIncrValue != nil {
 						assert.Loosely(t, v, should.Equal(test.wantIncrValue))
 					} else if test.wantIncrValidator != nil {
@@ -436,14 +393,14 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					v := s.Get(ctx, m, makeInterfaceSlice("one"))
 					assert.Loosely(t, v, should.BeNil)
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					v = s.Get(ctx, m, makeInterfaceSlice("two"))
 					assert.Loosely(t, v, should.BeNil)
 
 					// Increment one cell.
 					for _, delta := range test.deltas {
-						call := func() { s.Incr(ctx, m, time.Time{}, makeInterfaceSlice("one"), delta) }
+						call := func() { s.Incr(ctx, m, makeInterfaceSlice("one"), delta) }
 						if test.wantIncrPanic {
 							assert.Loosely(t, call, should.Panic)
 						} else {
@@ -452,7 +409,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					// Get the final value.
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one"))
+					v = s.Get(ctx, m, makeInterfaceSlice("one"))
 					if test.wantIncrValue != nil {
 						assert.Loosely(t, v, should.Equal(test.wantIncrValue))
 					} else if test.wantIncrValidator != nil {
@@ -460,48 +417,8 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					}
 
 					// Another cell should still be nil.
-					v = s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					v = s.Get(ctx, m, makeInterfaceSlice("two"))
 					assert.Loosely(t, v, should.BeNil)
-				})
-			}
-		})
-
-		t.Run("With a fixed reset time", func(t *ftt.Test) {
-			for i, test := range tests {
-				if test.wantIncrPanic {
-					continue
-				}
-
-				t.Run(fmt.Sprintf("%d. %s", i, test.typ), func(t *ftt.Test) {
-					var m types.Metric
-					if test.bucketer != nil {
-						m = &fakeDistributionMetric{FakeMetric{
-							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
-							types.MetricMetadata{}}, test.bucketer}
-					} else {
-						m = &FakeMetric{
-							types.MetricInfo{"m", "", []field.Field{}, test.typ, target.NilType},
-							types.MetricMetadata{}}
-					}
-
-					s := opts.Factory()
-					opts.RegistrationFinished(s)
-
-					// Do the incr with a fixed time.
-					tZero := time.Date(1972, 5, 6, 7, 8, 9, 0, time.UTC)
-					s.Incr(ctx, m, tZero, []any{}, test.deltas[0])
-
-					// Check the time in the Cell is the same.
-					all := s.GetAll(ctx)
-					assert.Loosely(t, len(all), should.Equal(1))
-
-					msg := monitor.SerializeValue(all[0], testclock.TestRecentTimeUTC)
-					if test.wantStartTimestamp {
-						ts := msg.GetStartTimestamp()
-						assert.Loosely(t, time.Unix(ts.GetSeconds(), int64(ts.GetNanos())).UTC().String(), should.Equal(tZero.String()))
-					} else {
-						assert.Loosely(t, msg.StartTimestamp, should.BeNil)
-					}
 				})
 			}
 		})
@@ -534,12 +451,12 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Incr the first delta on the default target, second delta on the
 					// different target.
-					s.Incr(ctx, m, time.Time{}, []any{}, test.deltas[0])
-					s.Incr(ctxWithTarget, m, time.Time{}, []any{}, test.deltas[1])
+					s.Incr(ctx, m, []any{}, test.deltas[0])
+					s.Incr(ctxWithTarget, m, []any{}, test.deltas[1])
 
 					// Get should return different values for different contexts.
-					v1 := s.Get(ctx, m, time.Time{}, []any{})
-					v2 := s.Get(ctxWithTarget, m, time.Time{}, []any{})
+					v1 := s.Get(ctx, m, []any{})
+					v2 := s.Get(ctxWithTarget, m, []any{})
 					assert.Loosely(t, v1, should.NotEqual(v2))
 
 					// The targets should be set in the Cells.
@@ -612,15 +529,15 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			{baz, makeInterfaceSlice("four"), 4.56},
 			{qux, makeInterfaceSlice("five"), distribution.New(nil)},
 		} {
-			s.Set(ctx, m.metric, time.Time{}, m.fieldvals, m.value)
+			s.Set(ctx, m.metric, m.fieldvals, m.value)
 			tc.Add(time.Second)
 		}
 
 		got := s.GetAll(ctx)
 
 		// Store operations made after GetAll should not be visible in the snapshot.
-		s.Set(ctx, baz, time.Time{}, makeInterfaceSlice("four"), 3.14)
-		s.Incr(ctx, qux, time.Time{}, makeInterfaceSlice("five"), float64(10.0))
+		s.Set(ctx, baz, makeInterfaceSlice("four"), 3.14)
+		s.Incr(ctx, qux, makeInterfaceSlice("five"), float64(10.0))
 
 		sort.Sort(sortableCellSlice(got))
 		want := []types.Cell{
@@ -738,11 +655,11 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Value should be nil initially.
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, []any{}), should.BeNil)
 
 					// Set and get the value.
-					s.Set(ctx, m, time.Time{}, []any{}, test.values[0])
-					v := s.Get(ctx, m, time.Time{}, []any{})
+					s.Set(ctx, m, []any{}, test.values[0])
+					v := s.Get(ctx, m, []any{})
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[0])
 					} else {
@@ -751,7 +668,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 
 					// Delete the cell. Then, get should return nil.
 					s.Del(ctx, m, []any{})
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, []any{}), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, []any{}), should.BeNil)
 				})
 			}
 		})
@@ -773,17 +690,17 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					s := opts.Factory()
 
 					// Values should be nil initially.
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), should.BeNil)
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two")), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, makeInterfaceSlice("one")), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, makeInterfaceSlice("two")), should.BeNil)
 
 					// Set both and then delete "one".
-					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("one"), test.values[0])
-					s.Set(ctx, m, time.Time{}, makeInterfaceSlice("two"), test.values[1])
+					s.Set(ctx, m, makeInterfaceSlice("one"), test.values[0])
+					s.Set(ctx, m, makeInterfaceSlice("two"), test.values[1])
 					s.Del(ctx, m, makeInterfaceSlice("one"))
 
 					// Get should return nil for "one", but the value for "two".
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, makeInterfaceSlice("one")), should.BeNil)
-					v := s.Get(ctx, m, time.Time{}, makeInterfaceSlice("two"))
+					assert.Loosely(t, s.Get(ctx, m, makeInterfaceSlice("one")), should.BeNil)
+					v := s.Get(ctx, m, makeInterfaceSlice("two"))
 					if test.wantSetValidator != nil {
 						test.wantSetValidator(v, test.values[1])
 					} else {
@@ -822,19 +739,19 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 					// different target. Note that both are set with the same field value,
 					// "one".
 					fvs := func() []any { return makeInterfaceSlice("one") }
-					s.Set(ctx, m, time.Time{}, fvs(), test.values[0])
-					s.Set(ctxWithTarget, m, time.Time{}, fvs(), test.values[1])
+					s.Set(ctx, m, fvs(), test.values[0])
+					s.Set(ctxWithTarget, m, fvs(), test.values[1])
 
 					// Get should return different values for different contexts.
-					v1 := s.Get(ctx, m, time.Time{}, fvs())
-					v2 := s.Get(ctxWithTarget, m, time.Time{}, fvs())
+					v1 := s.Get(ctx, m, fvs())
+					v2 := s.Get(ctxWithTarget, m, fvs())
 					assert.Loosely(t, v1, should.NotEqual(v2))
 
 					// Delete the cell with the custom target. Then, get should return
 					// the value for the default target, and nil for the custom target.
 					s.Del(ctxWithTarget, m, fvs())
-					assert.Loosely(t, s.Get(ctx, m, time.Time{}, fvs()), should.Equal(test.values[0]))
-					assert.Loosely(t, s.Get(ctxWithTarget, m, time.Time{}, fvs()), should.BeNil)
+					assert.Loosely(t, s.Get(ctx, m, fvs()), should.Equal(test.values[0]))
+					assert.Loosely(t, s.Get(ctxWithTarget, m, fvs()), should.BeNil)
 				})
 			}
 		})
@@ -854,7 +771,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			f := func(n int) {
 				defer wg.Done()
 				for i := 0; i < numIterations; i++ {
-					s.Incr(ctx, m, time.Time{}, []any{}, int64(1))
+					s.Incr(ctx, m, []any{}, int64(1))
 				}
 			}
 
@@ -864,7 +781,7 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			}
 			wg.Wait()
 
-			val := s.Get(ctx, m, time.Time{}, []any{})
+			val := s.Get(ctx, m, []any{})
 			assert.Loosely(c, val, should.Equal(numIterations*numGoroutines))
 		})
 	})
@@ -880,13 +797,13 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			t := target.Task{ServiceName: "foo"}
 			ctxWithTarget := target.Set(ctx, &t)
 
-			s.Set(ctx, m, time.Time{}, []any{}, int64(42))
-			s.Set(ctxWithTarget, m, time.Time{}, []any{}, int64(43))
+			s.Set(ctx, m, []any{}, int64(42))
+			s.Set(ctxWithTarget, m, []any{}, int64(43))
 
-			val := s.Get(ctx, m, time.Time{}, []any{})
+			val := s.Get(ctx, m, []any{})
 			assert.Loosely(c, val, should.Equal(42))
 
-			val = s.Get(ctxWithTarget, m, time.Time{}, []any{})
+			val = s.Get(ctxWithTarget, m, []any{})
 			assert.Loosely(c, val, should.Equal(43))
 
 			all := s.GetAll(ctx)
@@ -919,13 +836,13 @@ func RunStoreImplementationTests(t *testing.T, ctx context.Context, opts TestOpt
 			deviceTarget := target.NetworkDevice{Hostname: "bar"}
 			ctxWithTarget := target.Set(target.Set(ctx, &taskTarget), &deviceTarget)
 
-			s.Set(ctxWithTarget, mTask, time.Time{}, []any{}, int64(42))
-			s.Set(ctxWithTarget, mDevice, time.Time{}, []any{}, int64(43))
+			s.Set(ctxWithTarget, mTask, []any{}, int64(42))
+			s.Set(ctxWithTarget, mDevice, []any{}, int64(43))
 
-			val := s.Get(ctxWithTarget, mTask, time.Time{}, []any{})
+			val := s.Get(ctxWithTarget, mTask, []any{})
 			assert.Loosely(c, val, should.Equal(42))
 
-			val = s.Get(ctxWithTarget, mDevice, time.Time{}, []any{})
+			val = s.Get(ctxWithTarget, mDevice, []any{})
 			assert.Loosely(c, val, should.Equal(43))
 
 			all := s.GetAll(ctx)
@@ -958,9 +875,6 @@ func (m *FakeMetric) Info() types.MetricInfo { return m.MetricInfo }
 
 // Metadata implements Metric.Metadata
 func (m *FakeMetric) Metadata() types.MetricMetadata { return m.MetricMetadata }
-
-// SetFixedResetTime implements Metric.SetFixedResetTime.
-func (m *FakeMetric) SetFixedResetTime(t time.Time) {}
 
 type fakeDistributionMetric struct {
 	FakeMetric

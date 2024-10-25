@@ -1000,12 +1000,12 @@ func TestSyncBuild(t *testing.T) {
 						assert.Loosely(t, sch.Tasks(), should.HaveLength(5))
 
 						v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
-						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), should.Equal(1))
+						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountCompleted, v2fs), should.Equal(1))
 
 					} else if syncedBuild.Status == pb.Status_STARTED {
 						// NotifyPubSubGoProxy and a continuation sync task.
 						assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
-						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountStarted, time.Time{}, []any{"None"}), should.Equal(1))
+						assert.Loosely(t, metricsStore.Get(ctx, metrics.V2.BuildCountStarted, []any{"None"}), should.Equal(1))
 					}
 					syncedBuildStatus := &model.BuildStatus{Build: datastore.KeyForObj(ctx, syncedBuild)}
 					assert.Loosely(t, datastore.Get(ctx, syncedBuildStatus), should.BeNil)
@@ -1343,7 +1343,7 @@ func TestSubNotify(t *testing.T) {
 
 			// BuildCompleted metric should be set to 1 with SUCCESS.
 			v2fs := []any{pb.Status_name[int32(syncedBuild.Status)], "None"}
-			assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, time.Time{}, v2fs), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, metrics.V2.BuildCountCompleted, v2fs), should.Equal(1))
 		})
 
 		t.Run("status unchanged(in STARTED) while bot dimensions changed", func(t *ftt.Test) {

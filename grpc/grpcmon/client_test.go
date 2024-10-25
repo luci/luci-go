@@ -18,7 +18,6 @@ import (
 	"context"
 	"net"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -77,12 +76,12 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 		}
 		t.Run("Captures count and duration", func(t *ftt.Test) {
 			count := func(code string) int64 {
-				val := memStore.Get(ctx, grpcClientCount, time.Time{}, fields(code))
+				val := memStore.Get(ctx, grpcClientCount, fields(code))
 				assert.Loosely(t, val, should.NotBeZero)
 				return val.(int64)
 			}
 			duration := func(code string) any {
-				return memStore.Get(ctx, grpcClientDuration, time.Time{}, fields(code))
+				return memStore.Get(ctx, grpcClientDuration, fields(code))
 			}
 
 			// grpc uses time.Now() to assign a value to
@@ -108,16 +107,16 @@ func TestClientRPCStatsMonitor(t *testing.T) {
 
 		t.Run("Captures sent/received messages", func(t *ftt.Test) {
 			count := func(code string) (float64, float64) {
-				sent := memStore.Get(ctx, grpcClientSentMsg, time.Time{}, fields())
+				sent := memStore.Get(ctx, grpcClientSentMsg, fields())
 				assert.Loosely(t, sent, should.NotBeNil)
-				recv := memStore.Get(ctx, grpcClientRecvMsg, time.Time{}, fields())
+				recv := memStore.Get(ctx, grpcClientRecvMsg, fields())
 				assert.Loosely(t, recv, should.NotBeNil)
 				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
 			}
 			bytes := func(code string) (float64, float64) {
-				sent := memStore.Get(ctx, grpcClientSentByte, time.Time{}, fields())
+				sent := memStore.Get(ctx, grpcClientSentByte, fields())
 				assert.Loosely(t, sent, should.NotBeNil)
-				recv := memStore.Get(ctx, grpcClientRecvByte, time.Time{}, fields())
+				recv := memStore.Get(ctx, grpcClientRecvByte, fields())
 				assert.Loosely(t, recv, should.NotBeNil)
 				return sent.(*distribution.Distribution).Sum(), recv.(*distribution.Distribution).Sum()
 			}

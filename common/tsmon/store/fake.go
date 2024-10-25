@@ -35,12 +35,12 @@ func (s *Fake) DefaultTarget() types.Target { return s.DT }
 func (s *Fake) SetDefaultTarget(types.Target) {}
 
 // Get does nothing.
-func (s *Fake) Get(context.Context, types.Metric, time.Time, []any) any {
+func (s *Fake) Get(context.Context, types.Metric, []any) any {
 	return nil
 }
 
 // Set does nothing.
-func (s *Fake) Set(context.Context, types.Metric, time.Time, []any, any) {
+func (s *Fake) Set(context.Context, types.Metric, []any, any) {
 }
 
 // Del does nothing.
@@ -48,7 +48,7 @@ func (s *Fake) Del(context.Context, types.Metric, []any) {
 }
 
 // Incr does nothing.
-func (s *Fake) Incr(context.Context, types.Metric, time.Time, []any, any) {
+func (s *Fake) Incr(context.Context, types.Metric, []any, any) {
 }
 
 // GetAll returns the pre-set list of cells.

@@ -17,7 +17,6 @@ package metrics
 import (
 	"context"
 	"testing"
-	"time"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -35,13 +34,13 @@ func TestQuota(t *testing.T) {
 		fields := []any{"metric", "region", "project"}
 
 		UpdateQuota(c, 100.0, 25.0, "metric", "region", "project")
-		assert.Loosely(t, s.Get(c, quotaLimit, time.Time{}, fields).(float64), should.Equal(100.0))
-		assert.Loosely(t, s.Get(c, quotaRemaining, time.Time{}, fields).(float64), should.Equal(75.0))
-		assert.Loosely(t, s.Get(c, quotaUsage, time.Time{}, fields).(float64), should.Equal(25.0))
+		assert.Loosely(t, s.Get(c, quotaLimit, fields).(float64), should.Equal(100.0))
+		assert.Loosely(t, s.Get(c, quotaRemaining, fields).(float64), should.Equal(75.0))
+		assert.Loosely(t, s.Get(c, quotaUsage, fields).(float64), should.Equal(25.0))
 
 		UpdateQuota(c, 120.0, 40.0, "metric", "region", "project")
-		assert.Loosely(t, s.Get(c, quotaLimit, time.Time{}, fields).(float64), should.Equal(120.0))
-		assert.Loosely(t, s.Get(c, quotaRemaining, time.Time{}, fields).(float64), should.Equal(80.0))
-		assert.Loosely(t, s.Get(c, quotaUsage, time.Time{}, fields).(float64), should.Equal(40.0))
+		assert.Loosely(t, s.Get(c, quotaLimit, fields).(float64), should.Equal(120.0))
+		assert.Loosely(t, s.Get(c, quotaRemaining, fields).(float64), should.Equal(80.0))
+		assert.Loosely(t, s.Get(c, quotaUsage, fields).(float64), should.Equal(40.0))
 	})
 }

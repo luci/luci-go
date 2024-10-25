@@ -17,7 +17,6 @@ package rpcutil
 import (
 	"context"
 	"testing"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -52,13 +51,13 @@ func TestIdentityKindCountingInterceptor(t *testing.T) {
 				Identity: "user:user@example.com",
 			})
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, []any{"service", "method", "user"}), should.Equal(1))
 		})
 
 		t.Run(`anonymous`, func(t *ftt.Test) {
 			_, _ = interceptor(ctx, nil, &fakeServerInfo, fakeHandler)
-			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "user"}), should.BeNil)
-			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, time.Time{}, []any{"service", "method", "anonymous"}), should.Equal(1))
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, []any{"service", "method", "user"}), should.BeNil)
+			assert.Loosely(t, store.Get(ctx, IdentityKindCounter, []any{"service", "method", "anonymous"}), should.Equal(1))
 		})
 	})
 }

@@ -64,9 +64,9 @@ func TestTasks(t *testing.T) {
 			tc.Computed = time.Time{}
 			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 			updateTasks(c)
-			assert.Loosely(t, s.Get(c, tasksExecuting, time.Time{}, fields), should.BeNil)
-			assert.Loosely(t, s.Get(c, tasksPending, time.Time{}, fields), should.BeNil)
-			assert.Loosely(t, s.Get(c, tasksTotal, time.Time{}, fields), should.BeNil)
+			assert.Loosely(t, s.Get(c, tasksExecuting, fields), should.BeNil)
+			assert.Loosely(t, s.Get(c, tasksPending, fields), should.BeNil)
+			assert.Loosely(t, s.Get(c, tasksTotal, fields), should.BeNil)
 			assert.Loosely(t, datastore.Get(c, &TaskCount{
 				ID: tc.ID,
 			}), should.Equal(datastore.ErrNoSuchEntity))
@@ -74,9 +74,9 @@ func TestTasks(t *testing.T) {
 			tc.Computed = time.Now().UTC()
 			assert.Loosely(t, datastore.Put(c, tc), should.BeNil)
 			updateTasks(c)
-			assert.Loosely(t, s.Get(c, tasksExecuting, time.Time{}, fields).(int64), should.Equal(1))
-			assert.Loosely(t, s.Get(c, tasksPending, time.Time{}, fields).(int64), should.Equal(2))
-			assert.Loosely(t, s.Get(c, tasksTotal, time.Time{}, fields).(int64), should.Equal(3))
+			assert.Loosely(t, s.Get(c, tasksExecuting, fields).(int64), should.Equal(1))
+			assert.Loosely(t, s.Get(c, tasksPending, fields).(int64), should.Equal(2))
+			assert.Loosely(t, s.Get(c, tasksTotal, fields).(int64), should.Equal(3))
 			assert.Loosely(t, datastore.Get(c, &TaskCount{
 				ID: tc.ID,
 			}), should.BeNil)
