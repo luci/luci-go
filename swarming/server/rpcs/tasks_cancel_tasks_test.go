@@ -26,17 +26,15 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/secrets"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCancelTasks(t *testing.T) {
@@ -74,16 +72,16 @@ func TestCancelTasks(t *testing.T) {
 		_, err := call(&apipb.TasksCancelRequest{
 			Limit: -10,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		_, err = call(&apipb.TasksCancelRequest{
 			Limit: 1001,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Tags are required", t, func(t *ftt.Test) {
 		_, err := call(&apipb.TasksCancelRequest{})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("tags are required when cancelling multiple tasks"))
 	})
 
@@ -103,7 +101,7 @@ func TestCancelTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("Cancelling visible and invisible pool as admin: OK", func(t *ftt.Test) {
@@ -121,7 +119,7 @@ func TestCancelTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"k:v"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("Cancelling all pools as admin: OK", func(t *ftt.Test) {

@@ -23,14 +23,12 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestListTaskStates(t *testing.T) {
@@ -54,19 +52,19 @@ func TestListTaskStates(t *testing.T) {
 
 	ftt.Run("Requires task_ids", t, func(t *ftt.Test) {
 		_, err := call(nil)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("task_ids is required"))
 	})
 
 	ftt.Run("Limits task_ids", t, func(t *ftt.Test) {
 		_, err := call(make([]string, 1001))
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("task_ids length should be no more than"))
 	})
 
 	ftt.Run("Checks task_ids are valid", t, func(t *ftt.Test) {
 		_, err := call([]string{tasks["running-0"], "zzz"})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("task_ids: zzz: bad task ID"))
 	})
 
@@ -77,7 +75,7 @@ func TestListTaskStates(t *testing.T) {
 			tasks["running-2"],
 			tasks["running-0"],
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("%s is specified more than once", tasks["running-0"])))
 	})
 
@@ -87,7 +85,7 @@ func TestListTaskStates(t *testing.T) {
 			tasks["missing-0"],
 			tasks["pending-0"],
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("%s: no such task", tasks["missing-0"])))
 	})
 
@@ -97,7 +95,7 @@ func TestListTaskStates(t *testing.T) {
 			tasks["running-1"],
 			tasks["pending-0"],
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("%s: ", tasks["running-1"])))
 		assert.Loosely(t, err, should.ErrLike("doesn't have permission"))
 	})

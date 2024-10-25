@@ -24,17 +24,15 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCancelTask(t *testing.T) {
@@ -61,12 +59,12 @@ func TestCancelTask(t *testing.T) {
 
 		t.Run("empty taskID", func(t *ftt.Test) {
 			_, err := call(ctx, "", false)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("task request not exist", func(t *ftt.Test) {
 			_, err := call(ctx, taskID, false)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("acl check fails", func(t *ftt.Test) {
@@ -86,7 +84,7 @@ func TestCancelTask(t *testing.T) {
 				},
 			)
 			_, err = call(ctx, taskID, false)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("cancel", func(t *ftt.Test) {
@@ -110,7 +108,7 @@ func TestCancelTask(t *testing.T) {
 			t.Run("fail", func(t *ftt.Test) {
 				// No TaskResultSummary entity.
 				_, err = call(ctx, taskID, false)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 
 			t.Run("pass", func(t *ftt.Test) {

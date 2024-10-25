@@ -22,16 +22,14 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetRequest(t *testing.T) {
@@ -86,18 +84,18 @@ func TestGetRequest(t *testing.T) {
 
 	ftt.Run("Bad task ID", t, func(t *ftt.Test) {
 		_, err := call("")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Missing task", t, func(t *ftt.Test) {
 		// Note: existence of a task is not a secret (task IDs are predictable).
 		_, err := call(model.RequestKeyToTaskID(missingReq, model.AsRequest))
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 	})
 
 	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call(model.RequestKeyToTaskID(hiddenReq, model.AsRequest))
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("OK", t, func(t *ftt.Test) {

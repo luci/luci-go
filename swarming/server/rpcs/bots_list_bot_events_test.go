@@ -26,17 +26,15 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/secrets"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestListBotEvents(t *testing.T) {
@@ -116,7 +114,7 @@ func TestListBotEvents(t *testing.T) {
 			BotId: "",
 			Limit: 10,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
@@ -124,12 +122,12 @@ func TestListBotEvents(t *testing.T) {
 			BotId: "doesnt-matter",
 			Limit: -10,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		_, err = call(&apipb.BotEventsRequest{
 			BotId: "doesnt-matter",
 			Limit: 1001,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
@@ -137,7 +135,7 @@ func TestListBotEvents(t *testing.T) {
 			BotId:  "doesnt-matter",
 			Cursor: "!!!!",
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("No permissions", t, func(t *ftt.Test) {
@@ -145,7 +143,7 @@ func TestListBotEvents(t *testing.T) {
 			BotId: "hidden-bot",
 			Limit: 10,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
@@ -153,7 +151,7 @@ func TestListBotEvents(t *testing.T) {
 			BotId: "unknown-bot",
 			Limit: 10,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("All events", t, func(t *ftt.Test) {

@@ -23,16 +23,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/caching"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetToken(t *testing.T) {
@@ -62,6 +60,6 @@ func TestGetToken(t *testing.T) {
 	ftt.Run("Not authorized", t, func(t *ftt.Test) {
 		state := NewMockedRequestState()
 		_, err := srv.GetDetails(MockRequestState(ctx, state), nil)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 }

@@ -25,17 +25,15 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/secrets"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestListBotTasks(t *testing.T) {
@@ -154,7 +152,7 @@ func TestListBotTasks(t *testing.T) {
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Limit is checked", t, func(t *ftt.Test) {
@@ -163,13 +161,13 @@ func TestListBotTasks(t *testing.T) {
 			Limit: -10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		_, err = call(&apipb.BotTasksRequest{
 			BotId: "doesnt-matter",
 			Limit: 1001,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("Cursor is checked", t, func(t *ftt.Test) {
@@ -178,7 +176,7 @@ func TestListBotTasks(t *testing.T) {
 			Cursor: "!!!!",
 			State:  apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("No permissions", t, func(t *ftt.Test) {
@@ -187,7 +185,7 @@ func TestListBotTasks(t *testing.T) {
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
@@ -196,7 +194,7 @@ func TestListBotTasks(t *testing.T) {
 			Limit: 10,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Unsupported state filters", t, func(t *ftt.Test) {
@@ -214,7 +212,7 @@ func TestListBotTasks(t *testing.T) {
 				Limit: 10,
 				State: f,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("filter"))
 		}
 	})
@@ -235,7 +233,7 @@ func TestListBotTasks(t *testing.T) {
 				Sort:  pair.sort,
 				State: pair.state,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("sort"))
 		}
 	})
@@ -247,7 +245,7 @@ func TestListBotTasks(t *testing.T) {
 				State: apipb.StateQuery_QUERY_ALL,
 				Start: timestamppb.New(time.Date(1977, time.January, 1, 2, 3, 4, 0, time.UTC)),
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invalid start time"))
 		})
 

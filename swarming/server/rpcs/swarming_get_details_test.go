@@ -22,14 +22,12 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetDetails(t *testing.T) {
@@ -58,6 +56,6 @@ func TestGetDetails(t *testing.T) {
 
 	ftt.Run("Not authorized", t, func(t *ftt.Test) {
 		_, err := srv.GetDetails(MockRequestState(ctx, state), nil)
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 }

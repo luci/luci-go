@@ -24,17 +24,15 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetResult(t *testing.T) {
@@ -313,21 +311,21 @@ func TestGetResult(t *testing.T) {
 		t.Run("no task_id", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("task_id is required"))
 		})
 
 		t.Run("error with task_id", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "1", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("task_id 1: bad task ID: too small"))
 		})
 
 		t.Run("no such task", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99320", IncludePerformanceStats: false}
 			_, err := srv.GetResult(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("no such task"))
 		})
 
@@ -344,7 +342,7 @@ func TestGetResult(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, &trs), should.BeNil)
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99320", IncludePerformanceStats: false}
 			_, err = srv.GetResult(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("the caller \"user:test@example.com\" doesn't have permission \"swarming.tasks.get\" for the task \"65aba3a3e6b99320\""))
 		})
 	})

@@ -25,15 +25,13 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/tasks"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskBackendCancelTasks(t *testing.T) {
@@ -83,7 +81,7 @@ func TestTaskBackendCancelTasks(t *testing.T) {
 
 	ftt.Run("Limits task_ids", t, func(t *ftt.Test) {
 		_, err := call(make([]string, cancelTasksLimit+1), "swarming://target")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		assert.Loosely(t, err, should.ErrLike("the allowed max is"))
 	})
 

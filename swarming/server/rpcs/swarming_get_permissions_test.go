@@ -24,10 +24,10 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
@@ -36,8 +36,6 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSwarmingServer(t *testing.T) {
@@ -210,7 +208,7 @@ func TestSwarmingServer(t *testing.T) {
 			// We allow leaking existence of a task ID for better error message. Task
 			// ID is mostly random and it doesn't have any private bits in it.
 			_, err := callWithErr(authorizedID, "", unknownTaskID, nil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("Accessing bot", func(t *ftt.Test) {

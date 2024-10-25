@@ -27,12 +27,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTaskResults(t *testing.T) {
@@ -84,7 +82,7 @@ func TestTaskResults(t *testing.T) {
 			// Make one of RPCs fail. It should abort everything.
 			mockedRPC.errs = []error{status.Errorf(codes.PermissionDenied, "boom")}
 			res, err := impl.TaskResults(ctx, taskIDs, nil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, res, should.BeNil)
 		})
 	})

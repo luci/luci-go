@@ -29,16 +29,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSessionServer(t *testing.T) {
@@ -165,7 +163,7 @@ func TestSessionServer(t *testing.T) {
 				return nil, status.Errorf(codes.FailedPrecondition, "boom")
 			})
 			_, err := srv.CreateBotSession(ctx, &CreateBotSessionRequest{}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
@@ -508,7 +506,7 @@ func TestSessionServer(t *testing.T) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 			}, &botsrv.Request{})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("missing session ID"))
 		})
 
@@ -531,7 +529,7 @@ func TestSessionServer(t *testing.T) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "OK",
 			}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
@@ -539,13 +537,13 @@ func TestSessionServer(t *testing.T) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{
 				Status: "huh",
 			}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("unrecognized session status"))
 		})
 
 		t.Run("UpdateBotSession missing session status", func(t *ftt.Test) {
 			_, err := srv.UpdateBotSession(ctx, &UpdateBotSessionRequest{}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("missing session status"))
 		})
 
@@ -554,7 +552,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 				Lease:  &Lease{State: "huh"},
 			}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("unrecognized lease state"))
 		})
 
@@ -563,7 +561,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 				Lease:  &Lease{},
 			}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("missing lease state"))
 		})
 
@@ -572,7 +570,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 				Lease:  &Lease{State: "CANCELLED"},
 			}, fakeRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("unexpected lease state"))
 		})
 
@@ -626,7 +624,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			assert.Loosely(t, err, should.ErrLike("unexpected ACTIVE lease state transition to PENDING"))
 		})
 
@@ -650,7 +648,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			assert.Loosely(t, err, should.ErrLike("failed to unmarshal pending lease payload"))
 		})
 	})

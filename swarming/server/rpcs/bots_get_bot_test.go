@@ -25,16 +25,14 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetBot(t *testing.T) {
@@ -108,22 +106,22 @@ func TestGetBot(t *testing.T) {
 
 	ftt.Run("Bad bot ID", t, func(t *ftt.Test) {
 		_, err := call("")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 
 	ftt.Run("No permissions", t, func(t *ftt.Test) {
 		_, err := call("hidden-bot")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Bot not in a config", t, func(t *ftt.Test) {
 		_, err := call("unknown-bot")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Unconnected bot", t, func(t *ftt.Test) {
 		_, err := call("unconnected-bot")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 	})
 
 	ftt.Run("Alive bot", t, func(t *ftt.Test) {

@@ -32,19 +32,17 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestServerLevel(t *testing.T) {
@@ -135,7 +133,7 @@ func TestServerLevel(t *testing.T) {
 		res := chk.CheckServerPerm(ctx, PermTasksCancel)
 		assert.Loosely(t, res.Permitted, should.BeFalse)
 		err := res.ToGrpcErr()
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		assert.Loosely(t, err, should.ErrLike(`the caller "user:unknown@example.com" doesn't have server-level permission "swarming.tasks.cancel"`))
 
 		err = res.ToTaggedError()
@@ -217,7 +215,7 @@ func TestPoolLevel(t *testing.T) {
 				res := chk.CheckPoolPerm(ctx, pool, PermPoolsListBots)
 				assert.Loosely(t, res.Permitted, should.BeFalse)
 				err := res.ToGrpcErr()
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(
 					fmt.Sprintf(`the caller "user:unknown@example.com" doesn't have permission "swarming.pools.listBots"`+
 						` in the pool %q or the pool doesn't exist`, pool)))
@@ -285,7 +283,7 @@ func TestPoolLevel(t *testing.T) {
 			res := chk.CheckAllPoolsPerm(ctx, allPools, PermPoolsListBots)
 			assert.Loosely(t, res.InternalError, should.BeFalse)
 			err := res.ToGrpcErr()
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in some of the requested pools`))
 		})
 	})
@@ -328,7 +326,7 @@ func TestPoolLevel(t *testing.T) {
 			res := chk.CheckAnyPoolsPerm(ctx, []string{"hidden-pool-1", "deleted-pool-1"}, PermPoolsListBots)
 			assert.Loosely(t, res.InternalError, should.BeFalse)
 			err := res.ToGrpcErr()
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission "swarming.pools.listBots" in any of the requested pools`))
 		})
 	})
@@ -390,7 +388,7 @@ func TestBotLevel(t *testing.T) {
 		res := chk.CheckBotPerm(ctx, "hidden-bot", PermPoolsListBots)
 		assert.Loosely(t, res.InternalError, should.BeFalse)
 		err := res.ToGrpcErr()
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have permission `+
 			`"swarming.pools.listBots" in the pool that contains bot "hidden-bot" or this bot doesn't exist`))
 	})
@@ -509,7 +507,7 @@ func TestTaskLevel(t *testing.T) {
 		}, PermTasksCancel)
 		assert.Loosely(t, res.InternalError, should.BeFalse)
 		err := res.ToGrpcErr()
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		assert.Loosely(t, err, should.ErrLike(`the caller "user:authorized@example.com" doesn't have `+
 			`permission "swarming.tasks.cancel" for the task "65aba3a3e6b99310"`))
 	})
@@ -518,7 +516,7 @@ func TestTaskLevel(t *testing.T) {
 		chk := Checker{cfg: cfg, db: db, caller: authorizedID}
 		res := chk.CheckTaskPerm(ctx, &mockedTask{err: errors.New("BOOM")}, PermTasksCancel)
 		assert.Loosely(t, res.InternalError, should.BeTrue)
-		assert.Loosely(t, res.ToGrpcErr(), convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+		assert.Loosely(t, res.ToGrpcErr(), grpccode.ShouldBe(codes.Internal))
 		assert.Loosely(t, transient.Tag.In(res.ToTaggedError()), should.BeTrue)
 	})
 }

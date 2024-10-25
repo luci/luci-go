@@ -23,17 +23,15 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/model/internalmodelpb"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetBotDimensions(t *testing.T) {
@@ -111,12 +109,12 @@ func TestGetBotDimensions(t *testing.T) {
 
 	ftt.Run("Concrete pool: no permission", t, func(t *ftt.Test) {
 		_, err := call("hidden-pool")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("Concrete pool: unknown pool", t, func(t *ftt.Test) {
 		_, err := call("unknown-pool")
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 
 	ftt.Run("All pools: admin", t, func(t *ftt.Test) {
