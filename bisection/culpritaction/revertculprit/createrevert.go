@@ -44,7 +44,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 			return false, "", errors.Annotate(err, "get test failure analysis for suspect").Err()
 		}
 		if len(tfa.SheriffRotations) == 0 {
-			return false, "the builder of the failed test(s) is not being watched by gardeners", nil
+			return false, "the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves", nil
 		}
 	} else if culpritModel.AnalysisType == bisectionpb.AnalysisType_COMPILE_FAILURE_ANALYSIS {
 		buildID, err := datastoreutil.GetBuildIDForCompileSuspect(ctx, culpritModel)
@@ -59,7 +59,7 @@ func isCulpritRevertible(ctx context.Context, gerritClient *gerrit.Client,
 			return false, "", errors.Reason("no build found: %d", buildID).Err()
 		}
 		if len(build.SheriffRotations) == 0 {
-			return false, "the associated builder is not being watched by gardeners", nil
+			return false, "the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves", nil
 		}
 	}
 

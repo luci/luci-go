@@ -311,7 +311,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 							" change as the cause of a test failure. See the analysis: %s\n\n"+
 							"Sample build with failed test: %s\n"+
 							"Affected test(s):\n%s\n"+
-							"A revert for this change was not created because the builder of the failed test(s) is not being watched by gardeners.\n\n"+
+							"A revert for this change was not created because the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves.\n\n"+
 							"If this is a false positive, please report it at %s", analysisURL, buildURL, testLinks, bugURL),
 					},
 				)).Times(1)
@@ -357,7 +357,7 @@ func TestProcessTestFailureCulpritTask(t *testing.T) {
 							"[testID4](https://ci.chromium.org/ui/test/chromium/testID4?q=VHash%%3Avarianthash4)\n"+
 							"[testID5](https://ci.chromium.org/ui/test/chromium/testID5?q=VHash%%3Avarianthash5)\n"+
 							"and 2 more ...\n"+
-							"A revert for this change was not created because the builder of the failed test(s) is not being watched by gardeners.\n\n"+
+							"A revert for this change was not created because the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves.\n\n"+
 							"If this is a false positive, please report it at %s", analysisURL, buildURL, bugURL),
 					},
 				)).Times(1)

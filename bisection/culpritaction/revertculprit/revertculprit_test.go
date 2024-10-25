@@ -574,7 +574,7 @@ func TestRevertCulprit(t *testing.T) {
 					Message: fmt.Sprintf("LUCI Bisection has identified this"+
 						" change as the culprit of a build failure. See the analysis: %s\n\n"+
 						"A revert for this change was not created because"+
-						" the associated builder is not being watched by gardeners.\n\n"+
+						" the builder that this CL broke is not watched by gardeners, therefore less important. You can consider revert this CL, fix forward or let builder owners resolve it themselves.\n\n"+
 						"Sample failed build: %s\n\nIf this is a false positive, please report"+
 						" it at %s", analysisURL, buildURL, bugURL),
 				},
