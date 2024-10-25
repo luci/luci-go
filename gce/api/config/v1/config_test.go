@@ -21,10 +21,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -51,9 +49,9 @@ func TestConfig(t *testing.T) {
 				cfg := &Config{}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("at least one disk is required"))
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("prefix is required"))
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration or seconds is required"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("at least one disk is required"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("prefix is required"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("duration or seconds is required"))
 			})
 
 			t.Run("current amount", func(t *ftt.Test) {
@@ -62,7 +60,7 @@ func TestConfig(t *testing.T) {
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("current amount must not be specified"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("current amount must not be specified"))
 			})
 
 			t.Run("revision", func(t *ftt.Test) {
@@ -71,7 +69,7 @@ func TestConfig(t *testing.T) {
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("revision must not be specified"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("revision must not be specified"))
 			})
 		})
 

@@ -22,10 +22,8 @@ import (
 
 	pb "go.chromium.org/luci/server/quotabeta/proto"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -92,7 +90,7 @@ func TestQuotaConfig(t *testing.T) {
 				ValidatePolicy(ctx, nil)
 				err := ctx.Finalize()
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("name must match"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("name must match"))
 			})
 
 			t.Run("empty", func(t *ftt.Test) {
@@ -101,7 +99,7 @@ func TestQuotaConfig(t *testing.T) {
 				ValidatePolicy(ctx, p)
 				err := ctx.Finalize()
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("name must match"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("name must match"))
 			})
 
 			t.Run("invalid char", func(t *ftt.Test) {
@@ -112,7 +110,7 @@ func TestQuotaConfig(t *testing.T) {
 				ValidatePolicy(ctx, p)
 				err := ctx.Finalize()
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("name must match"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("name must match"))
 			})
 
 			t.Run("user", func(t *ftt.Test) {
@@ -132,7 +130,7 @@ func TestQuotaConfig(t *testing.T) {
 				ValidatePolicy(ctx, p)
 				err := ctx.Finalize()
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("name must not exceed"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("name must not exceed"))
 			})
 		})
 
@@ -146,7 +144,7 @@ func TestQuotaConfig(t *testing.T) {
 				ValidatePolicy(ctx, p)
 				err := ctx.Finalize()
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("resources must not be negative"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("resources must not be negative"))
 			})
 
 			t.Run("zero", func(t *ftt.Test) {
@@ -180,7 +178,7 @@ func TestQuotaConfig(t *testing.T) {
 				err := ctx.Finalize()
 
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err.(*validation.Error).Errors, convey.Adapt(ShouldContainErr)("replenishment must not be negative"))
+				assert.Loosely(t, err.(*validation.Error).Errors, should.ErrLike("replenishment must not be negative"))
 			})
 
 			t.Run("zero", func(t *ftt.Test) {

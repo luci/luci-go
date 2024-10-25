@@ -34,10 +34,8 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/lucictx"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -234,7 +232,7 @@ func TestSubprocess(t *testing.T) {
 				shutdown()
 
 				bld, err := sp.Wait()
-				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process is interrupted"))
+				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process is interrupted"))
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
 				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))
 			})
@@ -243,7 +241,7 @@ func TestSubprocess(t *testing.T) {
 				tc.Add(100 * time.Second) // hits soft deadline
 
 				bld, err := sp.Wait()
-				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process timed out"))
+				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process timed out"))
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.Equal(terminateExitCode))
 				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{
 					StatusDetails: &bbpb.StatusDetails{Timeout: &bbpb.StatusDetails_Timeout{}},
@@ -254,7 +252,7 @@ func TestSubprocess(t *testing.T) {
 				cancel()
 
 				bld, err := sp.Wait()
-				assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("luciexe process's context is cancelled"))
+				assert.Loosely(t, err, should.UnwrapToErrStringLike("luciexe process's context is cancelled"))
 				// The exit code for killed process varies on different platform.
 				assert.Loosely(t, sp.cmd.ProcessState.ExitCode(), should.NotEqual(unexpectedErrorExitCode))
 				assert.Loosely(t, bld, should.Resemble(&bbpb.Build{}))

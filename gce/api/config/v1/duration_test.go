@@ -21,10 +21,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -79,7 +77,7 @@ func TestDuration(t *testing.T) {
 				d := &TimePeriod_Duration{}
 				d.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration must match regex"))
+				assert.Loosely(t, errs, should.ErrLike("duration must match regex"))
 			})
 
 			t.Run("invalid", func(t *ftt.Test) {

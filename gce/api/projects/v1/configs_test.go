@@ -20,10 +20,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -42,7 +40,7 @@ func TestConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("project is required"))
+				assert.Loosely(t, errs, should.ErrLike("project is required"))
 			})
 
 			t.Run("duplicate", func(t *ftt.Test) {
@@ -61,7 +59,7 @@ func TestConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("is not unique"))
+				assert.Loosely(t, errs, should.ErrLike("is not unique"))
 			})
 		})
 

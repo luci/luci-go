@@ -20,10 +20,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -48,7 +46,7 @@ func TestValidateConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("prefix is required"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("prefix is required"))
 			})
 
 			t.Run("duplicate", func(t *ftt.Test) {
@@ -67,7 +65,7 @@ func TestValidateConfigs(t *testing.T) {
 				}
 				cfgs.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("is a prefix of"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("is a prefix of"))
 			})
 		})
 	})

@@ -23,10 +23,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -180,7 +178,7 @@ func TestAmount(t *testing.T) {
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must be non-negative"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("minimum amount must be non-negative"))
 			})
 
 			t.Run("max", func(t *ftt.Test) {
@@ -189,7 +187,7 @@ func TestAmount(t *testing.T) {
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("maximum amount must be non-negative"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("maximum amount must be non-negative"))
 			})
 
 			t.Run("min > max", func(t *ftt.Test) {
@@ -199,7 +197,7 @@ func TestAmount(t *testing.T) {
 				}
 				a.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("minimum amount must not exceed maximum amount"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("minimum amount must not exceed maximum amount"))
 			})
 
 			t.Run("schedule", func(t *ftt.Test) {
@@ -211,8 +209,8 @@ func TestAmount(t *testing.T) {
 					}
 					a.Validate(c)
 					errs := c.Finalize().(*validation.Error).Errors
-					assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("duration or seconds is required"))
-					assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("time must match regex"))
+					assert.Loosely(t, errs, should.UnwrapToErrStringLike("duration or seconds is required"))
+					assert.Loosely(t, errs, should.UnwrapToErrStringLike("time must match regex"))
 				})
 
 				t.Run("conflict", func(t *ftt.Test) {
@@ -240,7 +238,7 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
+						assert.Loosely(t, errs, should.UnwrapToErrStringLike("start time is before"))
 					})
 
 					t.Run("different day", func(t *ftt.Test) {
@@ -267,7 +265,7 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
+						assert.Loosely(t, errs, should.UnwrapToErrStringLike("start time is before"))
 					})
 
 					t.Run("different week", func(t *ftt.Test) {
@@ -294,7 +292,7 @@ func TestAmount(t *testing.T) {
 						}
 						a.Validate(c)
 						errs := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("start time is before"))
+						assert.Loosely(t, errs, should.UnwrapToErrStringLike("start time is before"))
 					})
 				})
 			})

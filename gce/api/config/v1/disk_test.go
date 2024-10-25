@@ -20,10 +20,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -74,7 +72,7 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("persistent disk must use SCSI"))
+					assert.Loosely(t, err, should.ErrLike("persistent disk must use SCSI"))
 				})
 				t.Run("Persistent + No Image", func(t *ftt.Test) {
 					d := &Disk{
@@ -84,7 +82,7 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("image must match"))
+					assert.Loosely(t, err, should.ErrLike("image must match"))
 				})
 				t.Run("Scratch + Image", func(t *ftt.Test) {
 					d := &Disk{
@@ -94,7 +92,7 @@ func TestDisk(t *testing.T) {
 					}
 					d.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("local ssd cannot use an image"))
+					assert.Loosely(t, err, should.ErrLike("local ssd cannot use an image"))
 				})
 			})
 

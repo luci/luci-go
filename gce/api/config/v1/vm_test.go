@@ -20,10 +20,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -107,11 +105,11 @@ func TestVM(t *testing.T) {
 					vm := &VM{}
 					vm.Validate(c)
 					err := c.Finalize().(*validation.Error).Errors
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("at least one disk is required"))
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("machine type is required"))
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("at least one network interface is required"))
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("project is required"))
-					assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("zone is required"))
+					assert.Loosely(t, err, should.UnwrapToErrStringLike("at least one disk is required"))
+					assert.Loosely(t, err, should.UnwrapToErrStringLike("machine type is required"))
+					assert.Loosely(t, err, should.UnwrapToErrStringLike("at least one network interface is required"))
+					assert.Loosely(t, err, should.UnwrapToErrStringLike("project is required"))
+					assert.Loosely(t, err, should.UnwrapToErrStringLike("zone is required"))
 				})
 
 				t.Run("metadata", func(t *ftt.Test) {
@@ -123,7 +121,7 @@ func TestVM(t *testing.T) {
 						}
 						vm.Validate(c)
 						err := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("metadata from text must be in key:value form"))
+						assert.Loosely(t, err, should.UnwrapToErrStringLike("metadata from text must be in key:value form"))
 					})
 
 					t.Run("file", func(t *ftt.Test) {
@@ -138,7 +136,7 @@ func TestVM(t *testing.T) {
 						}
 						vm.Validate(c)
 						err := c.Finalize().(*validation.Error).Errors
-						assert.Loosely(t, err, convey.Adapt(ShouldContainErr)("metadata from text must be in key:value form"))
+						assert.Loosely(t, err, should.UnwrapToErrStringLike("metadata from text must be in key:value form"))
 					})
 				})
 			})

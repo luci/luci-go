@@ -20,10 +20,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -38,7 +36,7 @@ func TestConfig(t *testing.T) {
 				cfg := &Config{}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("project is required"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("project is required"))
 			})
 
 			t.Run("revision", func(t *ftt.Test) {
@@ -47,7 +45,7 @@ func TestConfig(t *testing.T) {
 				}
 				cfg.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("revision must not be specified"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("revision must not be specified"))
 			})
 		})
 

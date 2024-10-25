@@ -23,10 +23,8 @@ import (
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -130,8 +128,8 @@ func TestTimeOfDay(t *testing.T) {
 				tod := &TimeOfDay{}
 				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("time must match regex"))
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("day must be specified"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("time must match regex"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("day must be specified"))
 			})
 
 			t.Run("day", func(t *ftt.Test) {
@@ -140,7 +138,7 @@ func TestTimeOfDay(t *testing.T) {
 				}
 				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("day must be specified"))
+				assert.Loosely(t, errs, should.ErrLike("day must be specified"))
 			})
 
 			t.Run("location", func(t *ftt.Test) {
@@ -149,7 +147,7 @@ func TestTimeOfDay(t *testing.T) {
 				}
 				tod.Validate(c)
 				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, convey.Adapt(ShouldContainErr)("invalid location"))
+				assert.Loosely(t, errs, should.UnwrapToErrStringLike("invalid location"))
 			})
 		})
 

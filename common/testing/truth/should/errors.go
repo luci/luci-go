@@ -54,7 +54,78 @@ func ErrLikeString(substring string) comparison.Func[error] {
 			Actual(a).
 			AddFindingf("actual.Error()", "%q", a).
 			Expected(substring).
-			AddFindingf("Substring", substring).
+			AddFindingf("Substring", "%q", substring).
+			Summary
+	}
+}
+
+// UnwrapToErrStringLike returns failure when unwrapping the error repeatedly
+// doesn't yield an error whose text contains `substring`.
+//
+// This is useful when dealing with MultiError types which implement
+// `Unwrap() []error`, but whose Error function summarize the error.
+//
+// Strongly consider using a real target error instead so that this works with
+// `errors.Is` in typical code, e.g.:
+//
+//	var ErrMyTargetErr = errors.New("some description")
+//
+//	...
+//	return ..., MultiError{
+//	  ...,
+//	  errors.Annotate(ErrMyTargetErr, "some extra info").Error(),
+//	}
+//
+//	...
+//	if errors.Is(err, ErrMyTargetErr) {
+//	  // do something
+//	}
+func UnwrapToErrStringLike(substring string) comparison.Func[error] {
+	const cmpName = "should.UnwrapToErrStringLike"
+	if substring == "" {
+		return func(error) *failure.Summary {
+			return comparison.NewSummaryBuilder(cmpName).
+				Because(`"" is a substring of every string. Use ErrLikeError(nil) or BeNil.`).
+				Summary
+		}
+	}
+
+	return func(actual error) *failure.Summary {
+		count := 0
+		strReprs := []string{}
+		errStack := []error{actual}
+		for len(errStack) > 0 {
+			err := errStack[0]
+			errStack = errStack[1:]
+
+			errS := err.Error()
+			strReprs = append(strReprs, errS)
+
+			if strings.Contains(errS, substring) {
+				return nil
+			}
+			switch x := err.(type) {
+			case interface{ Unwrap() []error }:
+				toAdd := x.Unwrap()
+				for _, addable := range toAdd {
+					if addable != nil {
+						errStack = append(errStack, addable)
+						count += 1
+					}
+				}
+			case interface{ Unwrap() error }:
+				if unwrapped := x.Unwrap(); unwrapped != nil {
+					errStack = append(errStack, x.Unwrap())
+					count += 1
+				}
+			}
+		}
+
+		return comparison.NewSummaryBuilder(cmpName).
+			Because("`$unwrapped.Error()` is missing substring after unwrapping %d errors.", count).
+			Actual(actual).
+			AddFindingf("$unwrapped values", strings.Join(strReprs, "\n")).
+			AddFindingf("Substring", "%q", substring).
 			Summary
 	}
 }

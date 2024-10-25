@@ -19,12 +19,9 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestParseGetBuildRequest(t *testing.T) {
@@ -40,14 +37,14 @@ func TestParseGetBuildRequest(t *testing.T) {
 		t.Run("build number", func(t *ftt.Test) {
 			req, err := ParseGetBuildRequest("chromium/ci/linux-rel/1")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, req, convey.Adapt(ShouldResembleProtoText)(`
-				builder {
-					project: "chromium"
-					bucket: "ci"
-					builder: "linux-rel"
-				}
-				build_number: 1
-			`))
+			assert.Loosely(t, req, should.Match(&pb.GetBuildRequest{
+				Builder: &pb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "linux-rel",
+				},
+				BuildNumber: 1,
+			}))
 		})
 	})
 }
