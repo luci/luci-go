@@ -35,7 +35,7 @@ class GroupListing {
     const name = data.name;
     const members = data.members || [];
     const globs = data.globs || [];
-    const nestedGroups = data.nestedGroups || [];
+    const nestedGroups = data.nested || [];
     const redacted = data.numRedacted || [];
 
     const title = clone.querySelector('#title');
