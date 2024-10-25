@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -37,11 +38,9 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -190,7 +189,8 @@ func TestQuery(t *testing.T) {
 		t.Run(`An empty query will return an error.`, func(t *ftt.Test) {
 			req.Path = ""
 			_, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid query `path`"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid query `path`"))
 		})
 
 		t.Run(`Handles non-existent project.`, func(t *ftt.Test) {
@@ -199,13 +199,13 @@ func TestQuery(t *testing.T) {
 			t.Run(`Anon`, func(t *ftt.Test) {
 				env.ActAsAnon()
 				_, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
 			})
 
 			t.Run(`User`, func(t *ftt.Test) {
 				env.ActAsNobody()
 				_, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 		})
 
@@ -274,7 +274,7 @@ func TestQuery(t *testing.T) {
 
 			req.Path = "meta/+/**"
 			resp, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, shouldHaveLogPaths(prefixToAllStreamPaths["meta"]...))
 		})
 
@@ -282,7 +282,8 @@ func TestQuery(t *testing.T) {
 			req.Path = "***"
 
 			_, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid query `path`"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid query `path`"))
 		})
 
 		t.Run(`A query with an invalid Next cursor will return BadRequest error.`, func(t *ftt.Test) {
@@ -291,7 +292,8 @@ func TestQuery(t *testing.T) {
 			fb.BreakFeatures(errors.New("testing error"), "DecodeCursor")
 
 			_, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid `next` value"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invalid `next` value"))
 		})
 
 		t.Run(`A datastore query error will return InternalServer error.`, func(t *ftt.Test) {
@@ -299,7 +301,7 @@ func TestQuery(t *testing.T) {
 			fb.BreakFeatures(errors.New("testing error"), "Run")
 
 			_, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 		})
 
 		t.Run(`When querying for "testing/+/baz"`, func(t *ftt.Test) {
@@ -308,7 +310,7 @@ func TestQuery(t *testing.T) {
 			tls := streams["testing/+/baz"]
 			t.Run(`State is not returned.`, func(t *ftt.Test) {
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
 				assert.Loosely(t, resp.Streams, should.HaveLength(1))
@@ -322,7 +324,7 @@ func TestQuery(t *testing.T) {
 
 				t.Run(`When not requesting protobufs, returns a descriptor structure.`, func(t *ftt.Test) {
 					resp, err := svr.Query(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz"))
 
 					assert.Loosely(t, resp.Streams, should.HaveLength(1))
@@ -340,7 +342,7 @@ func TestQuery(t *testing.T) {
 					ds.GetTestable(c).CatchupIndexes()
 
 					_, err := svr.Query(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`When requesting protobufs, returns the raw protobuf descriptor.`, func(t *ftt.Test) {
@@ -371,7 +373,7 @@ func TestQuery(t *testing.T) {
 					req.Next = next
 
 					resp, err := svr.Query(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 
 					for _, svr := range resp.Streams {
 						seen = append(seen, svr.Path)
@@ -396,7 +398,8 @@ func TestQuery(t *testing.T) {
 				req.Purged = logdog.QueryRequest_YES
 
 				_, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("non-admin user cannot request purged log streams"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("non-admin user cannot request purged log streams"))
 			})
 
 			t.Run(`When the user is an administrator`, func(t *ftt.Test) {
@@ -406,7 +409,7 @@ func TestQuery(t *testing.T) {
 					req.Purged = logdog.QueryRequest_YES
 
 					resp, err := svr.Query(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogPaths(
 						"meta/+/terminated/archived/purged/foo",
 						"meta/+/purged/foo",
@@ -417,7 +420,7 @@ func TestQuery(t *testing.T) {
 					req.Purged = logdog.QueryRequest_NO
 
 					resp, err := svr.Query(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogPaths(
 						"meta/+/binary/foo",
 						"meta/+/datagram/foo",
@@ -431,7 +434,7 @@ func TestQuery(t *testing.T) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_TEXT}
 
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/archived/foo", "meta/+/terminated/foo"))
 			})
 
@@ -439,7 +442,7 @@ func TestQuery(t *testing.T) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_BINARY}
 
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/binary/foo"))
 			})
 
@@ -447,7 +450,7 @@ func TestQuery(t *testing.T) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: logpb.StreamType_DATAGRAM}
 
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("meta/+/datagram/foo"))
 			})
 
@@ -455,7 +458,7 @@ func TestQuery(t *testing.T) {
 				req.StreamType = &logdog.QueryRequest_StreamTypeFilter{Value: -1}
 
 				_, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 		})
 
@@ -464,7 +467,7 @@ func TestQuery(t *testing.T) {
 			req.ContentType = "other"
 
 			resp, err := svr.Query(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, shouldHaveLogPaths("other/+/baz", "other/+/foo/bar"))
 		})
 
@@ -474,7 +477,7 @@ func TestQuery(t *testing.T) {
 				req.Tags["baz"] = ""
 
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz", "testing/+/foo/bar/baz"))
 			})
 
@@ -484,7 +487,7 @@ func TestQuery(t *testing.T) {
 				req.Tags["prefix"] = "testing"
 
 				resp, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				assert.Loosely(t, resp, shouldHaveLogPaths("testing/+/baz", "testing/+/foo/bar/baz"))
 			})
 
@@ -493,7 +496,8 @@ func TestQuery(t *testing.T) {
 				req.Tags["+++not a valid tag+++"] = ""
 
 				_, err := svr.Query(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid tag constraint"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("invalid tag constraint"))
 			})
 		})
 	})

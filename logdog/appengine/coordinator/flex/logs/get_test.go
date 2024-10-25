@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -48,11 +49,9 @@ import (
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -188,19 +187,19 @@ func testGetImpl(t *testing.T, archived bool) {
 				fb.BreakFeatures(errors.New("testing error"), "GetMulti")
 
 				_, err := svr.Get(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 
 			t.Run(`Will fail with InvalidArgument if the project name is invalid.`, func(t *ftt.Test) {
 				req.Project = "!!! invalid project name !!!"
 				_, err := svr.Get(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run(`Will fail with NotFound if the log path does not exist (different path).`, func(t *ftt.Test) {
 				req.Path = "testing/+/does/not/exist"
 				_, err := svr.Get(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 
 			t.Run(`Will handle non-existent project.`, func(t *ftt.Test) {
@@ -210,13 +209,13 @@ func testGetImpl(t *testing.T, archived bool) {
 				t.Run(`Anon`, func(t *ftt.Test) {
 					env.ActAsAnon()
 					_, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
 				})
 
 				t.Run(`User`, func(t *ftt.Test) {
 					env.ActAsNobody()
 					_, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				})
 			})
 
@@ -336,14 +335,14 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					t.Run(`Will return NotFound if the user is not an administrator.`, func(t *ftt.Test) {
 						_, err := svr.Get(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 					})
 
 					t.Run(`Will process the request if the user is an administrator.`, func(t *ftt.Test) {
 						env.JoinAdmins()
 
 						resp, err := svr.Get(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 					})
 				})
@@ -353,18 +352,18 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.State = false
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp.Logs, should.HaveLength(0))
 				})
 
 				t.Run(`Will successfully retrieve a stream path.`, func(t *ftt.Test) {
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 
 					t.Run(`Will successfully retrieve the stream path again (caching).`, func(t *ftt.Test) {
 						resp, err := svr.Get(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 					})
 				})
@@ -373,7 +372,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.Index = 4
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(4, 5))
 				})
 
@@ -381,7 +380,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.Index = 6
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, len(resp.Logs), should.BeZero)
 				})
 
@@ -390,7 +389,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.Index = 6
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(7))
 				})
 
@@ -398,7 +397,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = 1
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
@@ -406,7 +405,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = frameSize(0)
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
@@ -414,7 +413,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = frameSize(0) + 1
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0))
 				})
 
@@ -422,7 +421,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = frameSize(0, 1)
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1))
 				})
 
@@ -430,7 +429,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = frameSize(0, 1, 2)
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
@@ -438,7 +437,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.ByteCount = frameSize(0, 1, 2) + 1
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
 
@@ -448,7 +447,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					t.Run(`Will successfully retrieve stream state.`, func(t *ftt.Test) {
 						resp, err := svr.Get(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 						assert.Loosely(t, len(resp.Logs), should.BeZero)
 					})
@@ -459,7 +458,7 @@ func testGetImpl(t *testing.T, archived bool) {
 						putLogStream(c)
 
 						_, err := svr.Get(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 					})
 				})
 
@@ -516,14 +515,14 @@ func testGetImpl(t *testing.T, archived bool) {
 					}
 
 					_, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Will successfully retrieve both logs and stream state.`, func(t *ftt.Test) {
 					req.State = true
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 				})
@@ -536,13 +535,13 @@ func testGetImpl(t *testing.T, archived bool) {
 					}
 
 					_, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Will enforce a maximum count of 2.`, func(t *ftt.Test) {
 					req.LogCount = 2
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1))
 				})
 
@@ -550,7 +549,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.State = true
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2))
 
 					// Confirm that this has protobufs.
@@ -567,7 +566,7 @@ func testGetImpl(t *testing.T, archived bool) {
 				t.Run(`Will successfully retrieve all records if non-contiguous is allowed.`, func(t *ftt.Test) {
 					req.NonContiguous = true
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0, 1, 2, 4, 5, 7))
 				})
 
@@ -575,7 +574,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.LogCount = 1
 
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(0))
 
 					assert.Loosely(t, resp.Logs[0].GetText(), should.Resemble(&logpb.Text{
@@ -590,7 +589,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.Index = 4
 					req.LogCount = 1
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(4))
 					assert.Loosely(t, resp.Logs[0].GetBinary(), should.Resemble(&logpb.Binary{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
@@ -601,7 +600,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					req.Index = 5
 					req.LogCount = 1
 					resp, err := svr.Get(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(5))
 					assert.Loosely(t, resp.Logs[0].GetDatagram(), should.Resemble(&logpb.Datagram{
 						Data: []byte{0x00, 0x01, 0x02, 0x03},
@@ -630,7 +629,7 @@ func testGetImpl(t *testing.T, archived bool) {
 
 				t.Run(`Will successfully retrieve a stream path.`, func(t *ftt.Test) {
 					resp, err := svr.Tail(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
 					assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 
@@ -642,7 +641,7 @@ func testGetImpl(t *testing.T, archived bool) {
 						env.StorageCache.Clear()
 
 						resp, err := svr.Tail(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp, shouldHaveLogs(tailIndex))
 						assert.Loosely(t, resp.State, should.Resemble(buildLogStreamState(tls.Stream, tls.State)))
 

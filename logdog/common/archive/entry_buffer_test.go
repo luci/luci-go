@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/api/logpb"
-	//. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestEntryBuffer(t *testing.T) {

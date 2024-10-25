@@ -17,14 +17,14 @@ package services
 import (
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/server/auth"
+	"google.golang.org/grpc/codes"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -41,13 +41,13 @@ func TestServiceAuth(t *testing.T) {
 				c = auth.WithState(c, nil)
 
 				_, err := svr.Prelude(c, "test", nil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 
 			t.Run(`With an authentication state`, func(t *ftt.Test) {
 				t.Run(`Will reject users who are not logged in.`, func(t *ftt.Test) {
 					_, err := svr.Prelude(c, "test", nil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				})
 
 				t.Run(`When a user is logged in`, func(t *ftt.Test) {
@@ -55,7 +55,7 @@ func TestServiceAuth(t *testing.T) {
 
 					t.Run(`Will reject users who are not members of the service group.`, func(t *ftt.Test) {
 						_, err := svr.Prelude(c, "test", nil)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					})
 
 					t.Run(`Will allow users who are members of the service group.`, func(t *ftt.Test) {

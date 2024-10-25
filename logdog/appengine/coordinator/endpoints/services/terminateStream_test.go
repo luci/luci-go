@@ -22,15 +22,15 @@ import (
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"google.golang.org/grpc/codes"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -59,7 +59,7 @@ func TestTerminateStream(t *testing.T) {
 
 		t.Run(`Returns Forbidden error if not a service.`, func(t *ftt.Test) {
 			_, err := svr.TerminateStream(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run(`When logged in as a service`, func(t *ftt.Test) {
@@ -71,7 +71,7 @@ func TestTerminateStream(t *testing.T) {
 
 				t.Run(`Can be marked terminal and schedules an archival mutation.`, func(t *ftt.Test) {
 					_, err := svr.TerminateStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					ds.GetTestable(c).CatchupIndexes()
 
 					// Reload the state and confirm.
@@ -84,7 +84,7 @@ func TestTerminateStream(t *testing.T) {
 
 					t.Run(`Can be marked terminal again (idempotent).`, func(t *ftt.Test) {
 						_, err := svr.TerminateStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 
 						// Reload state and confirm.
 						assert.Loosely(t, tls.Get(c), should.BeNil)
@@ -97,7 +97,8 @@ func TestTerminateStream(t *testing.T) {
 					t.Run(`Will reject attempts to change the terminal index.`, func(t *ftt.Test) {
 						req.TerminalIndex = 1338
 						_, err := svr.TerminateStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("Log stream is incompatibly terminated."))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+						assert.Loosely(t, err, should.ErrLike("Log stream is incompatibly terminated."))
 
 						// Reload state and confirm.
 						assert.Loosely(t, tls.Get(c), should.BeNil)
@@ -110,7 +111,8 @@ func TestTerminateStream(t *testing.T) {
 					t.Run(`Will reject attempts to clear the terminal index.`, func(t *ftt.Test) {
 						req.TerminalIndex = -1
 						_, err := svr.TerminateStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Negative terminal index."))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("Negative terminal index."))
 
 						// Reload state and confirm.
 						assert.Loosely(t, tls.Get(c), should.BeNil)
@@ -125,32 +127,35 @@ func TestTerminateStream(t *testing.T) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 					_, err := svr.TerminateStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Will return an internal server error if Get() fails.`, func(t *ftt.Test) {
 					c, fb := featureBreaker.FilterRDS(c, nil)
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
 					_, err := svr.TerminateStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Will return a bad request error if the secret doesn't match.`, func(t *ftt.Test) {
 					req.Secret[0] ^= 0xFF
 					_, err := svr.TerminateStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Request secret doesn't match the stream secret."))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("Request secret doesn't match the stream secret."))
 				})
 			})
 
 			t.Run(`Will not try and terminate a stream with an invalid path.`, func(t *ftt.Test) {
 				req.Id = "!!!invalid path!!!"
 				_, err := svr.TerminateStream(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid ID"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("Invalid ID"))
 			})
 
 			t.Run(`Will fail if the stream does not exist.`, func(t *ftt.Test) {
 				_, err := svr.TerminateStream(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("log stream doesn't exist"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("log stream doesn't exist"))
 			})
 		})
 	})

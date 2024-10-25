@@ -22,19 +22,19 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/taskqueue"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 	"go.chromium.org/luci/logdog/common/types"
+	"google.golang.org/grpc/codes"
 )
 
 func TestRegisterStream(t *testing.T) {
@@ -58,7 +58,7 @@ func TestRegisterStream(t *testing.T) {
 			env.ActAsNobody()
 
 			_, err := svr.RegisterStream(c, &logdog.RegisterStreamRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run(`When registering a testing log sream, "testing/+/foo/bar"`, func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestRegisterStream(t *testing.T) {
 
 			t.Run(`Returns FailedPrecondition when the Prefix is not registered.`, func(t *ftt.Test) {
 				_, err := svr.RegisterStream(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			})
 
 			t.Run(`When the Prefix is registered`, func(t *ftt.Test) {
@@ -97,7 +97,7 @@ func TestRegisterStream(t *testing.T) {
 					created := ds.RoundTime(env.Clock.Now())
 
 					resp, err := svr.RegisterStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, should.Resemble(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
@@ -125,7 +125,7 @@ func TestRegisterStream(t *testing.T) {
 						env.Clock.Set(created.Add(10 * time.Minute))
 
 						resp, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						assert.Loosely(t, resp, should.Resemble(expResp))
 
 						tls.WithProjectNamespace(c, func(c context.Context) {
@@ -156,7 +156,8 @@ func TestRegisterStream(t *testing.T) {
 					t.Run(`Will not re-register if secrets don't match.`, func(t *ftt.Test) {
 						req.Secret[0] = 0xAB
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invalid secret"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("invalid secret"))
 					})
 				})
 
@@ -171,7 +172,7 @@ func TestRegisterStream(t *testing.T) {
 					expResp.State.TerminalIndex = 1337
 
 					resp, err := svr.RegisterStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, resp, should.Resemble(expResp))
 					ds.GetTestable(c).CatchupIndexes()
 
@@ -208,7 +209,7 @@ func TestRegisterStream(t *testing.T) {
 						})
 
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						ds.GetTestable(c).CatchupIndexes()
 					})
 
@@ -219,7 +220,7 @@ func TestRegisterStream(t *testing.T) {
 						})
 
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 						ds.GetTestable(c).CatchupIndexes()
 					})
 				})
@@ -229,7 +230,7 @@ func TestRegisterStream(t *testing.T) {
 					fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
 					_, err := svr.RegisterStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Returns internal server error if the Prefix Put() fails.`, func(t *ftt.Test) {
@@ -237,7 +238,7 @@ func TestRegisterStream(t *testing.T) {
 					fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
 					_, err := svr.RegisterStream(c, &req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 				})
 
 				t.Run(`Registration failure cases`, func(t *ftt.Test) {
@@ -245,26 +246,30 @@ func TestRegisterStream(t *testing.T) {
 						env.Clock.Set(tls.Prefix.Expiration)
 
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("prefix has expired"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+						assert.Loosely(t, err, should.ErrLike("prefix has expired"))
 					})
 
 					t.Run(`Will not register a stream without a protobuf version.`, func(t *ftt.Test) {
 						req.ProtoVersion = ""
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Unrecognized protobuf version"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("Unrecognized protobuf version"))
 					})
 
 					t.Run(`Will not register a stream with an unknown protobuf version.`, func(t *ftt.Test) {
 						req.ProtoVersion = "unknown"
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Unrecognized protobuf version"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("Unrecognized protobuf version"))
 					})
 
 					t.Run(`Will not register with an empty descriptor.`, func(t *ftt.Test) {
 						req.Desc = nil
 
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid log stream descriptor"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("Invalid log stream descriptor"))
 					})
 
 					t.Run(`Will not register if the descriptor doesn't validate.`, func(t *ftt.Test) {
@@ -273,7 +278,8 @@ func TestRegisterStream(t *testing.T) {
 						req.Desc = tls.DescBytes()
 
 						_, err := svr.RegisterStream(c, &req)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid log stream descriptor"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("Invalid log stream descriptor"))
 					})
 				})
 			})

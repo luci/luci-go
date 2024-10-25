@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -39,10 +40,8 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -159,7 +158,7 @@ func TestRegisterPrefix(t *testing.T) {
 			t.Run(`Will refuse to register it again without nonce.`, func(t *ftt.Test) {
 				req.OpNonce = nil
 				_, err := svr.RegisterPrefix(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 			})
 
 			t.Run(`Is happy to return the same data if the nonce matches.`, func(t *ftt.Test) {
@@ -174,7 +173,7 @@ func TestRegisterPrefix(t *testing.T) {
 			t.Run(`Expires the nonce after 15 minutes.`, func(t *ftt.Test) {
 				env.Clock.Add(coordinator.RegistrationNonceTimeout + time.Second)
 				_, err := svr.RegisterPrefix(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 			})
 		})
 
@@ -215,14 +214,15 @@ func TestRegisterPrefix(t *testing.T) {
 				})
 
 				_, err := svr.RegisterPrefix(c, &req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("no prefix expiration defined"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("no prefix expiration defined"))
 			})
 		})
 
 		t.Run(`Will fail to register the prefix if Put is broken.`, func(t *ftt.Test) {
 			fb.BreakFeatures(errors.New("test error"), "PutMulti")
 			_, err := svr.RegisterPrefix(c, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 		})
 	})
 }

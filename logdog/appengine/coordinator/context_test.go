@@ -25,15 +25,14 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -59,14 +58,14 @@ func TestWithProjectNamespace(t *testing.T) {
 		t.Run(`Entering non-existing project`, func(t *ftt.Test) {
 			t.Run(`Anonymous`, func(t *ftt.Test) {
 				err := WithProjectNamespace(&ctx, "non-existing")
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unauthenticated))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
 			})
 			t.Run(`Non-anonymous`, func(t *ftt.Test) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
 				err := WithProjectNamespace(&ctx, "non-existing")
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 		})
 	})

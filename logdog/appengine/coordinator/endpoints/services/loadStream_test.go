@@ -19,18 +19,18 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -57,7 +57,7 @@ func TestLoadStream(t *testing.T) {
 
 		t.Run(`Returns Forbidden error if not a service.`, func(t *ftt.Test) {
 			_, err := svr.LoadStream(c, &logdog.LoadStreamRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run(`When logged in as a service`, func(t *ftt.Test) {
@@ -125,14 +125,15 @@ func TestLoadStream(t *testing.T) {
 				req.Id = string("!!! not a hash !!!")
 
 				_, err := svr.LoadStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid ID"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("Invalid ID"))
 			})
 
 			t.Run(`Will return NotFound for non-existent streams.`, func(t *ftt.Test) {
 				req.Id = string(coordinator.LogStreamID("this/stream/+/does/not/exist"))
 
 				_, err := svr.LoadStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 
 			t.Run(`Will return Internal for random datastore failures.`, func(t *ftt.Test) {
@@ -140,7 +141,7 @@ func TestLoadStream(t *testing.T) {
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
 				_, err := svr.LoadStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 		})
 	})

@@ -21,14 +21,14 @@ import (
 
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
+	"google.golang.org/grpc/codes"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -66,7 +66,7 @@ func TestArchiveStream(t *testing.T) {
 
 		t.Run(`Returns Forbidden error if not a service.`, func(t *ftt.Test) {
 			_, err := svr.ArchiveStream(c, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run(`When logged in as a service`, func(t *ftt.Test) {
@@ -117,21 +117,22 @@ func TestArchiveStream(t *testing.T) {
 			t.Run(`Will refuse to process an invalid stream hash.`, func(t *ftt.Test) {
 				req.Id = "!!!invalid!!!"
 				_, err := svr.ArchiveStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("Invalid ID"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("Invalid ID"))
 			})
 
 			t.Run(`If index URL is missing, will refuse to mark the stream archived.`, func(t *ftt.Test) {
 				req.IndexUrl = ""
 
 				_, err := svr.ArchiveStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run(`If stream URL is missing, will refuse to mark the stream archived.`, func(t *ftt.Test) {
 				req.StreamUrl = ""
 
 				_, err := svr.ArchiveStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run(`If stream is already archived, will not update and return success.`, func(t *ftt.Test) {
@@ -174,7 +175,7 @@ func TestArchiveStream(t *testing.T) {
 				fb.BreakFeatures(errors.New("test error"), "GetMulti")
 
 				_, err := svr.ArchiveStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 
 			t.Run(`When datastore Put fails, returns internal error.`, func(t *ftt.Test) {
@@ -182,7 +183,7 @@ func TestArchiveStream(t *testing.T) {
 				fb.BreakFeatures(errors.New("test error"), "PutMulti")
 
 				_, err := svr.ArchiveStream(c, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInternal)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			})
 		})
 	})
