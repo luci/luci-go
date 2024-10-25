@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	rdbPb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -67,8 +68,6 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func fv(vs ...any) []any {
@@ -7013,8 +7012,8 @@ func TestScheduleBuild(t *testing.T) {
 					})
 					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
-					assert.Loosely(t, merr[0], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
-					assert.Loosely(t, merr[1], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, merr[0], grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
 				})
 
 				t.Run("one of builds doesn't have permission to set parent_build_id", func(t *ftt.Test) {
@@ -7032,7 +7031,7 @@ func TestScheduleBuild(t *testing.T) {
 					_, merr := srv.scheduleBuilds(ctx, globalCfg, reqs)
 					assert.Loosely(t, merr, should.NotBeNil)
 					assert.Loosely(t, merr[0], should.BeNil)
-					assert.Loosely(t, merr[1], convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, merr[1], grpccode.ShouldBe(codes.PermissionDenied))
 				})
 				t.Run("OK", func(t *ftt.Test) {
 					ctx = auth.WithState(ctx, &authtest.FakeState{
@@ -7632,7 +7631,7 @@ func TestScheduleBuild(t *testing.T) {
 							},
 						}
 						_, _, err := validateScheduleBuild(ctx, nil, req, pMap, nil)
-						assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					})
 
 					t.Run("missing build entities", func(t *ftt.Test) {
@@ -7656,8 +7655,8 @@ func TestScheduleBuild(t *testing.T) {
 						})
 						pMap, err := validateParents(ctx, []int64{333, 444})
 						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, pMap.fromRequests[333].err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
-						assert.Loosely(t, pMap.fromRequests[444].err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+						assert.Loosely(t, pMap.fromRequests[333].err, grpccode.ShouldBe(codes.NotFound))
+						assert.Loosely(t, pMap.fromRequests[444].err, grpccode.ShouldBe(codes.NotFound))
 					})
 
 					t.Run("OK", func(t *ftt.Test) {

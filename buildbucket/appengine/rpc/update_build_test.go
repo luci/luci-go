@@ -35,13 +35,13 @@ import (
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
 
@@ -53,8 +53,6 @@ import (
 	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateUpdate(t *testing.T) {
@@ -588,7 +586,8 @@ func TestCheckBuildForUpdate(t *testing.T) {
 				b, err := common.GetBuild(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("cannot update an ended build"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike("cannot update an ended build"))
 			})
 
 			t.Run("with build.steps", func(t *ftt.Test) {
@@ -596,21 +595,24 @@ func TestCheckBuildForUpdate(t *testing.T) {
 				b, err := common.GetBuild(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update steps of a SCHEDULED build"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot update steps of a SCHEDULED build"))
 			})
 			t.Run("with build.output", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.output.properties"}}
 				b, err := common.GetBuild(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update build output fields of a SCHEDULED build"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot update build output fields of a SCHEDULED build"))
 			})
 			t.Run("with build.infra.buildbucket.agent.output", func(t *ftt.Test) {
 				req.UpdateMask = &field_mask.FieldMask{Paths: []string{"build.infra.buildbucket.agent.output"}}
 				b, err := common.GetBuild(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
 				err = checkBuildForUpdate(updateMask(req), req, b)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("cannot update agent output of a SCHEDULED build"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("cannot update agent output of a SCHEDULED build"))
 			})
 		})
 	})
@@ -737,7 +739,7 @@ func TestUpdateBuild(t *testing.T) {
 		t.Run("wrong purpose token", func(t *ftt.Test) {
 			tk, _ = buildtoken.GenerateToken(ctx, 1, pb.TokenBody_START_BUILD)
 			ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(buildbucket.BuildbucketTokenHeader, tk))
-			assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldHaveGRPCStatus)(codes.Unauthenticated))
+			assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.Unauthenticated))
 		})
 
 		t.Run("open mask, empty request", func(t *ftt.Test) {
@@ -790,7 +792,7 @@ func TestUpdateBuild(t *testing.T) {
 			url := "https://redirect.com"
 			req.Build.ViewUrl = url
 			req.UpdateMask.Paths[0] = "build.view_url"
-			assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 			b, err := common.GetBuild(ctx, req.Build.Id)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, b.Proto.ViewUrl, should.Equal(url))
@@ -804,7 +806,7 @@ func TestUpdateBuild(t *testing.T) {
 
 			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output.properties"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				m, err := structpb.NewStruct(map[string]any{"key": "value"})
 				assert.Loosely(t, err, should.BeNil)
@@ -812,7 +814,7 @@ func TestUpdateBuild(t *testing.T) {
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 			})
@@ -836,7 +838,7 @@ func TestUpdateBuild(t *testing.T) {
 
 			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Output.Properties, should.Resemble(largeProps))
 				count, err := datastore.Count(ctx, datastore.NewQuery("PropertyChunk"))
@@ -845,7 +847,7 @@ func TestUpdateBuild(t *testing.T) {
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Output.Properties, should.BeNil)
 			})
@@ -862,13 +864,13 @@ func TestUpdateBuild(t *testing.T) {
 
 			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.steps"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Steps[0], should.Resemble(step))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Steps, should.BeNil)
 			})
@@ -878,7 +880,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Status = pb.Status_STARTED
 				req.Build.Steps[0].Status = pb.Status_STARTED
 				req.Build.Steps[0].EndTime = nil
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 			})
 
 			t.Run("incomplete steps with terminal Build status", func(t *ftt.Test) {
@@ -890,8 +892,9 @@ func TestUpdateBuild(t *testing.T) {
 					req.Build.Steps[0].EndTime = nil
 
 					// Should be rejected.
-					msg := `cannot be "STARTED" because the build has a terminal status "SUCCESS"`
-					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, msg))
+					err := updateBuild(ctx, req)
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`cannot be "STARTED" because the build has a terminal status "SUCCESS"`))
 				})
 
 				t.Run("w/o mask", func(t *ftt.Test) {
@@ -899,12 +902,12 @@ func TestUpdateBuild(t *testing.T) {
 					req.Build.Status = pb.Status_STARTED
 					req.Build.Steps[0].Status = pb.Status_STARTED
 					req.Build.Steps[0].EndTime = nil
-					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 					// update the build again with a terminal status, but w/o step mask.
 					req.UpdateMask.Paths = []string{"build.status"}
 					req.Build.Status = pb.Status_SUCCESS
-					assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 					nbs := &model.BuildStatus{Build: bk}
 					err := datastore.Get(ctx, nbs)
 					assert.Loosely(t, err, should.BeNil)
@@ -929,7 +932,7 @@ func TestUpdateBuild(t *testing.T) {
 
 			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.tags"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				expected := []string{strpair.Format("resultdb", "disabled")}
@@ -938,7 +941,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				// change the value and update it again
 				tag.Value = "enabled"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// both tags should exist
 				b = getBuildWithDetails(ctx, req.Build.Id)
@@ -948,7 +951,7 @@ func TestUpdateBuild(t *testing.T) {
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Tags, should.BeNil)
 			})
@@ -981,13 +984,13 @@ func TestUpdateBuild(t *testing.T) {
 
 			t.Run("with mask", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.infra.buildbucket.agent.output"
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.Resemble(agentOutput))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Output, should.BeNil)
 			})
@@ -1015,13 +1018,13 @@ func TestUpdateBuild(t *testing.T) {
 					"build.infra.buildbucket.agent.output",
 					"build.infra.buildbucket.agent.purposes",
 				}}
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Purposes["p1"], should.Equal(pb.BuildInfra_Buildbucket_Agent_PURPOSE_EXE_PAYLOAD))
 			})
 
 			t.Run("without mask", func(t *ftt.Test) {
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				b := getBuildWithDetails(ctx, req.Build.Id)
 				assert.Loosely(t, b.Proto.Infra.Buildbucket.Agent.Purposes, should.BeNil)
 			})
@@ -1031,7 +1034,7 @@ func TestUpdateBuild(t *testing.T) {
 			t.Run("Status_STARTED w/o status change", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// no TQ tasks should be scheduled.
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -1057,7 +1060,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Id = build.ID
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
@@ -1078,7 +1081,7 @@ func TestUpdateBuild(t *testing.T) {
 			t.Run("output.status Status_STARTED w/o status change", func(t *ftt.Test) {
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// no TQ tasks should be scheduled.
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -1104,7 +1107,7 @@ func TestUpdateBuild(t *testing.T) {
 				req.Build.Id = build.ID
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_STARTED}
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// TQ tasks for pubsub-notification.
 				tasks := sch.Tasks()
@@ -1159,7 +1162,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
@@ -1205,7 +1208,7 @@ func TestUpdateBuild(t *testing.T) {
 
 				req.UpdateMask.Paths[0] = "build.output.status"
 				req.Build.Output = &pb.Build_Output{Status: pb.Status_SUCCESS}
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
@@ -1233,7 +1236,7 @@ func TestUpdateBuild(t *testing.T) {
 					Status: pb.Status_SUCCESS,
 				}
 				req.Build.Status = pb.Status_SUCCESS
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
@@ -1258,7 +1261,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, bldr), should.BeNil)
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
 				assert.Loosely(t, tasks, should.HaveLength(3))
@@ -1303,7 +1306,7 @@ func TestUpdateBuild(t *testing.T) {
 				}}}
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_SUCCESS
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 				// TQ tasks for pubsub-notification, bq-export, and invocation-finalization.
 				tasks := sch.Tasks()
 				// led builds not supported by max_concurrent_builds.
@@ -1371,7 +1374,7 @@ func TestUpdateBuild(t *testing.T) {
 				assert.Loosely(t, datastore.Put(ctx, child), should.BeNil)
 				req.UpdateMask.Paths[0] = "build.status"
 				req.Build.Status = pb.Status_STARTED
-				assert.Loosely(t, updateBuild(ctx, req), convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, updateBuild(ctx, req), grpccode.ShouldBe(codes.OK))
 			})
 
 			t.Run("child cannot outlive parent", func(t *ftt.Test) {
@@ -1422,7 +1425,7 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_SUCCESS))
 					assert.Loosely(t, build.CancelTime, should.BeNil)
 
@@ -1483,7 +1486,7 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
 					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
 					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 10 has terminated"))
@@ -1533,7 +1536,7 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.Status, should.Equal(pb.Status_STARTED))
 					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0))
 					assert.Loosely(t, build.CancellationMarkdown, should.Equal("canceled because its parent 3000000 is missing"))
@@ -1624,7 +1627,7 @@ func TestUpdateBuild(t *testing.T) {
 						},
 					}
 					build, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 					assert.Loosely(t, build.CancelTime.AsTime(), should.Resemble(t0.Add(-time.Minute)))
 					assert.Loosely(t, build.SummaryMarkdown, should.Equal("new summary"))
 					assert.Loosely(t, sch.Tasks(), should.BeEmpty)
@@ -1679,7 +1682,7 @@ func TestUpdateBuild(t *testing.T) {
 					req.Build.Status = pb.Status_INFRA_FAILURE
 					req.UpdateMask.Paths[0] = "build.status"
 					_, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 
 					child, err := common.GetBuild(ctx, 21)
 					assert.Loosely(t, err, should.BeNil)
@@ -1722,7 +1725,7 @@ func TestUpdateBuild(t *testing.T) {
 					req.Build.CancelTime = timestamppb.New(t0.Add(-time.Minute))
 					req.Build.CancellationMarkdown = "swarming task is cancelled"
 					_, err := srv.UpdateBuild(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 
 					child, err := common.GetBuild(ctx, 21)
 					assert.Loosely(t, err, should.BeNil)

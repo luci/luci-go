@@ -26,9 +26,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -36,8 +36,6 @@ import (
 
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRunTask(t *testing.T) {
@@ -197,7 +195,8 @@ func TestRunTask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			res, err := srv.RunTask(ctx, req)
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "topic taskbackendlite-myProject does not exist on Cloud project myApp-dev"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("topic taskbackendlite-myProject does not exist on Cloud project myApp-dev"))
 		})
 
 		t.Run("perm errors", func(t *ftt.Test) {
@@ -208,7 +207,8 @@ func TestRunTask(t *testing.T) {
 				})
 				res, err := srv.RunTask(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, `the peer "user:user1@example.com" is not allowed to access this task backend`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`the peer "user:user1@example.com" is not allowed to access this task backend`))
 			})
 
 			t.Run("not a project identity", func(t *ftt.Test) {
@@ -218,7 +218,8 @@ func TestRunTask(t *testing.T) {
 				})
 				res, err := srv.RunTask(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, `The caller's user identity "user:user1" is not a project identity`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`The caller's user identity "user:user1" is not a project identity`))
 			})
 		})
 	})

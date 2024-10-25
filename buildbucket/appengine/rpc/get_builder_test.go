@@ -23,18 +23,16 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGetBuilder(t *testing.T) {
@@ -57,7 +55,8 @@ func TestGetBuilder(t *testing.T) {
 		t.Run(`Request validation`, func(t *ftt.Test) {
 			t.Run(`Invalid ID`, func(t *ftt.Test) {
 				_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "id: project must match"))
+				assert.Loosely(t, appstatus.Code(err), should.Match(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("id: project must match"))
 			})
 		})
 
@@ -79,7 +78,8 @@ func TestGetBuilder(t *testing.T) {
 			), should.BeNil)
 
 			_, err := srv.GetBuilder(ctx, &pb.GetBuilderRequest{Id: bid})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
+			assert.Loosely(t, appstatus.Code(err), should.Match(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
 
 		t.Run(`End to end`, func(t *ftt.Test) {

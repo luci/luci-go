@@ -23,10 +23,10 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
@@ -34,8 +34,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestListBuilders(t *testing.T) {
@@ -53,7 +51,8 @@ func TestListBuilders(t *testing.T) {
 		t.Run(`Request validation`, func(t *ftt.Test) {
 			t.Run(`No project when bucket is specified`, func(t *ftt.Test) {
 				_, err := srv.ListBuilders(ctx, &pb.ListBuildersRequest{Bucket: "bucket"})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "project must be specified"))
+				assert.Loosely(t, appstatus.Code(err), should.Match(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("project must be specified"))
 			})
 
 			t.Run(`Invalid bucket`, func(t *ftt.Test) {
@@ -61,7 +60,8 @@ func TestListBuilders(t *testing.T) {
 					Project: "project",
 					Bucket:  "!",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "bucket must match"))
+				assert.Loosely(t, appstatus.Code(err), should.Match(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bucket must match"))
 			})
 
 			t.Run(`Invalid page token`, func(t *ftt.Test) {
@@ -70,7 +70,8 @@ func TestListBuilders(t *testing.T) {
 					Bucket:    "bucket",
 					PageToken: "invalid token",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page token"))
+				assert.Loosely(t, appstatus.Code(err), should.Match(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("invalid page token"))
 			})
 		})
 
@@ -95,7 +96,8 @@ func TestListBuilders(t *testing.T) {
 				Project: "project",
 				Bucket:  "bucket",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
+			assert.Loosely(t, appstatus.Code(err), should.Match(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
 
 		t.Run(`End to end`, func(t *ftt.Test) {

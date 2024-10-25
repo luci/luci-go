@@ -31,10 +31,10 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -42,8 +42,6 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	pb "go.chromium.org/luci/buildbucket/proto"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 const userID = identity.Identity("user:user@example.com")
@@ -249,7 +247,8 @@ func TestMainFetchFlow(t *testing.T) {
 				Identity: userID,
 			})
 			_, err := query.Fetch(ctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "not found"))
+			assert.Loosely(t, appstatus.Code(err), should.Match(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("not found"))
 		})
 
 		t.Run("With read permission", func(t *ftt.Test) {
