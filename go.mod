@@ -48,7 +48,6 @@ require (
 	github.com/bazelbuild/remote-apis-sdks v0.0.0-20240910213405-f4821a2a072c
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/danjacques/gofslock v0.0.0-20240212154529-d899e02bfe22
-	github.com/dave/dst v0.27.3
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
