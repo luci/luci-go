@@ -19,11 +19,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/smarty/assertions"
-	"github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
 )
@@ -93,7 +93,11 @@ func ShouldHaveRPCCode(actual any, expected ...any) string {
 	}
 
 	if errLike != "" {
-		return convey.ShouldContainSubstring(status.Convert(aerr).Message(), errLike)
+		result := should.ContainSubstring(errLike)(status.Convert(aerr).Message())
+		if result == nil {
+			return ""
+		}
+		return result.String()
 	}
 	return ""
 }

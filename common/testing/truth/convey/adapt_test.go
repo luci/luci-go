@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -37,7 +36,7 @@ func shouldMatchMyType(actual any, expected ...any) string {
 	// custom comparisons don't do this.
 
 	if len(expected) > 1 {
-		return convey.ShouldHaveLength(expected, 1)
+		return should.HaveLength(1)(expected).String()
 	}
 	mine, ok := actual.(myType)
 	if !ok {
