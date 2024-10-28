@@ -108,9 +108,18 @@ func Run(ctx context.Context, options *Options, cb func(context.Context, Options
 		// for.
 		deadline := lucictx.GetDeadline(ctx)
 		toReserve := deadline.GracePeriodDuration() - opts.BaseBuild.GracePeriod.AsDuration()
-		logging.Infof(
-			ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
-			toReserve, lucictx.GetDeadline(ctx).GracePeriodDuration())
+		if toReserve < 0 {
+			logging.Warningf(
+				ctx, "Cannot reserve %s grace period for build: LUCI_CONTEXT only has %s of grace_period available",
+				opts.BaseBuild.GracePeriod.AsDuration(), deadline.GracePeriodDuration())
+			logging.Warningf(
+				ctx, "Reserving entire duration - build will operate with an effective grace_period of zero.")
+			toReserve = deadline.GracePeriodDuration()
+		} else {
+			logging.Infof(
+				ctx, "Reserving %s out of %s of grace_period from LUCI_CONTEXT.",
+				toReserve, deadline.GracePeriodDuration())
+		}
 		dctx, shutdown := lucictx.TrackSoftDeadline(ctx, toReserve)
 
 		// Invoking luciexe callback.

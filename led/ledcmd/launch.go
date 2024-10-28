@@ -230,6 +230,14 @@ func LaunchLocalBuild(ctx context.Context, build *bbpb.Build, opts LaunchSwarmin
 	var runErr error
 	finalBuild := build
 
+	if lucictx.GetDeadline(ctx) == nil {
+		// If there is no deadline in the context, set one to 180 plus the build's
+		// requested GracePeriod.
+		ctx = lucictx.SetDeadline(ctx, &lucictx.Deadline{
+			GracePeriod: (build.GracePeriod.AsDuration() + (180 * time.Second)).Seconds(),
+		})
+	}
+
 	builds, err := host.Run(ctx, luciexeOpts, func(ctx context.Context, hostOpts host.Options, deadlineEvntCh <-chan lucictx.DeadlineEvent, shutdown func()) {
 		logging.Infof(ctx, "running luciexe: %q", build.Exe.Cmd)
 		logging.Infof(ctx, "  (cache dir): %q", hostOpts.CacheDir)
