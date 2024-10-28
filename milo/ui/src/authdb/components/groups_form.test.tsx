@@ -35,7 +35,7 @@ describe('<GroupsForm />', () => {
           }}
         >
         <List>
-          <GroupsForm name='123'/>
+          <GroupsForm name='123' onDelete={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -56,7 +56,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-error');
@@ -77,7 +77,7 @@ describe('<GroupsForm />', () => {
           }}
         >
         <List>
-          <GroupsForm name='external/123'/>
+          <GroupsForm name='external/123' onDelete={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -102,7 +102,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123'/>
+          <GroupsForm name='123' onDelete={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -134,7 +134,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -167,7 +167,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123'/>
+          <GroupsForm name='123' onDelete={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -186,7 +186,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -206,7 +206,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -224,7 +224,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -260,7 +260,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -289,7 +289,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123'/>
+        <GroupsForm name='123' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -318,7 +318,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='google/testGoogleGroup'/>
+        <GroupsForm name='google/testGoogleGroup' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -332,7 +332,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group'/>
+        <GroupsForm name='test-group' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -346,7 +346,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group'/>
+        <GroupsForm name='test-group' onDelete={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');

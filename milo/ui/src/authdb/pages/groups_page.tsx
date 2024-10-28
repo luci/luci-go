@@ -17,7 +17,7 @@ import '../components/groups_list.css';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import { useEffect } from 'react';
+import { useEffect, createRef } from 'react';
 
 import { GroupsForm } from '@/authdb/components/groups_form';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
@@ -26,10 +26,12 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { GroupsListElement } from '@/authdb/components/groups_list';
 
 export function GroupsPage() {
   const { ['__luci_ui__-raw-*']: groupName } = useParams();
   const navigate = useNavigate();
+  const listRef = createRef<GroupsListElement>();
 
   useEffect(() => {
     if (!groupName) {
@@ -41,6 +43,10 @@ export function GroupsPage() {
     return <></>;
   }
 
+  const refetchGroups = () => {
+    listRef.current?.refetchList();
+  }
+
   return (
     <Paper className="groups-container-paper">
       <Grid container className="groups-container">
@@ -50,7 +56,7 @@ export function GroupsPage() {
           className="container-left"
           sx={{ display: 'flex', flexDirection: 'column' }}
         >
-          <GroupsList selectedGroup={groupName}/>
+          <GroupsList selectedGroup={groupName} ref={listRef}/>
         </Grid>
         <Grid
           item
@@ -66,6 +72,7 @@ export function GroupsPage() {
                 <GroupsForm
                   key={groupName}
                   name={groupName}
+                  onDelete={refetchGroups}
                 />
               </>
             )}

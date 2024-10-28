@@ -23,7 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import {useState} from 'react';
+import {useState, forwardRef, useImperativeHandle} from 'react';
 import { Virtuoso } from 'react-virtuoso'
 import { Link } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
@@ -32,7 +32,14 @@ interface GroupsListProps {
   selectedGroup: string;
 }
 
-export const GroupsList = (({selectedGroup} : GroupsListProps) => {
+export interface GroupsListElement {
+  refetchList: () => void;
+}
+
+export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
+  (
+    { selectedGroup }, ref
+  ) => {
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
 
   const client = useAuthServiceClient();
@@ -41,11 +48,20 @@ export const GroupsList = (({selectedGroup} : GroupsListProps) => {
     isError,
     data: response,
     error,
+    refetch,
   } = useQuery({
     ...client.ListGroups.query({}),
     refetchOnWindowFocus: false,
   })
   const allGroups: readonly AuthGroup[] = response?.groups || [];
+
+  useImperativeHandle(ref, () => ({
+    refetchList: () => {
+      if (refetch) {
+        refetch();
+      }
+    },
+  }));
 
   if (isLoading) {
     return (

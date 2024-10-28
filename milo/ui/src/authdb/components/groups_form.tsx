@@ -88,9 +88,10 @@ function isExternalGroupName(name: string) {
 
 interface GroupsFormProps {
   name: string;
+  onDelete: () => void;
 }
 
-export function GroupsForm({name}: GroupsFormProps) {
+export function GroupsForm({name, onDelete}: GroupsFormProps) {
   const navigate = useNavigate();
   const [descriptionMode, setDescriptionMode] = useState<boolean>();
   const [ownersMode, setOwnersMode] = useState<boolean>();
@@ -137,6 +138,7 @@ export function GroupsForm({name}: GroupsFormProps) {
     },
     onSuccess: () => {
       navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
+      onDelete();
     },
     onError: () => {
       setErrorMessage('Error deleting group');
