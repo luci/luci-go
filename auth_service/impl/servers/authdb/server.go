@@ -133,6 +133,7 @@ func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 		return errors.Annotate(err, "error calling GetAuthDBSnapshot").Err()
 	}
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = json.NewEncoder(w).Encode(map[string]SnapshotJSON{
 		"snapshot": {
 			AuthDBRev:      snapshot.ID,
@@ -208,6 +209,7 @@ func (srv *Server) CheckLegacyMembership(ctx *router.Context) error {
 			id)
 	}
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = json.NewEncoder(w).Encode(map[string]bool{
 		"is_member": isMember,
 	})

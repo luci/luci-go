@@ -340,6 +340,7 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 	// Set the Last-Modified header.
 	w.Header().Set("Last-Modified", group.ModifiedTS.Format(time.RFC1123Z))
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = json.NewEncoder(w).Encode(map[string]AuthGroupJSON{
 		"group": {
 			Name:            group.ID,
@@ -414,6 +415,7 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 		response.Nested[i] = listingPrincipal{Principal: nestedGroup}
 	}
 
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err = json.NewEncoder(w).Encode(map[string]ListingJSON{
 		"listing": response,
 	})

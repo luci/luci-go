@@ -168,27 +168,27 @@ func Deauthorize(ctx *router.Context) error {
 }
 
 func respond(ctx *router.Context, psAuthorized, gsAuthorized bool) error {
-	gsPath, err := gs.GetPath(ctx.Request.Context())
+	c, w := ctx.Request.Context(), ctx.Writer
+
+	gsPath, err := gs.GetPath(c)
 	if err != nil {
 		return errors.Annotate(err, "error getting GS path from configs").Err()
 	}
 
-	topic := pubsub.GetAuthDBChangeTopic(ctx.Request.Context())
-	response := responseJSON{
+	topic := pubsub.GetAuthDBChangeTopic(c)
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	err = json.NewEncoder(w).Encode(responseJSON{
 		PubsubTopic:      topic,
 		PubsubAuthorized: psAuthorized,
 		GS: gsAccess{
 			AuthDBGSPath: gsPath,
 			Authorized:   gsAuthorized,
 		},
-	}
-	blob, err := json.Marshal(response)
+	})
 	if err != nil {
-		return errors.Annotate(err, "error marshalling JSON").Err()
-	}
-
-	if _, err = ctx.Writer.Write(blob); err != nil {
-		return errors.Annotate(err, "error writing JSON response").Err()
+		err = errors.Annotate(err, "error encoding JSON").Err()
+		return err
 	}
 
 	return nil

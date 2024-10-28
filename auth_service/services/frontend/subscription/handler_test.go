@@ -16,6 +16,7 @@ package subscription
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -98,8 +99,17 @@ func TestCheckAccess(t *testing.T) {
 			}
 			err := CheckAccess(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"","authorized":false}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": false,
+				"gs": map[string]any{
+					"auth_db_gs_path": "",
+					"authorized":      false,
+				},
+			}))
 		})
 
 		t.Run("true for authorized", func(t *ftt.Test) {
@@ -118,8 +128,17 @@ func TestCheckAccess(t *testing.T) {
 			}
 			err := CheckAccess(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"","authorized":true}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": true,
+				"gs": map[string]any{
+					"auth_db_gs_path": "",
+					"authorized":      true,
+				},
+			}))
 		})
 	})
 }
@@ -197,8 +216,17 @@ func TestAuthorize(t *testing.T) {
 			}
 			err := Authorize(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": true,
+				"gs": map[string]any{
+					"auth_db_gs_path": "chrome-infra-auth-test.appspot.com/auth-db",
+					"authorized":      true,
+				},
+			}))
 		})
 
 		t.Run("succeeds for authorized user", func(t *ftt.Test) {
@@ -231,8 +259,17 @@ func TestAuthorize(t *testing.T) {
 			}
 			err := Authorize(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":true,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":true}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": true,
+				"gs": map[string]any{
+					"auth_db_gs_path": "chrome-infra-auth-test.appspot.com/auth-db",
+					"authorized":      true,
+				},
+			}))
 		})
 	})
 }
@@ -301,8 +338,17 @@ func TestDeauthorize(t *testing.T) {
 			}
 			err := Deauthorize(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": false,
+				"gs": map[string]any{
+					"auth_db_gs_path": "chrome-infra-auth-test.appspot.com/auth-db",
+					"authorized":      false,
+				},
+			}))
 		})
 
 		t.Run("succeeds for unauthorized user", func(t *ftt.Test) {
@@ -327,8 +373,17 @@ func TestDeauthorize(t *testing.T) {
 			}
 			err := Deauthorize(rctx)
 			assert.Loosely(t, err, should.BeNil)
-			expectedBlob := []byte(`{"topic":"projects/app/topics/auth-db-changed","authorized":false,"gs":{"auth_db_gs_path":"chrome-infra-auth-test.appspot.com/auth-db","authorized":false}}`)
-			assert.Loosely(t, rw.Body.Bytes(), should.Match(expectedBlob))
+
+			actual := map[string]any{}
+			assert.Loosely(t, json.NewDecoder(rw.Body).Decode(&actual), should.BeNil)
+			assert.Loosely(t, actual, should.Match(map[string]any{
+				"topic":      "projects/app/topics/auth-db-changed",
+				"authorized": false,
+				"gs": map[string]any{
+					"auth_db_gs_path": "chrome-infra-auth-test.appspot.com/auth-db",
+					"authorized":      false,
+				},
+			}))
 		})
 	})
 }
