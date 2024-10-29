@@ -17,6 +17,8 @@ package e2etest
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"net/http"
@@ -58,9 +60,10 @@ type service struct {
 
 	sleep func() time.Duration
 
-	m            sync.Mutex
-	incomingMD   metadata.MD
-	incomingPeer *peer.Peer
+	m              sync.Mutex
+	incomingMD     metadata.MD
+	incomingPeer   *peer.Peer
+	incomingFields []string
 }
 
 func (s *service) SayHello(ctx context.Context, req *testpb.HelloRequest) (*testpb.HelloReply, error) {
@@ -68,6 +71,7 @@ func (s *service) SayHello(ctx context.Context, req *testpb.HelloRequest) (*test
 	s.m.Lock()
 	s.incomingMD = md.Copy()
 	s.incomingPeer, _ = peer.FromContext(ctx)
+	s.incomingFields = append([]string(nil), req.Fields.GetPaths()...)
 	var sleep time.Duration
 	if s.sleep != nil {
 		sleep = s.sleep()
@@ -99,6 +103,12 @@ func (s *service) getIncomingPeer() *peer.Peer {
 	s.m.Lock()
 	defer s.m.Unlock()
 	return s.incomingPeer
+}
+
+func (s *service) getIncomingFields() []string {
+	s.m.Lock()
+	defer s.m.Unlock()
+	return s.incomingFields
 }
 
 func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, testpb.GreeterClient) {
@@ -285,6 +295,110 @@ func endToEndTest(t *testing.T, responseType string) {
 			assert.Loosely(t, peer.Addr.String(), should.HavePrefix("127.0.0.1:"))
 		})
 	})
+}
+
+func TestJSONFieldMaskWithoutHack(t *testing.T) {
+	t.Parallel()
+
+	// Doesn't support string serialization, but still supports advanced masks.
+	testJSONFieldMask(t, false, true, func(srv *prpc.Server) {
+		srv.HackFixFieldMasksForJSON = false
+	})
+}
+
+func TestJSONFieldMaskWithHack(t *testing.T) {
+	t.Parallel()
+
+	// Supports string serialization and advanced masks.
+	testJSONFieldMask(t, true, true, func(srv *prpc.Server) {
+		srv.HackFixFieldMasksForJSON = true
+	})
+}
+
+func testJSONFieldMask(t *testing.T, testStr, testAdvanced bool, cfg func(srv *prpc.Server)) {
+	ctx := gologger.StdConfig.Use(context.Background())
+	svc := service{R: &testpb.HelloReply{Message: "sup"}}
+
+	ts := prpctest.Server{}
+	testpb.RegisterGreeterServer(&ts, &svc)
+
+	if cfg != nil {
+		cfg(&ts.Server)
+	}
+
+	ts.Start(ctx)
+	defer ts.Close()
+
+	// Get an HTTP client since we specifically want to test concrete JSON
+	// serialization formats for backward compatibility and using a Go pRPC
+	// client makes this hard since we will need to manipulate it to produce
+	// necessary serialization first.
+	cl, err := ts.NewClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	httpC := cl.C
+
+	jsonCall := func(body string) error {
+		req, err := http.NewRequest(
+			"POST",
+			fmt.Sprintf("http://%s/prpc/prpc.Greeter/SayHello", ts.Host),
+			strings.NewReader(body),
+		)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json")
+		resp, err := httpC.Do(req)
+		if err != nil {
+			return err
+		}
+		respBody, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("failed with code %d: %s", resp.StatusCode, respBody)
+		}
+		return nil
+	}
+
+	t.Run(`Simple mask as object`, func(t *testing.T) {
+		err := jsonCall(`{"fields": {"paths": ["a", "a.b.c"]}}`)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, svc.getIncomingFields(), should.Match([]string{
+			"a", "a.b.c",
+		}))
+	})
+
+	if testStr {
+		t.Run(`Simple mask as str`, func(t *testing.T) {
+			err := jsonCall(`{"fields": "a,a.b.c"}`)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, svc.getIncomingFields(), should.Match([]string{
+				"a", "a.b.c",
+			}))
+		})
+	}
+
+	if testAdvanced {
+		t.Run(`Advanced mask as object`, func(t *testing.T) {
+			err := jsonCall(`{"fields": {"paths": ["a.*.b", "a.0.c"]}}`)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, svc.getIncomingFields(), should.Match([]string{
+				"a.*.b", "a.0.c",
+			}))
+		})
+
+		if testStr {
+			t.Run(`Advanced mask as str`, func(t *testing.T) {
+				err := jsonCall(`{"fields": "a.*.b,a.0.c"}`)
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, svc.getIncomingFields(), should.Match([]string{
+					"a.*.b", "a.0.c",
+				}))
+			})
+		}
+	}
 }
 
 func TestTimeouts(t *testing.T) {
