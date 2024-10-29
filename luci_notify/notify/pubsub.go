@@ -208,7 +208,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 
 	// Helper functions for notifying and updating tree closer status.
 	notifyNoBlame := func(c context.Context, b config.Builder, oldStatus buildbucketpb.Status) error {
-		notifications := Filter(c, &b.Notifications, oldStatus, &build.Build)
+		notifications := Filter(c, b.Notifications, oldStatus, &build.Build)
 		recipients = append(recipients, ComputeRecipients(c, notifications, nil, nil)...)
 		templateInput.OldStatus = oldStatus
 		return Notify(c, recipients, templateInput)
@@ -385,7 +385,7 @@ func handleBuild(c context.Context, build *Build, getCheckout CheckoutFunc, hist
 		}
 
 		// Notify, and include the blamelist.
-		n := Filter(c, &builder.Notifications, builder.Status, &build.Build)
+		n := Filter(c, builder.Notifications, builder.Status, &build.Build)
 		recipients = append(recipients, ComputeRecipients(c, n, commits[:index], aggregateLogs)...)
 		templateInput.OldStatus = builder.Status
 

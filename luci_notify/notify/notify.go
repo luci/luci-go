@@ -124,7 +124,7 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucketp
 
 // BlamelistRepoAllowset computes the aggregate repository allowlist for all
 // blamelist notification configurations in a given set of notifications.
-func BlamelistRepoAllowset(notifications notifypb.Notifications) stringset.Set {
+func BlamelistRepoAllowset(notifications *notifypb.Notifications) stringset.Set {
 	allowset := stringset.New(0)
 	for _, notification := range notifications.GetNotifications() {
 		blamelistInfo := notification.GetNotifyBlamelist()

@@ -190,7 +190,7 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 			for _, cfgBuilder := range cfgNotifier.Builders {
 				builder := builders[builderIndex]
 				builder.Repository = cfgBuilder.Repository
-				builder.Notifications = notifypb.Notifications{
+				builder.Notifications = &notifypb.Notifications{
 					Notifications: cfgNotifier.Notifications,
 				}
 				toSave = append(toSave, builder)

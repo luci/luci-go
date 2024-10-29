@@ -656,7 +656,7 @@ func makeBuilders(c context.Context, projectID string, cfg *apicfg.ProjectConfig
 				ProjectKey: parentKey,
 				ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
 				Repository: cfgBuilder.Repository,
-				Notifications: apicfg.Notifications{
+				Notifications: &apicfg.Notifications{
 					Notifications: cfgNotifier.Notifications,
 				},
 			})

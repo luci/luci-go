@@ -40,7 +40,7 @@ type Builder struct {
 	// Notifications is Notifications proto message, containing Notification messages
 	// associated with this builder. Each notification contains information about who
 	// to notify, and different settings on how to notify them.
-	Notifications notifypb.Notifications
+	Notifications *notifypb.Notifications
 
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
