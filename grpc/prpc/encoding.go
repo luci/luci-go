@@ -137,7 +137,7 @@ func writeResponse(ctx context.Context, w http.ResponseWriter, res *response) {
 	}
 
 	// Skip sending the response that exceeds the client's limit.
-	if res.maxResponseSize > 0 && len(body) > int(res.maxResponseSize) {
+	if res.maxResponseSize > 0 && int64(len(body)) > res.maxResponseSize {
 		writeError(ctx, w, errResponseTooBig(int64(len(body)), res.maxResponseSize), res.fmt)
 		return
 	}

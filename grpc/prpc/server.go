@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -74,9 +75,15 @@ var (
 	}, ", ")
 )
 
-// DefaultMaxRequestSize is the default maximum request size (in bytes)
-// the server is willing to read from the client.
-const DefaultMaxRequestSize = 64 * 1024 * 1024
+const (
+	// DefaultMaxRequestSize is the default maximum request size (in bytes)
+	// the server is willing to read from the client.
+	DefaultMaxRequestSize = 64 * 1024 * 1024
+
+	// UnlimitedMaxRequestSize can be used as Server's MaxRequestSize to remove
+	// limits on the allowed request size (with the risk of OOMing the client).
+	UnlimitedMaxRequestSize = math.MaxInt
+)
 
 // ResponseCompression controls how the server compresses responses.
 //
@@ -245,7 +252,8 @@ type Server struct {
 	// particular, AppEngine and Cloud Run (but only when using HTTP/1), have
 	// a 32MiB request size limit.
 	//
-	// If <= 0, DefaultMaxRequestSize will be used.
+	// If <= 0, DefaultMaxRequestSize will be used. Use UnlimitedMaxRequestSize to
+	// disable the limit (with the risk of OOMing the server).
 	MaxRequestSize int
 
 	mu        sync.RWMutex
@@ -319,9 +327,12 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 }
 
 // maxRequestSize is a limit on the request size pre and post decompression.
-func (s *Server) maxRequestSize() int {
+//
+// Use int64 (not int) in case the server is 32-bit. We need to be able to
+// handle large requests in that case  (even if just to reject them).
+func (s *Server) maxRequestSize() int64 {
 	if s.MaxRequestSize > 0 {
-		return s.MaxRequestSize
+		return int64(s.MaxRequestSize)
 	}
 	return DefaultMaxRequestSize
 }
@@ -339,7 +350,7 @@ func (s *Server) maxBytesReader(w http.ResponseWriter, r io.ReadCloser) io.ReadC
 	if _, replaced := r.(*reproducingReader); replaced {
 		return r
 	}
-	return http.MaxBytesReader(w, r, int64(s.maxRequestSize()))
+	return http.MaxBytesReader(w, r, s.maxRequestSize())
 }
 
 // handlePOST handles POST requests with pRPC messages.

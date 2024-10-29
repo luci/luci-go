@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -76,6 +77,11 @@ const (
 	// It is 32MiB minus 32KiB. Its value is picked to fit into Appengine response
 	// size limits (taking into account potential overhead on headers).
 	DefaultMaxResponseSize = 32*1024*1024 - 32*1024
+
+	// UnlimitedMaxResponseSize can be used as Client's MaxResponseSize to remove
+	// the limit on maximum acceptable response size: any response will be
+	// accepted (with the risk of OOMing the client).
+	UnlimitedMaxResponseSize = math.MaxInt
 )
 
 var (
@@ -111,7 +117,8 @@ type Client struct {
 	// use it to skip sending too big response. Instead the server will reply
 	// with the same sort of UNAVAILABLE error (with details attached as well).
 	//
-	// If <= 0, DefaultMaxResponseSize will be used.
+	// If <= 0, DefaultMaxResponseSize will be used. Use UnlimitedMaxResponseSize
+	// to disable the limit (with the risk of OOMing the client).
 	MaxResponseSize int
 
 	// MaxConcurrentRequests, if > 0, limits how many requests to the server can
@@ -507,6 +514,9 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 }
 
 // maxResponseSize is a maximum length of the uncompressed response to read.
+//
+// Use int64 (not int) in case the client is 32-bit. We need to be able to
+// handle large responses in that case (even if just to reject them).
 func (c *Client) maxResponseSize() int64 {
 	if c.MaxResponseSize <= 0 {
 		return DefaultMaxResponseSize
@@ -524,6 +534,10 @@ func (c *Client) readResponseBody(ctx context.Context, dest *bytes.Buffer, r *ht
 
 	dest.Reset()
 	if l := r.ContentLength; l > 0 {
+		// Note here `limit` is guaranteed to be <= math.MaxInt (even on a 32-bit
+		// architecture), since maxResponseSize() derives it from an int-typed
+		// field. Thus `l` will also be <= math.MaxInt and the typecast below is
+		// sound.
 		if l > limit {
 			logging.Errorf(ctx, "ContentLength header exceeds response body limit: %d > %d.", l, limit)
 			return errResponseTooBig(l, limit)
@@ -700,8 +714,16 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	headers.Set("Accept", options.outFormat.MediaType())
 	headers.Set("User-Agent", options.UserAgent)
 
-	// This tells the server to give up sending very large responses.
-	headers.Set(HeaderMaxResponseSize, strconv.FormatInt(c.maxResponseSize(), 10))
+	// This tells the server to give up sending very large responses. If the limit
+	// is disabled (by setting it to math.MaxInt), just don't set the header
+	// (math.MaxInt64 looks very scary as a text header). There's an edge case
+	// here: a 32-bit client won't be able to process more than 2GB of data either
+	// way (it will just fail to allocate a buffer for it), so omit the header
+	// only when the client is 64-bit and still send math.MaxInt32 value. It will
+	// tell the 64-bit server that responses larger than 2GB won't work.
+	if maxRespSize := c.maxResponseSize(); maxRespSize != math.MaxInt64 {
+		headers.Set(HeaderMaxResponseSize, strconv.FormatInt(maxRespSize, 10))
+	}
 
 	body := requestMessage
 	if c.EnableRequestCompression && len(requestMessage) > gzipThreshold {

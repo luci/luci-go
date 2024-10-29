@@ -17,6 +17,7 @@ package e2etest
 import (
 	"context"
 	"encoding/hex"
+	"math"
 	"math/rand"
 	"net/http"
 	"net/http/cookiejar"
@@ -400,4 +401,22 @@ func TestVerySmallTimeouts(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestMaxLimits(t *testing.T) {
+	t.Parallel()
+
+	ctx := gologger.StdConfig.Use(context.Background())
+	svc := service{}
+	ts, tc, client := newTestClient(ctx, &svc, nil)
+	defer ts.Close()
+
+	ts.MaxRequestSize = math.MaxInt
+	tc.MaxResponseSize = math.MaxInt
+
+	// Doesn't blow up.
+	svc.R = &testpb.HelloReply{Message: "sup"}
+	resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
+	assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+	assert.Loosely(t, resp, should.Resemble(svc.R))
 }

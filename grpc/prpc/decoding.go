@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"reflect"
 
@@ -51,7 +52,7 @@ var decompressionLimitErr = errors.Reason("the decompressed request size exceeds
 // fixFieldMasksForJSON indicates whether to attempt a workaround for
 // https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
 // TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecompressedBytes int, fixFieldMasksForJSON bool) error {
+func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecompressedBytes int64, fixFieldMasksForJSON bool) error {
 	format, err := FormatFromContentType(header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
@@ -68,17 +69,25 @@ func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecom
 		if err != nil {
 			return requestReadErr(err, "decompressing the request")
 		}
-		// Read one extra byte. This is how we'll know that we read past the limit,
-		// because LimitReader uses io.EOF to indicate the limit is reached, which
-		// is indistinguishable from just truncating the original reader.
-		buf, err = io.ReadAll(io.LimitReader(reader, int64(maxDecompressedBytes+1)))
-		if err == nil {
-			if len(buf) > maxDecompressedBytes {
-				err = decompressionLimitErr
-				_ = reader.Close() // this will be a bogus error, since we abandoned the reader
-			} else {
-				err = reader.Close() // this just checks the crc32 checksum
+		if maxDecompressedBytes == math.MaxInt64 {
+			// No limit. Just read until the EOF or OOM.
+			buf, err = io.ReadAll(reader)
+		} else {
+			// Read one extra byte. This is how we'll know that we read past the
+			// limit, because LimitReader uses io.EOF to indicate the limit is
+			// reached, which is indistinguishable from just truncating the original
+			// reader.
+			buf, err = io.ReadAll(io.LimitReader(reader, maxDecompressedBytes+1))
+			if err == nil {
+				if int64(len(buf)) > maxDecompressedBytes {
+					err = decompressionLimitErr
+				}
 			}
+		}
+		if err == nil {
+			err = reader.Close() // this just checks the crc32 checksum
+		} else {
+			_ = reader.Close() // this will be some bogus error since we abandoned the reader
 		}
 		returnGZipReader(reader)
 		if err != nil {
