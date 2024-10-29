@@ -1,4 +1,4 @@
-// Copyright 2016 The LUCI Authors.
+// Copyright 2024 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package prpc
+// Package testpb is used internally by pRPC tests.
+package testpb
 
-//go:generate cproto -discovery=false
+//go:generate cproto -discovery=false -use-grpc-plugin

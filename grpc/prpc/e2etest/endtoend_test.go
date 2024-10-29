@@ -43,12 +43,15 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/grpc/prpc/internal/testpb"
 
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type service struct {
-	R          *HelloReply
+	testpb.UnimplementedGreeterServer
+
+	R          *testpb.HelloReply
 	err        error
 	outgoingMD metadata.MD
 
@@ -59,7 +62,7 @@ type service struct {
 	incomingPeer *peer.Peer
 }
 
-func (s *service) Greet(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
+func (s *service) SayHello(ctx context.Context, req *testpb.HelloRequest) (*testpb.HelloReply, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	s.m.Lock()
 	s.incomingMD = md.Copy()
@@ -97,9 +100,9 @@ func (s *service) getIncomingPeer() *peer.Peer {
 	return s.incomingPeer
 }
 
-func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, HelloClient) {
+func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, testpb.GreeterClient) {
 	ts := prpctest.Server{}
-	RegisterHelloServer(&ts, svc)
+	testpb.RegisterGreeterServer(&ts, svc)
 	ts.Start(ctx)
 
 	prpcClient, err := ts.NewClientWithOptions(opts)
@@ -131,7 +134,7 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 	ts.ResponseCompression = prpc.CompressAlways
 	prpcClient.EnableRequestCompression = true
 
-	return &ts, prpcClient, NewHelloClient(prpcClient)
+	return &ts, prpcClient, testpb.NewGreeterClient(prpcClient)
 }
 
 func TestEndToEndBinary(t *testing.T) {
@@ -145,7 +148,7 @@ func TestEndToEndJSON(t *testing.T) {
 }
 
 func endToEndTest(t *testing.T, responseType string) {
-	ftt.Run(`A client/server for the Greet service`, t, func(t *ftt.Test) {
+	ftt.Run(`A client/server for the Greeter service`, t, func(t *ftt.Test) {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{
 			sleep: func() time.Duration { return time.Millisecond },
@@ -158,9 +161,9 @@ func endToEndTest(t *testing.T, responseType string) {
 		ts.MaxRequestSize = 2 * 1024 * 1024
 
 		t.Run(`Can round-trip a hello message`, func(t *ftt.Test) {
-			svc.R = &HelloReply{Message: "sup"}
+			svc.R = &testpb.HelloReply{Message: "sup"}
 
-			resp, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
@@ -176,9 +179,9 @@ func endToEndTest(t *testing.T, responseType string) {
 			}
 			prpcC.MaxResponseSize = 123
 
-			svc.R = &HelloReply{Message: strings.Repeat("z", 124)}
+			svc.R = &testpb.HelloReply{Message: strings.Repeat("z", 124)}
 
-			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
 			assert.Loosely(t, err, should.ErrLike("exceeds the client limit 123"))
 			assert.Loosely(t, prpc.ProtocolErrorDetails(err).GetResponseTooBig(), should.NotBeNil)
@@ -188,13 +191,13 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 
 		t.Run(`Can send a giant message with compression`, func(t *ftt.Test) {
-			svc.R = &HelloReply{Message: "sup"}
+			svc.R = &testpb.HelloReply{Message: "sup"}
 
 			msg := make([]byte, 512*1024)
 			_, err := rand.Read(msg)
 			assert.Loosely(t, err, should.BeNil)
 
-			resp, err := client.Greet(ctx, &HelloRequest{Name: hex.EncodeToString(msg)})
+			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: hex.EncodeToString(msg)})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
@@ -204,16 +207,16 @@ func endToEndTest(t *testing.T, responseType string) {
 			_, err := rand.Read(msg)
 			assert.Loosely(t, err, should.BeNil)
 
-			svc.R = &HelloReply{Message: hex.EncodeToString(msg)}
+			svc.R = &testpb.HelloReply{Message: hex.EncodeToString(msg)}
 
-			resp, err := client.Greet(ctx, &HelloRequest{Name: "hi"})
+			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "hi"})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
 
 		t.Run(`Rejects mega giant uncompressed request`, func(t *ftt.Test) {
 			prpcC.EnableRequestCompression = false
-			_, err := client.Greet(ctx, &HelloRequest{
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{
 				Name: strings.Repeat("z", 2*1024*1024),
 			})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnavailable)())
@@ -221,7 +224,7 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 
 		t.Run(`Rejects mega-giant compressed request`, func(t *ftt.Test) {
-			_, err := client.Greet(ctx, &HelloRequest{
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{
 				Name: strings.Repeat("z", 2*1024*1024),
 			})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnavailable)())
@@ -236,7 +239,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			assert.Loosely(t, err, should.BeNil)
 			svc.err = s.Err()
 
-			_, err = client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			details := status.Convert(err).Details()
 			assert.Loosely(t, details, should.Resemble([]any{detail}))
 		})
@@ -246,13 +249,13 @@ func endToEndTest(t *testing.T, responseType string) {
 			md.Append("MultiVAL-KEY", "val 1", "val 2")
 			md.Append("binary-BIN", string([]byte{0, 1, 2, 3}))
 
-			svc.R = &HelloReply{Message: "sup"}
+			svc.R = &testpb.HelloReply{Message: "sup"}
 			svc.outgoingMD = md
 
 			var respMD metadata.MD
 
 			ctx = metadata.NewOutgoingContext(ctx, md)
-			resp, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
+			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 
@@ -272,8 +275,8 @@ func endToEndTest(t *testing.T, responseType string) {
 		})
 
 		t.Run(`Populates peer`, func(t *ftt.Test) {
-			svc.R = &HelloReply{Message: "sup"}
-			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			svc.R = &testpb.HelloReply{Message: "sup"}
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 
 			peer := svc.getIncomingPeer()
@@ -286,9 +289,9 @@ func endToEndTest(t *testing.T, responseType string) {
 func TestTimeouts(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`A client/server for the Greet service`, t, func(t *ftt.Test) {
+	ftt.Run(`A client/server for the Greeter service`, t, func(t *ftt.Test) {
 		ctx := gologger.StdConfig.Use(context.Background())
-		svc := service{R: &HelloReply{Message: "sup"}}
+		svc := service{R: &testpb.HelloReply{Message: "sup"}}
 		ts, _, client := newTestClient(ctx, &svc, &prpc.Options{
 			Retry: func() retry.Iterator {
 				return &retry.ExponentialBackoff{
@@ -307,7 +310,7 @@ func TestTimeouts(t *testing.T) {
 				return 60 * time.Second // much larger than the per-RPC timeout
 			}
 
-			_, err := client.Greet(ctx, &HelloRequest{})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 		})
 
@@ -321,7 +324,7 @@ func TestTimeouts(t *testing.T) {
 				return 60 * time.Second
 			}
 
-			_, err := client.Greet(ctx, &HelloRequest{})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
 		})
 
@@ -333,14 +336,14 @@ func TestTimeouts(t *testing.T) {
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 
-			_, err := client.Greet(ctx, &HelloRequest{})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 		})
 
 		t.Run(`Respected DEADLINE_EXCEEDED response code`, func(t *ftt.Test) {
 			svc.err = status.Errorf(codes.DeadlineExceeded, "internal deadline exceeded")
 
-			_, err := client.Greet(ctx, &HelloRequest{})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
 			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 		})
 	})
@@ -349,7 +352,7 @@ func TestTimeouts(t *testing.T) {
 func TestVerySmallTimeouts(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`A client/server for the Greet service`, t, func(t *ftt.Test) {
+	ftt.Run(`A client/server for the Greeter service`, t, func(t *ftt.Test) {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{}
 		ts, _, client := newTestClient(ctx, &svc, &prpc.Options{
@@ -363,22 +366,22 @@ func TestVerySmallTimeouts(t *testing.T) {
 		// places in net/http network guts that can abort the connection.
 
 		t.Run(`Round-trip a hello message`, func(t *ftt.Test) {
-			svc.R = &HelloReply{Message: "sup"}
+			svc.R = &testpb.HelloReply{Message: "sup"}
 
-			_, err := client.Greet(ctx, &HelloRequest{Name: "round-trip"})
+			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			if err != nil {
 				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 			}
 		})
 
 		t.Run(`Send a giant message with compression`, func(t *ftt.Test) {
-			svc.R = &HelloReply{Message: "sup"}
+			svc.R = &testpb.HelloReply{Message: "sup"}
 
 			msg := make([]byte, 1024*1024)
 			_, err := rand.Read(msg)
 			assert.Loosely(t, err, should.BeNil)
 
-			_, err = client.Greet(ctx, &HelloRequest{Name: hex.EncodeToString(msg)})
+			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: hex.EncodeToString(msg)})
 			if err != nil {
 				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 			}
@@ -389,9 +392,9 @@ func TestVerySmallTimeouts(t *testing.T) {
 			_, err := rand.Read(msg)
 			assert.Loosely(t, err, should.BeNil)
 
-			svc.R = &HelloReply{Message: hex.EncodeToString(msg)}
+			svc.R = &testpb.HelloReply{Message: hex.EncodeToString(msg)}
 
-			_, err = client.Greet(ctx, &HelloRequest{Name: "hi"})
+			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: "hi"})
 			if err != nil {
 				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
 			}

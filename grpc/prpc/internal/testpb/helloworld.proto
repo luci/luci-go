@@ -6,25 +6,21 @@ syntax = "proto3";
 
 package prpc;
 
-option go_package = "go.chromium.org/luci/grpc/prpc";
-
 import "google/protobuf/field_mask.proto";
 
-// The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
-}
+option go_package = "go.chromium.org/luci/grpc/prpc/internal/testpb";
 
-// The request message containing the user's name.
 message HelloRequest {
   string name = 1;
   google.protobuf.FieldMask fields = 2;
 }
 
-// The response message containing the greetings
 message HelloReply {
   string message = 1;
+}
+
+service Greeter {
+  rpc SayHello(HelloRequest) returns (HelloReply);
 }
 
 service Calc {

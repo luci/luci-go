@@ -40,15 +40,16 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/retry"
-
-	"go.chromium.org/luci/grpc/prpc/prpcpb"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/grpc/prpc/internal/testpb"
+	"go.chromium.org/luci/grpc/prpc/prpcpb"
+
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func sayHello(t testing.TB) http.HandlerFunc {
@@ -65,7 +66,7 @@ func sayHello(t testing.TB) http.HandlerFunc {
 		reqBody, err := io.ReadAll(r.Body)
 		assert.Loosely(t, err, should.BeNil)
 
-		var req HelloRequest
+		var req testpb.HelloRequest
 		err = proto.Unmarshal(reqBody, &req)
 		assert.Loosely(t, err, should.BeNil)
 
@@ -74,7 +75,7 @@ func sayHello(t testing.TB) http.HandlerFunc {
 		}
 		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
 
-		res := HelloReply{Message: "Hello " + req.Name}
+		res := testpb.HelloReply{Message: "Hello " + req.Name}
 		if r.URL.Path == "/python/prpc/prpc.Greeter/SayHello" {
 			res.Message = res.Message + " from python service"
 		}
@@ -183,8 +184,8 @@ func TestClient(t *testing.T) {
 			}
 		}
 
-		req := &HelloRequest{Name: "John"}
-		res := &HelloReply{}
+		req := &testpb.HelloRequest{Name: "John"}
+		res := &testpb.HelloReply{}
 
 		t.Run("Call", func(t *ftt.Test) {
 			t.Run("Works", func(c *ftt.Test) {
@@ -249,7 +250,7 @@ func TestClient(t *testing.T) {
 			})
 
 			t.Run("Works with compression", func(t *ftt.Test) {
-				req := &HelloRequest{Name: strings.Repeat("A", 1024)}
+				req := &testpb.HelloRequest{Name: strings.Repeat("A", 1024)}
 
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 
@@ -262,13 +263,13 @@ func TestClient(t *testing.T) {
 					reqBody, err := io.ReadAll(gz)
 					assert.Loosely(t, err, should.BeNil)
 
-					var actualReq HelloRequest
+					var actualReq testpb.HelloRequest
 					err = proto.Unmarshal(reqBody, &actualReq)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, &actualReq, should.Resemble(req))
 
 					// Write response.
-					resBytes, err := proto.Marshal(&HelloReply{Message: "compressed response"})
+					resBytes, err := proto.Marshal(&testpb.HelloReply{Message: "compressed response"})
 					assert.Loosely(t, err, should.BeNil)
 					resBody, err := compressBlob(resBytes)
 					assert.Loosely(t, err, should.BeNil)
@@ -534,7 +535,7 @@ func TestClient(t *testing.T) {
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						err := client.Call(ctx, "prpc.Greeter", "SayHello", &HelloRequest{Name: "John"}, &HelloReply{})
+						err := client.Call(ctx, "prpc.Greeter", "SayHello", &testpb.HelloRequest{Name: "John"}, &testpb.HelloReply{})
 						assert.Loosely(t, err, should.BeNil)
 					}()
 				}

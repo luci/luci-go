@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/grpc/prpc/internal/testpb"
 )
 
 func TestDecoding(t *testing.T) {
@@ -40,7 +42,7 @@ func TestDecoding(t *testing.T) {
 	ftt.Run("readMessage", t, func(t *ftt.Test) {
 		const maxDecompressedSize = 100
 
-		var msg HelloRequest
+		var msg testpb.HelloRequest
 		read := func(contentType, contentEncoding string, body []byte) *protocolError {
 			err := readMessage(
 				bytes.NewBuffer(body),
@@ -62,7 +64,7 @@ func TestDecoding(t *testing.T) {
 			t.Helper()
 			err := read(contentType, "identity", body)
 			assert.That(t, err, should.Equal[*protocolError](nil), truth.LineContext())
-			assert.Loosely(t, &msg, should.Resemble(&HelloRequest{
+			assert.Loosely(t, &msg, should.Resemble(&testpb.HelloRequest{
 				Name: "Lucy",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{
@@ -73,7 +75,7 @@ func TestDecoding(t *testing.T) {
 		}
 
 		t.Run("binary", func(t *ftt.Test) {
-			testMsg := &HelloRequest{
+			testMsg := &testpb.HelloRequest{
 				Name: "Lucy",
 				Fields: &field_mask.FieldMask{
 					Paths: []string{
@@ -154,7 +156,7 @@ func TestDecoding(t *testing.T) {
 			}
 
 			t.Run("OK", func(t *ftt.Test) {
-				m := &HelloRequest{Name: "hi"}
+				m := &testpb.HelloRequest{Name: "hi"}
 				blob, err := proto.Marshal(m)
 				assert.Loosely(t, err, should.BeNil)
 

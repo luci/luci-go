@@ -36,14 +36,18 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/grpc/prpc/internal/testpb"
 )
 
 type greeterService struct {
+	testpb.UnimplementedGreeterServer
+
 	headerMD   metadata.MD
 	errDetails []proto.Message
 }
 
-func (s *greeterService) SayHello(ctx context.Context, req *HelloRequest) (*HelloReply, error) {
+func (s *greeterService) SayHello(ctx context.Context, req *testpb.HelloRequest) (*testpb.HelloReply, error) {
 	if req.Name == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
 	}
@@ -60,29 +64,31 @@ func (s *greeterService) SayHello(ctx context.Context, req *HelloRequest) (*Hell
 		SetHeader(ctx, s.headerMD)
 	}
 
-	return &HelloReply{
+	return &testpb.HelloReply{
 		Message: "Hello " + req.Name,
 	}, nil
 }
 
-type calcService struct{}
+type calcService struct {
+	testpb.UnimplementedCalcServer
+}
 
-func (s *calcService) Multiply(ctx context.Context, req *MultiplyRequest) (*MultiplyResponse, error) {
-	return &MultiplyResponse{
+func (s *calcService) Multiply(ctx context.Context, req *testpb.MultiplyRequest) (*testpb.MultiplyResponse, error) {
+	return &testpb.MultiplyResponse{
 		Z: req.X & req.Y,
 	}, nil
 }
 
-func decodeRequest(body []byte) *HelloRequest {
-	msg := &HelloRequest{}
+func decodeRequest(body []byte) *testpb.HelloRequest {
+	msg := &testpb.HelloRequest{}
 	if err := prototext.Unmarshal(body, msg); err != nil {
 		panic(err)
 	}
 	return msg
 }
 
-func decodeReply(body []byte) *HelloReply {
-	msg := &HelloReply{}
+func decodeReply(body []byte) *testpb.HelloReply {
+	msg := &testpb.HelloReply{}
 	if err := prototext.Unmarshal(body, msg); err != nil {
 		panic(err)
 	}
@@ -96,10 +102,10 @@ func TestServer(t *testing.T) {
 		server := Server{MaxRequestSize: 100}
 
 		greeterSvc := &greeterService{}
-		RegisterGreeterServer(&server, greeterSvc)
+		testpb.RegisterGreeterServer(&server, greeterSvc)
 
 		t.Run("Register Calc service", func(t *ftt.Test) {
-			RegisterCalcServer(&server, &calcService{})
+			testpb.RegisterCalcServer(&server, &calcService{})
 			assert.Loosely(t, server.ServiceNames(), should.Resemble([]string{
 				"prpc.Calc",
 				"prpc.Greeter",
@@ -135,7 +141,7 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
 			})
 
 			t.Run("Header Metadata", func(t *ftt.Test) {
@@ -382,7 +388,7 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
 				assert.Loosely(t, called, should.BeTrue)
 			})
 
@@ -406,7 +412,7 @@ func TestServer(t *testing.T) {
 					"Overridden":   {"1"},
 				}))
 				assert.Loosely(t, res.Body.String(), should.Equal("Override"))
-				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: error", func(t *ftt.Test) {
@@ -433,10 +439,10 @@ func TestServer(t *testing.T) {
 			t.Run("Override callback: peek, pass through", func(t *ftt.Test) {
 				req.Header.Set("Accept", mtPRPCText)
 
-				var rpcReq *HelloRequest
+				var rpcReq *testpb.HelloRequest
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						r := &HelloRequest{}
+						r := &testpb.HelloRequest{}
 						if err := body(r); err != nil {
 							return false, err
 						}
@@ -453,18 +459,18 @@ func TestServer(t *testing.T) {
 					"X-Content-Type-Options": {"nosniff"},
 					"X-Prpc-Grpc-Code":       {strCode(codes.OK)},
 				}))
-				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&HelloReply{Message: "Hello Lucy"}))
-				assert.Loosely(t, rpcReq, should.Resemble(&HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeReply(res.Body.Bytes()), should.Resemble(&testpb.HelloReply{Message: "Hello Lucy"}))
+				assert.Loosely(t, rpcReq, should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: peek, override", func(t *ftt.Test) {
 				req.Header.Set("Accept", mtPRPCText)
 
-				var rpcReq *HelloRequest
+				var rpcReq *testpb.HelloRequest
 				var rawBody []byte
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						r := &HelloRequest{}
+						r := &testpb.HelloRequest{}
 						if err := body(r); err != nil {
 							return false, err
 						}
@@ -483,9 +489,9 @@ func TestServer(t *testing.T) {
 					"Content-Type": {"text/plain; charset=utf-8"},
 					"Overridden":   {"1"},
 				}))
-				assert.Loosely(t, rpcReq, should.Resemble(&HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, rpcReq, should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
 				assert.Loosely(t, res.Body.String(), should.Equal("Override"))
-				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&HelloRequest{Name: "Lucy"}))
+				assert.Loosely(t, decodeRequest(rawBody), should.Resemble(&testpb.HelloRequest{Name: "Lucy"}))
 			})
 
 			t.Run("Override callback: malformed request, pass through", func(t *ftt.Test) {
@@ -494,7 +500,7 @@ func TestServer(t *testing.T) {
 				var callbackErr error
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						callbackErr = body(&HelloRequest{})
+						callbackErr = body(&testpb.HelloRequest{})
 						return false, nil // let the request be handled by the pRPC server
 					},
 				)
@@ -519,7 +525,7 @@ func TestServer(t *testing.T) {
 				var rawBodyErr error
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						callbackErr = body(&HelloRequest{})
+						callbackErr = body(&testpb.HelloRequest{})
 						rawBody, rawBodyErr = io.ReadAll(req.Body)
 						rw.Header().Set("Overridden", "1")
 						_, _ = fmt.Fprintf(rw, "Override")
@@ -548,7 +554,7 @@ func TestServer(t *testing.T) {
 				var callbackErr error
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						callbackErr = body(&HelloRequest{})
+						callbackErr = body(&testpb.HelloRequest{})
 						return false, nil // let the request be handled by the pRPC server
 					},
 				)
@@ -576,7 +582,7 @@ func TestServer(t *testing.T) {
 				var rawBodyErr error
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						callbackErr = body(&HelloRequest{})
+						callbackErr = body(&testpb.HelloRequest{})
 						rawBody, rawBodyErr = io.ReadAll(req.Body)
 						rw.Header().Set("Overridden", "1")
 						_, _ = fmt.Fprintf(rw, "Override")
@@ -602,7 +608,7 @@ func TestServer(t *testing.T) {
 				var callbackErr error
 				server.RegisterOverride("prpc.Greeter", "SayHello",
 					func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
-						callbackErr = body(&HelloRequest{})
+						callbackErr = body(&testpb.HelloRequest{})
 						return false, nil // let the request be handled by the pRPC server
 					},
 				)

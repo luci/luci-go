@@ -33,6 +33,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/grpc/prpc/internal/testpb"
 )
 
 func TestEncoding(t *testing.T) {
@@ -97,7 +99,7 @@ func TestEncoding(t *testing.T) {
 	})
 
 	ftt.Run("writeResponse", t, func(t *ftt.Test) {
-		msg := &HelloReply{Message: "Hi"}
+		msg := &testpb.HelloReply{Message: "Hi"}
 		c := context.Background()
 
 		test := func(f Format, body []byte, contentType string) {
@@ -123,7 +125,7 @@ func TestEncoding(t *testing.T) {
 
 		t.Run("compression", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
-			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
+			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:         msg,
 				fmt:         FormatText,
@@ -136,7 +138,7 @@ func TestEncoding(t *testing.T) {
 
 		t.Run("maxResponseSize", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
-			msg := &HelloReply{Message: strings.Repeat("A", 1024)}
+			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:             msg,
 				fmt:             FormatJSONPB,
