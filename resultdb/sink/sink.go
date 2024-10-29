@@ -26,6 +26,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,8 +37,6 @@ import (
 	"go.chromium.org/luci/lucictx"
 	"go.chromium.org/luci/server/middleware"
 	"go.chromium.org/luci/server/router"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -314,7 +315,10 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	prpc := &prpc.Server{}
+	prpc := &prpc.Server{
+		// Increase the limit to 1 GiB, since the default 64 MiB is too small.
+		MaxRequestSize: 1024 * 1024 * 1024,
+	}
 	prpc.InstallHandlers(routes, nil)
 	sinkpb.RegisterSinkServer(prpc, ss)
 
