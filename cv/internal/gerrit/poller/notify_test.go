@@ -57,7 +57,7 @@ func TestNotifyOnUnmatchedCLs(t *testing.T) {
 		sort.Sort(knownIDs)
 
 		err := p.notifyOnUnmatchedCLs(ctx, lProject, gHost, changes, changelist.UpdateCLTask_RUN_POKE)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// PM must be notified immediately on CLs already saved.
 		ids := pm.projects[lProject]

@@ -62,7 +62,7 @@ func TestRelationship(t *testing.T) {
 
 		t.Run("with allowed project", func(t *ftt.Test) {
 			gc, err := f.MakeClient(ctx, "host", "infra")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			t.Run("No relations", func(t *ftt.Test) {
 				resp, err := gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
@@ -70,7 +70,7 @@ func TestRelationship(t *testing.T) {
 					Project:    "infra/infra",
 					RevisionId: "1",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{}))
 			})
 
@@ -80,7 +80,7 @@ func TestRelationship(t *testing.T) {
 					Project:    "infra/infra",
 					RevisionId: "1",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				sortRelated(resp)
 				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
@@ -123,7 +123,7 @@ func TestRelationship(t *testing.T) {
 					Number:     4,
 					RevisionId: "4",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				sortRelated(resp)
 				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
@@ -179,7 +179,7 @@ func TestRelationship(t *testing.T) {
 					Number:     3,
 					RevisionId: "3",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				sortRelated(resp)
 				assert.Loosely(t, resp, should.Resemble(&gerritpb.GetRelatedChangesResponse{
 					Changes: []*gerritpb.GetRelatedChangesResponse_ChangeAndCommit{
@@ -223,7 +223,7 @@ func TestRelationship(t *testing.T) {
 
 		t.Run("with disallowed project", func(t *ftt.Test) {
 			gc, err := f.MakeClient(ctx, "host", "spying-luci-project")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			_, err = gc.GetRelatedChanges(ctx, &gerritpb.GetRelatedChangesRequest{
 				Number:     4,
 				RevisionId: "1",
@@ -262,7 +262,7 @@ func TestFiles(t *testing.T) {
 
 		ctx := context.Background()
 		gc, err := f.MakeClient(ctx, "host", "infra")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("change or revision NotFound", func(t *ftt.Test) {
 			_, err := gc.ListFiles(ctx, &gerritpb.ListFilesRequest{Number: 123213, RevisionId: "1"})
@@ -279,7 +279,7 @@ func TestFiles(t *testing.T) {
 				Number:     ciDefault.GetNumber(),
 				RevisionId: ciDefault.GetCurrentRevision(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"ps001/c.cpp", "shared/s.py"}))
 		})
 
@@ -288,13 +288,13 @@ func TestFiles(t *testing.T) {
 				Number:     ciCustom.GetNumber(),
 				RevisionId: "1",
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"bl.ah", "ps1/cus.tom"}))
 			resp, err = gc.ListFiles(ctx, &gerritpb.ListFilesRequest{
 				Number:     ciCustom.GetNumber(),
 				RevisionId: "2",
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sortedFiles(resp), should.Resemble([]string{"still/custom"}))
 		})
 
@@ -303,7 +303,7 @@ func TestFiles(t *testing.T) {
 				Number:     ciNoFiles.GetNumber(),
 				RevisionId: ciNoFiles.GetCurrentRevision(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.GetFiles(), should.HaveLength(0))
 		})
 	})
@@ -319,7 +319,7 @@ func TestGetChange(t *testing.T) {
 
 		ctx := context.Background()
 		gc, err := f.MakeClient(ctx, "host", "infra")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("NotFound", func(t *ftt.Test) {
 			_, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 12321})
@@ -328,7 +328,7 @@ func TestGetChange(t *testing.T) {
 
 		t.Run("Default", func(t *ftt.Test) {
 			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{Number: 100100})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.GetCurrentRevision(), should.BeEmpty)
 			assert.Loosely(t, resp.GetRevisions(), should.HaveLength(0))
 			assert.Loosely(t, resp.GetLabels(), should.HaveLength(0))
@@ -338,7 +338,7 @@ func TestGetChange(t *testing.T) {
 			resp, err := gc.GetChange(ctx, &gerritpb.GetChangeRequest{
 				Number:  100100,
 				Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION}})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.GetRevisions(), should.HaveLength(1))
 			assert.Loosely(t, resp.GetRevisions()[resp.GetCurrentRevision()], should.NotBeNil)
 		})
@@ -354,7 +354,7 @@ func TestGetChange(t *testing.T) {
 					gerritpb.QueryOption_MESSAGES,
 					gerritpb.QueryOption_SUBMITTABLE,
 				}})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Resemble(ci))
 		})
 	})
@@ -373,14 +373,14 @@ func TestListAccountEmails(t *testing.T) {
 		})
 
 		client, err := f.MakeClient(ctx, "foo", "bar")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("returns linked email for the given email address", func(t *ftt.Test) {
 			res, err := client.ListAccountEmails(ctx, &gerritpb.ListAccountEmailsRequest{
 				Email: "foo@google.com",
 			})
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.ListAccountEmailsResponse{
 				Emails: []*gerritpb.EmailInfo{
 					&gerritpb.EmailInfo{Email: "foo@google.com"},
@@ -407,13 +407,13 @@ func TestListChanges(t *testing.T) {
 
 		mustCurrentClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return cl
 		}
 
 		listChangeIDs := func(client gerrit.Client, req *gerritpb.ListChangesRequest) []int {
 			out, err := client.ListChanges(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, out.GetMoreChanges(), should.BeFalse)
 			ids := make([]int, len(out.GetChanges()))
 			for i, ch := range out.GetChanges() {
@@ -454,7 +454,7 @@ func TestListChanges(t *testing.T) {
 			assert.Loosely(t, listChangeIDs(g, &gerritpb.ListChangesRequest{}), should.Resemble([]int{8002, 8001, 8003}))
 
 			out, err := g.ListChanges(ctx, &gerritpb.ListChangesRequest{Limit: 2})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, out.GetMoreChanges(), should.BeTrue)
 			assert.Loosely(t, out.GetChanges()[0].GetNumber(), should.Equal(8002))
 			assert.Loosely(t, out.GetChanges()[1].GetNumber(), should.Equal(8001))
@@ -520,7 +520,7 @@ func TestListChanges(t *testing.T) {
 		t.Run("Bad queries", func(t *ftt.Test) {
 			test := func(query string) error {
 				client, err := f.MakeClient(ctx, "infra", "chromium")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				_, err = client.ListChanges(ctx, &gerritpb.ListChangesRequest{Query: query})
 				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike(`invalid query argument`))
@@ -568,7 +568,7 @@ func TestSetReview(t *testing.T) {
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return cl
 		}
 
@@ -616,7 +616,7 @@ func TestSetReview(t *testing.T) {
 				Number:  10001,
 				Message: "this is a message",
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{}))
 			assert.Loosely(t, latestCI().GetUpdated().AsTime(), should.HappenAfter(ciBefore.GetUpdated().AsTime()))
 			assert.Loosely(t, latestCI().GetMessages(), should.Resemble([]*gerritpb.ChangeMessageInfo{
@@ -637,7 +637,7 @@ func TestSetReview(t *testing.T) {
 					"Commit-Queue": 2,
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 				Labels: map[string]int32{
 					"Commit-Queue": 2,
@@ -668,7 +668,7 @@ func TestSetReview(t *testing.T) {
 					},
 					OnBehalfOf: 123,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 0,
@@ -686,7 +686,7 @@ func TestSetReview(t *testing.T) {
 					},
 					OnBehalfOf: 789,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&gerritpb.ReviewResult{
 					Labels: map[string]int32{
 						"Commit-Queue": 1,
@@ -741,7 +741,7 @@ func TestSubmitRevision(t *testing.T) {
 
 		mustWriterClient := func(host, luciProject string) gerrit.Client {
 			cl, err := f.MakeClient(ctx, host, luciProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return cl
 		}
 
@@ -802,7 +802,7 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciSingular.GetNumber(),
 				RevisionId: ciSingular.GetCurrentRevision(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
 			}))
@@ -815,7 +815,7 @@ func TestSubmitRevision(t *testing.T) {
 				Number:     ciStackTop.GetNumber(),
 				RevisionId: ciStackTop.GetCurrentRevision(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 				Status: gerritpb.ChangeStatus_MERGED,
 			}))
@@ -842,7 +842,7 @@ func TestSubmitRevision(t *testing.T) {
 					Number:     ciStackTop.GetNumber(),
 					RevisionId: ciStackTop.GetCurrentRevision(),
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&gerritpb.SubmitInfo{
 					Status: gerritpb.ChangeStatus_MERGED,
 				}))

@@ -61,7 +61,7 @@ func TestFormatCLError(t *testing.T) {
 			var mode run.Mode
 			mustFormat := func() string {
 				s, err := SFormatCLError(ctx, reason, cl, mode)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, s, should.NotContainSubstring("<no value>"))
 				return s
 			}

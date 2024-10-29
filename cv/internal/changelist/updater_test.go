@@ -200,7 +200,7 @@ func TestUpdaterSchedule(t *testing.T) {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return u.Schedule(ctx, task)
 			}, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]proto.Message{task, task}))
 
 			t.Log("Once out of dedup window, schedules a new task")
@@ -248,12 +248,12 @@ func TestUpdaterBatch(t *testing.T) {
 		t.Run("outside of a transaction, enqueues individual tasks", func(t *ftt.Test) {
 			t.Run("special case of just one task", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA}, UpdateCLTask_RUN_POKE)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads[:1]))
 			})
 			t.Run("multiple", func(t *ftt.Test) {
 				err := u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sortedTQPayloads(), should.Resemble(expectedPayloads))
 			})
 		})
@@ -262,7 +262,7 @@ func TestUpdaterBatch(t *testing.T) {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return u.ScheduleBatch(ctx, "proj", []*CL{clA, clB}, UpdateCLTask_RUN_POKE)
 			}, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 			// Run just the batch task.
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(BatchUpdateCLTaskClass))
@@ -336,7 +336,7 @@ func TestUpdaterHappyPath(t *testing.T) {
 
 		// Ensure CL is created with correct data.
 		cl, err := ExternalID("fake/123").Load(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, cl.Snapshot, should.Resemble(b.fetchResult.Snapshot))
 		assert.Loosely(t, cl.ApplicableConfig, should.Resemble(b.fetchResult.ApplicableConfig))
 		assert.Loosely(t, cl.UpdateTime, should.HappenWithin(time.Microsecond /*see DS.RoundTime()*/, ct.Clock.Now()))
@@ -456,7 +456,7 @@ func TestUpdaterFetchedNoNewData(t *testing.T) {
 			ExternalId:  "fake/1",
 			Requester:   UpdateCLTask_PUBSUB_POLL})
 
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Check the monitoring data
 		if b.fetchResult.IsEmpty() {
@@ -560,7 +560,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 		}
 
 		err := u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Resulting CL entity should keep the Snapshot, rewrite ApplicableConfig,
 		// and merge Access.
@@ -596,7 +596,7 @@ func TestUpdaterAccessRestriction(t *testing.T) {
 			DelAccess:        []string{"luci-project"},
 		}
 		err = u.handleCL(ctx, &UpdateCLTask{LuciProject: "luci-project", ExternalId: "fake/1"})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		cl3 := reloadCL(ctx, cl)
 		assert.Loosely(t, cl3.Snapshot, should.Resemble(b.fetchResult.Snapshot))                     // replaced
 		assert.Loosely(t, cl3.ApplicableConfig, should.Resemble(cl2.ApplicableConfig))               // same
@@ -911,7 +911,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 
 		t.Run("no deps", func(t *ftt.Test) {
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, nil, UpdateCLTask_RUN_POKE)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, deps, should.BeEmpty)
 		})
 
@@ -921,7 +921,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				clUpToDate.ExternalID:            DepKind_HARD,
 				clUpToDateDiffProject.ExternalID: DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
 				{Clid: int64(clBareBones.ID), Kind: DepKind_SOFT},
 				{Clid: int64(clUpToDate.ID), Kind: DepKind_HARD},
@@ -936,7 +936,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				"new/1": DepKind_SOFT,
 				"new/2": DepKind_HARD,
 			}, UpdateCLTask_RUN_POKE)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
 			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
@@ -953,7 +953,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 				clBareBones.ExternalID: DepKind_HARD,
 				clUpToDate.ExternalID:  DepKind_SOFT,
 			}, UpdateCLTask_RUN_POKE)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			cl1 := ExternalID("new/1").MustCreateIfNotExists(ctx)
 			cl2 := ExternalID("new/2").MustCreateIfNotExists(ctx)
 			assert.Loosely(t, deps, should.Resemble(sortDeps([]*Dep{
@@ -976,7 +976,7 @@ func TestUpdaterResolveAndScheduleDepsUpdate(t *testing.T) {
 			}
 
 			deps, err := u.ResolveAndScheduleDepsUpdate(ctx, lProject, depCLMap, UpdateCLTask_RUN_POKE)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			expectedDeps := make([]*Dep, clCount)
 			for i, depCL := range depCLs {
 				expectedDeps[i] = &Dep{

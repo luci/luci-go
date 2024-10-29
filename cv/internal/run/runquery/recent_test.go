@@ -143,7 +143,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 
 					},
 				}.LoadRuns(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pageToken, should.BeNil)
 				assert.Loosely(t, runs, should.BeEmpty)
 			})
@@ -178,7 +178,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 						return true, nil
 					},
 				}.LoadRuns(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pageToken, should.BeNil)
 				checkOrder(t, runs)
 				for _, r := range runs {
@@ -199,7 +199,7 @@ func TestRecentQueryBuilder(t *testing.T) {
 						}
 					},
 				}.LoadRuns(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pageToken, should.BeNil)
 				assert.Loosely(t, runs, should.BeEmpty)
 			})

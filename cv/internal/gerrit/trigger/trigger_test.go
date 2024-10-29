@@ -169,7 +169,7 @@ func TestFindCQTrigger(t *testing.T) {
 					TriggeredAt: now.Add(-15 * time.Minute),
 					Revision:    ci.GetCurrentRevision(),
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
 				trig := findCQTrigger(&FindInput{ChangeInfo: ci, ConfigGroup: cg})
 				assert.Loosely(t, trig, should.Resemble(&run.Trigger{

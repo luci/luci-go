@@ -365,7 +365,7 @@ func TestRunManager(t *testing.T) {
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(eventpb.ManageRunTaskClass))
 			assert.Loosely(t, currentRun(ctx).EVersion, should.Equal(initialEVersion+1))
 			entries, err := run.LoadRunLogEntries(ctx, runID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, entries, should.Resemble(fh.startAddsLogEntries))
 		})
 

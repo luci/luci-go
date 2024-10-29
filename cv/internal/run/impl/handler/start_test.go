@@ -94,7 +94,7 @@ func TestStart(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return id
 		}
 
@@ -167,7 +167,7 @@ func TestStart(t *testing.T) {
 			}
 
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(1))
 
@@ -219,7 +219,7 @@ func TestStart(t *testing.T) {
 			}
 
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
@@ -239,7 +239,7 @@ func TestStart(t *testing.T) {
 
 			t.Run("Enqueue pending message only once when quota is exhausted", func(t *ftt.Test) {
 				res, err := h.Start(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				ops := res.State.OngoingLongOps.GetOps()
 				assert.Loosely(t, ops, should.ContainKey("1-1"))
 				assert.Loosely(t, ops["1-1"].GetPostGerritMessage(), should.Resemble(&run.OngoingLongOps_Op_PostGerritMessage{
@@ -269,7 +269,7 @@ func TestStart(t *testing.T) {
 			), should.BeNil)
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			ops := res.State.OngoingLongOps.GetOps()
@@ -286,7 +286,7 @@ func TestStart(t *testing.T) {
 			), should.BeNil)
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 		})
@@ -302,7 +302,7 @@ func TestStart(t *testing.T) {
 				},
 			), should.BeNil)
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
 			runtest.AssertReceivedStart(t, ctx, child1)
@@ -318,7 +318,7 @@ func TestStart(t *testing.T) {
 			rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
 			t.Run("Reset triggers on all CLs", func(t *ftt.Test) {
 				res, err := h.Start(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
@@ -341,7 +341,7 @@ func TestStart(t *testing.T) {
 			t.Run("Only reset trigger on root CL", func(t *ftt.Test) {
 				rs.RootCL = cl.ID
 				res, err := h.Start(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
@@ -358,7 +358,7 @@ func TestStart(t *testing.T) {
 		t.Run("Fail the Run if acls.CheckRunCreate fails", func(t *ftt.Test) {
 			ct.ResetMockedAuthDB(ctx)
 			res, err := h.Start(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 
@@ -399,7 +399,7 @@ func TestStart(t *testing.T) {
 				rs.CLs = common.CLIDs{cl.ID, anotherCL.ID}
 				rs.RootCL = cl.ID
 				res, err := h.Start(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
@@ -425,7 +425,7 @@ func TestStart(t *testing.T) {
 			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				res, err := h.Start(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Equal(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -477,7 +477,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			rs.Run.Status = run.Status_SUBMITTING
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -491,7 +491,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 			// However, this test aims to cover possible future logic change in CV.
 			result.Status = eventpb.LongOpCompleted_CANCELLED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -507,7 +507,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -518,7 +518,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -529,7 +529,7 @@ func TestOnCompletedPostStartMessage(t *testing.T) {
 		t.Run("on expiration,cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)

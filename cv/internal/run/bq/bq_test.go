@@ -218,7 +218,7 @@ func TestMakeAttempt(t *testing.T) {
 
 		t.Run("All fields", func(t *ftt.Test) {
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a, should.Resemble(&cvbqpb.Attempt{
 				Key:                  runID.AttemptKey(),
 				LuciProject:          lProject,
@@ -352,7 +352,7 @@ func TestMakeAttempt(t *testing.T) {
 			a, err := makeAttempt(ctx, r, []*run.RunCL{
 				clSubmitted, clFailedToSubmit, clPendingToSubmit,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,
@@ -396,7 +396,7 @@ func TestMakeAttempt(t *testing.T) {
 			r.Tryjobs.GetState().Status = tryjob.ExecutionState_FAILED
 			r.Status = run.Status_FAILED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_FAILURE))
 			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_FAILED_TRYJOBS))
 		})
@@ -405,7 +405,7 @@ func TestMakeAttempt(t *testing.T) {
 			// TODO(crbug/1342810): Populate run failure reason
 			r.Status = run.Status_FAILED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_FAILURE))
 			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_UNAPPROVED))
 		})
@@ -414,7 +414,7 @@ func TestMakeAttempt(t *testing.T) {
 			// TODO(crbug/1342810): Populate run failure reason
 			r.Status = run.Status_CANCELLED
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.Status, should.Equal(cvbqpb.AttemptStatus_ABORTED))
 			assert.Loosely(t, a.Substatus, should.Equal(cvbqpb.AttemptSubstatus_MANUAL_CANCEL))
 		})
@@ -422,7 +422,7 @@ func TestMakeAttempt(t *testing.T) {
 		t.Run("Empty actual start time", func(t *ftt.Test) {
 			r.StartTime = time.Time{}
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.GetActualStartTime(), should.BeNil)
 		})
 
@@ -431,7 +431,7 @@ func TestMakeAttempt(t *testing.T) {
 				IncludedTryjobs: []string{fmt.Sprintf("%s/try: cool-builder", lProject)},
 			}
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.GetHasCustomRequirement(), should.BeTrue)
 		})
 
@@ -439,19 +439,19 @@ func TestMakeAttempt(t *testing.T) {
 			t.Run("tagged with service user", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Tags = []string{"SERVICE_USER"}
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
 			t.Run("domain is prod.google.com", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "abc@prod.google.com"
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
 			t.Run("domain is gserviceaccount.com", func(t *ftt.Test) {
 				cl.Detail.GetGerrit().GetInfo().GetOwner().Email = "xyz@proj-foo.iam.gserviceaccount.com"
 				a, err := makeAttempt(ctx, r, []*run.RunCL{cl})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, a.GerritChanges[0].IsOwnerBot, should.BeTrue)
 			})
 		})
@@ -488,7 +488,7 @@ func TestMakeAttempt(t *testing.T) {
 			r.Submission.SubmittedCls = append(r.Submission.SubmittedCls, int64(anotherCL.ID))
 			assert.Loosely(t, datastore.Put(ctx, anotherCL, r), should.BeNil)
 			a, err := makeAttempt(ctx, r, []*run.RunCL{cl, anotherCL})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, a.GetGerritChanges(), should.Resemble([]*cvbqpb.GerritChange{
 				{
 					Host:                       gHost,

@@ -48,7 +48,7 @@ func TestCancel(t *testing.T) {
 			ConfigGroups: []*cfgpb.ConfigGroup{{Name: "main"}},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		cg := cgs[0]
 		runID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
 		clid := common.CLID(11)
@@ -74,7 +74,7 @@ func TestCancel(t *testing.T) {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 			assert.Loosely(t, res.State.StartTime, should.Resemble(now.Add(-1*time.Minute)))
 			assert.Loosely(t, res.State.EndTime, should.Resemble(now))
@@ -87,14 +87,14 @@ func TestCancel(t *testing.T) {
 			rs.Status = run.Status_RUNNING
 			rs.StartTime = now.Add(-1 * time.Minute)
 			res, err := h.Cancel(ctx, rs, []string{"user request", "", "user request"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{"user request"}))
 		})
 
 		t.Run("Cancels SUBMITTING Run", func(t *ftt.Test) {
 			rs.Status = run.Status_SUBMITTING
 			res, err := h.Cancel(ctx, rs, []string{"user request"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Equal(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
@@ -111,7 +111,7 @@ func TestCancel(t *testing.T) {
 				rs.StartTime = clock.Now(ctx).UTC().Add(-1 * time.Minute)
 				rs.EndTime = clock.Now(ctx).UTC().Add(-30 * time.Second)
 				res, err := h.Cancel(ctx, rs, []string{"user request"})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Equal(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)

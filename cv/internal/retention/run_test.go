@@ -84,7 +84,7 @@ func TestScheduleWipeoutRuns(t *testing.T) {
 		}
 
 		err := scheduleWipeoutRuns(ctx, ct.TQDispatcher)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		var actualRuns common.RunIDs
 		for _, task := range ct.TQ.Tasks() {
 			assert.Loosely(t, task.ETA, should.HappenWithin(wipeoutTasksDistInterval, ct.Clock.Now()))

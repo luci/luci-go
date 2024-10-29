@@ -68,7 +68,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 
 		t.Run("Enqueue longop", func(t *ftt.Test) {
 			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 			assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
@@ -87,7 +87,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 		t.Run("Defer if an tryjob execute task is ongoing", func(t *ftt.Test) {
 			enqueueTryjobsUpdatedTask(ctx, rs, common.TryjobIDs{123})
 			res, err := h.OnTryjobsUpdated(ctx, rs, common.MakeTryjobIDs(456, 789, 456))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 		})
@@ -103,7 +103,7 @@ func TestOnTryjobsUpdated(t *testing.T) {
 			t.Run(fmt.Sprintf("Noop when Run is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				res, err := h.OnTryjobsUpdated(ctx, rs, common.TryjobIDs{123})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Equal(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -183,7 +183,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 			t.Run(fmt.Sprintf("on long op %s", longOpStatus), func(t *ftt.Test) {
 				result.Status = longOpStatus
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 				assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 				for _, op := range res.State.OngoingLongOps.GetOps() {
@@ -204,9 +204,9 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 						Status: tryjob.ExecutionState_RUNNING,
 					}, 0, nil)
 				}, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				res, err := h.OnLongOpCompleted(ctx, rs, result)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 				assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 					State: &tryjob.ExecutionState{
@@ -224,12 +224,12 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 						Status: tryjob.ExecutionState_SUCCEEDED,
 					}, 0, nil)
 				}, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				t.Run("Full Run", func(t *ftt.Test) {
 					rs.Mode = run.FullRun
 					ctx = context.WithValue(ctx, &fakeTaskIDKey, "task-foo")
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -245,7 +245,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				t.Run("Dry Run", func(t *ftt.Test) {
 					rs.Mode = run.DryRun
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -273,7 +273,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 				t.Run("New Patchset Run, no message is posted", func(t *ftt.Test) {
 					rs.Mode = run.NewPatchsetRun
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -320,9 +320,9 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						}, 0, nil)
 					}, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -384,9 +384,9 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							},
 						}, 0, nil)
 					}, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -431,9 +431,9 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							Status: tryjob.ExecutionState_FAILED,
 						}, 0, nil)
 					}, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
 					assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
 						State: &tryjob.ExecutionState{
@@ -470,7 +470,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 							Status: tryjob.ExecutionState_FAILED,
 						}, 0, nil)
 					}, nil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					anotherCL := &run.RunCL{
 						ID:         1002,
 						Run:        datastore.MakeKey(ctx, common.RunKind, string(rs.ID)),
@@ -491,7 +491,7 @@ func TestOnCompletedExecuteTryjobs(t *testing.T) {
 
 					rs.RootCL = anotherCL.ID
 					res, err := h.OnLongOpCompleted(ctx, rs, result)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.OngoingLongOps.GetOps(), should.HaveLength(1))
 					for _, op := range res.State.OngoingLongOps.GetOps() {
 						assert.Loosely(t, op.GetResetTriggers(), should.NotBeNil)

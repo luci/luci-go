@@ -171,7 +171,7 @@ func TestGerrit(t *testing.T) {
 					event := &gerritpb.SourceRepoEvent{}
 					assert.Loosely(t, protojson.Unmarshal(payload, event), should.BeNil)
 					bin, err := proto.Marshal(event)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					msg.Data = bin
 					settings.MessageFormat = listenerpb.Settings_GerritSubscription_PROTO_BINARY
 					check(t)

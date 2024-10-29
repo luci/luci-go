@@ -118,7 +118,7 @@ func TestMirrorIterator(t *testing.T) {
 					called = true
 					return nil
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, called, should.BeTrue)
 			})
 		})

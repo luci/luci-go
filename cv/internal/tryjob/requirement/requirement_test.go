@@ -267,7 +267,7 @@ func TestGetDisallowedOwners(t *testing.T) {
 		t.Run("works", func(t *ftt.Test) {
 			t.Run("with no allowlists", func(t *ftt.Test) {
 				disallowed, err := getDisallowedOwners(ctx, input, []string{userA.Email()})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, disallowed, should.HaveLength(0))
 			})
 		})
@@ -308,7 +308,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeFalse)
 			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &incompatibleTryjobOptions{
@@ -324,7 +324,7 @@ func TestCompute(t *testing.T) {
 			t.Run("with multiple CLs", func(t *ftt.Test) { in.addCL(userB.Email()) })
 			res, err := Compute(ctx, *in)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
 			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -351,7 +351,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeFalse)
 			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
@@ -369,7 +369,7 @@ func TestCompute(t *testing.T) {
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:builder1")
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.OK(), should.BeFalse)
 				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
@@ -389,7 +389,7 @@ func TestCompute(t *testing.T) {
 				in.addCL(userD.Email())
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.OK(), should.BeFalse)
 				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
@@ -413,7 +413,7 @@ func TestCompute(t *testing.T) {
 				}
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.OK(), should.BeTrue)
 			})
 		})
@@ -425,7 +425,7 @@ func TestCompute(t *testing.T) {
 
 			t.Run("skips by default", func(t *ftt.Test) {
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -515,7 +515,7 @@ func TestCompute(t *testing.T) {
 				in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test:equibuilder")
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.OK(), should.BeFalse)
 				assert.Loosely(t, res, should.Resemble(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
@@ -592,7 +592,7 @@ func TestCompute(t *testing.T) {
 				}.generate()})
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.OK(), should.BeTrue)
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 			})
@@ -606,7 +606,7 @@ func TestCompute(t *testing.T) {
 						EquiAllowlist: "", // allow everyone
 					}.generate()})
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.OK(), should.BeTrue)
 					assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
 						{
@@ -633,7 +633,7 @@ func TestCompute(t *testing.T) {
 						EquiAllowlist: "another-secret-group",
 					}.generate()})
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.OK(), should.BeTrue)
 					assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 				})
@@ -651,7 +651,7 @@ func TestCompute(t *testing.T) {
 			for i := 0; i < 1000; i++ {
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				if len(res.Requirement.GetDefinitions()) > 0 {
 					assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 					def := res.Requirement.GetDefinitions()[0]
@@ -673,7 +673,7 @@ func TestCompute(t *testing.T) {
 			for i := 0; i < 10; i++ { // should include the definition all the time.
 				in.CLs[0].ID = common.CLID(baseCLID + i)
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 				def := res.Requirement.GetDefinitions()[0]
 				assert.Loosely(t, def.GetCritical(), should.BeTrue)
@@ -699,7 +699,7 @@ func TestCompute(t *testing.T) {
 					"some/directory/contains/some/file",
 				}
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -725,7 +725,7 @@ func TestCompute(t *testing.T) {
 						"some/directory/contains/some/file",
 					}
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					// If the builder is not skipped, it will be in
 					// res.Requirement.Definitions.
@@ -753,7 +753,7 @@ func TestCompute(t *testing.T) {
 						"other/directory/contains/some/file",
 					}
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -768,7 +768,7 @@ func TestCompute(t *testing.T) {
 					in.CLs[0].Detail.GetGerrit().Files = []string{}
 					in.CLs[0].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -813,7 +813,7 @@ func TestCompute(t *testing.T) {
 				multiCLIn.CLs[1].Detail.GetGerrit().Host = "example.com"
 				multiCLIn.CLs[1].Detail.GetGerrit().Info = gf.CI(10, gf.ParentCommits([]string{"one", "two"}), gf.Project("repo"))
 				res, err := Compute(ctx, *multiCLIn)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				// Builder is triggered because there is a merge commit.
 				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
@@ -862,7 +862,7 @@ func TestCompute(t *testing.T) {
 					}
 					res, err := Compute(ctx, *in)
 
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -878,7 +878,7 @@ func TestCompute(t *testing.T) {
 					}
 					res, err := Compute(ctx, *in)
 
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -893,9 +893,9 @@ func TestCompute(t *testing.T) {
 						"some/readme.md",
 					}
 					res, err := Compute(ctx, *in)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -937,7 +937,7 @@ func TestCompute(t *testing.T) {
 				})
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(3))
 				expectedSkipStaleCheck := []bool{false, true, false}
@@ -961,7 +961,7 @@ func TestCompute(t *testing.T) {
 				}
 
 				res, err := Compute(ctx, *in)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				for _, def := range res.Requirement.GetDefinitions() {
 					assert.Loosely(t, def.GetSkipStaleCheck(), should.BeTrue)
@@ -983,7 +983,7 @@ func TestCompute(t *testing.T) {
 			in.RunMode = run.NewPatchsetRun
 			in.RunOptions.IncludedTryjobs = append(in.RunOptions.IncludedTryjobs, "test-proj/test.bucket:builder2")
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
 			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -1031,7 +1031,7 @@ func TestCompute(t *testing.T) {
 			}
 			res, err := Compute(ctx, *in)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
 			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
@@ -1060,7 +1060,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeFalse)
 			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
@@ -1075,7 +1075,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.SkipTryjobs = true
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeTrue)
 			assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 		})
@@ -1088,7 +1088,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeFalse)
 			assert.Loosely(t, res, should.Resemble(&ComputationResult{
 				ComputationFailure: &unauthorizedIncludedTryjob{
@@ -1110,7 +1110,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeTrue)
 			assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
 				{
@@ -1142,7 +1142,7 @@ func TestCompute(t *testing.T) {
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder2")
 
 			res, err := Compute(ctx, *in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeTrue)
 			assert.Loosely(t, res.Requirement.Definitions, should.HaveLength(1))
 			assert.Loosely(t, res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), should.Equal("builder2"))

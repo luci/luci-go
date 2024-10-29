@@ -72,7 +72,7 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 		t.Run("on cancellation, cleans up Run's state", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_CANCELLED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -88,7 +88,7 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -99,7 +99,7 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 		t.Run("on failure, cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_FAILED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -110,7 +110,7 @@ func TestOnCompletedPostGerritMessage(t *testing.T) {
 		t.Run("on expiration,cleans Run's state and record reasons", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
 			assert.Loosely(t, res.State.OngoingLongOps, should.BeNil)
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)

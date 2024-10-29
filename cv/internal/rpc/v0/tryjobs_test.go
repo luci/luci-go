@@ -160,7 +160,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ti, should.Resemble([]*apiv0pb.TryjobInvocation{
 				{
 					BuilderConfig: cg.GetVerifiers().GetTryjob().GetBuilders()[0],
@@ -252,7 +252,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ti, should.BeEmpty)
 		})
 
@@ -280,7 +280,7 @@ func TestMakeTryjobInvocations(t *testing.T) {
 				},
 			}
 			ti, err := makeTryjobInvocations(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ti, should.BeEmpty)
 		})
 	})

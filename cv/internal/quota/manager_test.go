@@ -56,7 +56,7 @@ func TestManager(t *testing.T) {
 		ctx := ct.SetUp(t)
 
 		s, err := miniredis.Run()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		defer s.Close()
 		s.SetTime(clock.Now(ctx))
 
@@ -68,7 +68,7 @@ func TestManager(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return id
 		}
 
@@ -127,7 +127,7 @@ func TestManager(t *testing.T) {
 
 		t.Run("WritePolicy() with config groups but no run limit", func(t *ftt.Test) {
 			pid, err := qm.WritePolicy(ctx, lProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, pid, should.BeNil)
 		})
 
@@ -140,7 +140,7 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
@@ -156,7 +156,7 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
@@ -172,7 +172,7 @@ func TestManager(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfg)
 			pid, err := qm.WritePolicy(ctx, lProject)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, pid, should.Resemble(&quotapb.PolicyConfigID{
 				AppId:   "cv",
 				Realm:   "chromium",
@@ -197,7 +197,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(googlerLimit))
 		})
 
@@ -218,7 +218,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 			res, err := qm.findRunLimit(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(exampleLimit))
 		})
 
@@ -239,7 +239,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(genUserLimit("default", 5, nil))) // default name is overriden.
 		})
 
@@ -259,7 +259,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, err := qm.findRunLimit(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -280,7 +280,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.DebitRunQuota(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
@@ -315,7 +315,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.CreditRunQuota(ctx, r)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    5,
@@ -350,7 +350,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
@@ -368,7 +368,7 @@ func TestManager(t *testing.T) {
 			), should.Equal(1))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,
@@ -401,7 +401,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    -1,
@@ -444,7 +444,7 @@ func TestManager(t *testing.T) {
 			t.Run("quota overflow", func(t *ftt.Test) {
 				// overflow doesn't err but gets capped.
 				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", 10)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					AccountStatus: quotapb.OpResult_CREATED,
@@ -478,7 +478,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
@@ -512,7 +512,7 @@ func TestManager(t *testing.T) {
 				})
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, userLimit, should.Resemble(partnerLimit))
 				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              0,
@@ -530,7 +530,7 @@ func TestManager(t *testing.T) {
 				})
 
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, userLimit, should.Resemble(chromiesLimit))
 				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              8,
@@ -550,7 +550,7 @@ func TestManager(t *testing.T) {
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
 				res, userLimit, err = qm.runQuotaOp(ctx, r, "", 2)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, userLimit, should.Resemble(chromiesLimit))
 				assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 					NewBalance:              10,
@@ -578,7 +578,7 @@ func TestManager(t *testing.T) {
 			}
 
 			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
@@ -586,7 +586,7 @@ func TestManager(t *testing.T) {
 			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", -1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:    4,
@@ -594,7 +594,7 @@ func TestManager(t *testing.T) {
 			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,
@@ -604,7 +604,7 @@ func TestManager(t *testing.T) {
 			}))
 
 			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, userLimit, should.Resemble(googlerLimit))
 			assert.Loosely(t, res, should.Resemble(&quotapb.OpResult{
 				NewBalance:              2,

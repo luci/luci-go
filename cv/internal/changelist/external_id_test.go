@@ -28,11 +28,11 @@ func TestExternalID(t *testing.T) {
 
 		t.Run("GobID", func(t *ftt.Test) {
 			eid, err := GobID("x-review.example.com", 12)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, eid, should.Resemble(ExternalID("gerrit/x-review.example.com/12")))
 
 			host, change, err := eid.ParseGobID()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, host, should.Match("x-review.example.com"))
 			assert.Loosely(t, change, should.Equal(12))
 
@@ -56,7 +56,7 @@ func TestJoinExternalURLs(t *testing.T) {
 	ftt.Run("JoinExternalURLs works", t, func(t *ftt.Test) {
 		gob := func(num int64) ExternalID {
 			eid, err := GobID("example.com", num)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return eid
 		}
 		var eids []ExternalID

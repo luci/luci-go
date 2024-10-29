@@ -59,6 +59,6 @@ func TestQueryTryjobIDsUpdatedBefore(t *testing.T) {
 	slices.Sort(expected)
 
 	actual, err := QueryTryjobIDsUpdatedBefore(ctx, before)
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	assert.Loosely(t, actual, should.Match(expected))
 }

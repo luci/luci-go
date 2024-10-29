@@ -90,7 +90,7 @@ func TestRunAggregator(t *testing.T) {
 		mustReport := func(active ...string) {
 			ra := runsAggregator{}
 			err := ra.report(ctx, active)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		}
 
 		t.Run("Skip reporting for disabled project", func(t *ftt.Test) {

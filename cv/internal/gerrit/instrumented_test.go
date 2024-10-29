@@ -71,11 +71,11 @@ func TestInstrumentedFactory(t *testing.T) {
 		}))
 		defer srv.Close()
 		u, err := url.Parse(srv.URL)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		gHost := u.Host
 
 		prod, err := newProd(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		prod.baseTransport = srv.Client().Transport
 		prod.mockMintProjectToken = func(context.Context, auth.ProjectTokenParams) (*auth.Token, error) {
 			return &auth.Token{
@@ -86,13 +86,13 @@ func TestInstrumentedFactory(t *testing.T) {
 
 		f := InstrumentedFactory(prod)
 		c1, err := f.MakeClient(ctx, gHost, "prj1")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		c2, err := f.MakeClient(ctx, gHost, "prj2")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		mockDelay, mockHTTPCode, mockResp = time.Second, http.StatusOK, ")]}'\n[]" // no changes.
 		r1, err := c1.ListChanges(ctx, &gerritpb.ListChangesRequest{})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, r1.GetChanges(), should.BeEmpty)
 		assert.Loosely(t, tsmonSentCounter(ctx, metricCount, "prj1", gHost, "ListChanges", "OK"), should.Equal(1))
 		d1 := tsmonSentDistr(ctx, metricDurationMS, "prj1", gHost, "ListChanges", "OK")

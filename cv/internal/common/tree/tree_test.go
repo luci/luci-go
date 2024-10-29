@@ -54,7 +54,7 @@ func TestTreeStatesClient(t *testing.T) {
 				gomock.Any()).Return(res, nil)
 
 			ts, err := client.FetchLatest(ctx, "mock")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ts, should.Resemble(Status{
 				State: Open,
 				Since: now,

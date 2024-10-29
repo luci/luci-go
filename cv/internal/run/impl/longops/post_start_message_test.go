@@ -146,7 +146,7 @@ func TestPostStartMessage(t *testing.T) {
 
 			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info, convey.Adapt(gf.ShouldLastMessageContain)("CV is trying the patch.\n\nBot data: "))
 		})
@@ -154,7 +154,7 @@ func TestPostStartMessage(t *testing.T) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			op := makeOp(makeRunWithCLs(nil, gf.CI(gChange1, gf.CQ(+2))))
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
@@ -179,7 +179,7 @@ func TestPostStartMessage(t *testing.T) {
 			op := makeOp(r)
 
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 
 			ci1 := ct.GFake.GetChange(gHost, gChange1).Info
@@ -200,7 +200,7 @@ func TestPostStartMessage(t *testing.T) {
 				gf.CI(gChange2, gf.CQ(+1)),
 			))
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 
 			for _, gChange := range []int{gChange1, gChange2} {
@@ -227,7 +227,7 @@ func TestPostStartMessage(t *testing.T) {
 			// Simulate first try updating Gerrit, but somehow crashing before getting
 			// response from Gerrit.
 			_, err := opFirst.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			ci := ct.GFake.GetChange(gHost, gChange1).Info
 			assert.Loosely(t, ci, convey.Adapt(gf.ShouldLastMessageContain)("CV is trying the patch"))
 			assert.Loosely(t, ci.GetMessages(), should.HaveLength(1))
@@ -235,7 +235,7 @@ func TestPostStartMessage(t *testing.T) {
 			t.Run("very quick retry leads to dups", func(t *ftt.Test) {
 				ct.Clock.Add(time.Second)
 				res, err := opRetry.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), should.HaveLength(2))
 				// And the timestamp isn't entirely right, but that's fine.
@@ -245,7 +245,7 @@ func TestPostStartMessage(t *testing.T) {
 			t.Run("later retry", func(t *ftt.Test) {
 				ct.Clock.Add(util.StaleCLAgeThreshold)
 				res, err := opRetry.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				// There should still be exactly 1 message.
 				ci := ct.GFake.GetChange(gHost, gChange1).Info
@@ -270,7 +270,7 @@ func TestPostStartMessage(t *testing.T) {
 				res, err := op.Do(ctx)
 				// Given any failure, the status should be set to FAILED,
 				// but the returned error is nil to prevent the TQ retry.
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_FAILED))
 				assert.Loosely(t, res.GetPostStartMessage().GetTime(), should.BeNil)
 				assert.Loosely(t, ct.GFake.GetChange(gHost, gChange1).Info.GetMessages(), should.HaveLength(0))

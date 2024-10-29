@@ -129,14 +129,14 @@ func TestPartitionConfig(t *testing.T) {
 
 		t.Run("load from Datstore", func(t *ftt.Test) {
 			m, err := LoadMatcher(ctx, luciProject, hash)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			testMatches(m)
 
 			t.Run("Serialize/Deserialize", func(t *ftt.Test) {
 				bytes, err := m.Serialize()
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				m, err := Deserialize(bytes)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				testMatches(m)
 			})
 		})

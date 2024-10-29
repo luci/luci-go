@@ -56,7 +56,7 @@ func TestLoadChildRuns(t *testing.T) {
 		const orphanRun = common.RunID("orphan/1-chicken")
 		put(orphanRun, common.RunIDs{})
 		out1, err := LoadChildRuns(ctx, parentRun1)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, out1, should.HaveLength(0))
 
 		const pendingRun = common.RunID("child/1-pending")
@@ -65,7 +65,7 @@ func TestLoadChildRuns(t *testing.T) {
 		put(runningRun, common.RunIDs{parentRun1})
 
 		out2, err := LoadChildRuns(ctx, parentRun1)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, out2, should.HaveLength(2))
 	})
 }
@@ -126,14 +126,14 @@ func TestLoadRunLogEntries(t *testing.T) {
 		)
 
 		out1, err := LoadRunLogEntries(ctx, run1)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, out1, should.HaveLength(3))
 		assert.Loosely(t, out1[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst"))
 		assert.Loosely(t, out1[1].GetConfigChanged().GetConfigGroupId(), should.Match("se/cond"))
 		assert.Loosely(t, out1[2].GetTryjobsRequirementUpdated(), should.NotBeNil)
 
 		out2, err := LoadRunLogEntries(ctx, run2)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, out2, should.HaveLength(1))
 		assert.Loosely(t, out2[0].GetCreated().GetConfigGroupId(), should.Match("fi/rst-but-run2"))
 	})
@@ -172,7 +172,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 					assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, runsB, should.Resemble(runsA))
 				}
 				t.Run("IDs", func(t *ftt.Test) {
@@ -194,7 +194,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, runsB, should.BeNil)
 			})
 			t.Run("Mix of existing and missing", func(t *ftt.Test) {
@@ -212,7 +212,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202, r4}))
 			})
 		})
@@ -230,7 +230,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				assert.Loosely(t, runsA, should.Resemble([]*Run{r201, r202, r4}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, runsB, should.Resemble(runsA))
 			})
 
@@ -242,7 +242,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, runsB, should.BeNil)
 			})
 
@@ -273,7 +273,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 					}))
 
 					runsB, err := b.DoIgnoreNotFound(ctx)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, runsB, should.Resemble([]*Run{r201, r202}))
 				})
 				t.Run("of everything", func(t *ftt.Test) {

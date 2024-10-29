@@ -42,11 +42,11 @@ func TestCL(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 
 		eid, err := GobID("x-review.example.com", 12)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("ExternalID.Get returns nil if CL doesn't exist", func(t *ftt.Test) {
 			cl, err := eid.Load(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, cl, should.BeNil)
 		})
 
@@ -62,7 +62,7 @@ func TestCL(t *testing.T) {
 
 			t.Run("ExternalID.Get loads existing CL", func(t *ftt.Test) {
 				cl2, err := eid.Load(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, cl2.ID, should.Equal(cl.ID))
 				assert.Loosely(t, cl2.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl2.EVersion, should.Equal(1))
@@ -82,7 +82,7 @@ func TestCL(t *testing.T) {
 
 			t.Run("Delete works", func(t *ftt.Test) {
 				err := Delete(ctx, cl.ID)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Verify.
 				assert.Loosely(t, datastore.Get(ctx, cl), should.Resemble(datastore.ErrNoSuchEntity))
 				cl2, err2 := eid.Load(ctx)
@@ -91,7 +91,7 @@ func TestCL(t *testing.T) {
 
 				t.Run("delete is now a noop", func(t *ftt.Test) {
 					err := Delete(ctx, cl.ID)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 				})
 			})
 		})
@@ -115,7 +115,7 @@ func TestLookup(t *testing.T) {
 		}
 
 		actual, err := Lookup(ctx, eids)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, actual, should.Resemble(ids))
 	})
 }

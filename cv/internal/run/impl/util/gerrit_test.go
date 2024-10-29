@@ -83,7 +83,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 					assert.Loosely(t, ci.GetCurrentRevision(), should.Equal(revisionInCV))
 					return expectedActionTime
 				})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actionTime, should.Match(expectedActionTime))
 		})
 
@@ -102,7 +102,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 						panic(fmt.Errorf("impossible revision %s", ci.GetCurrentRevision()))
 					}
 				})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actionTime, should.Match(expectedActionTime))
 		})
 
@@ -119,7 +119,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 						panic(fmt.Errorf("impossible revision %s", ci.GetCurrentRevision()))
 					}
 				})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actionTime.IsZero(), should.BeTrue)
 		})
 
@@ -133,7 +133,7 @@ func TestIsActionTakenOnGerritCL(t *testing.T) {
 					assert.Loosely(t, ci.GetCurrentRevision(), should.Equal(revisionInCV))
 					return time.Time{}
 				})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actionTime.IsZero(), should.BeTrue)
 		})
 

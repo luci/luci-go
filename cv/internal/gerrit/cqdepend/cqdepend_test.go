@@ -63,11 +63,11 @@ func TestParseSingleDep(t *testing.T) {
 	ftt.Run("parseSingleDep works", t, func(t *ftt.Test) {
 		t.Run("OK", func(t *ftt.Test) {
 			d, err := parseSingleDep(" x:123 ")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, d, should.Resemble(Dep{Change: 123, Subdomain: "x"}))
 
 			d, err = parseSingleDep("123")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, d, should.Resemble(Dep{Change: 123, Subdomain: ""}))
 		})
 		t.Run("Invalid format", func(t *ftt.Test) {

@@ -53,7 +53,7 @@ func TestExtractTopicProject(t *testing.T) {
 
 	t.Run("bad", func(t *testing.T) {
 		prj, err := extractTopicProject("projects/my-project/topics/topic")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, prj, should.Equal("my-project"))
 	})
 }
@@ -68,20 +68,20 @@ func TestListener(t *testing.T) {
 		srv := pstest.NewServer()
 		defer srv.Close()
 		conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		defer conn.Close()
 		client, err := pubsub.NewClient(ctx, "testProj", option.WithGRPCConn(conn))
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		defer client.Close()
 		topic, err := client.CreateTopic(ctx, "build-update")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		subConfig := pubsub.SubscriptionConfig{
 			Topic: topic,
 		}
 		sub, err := client.CreateSubscription(ctx, SubscriptionID, subConfig)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		tProj, err := extractTopicProject(subConfig.Topic.String())
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		tjNotifier := &testTryjobNotifier{}
 		tjUpdater := &testTryjobUpdater{}
 		l := &listener{
@@ -381,7 +381,7 @@ func makeBuildPubsubData(t *ftt.Test, b *buildbucketpb.Build, dropLargeFields bo
 		buf := &bytes.Buffer{}
 		zw := zlib.NewWriter(buf)
 		_, err := zw.Write(data)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, zw.Close(), should.ErrLike(nil))
 		return buf.Bytes()
 	}
@@ -393,11 +393,11 @@ func makeBuildPubsubData(t *ftt.Test, b *buildbucketpb.Build, dropLargeFields bo
 		msg.BuildLargeFieldsDropped = true
 	} else {
 		largeBytes, err := proto.Marshal(large)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		msg.BuildLargeFields = compress(largeBytes)
 	}
 	data, err := protojson.Marshal(msg)
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 	return data
 }
 

@@ -263,7 +263,7 @@ func TestReset(t *testing.T) {
 			originalValue := cl.TriggerNewPatchsetRunAfterPS
 
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
@@ -298,7 +298,7 @@ func TestReset(t *testing.T) {
 		t.Run("Remove single vote", func(t *ftt.Test) {
 			input.Triggers.CqVoteTrigger = cqTrigger
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
@@ -338,7 +338,7 @@ func TestReset(t *testing.T) {
 
 			t.Run("Success", func(t *ftt.Test) {
 				err := Reset(ctx, input)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 				resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 				assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
@@ -378,7 +378,7 @@ func TestReset(t *testing.T) {
 					) // no permission to vote on behalf of others
 				})
 				err := Reset(ctx, input)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, isOutdated(cl), should.BeFalse)
 				onBehalfs, _ := splitSetReviewRequests()
 				assert.Loosely(t, onBehalfs, should.HaveLength(3)) // all non-triggering votes
@@ -454,7 +454,7 @@ func TestReset(t *testing.T) {
 				ultraQuick(0, clock.Now(ctx).Add(-90*time.Second), gf.U("user-104"))(c.Info)
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
@@ -481,7 +481,7 @@ func TestReset(t *testing.T) {
 			})
 
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
@@ -498,7 +498,7 @@ func TestReset(t *testing.T) {
 				gf.CQ(0, clock.Now(ctx), triggerer)(c.Info)
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeTrue) // snapshot is outdated
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber()))
 			assert.Loosely(t, resultCI.Info.GetMessages(), should.HaveLength(1))
@@ -547,7 +547,7 @@ Bot data: {"action":"cancel","triggered_at":"2020-02-02T10:28:00Z","revision":"r
 				}
 			})
 			err := Reset(ctx, input)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, isOutdated(cl), should.BeFalse)
 			resultCI := ct.GFake.GetChange(gHost, int(ci.GetNumber())).Info
 			// CQ+2 vote remains.

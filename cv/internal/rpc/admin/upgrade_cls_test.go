@@ -97,10 +97,10 @@ func TestUpgradeCLs(t *testing.T) {
 			IdentityGroups: []string{allowGroup},
 		})
 		jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "runcl-description"})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 		jobInfo, err := a.DSMGetJob(ctx, jobID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, jobInfo.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 
 		verify()

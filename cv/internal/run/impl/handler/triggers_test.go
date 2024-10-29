@@ -90,7 +90,7 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 		t.Run("on expiration", func(t *ftt.Test) {
 			result.Status = eventpb.LongOpCompleted_EXPIRED
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
@@ -129,7 +129,7 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
@@ -168,7 +168,7 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {
@@ -221,7 +221,7 @@ func TestOnCompletedResetTriggers(t *testing.T) {
 				},
 			}
 			res, err := h.OnLongOpCompleted(ctx, rs, result)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_FAILED))
 			for _, op := range res.State.OngoingLongOps.GetOps() {
 				if op.GetExecutePostAction() == nil {

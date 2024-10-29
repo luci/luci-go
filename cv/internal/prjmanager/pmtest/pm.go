@@ -53,7 +53,7 @@ func iterEventBox(t testing.TB, ctx context.Context, project string, cb func(*pr
 	t.Helper()
 
 	events, err := eventbox.List(ctx, prjmanager.EventboxRecipient(ctx, project))
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	for _, item := range events {
 		evt := &prjpb.Event{}
 		assert.Loosely(t, proto.Unmarshal(item.Value, evt), should.BeNil, truth.LineContext())

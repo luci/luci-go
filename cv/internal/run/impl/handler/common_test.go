@@ -88,7 +88,7 @@ func TestEndRun(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		cg := cgs[0]
 
 		// mock a CL with two onoging Runs.
@@ -271,7 +271,7 @@ func TestCheckRunCreate(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		cg := cgs[0]
 
@@ -356,7 +356,7 @@ func TestCheckRunCreate(t *testing.T) {
 		t.Run("Returns empty metas for new patchset run", func(t *ftt.Test) {
 			rs.Mode = run.NewPatchsetRun
 			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ok, should.BeFalse)
 			assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 			for _, op := range rs.OngoingLongOps.Ops {
@@ -373,7 +373,7 @@ func TestCheckRunCreate(t *testing.T) {
 		t.Run("Populates metas for other modes", func(t *ftt.Test) {
 			rs.Mode = run.FullRun
 			ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ok, should.BeFalse)
 			assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 			for _, op := range rs.OngoingLongOps.Ops {
@@ -416,7 +416,7 @@ func TestCheckRunCreate(t *testing.T) {
 			t.Run("Only root CL fails the ACL check", func(t *ftt.Test) {
 				ct.AddMember("user-1", "committer-group") // can create a full run on cl2 now
 				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 				assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 				for _, op := range rs.OngoingLongOps.Ops {
@@ -432,7 +432,7 @@ func TestCheckRunCreate(t *testing.T) {
 
 			t.Run("Non root CL also fails the ACL check", func(t *ftt.Test) {
 				ok, err := checkRunCreate(ctx, ct.GFake, rs, cg, rcls, cls)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 				assert.Loosely(t, rs.OngoingLongOps.Ops, should.HaveLength(1))
 				for _, op := range rs.OngoingLongOps.Ops {

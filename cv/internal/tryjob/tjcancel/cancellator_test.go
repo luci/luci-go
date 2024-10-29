@@ -64,7 +64,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 			})
 			t.Run("all tryjobs ended", func(t *ftt.Test) {
@@ -75,7 +75,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
@@ -92,7 +92,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should call backend once, with tj12.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(1))
 				assert.Loosely(t, mb.calledWith[0].ExternalID, should.Equal(tj12.ExternalID))
@@ -111,7 +111,7 @@ func TestTaskHandler(t *testing.T) {
 					CurrentMinEquivPatchset:  5,
 				}
 				err := c.handleTask(ctx, task)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 
@@ -132,7 +132,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 				assert.Loosely(t, datastore.Get(ctx, tj31), should.BeNil)
@@ -149,7 +149,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 				assert.Loosely(t, datastore.Get(ctx, tj41), should.BeNil)
@@ -173,7 +173,7 @@ func TestTaskHandler(t *testing.T) {
 					PreviousMinEquivPatchset: 2,
 					CurrentMinEquivPatchset:  5,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Should not call backend.
 				assert.Loosely(t, mb.calledWith, should.HaveLength(0))
 				assert.Loosely(t, datastore.Get(ctx, tj51), should.BeNil)

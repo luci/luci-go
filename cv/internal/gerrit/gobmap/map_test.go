@@ -165,13 +165,13 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 
 		t.Run("LookupProjects with the matched repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr/src")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, prjs, should.Resemble([]string{"chromium"}))
 		})
 
 		t.Run("LookupProjects with an unmated repo", func(t *ftt.Test) {
 			prjs, err := LookupProjects(ctx, "cr-review.gs.com", "cr2/src")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, prjs, should.BeEmpty)
 		})
 	})
@@ -319,7 +319,7 @@ func TestGobMapUpdateAndLookup(t *testing.T) {
 	ftt.Run("Lookup again after correcting the config mistake by deleting the second project", t, func(t *ftt.Test) {
 		prjcfgtest.Delete(ctx, "foo")
 		meta, err := prjcfg.GetLatestMeta(ctx, "foo")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, Update(ctx, &meta, nil), should.BeNil)
 		assert.Loosely(t,
 			lookup(t, ctx, "cr-review.gs.com", "cr/src", "refs/heads/main"),
@@ -452,7 +452,7 @@ func TestGobMapConcurrentUpdates(t *testing.T) {
 			expectedRepos := stringset.Set{}
 			meta := prjcfgtest.MustExist(ctx, project)
 			cgs, err := meta.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			for _, pr := range cgs[0].Content.GetGerrit()[0].GetProjects() {
 				expectedRepos.Add(pr.GetName())
 			}

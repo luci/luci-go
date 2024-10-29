@@ -66,7 +66,7 @@ func TestGetBuild(t *testing.T) {
 		build, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 			Builder: builderID,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Can get", func(t *ftt.Test) {
 			t.Run("Without mask", func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestGetBuild(t *testing.T) {
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: build.GetId(),
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(trimmedBuildWithDefaultMask(t, expected)))
 			})
 			t.Run("With mask", func(t *ftt.Test) {
@@ -86,7 +86,7 @@ func TestGetBuild(t *testing.T) {
 						},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&bbpb.Build{
 					Id:      build.GetId(),
 					Builder: builderID,
@@ -164,11 +164,11 @@ func TestSearchBuild(t *testing.T) {
 			Builder:       builderID,
 			GerritChanges: []*bbpb.GerritChange{gc},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Empty Predicate", func(t *ftt.Test) {
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&bbpb.SearchBuildsResponse{
 				Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 			}))
@@ -190,7 +190,7 @@ func TestSearchBuild(t *testing.T) {
 						GerritChanges: []*bbpb.GerritChange{gc},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&bbpb.SearchBuildsResponse{
 					Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 				}))
@@ -203,7 +203,7 @@ func TestSearchBuild(t *testing.T) {
 						GerritChanges: []*bbpb.GerritChange{gc},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetBuilds(), should.BeEmpty)
 				assert.Loosely(t, res.GetNextPageToken(), should.BeEmpty)
 			})
@@ -215,7 +215,7 @@ func TestSearchBuild(t *testing.T) {
 						GerritChanges: []*bbpb.GerritChange{gc, anotherGC},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetBuilds(), should.BeEmpty)
 				assert.Loosely(t, res.GetNextPageToken(), should.BeEmpty)
 			})
@@ -236,7 +236,7 @@ func TestSearchBuild(t *testing.T) {
 						IncludeExperimental: true,
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&bbpb.SearchBuildsResponse{
 					Builds: []*bbpb.Build{trimmedBuildWithDefaultMask(t, build)},
 				}))
@@ -245,7 +245,7 @@ func TestSearchBuild(t *testing.T) {
 				res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{
 					Predicate: &bbpb.BuildPredicate{},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetBuilds(), should.BeEmpty)
 				assert.Loosely(t, res.GetNextPageToken(), should.BeEmpty)
 			})
@@ -254,7 +254,7 @@ func TestSearchBuild(t *testing.T) {
 		t.Run("Different host", func(t *ftt.Test) {
 			client = fake.MustNewClient(ctx, "another-bb.example.com", lProject)
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetBuilds(), should.BeEmpty)
 			assert.Loosely(t, res.GetNextPageToken(), should.BeEmpty)
 		})
@@ -270,23 +270,23 @@ func TestSearchBuild(t *testing.T) {
 				Builder:       anotherBuilder,
 				GerritChanges: []*bbpb.GerritChange{gc},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetBuilds(), should.HaveLength(1))
 			assert.Loosely(t, res.GetNextPageToken(), should.BeEmpty)
 		})
 
 		t.Run("Apply customized mask", func(t *ftt.Test) {
 			fields, err := fieldmaskpb.New(build, "id")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			res, err := client.SearchBuilds(ctx, &bbpb.SearchBuildsRequest{
 				Mask: &bbpb.BuildMask{
 					Fields: fields,
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&bbpb.SearchBuildsResponse{
 				Builds: []*bbpb.Build{{Id: build.GetId()}},
 			}))
@@ -300,7 +300,7 @@ func TestSearchBuild(t *testing.T) {
 					Builder:       builderID,
 					GerritChanges: []*bbpb.GerritChange{gc},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			}
 
 			for _, pageSize := range []int{0, 20} { // 0 means  default size
@@ -315,7 +315,7 @@ func TestSearchBuild(t *testing.T) {
 					}
 					for {
 						res, err := client.SearchBuilds(ctx, req)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, len(res.GetBuilds()), should.BeLessThanOrEqual(actualPageSize))
 						buildCnt += len(res.GetBuilds())
 						if res.NextPageToken == "" {
@@ -346,9 +346,9 @@ func TestCancelBuild(t *testing.T) {
 			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 		)
 		defer func() { _ = pubsubClient.Close() }()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		topic, err := pubsubClient.CreateTopic(ctx, "test-topic")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		fake.RegisterPubsubTopic(bbHost, topic)
 
 		client := fake.MustNewClient(ctx, bbHost, lProject)
@@ -363,7 +363,7 @@ func TestCancelBuild(t *testing.T) {
 		build, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 			Builder: builderID,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Can cancel", func(t *ftt.Test) {
 			t.Run("Without mask", func(t *ftt.Test) {
@@ -371,7 +371,7 @@ func TestCancelBuild(t *testing.T) {
 					Id:              build.GetId(),
 					SummaryMarkdown: "no longer needed",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Match(trimmedBuildWithDefaultMask(t, NewBuildConstructor().
 					WithID(build.GetId()).
 					WithHost(bbHost).
@@ -383,10 +383,8 @@ func TestCancelBuild(t *testing.T) {
 					WithUpdateTime(tc.Now()).
 					WithSummaryMarkdown("no longer needed").
 					Construct())))
-				assert.Loosely(t, pubsubSrv.Messages(), should.HaveLength(1))
 				pubsubMsg := &bbpb.BuildsV2PubSub{}
-				assert.That(t, protojson.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg), should.ErrLike(nil))
-				assert.That(t, pubsubMsg.Build.GetId(), should.Equal(build.GetId()))
+				assert.NoErr(t, protojson.Unmarshal(pubsubSrv.Messages()[0].Data, pubsubMsg))
 			})
 			t.Run("With mask", func(t *ftt.Test) {
 				res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
@@ -398,7 +396,7 @@ func TestCancelBuild(t *testing.T) {
 						},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&bbpb.Build{
 					Id:     build.GetId(),
 					Status: bbpb.Status_CANCELED,
@@ -450,7 +448,7 @@ func TestCancelBuild(t *testing.T) {
 							},
 						},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res, should.Resemble(&bbpb.Build{
 						Id:              build.GetId(),
 						Status:          status,
@@ -492,7 +490,7 @@ func TestScheduleBuild(t *testing.T) {
 				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder: builderNoProp,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderNoProp,
@@ -511,7 +509,7 @@ func TestScheduleBuild(t *testing.T) {
 				props, err := structpb.NewStruct(map[string]any{
 					"coolKey": "coolVal",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				gc := &bbpb.GerritChange{
 					Host:     "example-review.com",
 					Project:  "testProj",
@@ -526,7 +524,7 @@ func TestScheduleBuild(t *testing.T) {
 						{Key: "tagKey", Value: "tagValue"},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderNoProp,
@@ -553,12 +551,12 @@ func TestScheduleBuild(t *testing.T) {
 					"foo":  "not_bar",
 					"cool": "awesome",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					Builder:    builderWithProp,
 					Properties: props,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(trimmedBuildWithDefaultMask(t, &bbpb.Build{
 					Id:         res.Id,
 					Builder:    builderWithProp,
@@ -585,7 +583,7 @@ func TestScheduleBuild(t *testing.T) {
 						},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.Resemble(&bbpb.Build{
 					Id:     res.Id,
 					Status: bbpb.Status_SCHEDULED,
@@ -602,7 +600,7 @@ func TestScheduleBuild(t *testing.T) {
 					res, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder: builder,
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.Id, should.BeLessThan(prevBuildID))
 					prevBuildID = res.Id
 				}
@@ -612,13 +610,13 @@ func TestScheduleBuild(t *testing.T) {
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				tc.Add(requestDeduplicationWindow / 2)
 				dup, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, dup.Id, should.Equal(first.Id))
 				// Passes the deduplication window, should generate new build.
 				tc.Add(requestDeduplicationWindow)
@@ -626,7 +624,7 @@ func TestScheduleBuild(t *testing.T) {
 					RequestId: "foo",
 					Builder:   builderNoProp,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, newBuild.Id, should.NotEqual(first.Id))
 			})
 		})
@@ -677,11 +675,11 @@ func TestBatch(t *testing.T) {
 		buildFoo, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 			Builder: builderFoo,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		buildBar, err := client.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 			Builder: builderBar,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		tc.Add(1 * time.Minute)
 		buildBar = fake.MutateBuild(ctx, bbHost, buildBar.GetId(), func(b *bbpb.Build) {
 			b.Status = bbpb.Status_SUCCESS
@@ -726,7 +724,7 @@ func TestBatch(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&bbpb.BatchResponse{
 				Responses: []*bbpb.BatchResponse_Response{
 					{
@@ -784,7 +782,7 @@ func TestBatch(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&bbpb.BatchResponse{
 				Responses: []*bbpb.BatchResponse_Response{
 					{

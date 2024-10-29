@@ -66,7 +66,7 @@ func TestCheckRunCLs(t *testing.T) {
 		ctx = auth.WithState(ctx, authState)
 		addMember := func(email, grp string) {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			authState.FakeDB.(*authtest.FakeDB).AddMocks(authtest.MockMembership(id, grp))
 		}
 		addCommitter := func(email string) {
@@ -147,13 +147,13 @@ func TestCheckRunCLs(t *testing.T) {
 
 		mustOK := func() {
 			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.FailuresSummary(), should.BeEmpty)
 			assert.Loosely(t, res.OK(), should.BeTrue)
 		}
 		mustFailWith := func(cl *changelist.CL, format string, args ...any) CheckResult {
 			res, err := CheckRunCreate(ctx, ct.GFake, &cg, trs, cls)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.OK(), should.BeFalse)
 			assert.Loosely(t, res.Failure(cl), should.ContainSubstring(fmt.Sprintf(format, args...)))
 			return res

@@ -152,7 +152,7 @@ func TestUpdateConfig(t *testing.T) {
 			},
 		}
 		runCLs, err := run.LoadRunCLs(ctx, rs.ID, rs.CLs)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		initialReqmt, err := requirement.Compute(ctx, requirement.Input{
 			GFactory:    ct.GFactory(),
 			ConfigGroup: cgMain,
@@ -161,7 +161,7 @@ func TestUpdateConfig(t *testing.T) {
 			RunOptions:  rs.Options,
 			RunMode:     rs.Mode,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, initialReqmt.OK(), should.BeTrue)
 		rs.Tryjobs.Requirement = initialReqmt.Requirement
 		// Prepare new config as a copy of existing one. Add extra ConfigGroup to it
@@ -175,7 +175,7 @@ func TestUpdateConfig(t *testing.T) {
 			prjcfgtest.Update(ctx, lProject, cfgNew)
 			metaNew := prjcfgtest.MustExist(ctx, lProject)
 			res, err := h.UpdateConfig(ctx, rs, metaNew.Hash())
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return res
 		}
 
@@ -199,12 +199,12 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run("When given config hash isn't new", func(t *ftt.Test) {
 				t.Run("but is the same as current", func(t *ftt.Test) {
 					res, err := h.UpdateConfig(ctx, rs, metaCurrent.Hash())
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					ensureNoop(res)
 				})
 				t.Run("but is older than current", func(t *ftt.Test) {
 					res, err := h.UpdateConfig(ctx, rs, metaBefore.Hash())
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					ensureNoop(res)
 				})
 			})

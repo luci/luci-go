@@ -45,7 +45,7 @@ func TestCheckLegacy(t *testing.T) {
 
 		t.Run("not existing project", func(t *ftt.Test) {
 			allowed, err := checkLegacyCQStatusAccess(ctx, "non-existing")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
@@ -55,7 +55,7 @@ func TestCheckLegacy(t *testing.T) {
 			prjcfgtest.Create(ctx, "disabled", cfg)
 			prjcfgtest.Disable(ctx, "disabled")
 			allowed, err := checkLegacyCQStatusAccess(ctx, "disabled")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
@@ -63,7 +63,7 @@ func TestCheckLegacy(t *testing.T) {
 			cfg.CqStatusHost = ""
 			prjcfgtest.Create(ctx, "no-legacy", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "no-legacy")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
@@ -71,7 +71,7 @@ func TestCheckLegacy(t *testing.T) {
 			cfg.CqStatusHost = "misconfigured.example.com"
 			prjcfgtest.Create(ctx, "misconfigured", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "misconfigured")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, allowed, should.BeFalse)
 		})
 
@@ -79,7 +79,7 @@ func TestCheckLegacy(t *testing.T) {
 			cfg.CqStatusHost = validation.CQStatusHostPublic
 			prjcfgtest.Create(ctx, "public", cfg)
 			allowed, err := checkLegacyCQStatusAccess(ctx, "public")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, allowed, should.BeTrue)
 		})
 
@@ -93,7 +93,7 @@ func TestCheckLegacy(t *testing.T) {
 					IdentityGroups: []string{cqStatusInternalCrIAGroup},
 				})
 				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, allowed, should.BeTrue)
 			})
 
@@ -103,7 +103,7 @@ func TestCheckLegacy(t *testing.T) {
 					IdentityGroups: []string{},
 				})
 				allowed, err := checkLegacyCQStatusAccess(ctx, "internal")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, allowed, should.BeFalse)
 			})
 		})

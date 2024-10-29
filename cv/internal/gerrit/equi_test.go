@@ -50,7 +50,7 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 
 		t.Run("works", func(t *ftt.Test) {
 			m, p, err := EquivalentPatchsetRange(makeCI(gerritpb.RevisionInfo_REWORK))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m, should.Equal(1))
 			assert.Loosely(t, p, should.Equal(1))
 
@@ -64,7 +64,7 @@ func TestEquivalentPatchsetRange(t *testing.T) {
 				gerritpb.RevisionInfo_TRIVIAL_REBASE,
 				gerritpb.RevisionInfo_TRIVIAL_REBASE_WITH_MESSAGE_UPDATE,
 			))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m, should.Equal(3))
 			assert.Loosely(t, p, should.Equal(8))
 		})

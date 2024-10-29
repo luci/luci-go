@@ -71,7 +71,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		assert.Loosely(t, pmNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 		assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
 		events1, err := eventbox.List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Simulate stuck TQ task, which gets executed with a huge delay.
 		ct.Clock.Add(time.Hour)
@@ -79,7 +79,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		// It must not modify PM state nor consume events.
 		assert.Loosely(t, datastore.Get(ctx, &prjmanager.Project{ID: lProject}), should.Equal(datastore.ErrNoSuchEntity))
 		events2, err := eventbox.List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, events2, should.Resemble(events1))
 		// But schedules new task instead.
 		assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
@@ -88,7 +88,7 @@ func TestProjectTQLateTasks(t *testing.T) {
 		ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 		assert.Loosely(t, datastore.Get(ctx, &prjmanager.Project{ID: lProject}), should.BeNil)
 		events3, err := eventbox.List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, events3, should.BeEmpty)
 	})
 }
@@ -118,7 +118,7 @@ func TestProjectLifeCycle(t *testing.T) {
 			assert.Loosely(t, pmtest.Projects(ct.TQ.Tasks()), should.Resemble([]string{lProject}))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(prjpb.ManageProjectTaskClass))
 			events, err := eventbox.List(ctx, recipient)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, events, should.HaveLength(0))
 			p, ps, plog := loadProjectEntities(t, ctx, lProject)
 			assert.Loosely(t, p.EVersion, should.Equal(1))
@@ -135,7 +135,7 @@ func TestProjectLifeCycle(t *testing.T) {
 					&run.Run{ID: common.RunID(lProject + "/111-beef"), CLs: common.CLIDs{111}},
 					&run.Run{ID: common.RunID(lProject + "/222-cafe"), CLs: common.CLIDs{222}},
 				)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// This is what pmNotifier.notifyRunCreated func does,
 				// but because it's private, it can't be called from this package.
 				simulateRunCreated := func(suffix string) {
@@ -145,7 +145,7 @@ func TestProjectLifeCycle(t *testing.T) {
 						},
 					}}
 					value, err := proto.Marshal(e)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, eventbox.Emit(ctx, value, recipient), should.BeNil)
 				}
 				simulateRunCreated("111-beef")
@@ -300,7 +300,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		}
 
 		events, err := eventbox.List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// Expect the following events:
 		// +1 from NotifyCLsUpdated on cl43 and cl44,
 		// +3*n from loop.
@@ -339,7 +339,7 @@ func TestProjectHandlesManyEvents(t *testing.T) {
 		}
 
 		events, err = eventbox.List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, events, should.BeEmpty)
 		assert.Loosely(t, poller.FilterProjects(ct.TQ.Tasks().SortByETA().Payloads()), should.Resemble([]string{lProject}))
 

@@ -148,7 +148,7 @@ func TestWorker(t *testing.T) {
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.Equal(eid))
 			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
@@ -172,7 +172,7 @@ func TestWorker(t *testing.T) {
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.NotBeEmpty)
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
@@ -192,7 +192,7 @@ func TestWorker(t *testing.T) {
 				},
 			}
 			tryjobs, err := w.start(ctx, []*tryjob.Definition{def})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ID, should.Equal(reuseID))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.NotBeEmpty)
@@ -242,7 +242,7 @@ func TestWorker(t *testing.T) {
 				},
 			}
 			tryjobs, err := w.start(ctx, definitions)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(3))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.Equal(eidForBuilder0))
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_ENDED))

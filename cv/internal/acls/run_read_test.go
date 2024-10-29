@@ -107,7 +107,7 @@ func TestRunReadChecker(t *testing.T) {
 
 			t.Run("OK public", func(t *ftt.Test) {
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, r, should.Match(publicRun))
 			})
 
@@ -118,7 +118,7 @@ func TestRunReadChecker(t *testing.T) {
 					IdentityGroups: []string{"googlers"},
 				})
 				r, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, r, should.Match(internalRun))
 			})
 
@@ -128,10 +128,10 @@ func TestRunReadChecker(t *testing.T) {
 					IdentityGroups: []string{V0APIAllowGroup},
 				})
 				r, err := run.LoadRun(ctx, publicRun.ID, NewRunReadChecker())
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, r, should.Match(publicRun))
 				r, err = run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, r, should.Match(internalRun))
 			})
 

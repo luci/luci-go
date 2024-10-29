@@ -275,9 +275,9 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			})
 
 			cla, err := changelist.MustGobID(gHost, int64(gChangeA)).Load(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			clb, err := changelist.MustGobID(gHost, int64(gChangeB)).Load(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			assert.Loosely(t, rs[0].Mode, should.Equal(run.DryRun))
 			assert.Loosely(t, rs[0].CLs, should.HaveLength(1))
@@ -377,9 +377,9 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 		})
 
 		cla, err := changelist.MustGobID(gHost, int64(gChangeA)).Load(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		clb, err := changelist.MustGobID(gHost, int64(gChangeB)).Load(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// The full run includes both CLs.
 		assert.Loosely(t, rs[0].Mode, should.Equal(run.FullRun))
 		assert.Loosely(t, rs[0].CLs, should.HaveLength(2))

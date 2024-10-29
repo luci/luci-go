@@ -91,7 +91,7 @@ func TestSubscriber(t *testing.T) {
 
 			// publish a sample message and wait until it gets processed.
 			_, err := topic.Publish(ctx, &pubsub.Message{}).Get(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			select {
 			case <-ch:
 			case <-time.After(10 * time.Second):

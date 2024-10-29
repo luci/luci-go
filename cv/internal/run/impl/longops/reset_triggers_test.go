@@ -149,7 +149,7 @@ func TestResetTriggers(t *testing.T) {
 
 		assertTriggerRemoved := func(eid changelist.ExternalID) {
 			host, changeID, err := changelist.ExternalID(eid).ParseGobID()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, host, should.Equal(gHost))
 			changeInfo := ct.GFake.GetChange(gHost, int(changeID)).Info
 			assert.Loosely(t, trigger.Find(&trigger.FindInput{ChangeInfo: changeInfo, ConfigGroup: cfg.GetConfigGroups()[0]}), should.BeNil)
@@ -166,7 +166,7 @@ func TestResetTriggers(t *testing.T) {
 				op := makeOp(r)
 				op.Concurrency = concurrency
 				res, err := op.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 				results := res.GetResetTriggers().GetResults()
 				assert.Loosely(t, results, should.HaveLength(clCount))
@@ -195,7 +195,7 @@ func TestResetTriggers(t *testing.T) {
 			r.RootCL = clids[0]
 			op := makeOp(r)
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
 			assert.Loosely(t, results, should.HaveLength(1))
@@ -226,7 +226,7 @@ func TestResetTriggers(t *testing.T) {
 			r, clids := initRunAndCLs(cis)
 			for i, clid := range clids {
 				_, _, err := lease.ApplyOnCL(ctx, clid, time.Duration(cis[i].GetNumber())*time.Minute, "FooBar")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			}
 			startTime := clock.Now(ctx)
 			op := makeOp(r)
@@ -237,7 +237,7 @@ func TestResetTriggers(t *testing.T) {
 				ct.Clock.Add(1*time.Minute + 1*time.Second)
 			}
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
 			assert.Loosely(t, results, should.HaveLength(len(cis)))
@@ -287,7 +287,7 @@ func TestResetTriggers(t *testing.T) {
 			op := makeOp(r)
 			op.IsCancelRequested = func() bool { return true }
 			res, err := op.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.GetStatus(), should.Equal(eventpb.LongOpCompleted_SUCCEEDED))
 			results := res.GetResetTriggers().GetResults()
 			assert.Loosely(t, results, should.HaveLength(len(cis)))

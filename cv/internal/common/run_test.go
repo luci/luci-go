@@ -59,7 +59,7 @@ func TestID(t *testing.T) {
 		t.Run("panics if time machine is invented", func(t *ftt.Test) {
 			// Load Hill Valley's presumed timezone.
 			la, err := time.LoadLocation("America/Los_Angeles")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, func() {
 				MakeRunID("infra", time.Date(1955, time.November, 5, 6, 15, 0, 0, la), 1, []byte{31, 44})
 			}, should.Panic)
@@ -69,7 +69,7 @@ func TestID(t *testing.T) {
 			publicID := id.PublicID()
 			assert.Loosely(t, publicID, should.Equal("projects/infra/runs/0000000060000-1-410f"))
 			id2, err := FromPublicRunID(publicID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, id2, should.Resemble(id))
 
 			t.Run("panics if ID is invalid", func(t *ftt.Test) {

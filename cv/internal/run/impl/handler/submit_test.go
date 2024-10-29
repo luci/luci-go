@@ -90,7 +90,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		}
 		prjcfgtest.Create(ctx, rid.LUCIProject(), cg)
 		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]
 
@@ -153,7 +153,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				}, nil), should.BeNil)
 				rs.Status = status
 				res, err := h.OnReadyForSubmission(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				expectedState := &state.RunState{
 					Run: rs.Run,
 					LogEntries: []*run.LogEntry{
@@ -170,7 +170,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				assert.Loosely(t, res.PostProcessFn, should.BeNil)
 				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, current, should.BeEmpty)
 				assert.Loosely(t, waitlist, should.BeEmpty)
 			})
@@ -179,7 +179,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 		t.Run("No-Op when status is SUBMITTING", func(t *ftt.Test) {
 			rs.Status = run.Status_SUBMITTING
 			res, err := h.OnReadyForSubmission(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Equal(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -203,7 +203,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 			rs.DepRuns = common.RunIDs{parentRun}
 			res, err := h.OnReadyForSubmission(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -217,7 +217,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				rs.Status = status
 				t.Run("Mark submitting if Submit Queue is acquired and tree is open", func(t *ftt.Test) {
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
@@ -243,18 +243,18 @@ func TestOnReadyForSubmission(t *testing.T) {
 					anotherRunID := common.MakeRunID(lProject, now, 1, []byte("cafecafe"))
 					assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 						_, err := submit.TryAcquire(ctx, deps.rm.NotifyReadyForSubmission, anotherRunID, nil)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						return nil
 					}, nil), should.BeNil)
 					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.Equal(anotherRunID))
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
 					_, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rid)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, waitlist.Index(rid), should.BeZero)
 					assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
 					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_Waitlisted_])
@@ -263,7 +263,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				t.Run("Revisit after 1 mintues if tree is closed", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						TreeOpen:          false,
@@ -286,7 +286,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
 					ct.TreeFake.InjectErr(fmt.Errorf("error while fetching tree status"))
 					res, err := h.OnReadyForSubmission(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						TreeOpen:          false,
@@ -335,7 +335,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 		}
 		prjcfgtest.Create(ctx, rid.LUCIProject(), cg)
 		meta, err := prjcfg.GetLatestMeta(ctx, rid.LUCIProject())
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		r.ConfigGroupID = meta.ConfigGroupIDs[0]
 
@@ -434,7 +434,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				}, nil), should.BeNil)
 				rs.Status = status
 				res, err := h.OnSubmissionCompleted(ctx, rs, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				expectedState := &state.RunState{
 					Run: rs.Run,
 					LogEntries: []*run.LogEntry{
@@ -451,7 +451,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				assert.Loosely(t, res.PostProcessFn, should.BeNil)
 				current, waitlist, err := submit.LoadCurrentAndWaitlist(ctx, rs.ID)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, current, should.BeEmpty)
 				assert.Loosely(t, waitlist, should.BeEmpty)
 			})
@@ -463,7 +463,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				Result: eventpb.SubmissionResult_SUCCEEDED,
 			}
 			res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
 			assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now().UTC()))
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
@@ -532,7 +532,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				t.Run("Resume submission if TaskID matches", func(t *ftt.Test) {
 					rs.Submission.TaskId = "task-foo" // same task ID as the current task
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
 						Deadline: timestamppb.New(ct.Clock.Now().UTC().Add(10 * time.Minute)),
@@ -548,7 +548,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					ctx, rmDispatcher := runtest.MockDispatch(ctx)
 					rs.Submission.TaskId = "another-task"
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					expectedState := &state.RunState{
 						Run: rs.Run,
 						LogEntries: []*run.LogEntry{
@@ -585,7 +585,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					msg  string
 				}) {
 					res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 					for i, f := range sc.GetClFailures().GetFailures() {
 						assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
@@ -657,7 +657,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					t.Run("Submitted", func(t *ftt.Test) {
 						rs.Submission.SubmittedCls = []int64{2}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
 						assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now()))
 						for _, op := range res.State.OngoingLongOps.GetOps() {
@@ -826,7 +826,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 					t.Run("CLs fully submitted", func(t *ftt.Test) {
 						rs.Submission.SubmittedCls = []int64{2, 1}
 						res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUCCEEDED))
 						assert.Loosely(t, res.State.EndTime, should.Match(ct.Clock.Now()))
 						assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
@@ -851,7 +851,7 @@ func TestOnSubmissionCompleted(t *testing.T) {
 				msg  string
 			}) {
 				res, err := h.OnSubmissionCompleted(ctx, rs, sc)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
 				for i, f := range sc.GetClFailures().GetFailures() {
 					assert.Loosely(t, res.State.Submission.GetFailedCls()[i], should.Equal(f.GetClid()))
@@ -1094,38 +1094,38 @@ func TestOnCLsSubmitted(t *testing.T) {
 		h, _ := makeTestHandler(&ct)
 		t.Run("Single", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3}))
 
 		})
 		t.Run("Duplicate", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{3, 3, 3, 3, 1, 1, 1})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1}))
 		})
 		t.Run("Obey Submission order", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3, 5, 7})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
 		})
 		t.Run("Merge to existing", func(t *ftt.Test) {
 			rs.Submission.SubmittedCls = []int64{3, 1}
 			// 1 should be deduped
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 7})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7}))
 		})
 		t.Run("Last cl arrives first", func(t *ftt.Test) {
 			res, err := h.OnCLsSubmitted(ctx, rs, common.CLIDs{5})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{1, 3})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 5}))
 			rs = res.State
 			res, err = h.OnCLsSubmitted(ctx, rs, common.CLIDs{7})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Submission.SubmittedCls, should.Resemble([]int64{3, 1, 7, 5}))
 		})
 		t.Run("Error for unknown CLs", func(t *ftt.Test) {

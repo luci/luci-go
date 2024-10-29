@@ -114,19 +114,19 @@ func TestLaunch(t *testing.T) {
 			tj := w.makePendingTryjob(ctx, defFoo)
 			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			eid := tryjobs[0].ExternalID
 			assert.Loosely(t, eid, should.NotBeEmpty)
 			assert.Loosely(t, eid.MustLoad(ctx), should.NotBeNil)
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 			host, buildID, err := eid.ParseBuildbucketID()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, host, should.Equal(bbHost))
 			bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, build, should.NotBeNil)
 			assert.Loosely(t, w.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 				{
@@ -158,7 +158,7 @@ func TestLaunch(t *testing.T) {
 			tj := w.makePendingTryjob(ctx, def)
 			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ExternalID, should.BeEmpty)
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_UNTRIGGERED))
@@ -206,7 +206,7 @@ func TestLaunch(t *testing.T) {
 			}
 
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			assert.Loosely(t, tryjobs[0].ID, should.Equal(existingTryjobID))
 			assert.Loosely(t, tryjobs[0].ExternalID.MustLoad(ctx).ID, should.Equal(existingTryjobID))
@@ -249,19 +249,19 @@ func TestLaunch(t *testing.T) {
 			tj := w.makePendingTryjob(ctx, defFoo)
 			assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
 			tryjobs, err := w.launchTryjobs(ctx, []*tryjob.Tryjob{tj})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tryjobs, should.HaveLength(1))
 			eid := tryjobs[0].ExternalID
 			assert.Loosely(t, eid, should.NotBeEmpty)
 			assert.Loosely(t, eid.MustLoad(ctx), should.NotBeNil)
 			assert.Loosely(t, tryjobs[0].Status, should.Equal(tryjob.Status_TRIGGERED))
 			host, buildID, err := eid.ParseBuildbucketID()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, host, should.Equal(bbHost))
 			bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{Id: buildID})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, build.Input.GetGerritChanges(), should.Resemble([]*bbpb.GerritChange{
 				// Dep CL is listed first even though in the worker it is after the
 				// dependent CL.

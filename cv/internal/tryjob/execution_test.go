@@ -103,7 +103,7 @@ func TestLoadExecutionLogs(t *testing.T) {
 		)
 
 		ret, err := LoadExecutionLogs(ctx, runID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ret, should.HaveLength(4))
 		assert.Loosely(t, ret[0].GetTryjobsLaunched().GetTryjobs()[0].GetId(), should.Equal(1))
 		assert.Loosely(t, ret[1].GetTryjobsLaunched().GetTryjobs()[0].GetId(), should.Equal(2))

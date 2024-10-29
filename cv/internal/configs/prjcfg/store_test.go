@@ -73,17 +73,17 @@ func TestGetAllProjectIDs(t *testing.T) {
 			Enabled: false,
 		}
 		err := datastore.Put(ctx, &enabledPC, &disabledPC)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("All", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, false)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ret, should.Resemble([]string{"disabledProject", "enabledProject"}))
 		})
 
 		t.Run("Enabled", func(t *ftt.Test) {
 			ret, err := GetAllProjectIDs(ctx, true)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ret, should.Resemble([]string{"enabledProject"}))
 		})
 	})
@@ -154,7 +154,7 @@ func TestGetAllGerritHosts(t *testing.T) {
 			assert.Loosely(t, addCG(pc2, "main", "example.edu", "example.net"), should.BeNil)
 
 			hosts, err := GetAllGerritHosts(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, hosts[pc1.Project].ToSortedSlice(), should.Resemble(
 				[]string{"example.com", "example.org"}))
 			assert.Loosely(t, hosts[pc2.Project].ToSortedSlice(), should.Resemble(
@@ -165,7 +165,7 @@ func TestGetAllGerritHosts(t *testing.T) {
 			pc2.Enabled = false
 			assert.Loosely(t, datastore.Put(ctx, pc2), should.BeNil)
 			hosts, err := GetAllGerritHosts(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, hosts, should.NotContainKey(pc2.Project))
 		})
 	})

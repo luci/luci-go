@@ -118,7 +118,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				Patchset: gPatchset,
 			}},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		epoch := ct.Clock.Now().UTC()
 		build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
 			build.Status = bbpb.Status_SUCCESS
@@ -129,7 +129,7 @@ func TestFindReuseInBackend(t *testing.T) {
 
 		t.Run("Found reuse", func(t *ftt.Test) {
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
@@ -165,7 +165,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				Builder:       builder,
 				GerritChanges: build.GetInput().GetGerritChanges(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			epoch := ct.Clock.Now().UTC()
 			newerBuild = ct.BuildbucketFake.MutateBuild(ctx, bbHost, newerBuild.GetId(), func(build *bbpb.Build) {
 				build.Status = bbpb.Status_SUCCESS
@@ -173,7 +173,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				build.EndTime = timestamppb.New(epoch.Add(10 * time.Minute))
 			})
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ExternalID, should.Equal(tryjob.MustBuildbucketID(bbHost, newerBuild.GetId())))
@@ -182,7 +182,7 @@ func TestFindReuseInBackend(t *testing.T) {
 		t.Run("Build already known", func(t *ftt.Test) {
 			w.knownExternalIDs = stringset.NewFromSlice(string(tryjob.MustBuildbucketID(bbHost, build.GetId())))
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
 		})
 
@@ -191,7 +191,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				Builder:       builder,
 				GerritChanges: build.GetInput().GetGerritChanges(),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			epoch := ct.Clock.Now().UTC()
 			ct.BuildbucketFake.MutateBuild(ctx, bbHost, failedButNewerBuild.GetId(), func(build *bbpb.Build) {
 				build.Status = bbpb.Status_FAILURE // failed build is not reusable
@@ -200,7 +200,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			})
 
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ExternalID, should.Equal(tryjob.MustBuildbucketID(bbHost, build.Id))) // reuse the old successful build
@@ -211,7 +211,7 @@ func TestFindReuseInBackend(t *testing.T) {
 			tj := eid.MustCreateIfNotExists(ctx)
 			ct.Clock.Add(10 * time.Second)
 			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ExternalID, should.Equal(tryjob.MustBuildbucketID(bbHost, build.Id)))

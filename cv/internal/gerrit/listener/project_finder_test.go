@@ -67,7 +67,7 @@ func TestProjectFinder(t *testing.T) {
 		}
 		check := func(host, repo string) []string {
 			prjs, err := finder.lookup(ctx, host, repo)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return prjs
 		}
 		createTestLUCIProject(t, ctx, "chromium", "https://cr-review.gs.com/", "cr/src")

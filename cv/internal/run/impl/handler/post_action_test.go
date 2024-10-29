@@ -90,7 +90,7 @@ func TestOnCompletedPostAction(t *testing.T) {
 			opResult.Status = eventpb.LongOpCompleted_CANCELLED
 			opResult.GetExecutePostAction().Summary = "this is a summary"
 			res, err = h.OnLongOpCompleted(ctx, rs, opResult)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.LogEntries[0].GetInfo(), should.Resemble(&run.LogEntry_Info{
 				Label:   "PostAction[label-vote]",
 				Message: "this is a summary",

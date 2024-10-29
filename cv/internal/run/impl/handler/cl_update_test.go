@@ -161,7 +161,7 @@ func TestOnCLsUpdated(t *testing.T) {
 		t.Run("Single CL Run", func(t *ftt.Test) {
 			ensureNoop := func() {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Resemble(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -202,7 +202,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			t.Run("Preserve events for SUBMITTING Run", func(t *ftt.Test) {
 				rs.Status = run.Status_SUBMITTING
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Resemble(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
@@ -226,7 +226,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					},
 				}
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State, should.Resemble(rs))
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
@@ -234,7 +234,7 @@ func TestOnCLsUpdated(t *testing.T) {
 
 			runAndVerifyCancelled := func(reason string) {
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 				assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{reason}))
 				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
@@ -282,7 +282,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					}}
 					updateCL(1, ci1, aplConfigOK, acc)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State, should.Resemble(rs))
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					// Event must be preserved, s.t. the same CL is re-visited later.
@@ -313,7 +313,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 				), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 					1: "CV cannot start a Run because this CL is not submittable.",
 				}, run.Status_FAILED)
@@ -351,7 +351,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				t.Run("Part of the CLs cause cancellation", func(t *ftt.Test) {
 					updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6"}))
 					verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 						2: "Reset the trigger of this CL because the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",
@@ -359,7 +359,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					t.Run("Cancel directly if it is root CL causing cancellation", func(t *ftt.Test) {
 						rs.RootCL = common.CLID(1)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 						assert.Loosely(t, isCurrentlyResettingTriggers(rs), should.BeFalse)
 					})
@@ -371,7 +371,7 @@ func TestOnCLsUpdated(t *testing.T) {
 							gChange1, gf.PS(gPatchSet1), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 						), aplConfigOK, accessOK)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run due to errors in the following CL(s).",
@@ -379,7 +379,7 @@ func TestOnCLsUpdated(t *testing.T) {
 						t.Run("Only reset trigger on root Cl", func(t *ftt.Test) {
 							rs.RootCL = common.CLID(1)
 							res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
-							assert.Loosely(t, err, should.BeNil)
+							assert.NoErr(t, err)
 							verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 								1: "CV cannot start a Run because this CL is not submittable.",
 							}, run.Status_FAILED)
@@ -393,7 +393,7 @@ func TestOnCLsUpdated(t *testing.T) {
 							gChange2, gf.PS(gPatchSet2), gf.CQ(+2, triggerTime, gf.U("foo")), gf.Disapprove(),
 						), aplConfigOK, accessOK)
 						res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						verifyHasResetTriggerLongOpScheduled(res, map[common.CLID]string{
 							1: "CV cannot start a Run because this CL is not submittable.",
 							2: "CV cannot start a Run because this CL is not submittable.",
@@ -406,7 +406,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				updateCL(1, gf.CI(gChange1, gf.PS(gPatchSet1+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 				updateCL(2, gf.CI(gChange2, gf.PS(gPatchSet2+1), gf.CQ(+2, triggerTime, gf.U("foo"))), aplConfigOK, accessOK)
 				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1, 2})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 				assert.Loosely(t, res.State.CancellationReasons, should.Resemble([]string{
 					"the patchset of https://x-review.example.com/c/1 has changed from 5 to 6",

@@ -47,7 +47,7 @@ func TestMembership(t *testing.T) {
 
 		makeIdentity := func(email string) identity.Identity {
 			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return id
 		}
 
@@ -63,13 +63,13 @@ func TestMembership(t *testing.T) {
 			t.Run("IsMember returns true when the given identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(unlinkedEmail, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 			})
 
 			t.Run("IsMember returns false when the given identity is unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(unlinkedEmail), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
@@ -80,13 +80,13 @@ func TestMembership(t *testing.T) {
 			t.Run("IsMember returns true when the given identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(email, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 			})
 
 			t.Run("IsMember returns false when the given identity is unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(email), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 		})
@@ -103,14 +103,14 @@ func TestMembership(t *testing.T) {
 			t.Run("IsMember returns true when the given linked identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 			})
 
 			t.Run("IsMember returns true when the given identity's linked account is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 			})
 
@@ -123,37 +123,37 @@ func TestMembership(t *testing.T) {
 					HonorGerritLinkedAccounts: false,
 				})
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 
 			t.Run("IsMember returns false when all linked accounts are unauthorized", func(t *ftt.Test) {
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 
 			t.Run("listActiveAccountEmails returns all non-pending linked email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1, linkedEmail2}))
 			})
 
 			t.Run("IsMember looks up cache on second hit", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 
 				ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 				assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(1))
 
 				t.Run("IsMember calls gerrit after cache expires", func(t *ftt.Test) {
 					ct.Clock.Add(cacheTTL + time.Second)
 					ok, err = IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail2), groups)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, ok, should.BeTrue)
 					assert.Loosely(t, ct.GFake.Requests(), should.HaveLength(2))
 				})
@@ -172,20 +172,20 @@ func TestMembership(t *testing.T) {
 			t.Run("IsMember returns true when the given linked identity is authorized", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail1, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeTrue)
 			})
 
 			t.Run("IsMember returns false when the linked authorized email is pending_confirmation", func(t *ftt.Test) {
 				ct.AddMember(linkedEmail2, "googlers")
 				ok, err := IsMember(ctx, ct.GFake, "foo", lProject, makeIdentity(linkedEmail1), groups)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ok, should.BeFalse)
 			})
 
 			t.Run("listActiveAccountEmails skips pending email addresses", func(t *ftt.Test) {
 				emails, err := listActiveAccountEmails(ctx, ct.GFake, "foo", lProject, linkedEmail1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, emails, should.Resemble([]string{linkedEmail1}))
 			})
 		})

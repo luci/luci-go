@@ -52,7 +52,7 @@ func TestQueue(t *testing.T) {
 		run3 := common.MakeRunID(lProject, clock.Now(ctx), 1, []byte("cafecafe"))
 		mustLoadQueue := func() *queue {
 			q, err := loadQueue(ctx, lProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return q
 		}
 		mustTryAcquire := func(ctx context.Context, runID common.RunID, opts *cfgpb.SubmitOptions) bool {
@@ -63,7 +63,7 @@ func TestQueue(t *testing.T) {
 				return innerErr
 			}, nil)
 			assert.Loosely(t, innerErr, should.BeNil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return waitlisted
 		}
 
@@ -144,7 +144,7 @@ func TestQueue(t *testing.T) {
 					return innerErr
 				}, nil)
 				assert.Loosely(t, innerErr, should.BeNil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			}
 			assert.Loosely(t, datastore.Put(ctx, &queue{
 				ID:       lProject,
@@ -203,7 +203,7 @@ func TestQueue(t *testing.T) {
 						return innerErr
 					}, nil)
 					assert.Loosely(t, innerErr, should.BeNil)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 				}
 				q := &queue{
 					ID:       lProject,

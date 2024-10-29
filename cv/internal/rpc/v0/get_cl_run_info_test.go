@@ -228,7 +228,7 @@ func TestGetCLRunInfo(t *testing.T) {
 			putWithDeps(gc, nil)
 
 			resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.DepChangeInfos, should.BeEmpty)
 		})
 
@@ -250,7 +250,7 @@ func TestGetCLRunInfo(t *testing.T) {
 			runInfo := addRunAndGetRunInfo(deps[0])
 
 			resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 				{
 					GerritChange: deps[0],
@@ -266,11 +266,11 @@ func TestGetCLRunInfo(t *testing.T) {
 
 			t.Run("skip submitted dep", func(t *ftt.Test) {
 				cl, err := changelist.MustGobID(deps[0].GetHost(), deps[0].GetChange()).Load(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				cl.Snapshot.GetGerrit().GetInfo().Status = gerritpb.ChangeStatus_MERGED
 				assert.Loosely(t, datastore.Put(ctx, cl), should.BeNil)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, resp.DepChangeInfos, should.Resemble([]*apiv0pb.GetCLRunInfoResponse_DepChangeInfo{
 					{
 						GerritChange: deps[1],
@@ -282,7 +282,7 @@ func TestGetCLRunInfo(t *testing.T) {
 			t.Run("return empty response for non-dogfooder", func(t *ftt.Test) {
 				ct.ResetMockedAuthDB(ctx)
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, resp.GetRunsAsOrigin(), should.BeEmpty)
 				assert.Loosely(t, resp.GetRunsAsDep(), should.BeEmpty)
 				assert.Loosely(t, resp.GetDepChangeInfos(), should.BeEmpty)
@@ -299,7 +299,7 @@ func TestGetCLRunInfo(t *testing.T) {
 					},
 				})
 				resp, err := gis.GetCLRunInfo(ctx, &apiv0pb.GetCLRunInfoRequest{GerritChange: gc})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, resp.GetRunsAsOrigin(), should.BeEmpty)
 				assert.Loosely(t, resp.GetRunsAsDep(), should.BeEmpty)
 				assert.Loosely(t, resp.GetDepChangeInfos(), should.BeEmpty)

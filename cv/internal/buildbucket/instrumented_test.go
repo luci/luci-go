@@ -69,13 +69,13 @@ func TestInstrumentedFactory(t *testing.T) {
 			client: mockBBClient,
 		})
 		instrumentedClient, err := f.MakeClient(ctx, bbHost, lProject)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("OK response", func(t *ftt.Test) {
 			_, err := instrumentedClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: 123,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "GetBuild", "OK"), should.Equal(1))
 			assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "GetBuild", "OK").Sum(), should.AlmostEqual(100.0))
 
@@ -91,7 +91,7 @@ func TestInstrumentedFactory(t *testing.T) {
 						},
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, tsmonSentCounter(ctx, metrics.Internal.BuildbucketRPCCount, lProject, bbHost, "Batch.GetBuild", "OK"), should.Equal(1))
 				assert.Loosely(t, tsmonSentDistr(ctx, metrics.Internal.BuildbucketRPCDurations, lProject, bbHost, "Batch.GetBuild", "OK").Sum(), should.AlmostEqual(100.0))
 			})

@@ -156,11 +156,11 @@ func TestEventboxWorks(t *testing.T) {
 		// Seed the first cell.
 		assert.Loosely(t, Emit(ctx, []byte{'+'}, mkRecipient(ctx, 65)), should.BeNil)
 		l, err := List(ctx, mkRecipient(ctx, 65))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, l, should.HaveLength(1))
 
 		ppfns, err := ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(1))
 		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1))
@@ -168,28 +168,28 @@ func TestEventboxWorks(t *testing.T) {
 
 		// Let the cell grow without incoming events.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(2))
 		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1+3))
 		// Can't grow any more, no change to anything.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(2))
 		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(1+3))
 
 		// Advertise from nearby cell, twice.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustList(t, ctx, 65), should.HaveLength(2))
 		// Emigrate, at most once.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 65), &processor{65}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 65).EVersion, should.Equal(3))
 		assert.Loosely(t, mustGet(t, ctx, 65).Population, should.Equal(4-1))
@@ -197,16 +197,16 @@ func TestEventboxWorks(t *testing.T) {
 
 		// Accept immigrants.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 64).Population, should.Equal(+1))
 
 		// Advertise to a cell with population = 1 is a noop.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 63), &processor{63}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 64), &processor{64}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 
 		// Lots of events at once.
@@ -217,18 +217,18 @@ func TestEventboxWorks(t *testing.T) {
 		assert.Loosely(t, Emit(ctx, []byte{'-'}, mkRecipient(ctx, 49)), should.BeNil) // not enough people, ignored.
 		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(5))
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 49).EVersion, should.Equal(1))
 		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(1))
 		assert.Loosely(t, mustList(t, ctx, 49), should.HaveLength(2)) // 2x'+' are waiting
 		// Slowly welcome remaining newcomers.
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(2))
 		ppfns, err = ProcessBatch(ctx, mkRecipient(ctx, 49), &processor{49}, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, 49).Population, should.Equal(3))
 		// Finally, must be done.
@@ -309,7 +309,7 @@ func TestEventboxPostProcessFn(t *testing.T) {
 				}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.HaveLength(2))
 			for _, ppfn := range ppfns {
 				assert.Loosely(t, ppfn(ctx), should.BeNil)
@@ -423,14 +423,14 @@ func TestEventboxFails(t *testing.T) {
 
 		// In all cases, there must still be 2 unconsumed events.
 		l, err := List(ctx, recipient)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, l, should.HaveLength(2))
 
 		// Finally, check that first side effect is real, otherwise assertions above
 		// might be giving false sense of correctness.
 		p.saveState = func(context.Context, State, EVersion) error { return nil }
 		ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, ppfns, should.BeEmpty)
 		assert.Loosely(t, mustGet(t, ctx, firstIndex), should.NotBeNil)
 	})
@@ -479,7 +479,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 				return nil, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 		t.Run("Mutate returns no transitions, but some semantic garbage is still cleaned up", func(t *ftt.Test) {
@@ -489,10 +489,10 @@ func TestEventboxNoopTransitions(t *testing.T) {
 				return nil, es[:1], nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.BeEmpty)
 			l, err := List(ctx, recipient)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, l, should.HaveLength(1))
 			assert.Loosely(t, l[0].Value, should.Resemble([]byte("msg")))
 		})
@@ -505,7 +505,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 			_, err := ProcessBatch(ctx, recipient, p, limit)
 			assert.Loosely(t, err, should.ErrLike("boom"))
 			l, err := List(ctx, recipient)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, l, should.HaveLength(1))
 			assert.Loosely(t, l[0].Value, should.Resemble([]byte("msg")))
 		})
@@ -514,7 +514,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 				return []Transition{}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 		t.Run("Mutate returns noop transitions only", func(t *ftt.Test) {
@@ -524,7 +524,7 @@ func TestEventboxNoopTransitions(t *testing.T) {
 				}, nil, nil
 			}
 			ppfns, err := ProcessBatch(ctx, recipient, p, limit)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ppfns, should.BeEmpty)
 		})
 

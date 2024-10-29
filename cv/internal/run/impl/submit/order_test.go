@@ -230,7 +230,7 @@ func TestComputeOrder(t *testing.T) {
 			N := 30
 			cls := genFullGraph(N)
 			actual, numBrokenDeps, err := compute(cls)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, actual, should.Resemble(cls))
 			assert.Loosely(t, numBrokenDeps, should.Equal((N-1)*(N-1)))
 		})

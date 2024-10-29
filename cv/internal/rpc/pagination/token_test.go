@@ -40,14 +40,14 @@ func TestPageTokens(t *testing.T) {
 			// Any proto type should work.
 			in := timestamppb.New(testclock.TestRecentTimeUTC)
 			token, err := EncryptPageToken(ctx, in)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			out := &timestamppb.Timestamp{}
 			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
 			assert.Loosely(t, out, should.Resemble(in))
 		})
 		t.Run("empty page token", func(t *ftt.Test) {
 			token, err := EncryptPageToken(ctx, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, token, should.BeBlank)
 			out := &timestamppb.Timestamp{}
 			assert.Loosely(t, DecryptPageToken(ctx, token, out), should.BeNil)
@@ -56,7 +56,7 @@ func TestPageTokens(t *testing.T) {
 		t.Run("empty page token with typed nil", func(t *ftt.Test) {
 			var typedNil *timestamppb.Timestamp
 			token, err := EncryptPageToken(ctx, typedNil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, token, should.BeBlank)
 		})
 	})
@@ -64,7 +64,7 @@ func TestPageTokens(t *testing.T) {
 	ftt.Run("Bad page token", t, func(t *ftt.Test) {
 		dst := &timestamppb.Timestamp{Seconds: 1, Nanos: 2}
 		goodToken, err := EncryptPageToken(ctx, timestamppb.New(testclock.TestRecentTimeUTC))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		tokenBytes := []byte(goodToken)
 		tokenBytes[10] = '\\'
 		err = DecryptPageToken(ctx, string(tokenBytes), dst)

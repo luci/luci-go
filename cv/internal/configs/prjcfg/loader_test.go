@@ -115,14 +115,14 @@ func TestLoadingConfigs(t *testing.T) {
 
 		t.Run("Not existing project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, "not_chromium")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeFalse)
 			assert.Loosely(t, func() { m.Hash() }, should.Panic)
 		})
 
 		t.Run("Enabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeTrue)
 			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 			assert.Loosely(t, m.ConfigGroupNames, should.Resemble([]string{cfgGroups[0].Name, cfgGroups[1].Name}))
@@ -132,11 +132,11 @@ func TestLoadingConfigs(t *testing.T) {
 			}))
 
 			m2, err := GetHashMeta(ctx, project, m.Hash())
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m2, should.Resemble(m))
 
 			cgs, err := m.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, len(cgs), should.Equal(2))
 			assert.Loosely(t, cgs[0].Project.StringID(), should.Equal(project))
 			assert.Loosely(t, cgs[0].Content, should.Resemble(cfgGroups[0]))
@@ -162,7 +162,7 @@ func TestLoadingConfigs(t *testing.T) {
 
 		t.Run("Updated project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeTrue)
 			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 			h := m.Hash()
@@ -173,12 +173,12 @@ func TestLoadingConfigs(t *testing.T) {
 				ConfigGroupID(h + "/" + cfgGroups[2].Name),
 			}))
 			cgs, err := m.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, len(cgs), should.Equal(3))
 
 			t.Run("reading ConfigGroup directly works", func(t *ftt.Test) {
 				cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
 			})
 		})
@@ -187,12 +187,12 @@ func TestLoadingConfigs(t *testing.T) {
 
 		t.Run("Disabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeTrue)
 			assert.Loosely(t, m.Status, should.Equal(StatusDisabled))
 			assert.Loosely(t, len(m.ConfigGroupIDs), should.Equal(3))
 			cgs, err := m.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, len(cgs), should.Equal(3))
 		})
 
@@ -201,21 +201,21 @@ func TestLoadingConfigs(t *testing.T) {
 
 		t.Run("Re-enabled project", func(t *ftt.Test) {
 			m, err := GetLatestMeta(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeTrue)
 			assert.Loosely(t, m.Status, should.Equal(StatusEnabled))
 		})
 
 		m, err := GetLatestMeta(ctx, project)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		cgs, err := m.GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Deleted project", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Delete(ctx, &ProjectConfig{Project: project}, cgs), should.BeNil)
 
 			m, err = GetLatestMeta(ctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, m.Exists(), should.BeFalse)
 		})
 
@@ -228,10 +228,10 @@ func TestLoadingConfigs(t *testing.T) {
 
 			// Can still read individual ConfigGroups.
 			cg, err := GetConfigGroup(ctx, project, m.ConfigGroupIDs[0])
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[0]))
 			cg, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[2])
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, cg.Content, should.Resemble(cfgGroups[2]))
 			// ... except the deleted one.
 			_, err = GetConfigGroup(ctx, project, m.ConfigGroupIDs[1])

@@ -102,14 +102,14 @@ func TestSubmitter(t *testing.T) {
 		), should.BeNil)
 		assert.Loosely(t, datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			waitlisted, err := TryAcquire(ctx, s.rm.NotifyReadyForSubmission, s.runID, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, waitlisted, should.BeFalse)
 			return err
 		}, nil), should.BeNil)
 
 		verifyRunReleased := func(runID common.RunID) {
 			current, waitlist, err := LoadCurrentAndWaitlist(ctx, runID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, current, should.NotEqual(runID))
 			assert.Loosely(t, waitlist.Index(runID), should.BeLessThan(0)) // doesn't exist
 		}

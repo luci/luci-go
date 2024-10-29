@@ -88,35 +88,35 @@ func TestLocationFilterMatch(t *testing.T) {
 			t.Run("in included dir", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeTrue)
 			})
 
 			t.Run("in excluded dir", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeFalse)
 			})
 
 			t.Run("host doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("other-review.googlesource.com", "gp", refMain, []string{"included/foo"})})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeFalse)
 			})
 
 			t.Run("project doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "xyz", refMain, []string{"included/foo"})})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeFalse)
 			})
 
 			t.Run("ref doesn't match", func(t *ftt.Test) {
 				included, err := locationFilterMatch(ctx, lfs,
 					[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", "refs/heads/experimental", []string{"included/foo"})})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeFalse)
 			})
 
@@ -130,25 +130,25 @@ func TestLocationFilterMatch(t *testing.T) {
 
 				t.Run("matches host, project, ref", func(t *ftt.Test) {
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, included, should.BeTrue)
 				})
 				t.Run("doesn't match host", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().Host = "other-review.googlesource.com"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, included, should.BeFalse)
 				})
 				t.Run("doesn't match project", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_proj"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, included, should.BeFalse)
 				})
 				t.Run("doesn't match ref", func(t *ftt.Test) {
 					mergeCL.Detail.GetGerrit().GetInfo().Project = "other_ref"
 					included, err := locationFilterMatch(ctx, lfs, []*run.RunCL{mergeCL})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, included, should.BeFalse)
 				})
 			})
@@ -159,7 +159,7 @@ func TestLocationFilterMatch(t *testing.T) {
 						makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md", "included/excluded/foo.txt"}),
 						makeCL("x-review.googlesource.com", "foo", refMain, []string{"readme.md"}),
 					})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, included, should.BeTrue)
 			})
 		})
@@ -177,12 +177,12 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"excluded/readme.md"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeFalse)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"somewhere/else"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeTrue)
 		})
 
@@ -196,17 +196,17 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"included/readme.md"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeTrue)
 
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("example.com", "blah", refMain, []string{"somewhere/else"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeFalse)
 		})
 
@@ -240,19 +240,19 @@ func TestLocationFilterMatch(t *testing.T) {
 
 			included, err := locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/readme.md"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeTrue)
 
 			// In excluded dir.
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/foo"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeFalse)
 
 			// In excluded dir, but an exception.
 			included, err = locationFilterMatch(ctx, lfs,
 				[]*run.RunCL{makeCL("x-review.googlesource.com", "gp", refMain, []string{"included/excluded/included.txt"})})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, included, should.BeTrue)
 		})
 	})

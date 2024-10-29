@@ -62,7 +62,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 			}
 			prepPlan := func(execState *tryjob.ExecutionState, updatedTryjobs ...int64) *plan {
 				_, p, err := executor.prepExecutionPlan(ctx, execState, r, updatedTryjobs, false)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				return p
 			}
 			t.Run("Updates", func(t *ftt.Test) {
@@ -399,7 +399,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					withRequirementVersion(int(r.Tryjobs.GetRequirementVersion()) + 1).
 					build()
 				_, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 				assert.Loosely(t, executor.logEntries, should.BeEmpty)
 			})
@@ -407,7 +407,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 			t.Run("New Requirement", func(t *ftt.Test) {
 				execState := newExecStateBuilder().build()
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.Requirement, should.Resemble(latestReqmt))
 				assert.Loosely(t, plan.triggerNewAttempt, should.HaveLength(1))
 				assert.Loosely(t, plan.triggerNewAttempt[0].definition, should.Resemble(builderFooDef))
@@ -421,7 +421,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					appendDefinition(builderFooDef).
 					build()
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.Requirement, should.Resemble(latestReqmt))
 				assert.Loosely(t, plan.triggerNewAttempt, should.BeEmpty)
 				assert.Loosely(t, plan.discard, should.HaveLength(1))
@@ -445,7 +445,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					appendDefinition(builderFooOriginal).
 					build()
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.Requirement, should.Resemble(latestReqmt))
 				assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 				assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
@@ -467,7 +467,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					}).
 					build()
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.Requirement, should.Resemble(latestReqmt))
 				assert.Loosely(t, plan.isEmpty(), should.BeTrue)
 				assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
@@ -486,7 +486,7 @@ func TestPrepExecutionPlan(t *testing.T) {
 					appendDefinition(builderFooDef).
 					build()
 				execState, plan, err := executor.prepExecutionPlan(ctx, execState, r, nil, true)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.Requirement, should.Resemble(latestReqmt))
 				assert.Loosely(t, plan.discard, should.HaveLength(1))
 				assert.Loosely(t, execState.Status, should.Equal(tryjob.ExecutionState_SUCCEEDED))
@@ -538,7 +538,7 @@ func TestExecutePlan(t *testing.T) {
 					},
 				},
 			}, nil, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, executor.logEntries, should.Resemble([]*tryjob.ExecutionLogEntry{
 				{
 					Time: timestamppb.New(ct.Clock.Now().UTC()),
@@ -719,7 +719,7 @@ func TestExecutePlan(t *testing.T) {
 						},
 					},
 				}, r, execState)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, execState.GetExecutions()[0].GetAttempts(), should.HaveLength(1))
 				attempt := execState.GetExecutions()[0].GetAttempts()[0]
 				assert.Loosely(t, attempt.GetTryjobId(), should.NotEqual(0))

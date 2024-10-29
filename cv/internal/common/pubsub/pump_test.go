@@ -40,7 +40,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 
 		psSrv, err := NewTestPSServer(ctx)
 		defer func() { _ = psSrv.Close() }()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		processed := make(chan string, 100)
 		defer close(processed)
@@ -186,7 +186,7 @@ func TestPullingBatchProcessor(t *testing.T) {
 			case <-ctx.Done():
 				panic("This test failed because .Process() did not respect .runTime")
 			case err := <-done:
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			}
 			assert.Loosely(t, len(received), should.BeLessThan(len(sent)))
 		})

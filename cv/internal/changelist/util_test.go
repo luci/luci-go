@@ -43,7 +43,7 @@ func TestOwnerIdentity(t *testing.T) {
 			Info: ci,
 		}}
 		i, err := s.OwnerIdentity()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, i, should.Equal(identity.Identity("user:owner-1@example.com")))
 
 		t.Run("no preferred email set", func(t *ftt.Test) {
@@ -90,7 +90,7 @@ func TestQueryCLIDsUpdatedBefore(t *testing.T) {
 		sort.Sort(expected)
 
 		actual, err := QueryCLIDsUpdatedBefore(ctx, before)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

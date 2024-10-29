@@ -83,7 +83,7 @@ func TestTQifyError(t *testing.T) {
 		t.Run("Simple", func(t *ftt.Test) {
 			t.Run("noop", func(t *ftt.Test) {
 				err := TQifyError(ctx, nil)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ml.Messages(), should.HaveLength(0))
 			})
 			t.Run("non-transient becomes Fatal and is logged", func(t *ftt.Test) {

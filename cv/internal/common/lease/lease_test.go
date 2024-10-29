@@ -49,7 +49,7 @@ func TestLease(t *testing.T) {
 		}
 		t.Run("Works for new lease", func(t *ftt.Test) {
 			actual, err := Apply(ctx, application)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			expected := &Lease{
 				ResourceID: rid,
 				Holder:     "holder",
@@ -80,7 +80,7 @@ func TestLease(t *testing.T) {
 					ExpireTime: now.Add(1 * time.Minute),
 				}
 				actual, err := Apply(ctx, application)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				expected := &Lease{
 					ResourceID: rid,
 					Holder:     "holder2",
@@ -96,7 +96,7 @@ func TestLease(t *testing.T) {
 		t.Run("Truncates to millisecond", func(t *ftt.Test) {
 			application.ExpireTime = now.Add(1 * time.Minute).Add(3141593 * time.Nanosecond) // 3.141593 ms
 			actual, err := Apply(ctx, application)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			expected := &Lease{
 				ResourceID: rid,
 				Holder:     "holder",
@@ -119,16 +119,16 @@ func TestLease(t *testing.T) {
 			Holder:     "holder",
 			ExpireTime: now.Add(1 * time.Minute),
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Works", func(t *ftt.Test) {
 			err := l.Terminate(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, mustLoadLease(ctx, rid), should.BeNil)
 
 			t.Run("No-op if lease is already terminated", func(t *ftt.Test) {
 				err := l.Terminate(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, mustLoadLease(ctx, rid), should.BeNil)
 			})
 		})
@@ -141,7 +141,7 @@ func TestLease(t *testing.T) {
 				Holder:     "holder2",
 				ExpireTime: now.Add(1 * time.Minute),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, l.Terminate(ctx), should.Match(&AlreadyInLeaseErr{
 				ExpireTime: now.Add(1 * time.Minute), // original lease expiry time
 				Holder:     "holder2",
@@ -163,11 +163,11 @@ func TestLease(t *testing.T) {
 			ExpireTime: now.Add(1 * time.Minute),
 			Payload:    []byte("stuff"),
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Works", func(t *ftt.Test) {
 			err := l.Extend(ctx, 1*time.Minute)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			expected := &Lease{
 				ResourceID: rid,
 				Holder:     "holder",
@@ -181,7 +181,7 @@ func TestLease(t *testing.T) {
 
 		t.Run("Truncates to millisecond", func(t *ftt.Test) {
 			err := l.Extend(ctx, 3141593*time.Nanosecond) // 3.141593 ms
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			expected := &Lease{
 				ResourceID: rid,
 				Holder:     "holder",
@@ -213,7 +213,7 @@ func TestLease(t *testing.T) {
 				Holder:     "holder2",
 				ExpireTime: now.UTC().Add(1 * time.Minute),
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			err = l.Extend(ctx, 1*time.Minute)
 			assert.Loosely(t, err, should.Match(&AlreadyInLeaseErr{
 				ExpireTime: now.Add(1 * time.Minute),

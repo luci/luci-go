@@ -30,11 +30,11 @@ func TestExternalID(t *testing.T) {
 
 		t.Run("BuildbucketID", func(t *ftt.Test) {
 			eid, err := BuildbucketID("cr-buildbucket.appspot.com", 12)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, eid, should.Resemble(ExternalID("buildbucket/cr-buildbucket.appspot.com/12")))
 
 			host, build, err := eid.ParseBuildbucketID()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, host, should.Match("cr-buildbucket.appspot.com"))
 			assert.Loosely(t, build, should.Equal(12))
 
@@ -64,13 +64,13 @@ func TestExternalID(t *testing.T) {
 			// None of ids[:] are created.
 
 			tjIDs, err := Resolve(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for _, tjID := range tjIDs {
 				assert.Loosely(t, tjID, should.BeZero)
 			}
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for _, tj := range tjs {
 				assert.Loosely(t, tj, should.BeNil)
@@ -87,7 +87,7 @@ func TestExternalID(t *testing.T) {
 			ids[2].MustCreateIfNotExists(ctx)
 
 			tjIDs, err := Resolve(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for i, tjID := range tjIDs {
 				if i == 0 {
@@ -98,7 +98,7 @@ func TestExternalID(t *testing.T) {
 			}
 
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for i, tj := range tjs {
 				if i == 0 {
@@ -121,14 +121,14 @@ func TestExternalID(t *testing.T) {
 			ids[2].MustCreateIfNotExists(ctx)
 
 			tjIDs, err := Resolve(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjIDs, should.HaveLength(len(ids)))
 			for _, tjID := range tjIDs {
 				assert.Loosely(t, tjID, should.NotEqual(0))
 			}
 
 			tjs, err := ResolveToTryjobs(ctx, ids...)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, tjs, should.HaveLength(len(ids)))
 			for i, tj := range tjs {
 				assert.Loosely(t, tj, should.NotBeNil)

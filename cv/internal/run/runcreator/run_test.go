@@ -126,7 +126,7 @@ func TestRunBuilder(t *testing.T) {
 		}
 		makeSnapshot := func(ci *gerritpb.ChangeInfo) *changelist.Snapshot {
 			min, cur, err := gerrit.EquivalentPatchsetRange(ci)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return &changelist.Snapshot{
 				Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
 					Host: gHost,
@@ -162,7 +162,7 @@ func TestRunBuilder(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, cl2), should.BeNil)
 
 		owner, err := identity.MakeIdentity("user:owner@example.com")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		trIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.User, triggerer.Email))
 		cls := []CL{
 			{
@@ -232,7 +232,7 @@ func TestRunBuilder(t *testing.T) {
 				projectStateOffload.UpdateTime = ct.Clock.Now().UTC().Add(-1 * time.Hour)
 				assert.Loosely(t, datastore.Put(ctx, projectStateOffload), should.BeNil)
 				_, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			})
 
 			t.Run("CL not exists", func(t *ftt.Test) {
@@ -276,7 +276,7 @@ func TestRunBuilder(t *testing.T) {
 					ID:                  expectedRunID,
 					CreationOperationID: "concurrent runner",
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				_, err = rb.Create(ctx, clMutator, pmNotifier, runNotifier)
 				assert.Loosely(t, err, should.ErrLike(`already created with OperationID "concurrent runner"`))
 				assert.Loosely(t, StateChangedTag.In(err), should.BeFalse)
@@ -288,9 +288,9 @@ func TestRunBuilder(t *testing.T) {
 					ID:                  expectedRunID,
 					CreationOperationID: rb.OperationID,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, r, should.NotBeNil)
 			})
 		})
@@ -310,7 +310,7 @@ func TestRunBuilder(t *testing.T) {
 
 		t.Run("New Run is created", func(t *ftt.Test) {
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			expectedRun := &run.Run{
 				ID:         expectedRunID,
@@ -365,7 +365,7 @@ func TestRunBuilder(t *testing.T) {
 
 			// RunLog must contain the first entry for Creation.
 			entries, err := run.LoadRunLogEntries(ctx, expectedRun.ID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, entries, should.HaveLength(1))
 			assert.Loosely(t, entries[0].GetCreated().GetConfigGroupId(), should.Resemble(string(expectedRun.ConfigGroupID)))
 
@@ -393,7 +393,7 @@ func TestRunBuilder(t *testing.T) {
 				TriggeringValue: 1,
 			}
 			r, err := rb.Create(ctx, clMutator, pmNotifier, runNotifier)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, r.Mode, should.Equal(run.Mode("CUSTOM_RUN")))
 			assert.Loosely(t, r.ModeDefinition, should.Resemble(rb.ModeDefinition))
 		})

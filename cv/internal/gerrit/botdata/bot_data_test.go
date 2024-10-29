@@ -88,7 +88,7 @@ func TestAppend(t *testing.T) {
 				Revision:    "abcd",
 			}
 			ret, err := append("", bd, 1000)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ret, should.Equal(`Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision":"abcd"}`))
 		})
 
@@ -99,7 +99,7 @@ func TestAppend(t *testing.T) {
 				Revision:    "abcd",
 			}
 			ret, err := append("Message for human", bd, 1000)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ret, should.Equal(`Message for human
 
 Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision":"abcd"}`))
@@ -112,7 +112,7 @@ Bot data: {"action":"cancel","triggered_at":"2013-03-23T21:36:52.332Z","revision
 				Revision:    "abcd",
 			}
 			ret, err := append("Message for human. But it's way tooooooooooooooooooooooo long", bd, 150)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ret, should.Equal(`Message for human. But it's
 ...[truncated too long message]
 

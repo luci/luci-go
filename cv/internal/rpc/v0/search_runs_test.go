@@ -95,7 +95,7 @@ func TestSearchRuns(t *testing.T) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: "bogus"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Runs, should.BeEmpty)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
@@ -104,7 +104,7 @@ func TestSearchRuns(t *testing.T) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Runs, should.BeEmpty)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
@@ -159,7 +159,7 @@ func TestSearchRuns(t *testing.T) {
 			resp, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			// Most recent Run comes first.
 			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2, r1)))
@@ -177,7 +177,7 @@ func TestSearchRuns(t *testing.T) {
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 				PageSize:  1,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r2)))
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
@@ -187,7 +187,7 @@ func TestSearchRuns(t *testing.T) {
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
 			assert.Loosely(t, resp.NextPageToken, should.NotBeEmpty)
 
@@ -197,7 +197,7 @@ func TestSearchRuns(t *testing.T) {
 				PageSize:  1,
 				PageToken: resp.NextPageToken,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Runs, should.BeEmpty)
 			assert.Loosely(t, resp.NextPageToken, should.BeEmpty)
 		})
@@ -213,7 +213,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
 		})
 
@@ -254,7 +254,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Runs, should.BeEmpty)
 		})
 
@@ -277,7 +277,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, respIDs(resp.Runs), should.Resemble(runIDs(r1)))
 		})
 
@@ -301,7 +301,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Runs, should.BeEmpty)
 		})
 	})

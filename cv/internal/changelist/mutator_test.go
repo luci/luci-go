@@ -78,7 +78,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.Snapshot = s
 					return nil
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.Loosely(t, cl.EVersion, should.Equal(1))
 				assert.Loosely(t, cl.UpdateTime, should.Match(ct.Clock.Now()))
@@ -99,7 +99,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, cl, should.BeNil)
 				expectNoNotifications()
 			})
@@ -123,7 +123,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.IncompleteRuns.InsertSorted(run2) // idempotent
 					return nil
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				assert.Loosely(t, priorSnapshot, should.Resemble(s1))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
@@ -154,7 +154,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				cl, err := m.Upsert(ctx, lProject, eid, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				assert.That(t, cl.ExternalID, should.Equal(eid))
 				assert.That(t, cl.EVersion, should.Equal(priorCL.EVersion))
@@ -189,7 +189,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.Snapshot = s2
 					return nil
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
@@ -226,7 +226,7 @@ func TestMutatorSingleCL(t *testing.T) {
 					cl.Snapshot = s2
 					return nil
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, cl.Snapshot, should.Resemble(s2))
 				assert.Loosely(t, tj.clsNotified, should.HaveLength(1))
 				for clid, content := range tj.clsNotified {
@@ -243,7 +243,7 @@ func TestMutatorSingleCL(t *testing.T) {
 				cl, err := m.Update(ctx, lProject, priorCL.ID, func(cl *CL) error {
 					return ErrStopMutation
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				assert.Loosely(t, cl.ID, should.Resemble(priorCL.ID))
 				assert.That(t, cl.ExternalID, should.Equal(eid))
@@ -365,7 +365,7 @@ func TestMutatorBatch(t *testing.T) {
 				// Ensure the returned CLs are exactly what was stored in Datastore,
 				// and compute eversion map at the same time.
 				dsCLs, err := LoadCLsByIDs(ctx, clids)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				eversions := make(map[common.CLID]int64, len(dsCLs))
 				for i := range dsCLs {
 					assert.Loosely(t, dsCLs[i].IncompleteRuns.ContainsSorted(run3), should.BeTrue)
@@ -402,7 +402,7 @@ func TestMutatorBatch(t *testing.T) {
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = nil // reset in case of retries
 					muts, err := m.BeginBatch(ctx, lProject, clids)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					eg, _ := errgroup.WithContext(ctx)
 					for i := range muts {
 						mut := muts[i]
@@ -462,7 +462,7 @@ func TestMutatorBatch(t *testing.T) {
 				transErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 					resCLs = make([]*CL, len(clids)) // reset in case of retries
 					muts, err := m.BeginBatch(ctx, lProject, clids)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					eg, egCtx := errgroup.WithContext(ctx)
 					for i, mut := range muts {
 						i, mut := i, mut
@@ -586,7 +586,7 @@ func TestMutatorConcurrent(t *testing.T) {
 			featureBreaker.DatastoreFeatures...,
 		)
 		cl, err := eid.Load(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, cl, should.NotBeNil)
 		// Since all workers have succeeded, the latest snapshot
 		// (by ExternalUpdateTime) must be the current snapshot in datastore.

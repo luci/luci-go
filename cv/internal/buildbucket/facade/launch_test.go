@@ -62,7 +62,7 @@ func TestLaunch(t *testing.T) {
 			triggerEmail = "triggerer@example.com"
 		)
 		ownerIdentity, err := identity.MakeIdentity(fmt.Sprintf("user:%s", owner1Email))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		ct.AddMember(ownerIdentity.Email(), "googlers") // Run owner is a googler
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
@@ -73,7 +73,7 @@ func TestLaunch(t *testing.T) {
 			"foo": "bar",
 		})
 		bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, bbHost, lProject)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		epoch := ct.Clock.Now().UTC()
 		cl1 := &run.RunCL{
@@ -155,7 +155,7 @@ func TestLaunch(t *testing.T) {
 				assert.Loosely(t, launchResult.Err, should.BeNil)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, host, should.Equal(bbHost))
 				assert.Loosely(t, launchResult.Status, should.Equal(tryjob.Status_TRIGGERED))
 				assert.Loosely(t, launchResult.Result, should.Resemble(&tryjob.Result{
@@ -176,7 +176,7 @@ func TestLaunch(t *testing.T) {
 						AllFields: true,
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, build.GetBuilder(), should.Resemble(builderID))
 				assert.Loosely(t, build.GetInput().GetProperties(), should.Resemble(&structpb.Struct{
 					Fields: map[string]*structpb.Value{
@@ -232,14 +232,14 @@ func TestLaunch(t *testing.T) {
 				assert.Loosely(t, launchResult.Err, should.BeNil)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				_, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, build.GetInput().GetProperties().GetFields()[propertyKey].GetStructValue().GetFields()["experimental"].GetBoolValue(), should.BeTrue)
 				var experimentalTag *bbpb.StringPair
 				for _, tag := range build.GetTags() {
@@ -313,7 +313,7 @@ func TestLaunch(t *testing.T) {
 				assert.Loosely(t, launchResult.Err, should.BeNil)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				switch i {
 				case 0, 1:
 					assert.Loosely(t, host, should.Equal(bbHost))
@@ -321,14 +321,14 @@ func TestLaunch(t *testing.T) {
 					assert.Loosely(t, host, should.Equal(bbHost2))
 				}
 				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, build, should.NotBeNil)
 			}
 		})
@@ -360,16 +360,16 @@ func TestLaunch(t *testing.T) {
 				assert.Loosely(t, launchResult.Err, should.BeNil)
 				assert.Loosely(t, launchResult.ExternalID, should.NotBeEmpty)
 				host, id, err := launchResult.ExternalID.ParseBuildbucketID()
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				bbClient, err := ct.BuildbucketFake.NewClientFactory().MakeClient(ctx, host, lProject)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: id,
 					Mask: &bbpb.BuildMask{
 						AllFields: true,
 					},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, build.GetBuilder(), should.Resemble(tryjobs[i].Definition.GetBuildbucket().GetBuilder()))
 			}
 		})

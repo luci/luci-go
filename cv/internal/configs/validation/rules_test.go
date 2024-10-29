@@ -36,7 +36,7 @@ func TestValidationRules(t *testing.T) {
 		addRules(r)
 
 		patterns, err := r.ConfigPatterns(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, len(patterns), should.Equal(2))
 		t.Run("project-scope cq.cfg", func(t *ftt.Test) {
 			assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
@@ -51,7 +51,7 @@ func TestValidationRules(t *testing.T) {
 		t.Run("Dev", func(t *ftt.Test) {
 			ctx = memory.UseWithAppID(context.Background(), "luci-change-verifier-dev")
 			patterns, err := r.ConfigPatterns(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, patterns[0].Path.Match("commit-queue-dev.cfg"), should.BeTrue)
 		})
 	})

@@ -677,7 +677,7 @@ func TestCreatesMultiCLsFullRunSuccess(t *testing.T) {
 		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
 			Id: buildID,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Resemble([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange2, Patchset: gPatchSet},
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
@@ -834,7 +834,7 @@ func TestCreatesSingularFullRunWithAllowOpenDeps(t *testing.T) {
 		b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
 			Id: buildID,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, b.GetInput().GetGerritChanges(), should.Resemble([]*buildbucketpb.GerritChange{
 			{Host: gHost, Project: gRepo, Change: gChange3, Patchset: gPatchSet},
 		}))

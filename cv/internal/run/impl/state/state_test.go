@@ -58,7 +58,7 @@ func TestCheckTree(t *testing.T) {
 			},
 		})
 		meta, err := prjcfg.GetLatestMeta(ctx, lProject)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
 		client := ct.TreeFake.Client()
@@ -66,7 +66,7 @@ func TestCheckTree(t *testing.T) {
 		t.Run("Open", func(t *ftt.Test) {
 			ct.TreeFake.ModifyState(ctx, tree.Open)
 			open, err := rs.CheckTree(ctx, client)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, open, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
@@ -75,7 +75,7 @@ func TestCheckTree(t *testing.T) {
 		t.Run("Closed", func(t *ftt.Test) {
 			ct.TreeFake.ModifyState(ctx, tree.Closed)
 			open, err := rs.CheckTree(ctx, client)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, open, should.BeFalse)
 			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeFalse)
 			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
@@ -85,7 +85,7 @@ func TestCheckTree(t *testing.T) {
 			ct.TreeFake.ModifyState(ctx, tree.Closed)
 			rs.Run.Options = &run.Options{SkipTreeChecks: true}
 			open, err := rs.CheckTree(ctx, client)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, open, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
@@ -100,11 +100,11 @@ func TestCheckTree(t *testing.T) {
 				},
 			})
 			meta, err := prjcfg.GetLatestMeta(ctx, lProject)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
 			open, err := rs.CheckTree(ctx, client)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, open, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
 			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))

@@ -161,7 +161,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("adds new labels", func(t *ftt.Test) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1)))
 				summary, err = exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
@@ -172,7 +172,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("leaves other labels as they are", func(t *ftt.Test) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-3", 1))))
 				summary, err = exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
@@ -184,7 +184,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("overrides the values if a given label already exists", func(t *ftt.Test) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1, gf.Vote("label-1", -1))))
 				summary, err = exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
@@ -195,7 +195,7 @@ func TestExecutePostActionOp(t *testing.T) {
 			t.Run("multi CL run", func(t *ftt.Test) {
 				exe := newExecutor(ctx, makeRunWithCLs(gf.CI(gChange1), gf.CI(gChange2)))
 				summary, err = exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{
 					"label-1": 2,
 					"label-2": 0,
@@ -306,7 +306,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 				// give it another try
 				_, err := exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// No vote should have been performed. (It can't be, anyways)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{}))
 			})
@@ -321,7 +321,7 @@ func TestExecutePostActionOp(t *testing.T) {
 
 				// give it another try
 				_, err := exe.Do(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// No vote should have been performed. (It can't be, anyways)
 				assert.Loosely(t, listLabels(gChange1), should.Resemble(map[string]int32{}))
 			})

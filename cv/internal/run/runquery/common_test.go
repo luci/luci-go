@@ -85,7 +85,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 		t.Run("If there is no limit, page token must not be returned but ACLs must be obeyed", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clA}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1, xero7}))
 			assert.Loosely(t, pt, should.BeNil)
 		})
@@ -94,7 +94,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			t.Run("without ACLs filtering", func(t *ftt.Test) {
 				q := CLQueryBuilder{CLID: clA, Limit: 3}
 				runs, pt, err := loadRunsFromQuery(ctx, q)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, bond2}))
 				assert.Loosely(t, pt, should.NotBeNil)
 			})
@@ -103,7 +103,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 				t.Run("limit=3", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 3}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5}))
 					t.Log("and chooses pagetoken to maximally avoid redundant work")
 					// NOTE: the second behind-the-scenes query should have fetched
@@ -112,14 +112,14 @@ func TestLoadRunsFromQuery(t *testing.T) {
 
 					q = q.PageToken(pt)
 					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{rust1, xero7}))
 					assert.Loosely(t, pt, should.BeNil)
 				})
 				t.Run("limit=4", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 4}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1}))
 					t.Log("and chooses pagetoken to maximally avoid redundant work")
 					// NOTE: the second behind-the-scenes query should have fetched
@@ -129,14 +129,14 @@ func TestLoadRunsFromQuery(t *testing.T) {
 
 					q = q.PageToken(pt)
 					runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{xero7}))
 					assert.Loosely(t, pt, should.BeNil)
 				})
 				t.Run("limit=5", func(t *ftt.Test) {
 					q := CLQueryBuilder{CLID: clA, Limit: 5}
 					runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond9, bond4, dart5, rust1, xero7}))
 					// NOTE: the second behind-the-scenes query should have fetched
 					// keys for {rust8,rust1,xero7}, and thus exhausted the search.
@@ -148,13 +148,13 @@ func TestLoadRunsFromQuery(t *testing.T) {
 		t.Run("If there are exactly `limit` Runs, page token may be returned", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clB, Limit: 3}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, idsOf(runs), should.Resemble(common.RunIDs{bond4, rust1}))
 			if pt != nil {
 				// If page token is returned, then next page must be empty.
 				q = q.PageToken(pt)
 				runs, pt, err = loadRunsFromQuery(ctx, q, aclChecker)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, runs, should.BeEmpty)
 				assert.Loosely(t, pt, should.BeNil)
 			}
@@ -163,7 +163,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 		t.Run("If there are no Runs, then limit is not obeyed", func(t *ftt.Test) {
 			q := CLQueryBuilder{CLID: clZ, Limit: 1}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, runs, should.BeEmpty)
 			assert.Loosely(t, pt, should.BeNil)
 		})
@@ -208,7 +208,7 @@ func TestLoadRunsFromQuery(t *testing.T) {
 			q := CLQueryBuilder{CLID: clX, Limit: invisibleN + 1}
 			runs, pt, err := loadRunsFromQuery(ctx, q, aclChecker)
 			took := ct.Clock.Now().Sub(tStart)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			// Shouldn't have terminated prematurely.
 			assert.Loosely(t, took, should.BeGreaterThanOrEqual(queryStopAfterDuration))
 			// It should have loaded `queryStopAfterIterations` of batches, each

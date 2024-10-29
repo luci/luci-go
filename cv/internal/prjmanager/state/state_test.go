@@ -171,7 +171,7 @@ func TestUpdateConfig(t *testing.T) {
 			s0 := &State{PB: &prjpb.PState{LuciProject: ct.lProject}}
 			pb0 := backupPB(s0)
 			s1, sideEffect, err := h.UpdateConfig(ctx, s0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s0.PB, should.Resemble(pb0)) // s0 must not change.
 			assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 				Hash:     meta.Hash(),
@@ -277,7 +277,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		t.Run("noop update is quick", func(t *ftt.Test) {
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s2, should.Equal(s1)) // pointer comparison only.
 			assert.Loosely(t, sideEffect, should.BeNil)
 		})
@@ -286,7 +286,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run("updated without touching components", func(t *ftt.Test) {
 				meta2 := updateConfigToNoFallabck(ctx, &ct)
 				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
 				assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 					Hash:     meta2.Hash(),
@@ -323,7 +323,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run("If PCLs stay same, RepartitionRequired must be false", func(t *ftt.Test) {
 				meta2 := updateConfigRenameG1toG11(ctx, &ct)
 				s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
 				assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 					Hash:     meta2.Hash(),
@@ -352,7 +352,7 @@ func TestUpdateConfig(t *testing.T) {
 
 			meta2 := updateConfigToNoFallabck(ctx, &ct)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s1.PB, should.Resemble(pb1)) // s1 must not change.
 			assert.Loosely(t, sideEffect, should.Resemble(&UpdateIncompleteRunsConfig{
 				Hash:     meta2.Hash(),
@@ -382,7 +382,7 @@ func TestUpdateConfig(t *testing.T) {
 		t.Run("disabled project waits for incomplete Runs", func(t *ftt.Test) {
 			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPING
 			assert.Loosely(t, s2.PB, should.Resemble(pb))
@@ -398,7 +398,7 @@ func TestUpdateConfig(t *testing.T) {
 			}
 			prjcfgtest.Disable(ctx, ct.lProject)
 			s2, sideEffect, err := h.UpdateConfig(ctx, s1)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sideEffect, should.BeNil)
 			pb := backupPB(s1)
 			pb.Status = prjpb.Status_STOPPED
@@ -412,7 +412,7 @@ func TestUpdateConfig(t *testing.T) {
 		t.Run("makePCL with full snapshot works", func(t *ftt.Test) {
 			var err error
 			s1.configGroups, err = meta.GetConfigGroups(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			s1.cfgMatcher = cfgmatcher.LoadMatcherFromConfigGroups(ctx, s1.configGroups, &meta)
 
 			t.Run("Status == OK", func(t *ftt.Test) {
@@ -620,7 +620,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): cl101.EVersion,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s0.PB, should.Resemble(pb0))
 			assert.Loosely(t, sideEffect, should.BeNil)
 			assert.Loosely(t, s1.PB.Pcls, should.Resemble([]*prjpb.PCL{
@@ -643,7 +643,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				s2, sideEffect, err := h.OnCLsUpdated(ctx, s1, map[int64]int64{
 					int64(cl101.ID): 1, // already known
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s1.PB.GetPcls(), should.Match(s2.PB.GetPcls())) // pointer comparison only.
 			})
@@ -661,7 +661,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					int64(cl101.ID): cl101.EVersion,
 				})
 				assert.Loosely(t, s1.PB, should.Resemble(pb))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				// The only expected changes are:
 				pb.Components[0].TriageRequired = true
@@ -674,7 +674,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl203.ID): 1,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s0.PB, should.Resemble(pb0))
 			assert.Loosely(t, sideEffect, should.BeNil)
 			assert.Loosely(t, s1.PB, should.Resemble(&prjpb.PState{
@@ -709,7 +709,7 @@ func TestOnCLsUpdated(t *testing.T) {
 					int64(cl202.ID): cl202.EVersion,
 				})
 				assert.Loosely(t, s1.PB, should.Resemble(pb))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB.Components[0].TriageRequired, should.BeTrue)
 			})
@@ -754,7 +754,7 @@ func TestOnCLsUpdated(t *testing.T) {
 				int64(cl101.ID): cl101.EVersion, // unchanged
 				int64(cl203.ID): 3,              // updated
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s1.PB, should.Resemble(pb1))
 			assert.Loosely(t, sideEffect, should.BeNil)
 			assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
@@ -814,7 +814,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl404.ID): 1,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, s0.PB, should.Resemble(pb0))
 			assert.Loosely(t, sideEffect, should.BeNil)
 			pb1 := proto.Clone(pb0).(*prjpb.PState)
@@ -833,7 +833,7 @@ func TestOnCLsUpdated(t *testing.T) {
 			s1, sideEffect, err := h.OnCLsUpdated(ctx, s0, map[int64]int64{
 				int64(cl101.ID): cl101.EVersion,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sideEffect, should.BeNil)
 			assert.Loosely(t, s0, should.Equal(s1)) // pointer comparison only.
 		})
@@ -886,7 +886,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 		}}
 		var err error
 		s1.configGroups, err = meta.GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		pb1 := backupPB(s1)
 
 		t.Run("Noops", func(t *ftt.Test) {
@@ -894,28 +894,28 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 			t.Run("OnRunsFinished on not tracked Run", func(t *ftt.Test) {
 				finished[run1finished.ID] = run.Status_SUCCEEDED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
 				assert.Loosely(t, s2.PB, should.Resemble(pb1))
 			})
 			t.Run("OnRunsCreated on already finished run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1finished.ID})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
 				assert.Loosely(t, s2.PB, should.Resemble(pb1))
 			})
 			t.Run("OnRunsCreated on already tracked Run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/101-aaa"))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2, should.Equal(s1))
 				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 			})
 			t.Run("OnRunsCreated on somehow already deleted run", func(t *ftt.Test) {
 				s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.MakeRunIDs(ct.lProject+"/404-nnn"))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				// although s2 is cloned, it must be exact same as s1.
 				assert.Loosely(t, s2.PB, should.Resemble(pb1))
@@ -940,7 +940,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					// non-existing Run shouldn't derail others.
 					common.RunID(ct.lProject + "/404-nnn"),
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
@@ -974,7 +974,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				pb1 := backupPB(s1)
 				t.Run("cancels incomplete Runs", func(t *ftt.Test) {
 					s2, sideEffect, err := h.OnRunsCreated(ctx, s1, common.RunIDs{run1.ID, run1finished.ID})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, pb1, should.Resemble(s1.PB))
 					assert.Loosely(t, sideEffect, should.Resemble(&CancelIncompleteRuns{
 						RunIDs: common.RunIDs{run1.ID},
@@ -994,7 +994,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				runIDs := common.MakeRunIDs(ct.lProject + "/101-aaa")
 				finished[runIDs[0]] = run.Status_CANCELLED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
@@ -1019,7 +1019,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				runIDs := common.MakeRunIDs(ct.lProject + "/789-efg")
 				finished[runIDs[0]] = run.Status_CANCELLED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
@@ -1040,7 +1040,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				finished[runIDs[0]] = run.Status_SUCCEEDED
 				finished[runIDs[1]] = run.Status_SUCCEEDED
 				s2, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, pb1, should.Resemble(s1.PB))
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB, should.Resemble(&prjpb.PState{
@@ -1132,7 +1132,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				t.Run("if they have CQ votes", func(t *ftt.Test) {
 					finished[common.RunID(mceRun.Id)] = run.Status_FAILED
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, sideEffect, should.NotBeNil)
 					tasks := sideEffect.(*TriggerPurgeCLTasks)
 
@@ -1148,7 +1148,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 				t.Run("unless the finished Run is failed", func(t *ftt.Test) {
 					finished[common.RunID(mceRun.Id)] = run.Status_SUCCEEDED
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, sideEffect, should.BeNil)
 				})
 				t.Run("unless they have ongoing Runs", func(t *ftt.Test) {
@@ -1161,7 +1161,7 @@ func TestRunsCreatedAndFinished(t *testing.T) {
 					}
 					s1.PB.Components[0].Pruns = append(s1.PB.Components[0].Pruns, middleRun)
 					_, sideEffect, err := h.OnRunsFinished(ctx, s1, finished)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, sideEffect, should.NotBeNil)
 					tasks := sideEffect.(*TriggerPurgeCLTasks)
 
@@ -1224,7 +1224,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 		t.Run("Empty", func(t *ftt.Test) {
 			s1 := &State{PB: &prjpb.PState{}}
 			s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sideEffect, should.BeNil)
 			assert.Loosely(t, s1, should.Equal(s2))
 			assert.Loosely(t, evsToConsume, should.HaveLength(0))
@@ -1323,7 +1323,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 
 			t.Run("Expires and removed", func(t *ftt.Test) {
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{{OperationId: "1", Clid: int64(cl101.ID)}})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s1.PB, should.Resemble(pb))
 				assert.Loosely(t, evsToConsume, should.Resemble([]int{0}))
@@ -1350,7 +1350,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 					{OperationId: "5", Clid: int64(cl209.ID)},
 					{OperationId: "2", Clid: int64(cl202.ID)},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s1.PB, should.Resemble(pb))
 				assert.Loosely(t, evsToConsume, should.Resemble([]int{0, 1, 2, 3}))
@@ -1370,7 +1370,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 				s2, sideEffect, evsToConsume, err := h.OnPurgesCompleted(ctx, s1, []*prjpb.PurgeCompleted{
 					{OperationId: "1", Clid: int64(cl101.ID)},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s2.PB.GetPurgingCL(int64(cl101.ID)), should.NotBeNil)
 				assert.Loosely(t, evsToConsume, should.BeNil)
@@ -1384,7 +1384,7 @@ func TestOnPurgesCompleted(t *testing.T) {
 					{OperationId: "2", Clid: int64(cl202.ID)},
 					{OperationId: "3", Clid: int64(cl203.ID)},
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				assert.Loosely(t, s1.PB, should.Resemble(pb))
 
@@ -1499,7 +1499,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 
 		t.Run("effectively noop if empty", func(t *ftt.Test) {
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, se, should.BeNil)
 			assert.Loosely(t, evIndexes, should.BeNil)
 			// OnTriggeringCLDepsCompleted() always makes a shallow clone for
@@ -1510,7 +1510,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 		t.Run("removes an expired op", func(t *ftt.Test) {
 			addTriggeringCLDeps(s1, now.Add(-time.Hour), cl103, cl101, cl102)
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, TriggeringCLDeps(s2, cl103), should.BeNil)
 			assert.Loosely(t, se, should.BeNil)
 			assert.Loosely(t, evIndexes, should.BeNil)
@@ -1526,7 +1526,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 			}
 			t.Run("removes the op", func(t *ftt.Test) {
 				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, TriggeringCLDeps(s2, cl103), should.BeNil)
 				assert.Loosely(t, se, should.BeNil)
 				assert.Loosely(t, evIndexes, should.Resemble([]int{0}))
@@ -1535,7 +1535,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 				cl102.Snapshot.Outdated = &changelist.Snapshot_Outdated{}
 				assert.Loosely(t, datastore.Put(ctx, cl102 /* dep */), should.BeNil)
 				s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, TriggeringCLDeps(s2, cl103 /* origin */), should.NotBeNil)
 				assert.Loosely(t, se, should.BeNil)
 				assert.Loosely(t, evIndexes, should.BeNil)
@@ -1557,7 +1557,7 @@ func TestOnTriggeringCLDepsCompleted(t *testing.T) {
 				},
 			}
 			s2, se, evIndexes, err := h.OnTriggeringCLDepsCompleted(ctx, s1, events)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, evIndexes, should.Resemble([]int{0}))
 
 			// remove the TriggeringCLDeps, but schedule PurgingCL(s).

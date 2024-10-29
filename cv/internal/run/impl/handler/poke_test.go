@@ -134,7 +134,7 @@ func TestPoke(t *testing.T) {
 
 		verifyNoOp := func() {
 			res, err := h.Poke(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Match(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -145,7 +145,7 @@ func TestPoke(t *testing.T) {
 		t.Run("Cancels run exceeding max duration", func(t *ftt.Test) {
 			ct.Clock.Add(2 * common.MaxRunTotalDuration)
 			res, err := h.Poke(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State.Status, should.Equal(run.Status_CANCELLED))
 		})
 
@@ -163,7 +163,7 @@ func TestPoke(t *testing.T) {
 
 				t.Run("Open", func(t *ftt.Test) {
 					res, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
@@ -181,7 +181,7 @@ func TestPoke(t *testing.T) {
 				t.Run("Close", func(t *ftt.Test) {
 					ct.TreeFake.ModifyState(ctx, tree.Closed)
 					res, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
@@ -199,14 +199,14 @@ func TestPoke(t *testing.T) {
 					ct.TreeFake.InjectErr(fmt.Errorf("error retrieving tree status"))
 					t.Run("Not too long", func(t *ftt.Test) {
 						res, err := h.Poke(ctx, rs)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					})
 
 					t.Run("Too long", func(t *ftt.Test) {
 						rs.Submission.TreeErrorSince = timestamppb.New(now.Add(-11 * time.Minute))
 						res, err := h.Poke(ctx, rs)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, res.State, should.NotEqual(rs))
 						assert.Loosely(t, res.SideEffectFn, should.BeNil)
 						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
@@ -221,7 +221,7 @@ func TestPoke(t *testing.T) {
 							rs.CLs = append(rs.CLs, cl.ID+1000)
 							rs.RootCL = cl.ID
 							res, err := h.Poke(ctx, rs)
-							assert.Loosely(t, err, should.BeNil)
+							assert.NoErr(t, err)
 							assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 							ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
 							assert.Loosely(t, ct.Requests, should.HaveLength(1))
@@ -274,7 +274,7 @@ func TestPoke(t *testing.T) {
 			t.Run("Schedule refresh", func(t *ftt.Test) {
 				verifyScheduled := func() {
 					res, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
@@ -298,7 +298,7 @@ func TestPoke(t *testing.T) {
 
 				// verify that it did not schedule refresh but reset triggers.
 				res, err := h.Poke(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.SideEffectFn, should.BeNil)
 				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 				assert.Loosely(t, res.PostProcessFn, should.BeNil)
@@ -381,7 +381,7 @@ func TestPoke(t *testing.T) {
 			t.Run("Schedule refresh", func(t *ftt.Test) {
 				verifyScheduled := func() {
 					res, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
 					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.BeNil)
@@ -403,7 +403,7 @@ func TestPoke(t *testing.T) {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
 					tryjob.LatestAttempt(execution).ExternalId = ""
 					_, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.BeEmpty)
 				})
 
@@ -411,7 +411,7 @@ func TestPoke(t *testing.T) {
 					execution := rs.Tryjobs.GetState().GetExecutions()[0]
 					tryjob.LatestAttempt(execution).Status = tryjob.Status_ENDED
 					_, err := h.Poke(ctx, rs)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, deps.tjNotifier.updateScheduled, should.BeEmpty)
 				})
 			})

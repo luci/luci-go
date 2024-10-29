@@ -129,7 +129,7 @@ func TestSearch(t *testing.T) {
 					ret = append(ret, job)
 					return true
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				return ret
 			}
 			t.Run("Match", func(t *ftt.Test) {
@@ -156,7 +156,7 @@ func TestSearch(t *testing.T) {
 						Builder:       builderID,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					checkResult(t)
 				})
@@ -168,13 +168,13 @@ func TestSearch(t *testing.T) {
 							"run_mode": "FULL_RUN",
 						},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build, err = bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						Properties:    prop,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					checkResult(t)
 				})
@@ -185,7 +185,7 @@ func TestSearch(t *testing.T) {
 						Builder:       equiBuilderID,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					checkResult(t)
 				})
@@ -201,7 +201,7 @@ func TestSearch(t *testing.T) {
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc},
 						})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
 						assert.Loosely(t, results, should.BeEmpty)
@@ -215,7 +215,7 @@ func TestSearch(t *testing.T) {
 						Builder:       builderID,
 						GerritChanges: []*bbpb.GerritChange{anotherChange},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					assert.Loosely(t, results, should.BeEmpty)
@@ -232,7 +232,7 @@ func TestSearch(t *testing.T) {
 						Builder:       anotherBuilder,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					assert.Loosely(t, results, should.BeEmpty)
@@ -246,13 +246,13 @@ func TestSearch(t *testing.T) {
 						}, // permitted
 						"foo": "bar", // not permitted
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 						Builder:       builderID,
 						Properties:    prop,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 					results := searchAll()
 					assert.Loosely(t, results, should.BeEmpty)
@@ -266,7 +266,7 @@ func TestSearch(t *testing.T) {
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc, anotherChange},
 						})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 						results := searchAll()
 						assert.Loosely(t, results, should.BeEmpty)
@@ -277,7 +277,7 @@ func TestSearch(t *testing.T) {
 							Builder:       builderID,
 							GerritChanges: []*bbpb.GerritChange{gc},
 						})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), commonMutateFn)
 
 						anotherChange := proto.Clone(gc).(*bbpb.GerritChange)
@@ -304,7 +304,7 @@ func TestSearch(t *testing.T) {
 							tryjobs = append(tryjobs, job)
 							return true
 						})
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, tryjobs, should.BeEmpty)
 					})
 				})
@@ -344,7 +344,7 @@ func TestSearch(t *testing.T) {
 						Builder:       builder,
 						GerritChanges: []*bbpb.GerritChange{gc},
 					})
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					build = ct.BuildbucketFake.MutateBuild(ctx, bbHost, build.GetId(), func(build *bbpb.Build) {
 						build.Status = bbpb.Status_SUCCESS
 						build.StartTime = timestamppb.New(epoch.Add(1 * time.Minute))
@@ -378,7 +378,7 @@ func TestSearch(t *testing.T) {
 					got.Add(string(job.ExternalID))
 					return true
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, got, should.Resemble(expected))
 			})
 
@@ -420,7 +420,7 @@ func TestSearch(t *testing.T) {
 						return true // never reached
 					}
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			})
 		})
 	})

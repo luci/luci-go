@@ -53,10 +53,10 @@ func TestDeleteEntities(t *testing.T) {
 			})
 
 			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "delete-entities"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 			jobInfo, err := a.DSMGetJob(ctx, jobID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, jobInfo.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 		}
 
@@ -69,7 +69,7 @@ func TestDeleteEntities(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, entities), should.BeNil)
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.List(0).Any(), should.BeFalse)
 		})
 
@@ -82,7 +82,7 @@ func TestDeleteEntities(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, entities[0], entities[2]), should.BeNil)
 			runJobAndEnsureSuccess()
 			res, err := datastore.Exists(ctx, entities)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.List(0).Any(), should.BeFalse)
 		})
 	})

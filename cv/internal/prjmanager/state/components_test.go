@@ -176,7 +176,7 @@ func TestComponentsActions(t *testing.T) {
 				return itriager.Result{}, nil
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.BeNil)
 			assert.Loosely(t, state.PB, should.Resemble(pb))
@@ -184,7 +184,7 @@ func TestComponentsActions(t *testing.T) {
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, state.PB, should.Resemble(pb))
 				assert.Loosely(t, state2, should.Equal(state)) // pointer comparison
 				assert.Loosely(t, sideEffect, should.BeNil)
@@ -210,14 +210,14 @@ func TestComponentsActions(t *testing.T) {
 				panic("unreachable")
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
 			assert.Loosely(t, collectCalledOn(), should.Resemble([]int{1, 3}))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				pb.NextEvalTime = timestamppb.New(now.Add(2 * time.Minute))
 				pb.Components[1].DecisionTime = timestamppb.New(c1next)
@@ -251,14 +251,14 @@ func TestComponentsActions(t *testing.T) {
 				panic("unreachable")
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(3))
 			assert.Loosely(t, state.PB, should.Resemble(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffects, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				expectedDeadline := timestamppb.New(now.Add(maxPurgingCLDuration))
 				assert.Loosely(t, state2.PB.GetPurgingCls(), should.Resemble([]*prjpb.PurgingCL{
 					{Clid: 1, OperationId: "1580640000-1", Deadline: expectedDeadline,
@@ -296,14 +296,14 @@ func TestComponentsActions(t *testing.T) {
 				panic("unreachable")
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(3))
 			assert.Loosely(t, state.PB, should.Resemble(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffects, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				expectedDeadline := timestamppb.New(now.Add(prjpb.MaxTriggeringCLDepsDuration))
 				assert.Loosely(t, state2.PB.GetTriggeringClDeps(), should.HaveLength(1))
 				assert.Loosely(t, state2.PB.GetTriggeringClDeps()[0], should.Resemble(&prjpb.TriggeringCLDeps{
@@ -342,7 +342,7 @@ func TestComponentsActions(t *testing.T) {
 				panic("unreachable")
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
 			assert.Loosely(t, state.PB, should.Resemble(pb))
@@ -351,7 +351,7 @@ func TestComponentsActions(t *testing.T) {
 				// Execute slightly after #1 component decision time.
 				ct.Clock.Set(pb.Components[1].DecisionTime.AsTime().Add(time.Microsecond))
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
@@ -374,14 +374,14 @@ func TestComponentsActions(t *testing.T) {
 				panic("unreachable")
 			}
 			actions, saveForDebug, err := h.triageComponents(ctx, state)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, saveForDebug, should.BeFalse)
 			assert.Loosely(t, actions, should.HaveLength(2))
 			assert.Loosely(t, state.PB, should.Resemble(pb))
 
 			t.Run("ExecDeferred", func(t *ftt.Test) {
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				pb.Components[2].TriageRequired = false
 				pb.Components[3].TriageRequired = false
@@ -492,7 +492,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 
 				state2, sideEffect, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, sideEffect, should.BeNil)
 				pb.Components[1].TriageRequired = false // must be saved, since Run Creation succeeded.
 				assert.Loosely(t, state2.PB, should.Resemble(pb))
@@ -545,7 +545,7 @@ func TestComponentsActions(t *testing.T) {
 				}
 
 				state2, sideEffects, err := h.ExecDeferred(ctx, state)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Only #3 component purge must be a SideEffect.
 				sideEffect := sideEffects.(*SideEffects).items[0]
 				assert.Loosely(t, sideEffect, should.HaveType[*TriggerPurgeCLTasks])

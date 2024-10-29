@@ -78,7 +78,7 @@ func TestParseStatusAndResult(t *testing.T) {
 				t.Run("That succeeded", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_SUCCESS).Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
 					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_SUCCEEDED))
 					assert.Loosely(t, result, should.Resemble(&tryjob.Result{
@@ -107,7 +107,7 @@ func TestParseStatusAndResult(t *testing.T) {
 						WithTimeout(true).
 						Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
 					assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_TIMEOUT))
 				})
@@ -115,7 +115,7 @@ func TestParseStatusAndResult(t *testing.T) {
 					t.Run("Transiently", func(t *ftt.Test) {
 						b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
 						status, result, err := parseStatusAndResult(ctx, b)
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
 						assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_TRANSIENTLY))
 					})
@@ -123,14 +123,14 @@ func TestParseStatusAndResult(t *testing.T) {
 						b.Status = bbpb.Status_FAILURE
 						status, result, err := parseStatusAndResult(ctx, b)
 						assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
-						assert.Loosely(t, err, should.BeNil)
+						assert.NoErr(t, err)
 						assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_PERMANENTLY))
 					})
 				})
 				t.Run("That cancelled", func(t *ftt.Test) {
 					b = bbfake.NewConstructorFromBuild(b).WithStatus(bbpb.Status_INFRA_FAILURE).Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_ENDED))
 					assert.Loosely(t, result.GetStatus(), should.Equal(tryjob.Result_FAILED_TRANSIENTLY))
 				})
@@ -138,7 +138,7 @@ func TestParseStatusAndResult(t *testing.T) {
 			t.Run("For a pending build", func(t *ftt.Test) {
 				t.Run("That is still scheduled", func(t *ftt.Test) {
 					status, result, err := parseStatusAndResult(ctx, b)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_TRIGGERED))
 					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_UNKNOWN))
 				})
@@ -148,7 +148,7 @@ func TestParseStatusAndResult(t *testing.T) {
 						WithStartTime(createTime.Add(1 * time.Minute)).
 						Construct()
 					status, result, err := parseStatusAndResult(ctx, b)
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, status, should.Equal(tryjob.Status_TRIGGERED))
 					assert.Loosely(t, result.Status, should.Equal(tryjob.Result_UNKNOWN))
 				})

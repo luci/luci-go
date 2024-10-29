@@ -116,7 +116,7 @@ func TestTriggerer(t *testing.T) {
 		}
 		loadCL := func(change int64) *changelist.CL {
 			cl, err := changelist.MustGobID(gHost, change).Load(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, cl, should.NotBeNil)
 			return cl
 		}

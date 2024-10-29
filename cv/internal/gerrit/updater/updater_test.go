@@ -87,7 +87,7 @@ func TestUpdaterBackend(t *testing.T) {
 
 			t.Run("Happy path", func(t *ftt.Test) {
 				acfg, err := gu.LookupApplicableConfig(ctx, cl)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, acfg, should.Resemble(&changelist.ApplicableConfig{
 					Projects: []*changelist.ApplicableConfig_Project{
 						{Name: "luci-project-x", ConfigGroupIds: []string{string(xConfigGroupID)}},
@@ -98,14 +98,14 @@ func TestUpdaterBackend(t *testing.T) {
 			t.Run("CL without Gerrit Snapshot can't be decided on", func(t *ftt.Test) {
 				cl.Snapshot.Kind = nil
 				acfg, err := gu.LookupApplicableConfig(ctx, cl)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, acfg, should.BeNil)
 			})
 
 			t.Run("No watching projects", func(t *ftt.Test) {
 				cl.Snapshot.GetGerrit().GetInfo().Ref = "ref/un/watched"
 				acfg, err := gu.LookupApplicableConfig(ctx, cl)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Must be empty, but not nil per updaterBackend interface contract.
 				assert.Loosely(t, acfg, should.NotBeNil)
 				assert.Loosely(t, acfg, should.Resemble(&changelist.ApplicableConfig{}))
@@ -115,7 +115,7 @@ func TestUpdaterBackend(t *testing.T) {
 				prjcfgtest.Create(ctx, "luci-project-dupe", singleRepoConfig(gHost, "x"))
 				gobmaptest.Update(ctx, "luci-project-dupe")
 				acfg, err := gu.LookupApplicableConfig(ctx, cl)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, acfg.GetProjects(), should.HaveLength(2))
 			})
 		})
@@ -196,7 +196,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			for _, p := range ct.TQ.Tasks().Payloads() {
 				if ts, ok := p.(*changelist.UpdateCLTask); ok {
 					_, changeNumber, err := changelist.ExternalID(ts.GetExternalId()).ParseGobID()
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					actual = append(actual, int(changeNumber))
 				}
 			}
@@ -229,7 +229,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			})
 
 			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			assert.Loosely(t, res.AddDependentMeta, should.BeNil)
 			assert.Loosely(t, res.ApplicableConfig, should.Resemble(&changelist.ApplicableConfig{
@@ -290,7 +290,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					})
 
 					res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					// Only the ChangeInfo & ExternalUpdateTime must change.
 					expectedCI := ct.GFake.GetChange(gHost, gChange).Info
 					changelist.RemoveUnusedGerritInfo(expectedCI)
@@ -313,7 +313,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					})
 
 					res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res2.Snapshot.GetGerrit().GetFiles(), should.Resemble([]string{"new.file"}))
 					assert.Loosely(t, res2.Snapshot.GetGerrit().GetSoftDeps(), should.Resemble([]*changelist.GerritSoftDep{{Change: 444, Host: gHost}}))
 				})
@@ -340,7 +340,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			ct.GFake.SetDependsOn(gHost, "55_1", "54_3")
 
 			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			assert.Loosely(t, res.Snapshot.GetGerrit().GetGitDeps(), should.Resemble([]*changelist.GerritGitDep{
 				{Change: 55, Immediate: true},
@@ -372,7 +372,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 							gf.Desc("All deps and files are ignored for such CL.\n\nCq-Depend: 44"),
 						)))
 					res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.Snapshot.GetGerrit().GetInfo().GetStatus(), should.Resemble(s))
 					assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.BeNil)
 					assert.Loosely(t, res.Snapshot.GetDeps(), should.BeNil)
@@ -385,7 +385,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gf.Status(gerritpb.ChangeStatus_NEW),
 				)))
 				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.Resemble([]string{"a.txt"}))
 
 				savedCL := changelist.CL{
@@ -400,7 +400,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gf.Updated(ct.Clock.Now())(c.Info)
 				})
 				res, err = gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// CV doesn't care about files of ABANDONED CLs.
 				assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.BeEmpty)
 
@@ -412,7 +412,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gf.Updated(ct.Clock.Now())(c.Info)
 				})
 				res, err = gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.Snapshot.GetGerrit().GetFiles(), should.Resemble([]string{"a.txt"}))
 			})
 		})
@@ -446,7 +446,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					task.Hint.MetaRevId = "deadbeef"
 					res, err := gu.Fetch(ctx, changelist.NewFetchInput(&existingCL, task))
 					// The Fetch() should succeed with nil in toUpdate.Snapshot.
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 					assert.Loosely(t, res.Snapshot, should.BeNil)
 				})
 			})
@@ -462,7 +462,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 
 			// First time 404 isn't certain.
 			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.Snapshot, should.BeNil)
 			assert.Loosely(t, res.ApplicableConfig, should.BeNil)
 			assert.Loosely(t, res.AddDependentMeta.GetByProject()[lProject], should.Resemble(&changelist.Access_Project{
@@ -482,7 +482,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				// Because 403 can be caused due to stale ACLs on a stale mirror.
 				gfResponse = status.New(codes.PermissionDenied, "403")
 				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// res2 must be the same, except for the .UpdateTime.
 				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Resemble(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
@@ -495,7 +495,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			t.Run("still no access after grace duration", func(t *ftt.Test) {
 				ct.Clock.Add(noAccessGraceDuration + time.Second)
 				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&cl, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// res2 must be the same, except for the .UpdateTime.
 				assert.Loosely(t, res2.AddDependentMeta.GetByProject()[lProject].UpdateTime, should.Resemble(timestamppb.New(ct.Clock.Now())))
 				res.AddDependentMeta.GetByProject()[lProject].UpdateTime = nil
@@ -512,7 +512,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 				gfResponse = status.New(codes.OK, "OK")
 				ct.Clock.Add(time.Minute)
 				res2, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// The previous record of lack of Access must be expunged.
 				assert.Loosely(t, res2.AddDependentMeta, should.BeNil)
 				assert.Loosely(t, res2.DelAccess, should.Resemble([]string{lProject}))
@@ -529,7 +529,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 					gfResponse = status.New(codes.NotFound, "not found, again")
 					ct.Clock.Add(time.Minute)
 					res3, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-					assert.Loosely(t, err, should.BeNil)
+					assert.NoErr(t, err)
 
 					assert.Loosely(t, res3.Snapshot, should.BeNil)         // nothing to update
 					assert.Loosely(t, res3.ApplicableConfig, should.BeNil) // nothing to update
@@ -546,7 +546,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			t.Run("Gerrit host is not watched", func(t *ftt.Test) {
 				bogusCL := changelist.CL{ExternalID: changelist.MustGobID("404.example.com", 404)}
 				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&bogusCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, res.Snapshot, should.BeNil)
 				assert.Loosely(t, res.ApplicableConfig, should.BeNil)
 				assert.Loosely(t, res.AddDependentMeta.GetByProject()[lProject], should.Resemble(&changelist.Access_Project{
@@ -560,7 +560,7 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			t.Run("Only the ref isn't watched", func(t *ftt.Test) {
 				ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), gf.CI(gChange, gf.Ref("refs/un/watched"), gf.Project(gRepo))))
 				res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				// Although technically, LUCI project currently has access,
 				// we mark it as lacking access from CV's PoV.
 				// TODO(tandrii): this is weird, and ought to be refactored together

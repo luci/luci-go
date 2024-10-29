@@ -45,7 +45,7 @@ func TestMakeClient(t *testing.T) {
 		const gHost = "first.example.com"
 
 		f, err := newProd(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("factory.token", func(t *ftt.Test) {
 			t.Run("works", func(t *ftt.Test) {
@@ -53,7 +53,7 @@ func TestMakeClient(t *testing.T) {
 					return &auth.Token{Token: "tok-1", Expiry: epoch.Add(2 * time.Minute)}, nil
 				}
 				tok, err := f.token(ctx, gHost, "lProject")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, tok.AccessToken, should.Equal("tok-1"))
 				assert.Loosely(t, tok.TokenType, should.Equal("Bearer"))
 			})
@@ -85,7 +85,7 @@ func TestMakeClient(t *testing.T) {
 			f.baseTransport = srv.Client().Transport
 
 			u, err := url.Parse(srv.URL)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			limitedCtx, limitedCancel := context.WithTimeout(ctx, time.Minute)
 			defer limitedCancel()
@@ -102,9 +102,9 @@ func TestMakeClient(t *testing.T) {
 				}
 
 				c, err := f.MakeClient(limitedCtx, u.Host, "lProject")
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				_, err = c.ListChanges(limitedCtx, &gerritpb.ListChangesRequest{})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, requests, should.HaveLength(1))
 				assert.Loosely(t, requests[0].Header["Authorization"], should.Resemble([]string{"Bearer tok-1"}))
 
@@ -114,7 +114,7 @@ func TestMakeClient(t *testing.T) {
 				// force token refresh
 				tclock.Add(3 * time.Minute)
 				_, err = c.ListChanges(ctx, &gerritpb.ListChangesRequest{})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, requests, should.HaveLength(2))
 				assert.Loosely(t, requests[1].Header["Authorization"], should.Resemble([]string{"Bearer tok-2"}))
 			})

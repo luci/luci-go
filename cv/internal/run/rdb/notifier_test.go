@@ -128,7 +128,7 @@ func TestNotifier(t *testing.T) {
 			err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return notifier.Schedule(ctx, runID)
 			}, nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			assert.Loosely(t, ct.TQ.Tasks(), should.HaveLength(1))
 			ct.TQ.Run(ctx, tqtesting.StopAfterTask(notifierTaskClass))

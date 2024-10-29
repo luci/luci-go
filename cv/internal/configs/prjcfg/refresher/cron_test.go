@@ -53,7 +53,7 @@ func TestConfigRefreshCron(t *testing.T) {
 			}))
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 				&RefreshProjectConfigTask{Project: "chromium"},
 			}))
@@ -109,7 +109,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Enabled: true,
 				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				}))
@@ -124,7 +124,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Enabled: true,
 				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ct.TQ.Tasks().Payloads(), should.Resemble([]protoreflect.ProtoMessage{
 					&RefreshProjectConfigTask{Project: "chromium", Disable: true},
 				}))
@@ -139,7 +139,7 @@ func TestConfigRefreshCron(t *testing.T) {
 					Enabled: false,
 				}), should.BeNil)
 				err := pcr.SubmitRefreshTasks(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, ct.TQ.Tasks(), should.BeEmpty)
 			})
 		})

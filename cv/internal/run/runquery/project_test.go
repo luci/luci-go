@@ -70,14 +70,14 @@ func TestProjectQueryBuilder(t *testing.T) {
 		t.Run("Obeys limit and returns correct page token", func(t *ftt.Test) {
 			qb := ProjectQueryBuilder{Project: "bond", Limit: 2}
 			runs1, pageToken1, err := qb.LoadRuns(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, idsOf(runs1), should.Resemble(common.RunIDs{bond9, bond4}))
 			assert.Loosely(t, pageToken1, should.NotBeNil)
 
 			qb = qb.PageToken(pageToken1)
 			assert.Loosely(t, qb.MinExcl, should.Resemble(bond4))
 			runs2, pageToken2, err := qb.LoadRuns(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, idsOf(runs2), should.Resemble(common.RunIDs{bond2}))
 			assert.Loosely(t, pageToken2, should.BeNil)
 		})

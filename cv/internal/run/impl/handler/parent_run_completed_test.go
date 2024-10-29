@@ -64,7 +64,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			},
 		})
 		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		cg := cgs[0]
 
 		rid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef"))
@@ -129,7 +129,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Equal(rs))
 			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
 			assert.Loosely(t, res.SideEffectFn(ctx), should.BeNil)
@@ -140,7 +140,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			rs.Status = run.Status_RUNNING
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Equal(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 		})
@@ -149,7 +149,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 			resetOp := longOp.GetResetTriggers()
 			assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
@@ -158,7 +158,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 				rs.CLs = append(rs.CLs, clid+1000)
 				rs.RootCL = clid
 				res, err := h.OnParentRunCompleted(ctx, rs)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				longOp := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
 				resetOp := longOp.GetResetTriggers()
 				assert.Loosely(t, resetOp.Requests, should.HaveLength(1))
@@ -170,7 +170,7 @@ func TestOnParentRunCompleted(t *testing.T) {
 			rs.Status = run.Status_WAITING_FOR_SUBMISSION
 
 			res, err := h.OnParentRunCompleted(ctx, rs)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, res.State, should.Equal(rs))
 			assert.Loosely(t, res.SideEffectFn, should.BeNil)
 		})

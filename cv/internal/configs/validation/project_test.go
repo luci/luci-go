@@ -138,7 +138,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 		vctx := &validation.Context{Context: ctx}
 		validateProjectConfig := func(vctx *validation.Context, cfg *cfgpb.Config) {
 			vd, err := makeProjectConfigValidator(vctx, project)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			vd.validateProjectConfig(cfg)
 		}
 
@@ -913,7 +913,7 @@ func TestTryjobValidation(t *testing.T) {
 		validate := func(textPB string, parentPB ...string) error {
 			vctx := &validation.Context{Context: ctx}
 			vd, err := makeProjectConfigValidator(vctx, "prj")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			v := cfgpb.Verifiers{}
 			switch len(parentPB) {
 			case 0:

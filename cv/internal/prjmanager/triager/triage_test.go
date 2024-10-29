@@ -89,7 +89,7 @@ func TestTriage(t *testing.T) {
 		pm := &simplePMState{pb: &prjpb.PState{}}
 		var err error
 		pm.cgs, err = prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		dryRun := func(ts time.Time) *run.Triggers {
 			return &run.Triggers{CqVoteTrigger: &run.Trigger{Mode: string(run.DryRun), Time: timestamppb.New(ts)}}
@@ -105,7 +105,7 @@ func TestTriage(t *testing.T) {
 		}
 		mustTriage := func(c *prjpb.Component) itriager.Result {
 			res, err := triage(c)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return res
 		}
 		failTriage := func(c *prjpb.Component) error {

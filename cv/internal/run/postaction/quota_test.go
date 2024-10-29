@@ -109,7 +109,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", r.ID)))
 			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
 			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{r.ID}))
@@ -126,7 +126,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			qm.quotaSpecified = false
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("run quota limit is not specified for user %q", r.BilledTo.Email())))
 			assert.Loosely(t, qm.creditQuotaCalledWith, should.Resemble(common.RunIDs{executor.Run.ID}))
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
@@ -142,7 +142,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
@@ -157,7 +157,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
@@ -172,7 +172,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
@@ -196,7 +196,7 @@ func TestCreditQuotaOp(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(ctx, depRun, r), should.BeNil)
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.BeEmpty)
 			assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
 		})
@@ -223,7 +223,7 @@ func TestCreditQuotaOp(t *testing.T) {
 				}
 			}
 			summary, err := executor.Do(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", earliestRun.ID)))
 			assert.Loosely(t, rm.notifyStarted, should.Resemble(common.RunIDs{earliestRun.ID}))
 		})

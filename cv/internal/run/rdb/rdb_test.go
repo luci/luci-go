@@ -43,7 +43,7 @@ func TestRecorderClient(t *testing.T) {
 
 		mcf := NewMockRecorderClientFactory(ct.GoMockCtl)
 		rc, err := mcf.MakeClient(ctx, "rdbhost")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run(`OK`, func(t *ftt.Test) {
 			inv := "invocations/build-100001"
@@ -52,7 +52,7 @@ func TestRecorderClient(t *testing.T) {
 			})).Return(&emptypb.Empty{}, nil)
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run(`Permission Denied`, func(t *ftt.Test) {

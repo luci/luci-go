@@ -86,10 +86,10 @@ func TestDSMapperServer(t *testing.T) {
 			})
 
 			jobID, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "upgrade-something"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			job, err := a.DSMGetJob(ctx, jobID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
 			assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_STARTING))
 
@@ -97,13 +97,13 @@ func TestDSMapperServer(t *testing.T) {
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 
 				job, err = a.DSMGetJob(ctx, jobID)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, job.GetName(), should.Match("upgrade-something"))
 				assert.Loosely(t, job.GetInfo().GetState(), should.Equal(dsmapperpb.State_SUCCESS))
 			})
 			t.Run("Abort", func(t *ftt.Test) {
 				_, err = a.DSMAbortJob(ctx, jobID)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				ct.TQ.Run(ctx, tqtesting.StopWhenDrained())
 				// This fails with:
 				//   "broken state, no ShardList entity for job 1"

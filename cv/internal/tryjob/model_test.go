@@ -107,7 +107,7 @@ func TestCLPatchset(t *testing.T) {
 		})
 		clps := MakeCLPatchset(cl, ps)
 		parsedCl, parsedPs, err := clps.Parse()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, parsedCl, should.Equal(cl))
 		assert.Loosely(t, parsedPs, should.Equal(ps))
 	})
