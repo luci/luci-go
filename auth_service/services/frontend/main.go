@@ -136,6 +136,8 @@ func main() {
 		srv.ConfigurePRPC(func(s *prpc.Server) {
 			// Allow cross-origin calls.
 			s.AccessControl = prpc.AllowOriginAll
+			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			s.HackFixFieldMasksForJSON = true
 		})
 
 		// The middleware chain applied to all UI routes.
