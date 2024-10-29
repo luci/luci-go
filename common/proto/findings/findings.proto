@@ -1,0 +1,110 @@
+// Copyright 2024 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "go.chromium.org/luci/common/proto/findings;findings";
+
+package luci.findings;
+
+// Finding represents a code finding, which can be a bug, vulnerability,
+// style violation, or other issue identified in code.
+message Finding {
+  // Category of the code finding, e.g. "ClangTidy".
+  string category = 1;
+  // Location of the finding in the source code.
+  Location location = 2;
+  // Human-readable message describing the finding.
+  string message = 3;
+
+  enum SeverityLevel {
+    UNSET = 0;
+    INFO = 1;
+    WARNING = 2;
+    ERROR = 3;
+  }
+  // Severity level of finding.
+  //
+  // In Gerrit, this controls what section of the checks UI the finding is
+  // displayed under. Currently, the ERROR level findings won't block the CL
+  // from submission. It will once go/long-term-cider-presubmits is implemented.
+  SeverityLevel severity_level = 4;
+  // Optional suggested fixes for the finding.
+  //
+  // If multiple fixes are present, they should be ordered by preference.
+  repeated Fix fix = 7;
+}
+
+// Location describes a location in the source code.
+message Location {
+  message GerritChangeReference {
+      // Gerrit hostname, e.g. "chromium-review.googlesource.com".
+      string host = 1;
+      // Gerrit project, e.g. "chromium/src".
+      string project = 2;
+      // Change number, e.g. 12345.
+      int64 change = 3;
+      // Patch set number, e.g. 1.
+      int64 patchset = 4;
+  }
+
+  oneof source {
+    // Source from a Gerrit CL.
+    GerritChangeReference gerrit_change_ref = 1;
+  }
+
+  // Path to the file where the finding is located in the source.
+  //
+  // For Gerrit Change, "COMMIT_MSG" is a special file path indicating the
+  // location is in commit message.
+  string file_path = 2;
+
+  // Range within the file where the finding is located.
+  message Range {
+    // Start line of the range (1-based).
+    //
+    // If not provided, the entire file is included in the range. The rest of
+    // the fields will be omitted.
+    int32 start_line = 1;
+    // Start column of the range (1-based).
+    //
+    // Must provide start_line if provided. If not provided, the entire line is
+    // included in the range.
+    int32 start_column = 2;
+    // End line of the range (1-based).
+    //
+    // Must provide start_line if provided. If not provided, the range will only
+    // include the entire line specified by start_line.
+    int32 end_line = 3;
+    // End column of the range (1-based).
+    // Must provide all other fields if provided. If not provided, the range
+    // include the entire line specified by end_line.
+    int32 end_column = 4;
+  }
+  Range range = 3;
+}
+
+// A suggested fix for the finding.
+message Fix {
+  message Replacement {
+    // Location of the content to be replaced.
+    Location location = 1;
+    // New content to replace the old content.
+    string new_content = 2;
+  }
+  // Optional human-readable description of the fix.
+  string description = 1;
+  // Replacements to be applied to fix the finding.
+  repeated Replacement replacement = 2;
+}
