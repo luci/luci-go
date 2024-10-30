@@ -16,8 +16,6 @@ package rpcs
 
 import (
 	"context"
-	"regexp"
-	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -26,27 +24,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 const (
 	// Default value to wait for pings from bot.
 	defaultBotPingTolerance = 1200
-
-	// If no update is received from bot after max seconds lapsed from its last
-	// ping to the server, it will be considered dead.
-	maxBotPingTolanceSecs = 1200
-
-	// Min time to keep the bot alive before it is declared dead.
-	minBotPingTolanceSecs = 60
-
-	// Maximum acceptable priority value, which is effectively the lowest priority.
-	maxPriority = 255
-
-	// Max length of a valid service account.
-	maxServiceAccountLength = 128
 )
-
-var serviceAccountRE = regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$`)
 
 // ValidateConfigs implements bbpb.TaskBackendServer.
 func (srv *TaskBackend) ValidateConfigs(ctx context.Context, req *bbpb.ValidateConfigsRequest) (*bbpb.ValidateConfigsResponse, error) {
@@ -116,60 +100,27 @@ func ingestBackendConfigWithDefaults(cfgStruct *structpb.Struct) (*apipb.Swarmin
 func validateBackendConfig(cfg *apipb.SwarmingTaskBackendConfig) []error {
 	var errs []error
 	if cfg.GetPriority() != 0 {
-		if err := validatePriority(cfg.Priority); err != nil {
-			errs = append(errs, err)
+		if err := validate.Priority(cfg.Priority); err != nil {
+			errs = append(errs, errors.Annotate(err, "priority").Err())
 		}
 	}
 
 	if cfg.GetBotPingTolerance() != 0 {
-		if err := validateBotPingTolerance(cfg.BotPingTolerance); err != nil {
-			errs = append(errs, err)
+		if err := validate.BotPingTolerance(cfg.BotPingTolerance); err != nil {
+			errs = append(errs, errors.Annotate(err, "bot_ping_tolerance").Err())
 		}
 	}
 
 	if cfg.GetServiceAccount() != "" {
-		if err := validateServiceAccount(cfg.ServiceAccount); err != nil {
-			errs = append(errs, err)
+		if err := validate.ServiceAccount(cfg.ServiceAccount); err != nil {
+			errs = append(errs, errors.Annotate(err, "service_account").Err())
 		}
 	}
 
 	for _, t := range cfg.Tags {
-		if err := validateTag(t); err != nil {
-			errs = append(errs, err)
+		if err := validate.Tag(t); err != nil {
+			errs = append(errs, errors.Annotate(err, "tags").Err())
 		}
 	}
 	return errs
-}
-
-func validatePriority(p int32) error {
-	if p < 0 || p > maxPriority {
-		return errors.Reason("invalid priority %d, must be between 0 and %d", p, maxPriority).Err()
-	}
-	return nil
-}
-
-func validateBotPingTolerance(bpt int64) error {
-	if bpt < minBotPingTolanceSecs || bpt > maxBotPingTolanceSecs {
-		return errors.Reason("invalid bot_ping_tolerance %d, must be between %d and %d", bpt, minBotPingTolanceSecs, maxBotPingTolanceSecs).Err()
-	}
-	return nil
-}
-
-func validateServiceAccount(sa string) error {
-	if len(sa) > maxServiceAccountLength {
-		return errors.Reason("service account too long %s: %d > %d", sa, len(sa), maxServiceAccountLength).Err()
-	}
-
-	if !serviceAccountRE.MatchString(sa) {
-		return errors.Reason("invalid service account %s: must be an email", sa).Err()
-	}
-	return nil
-}
-
-func validateTag(tag string) error {
-	parts := strings.Split(tag, ":")
-	if len(parts) != 2 || (len(parts[0]) <= 0 || len(parts[1]) <= 0) {
-		return errors.Reason("tag must be in key:value form, not %q", tag).Err()
-	}
-	return nil
 }

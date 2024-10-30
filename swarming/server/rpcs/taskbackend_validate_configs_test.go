@@ -17,7 +17,6 @@ package rpcs
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -106,61 +105,5 @@ func TestValidateConfigs(t *testing.T) {
 			}
 			assert.Loosely(t, ed.Index, should.Equal(2))
 		}
-	})
-}
-
-func TestSubValidations(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("priority", t, func(t *ftt.Test) {
-		t.Run("too small", func(t *ftt.Test) {
-			err := validatePriority(-1)
-			assert.Loosely(t, err, should.ErrLike("invalid priority -1, must be between 0 and 255"))
-		})
-
-		t.Run("too big", func(t *ftt.Test) {
-			err := validatePriority(256)
-			assert.Loosely(t, err, should.ErrLike("invalid priority 256, must be between 0 and 255"))
-		})
-	})
-
-	ftt.Run("bot_ping_tolerance", t, func(t *ftt.Test) {
-		t.Run("too small", func(t *ftt.Test) {
-			err := validateBotPingTolerance(int64(30))
-			assert.Loosely(t, err, should.ErrLike("invalid bot_ping_tolerance 30, must be between 60 and 1200"))
-		})
-
-		t.Run("too big", func(t *ftt.Test) {
-			err := validateBotPingTolerance(int64(2000))
-			assert.Loosely(t, err, should.ErrLike("invalid bot_ping_tolerance 2000, must be between 60 and 1200"))
-		})
-	})
-
-	ftt.Run("service account", t, func(t *ftt.Test) {
-		t.Run("too long", func(t *ftt.Test) {
-			sa := strings.Repeat("l", maxServiceAccountLength+1)
-			err := validateServiceAccount(sa)
-			assert.Loosely(t, err, should.ErrLike("service account too long"))
-		})
-
-		t.Run("invalid", func(t *ftt.Test) {
-			err := validateServiceAccount("invalid")
-			assert.Loosely(t, err, should.ErrLike("invalid service account"))
-		})
-	})
-
-	ftt.Run("tag", t, func(t *ftt.Test) {
-		t.Run("invalid tag", func(t *ftt.Test) {
-			cases := []string{
-				"tag",
-				"tag:",
-				":tag",
-			}
-
-			for _, tc := range cases {
-				err := validateTag(tc)
-				assert.Loosely(t, err, should.ErrLike("tag must be in key:value form"))
-			}
-		})
 	})
 }
