@@ -31,6 +31,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -40,10 +41,8 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -144,7 +143,8 @@ func TestGetConfig(t *testing.T) {
 			t.Run("invalid req", func(t *ftt.Test) {
 				res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{ConfigSet: "services/myservice"})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "content_sha256 or path is required"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("content_sha256 or path is required"))
 			})
 
 			t.Run("bad field mask", func(t *ftt.Test) {
@@ -156,7 +156,8 @@ func TestGetConfig(t *testing.T) {
 					},
 				})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invalid fields mask: field "random" does not exist in message Config`))
 			})
 
 			t.Run("no permission", func(t *ftt.Test) {
@@ -169,7 +170,8 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:random@example.com" does not have permission to access it`))
 			})
 
 			t.Run("missing config set", func(t *ftt.Test) {
@@ -178,7 +180,8 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 
 			t.Run("missing config", func(t *ftt.Test) {
@@ -188,7 +191,8 @@ func TestGetConfig(t *testing.T) {
 					Path:      "path",
 				})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 
 			t.Run("not exist config sha256", func(t *ftt.Test) {
@@ -198,7 +202,8 @@ func TestGetConfig(t *testing.T) {
 					ContentSha256: "abc",
 				})
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:user@example.com" does not have permission to access it`))
 			})
 		})
 
@@ -354,7 +359,8 @@ func TestGetConfig(t *testing.T) {
 						Path:      "large",
 					})
 					assert.Loosely(t, res, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "error while generating the config signed url"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+					assert.Loosely(t, err, should.ErrLike("error while generating the config signed url"))
 				})
 
 				t.Run("content size > maxRawContentSize", func(t *ftt.Test) {

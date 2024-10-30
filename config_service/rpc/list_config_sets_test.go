@@ -27,6 +27,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,10 +36,8 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -76,7 +75,8 @@ func TestListConfigSets(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, `'configs' is not supported in fields mask`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`'configs' is not supported in fields mask`))
 
 			res, err = srv.ListConfigSets(ctx, &pb.ListConfigSetsRequest{
 				Fields: &field_mask.FieldMask{
@@ -84,7 +84,8 @@ func TestListConfigSets(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid fields mask: field "random" does not exist in message ConfigSet`))
 		})
 
 		t.Run("no permission", func(t *ftt.Test) {

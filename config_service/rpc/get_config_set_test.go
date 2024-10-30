@@ -27,6 +27,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,10 +36,8 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -95,7 +94,8 @@ func TestGetConfigSet(t *testing.T) {
 		t.Run("empty req", func(t *ftt.Test) {
 			res, err := srv.GetConfigSet(ctx, &pb.GetConfigSetRequest{})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "config_set is not specified"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("config_set is not specified"))
 		})
 
 		t.Run("invalid config set", func(t *ftt.Test) {
@@ -103,7 +103,8 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "project/abc",
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `unknown domain "project" for config set "project/abc"; currently supported domains [projects, services]`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`unknown domain "project" for config set "project/abc"; currently supported domains [projects, services]`))
 		})
 
 		t.Run("invalid field mask", func(t *ftt.Test) {
@@ -114,7 +115,8 @@ func TestGetConfigSet(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message ConfigSet`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid fields mask: field "random" does not exist in message ConfigSet`))
 		})
 
 		t.Run("no permission", func(t *ftt.Test) {
@@ -126,7 +128,8 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "projects/project",
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:random@example.com" does not have permission to access it`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:random@example.com" does not have permission to access it`))
 		})
 
 		t.Run("non-existent configSet", func(t *ftt.Test) {
@@ -134,7 +137,8 @@ func TestGetConfigSet(t *testing.T) {
 				ConfigSet: "projects/random",
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound, `requested resource not found or "user:user@example.com" does not have permission to access it`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`requested resource not found or "user:user@example.com" does not have permission to access it`))
 		})
 
 		t.Run("ok with default mask", func(t *ftt.Test) {

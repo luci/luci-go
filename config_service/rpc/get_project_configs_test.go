@@ -31,6 +31,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -40,10 +41,8 @@ import (
 	pb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -102,15 +101,18 @@ func TestGetProjectConfigs(t *testing.T) {
 		t.Run("invalid path", func(t *ftt.Test) {
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "": not specified`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid path - "": not specified`))
 
 			res, err = srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{Path: "/file"})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "/file": must not be absolute`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid path - "/file": must not be absolute`))
 
 			res, err = srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{Path: "./file"})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid path - "./file": should not start with './' or '../'`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid path - "./file": should not start with './' or '../'`))
 		})
 
 		t.Run("invalid mask", func(t *ftt.Test) {
@@ -121,7 +123,8 @@ func TestGetProjectConfigs(t *testing.T) {
 				},
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, `invalid fields mask: field "random" does not exist in message Config`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invalid fields mask: field "random" does not exist in message Config`))
 		})
 
 		t.Run("no access to matched files", func(t *ftt.Test) {
@@ -295,7 +298,8 @@ func TestGetProjectConfigs(t *testing.T) {
 				Path: "config.cfg",
 			})
 			assert.Loosely(t, res, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "error while generating the config signed url"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+			assert.Loosely(t, err, should.ErrLike("error while generating the config signed url"))
 		})
 	})
 }

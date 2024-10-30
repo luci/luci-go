@@ -31,6 +31,7 @@ import (
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -40,12 +41,10 @@ import (
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -125,38 +124,44 @@ func TestValidate(t *testing.T) {
 				req.ConfigSet = ""
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "config set is required"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("config set is required"))
 			})
 			t.Run("Invalid config set", func(t *ftt.Test) {
 				req.ConfigSet = "bad bad"
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "invalid config set"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("invalid config set"))
 			})
 			t.Run("Empty file hashes", func(t *ftt.Test) {
 				req.FileHashes = nil
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must provide non-empty file_hashes"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("must provide non-empty file_hashes"))
 			})
 			t.Run("Empty path", func(t *ftt.Test) {
 				req.FileHashes[0].Path = ""
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "file_hash[0]: path is empty"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("file_hash[0]: path is empty"))
 			})
 			t.Run("Absolute path", func(t *ftt.Test) {
 				req.FileHashes[0].Path = "/home/foo.cfg"
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must not be absolute"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("must not be absolute"))
 			})
 			for _, invalidSeg := range []string{".", ".."} {
 				t.Run(fmt.Sprintf("Path contain %q", invalidSeg), func(t *ftt.Test) {
 					req.FileHashes[0].Path = fmt.Sprintf("sub/%s/a.cfg", invalidSeg)
 					res, err := c.ValidateConfigs(ctx, req)
 					assert.Loosely(t, res, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "must not contain '.' or '..' components"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("must not contain '.' or '..' components"))
 				})
 			}
 
@@ -164,13 +169,15 @@ func TestValidate(t *testing.T) {
 				req.FileHashes[0].Sha256 = ""
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "file_hash[0]: sha256 is empty"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("file_hash[0]: sha256 is empty"))
 			})
 			t.Run("Invalid hash", func(t *ftt.Test) {
 				req.FileHashes[0].Sha256 = "x.y.z"
 				res, err := c.ValidateConfigs(ctx, req)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument, "invalid sha256 hash"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("invalid sha256 hash"))
 			})
 		})
 
@@ -182,7 +189,8 @@ func TestValidate(t *testing.T) {
 				})
 				res, err := c.ValidateConfigs(ctx, validateRequest)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, "user must be authenticated to validate config"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user must be authenticated to validate config"))
 			})
 
 			t.Run("Permission Denied", func(t *ftt.Test) {
@@ -192,7 +200,8 @@ func TestValidate(t *testing.T) {
 				})
 				res, err := c.ValidateConfigs(ctx, validateRequest)
 				assert.Loosely(t, res, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied, "\"user:another-requester@example.com\" does not have permission to validate config set"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("\"user:another-requester@example.com\" does not have permission to validate config set"))
 			})
 		})
 
@@ -240,7 +249,8 @@ func TestValidate(t *testing.T) {
 			mv.examineResult = &validation.ExamineResult{} //passed
 			mv.validateErr = errors.New("something went wrong. Transient but confidential!!!")
 			res, err := c.ValidateConfigs(ctx, validateRequest)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "failed to validate the configs"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+			assert.Loosely(t, err, should.ErrLike("failed to validate the configs"))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
