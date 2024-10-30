@@ -23,16 +23,15 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/deploy/api/rpcpb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -125,12 +124,12 @@ func TestActuationsRPC(t *testing.T) {
 			})
 
 			_, err = srv.BeginActuation(ctx, beginReq(0, 1000))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 		})
 
 		t.Run("End: missing actuation", func(t *ftt.Test) {
 			_, err := srv.EndActuation(ctx, endReq(1000))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.NotFound))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 
 		t.Run("End wrong caller", func(t *ftt.Test) {
@@ -142,7 +141,7 @@ func TestActuationsRPC(t *testing.T) {
 			})
 
 			_, err = srv.EndActuation(ctx, endReq(1000))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 		})
 
 		t.Run("End wrong asset list", func(t *ftt.Test) {
@@ -155,7 +154,7 @@ func TestActuationsRPC(t *testing.T) {
 			}
 
 			_, err = srv.EndActuation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 	})
 }
@@ -197,25 +196,25 @@ func TestActuationsValidation(t *testing.T) {
 		t.Run("No id", func(t *ftt.Test) {
 			rpc.Actuation.Id = ""
 			_, err := validateBeginActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("No deployment", func(t *ftt.Test) {
 			rpc.Actuation.Deployment = nil
 			_, err := validateBeginActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("No actuator", func(t *ftt.Test) {
 			rpc.Actuation.Actuator = nil
 			_, err := validateBeginActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("No assets", func(t *ftt.Test) {
 			rpc.Assets = nil
 			_, err := validateBeginActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 	})
 
@@ -241,13 +240,13 @@ func TestActuationsValidation(t *testing.T) {
 		t.Run("No id", func(t *ftt.Test) {
 			rpc.ActuationId = ""
 			_, err := validateEndActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("No assets", func(t *ftt.Test) {
 			rpc.Assets = nil
 			_, err := validateEndActuation(rpc)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 	})
 }

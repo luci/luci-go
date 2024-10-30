@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
@@ -49,10 +50,8 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	// Using transactional datastore TQ tasks.
@@ -3047,8 +3046,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.FailedPrecondition,
-				`"a/pkg/var-1" is not a bootstrap package (and 2 other errors like this)`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			assert.Loosely(t, err, should.ErrLike(`"a/pkg/var-1" is not a bootstrap package (and 2 other errors like this)`))
 		})
 
 		t.Run("Empty prefix", func(t *ftt.Test) {
@@ -3056,7 +3055,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.NotFound, `no packages directly under prefix "a/pkg"`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`no packages directly under prefix "a/pkg"`))
 		})
 
 		t.Run("Missing version", func(t *ftt.Test) {
@@ -3065,7 +3065,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "not-latest",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.NotFound, `no such ref`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`no such ref`))
 		})
 
 		t.Run("Broken processor", func(t *ftt.Test) {
@@ -3074,7 +3075,8 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 				Prefix:  "a/pkg",
 				Version: "latest",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.Aborted, `some processors failed to process this instance`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Aborted))
+			assert.Loosely(t, err, should.ErrLike(`some processors failed to process this instance`))
 		})
 
 		t.Run("Request validation", func(t *ftt.Test) {
@@ -3085,7 +3087,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Prefix:  "///",
 					Version: "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Variant with /", func(t *ftt.Test) {
@@ -3094,7 +3096,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Variants: []string{"some/thing"},
 					Version:  "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Empty variant", func(t *ftt.Test) {
@@ -3103,7 +3105,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Variants: []string{""},
 					Version:  "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Malformed variant name", func(t *ftt.Test) {
@@ -3112,7 +3114,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Variants: []string{"BAD"},
 					Version:  "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Duplicate variants", func(t *ftt.Test) {
@@ -3121,7 +3123,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Variants: []string{"var-1", "var-1"},
 					Version:  "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Bad version", func(t *ftt.Test) {
@@ -3129,7 +3131,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Prefix:  "a/pkg",
 					Version: "bad version ID",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 
 			t.Run("Not a reader", func(t *ftt.Test) {
@@ -3137,7 +3139,7 @@ func TestDescribeBootstrapBundle(t *testing.T) {
 					Prefix:  "a/pkg",
 					Version: "latest",
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 		})
 	})

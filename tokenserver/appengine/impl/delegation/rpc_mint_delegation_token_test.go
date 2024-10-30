@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -35,10 +37,8 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -284,7 +284,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("delegation is forbidden for this API call"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("delegation is forbidden for this API call"))
 		})
 
 		t.Run("Anonymous calls are forbidden", func(t *ftt.Test) {
@@ -296,7 +297,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)("authentication required"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+			assert.Loosely(t, err, should.ErrLike("authentication required"))
 		})
 
 		t.Run("Unauthorized requestor", func(t *ftt.Test) {
@@ -308,7 +310,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"REQUESTOR"},
 				Services:          []string{"*"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not authorized"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not authorized"))
 		})
 
 		t.Run("Negative validity duration", func(t *ftt.Test) {
@@ -318,7 +321,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Services:          []string{"*"},
 				ValidityDuration:  -1,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request - invalid 'validity_duration' (-1)"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad request - invalid 'validity_duration' (-1)"))
 		})
 
 		t.Run("Bad tags", func(t *ftt.Test) {
@@ -328,7 +332,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Services:          []string{"*"},
 				Tags:              []string{"not key value"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request - invalid 'tags': tag #1: not in <key>:<value> form"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("bad request - invalid 'tags': tag #1: not in <key>:<value> form"))
 		})
 
 		t.Run("Malformed request", func(t *ftt.Test) {
@@ -337,7 +342,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"junk"},
 				Services:          []string{"*"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request - bad 'audience' - auth: bad identity string "junk"`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad request - bad 'audience' - auth: bad identity string "junk"`))
 		})
 
 		t.Run("No matching rules", func(t *ftt.Test) {
@@ -346,7 +352,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Audience:          []string{"user:someone-else@example.com"},
 				Services:          []string{"*"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("forbidden - no matching delegation rules in the config"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("forbidden - no matching delegation rules in the config"))
 		})
 
 		t.Run("Forbidden validity duration", func(t *ftt.Test) {
@@ -356,7 +363,8 @@ func TestMintDelegationToken(t *testing.T) {
 				Services:          []string{"*"},
 				ValidityDuration:  3601,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("forbidden - the requested validity duration (3601 sec) exceeds the maximum allowed one (3600 sec)"))
 		})
 
 	})

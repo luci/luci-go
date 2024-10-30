@@ -42,13 +42,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/grpc/prpc/internal/testpb"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type service struct {
@@ -175,7 +173,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			svc.R = &testpb.HelloReply{Message: "sup"}
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
 
@@ -193,7 +191,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			svc.R = &testpb.HelloReply{Message: strings.Repeat("z", 124)}
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 			assert.Loosely(t, err, should.ErrLike("exceeds the client limit 123"))
 			assert.Loosely(t, prpc.ProtocolErrorDetails(err).GetResponseTooBig(), should.NotBeNil)
 
@@ -209,7 +207,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			assert.Loosely(t, err, should.BeNil)
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: hex.EncodeToString(msg)})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
 
@@ -221,7 +219,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			svc.R = &testpb.HelloReply{Message: hex.EncodeToString(msg)}
 
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "hi"})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 		})
 
@@ -230,7 +228,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{
 				Name: strings.Repeat("z", 2*1024*1024),
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnavailable)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 			assert.Loosely(t, err, should.ErrLike("reading the request: the request size exceeds the server limit"))
 		})
 
@@ -238,7 +236,7 @@ func endToEndTest(t *testing.T, responseType string) {
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{
 				Name: strings.Repeat("z", 2*1024*1024),
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnavailable)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 			assert.Loosely(t, err, should.ErrLike("decompressing the request: the decompressed request size exceeds the server limit"))
 		})
 
@@ -267,7 +265,7 @@ func endToEndTest(t *testing.T, responseType string) {
 
 			ctx = metadata.NewOutgoingContext(ctx, md)
 			resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"}, grpc.Header(&respMD))
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			assert.Loosely(t, resp, should.Resemble(svc.R))
 
 			assert.Loosely(t, svc.getIncomingMD(), should.Resemble(metadata.MD{
@@ -288,7 +286,7 @@ func endToEndTest(t *testing.T, responseType string) {
 		t.Run(`Populates peer`, func(t *ftt.Test) {
 			svc.R = &testpb.HelloReply{Message: "sup"}
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 
 			peer := svc.getIncomingPeer()
 			assert.Loosely(t, peer, should.NotBeNil)
@@ -426,7 +424,7 @@ func TestTimeouts(t *testing.T) {
 			}
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 		})
 
 		t.Run(`Succeeds after N retries`, func(t *ftt.Test) {
@@ -440,7 +438,7 @@ func TestTimeouts(t *testing.T) {
 			}
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 		})
 
 		t.Run(`Gives up on overall timeout`, func(t *ftt.Test) {
@@ -452,14 +450,14 @@ func TestTimeouts(t *testing.T) {
 			defer cancel()
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 		})
 
 		t.Run(`Respected DEADLINE_EXCEEDED response code`, func(t *ftt.Test) {
 			svc.err = status.Errorf(codes.DeadlineExceeded, "internal deadline exceeded")
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 		})
 	})
 }
@@ -485,7 +483,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 
 			_, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
 			if err != nil {
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 			}
 		})
 
@@ -498,7 +496,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 
 			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: hex.EncodeToString(msg)})
 			if err != nil {
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 			}
 		})
 
@@ -511,7 +509,7 @@ func TestVerySmallTimeouts(t *testing.T) {
 
 			_, err = client.SayHello(ctx, &testpb.HelloRequest{Name: "hi"})
 			if err != nil {
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCDeadlineExceeded)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.DeadlineExceeded))
 			}
 		})
 	})
@@ -531,6 +529,6 @@ func TestMaxLimits(t *testing.T) {
 	// Doesn't blow up.
 	svc.R = &testpb.HelloReply{Message: "sup"}
 	resp, err := client.SayHello(ctx, &testpb.HelloRequest{Name: "round-trip"})
-	assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+	assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 	assert.Loosely(t, resp, should.Resemble(svc.R))
 }

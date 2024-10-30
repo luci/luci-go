@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -33,11 +35,9 @@ import (
 	"go.chromium.org/luci/luci_notify/internal/alerts"
 	"go.chromium.org/luci/luci_notify/internal/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -61,7 +61,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("No read access rejected", func(t *ftt.Test) {
@@ -72,7 +73,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchGetAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-notify-access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of luci-notify-access"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Read when no info present returns fallback", func(t *ftt.Test) {
@@ -156,7 +158,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("No access rejected", func(t *ftt.Test) {
@@ -172,7 +175,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-notify-access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of luci-notify-access"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("No write access rejected", func(t *ftt.Test) {
@@ -188,7 +192,8 @@ func TestAlerts(t *testing.T) {
 				}
 				response, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("you do not have permission to update alerts"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("you do not have permission to update alerts"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Successful Create", func(t *ftt.Test) {
@@ -244,7 +249,8 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format:"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: expected format:"))
 			})
 			t.Run("invalid bug", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
@@ -260,7 +266,8 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bug: must be zero or positive"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bug: must be zero or positive"))
 			})
 			t.Run("invalid silence_until", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
@@ -276,7 +283,8 @@ func TestAlerts(t *testing.T) {
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("silence_until: must be zero or positive"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("silence_until: must be zero or positive"))
 			})
 			t.Run("Time ignored", func(t *ftt.Test) {
 				ctx = fakeAuth().withReadAccess().withWriteAccess().setInContext(ctx)
@@ -334,7 +342,8 @@ func TestAlerts(t *testing.T) {
 						}},
 				}
 				_, err := server.BatchUpdateAlerts(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAborted)("etag"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Aborted))
+				assert.Loosely(t, err, should.ErrLike("etag"))
 			})
 		})
 	})

@@ -31,16 +31,15 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/config/validation"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -81,7 +80,7 @@ func TestConsumerServer(t *testing.T) {
 					t.Helper()
 					ctx = auth.WithState(ctx, authState)
 					_, err := srv.GetMetadata(ctx, &emptypb.Empty{})
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied), truth.LineContext())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied), truth.LineContext())
 				}
 
 				t.Run("Non-admin users", func(t *ftt.Test) {
@@ -319,7 +318,8 @@ func TestConsumerServer(t *testing.T) {
 					res, err := srv.ValidateConfigs(ctx, req)
 					grpcStatus, ok := status.FromError(err)
 					assert.Loosely(t, ok, should.BeTrue)
-					assert.Loosely(t, grpcStatus, convey.Adapt(ShouldBeLikeStatus)(codes.Internal, "Unknown resource"))
+					assert.That(t, grpcStatus.Code(), should.Equal(codes.Internal))
+					assert.That(t, grpcStatus.Message(), should.ContainSubstring("Unknown resource"))
 					assert.Loosely(t, res, should.BeNil)
 				})
 			})

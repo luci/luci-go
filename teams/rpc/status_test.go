@@ -20,6 +20,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -30,10 +31,8 @@ import (
 	"go.chromium.org/luci/teams/internal/testutil"
 	pb "go.chromium.org/luci/teams/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -61,7 +60,8 @@ func TestTeams(t *testing.T) {
 				}
 				status, err := server.Get(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Users without app access rejected", func(t *ftt.Test) {
@@ -72,7 +72,8 @@ func TestTeams(t *testing.T) {
 				}
 				status, err := server.Get(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-teams-access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of luci-teams-access"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Read team that exists", func(t *ftt.Test) {
@@ -98,7 +99,7 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.Unimplemented))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
 			})
 			t.Run("Read of invalid id", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
@@ -108,7 +109,8 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: expected format"))
 			})
 			t.Run("Read of non existing valid id", func(t *ftt.Test) {
 				ctx = fakeAuth().withAppAccess().setInContext(ctx)
@@ -118,7 +120,8 @@ func TestTeams(t *testing.T) {
 				}
 				_, err := server.Get(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("team was not found"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("team was not found"))
 			})
 		})
 	})

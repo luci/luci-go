@@ -33,14 +33,13 @@ import (
 
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/config"
 	pb "go.chromium.org/luci/config_service/proto"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -164,7 +163,8 @@ func TestRemoteCalls(t *testing.T) {
 				cfg, err := impl.GetConfig(ctx, config.Set("projects/project1"), "config.cfg", true)
 
 				assert.Loosely(t, cfg, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "internal error"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike("internal error"))
 				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
@@ -278,7 +278,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				configs, err := impl.GetProjectConfigs(ctx, "config.cfg", false)
 				assert.Loosely(t, configs, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "config server internal error"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike("config server internal error"))
 				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 
@@ -377,7 +378,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				projects, err := impl.GetProjects(ctx)
 				assert.Loosely(t, projects, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike("server internal error"))
 				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
@@ -411,7 +413,8 @@ func TestRemoteCalls(t *testing.T) {
 
 				files, err := impl.ListFiles(ctx, config.Set("projects/project"))
 				assert.Loosely(t, files, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+				assert.Loosely(t, err, should.ErrLike("server internal error"))
 				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
 		})
@@ -545,7 +548,8 @@ func TestRemoteCalls(t *testing.T) {
 
 					files, err := impl.GetConfigs(ctx, "projects/project", filter, false)
 					assert.Loosely(t, files, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal, "server internal error"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
+					assert.Loosely(t, err, should.ErrLike("server internal error"))
 					assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 				})
 

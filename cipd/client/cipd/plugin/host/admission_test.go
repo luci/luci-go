@@ -31,6 +31,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/plugin"
@@ -38,10 +39,8 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/plugin/protocol"
 	"go.chromium.org/luci/cipd/common"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -185,7 +184,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			assert.Loosely(t, good.Wait(ctx), should.BeNil)
 
 			err := bad.Wait(ctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.FailedPrecondition))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			assert.Loosely(t, err, should.ErrLike("the plugin says boo"))
 
 			// Caches the result.
@@ -273,7 +272,7 @@ func TestAdmissionPlugins(t *testing.T) {
 			defer plug.Close(ctx)
 
 			err := plug.CheckAdmission(testPin("good/a/b")).Wait(ctx)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("the listing says boo"))
 
 			assert.Loosely(t, fakeRepo.Calls(), should.Resemble([]*api.ListMetadataRequest{

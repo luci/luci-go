@@ -43,13 +43,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/grpc/prpc/internal/testpb"
 	"go.chromium.org/luci/grpc/prpc/prpcpb"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func sayHello(t testing.TB) http.HandlerFunc {
@@ -350,7 +348,7 @@ func TestClient(t *testing.T) {
 
 				client.MaxResponseSize = 8
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
 				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{
@@ -368,7 +366,7 @@ func TestClient(t *testing.T) {
 
 				req.Name = "TOO BIG"
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unavailable))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unavailable))
 				assert.Loosely(t, err, should.ErrLike("exceeds the client limit"))
 				assert.Loosely(t, ProtocolErrorDetails(err), should.Resemble(&prpcpb.ErrorDetails{
 					Error: &prpcpb.ErrorDetails_ResponseTooBig{

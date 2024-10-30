@@ -21,11 +21,10 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/buildbucket/bbperms"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/milo/internal/testutils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -71,7 +70,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 				Permissions: []string{bbperms.BuildsAdd.Name(), bbperms.BuildsList.Name(), bbperms.BuildsCancel.Name()},
 			})
 
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("must be specified"))
 			assert.Loosely(t, res, should.BeNil)
 		})
@@ -82,7 +81,7 @@ func TestBatchCheckPermissions(t *testing.T) {
 				Permissions: []string{bbperms.BuildsAdd.Name(), "testservice.testsubject.testaction"},
 			})
 
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("permission not registered"))
 			assert.Loosely(t, res, should.BeNil)
 		})
