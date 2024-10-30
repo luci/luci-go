@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -42,10 +44,8 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -64,7 +64,7 @@ func TestGetProject(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -74,7 +74,7 @@ func TestGetProject(t *testing.T) {
 			})
 			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.GetProject(ctx, &adminpb.GetProjectRequest{Project: lProject})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 	})
@@ -95,7 +95,7 @@ func TestGetProjectLogs(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetProjectLogs(ctx, &adminpb.GetProjectLogsRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -129,7 +129,7 @@ func TestGetRun(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -139,11 +139,11 @@ func TestGetRun(t *testing.T) {
 			})
 			t.Run("not exists", func(t *ftt.Test) {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid + "cafe"})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 			t.Run("exists", func(t *ftt.Test) {
 				_, err := a.GetRun(ctx, &adminpb.GetRunRequest{Run: rid})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 			})
 		})
 	})
@@ -163,7 +163,7 @@ func TestGetCL(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetCL(ctx, &adminpb.GetCLRequest{Id: 123})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -194,7 +194,7 @@ func TestGetPoller(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.GetPoller(ctx, &adminpb.GetPollerRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -287,7 +287,7 @@ func TestSearchRuns(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SearchRuns(ctx, &adminpb.SearchRunsRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -570,7 +570,7 @@ func TestDeleteProjectEvents(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DeleteProjectEvents(ctx, &adminpb.DeleteProjectEventsRequest{Project: lProject, Limit: 10})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -621,7 +621,7 @@ func TestRefreshProjectCLs(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.RefreshProjectCLs(ctx, &adminpb.RefreshProjectCLsRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -676,7 +676,7 @@ func TestSendProjectEvent(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendProjectEvent(ctx, &adminpb.SendProjectEventRequest{Project: lProject})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -689,7 +689,7 @@ func TestSendProjectEvent(t *testing.T) {
 					Project: lProject,
 					Event:   &prjpb.Event{Event: &prjpb.Event_Poke{Poke: &prjpb.Poke{}}},
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 	})
@@ -712,7 +712,7 @@ func TestSendRunEvent(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.SendRunEvent(ctx, &adminpb.SendRunEventRequest{Run: rid})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -725,7 +725,7 @@ func TestSendRunEvent(t *testing.T) {
 					Run:   rid,
 					Event: &eventpb.Event{Event: &eventpb.Event_Poke{Poke: &eventpb.Poke{}}},
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 	})
@@ -762,7 +762,7 @@ func TestScheduleTask(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.ScheduleTask(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {
@@ -790,17 +790,20 @@ func TestScheduleTask(t *testing.T) {
 				t.Run("Missing payload", func(t *ftt.Test) {
 					req.ManageProject = nil
 					_, err := a.ScheduleTask(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("none given"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("none given"))
 				})
 				t.Run("Two payloads", func(t *ftt.Test) {
 					req.KickManageProject = reqTrans.GetKickManageProject()
 					_, err := a.ScheduleTask(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("but 2+ given"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("but 2+ given"))
 				})
 				t.Run("Trans + DeduplicationKey is not allwoed", func(t *ftt.Test) {
 					reqTrans.DeduplicationKey = "beef"
 					_, err := a.ScheduleTask(ctx, reqTrans)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`"KickManageProjectTask" is transactional`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`"KickManageProjectTask" is transactional`))
 				})
 			})
 		})

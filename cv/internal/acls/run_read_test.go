@@ -33,11 +33,9 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -91,11 +89,11 @@ func TestRunReadChecker(t *testing.T) {
 		t.Run("Loading individual Runs", func(t *ftt.Test) {
 			t.Run("Run doesn't exist", func(t *ftt.Test) {
 				_, err1 := run.LoadRun(ctx, common.RunID("foo/bar"), NewRunReadChecker())
-				assert.Loosely(t, err1, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+				assert.Loosely(t, appstatus.Code(err1), should.Equal(codes.NotFound))
 
 				t.Run("No access must be indistinguishable from not existing Run", func(t *ftt.Test) {
 					_, err2 := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-					assert.Loosely(t, err2, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+					assert.Loosely(t, appstatus.Code(err2), should.Equal(codes.NotFound))
 
 					st1, _ := appstatus.Get(err1)
 					st2, _ := appstatus.Get(err2)
@@ -141,7 +139,7 @@ func TestRunReadChecker(t *testing.T) {
 					IdentityGroups: []string{"insufficient"},
 				})
 				_, err := run.LoadRun(ctx, internalRun.ID, NewRunReadChecker())
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.NotFound))
 			})
 		})
 	})

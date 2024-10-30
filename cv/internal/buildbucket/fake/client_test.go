@@ -37,12 +37,11 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -99,14 +98,14 @@ func TestGetBuild(t *testing.T) {
 			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: build.GetId(),
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, res, should.BeNil)
 		})
 		t.Run("Build not exist", func(t *ftt.Test) {
 			res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
 				Id: 777,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -115,7 +114,7 @@ func TestGetBuild(t *testing.T) {
 				res, err := client.GetBuild(ctx, &bbpb.GetBuildRequest{
 					Id: 0,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("Builder + build number", func(t *ftt.Test) {
@@ -123,7 +122,7 @@ func TestGetBuild(t *testing.T) {
 					Id:      build.GetId(),
 					Builder: builderID,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveRPCCode)(codes.Unimplemented))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
 				assert.Loosely(t, res, should.BeNil)
 			})
 		})
@@ -180,7 +179,7 @@ func TestSearchBuild(t *testing.T) {
 					CreatedBy: "foo",
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("Can apply Gerrit Change predicate", func(t *ftt.Test) {
@@ -410,7 +409,7 @@ func TestCancelBuild(t *testing.T) {
 				Id:              build.GetId(),
 				SummaryMarkdown: "no longer needed",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -418,7 +417,7 @@ func TestCancelBuild(t *testing.T) {
 			res, err := client.CancelBuild(ctx, &bbpb.CancelBuildRequest{
 				Id: 777,
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -637,7 +636,7 @@ func TestScheduleBuild(t *testing.T) {
 					Builder: "non-existent-builder",
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, res, should.BeNil)
 		})
 	})

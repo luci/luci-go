@@ -41,7 +41,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-	// . "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSubmitter(t *testing.T) {

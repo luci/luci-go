@@ -30,10 +30,8 @@ import (
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -238,7 +236,7 @@ func TestLoadRunsBuilder(t *testing.T) {
 				b := LoadRunsFromIDs(r404.ID).Checker(checker)
 
 				runsA, errs := b.Do(ctx)
-				assert.Loosely(t, errs[0], convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+				assert.Loosely(t, appstatus.Code(errs[0]), should.Equal(codes.NotFound))
 				assert.Loosely(t, runsA, should.Resemble([]*Run{{ID: r404.ID}}))
 
 				runsB, err := b.DoIgnoreNotFound(ctx)

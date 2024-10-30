@@ -19,12 +19,14 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
@@ -32,10 +34,8 @@ import (
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -409,7 +409,7 @@ func TestLaunch(t *testing.T) {
 			assert.Loosely(t, launchResults, should.HaveLength(2))
 			assert.Loosely(t, launchResults[0].Err, should.BeNil) // First Tryjob launched successfully
 			assert.Loosely(t, launchResults[0].ExternalID, should.NotBeEmpty)
-			assert.Loosely(t, launchResults[1].Err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, launchResults[1].Err, grpccode.ShouldBe(codes.NotFound))
 			assert.Loosely(t, launchResults[1].ExternalID, should.BeEmpty)
 			assert.Loosely(t, launchResults[1].Status, should.Equal(tryjob.Status_STATUS_UNSPECIFIED))
 			assert.Loosely(t, launchResults[1].Result, should.BeNil)

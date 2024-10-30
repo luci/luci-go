@@ -26,10 +26,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/grpc/appstatus"
@@ -62,7 +60,7 @@ func TestRecorderClient(t *testing.T) {
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.PermissionDenied, "permission denied"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
 			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 		})
@@ -74,7 +72,7 @@ func TestRecorderClient(t *testing.T) {
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.InvalidArgument, "invalid argument"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, transient.Tag.In(err), should.BeFalse)
 			assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("failed to mark %s submitted", inv)))
 		})
@@ -99,7 +97,7 @@ func TestRecorderClient(t *testing.T) {
 			})).Return(&emptypb.Empty{}, appstatus.Error(codes.Unknown, "???"))
 
 			err := rc.MarkInvocationSubmitted(ctx, inv)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.Unknown))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.Unknown))
 			assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			assert.Loosely(t, err, should.ErrLike("???"))
 		})

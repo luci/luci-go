@@ -19,19 +19,19 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/dsmapper/dsmapperpb"
 	"go.chromium.org/luci/server/tq/tqtesting"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	adminpb "go.chromium.org/luci/cv/internal/rpc/admin/api"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -72,11 +72,11 @@ func TestDSMapperServer(t *testing.T) {
 				Identity: "anonymous:anonymous",
 			})
 			_, err := a.DSMLaunchJob(ctx, &adminpb.DSMLaunchJobRequest{Name: "upgrade-something"})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			_, err = a.DSMGetJob(ctx, &adminpb.DSMJobID{Id: 1})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			_, err = a.DSMAbortJob(ctx, &adminpb.DSMJobID{Id: 1})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with access", func(t *ftt.Test) {

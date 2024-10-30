@@ -20,8 +20,10 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
@@ -32,10 +34,8 @@ import (
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/run"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -68,27 +68,27 @@ func TestSearchRuns(t *testing.T) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{Project: projectName},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run("with no predicate", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 
 			_, err = srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{PageSize: 50})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("with a page size that is too large", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{PageSize: maxPageSize + 1})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("with no project", func(t *ftt.Test) {
 			_, err := srv.SearchRuns(ctx, &apiv0pb.SearchRunsRequest{
 				Predicate: &apiv0pb.RunPredicate{},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("with nonexistent project", func(t *ftt.Test) {
@@ -228,7 +228,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("with CL predicate and no project given", func(t *ftt.Test) {
@@ -241,7 +241,7 @@ func TestSearchRuns(t *testing.T) {
 					},
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run("with no matching Run, CL predicate", func(t *ftt.Test) {

@@ -19,15 +19,15 @@ import (
 	"testing"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/secrets"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -69,6 +69,9 @@ func TestPageTokens(t *testing.T) {
 		tokenBytes[10] = '\\'
 		err = DecryptPageToken(ctx, string(tokenBytes), dst)
 		assert.Loosely(t, err, should.ErrLike("illegal base64"))
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page token"))
+
+		as, ok := appstatus.Get(err)
+		assert.That(t, ok, should.BeTrue)
+		assert.That(t, as, should.Resemble(status.New(codes.InvalidArgument, "invalid page token")))
 	})
 }
