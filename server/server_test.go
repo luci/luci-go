@@ -51,6 +51,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/lucictx"
 
@@ -63,11 +64,9 @@ import (
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -561,7 +560,7 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Unknown))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Unknown))
 				})
 
 				t.Run("Panic catcher is installed", func(t *ftt.Test) {
@@ -573,7 +572,7 @@ func TestRPCServers(t *testing.T) {
 					defer srv.StopBackgroundServing()
 
 					_, err := rpcClient.Unary(context.Background(), &testpb.Request{})
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 
 					// Logged the panic.
 					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))
@@ -663,7 +662,7 @@ func TestRPCServers(t *testing.T) {
 					assert.Loosely(t, resp.Text, should.Equal("ping:pong"))
 
 					_, err = ss.Recv()
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 
 					// Logged the panic.
 					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))

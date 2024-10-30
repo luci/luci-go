@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -35,16 +36,15 @@ import (
 	"go.chromium.org/luci/auth/loginsessionspb"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/server/loginsessions/internal"
 	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -224,31 +224,31 @@ func TestModule(t *testing.T) {
 			t.Run("Browser headers", func(t *ftt.Test) {
 				ctx := metadata.NewIncomingContext(ctx, metadata.Pairs("sec-fetch-site", "none"))
 				_, err := mod.srv.CreateLoginSession(ctx, createSessionReq())
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 			t.Run("Missing OAuth client ID", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthClientId = ""
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("Missing OAuth scopes", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthScopes = nil
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("Missing OAuth challenge", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthS256CodeChallenge = ""
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("Unknown OAuth client", func(t *ftt.Test) {
 				req := createSessionReq()
 				req.OauthClientId = "unknown"
 				_, err := mod.srv.CreateLoginSession(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 		})
 
@@ -262,33 +262,33 @@ func TestModule(t *testing.T) {
 					LoginSessionId:       session.Id,
 					LoginSessionPassword: session.Password,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			})
 			t.Run("Missing ID", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionPassword: session.Password,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("Missing password", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId: session.Id,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			})
 			t.Run("Missing session", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       "missing",
 					LoginSessionPassword: session.Password,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 			t.Run("Wrong password", func(t *ftt.Test) {
 				_, err := mod.srv.GetLoginSession(ctx, &loginsessionspb.GetLoginSessionRequest{
 					LoginSessionId:       session.Id,
 					LoginSessionPassword: []byte("wrong"),
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 

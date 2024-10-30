@@ -26,11 +26,10 @@ import (
 	"google.golang.org/grpc/peer"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -107,7 +106,7 @@ func TestAuthenticatingInterceptor(t *testing.T) {
 			_, err := intr.Unary()(requestCtx, "request", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
 				panic("must not be called")
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 	})
 }

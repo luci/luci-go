@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/sidecar"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -35,10 +36,8 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -223,7 +222,7 @@ func TestAuthServer(t *testing.T) {
 		t.Run("Transient error", func(t *ftt.Test) {
 			mockAuthError(errors.New("boom", transient.Tag))
 			_, err := call()
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.Internal))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 			assert.Loosely(t, err, should.ErrLike("boom"))
 		})
 
@@ -287,7 +286,7 @@ func TestIsMember(t *testing.T) {
 			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Groups: []string{"group-2"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("identity field is required"))
 		})
 
@@ -296,7 +295,7 @@ func TestIsMember(t *testing.T) {
 				Identity: "what",
 				Groups:   []string{"group-2"},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad identity"))
 		})
 
@@ -304,7 +303,7 @@ func TestIsMember(t *testing.T) {
 			_, err := srv.IsMember(ctx, &sidecar.IsMemberRequest{
 				Identity: "user:enduser@example.com",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("at least one group is required"))
 		})
 	})
@@ -367,7 +366,7 @@ func TestHasPermission(t *testing.T) {
 				Permission: testPerm0.Name(),
 				Realm:      "test:realm",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("identity field is required"))
 		})
 
@@ -377,7 +376,7 @@ func TestHasPermission(t *testing.T) {
 				Permission: testPerm0.Name(),
 				Realm:      "test:realm",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad identity"))
 		})
 
@@ -386,7 +385,7 @@ func TestHasPermission(t *testing.T) {
 				Identity: "user:enduser@example.com",
 				Realm:    "test:realm",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("permission field is required"))
 		})
 
@@ -396,7 +395,7 @@ func TestHasPermission(t *testing.T) {
 				Permission: "what",
 				Realm:      "test:realm",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad permission"))
 		})
 
@@ -406,7 +405,7 @@ func TestHasPermission(t *testing.T) {
 				Permission: "fake.permission.unknown",
 				Realm:      "test:realm",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("is not registered"))
 		})
 
@@ -415,7 +414,7 @@ func TestHasPermission(t *testing.T) {
 				Identity:   "user:enduser@example.com",
 				Permission: testPerm0.Name(),
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("realm field is required"))
 		})
 
@@ -425,7 +424,7 @@ func TestHasPermission(t *testing.T) {
 				Permission: testPerm0.Name(),
 				Realm:      "bad",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad global realm name"))
 		})
 	})
@@ -472,6 +471,6 @@ func TestRequestMetadata(t *testing.T) {
 
 	ftt.Run("Unknown protocol", t, func(t *ftt.Test) {
 		_, err := newRequestMetadata(&sidecar.AuthenticateRequest{})
-		assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 	})
 }
