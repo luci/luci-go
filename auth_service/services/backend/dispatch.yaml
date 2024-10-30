@@ -6,6 +6,9 @@ dispatch:
     service: backendv2
   - url: "*/internal/tasks/t/changelog-generation/*"
     service: backendv2
+  # Serve legacy endpoint to get a single AuthGroup using Go.
+  - url: "*/auth/api/v1/groups/*"
+    service: defaultv2
   # Serve legacy endpoint to get an AuthDB revision using Go.
   - url: "*/auth_service/api/v1/authdb/revisions/*"
     service: defaultv2
