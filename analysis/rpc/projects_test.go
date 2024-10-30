@@ -24,9 +24,9 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
@@ -37,8 +37,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProjects(t *testing.T) {
@@ -98,7 +96,8 @@ func TestProjects(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				response, err := server.GetConfig(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.config.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Valid request", func(t *ftt.Test) {
@@ -189,7 +188,8 @@ func TestProjects(t *testing.T) {
 				response, err := server.GetConfig(ctx, request)
 
 				// Verify
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid project config name, expected format: projects/{project}/config"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: invalid project config name, expected format: projects/{project}/config"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 		})

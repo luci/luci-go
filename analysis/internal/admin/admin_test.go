@@ -19,8 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
@@ -31,10 +33,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/tasks/taskspb"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -65,7 +65,8 @@ func TestAdminServer(t *testing.T) {
 			request := &pb.BackfillTestResultsRequest{}
 
 			rsp, err := server.BackfillTestResults(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of service-luci-analysis-admins"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of service-luci-analysis-admins"))
 			assert.Loosely(t, rsp, should.BeNil)
 		})
 		t.Run("BackfillTestResults", func(t *ftt.Test) {

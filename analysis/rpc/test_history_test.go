@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -32,10 +33,8 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -196,7 +195,7 @@ func TestTestHistoryServer(t *testing.T) {
 					res, err := server.Query(ctx, req)
 					assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
 					assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, res, should.BeNil)
 				}
 
@@ -243,7 +242,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageSize = -1
 				res, err := server.Query(ctx, req)
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -434,7 +433,7 @@ func TestTestHistoryServer(t *testing.T) {
 					res, err := server.QueryStats(ctx, req)
 					assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
 					assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, res, should.BeNil)
 				}
 
@@ -481,7 +480,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageSize = -1
 				res, err := server.QueryStats(ctx, req)
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -606,7 +605,7 @@ func TestTestHistoryServer(t *testing.T) {
 				res, err := server.QueryVariants(ctx, req)
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
 				assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -614,7 +613,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageSize = -1
 				res, err := server.QueryVariants(ctx, req)
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -689,7 +688,7 @@ func TestTestHistoryServer(t *testing.T) {
 				res, err := server.QueryTests(ctx, req)
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
 				assert.Loosely(t, err, should.ErrLike(`in realm "project:realm"`))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.PermissionDenied))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -697,7 +696,7 @@ func TestTestHistoryServer(t *testing.T) {
 				req.PageSize = -1
 				res, err := server.QueryTests(ctx, req)
 				assert.Loosely(t, err, should.NotBeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveGRPCStatus)(codes.InvalidArgument))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 				assert.Loosely(t, res, should.BeNil)
 			})
 

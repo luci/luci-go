@@ -24,9 +24,9 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -41,8 +41,6 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTestVariantsServer(t *testing.T) {
@@ -74,7 +72,8 @@ func TestTestVariantsServer(t *testing.T) {
 			request := &pb.QueryTestVariantStabilityRequest{}
 
 			response, err := server.QueryStability(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 			assert.Loosely(t, response, should.BeNil)
 		})
 		t.Run("QueryFailureRate", func(t *ftt.Test) {
@@ -143,7 +142,8 @@ func TestTestVariantsServer(t *testing.T) {
 				ctx, _ := testclock.UseTime(ctx, asAtTime)
 
 				response, err := server.QueryFailureRate(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list] in any realm"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list] in any realm"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Invalid input", func(t *ftt.Test) {
@@ -232,21 +232,24 @@ func TestTestVariantsServer(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 
 				response, err := server.QueryStability(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike("project has not defined test stability criteria; set test_stability_criteria in project configuration and try again"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("No list test results permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryStability(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list] in any realm"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list] in any realm"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("No get project config permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 				response, err := server.QueryStability(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.config.get in realm "project:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.config.get in realm "project:@project"`))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Invalid input", func(t *ftt.Test) {
@@ -257,7 +260,8 @@ func TestTestVariantsServer(t *testing.T) {
 				request.Project = ""
 
 				response, err := server.QueryStability(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`project: unspecified`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`project: unspecified`))
 				assert.Loosely(t, response, should.BeNil)
 			})
 		})

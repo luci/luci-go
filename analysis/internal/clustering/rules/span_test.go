@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/analysis/internal/bugs"
@@ -30,10 +32,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/clustering"
 	"go.chromium.org/luci/analysis/internal/testutil"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -626,13 +626,13 @@ func TestSpan(t *testing.T) {
 				// Cannot create a second rule managing the same bug.
 				secondManagingRule := NewRule(3).WithProject("project-d").WithBug(bug).WithBugManaged(true).Build()
 				err := testCreate(secondManagingRule, LUCIAnalysisSystem)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 			})
 			t.Run("Cannot update a rule to manage the same bug", func(t *ftt.Test) {
 				ruleToUpdate := rulesToCreate[2]
 				ruleToUpdate.IsManagingBug = true
 				err := testUpdate(ruleToUpdate, UpdateOptions{IsAuditableUpdate: true}, LUCIAnalysisSystem)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 			})
 			t.Run("Can swap which rule is managing a bug", func(t *ftt.Test) {
 				// Stop the first rule from managing the bug.

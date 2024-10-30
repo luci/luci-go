@@ -21,8 +21,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -30,10 +32,8 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -63,7 +63,8 @@ func TestChangepointsServer(t *testing.T) {
 			}
 
 			res, err := server.QueryChangepointGroupSummaries(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 			assert.Loosely(t, res, should.BeNil)
 		})
 		t.Run("QueryChangepointGroupSummaries", func(t *ftt.Test) {
@@ -80,7 +81,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid requests are rejected - project unspecified", func(t *ftt.Test) {
@@ -89,7 +91,8 @@ func TestChangepointsServer(t *testing.T) {
 				req := &pb.QueryChangepointGroupSummariesRequestLegacy{}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid requests are rejected - other", func(t *ftt.Test) {
@@ -102,7 +105,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("e2e", func(t *ftt.Test) {
@@ -224,7 +228,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.changepointgroups.list in realm "chromium:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -234,7 +239,8 @@ func TestChangepointsServer(t *testing.T) {
 				req := &pb.QueryChangepointGroupSummariesRequest{}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -248,7 +254,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryGroupSummaries(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`predicate: test_id_prefix: non-printable rune '\x00' at byte index 0`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -368,7 +375,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.changepointgroups.get in realm "chromium:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.changepointgroups.get in realm "chromium:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid requests are rejected - project unspecified", func(t *ftt.Test) {
@@ -377,7 +385,8 @@ func TestChangepointsServer(t *testing.T) {
 				req := &pb.QueryChangepointsInGroupRequest{}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid requests are rejected - other", func(t *ftt.Test) {
@@ -388,7 +397,8 @@ func TestChangepointsServer(t *testing.T) {
 				}
 
 				res, err := server.QueryChangepointsInGroup(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("group_key: test_id: unspecified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("group_key: test_id: unspecified"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -446,7 +456,7 @@ func TestChangepointsServer(t *testing.T) {
 					client.ReadChangepointsInGroupResult = []*changepoints.ChangepointRow{}
 
 					res, err := server.QueryChangepointsInGroup(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 					assert.Loosely(t, res, should.BeNil)
 				})
 			})

@@ -22,12 +22,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -47,11 +49,9 @@ import (
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -83,7 +83,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 
 				req := &pb.GetRawTestVariantBranchRequest{}
 				res, err := server.GetRaw(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of service-luci-analysis-admins"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of service-luci-analysis-admins"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("permission denied - no permission", func(t *ftt.Test) {
@@ -93,7 +94,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Name: "projects/myproject/tests/test/variants/abababababababab/refs/abababababababab",
 				}
 				res, err := server.GetRaw(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.testvariantbranches.get in realm "myproject:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.testvariantbranches.get in realm "myproject:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -102,7 +104,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Name: "Project/abc/xyz",
 				}
 				res, err := server.GetRaw(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -111,7 +114,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Name: "projects/myproject/tests/test/variants/abababababababab/refs/abababababababab",
 				}
 				res, err := server.GetRaw(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -120,7 +123,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					Name: "projects/myproject/tests/thisisatest/variants/abababababababab/refs/abababababababgh",
 				}
 				res, err := server.GetRaw(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: "))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: "))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -130,7 +134,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Name: "projects/myproject/tests/a/variants/0123456789abcdef/refs/7265665f68617368/bad/subpath",
 					}
 					res, err := server.GetRaw(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("bad URL escaping", func(t *ftt.Test) {
@@ -138,7 +143,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Name: "projects/myproject/tests/abcdef%test/variants/0123456789abcdef/refs/7265665f68617368",
 					}
 					res, err := server.GetRaw(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("malformed test id: invalid URL escape \"%te\""))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("malformed test id: invalid URL escape \"%te\""))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("bad value", func(t *ftt.Test) {
@@ -146,7 +152,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 						Name: "projects/myproject/tests/\u0001atest/variants/0123456789abcdef/refs/7265665f68617368",
 					}
 					res, err := server.GetRaw(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`test id "\x01atest": non-printable rune`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`test id "\x01atest": non-printable rune`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 			})
@@ -351,7 +358,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.BatchGet(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`does not have permission analysis.testvariantbranches.get in realm "testproject:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`does not have permission analysis.testvariantbranches.get in realm "testproject:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -370,7 +378,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					}
 
 					res, err := server.BatchGet(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}"))
 					assert.Loosely(t, res, should.BeNil)
 				})
 
@@ -384,7 +393,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					}
 
 					res, err := server.BatchGet(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("names: no more than 100 may be queried at a time"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("names: no more than 100 may be queried at a time"))
 					assert.Loosely(t, res, should.BeNil)
 				})
 			})
@@ -566,7 +576,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.Query(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission analysis.testvariantbranches.list in realm "myproject:@project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission analysis.testvariantbranches.list in realm "myproject:@project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid request", func(t *ftt.Test) {
@@ -587,19 +598,22 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					req.Project = ""
 
 					_, err := server.Query(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("project: unspecified"))
 				})
 				t.Run("invalid test id", func(t *ftt.Test) {
 					req.TestId = ""
 
 					_, err := server.Query(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_id: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("test_id: unspecified"))
 				})
 				t.Run("invalid ref", func(t *ftt.Test) {
 					req.Ref.GetGitiles().Host = ""
 
 					_, err := server.Query(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("ref: gitiles: host: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("ref: gitiles: host: unspecified"))
 				})
 			})
 			t.Run("e2e", func(t *ftt.Test) {
@@ -705,14 +719,16 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					IdentityGroups: []string{"luci-analysis-access"},
 				})
 				res, err := server.QuerySourcePositions(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
 			t.Run("invalid requests are rejected", func(t *ftt.Test) {
 				req.PageSize = -1
 				res, err := server.QuerySourcePositions(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("page_size: negative"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("page_size: negative"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -743,7 +759,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.QuerySourcePositions(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`cannot find source positions because test verdicts is too sparse`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`cannot find source positions because test verdicts is too sparse`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -759,7 +776,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				}
 
 				res, err := server.QuerySourcePositions(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`no commit at or after the requested start position`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`no commit at or after the requested start position`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -893,7 +911,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					IdentityGroups: []string{"luci-analysis-access"},
 				})
 				res, err := server.QuerySourceVerdicts(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "project"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "project"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -901,26 +920,30 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				t.Run("invalid parent", func(t *ftt.Test) {
 					req.Parent = ""
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`parent: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`parent: name must be of format projects/{PROJECT}/tests/{URL_ESCAPED_TEST_ID}/variants/{VARIANT_HASH}/refs/{REF_HASH}`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("invalid start position", func(t *ftt.Test) {
 					req.StartSourcePosition = 0
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`start_source_position: must be a positive number`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`start_source_position: must be a positive number`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("invalid end position", func(t *ftt.Test) {
 					req.EndSourcePosition = -1
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`end_source_position: must be a non-negative number`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`end_source_position: must be a non-negative number`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("end position not before start", func(t *ftt.Test) {
 					req.StartSourcePosition = 2000
 					req.EndSourcePosition = 2000
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`end_source_position: must be less than start_source_position`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`end_source_position: must be less than start_source_position`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 				t.Run("start to end range too large", func(t *ftt.Test) {
@@ -928,7 +951,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					req.StartSourcePosition = 2000
 					req.EndSourcePosition = 999
 					res, err := server.QuerySourceVerdicts(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`end_source_position: must not query more than 1000 source positions from start_source_position`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`end_source_position: must not query more than 1000 source positions from start_source_position`))
 					assert.Loosely(t, res, should.BeNil)
 				})
 			})
@@ -1141,21 +1165,24 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-access")
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("permission denied - not in group googlers", func(t *ftt.Test) {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "googlers")
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of googlers"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of googlers"))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("permission denied - no permissions to list test results", func(t *ftt.Test) {
 				authState.IdentityPermissions = nil
 
 				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "testproject"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "testproject"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 			t.Run("invalid request", func(t *ftt.Test) {
@@ -1167,38 +1194,44 @@ func TestTestVariantBranchesServer(t *testing.T) {
 					req.Project = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("project"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("project"))
 				})
 				t.Run("invalid test id", func(t *ftt.Test) {
 					req.TestId = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_id"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("test_id"))
 				})
 				t.Run("invalid variant hash", func(t *ftt.Test) {
 					req.VariantHash = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("variant_hash"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("variant_hash"))
 				})
 				t.Run("invalid ref hash", func(t *ftt.Test) {
 					req.RefHash = ""
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("ref_hash"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("ref_hash"))
 				})
 				t.Run("invalid start source position", func(t *ftt.Test) {
 					req.StartSourcePosition = 0
 
 					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("start_source_position"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("start_source_position"))
 				})
 			})
 			t.Run("test variant branch not found", func(t *ftt.Test) {
 				req.TestId = "not_exists"
 
 				_, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("test variant branch not found"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("test variant branch not found"))
 			})
 			t.Run("changepoint not found", func(t *ftt.Test) {
 				// This position is closer to the start of the first segment
@@ -1208,7 +1241,8 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				req.StartSourcePosition = 11
 
 				_, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("test variant branch changepoint not found"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("test variant branch changepoint not found"))
 			})
 			t.Run("valid", func(t *ftt.Test) {
 				ctx = gitiles.UseFakeClient(ctx, makeFakeCommit)

@@ -19,14 +19,15 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,8 +36,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/perms"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMetrics(t *testing.T) {
@@ -90,7 +89,8 @@ func TestMetrics(t *testing.T) {
 			}
 
 			rsp, err := server.ListForProject(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 			assert.Loosely(t, rsp, should.BeNil)
 		})
 		t.Run("List", func(t *ftt.Test) {
@@ -119,7 +119,8 @@ func TestMetrics(t *testing.T) {
 			t.Run("No config access", func(t *ftt.Test) {
 				authState.IdentityPermissions = nil
 				response, err := server.ListForProject(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.config.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Baseline", func(t *ftt.Test) {

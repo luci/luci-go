@@ -21,10 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
@@ -44,10 +46,8 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -130,7 +130,8 @@ func TestRules(t *testing.T) {
 			}
 
 			rule, err := srv.Get(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 			assert.Loosely(t, rule, should.BeNil)
 		})
 		t.Run("Get", func(t *ftt.Test) {
@@ -153,7 +154,8 @@ func TestRules(t *testing.T) {
 				}
 
 				rule, err := srv.Get(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.get"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("Rule exists", func(t *ftt.Test) {
@@ -203,7 +205,7 @@ func TestRules(t *testing.T) {
 
 				rule, err := srv.Get(ctx, request)
 				assert.Loosely(t, rule, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 		t.Run("List", func(t *ftt.Test) {
@@ -225,7 +227,8 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListRules)
 
 				response, err := srv.List(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.list"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.list"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Non-Empty", func(t *ftt.Test) {
@@ -334,14 +337,16 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermUpdateRule)
 
 				rule, err := srv.Update(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.update"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.update"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("No rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.Update(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.getDefinition"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("Validation error", func(t *ftt.Test) {
@@ -349,34 +354,38 @@ func TestRules(t *testing.T) {
 					request.Rule = nil
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: name: invalid rule name"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: name: invalid rule name"))
 				})
 				t.Run("Empty bug", func(t *ftt.Test) {
 					request.Rule.Bug = nil
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: unspecified"))
 				})
 				t.Run("Invalid bug system", func(t *ftt.Test) {
 					request.Rule.Bug.System = "other"
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: invalid bug tracking system \"other\""))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: invalid bug tracking system \"other\""))
 				})
 				t.Run("Invalid bug system - monorail", func(t *ftt.Test) {
 					request.Rule.Bug.System = "monorail"
 					request.Rule.Bug.Id = "project/2"
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: system: monorail bug system is no longer supported"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: system: monorail bug system is no longer supported"))
 				})
 				t.Run("Invalid buganizer bug id", func(t *ftt.Test) {
 					request.Rule.Bug.System = "buganizer"
 					request.Rule.Bug.Id = "-12345"
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("rule: bug: invalid buganizer bug ID \"-12345\""))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: invalid buganizer bug ID \"-12345\""))
 				})
 				t.Run("Re-use of same bug in same project", func(t *ftt.Test) {
 					// Use the same bug as another rule.
@@ -386,9 +395,8 @@ func TestRules(t *testing.T) {
 					}
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
-						fmt.Sprintf("bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID)))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("bug already used by a rule in the same project (%s/%s)", ruleTwoProject.Project, ruleTwoProject.RuleID)))
 				})
 				t.Run("Bug managed by another rule", func(t *ftt.Test) {
 					// Select a bug already managed by another rule.
@@ -401,23 +409,24 @@ func TestRules(t *testing.T) {
 					request.UpdateMask.Paths = []string{"bug", "is_managing_bug"}
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
-						fmt.Sprintf("rule: bug: bug already managed by a rule in another project (%s/%s)",
-							ruleManagedOther.Project, ruleManagedOther.RuleID)))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("rule: bug: bug already managed by a rule in another project (%s/%s)", ruleManagedOther.Project, ruleManagedOther.RuleID)))
 				})
 				t.Run("Empty rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = ""
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: unspecified`))
 				})
 				t.Run("Invalid rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = "<"
 
 					_, err := srv.Update(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
 			})
 			t.Run("Success", func(t *ftt.Test) {
@@ -608,7 +617,7 @@ func TestRules(t *testing.T) {
 				// requerying.
 				rule, err := srv.Update(ctx, request)
 				assert.Loosely(t, rule, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAborted)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Aborted))
 			})
 			t.Run("Rule does not exist", func(t *ftt.Test) {
 				ruleID := strings.Repeat("00", 16)
@@ -616,7 +625,7 @@ func TestRules(t *testing.T) {
 
 				rule, err := srv.Update(ctx, request)
 				assert.Loosely(t, rule, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 		})
 		t.Run("Create", func(t *ftt.Test) {
@@ -652,14 +661,16 @@ func TestRules(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
 				rule, err := srv.Create(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.create"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.create"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("No create rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.Create(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.getDefinition"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("Validation error", func(t *ftt.Test) {
@@ -667,45 +678,45 @@ func TestRules(t *testing.T) {
 					request.Rule = nil
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: unspecified"))
 				})
 				t.Run("Bug unspecified", func(t *ftt.Test) {
 					request.Rule.Bug = nil
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: bug: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: unspecified"))
 				})
 				t.Run("Invalid buganizer bug", func(t *ftt.Test) {
 					request.Rule.Bug.System = "buganizer"
 					request.Rule.Bug.Id = "-2"
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: bug: invalid buganizer bug ID \"-2\""))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: invalid buganizer bug ID \"-2\""))
 				})
 				t.Run("Invalid bug system", func(t *ftt.Test) {
 					request.Rule.Bug.System = "other"
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: bug: invalid bug tracking system \"other\""))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: invalid bug tracking system \"other\""))
 				})
 				t.Run("Invalid bug system - monorail", func(t *ftt.Test) {
 					request.Rule.Bug.System = "monorail"
 					request.Rule.Bug.Id = "otherproject/2"
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: bug: system: monorail bug system is no longer supported"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: bug: system: monorail bug system is no longer supported"))
 				})
 				t.Run("Invalid source cluster", func(t *ftt.Test) {
 					request.Rule.SourceCluster.Algorithm = "*invalid*"
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-						"rule: source_cluster: algorithm not valid"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("rule: source_cluster: algorithm not valid"))
 				})
 				t.Run("Re-use of same bug in same project", func(t *ftt.Test) {
 					// Use the same bug as another rule, in the same project.
@@ -715,22 +726,23 @@ func TestRules(t *testing.T) {
 					}
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(
-						fmt.Sprintf("rule: bug: bug already used by a rule in the same project (%s/%s)",
-							ruleTwoProject.Project, ruleTwoProject.RuleID)))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+					assert.Loosely(t, err, should.ErrLike(fmt.Sprintf("rule: bug: bug already used by a rule in the same project (%s/%s)", ruleTwoProject.Project, ruleTwoProject.RuleID)))
 				})
 				t.Run("Empty rule definition", func(t *ftt.Test) {
 					request.Rule.RuleDefinition = ""
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: unspecified`))
 				})
 				t.Run("Invalid rule definition", func(t *ftt.Test) {
 					// Use an invalid failure association rule.
 					request.Rule.RuleDefinition = "<"
 
 					_, err := srv.Create(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 				})
 			})
 			t.Run("Success", func(t *ftt.Test) {
@@ -944,21 +956,24 @@ func TestRules(t *testing.T) {
 				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-buganizer-access")
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-buganizer-access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-buganizer-access"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("No create rule permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermCreateRule)
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.create"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.create"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("No create rule definition permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
 
 				rule, err := srv.CreateWithNewIssue(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.getDefinition"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.getDefinition"))
 				assert.Loosely(t, rule, should.BeNil)
 			})
 			t.Run("Validation error", func(t *ftt.Test) {
@@ -967,8 +982,8 @@ func TestRules(t *testing.T) {
 						request.Rule = nil
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-							"rule: unspecified"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("rule: unspecified"))
 					})
 					t.Run("Bug specified", func(t *ftt.Test) {
 						// This RPC creates a bug, so the rule should not already have a
@@ -979,21 +994,23 @@ func TestRules(t *testing.T) {
 						}
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(
-							"rule: bug: must not be specified, as a new bug will be created by this RPC"))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike("rule: bug: must not be specified, as a new bug will be created by this RPC"))
 					})
 					t.Run("Empty rule definition", func(t *ftt.Test) {
 						request.Rule.RuleDefinition = ""
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: unspecified`))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: unspecified`))
 					})
 					t.Run("Invalid rule definition", func(t *ftt.Test) {
 						// Use an invalid failure association rule.
 						request.Rule.RuleDefinition = "<"
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`rule: rule_definition: parse: syntax error: 1:1: invalid input text "<"`))
 					})
 				})
 				t.Run("Issue", func(t *ftt.Test) {
@@ -1001,32 +1018,37 @@ func TestRules(t *testing.T) {
 						request.Issue = nil
 
 						_, err := srv.CreateWithNewIssue(ctx, request)
-						assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: unspecified`))
+						assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+						assert.Loosely(t, err, should.ErrLike(`issue: unspecified`))
 					})
 					t.Run("title", func(t *ftt.Test) {
 						t.Run("unspecified", func(t *ftt.Test) {
 							request.Issue.Title = ""
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: title: unspecified`))
 						})
 						t.Run("too long", func(t *ftt.Test) {
 							request.Issue.Title = strings.Repeat("a", 251)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: longer than 250 bytes`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: title: longer than 250 bytes`))
 						})
 						t.Run("invalid - non-printables", func(t *ftt.Test) {
 							request.Issue.Title = "hello\x00"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: non-printable rune '\x00' at byte index 5`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: title: non-printable rune '\x00' at byte index 5`))
 						})
 						t.Run("invalid - invalid UTF-8", func(t *ftt.Test) {
 							request.Issue.Title = "\xFF"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: not a valid utf8 string`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: title: not a valid utf8 string`))
 						})
 						t.Run("invalid - not in normal form C", func(t *ftt.Test) {
 							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
@@ -1034,7 +1056,8 @@ func TestRules(t *testing.T) {
 							request.Issue.Title = "\u0041\u030a"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: title: not in unicode normalized form C`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: title: not in unicode normalized form C`))
 						})
 					})
 					t.Run("comment", func(t *ftt.Test) {
@@ -1042,25 +1065,29 @@ func TestRules(t *testing.T) {
 							request.Issue.Comment = ""
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: comment: unspecified`))
 						})
 						t.Run("too long", func(t *ftt.Test) {
 							request.Issue.Comment = strings.Repeat("a", 100_001)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: longer than 100000 bytes`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: comment: longer than 100000 bytes`))
 						})
 						t.Run("invalid - non-printables", func(t *ftt.Test) {
 							request.Issue.Comment = "hello\x00"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: non-printable rune '\x00' at byte index 5`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: comment: non-printable rune '\x00' at byte index 5`))
 						})
 						t.Run("invalid - invalid UTF-8", func(t *ftt.Test) {
 							request.Issue.Comment = "\xFF"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: not a valid utf8 string`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: comment: not a valid utf8 string`))
 						})
 						t.Run("invalid - not in normal form C", func(t *ftt.Test) {
 							// U+0041 (LATIN CAPITAL LETTER A) followed by U+030A (COMBINING ACUTE ACCENT) is Normal Form D.
@@ -1068,7 +1095,8 @@ func TestRules(t *testing.T) {
 							request.Issue.Comment = "\u0041\u030a"
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: comment: not in unicode normalized form C`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: comment: not in unicode normalized form C`))
 						})
 					})
 					t.Run("access limit", func(t *ftt.Test) {
@@ -1076,13 +1104,15 @@ func TestRules(t *testing.T) {
 							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_ISSUE_ACCESS_LIMIT_UNSPECIFIED
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: access_limit: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: access_limit: unspecified`))
 						})
 						t.Run("invalid", func(t *ftt.Test) {
 							request.Issue.AccessLimit = pb.CreateRuleWithNewIssueRequest_Issue_IssueAccessLimit(100)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: access_limit: invalid value, must be a valid IssueAccessLimit`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: access_limit: invalid value, must be a valid IssueAccessLimit`))
 						})
 					})
 					t.Run("priority", func(t *ftt.Test) {
@@ -1090,13 +1120,15 @@ func TestRules(t *testing.T) {
 							request.Issue.Priority = pb.BuganizerPriority_BUGANIZER_PRIORITY_UNSPECIFIED
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: priority: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: priority: unspecified`))
 						})
 						t.Run("invalid", func(t *ftt.Test) {
 							request.Issue.Priority = pb.BuganizerPriority(100)
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: priority: invalid value, must be a valid BuganizerPriority`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: priority: invalid value, must be a valid BuganizerPriority`))
 						})
 					})
 					t.Run("component", func(t *ftt.Test) {
@@ -1104,13 +1136,15 @@ func TestRules(t *testing.T) {
 							request.Issue.Component = nil
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: unspecified`))
 						})
 						t.Run("system unspecified", func(t *ftt.Test) {
 							request.Issue.Component.System = nil
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: system: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: system: unspecified`))
 						})
 						t.Run("invalid - monorail system", func(t *ftt.Test) {
 							request.Issue.Component.System = &pb.BugComponent_Monorail{
@@ -1121,7 +1155,8 @@ func TestRules(t *testing.T) {
 							}
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: monorail: filing bugs into monorail is not supported by this RPC`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: monorail: filing bugs into monorail is not supported by this RPC`))
 						})
 						t.Run("invalid - issue tracker unspecified", func(t *ftt.Test) {
 							request.Issue.Component.System = &pb.BugComponent_IssueTracker{
@@ -1129,19 +1164,22 @@ func TestRules(t *testing.T) {
 							}
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: issue_tracker: unspecified`))
 						})
 						t.Run("component ID unspecified", func(t *ftt.Test) {
 							request.Issue.Component.GetIssueTracker().ComponentId = 0
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: component_id: unspecified`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: issue_tracker: component_id: unspecified`))
 						})
 						t.Run("component ID invalid", func(t *ftt.Test) {
 							request.Issue.Component.GetIssueTracker().ComponentId = -1
 
 							_, err := srv.CreateWithNewIssue(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`issue: component: issue_tracker: component_id: must be positive`))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike(`issue: component: issue_tracker: component_id: must be positive`))
 						})
 					})
 				})
@@ -1342,7 +1380,8 @@ func TestRules(t *testing.T) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetConfig)
 
 					_, err := srv.PrepareDefaults(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.config.get"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.config.get"))
 				})
 				t.Run("Validation", func(t *ftt.Test) {
 					t.Run("test ID", func(t *ftt.Test) {
@@ -1350,13 +1389,14 @@ func TestRules(t *testing.T) {
 							request.TestResult.TestId = ""
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(""))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 						})
 						t.Run("invalid", func(t *ftt.Test) {
 							request.TestResult.TestId = strings.Repeat("a", 513)
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_result: test_id: longer than 512 bytes"))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_result: test_id: longer than 512 bytes"))
 						})
 					})
 					t.Run("failure reason", func(t *ftt.Test) {
@@ -1364,7 +1404,8 @@ func TestRules(t *testing.T) {
 							request.TestResult.FailureReason.PrimaryErrorMessage = strings.Repeat("a", 1025)
 
 							_, err := srv.PrepareDefaults(ctx, request)
-							assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test_result: failure_reason: primary_error_message: exceeds the maximum size of 1024 bytes"))
+							assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+							assert.Loosely(t, err, should.ErrLike("test_result: failure_reason: primary_error_message: exceeds the maximum size of 1024 bytes"))
 						})
 					})
 				})

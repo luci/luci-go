@@ -22,12 +22,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -54,10 +56,8 @@ import (
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -140,7 +140,8 @@ func TestClusters(t *testing.T) {
 			}
 
 			rule, err := server.Cluster(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of luci-analysis-access"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
 			assert.Loosely(t, rule, should.BeNil)
 		})
 		t.Run("Cluster", func(t *ftt.Test) {
@@ -175,14 +176,16 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetClustersByFailure)
 
 				response, err := server.Cluster(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.getByFailure"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.getByFailure"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to get rule", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.Cluster(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -269,7 +272,8 @@ func TestClusters(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, response, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("test result 1: test ID must not be empty"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("test result 1: test ID must not be empty"))
 			})
 			t.Run("With too many test results", func(t *ftt.Test) {
 				var testResults []*pb.ClusterRequest_TestResult
@@ -285,7 +289,8 @@ func TestClusters(t *testing.T) {
 
 				// Verify
 				assert.Loosely(t, response, should.BeNil)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("too many test results: at most 1000 test results can be clustered in one request"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("too many test results: at most 1000 test results can be clustered in one request"))
 			})
 			t.Run("With project not configured", func(t *ftt.Test) {
 				err := config.SetTestProjectConfig(ctx, map[string]*configpb.ProjectConfig{})
@@ -334,7 +339,8 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.Get(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -569,7 +575,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: must be specified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name: must be specified"))
 				})
 				t.Run("Invalid name", func(t *ftt.Test) {
 					request.Name = "invalid"
@@ -579,7 +586,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name: invalid cluster name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}"))
 				})
 				t.Run("Invalid cluster algorithm in name", func(t *ftt.Test) {
 					request.Name = "projects/blah/clusters/reason/cccccc00000000000000000000000001"
@@ -589,7 +597,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster identity: algorithm not valid"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name: invalid cluster identity: algorithm not valid"))
 				})
 				t.Run("Invalid cluster ID in name", func(t *ftt.Test) {
 					request.Name = "projects/blah/clusters/reason-v3/123"
@@ -599,7 +608,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name: invalid cluster identity: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})
@@ -717,35 +727,40 @@ func TestClusters(t *testing.T) {
 				}
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("time_range: earliest must be before latest"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("time_range: earliest must be before latest"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list clusters", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermListClusters)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.list"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.list"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to get rules", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRule)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.rules.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryClusterSummaries(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Valid request", func(t *ftt.Test) {
@@ -943,7 +958,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("failure_filter: expected arg after :"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("failure_filter: expected arg after :"))
 				})
 				t.Run("Failure filter references non-existant column", func(t *ftt.Test) {
 					request.FailureFilter = `test:"pita.Boot"`
@@ -953,7 +969,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`failure_filter: no filterable field "test"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`failure_filter: no filterable field "test"`))
 				})
 				t.Run("Failure filter references unimplemented feature", func(t *ftt.Test) {
 					request.FailureFilter = "test_id<=\"blah\""
@@ -963,7 +980,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("failure_filter: comparator operator not implemented yet"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("failure_filter: comparator operator not implemented yet"))
 				})
 				t.Run("Metrics references non-existent metric", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/testproject/metrics/not-exists"}
@@ -972,7 +990,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`metrics: no metric with ID "not-exists"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`metrics: no metric with ID "not-exists"`))
 				})
 				t.Run("Metrics references metric in another project", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/anotherproject/metrics/failures"}
@@ -981,7 +1000,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`metrics: metric projects/anotherproject/metrics/failures cannot be used as it is from a different LUCI Project`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`metrics: metric projects/anotherproject/metrics/failures cannot be used as it is from a different LUCI Project`))
 				})
 				t.Run("Order by references metric that is not selected", func(t *ftt.Test) {
 					request.Metrics = []string{"projects/testproject/metrics/failures"}
@@ -992,7 +1012,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("order_by: no sortable field named \"metrics.`human-cls-failed-presubmit`.value\", valid fields are metrics.failures.value"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("order_by: no sortable field named \"metrics.`human-cls-failed-presubmit`.value\", valid fields are metrics.failures.value"))
 				})
 				t.Run("Order by syntax invalid", func(t *ftt.Test) {
 					// To sort in ascending order, "desc" should be omittted. "asc" is not valid syntax.
@@ -1003,7 +1024,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`order_by: syntax error: 1:44: unexpected token "asc"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`order_by: syntax error: 1:44: unexpected token "asc"`))
 				})
 				t.Run("Order by syntax references invalid column", func(t *ftt.Test) {
 					request.OrderBy = "not_exists desc"
@@ -1013,7 +1035,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`order_by: no sortable field named "not_exists"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`order_by: no sortable field named "not_exists"`))
 				})
 			})
 		})
@@ -1030,7 +1053,8 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.GetReclusteringProgress(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -1095,7 +1119,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: invalid reclustering progress name, expected format: projects/{project}/reclusteringProgress"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("name: invalid reclustering progress name, expected format: projects/{project}/reclusteringProgress"))
 				})
 			})
 		})
@@ -1117,21 +1142,24 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryClusterFailures(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -1297,7 +1325,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/failures"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: invalid cluster failures name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/failures"))
 				})
 				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/failures"
@@ -1307,7 +1336,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: algorithm not valid"))
 				})
 				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/failures"
@@ -1317,7 +1347,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
 				t.Run("Invalid metric ID format", func(t *ftt.Test) {
 					request.MetricFilter = "metrics/human-cls-failed-presubmit"
@@ -1327,7 +1358,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("filter_metric: invalid project metric name, expected format: projects/{project}/metrics/{metric_id}"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("filter_metric: invalid project metric name, expected format: projects/{project}/metrics/{metric_id}"))
 				})
 				t.Run("Filter metric references non-existant metric", func(t *ftt.Test) {
 					request.MetricFilter = "projects/testproject/metrics/not-exists"
@@ -1337,7 +1369,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`filter_metric: no metric with ID "not-exists"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`filter_metric: no metric with ID "not-exists"`))
 				})
 			})
 		})
@@ -1360,21 +1393,24 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryExoneratedTestVariants(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -1450,7 +1486,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariants"))
 				})
 				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariants"
@@ -1460,7 +1497,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: algorithm not valid"))
 				})
 				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariants"
@@ -1470,7 +1508,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})
@@ -1493,21 +1532,24 @@ func TestClusters(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetCluster)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission analysis.clusters.get"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.clusters.get"))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test results in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestResults)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("Not authorised to list test exonerations in any realm", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, rdbperms.PermListTestExonerations)
 
 				response, err := server.QueryExoneratedTestVariantBranches(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project \"testproject\""))
 				assert.Loosely(t, response, should.BeNil)
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
@@ -1619,7 +1661,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: invalid resource name, expected format: projects/{project}/clusters/{cluster_alg}/{cluster_id}/exoneratedTestVariantBranches"))
 				})
 				t.Run("Invalid cluster algorithm in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason/cccccc00000000000000000000000001/exoneratedTestVariantBranches"
@@ -1629,7 +1672,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: algorithm not valid"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: algorithm not valid"))
 				})
 				t.Run("Invalid cluster ID in parent", func(t *ftt.Test) {
 					request.Parent = "projects/blah/clusters/reason-v3/123/exoneratedTestVariantBranches"
@@ -1639,7 +1683,8 @@ func TestClusters(t *testing.T) {
 
 					// Verify
 					assert.Loosely(t, response, should.BeNil)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("parent: cluster id: ID is not valid lowercase hexadecimal bytes"))
 				})
 			})
 		})

@@ -20,15 +20,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -116,7 +115,7 @@ func TestQueryRealms(t *testing.T) {
 				realms, err := QueryRealmsNonEmpty(ctx, "project1", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
 				assert.That(t, err, should.ErrLike("caller does not have permissions"))
 				assert.That(t, err, should.ErrLike("in any realm in project \"project1\""))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, realms, should.BeEmpty)
 			})
 		})
@@ -150,7 +149,7 @@ func TestQueryRealms(t *testing.T) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
 					assert.That(t, err, should.ErrLike("caller does not have permissions"))
 					assert.That(t, err, should.ErrLike("in any realm in project \"project1\""))
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+					assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 					assert.Loosely(t, realms, should.BeEmpty)
 				})
 			})
@@ -172,7 +171,7 @@ func TestQueryRealms(t *testing.T) {
 					realms, err := QuerySubRealmsNonEmpty(ctx, "project1", "realm1", nil, rdbperms.PermListTestExonerations, rdbperms.PermListArtifacts)
 					assert.Loosely(t, err, should.ErrLike("caller does not have permission"))
 					assert.Loosely(t, err, should.ErrLike("in realm \"project1:realm1\""))
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+					assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 					assert.Loosely(t, realms, should.BeEmpty)
 				})
 			})
