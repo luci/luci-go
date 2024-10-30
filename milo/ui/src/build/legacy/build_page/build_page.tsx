@@ -132,9 +132,6 @@ export const BuildPage = observer(() => {
   const faviconUrl = build?.status
     ? STATUS_FAVICON_MAP[build.status]
     : miloFavicon;
-  useEffect(() => {
-    document.getElementById('favicon')?.setAttribute('href', faviconUrl);
-  }, [faviconUrl]);
 
   const realm = `${project}:${bucket}`;
   const [canReadFullBuild] = usePermCheck(realm, PERM_BUILDS_GET);
@@ -152,6 +149,7 @@ export const BuildPage = observer(() => {
             project={project}
             selectedPage={UiPage.Builders}
             title={documentTitle}
+            favicon={faviconUrl}
           />
           <ChangeConfigDialog
             open={showConfigDialog}

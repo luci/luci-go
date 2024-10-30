@@ -15,6 +15,7 @@
 import { useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
+import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { GenFeedbackUrlArgs } from '@/common/tools/utils';
@@ -23,7 +24,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 export const DeviceListPage = () => {
   return (
     <>
-      <PageMeta title="Streamlined Fleet UI" />
+      <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
       Hello world
     </>
   );

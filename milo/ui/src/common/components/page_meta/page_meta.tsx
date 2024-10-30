@@ -15,20 +15,29 @@
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 
+import milo from '@/common/assets/favicons/milo-32.png';
 import { UiPage } from '@/common/constants/view';
 
 import { useProject, useSetProject, useSetSelectedPage } from './hooks';
+
+const DEFAULT_FAVICON = milo;
 
 export interface PageMetaProps {
   title: string;
   selectedPage?: UiPage;
   project?: string;
+  favicon?: string;
 }
 
 /**
  * Handles setting the sidebar selected item and title of the page.
  */
-export const PageMeta = ({ title, selectedPage, project }: PageMetaProps) => {
+export const PageMeta = ({
+  title,
+  selectedPage,
+  project,
+  favicon,
+}: PageMetaProps) => {
   const setProject = useSetProject();
   const setSelectedPage = useSetSelectedPage();
   const currentProject = useProject();
@@ -36,7 +45,18 @@ export const PageMeta = ({ title, selectedPage, project }: PageMetaProps) => {
   useEffect(() => {
     setSelectedPage(selectedPage);
     setProject(project || currentProject);
-  }, [setSelectedPage, selectedPage, project, setProject, currentProject]);
+  }, [currentProject, project, selectedPage, setProject, setSelectedPage]);
+
+  useEffect(() => {
+    if (favicon === undefined) {
+      return () => {};
+    }
+
+    document.getElementById('favicon')?.setAttribute('href', favicon);
+    return () => {
+      document.getElementById('favicon')?.setAttribute('href', DEFAULT_FAVICON);
+    };
+  }, [favicon]);
 
   return (
     <Helmet titleTemplate="%s | LUCI" defaultTitle="LUCI">
