@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -42,10 +43,8 @@ import (
 	configpb "go.chromium.org/luci/resultdb/proto/config"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -228,7 +227,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("testproject"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("testproject"))
 			})
 			t.Run("user not configured", func(t *ftt.Test) {
 				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "testbucket")
@@ -239,7 +239,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user:other@test.com"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user:other@test.com"))
 			})
 			t.Run("bucket not listed", func(t *ftt.Test) {
 				testutil.SetGCSAllowedBuckets(ctx, t, "testproject", "user:test@test.com", "otherbucket")
@@ -248,7 +249,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendGcsArtReq("art1", 0, "text/plain", "gs://testbucket/art1")
 
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("testbucket"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("testbucket"))
 			})
 		})
 		t.Run("works", func(t *ftt.Test) {
@@ -396,12 +398,14 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			t.Run("Missing", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs())
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)(`missing update-token`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+				assert.Loosely(t, err, should.ErrLike(`missing update-token`))
 			})
 			t.Run("Wrong", func(t *ftt.Test) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, "rong"))
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`invalid update token`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`invalid update token`))
 			})
 		})
 
@@ -412,7 +416,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				testutil.MustApply(ctx, t, insert.Invocation("inv", pb.Invocation_FINALIZED, nil))
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCFailedPrecondition)(`invocations/inv is not active`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.Loosely(t, err, should.ErrLike(`invocations/inv is not active`))
 			})
 
 			art := map[string]any{
@@ -453,16 +458,19 @@ func TestBatchCreateArtifacts(t *testing.T) {
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.Contents = []byte("loooong content")
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different size"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different size"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("c1ntent")
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different hash"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different hash"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art1"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different storage scheme"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different storage scheme"))
 			})
 
 			t.Run("Different artifact exists GCS", func(t *ftt.Test) {
@@ -474,17 +482,20 @@ func TestBatchCreateArtifacts(t *testing.T) {
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different storage scheme"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different storage scheme"))
 
 				bReq.Requests[0].Artifact.Contents = []byte("")
 				bReq.Requests[0].Artifact.GcsUri = "gs://testbucket/art2"
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different GCS URI"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different GCS URI"))
 
 				appendArtReq("art1", "c0ntent", "text/plain", "invocations/inv", pb.TestStatus_STATUS_UNSPECIFIED)
 				bReq.Requests[0].Artifact.SizeBytes = 42
 				_, err = recorder.BatchCreateArtifacts(ctx, bReq)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)("exists w/ different size"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
+				assert.Loosely(t, err, should.ErrLike("exists w/ different size"))
 			})
 
 			// RowCount metric should have no changes from any of the above Convey()s.
@@ -494,7 +505,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 		t.Run("Too many requests", func(t *ftt.Test) {
 			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
 			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("the number of requests in the batch exceeds 500"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("the number of requests in the batch exceeds 500"))
 		})
 	})
 }

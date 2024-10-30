@@ -23,6 +23,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -37,10 +39,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -156,7 +156,8 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err := srv.QueryTestVariants(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testResults.listLimited"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testResults.listLimited"))
 
 			// Test PermListLimitedTestExonerations is required if the user does not
 			// have both PermListTestResults and PermListTestExonerations.
@@ -168,7 +169,8 @@ func TestQueryTestVariants(t *testing.T) {
 				},
 			})
 			_, err = srv.QueryTestVariants(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testExonerations.listLimited"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.listLimited"))
 		})
 
 		t.Run(`Valid with limited list permission`, func(t *ftt.Test) {
@@ -349,7 +351,8 @@ func TestQueryTestVariants(t *testing.T) {
 				PageSize:    1,
 			})
 
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invocations: only one invocation is allowed"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invocations: only one invocation is allowed"))
 		})
 
 		t.Run(`Try next page`, func(t *ftt.Test) {
@@ -406,13 +409,13 @@ func TestDetermineListAccessLevel(t *testing.T) {
 		t.Run("Access denied", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i0"), invocations.ID("i2"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
 		})
 		t.Run("No common access level", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i3"))
 			accessLevel, err := determineListAccessLevel(ctx, ids)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, accessLevel, should.Equal(testvariants.AccessLevelInvalid))
 		})
 		t.Run("Limited access", func(t *ftt.Test) {

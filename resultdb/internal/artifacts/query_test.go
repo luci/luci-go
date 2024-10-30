@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -27,10 +28,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -367,7 +366,10 @@ func TestQuery(t *testing.T) {
 			t.Run(`Bad token`, func(t *ftt.Test) {
 				q.PageToken = "CgVoZWxsbw=="
 				_, _, err := q.FetchProtos(span.Single(ctx))
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
+				as, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+				assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 			})
 		})
 

@@ -28,11 +28,10 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -448,8 +447,9 @@ func TestReportTestResults(t *testing.T) {
 
 			t.Run("returns an error if the artifact req is invalid", func(t *ftt.Test) {
 				tr.Artifacts["art2"] = &sinkpb.Artifact{}
-				assert.Loosely(t, report(tr), convey.Adapt(ShouldHaveRPCCode)(codes.InvalidArgument,
-					"one of file_path or contents or gcs_uri must be provided"))
+				err := report(tr)
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("one of file_path or contents or gcs_uri must be provided"))
 			})
 
 			t.Run("with an inaccesible artifact file", func(t *ftt.Test) {
@@ -457,7 +457,7 @@ func TestReportTestResults(t *testing.T) {
 					Body: &sinkpb.Artifact_FilePath{FilePath: "not_exist"}}
 
 				t.Run("drops the artifact", func(t *ftt.Test) {
-					assert.Loosely(t, report(tr), convey.Adapt(ShouldBeRPCOK)())
+					assert.Loosely(t, report(tr), grpccode.ShouldBe(codes.OK))
 
 					// make sure that no TestResults were dropped, and the valid artifact, "art1",
 					// was not dropped, either.
@@ -489,7 +489,7 @@ func TestReportTestResults(t *testing.T) {
 				tr.Expected = false
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				closeSinkServer(ctx, sink)
 				assert.Loosely(t, sentExoReq, should.NotBeNil)
 				assert.Loosely(t, sentExoReq.Requests, should.HaveLength(1))
@@ -505,14 +505,14 @@ func TestReportTestResults(t *testing.T) {
 				tr.Status = pb.TestStatus_FAIL
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				closeSinkServer(ctx, sink)
 				assert.Loosely(t, sentExoReq, should.BeNil)
 			})
 
 			t.Run("not exonerate expected pass", func(t *ftt.Test) {
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				closeSinkServer(ctx, sink)
 				assert.Loosely(t, sentExoReq, should.BeNil)
 			})
@@ -521,7 +521,7 @@ func TestReportTestResults(t *testing.T) {
 				tr.Status = pb.TestStatus_FAIL
 
 				_, err = sink.ReportTestResults(ctx, &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCOK)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.OK))
 				closeSinkServer(ctx, sink)
 				assert.Loosely(t, sentExoReq, should.BeNil)
 			})

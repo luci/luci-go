@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -35,10 +36,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -79,14 +78,14 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 		t.Run(`Invocation Bad Format`, func(t *ftt.Test) {
 			req.Invocation = "build:12345"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invocation"))
 		})
 
 		t.Run(`Invocation Unsupported Value`, func(t *ftt.Test) {
 			req.Invocation = "invocations/build!12345"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("invocation"))
 
 		})
@@ -95,7 +94,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("baseline"))
 		})
 
@@ -103,7 +102,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/-/baselines/try!linux-rel"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("baseline"))
 		})
 
@@ -111,7 +110,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:Linux Asan"
 			err := validateQueryNewTestVariantsRequest(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 
@@ -136,7 +135,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 
@@ -161,7 +160,7 @@ func TestValidateNewTestVariantsRequest(t *testing.T) {
 			req.Invocation = "invocations/build:12345"
 			req.Baseline = "projects/chromium/baselines/try:linux-rel"
 			err := validateQueryNewTestVariantsRequest(tctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike(noPermissionsError))
 		})
 	})

@@ -20,8 +20,10 @@ import (
 	"testing"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	durpb "google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -33,10 +35,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -80,7 +80,8 @@ func TestListTestResults(t *testing.T) {
 		t.Run(`Permission denied`, func(t *ftt.Test) {
 			req := &pb.ListTestResultsRequest{Invocation: "invocations/reqx"}
 			_, err := srv.ListTestResults(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testResults.list in realm of invocation reqx"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of invocation reqx"))
 		})
 
 		t.Run(`Works`, func(t *ftt.Test) {

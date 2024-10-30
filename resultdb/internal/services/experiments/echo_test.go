@@ -19,15 +19,15 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -57,7 +57,8 @@ func TestEcho(t *testing.T) {
 			}
 
 			rsp, err := server.Echo(ctx, request)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("not a member of googlers"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("not a member of googlers"))
 			assert.Loosely(t, rsp, should.BeNil)
 		})
 
@@ -72,21 +73,24 @@ func TestEcho(t *testing.T) {
 					request.Message = ""
 
 					rsp, err := server.Echo(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: unspecified"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("message: unspecified"))
 					assert.Loosely(t, rsp, should.BeNil)
 				})
 				t.Run("Non-printable", func(t *ftt.Test) {
 					request.Message = "\u0001"
 
 					rsp, err := server.Echo(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: does not match"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("message: does not match"))
 					assert.Loosely(t, rsp, should.BeNil)
 				})
 				t.Run("Too long", func(t *ftt.Test) {
 					request.Message = strings.Repeat("a", 1025)
 
 					rsp, err := server.Echo(ctx, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: exceeds 1024 bytes"))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike("message: exceeds 1024 bytes"))
 					assert.Loosely(t, rsp, should.BeNil)
 				})
 			})

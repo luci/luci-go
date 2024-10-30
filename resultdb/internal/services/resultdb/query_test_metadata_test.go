@@ -19,8 +19,10 @@ import (
 	"sort"
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
@@ -30,10 +32,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -73,7 +73,8 @@ func TestQueryTestMetadata(t *testing.T) {
 
 		t.Run(`Permission denied`, func(t *ftt.Test) {
 			res, err := srv.QueryTestMetadata(ctx, &pb.QueryTestMetadataRequest{Project: "x"})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testMetadata.list in any realm in project \"x\""))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testMetadata.list in any realm in project \"x\""))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -85,7 +86,8 @@ func TestQueryTestMetadata(t *testing.T) {
 						TestIds: []string{"test"},
 					},
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`project: does not match pattern "^[a-z0-9\\-]{1,40}$"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`project: does not match pattern "^[a-z0-9\\-]{1,40}$"`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -97,7 +99,8 @@ func TestQueryTestMetadata(t *testing.T) {
 					},
 					PageSize: -1,
 				})
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_size`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`page_size`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 		})

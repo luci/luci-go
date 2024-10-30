@@ -18,8 +18,10 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/exonerations"
@@ -29,10 +31,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -128,7 +128,8 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: test_exoneration: test_id: non-printable rune`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad request: test_exoneration: test_id: non-printable rune`))
 		})
 
 		t.Run(`No invocation`, func(t *ftt.Test) {
@@ -141,7 +142,8 @@ func TestCreateTestExoneration(t *testing.T) {
 				},
 			}
 			_, err := recorder.CreateTestExoneration(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/inv not found`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`invocations/inv not found`))
 		})
 
 		e2eTest := func(req *pb.CreateTestExonerationRequest, expectedVariantHash, expectedId string) {

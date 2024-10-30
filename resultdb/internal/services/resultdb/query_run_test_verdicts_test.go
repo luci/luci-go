@@ -17,10 +17,12 @@ package resultdb
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -29,10 +31,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -147,20 +147,23 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 				Invocation: "invocations/y",
 			})
 
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testResults.list in realm of invocation y"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testResults.list in realm of invocation y"))
 		})
 		t.Run(`Invalid argument`, func(t *ftt.Test) {
 			t.Run(`Empty request`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{})
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`unspecified`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`unspecified`))
 			})
 			t.Run(`Invalid invocation name`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 					Invocation: "x",
 				})
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`does not match pattern "^invocations/([a-z][a-z0-9_\\-:.]{0,99})$"`))
 			})
 			t.Run(`Invalid result limit`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
@@ -168,7 +171,8 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 					ResultLimit: -1,
 				})
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`result_limit: negative`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`result_limit: negative`))
 			})
 			t.Run(`Invalid page size`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
@@ -176,7 +180,8 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 					PageSize:   -1,
 				})
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_size: negative`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`page_size: negative`))
 			})
 			t.Run(`Invalid page token`, func(t *ftt.Test) {
 				_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
@@ -184,14 +189,15 @@ func TestQueryRunTestVerdicts(t *testing.T) {
 					PageToken:  "aaaa",
 				})
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`page_token`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`page_token`))
 			})
 		})
 		t.Run(`Invocation not found`, func(t *ftt.Test) {
 			_, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{
 				Invocation: "invocations/notexists",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 		})
 		t.Run(`Valid, no pagination`, func(t *ftt.Test) {
 			result, err := srv.QueryRunTestVerdicts(ctx, &pb.QueryRunTestVerdictsRequest{

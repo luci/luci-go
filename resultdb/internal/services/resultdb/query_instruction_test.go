@@ -17,8 +17,10 @@ package resultdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -28,10 +30,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -79,13 +79,13 @@ func TestQueryInstruction(t *testing.T) {
 				Name: "invocations/build-12345/instructions/test_instruction",
 			}
 			_, err := srv.QueryInstruction(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 		})
 
 		t.Run(`Invalid name`, func(t *ftt.Test) {
 			req := &pb.QueryInstructionRequest{Name: "Some invalid name"}
 			_, err := srv.QueryInstruction(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 		})
 
 		t.Run(`Query instruction`, func(t *ftt.Test) {
@@ -320,7 +320,7 @@ func TestQueryInstruction(t *testing.T) {
 					Name: "invocations/build-xxx/instructions/test_instruction",
 				}
 				_, err := srv.QueryInstruction(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 
 			t.Run("Instruction not found", func(t *ftt.Test) {
@@ -328,7 +328,7 @@ func TestQueryInstruction(t *testing.T) {
 					Name: "invocations/build-12345/instructions/not_found",
 				}
 				_, err := srv.QueryInstruction(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)())
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
 			})
 
 			t.Run("No dependency", func(t *ftt.Test) {

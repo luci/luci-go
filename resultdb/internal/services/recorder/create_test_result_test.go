@@ -20,11 +20,13 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -35,10 +37,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -204,7 +204,8 @@ func TestCreateTestResult(t *testing.T) {
 			t.Run("with an invalid request", func(t *ftt.Test) {
 				req.Invocation = "this is an invalid invocation name"
 				_, err := recorder.CreateTestResult(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("bad request: invocation: does not match"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("bad request: invocation: does not match"))
 			})
 
 			t.Run("with an non-existing invocation", func(t *ftt.Test) {
@@ -213,7 +214,8 @@ func TestCreateTestResult(t *testing.T) {
 				ctx = metadata.NewIncomingContext(ctx, metadata.Pairs(pb.UpdateTokenMetadataKey, tok))
 				req.Invocation = "invocations/inv"
 				_, err := recorder.CreateTestResult(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv not found"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
 			})
 		})
 	})

@@ -17,8 +17,10 @@ package recorder
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -30,10 +32,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -47,14 +47,16 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("unspecified"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("unspecified"))
 		})
 
 		t.Run(`Invalid Invocation`, func(t *ftt.Test) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "random/invocation",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("invocation: does not match"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("invocation: does not match"))
 		})
 
 		t.Run(`Invocation Does Not Exist`, func(t *ftt.Test) {
@@ -68,7 +70,8 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("Caller does not have permission to mark invocations/inv submitted"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("Caller does not have permission to mark invocations/inv submitted"))
 		})
 
 		t.Run(`Insufficient Permissions`, func(t *ftt.Test) {
@@ -80,7 +83,8 @@ func TestMarkInvocationSubmitted(t *testing.T) {
 			_, err := recorder.MarkInvocationSubmitted(ctx, &pb.MarkInvocationSubmittedRequest{
 				Invocation: "invocations/inv",
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("Caller does not have permission to mark invocations/inv submitted"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("Caller does not have permission to mark invocations/inv submitted"))
 		})
 
 		t.Run(`Unfinalized Invocation`, func(t *ftt.Test) {

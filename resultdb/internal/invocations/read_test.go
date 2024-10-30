@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/instructionutil"
@@ -32,10 +33,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -272,7 +271,8 @@ func TestReadRealms(t *testing.T) {
 			)
 
 			_, err := ReadRealms(span.Single(ctx), NewIDSet("inv0", "inv1"))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/inv1 not found"))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.NotFound))
+			assert.That(t, err, should.ErrLike("invocations/inv1 not found"))
 		})
 	})
 }
@@ -296,7 +296,11 @@ func TestReadSubmitted(t *testing.T) {
 				insertInvocation("inv0", map[string]any{"Submitted": true}),
 			)
 			_, err := ReadSubmitted(span.Single(ctx), ID("inv1"))
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/inv1 not found"))
+
+			as, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, as.Code(), should.Equal(codes.NotFound))
+			assert.That(t, as.Message(), should.ContainSubstring("invocations/inv1 not found"))
 		})
 
 		t.Run(`Nil`, func(t *ftt.Test) {

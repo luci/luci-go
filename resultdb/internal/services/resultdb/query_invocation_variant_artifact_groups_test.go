@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -32,10 +34,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -97,7 +97,8 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 		t.Run("no permission", func(t *ftt.Test) {
 			req.Project = "nopermissionproject"
 			res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\""))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.list in any realm in project \"nopermissionproject\""))
 			assert.Loosely(t, res, should.BeNil)
 		})
 
@@ -106,7 +107,8 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 			t.Run("googler", func(t *ftt.Test) {
 				req.StartTime = nil
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`start_time: unspecified`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`start_time: unspecified`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 
@@ -121,7 +123,8 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 				})
 
 				res, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`artifact_id_matcher: search by prefix is not allowed: insufficient permission to run this query with current filters`))
 				assert.Loosely(t, res, should.BeNil)
 			})
 		})
@@ -153,7 +156,8 @@ func TestQueryInvocationVariantArtifactGroups(t *testing.T) {
 				return nil, "", artifacts.BQQueryTimeOutErr
 			}
 			rsp, err := rdbSvr.QueryInvocationVariantArtifactGroups(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`query can't finish within the deadline`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`query can't finish within the deadline`))
 			assert.Loosely(t, rsp, should.BeNil)
 		})
 	})

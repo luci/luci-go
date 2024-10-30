@@ -17,8 +17,10 @@ package recorder
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
@@ -28,10 +30,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -110,7 +110,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 		t.Run(`Invalid request`, func(t *ftt.Test) {
 			_, err := recorder.UpdateIncludedInvocations(ctx, &pb.UpdateIncludedInvocationsRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: including_invocation: unspecified`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad request: including_invocation: unspecified`))
 		})
 
 		t.Run(`With valid request`, func(t *ftt.Test) {
@@ -128,7 +129,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					insert.Invocation("included2", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
 				)
 				_, err := recorder.UpdateIncludedInvocations(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/including not found`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`invocations/including not found`))
 			})
 
 			t.Run(`With existing inclusion`, func(t *ftt.Test) {
@@ -145,7 +147,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 
 				t.Run(`No included invocation`, func(t *ftt.Test) {
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/included`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+					assert.Loosely(t, err, should.ErrLike(`invocations/included`))
 				})
 
 				t.Run(`Leaking disallowed`, func(t *ftt.Test) {
@@ -155,7 +158,8 @@ func TestUpdateIncludedInvocations(t *testing.T) {
 					)
 
 					_, err := recorder.UpdateIncludedInvocations(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission resultdb.invocations.include in realm of invocation included2`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.invocations.include in realm of invocation included2`))
 					assertNotIncluded("included2")
 				})
 

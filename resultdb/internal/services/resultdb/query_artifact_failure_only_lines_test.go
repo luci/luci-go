@@ -17,18 +17,18 @@ package resultdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -94,7 +94,8 @@ func TestQueryArtifactFailureOnlyLines(t *testing.T) {
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv/artifacts/a"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.get"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.get"))
 		})
 
 		t.Run("given an invocation level artifact, then should return invalid argument error", func(t *ftt.Test) {
@@ -105,7 +106,8 @@ func TestQueryArtifactFailureOnlyLines(t *testing.T) {
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv/artifacts/b"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("only test artifacts are supported"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("only test artifacts are supported"))
 		})
 
 		t.Run("given a non-existent invocation, then should return not found error", func(t *ftt.Test) {
@@ -116,7 +118,8 @@ func TestQueryArtifactFailureOnlyLines(t *testing.T) {
 			)
 			req := &pb.QueryArtifactFailureOnlyLinesRequest{Parent: "invocations/inv2/artifacts/a"}
 			_, err := srv.QueryArtifactFailureOnlyLines(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv2 not found"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/inv2 not found"))
 		})
 	})
 }

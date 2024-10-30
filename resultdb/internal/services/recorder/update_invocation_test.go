@@ -29,6 +29,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -43,10 +45,8 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -490,17 +490,20 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 			t.Run(`no create access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied, `caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run(`no include access`, func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied, `caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run(`change of project`, func(t *ftt.Test) {
 				request.Invocation.Realm = "newproject:testrealm"
 				err := validateUpdateInvocationPermissions(ctx, existing, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, `cannot change invocation realm to outside project "testproject"`))
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`cannot change invocation realm to outside project "testproject"`))
 			})
 		})
 		t.Run(`baseline_id`, func(t *ftt.Test) {
@@ -551,7 +554,8 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 
 				t.Run(`with change`, func(t *ftt.Test) {
 					err := validateUpdateInvocationPermissions(ctx, existing, request)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
 				})
 				t.Run(`with no change`, func(t *ftt.Test) {
 					// If we are not updating anything, we should not need permission.
@@ -615,7 +619,8 @@ func TestUpdateInvocation(t *testing.T) {
 		t.Run(`invalid request`, func(t *ftt.Test) {
 			req := &pb.UpdateInvocationRequest{}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`bad request: invocation: name: unspecified`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`bad request: invocation: name: unspecified`))
 		})
 		t.Run(`no update token`, func(t *ftt.Test) {
 			req := &pb.UpdateInvocationRequest{
@@ -626,7 +631,8 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCUnauthenticated)(`missing update-token metadata value in the request`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unauthenticated))
+			assert.Loosely(t, err, should.ErrLike(`missing update-token metadata value in the request`))
 		})
 		t.Run(`invalid update token`, func(t *ftt.Test) {
 			token, err := generateInvocationToken(ctx, "inv2")
@@ -641,7 +647,8 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err = recorder.UpdateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`invalid update token`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`invalid update token`))
 		})
 
 		token, err := generateInvocationToken(ctx, "inv")
@@ -657,7 +664,8 @@ func TestUpdateInvocation(t *testing.T) {
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"properties"}},
 			}
 			_, err := recorder.UpdateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`invocations/inv not found`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike(`invocations/inv not found`))
 		})
 
 		doInsert := func() {
@@ -707,7 +715,8 @@ func TestUpdateInvocation(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permExportToBigQuery)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`updater does not have permission to set bigquery exports in realm "testproject:@root"`))
 			})
 			t.Run("with permission", func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
@@ -732,19 +741,22 @@ func TestUpdateInvocation(t *testing.T) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permCreateInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to create invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run("missing include invocation permission", func(t *ftt.Test) {
 				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permIncludeInvocation)
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to include invocations in realm "testproject:newrealm" (required to update invocation realm)`))
 			})
 			t.Run(`cannot change realm's project`, func(t *ftt.Test) {
 				req.Invocation.Realm = "newproject:testrealm"
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`cannot change invocation realm to outside project "testproject"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`cannot change invocation realm to outside project "testproject"`))
 			})
 			t.Run(`cannot change realm on an export root`, func(t *ftt.Test) {
 				// Make the invocation an export root.
@@ -754,7 +766,8 @@ func TestUpdateInvocation(t *testing.T) {
 				}))
 
 				_, err := recorder.UpdateInvocation(ctx, req)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`realm: cannot change realm of an invocation that is an export root`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`realm: cannot change realm of an invocation that is an export root`))
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
@@ -809,7 +822,8 @@ func TestUpdateInvocation(t *testing.T) {
 					req.Invocation.IsSourceSpecFinal = false
 
 					_, err := recorder.UpdateInvocation(ctx, req)
-					assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: is_source_spec_final: cannot unfinalize already finalized sources`))
+					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`invocation: is_source_spec_final: cannot unfinalize already finalized sources`))
 				})
 			})
 		})
@@ -928,7 +942,8 @@ func TestUpdateInvocation(t *testing.T) {
 					"extended_properties.mykey_5",
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: extended_properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: exceeds the maximum size of`))
 				assert.Loosely(t, inv, should.BeNil)
 			})
 		})

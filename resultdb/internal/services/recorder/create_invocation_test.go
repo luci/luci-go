@@ -33,8 +33,9 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/prpctest"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/span"
@@ -47,8 +48,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidateInvocationDeadline(t *testing.T) {
@@ -285,7 +284,8 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 					Realm: "invalid:",
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, `invocation: realm: bad global realm name`))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invocation: realm: bad global realm name`))
 		})
 	})
 
@@ -503,7 +503,8 @@ func TestCreateInvocation(t *testing.T) {
 
 		t.Run(`empty request`, func(t *ftt.Test) {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: unspecified`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invocation: unspecified`))
 		})
 		t.Run(`invalid realm`, func(t *ftt.Test) {
 			req := &pb.CreateInvocationRequest{
@@ -514,7 +515,8 @@ func TestCreateInvocation(t *testing.T) {
 				RequestId: "request id",
 			}
 			_, err := recorder.CreateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation: realm`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invocation: realm`))
 		})
 		t.Run(`missing invocation id`, func(t *ftt.Test) {
 			_, err := recorder.CreateInvocation(ctx, &pb.CreateInvocationRequest{
@@ -522,7 +524,8 @@ func TestCreateInvocation(t *testing.T) {
 					Realm: "testproject:testrealm",
 				},
 			})
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)(`invocation_id: unspecified`))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`invocation_id: unspecified`))
 		})
 
 		req := &pb.CreateInvocationRequest{
@@ -539,7 +542,7 @@ func TestCreateInvocation(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			_, err = recorder.CreateInvocation(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCAlreadyExists)())
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.AlreadyExists))
 		})
 
 		t.Run(`unsorted tags`, func(t *ftt.Test) {

@@ -19,6 +19,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/span"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
@@ -26,10 +27,8 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -83,7 +82,10 @@ func TestRead(t *testing.T) {
 
 		t.Run(`Does not exist`, func(t *ftt.Test) {
 			_, err := Read(ctx, "invocations/i/artifacts/a")
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound, "invocations/i/artifacts/a not found"))
+			as, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, as.Code(), should.Equal(codes.NotFound))
+			assert.That(t, as.Message(), should.ContainSubstring("invocations/i/artifacts/a not found"))
 		})
 
 		t.Run(`Exists`, func(t *ftt.Test) {

@@ -18,11 +18,10 @@ import (
 	"encoding/hex"
 	"testing"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -114,13 +113,21 @@ func TestQueryTestMetadata(t *testing.T) {
 				t.Run(`From bad position`, func(t *ftt.Test) {
 					q.PageToken = "CgVoZWxsbw=="
 					_, _, err := q.Fetch(ctx)
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
+
+					as, ok := appstatus.Get(err)
+					assert.That(t, ok, should.BeTrue)
+					assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+					assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 				})
 
 				t.Run(`From decoding`, func(t *ftt.Test) {
 					q.PageToken = "%%%"
 					_, _, err := q.Fetch(ctx)
-					assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
+
+					as, ok := appstatus.Get(err)
+					assert.That(t, ok, should.BeTrue)
+					assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+					assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 				})
 			})
 

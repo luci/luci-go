@@ -29,11 +29,10 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/mask"
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/pagination"
@@ -575,13 +574,19 @@ func TestQueryTestVariants(t *testing.T) {
 			t.Run(`wrong number of parts`, func(t *ftt.Test) {
 				q.PageToken = pagination.Token("testId", "variantHash")
 				_, err := q.Fetch(ctx)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
+				as, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+				assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 			})
 
 			t.Run(`first part not tvStatus`, func(t *ftt.Test) {
 				q.PageToken = pagination.Token("50", "testId", "variantHash")
 				_, err := q.Fetch(ctx)
-				assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.InvalidArgument, "invalid page_token"))
+				as, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.That(t, as.Code(), should.Equal(codes.InvalidArgument))
+				assert.That(t, as.Message(), should.ContainSubstring("invalid page_token"))
 			})
 		})
 

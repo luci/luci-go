@@ -19,11 +19,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
@@ -68,17 +67,17 @@ func TestVerifyInvocations(t *testing.T) {
 		t.Run("Access denied", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i0"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i0"))
 
 			ids = invocations.NewIDSet(invocations.ID("i1"), invocations.ID("i2"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListArtifacts, rdbperms.PermListTestExonerations)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list in realm of invocation i1"))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
 		t.Run("Duplicate invocations", func(t *ftt.Test) {
@@ -88,7 +87,7 @@ func TestVerifyInvocations(t *testing.T) {
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
 		t.Run("Duplicate realms", func(t *ftt.Test) {
@@ -98,18 +97,18 @@ func TestVerifyInvocations(t *testing.T) {
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID("i3"), invocations.ID("i3b"))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations, rdbperms.PermListTestResults, rdbperms.PermListArtifacts)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.PermissionDenied))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("resultdb.artifacts.list in realm of invocation i3"))
 		})
 		t.Run("Invocations do not exist", func(t *ftt.Test) {
 			ids := invocations.NewIDSet(invocations.ID("i2"), invocations.ID("iX"))
 			err := VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("invocations/iX not found"))
 
 			ids = invocations.NewIDSet(invocations.ID("i2"), invocations.ID(""))
 			err = VerifyInvocations(span.Single(ctx), ids, rdbperms.PermListTestExonerations)
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.NotFound))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("invocations/ not found"))
 		})
 		t.Run("No invocations", func(t *ftt.Test) {

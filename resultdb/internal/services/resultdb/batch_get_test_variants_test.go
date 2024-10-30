@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -29,10 +31,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -98,7 +98,8 @@ func TestBatchGetTestVariants(t *testing.T) {
 				},
 			})
 			_, err := srv.BatchGetTestVariants(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testResults.list"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testResults.list"))
 
 			// Verify missing ListTestExonerations permission results in an error.
 			ctx := auth.WithState(ctx, &authtest.FakeState{
@@ -108,7 +109,8 @@ func TestBatchGetTestVariants(t *testing.T) {
 				},
 			})
 			_, err = srv.BatchGetTestVariants(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("resultdb.testExonerations.list"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("resultdb.testExonerations.list"))
 		})
 		t.Run(`Valid request with included invocation`, func(t *ftt.Test) {
 			res, err := srv.BatchGetTestVariants(ctx, &pb.BatchGetTestVariantsRequest{
@@ -207,7 +209,8 @@ func TestBatchGetTestVariants(t *testing.T) {
 			}
 
 			_, err := srv.BatchGetTestVariants(ctx, &req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("a maximum of 500 test variants can be requested at once"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike("a maximum of 500 test variants can be requested at once"))
 		})
 
 		t.Run(`Request including missing variants omits said variants`, func(t *ftt.Test) {

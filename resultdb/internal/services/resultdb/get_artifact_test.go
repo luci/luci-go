@@ -22,9 +22,11 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -35,11 +37,9 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -91,7 +91,8 @@ func TestGetArtifact(t *testing.T) {
 			)
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.artifacts.get"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.artifacts.get"))
 		})
 
 		t.Run(`Exists`, func(t *ftt.Test) {
@@ -139,12 +140,14 @@ func TestGetArtifact(t *testing.T) {
 				insert.Invocation("inv", pb.Invocation_ACTIVE, map[string]any{"Realm": "testproject:testrealm"}))
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv/artifacts/a not found"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/inv/artifacts/a not found"))
 		})
 		t.Run(`Invocation does not exist`, func(t *ftt.Test) {
 			req := &pb.GetArtifactRequest{Name: "invocations/inv/artifacts/a"}
 			_, err := srv.GetArtifact(ctx, req)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv not found"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/inv not found"))
 		})
 	})
 }

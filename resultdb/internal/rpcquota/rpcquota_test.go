@@ -22,6 +22,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -30,10 +31,8 @@ import (
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -73,12 +72,12 @@ func TestUpdateUserQuota(t *testing.T) {
 		})
 		t.Run(`Insufficient quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.ResourceExhausted))
 		})
 		t.Run(`No matching policy`, func(t *ftt.Test) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{Identity: "user:bbb@example.com"})
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.ResourceExhausted))
 		})
 		t.Run(`Track only`, func(t *ftt.Test) {
 			ctx := context.WithValue(ctx, &quotaTrackOnlyKey, true)
@@ -106,7 +105,7 @@ func TestUpdateUserQuota(t *testing.T) {
 		})
 		t.Run(`Insufficient quota`, func(t *ftt.Test) {
 			err := UpdateUserQuota(ctx, "someresource/", 9999, "svc", "meth")
-			assert.Loosely(t, err, convey.Adapt(ShouldHaveAppStatus)(codes.ResourceExhausted))
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.ResourceExhausted))
 		})
 	})
 

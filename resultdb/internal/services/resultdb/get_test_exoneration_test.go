@@ -17,8 +17,10 @@ package resultdb
 import (
 	"testing"
 
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
@@ -28,10 +30,8 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	. "go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -83,7 +83,8 @@ func TestGetTestExoneration(t *testing.T) {
 
 			tr, err := srv.GetTestExoneration(ctx, req)
 			assert.Loosely(t, tr, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("invocations/inv_notexists not found"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+			assert.Loosely(t, err, should.ErrLike("invocations/inv_notexists not found"))
 		})
 		t.Run(`Permission denied`, func(t *ftt.Test) {
 			testutil.MustApply(ctx, t, spanutil.UpdateMap("Invocations", map[string]any{
@@ -93,7 +94,8 @@ func TestGetTestExoneration(t *testing.T) {
 
 			tr, err := srv.GetTestExoneration(ctx, req)
 			assert.Loosely(t, tr, should.BeNil)
-			assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("caller does not have permission resultdb.testExonerations.get in realm of invocation inv_0"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike("caller does not have permission resultdb.testExonerations.get in realm of invocation inv_0"))
 		})
 		t.Run("Valid", func(t *ftt.Test) {
 			tr, err := srv.GetTestExoneration(ctx, req)
