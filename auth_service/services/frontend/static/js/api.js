@@ -181,16 +181,16 @@ var api = (function () {
   exports.changeLogs = function (target, revision, pageSize, pageToken) {
     var q = {};
     if (target) {
-      q['target'] = target;
+      q.target = target;
     }
     if (revision) {
-      q['auth_db_rev'] = revision;
+      q.authDbRev = revision;
     }
     if (pageSize) {
-      q['page_size'] = pageSize;
+      q.pageSize = pageSize;
     }
     if (pageToken) {
-      q['page_token'] = pageToken;
+      q.pageToken = pageToken;
     }
 
     return call('auth.service.ChangeLogs', 'ListChangeLogs', q)
