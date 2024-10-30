@@ -19,21 +19,20 @@ import (
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/perms"
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTrees(t *testing.T) {
@@ -62,21 +61,24 @@ func TestTrees(t *testing.T) {
 			t.Run("Empty tree name", func(t *ftt.Test) {
 				request := &pb.GetTreeRequest{}
 				_, err := server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: must be specified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: must be specified"))
 			})
 			t.Run("Invalid tree name", func(t *ftt.Test) {
 				request := &pb.GetTreeRequest{
 					Name: "invalid",
 				}
 				_, err := server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: expected format"))
 			})
 			t.Run("Tree not found", func(t *ftt.Test) {
 				request := &pb.GetTreeRequest{
 					Name: "trees/random-tree",
 				}
 				_, err := server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)(`tree "random-tree" not found`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike(`tree "random-tree" not found`))
 			})
 			t.Run("Default ACLs anonymous", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().Anonymous().SetInContext(ctx)
@@ -84,7 +86,8 @@ func TestTrees(t *testing.T) {
 					Name: "trees/chromium",
 				}
 				_, err := server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("please log in for access"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("please log in for access"))
 			})
 			t.Run("Default ACLs no read access", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().SetInContext(ctx)
@@ -92,7 +95,8 @@ func TestTrees(t *testing.T) {
 					Name: "trees/chromium",
 				}
 				_, err := server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)(`user is not a member of group "luci-tree-status-access"`))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`user is not a member of group "luci-tree-status-access"`))
 			})
 			t.Run("Realm-based ACLs no access", func(t *ftt.Test) {
 				testConfig.Trees[0].UseDefaultAcls = false
@@ -103,7 +107,8 @@ func TestTrees(t *testing.T) {
 					Name: "trees/chromium",
 				}
 				_, err = server.GetTree(ctx, request)
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user does not have permission to perform this action"))
 			})
 			t.Run("Default ACLs get tree successfully", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)

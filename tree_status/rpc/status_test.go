@@ -22,13 +22,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
@@ -41,8 +42,6 @@ import (
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/internal/testutil"
 	pb "go.chromium.org/luci/tree_status/proto/v1"
-
-	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestStatus(t *testing.T) {
@@ -75,7 +74,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Default ACLs no read access rejected", func(t *ftt.Test) {
@@ -86,7 +86,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-access\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user is not a member of group \"luci-tree-status-access\""))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Realm-based ACLs no read access rejected", func(t *ftt.Test) {
@@ -100,7 +101,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.GetStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user does not have permission to perform this action"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 
@@ -343,7 +345,8 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.GetStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("name: expected format"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("name: expected format"))
 			})
 			t.Run("Read of non existing valid id", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().SetInContext(ctx)
@@ -353,7 +356,8 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.GetStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCNotFound)("status value was not found"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.Loosely(t, err, should.ErrLike("status value was not found"))
 			})
 		})
 
@@ -366,7 +370,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Default ACLs no access rejected", func(t *ftt.Test) {
@@ -377,7 +382,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-writers\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user is not a member of group \"luci-tree-status-writers\""))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Default ACLs no write access rejected", func(t *ftt.Test) {
@@ -388,7 +394,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-writers\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user is not a member of group \"luci-tree-status-writers\""))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Realm-based ACLs no write access rejected", func(t *ftt.Test) {
@@ -403,7 +410,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user does not have permission to perform this action"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Default ACLs successful create", func(t *ftt.Test) {
@@ -536,7 +544,8 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("expected format: ^trees/"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("expected format: ^trees/"))
 			})
 			t.Run("Name ignored", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
@@ -565,7 +574,8 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("general_state: must be specified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("general_state: must be specified"))
 			})
 			t.Run("Empty message", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
@@ -578,7 +588,8 @@ func TestStatus(t *testing.T) {
 				}
 				_, err := server.CreateStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCInvalidArgument)("message: must be specified"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("message: must be specified"))
 			})
 			t.Run("User ignored", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
@@ -624,7 +635,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.ListStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("log in"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("log in"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Default ACLs no read access rejected", func(t *ftt.Test) {
@@ -635,7 +647,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.ListStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user is not a member of group \"luci-tree-status-access\""))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user is not a member of group \"luci-tree-status-access\""))
 				assert.Loosely(t, status, should.BeNil)
 			})
 			t.Run("Realm-based ACLs no read access rejected", func(t *ftt.Test) {
@@ -650,7 +663,8 @@ func TestStatus(t *testing.T) {
 				}
 				status, err := server.ListStatus(ctx, request)
 
-				assert.Loosely(t, err, convey.Adapt(ShouldBeRPCPermissionDenied)("user does not have permission to perform this action"))
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("user does not have permission to perform this action"))
 				assert.Loosely(t, status, should.BeNil)
 			})
 
