@@ -96,16 +96,14 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			// Batch schedule requests. It allows partial success.
 			ret, merr := b.scheduleBuilds(ctx, globalCfg, schBatchReq)
 			defer func() { endSpan(span, err) }()
-			for i, e := range merr {
+			for i := range schBatchReq {
+				r, e := ret[i], merr[i]
 				if e != nil {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: toBatchResponseError(ctx, e),
 					}
 					logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
-				}
-			}
-			for i, r := range ret {
-				if r != nil {
+				} else {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: &pb.BatchResponse_Response_ScheduleBuild{
 							ScheduleBuild: r,
