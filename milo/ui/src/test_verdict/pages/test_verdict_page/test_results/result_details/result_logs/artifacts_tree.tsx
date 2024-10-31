@@ -12,12 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LogsTreeNode, ObjectNode, VirtualTree } from '@chopsui/log-viewer';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Box, Chip, LinearProgress } from '@mui/material';
 import { useMemo } from 'react';
 
+import {
+  LogsTreeNode,
+  ObjectNode,
+  VirtualTree,
+} from '@/common/components/log-viewer';
 import { getRawArtifactURLPath } from '@/common/tools/url_utils';
 import { Artifact } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/artifact.pb';
 

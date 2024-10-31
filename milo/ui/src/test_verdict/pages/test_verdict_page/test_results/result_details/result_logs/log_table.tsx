@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  LogsEntryTableCell,
-  LogsHeaderCell,
-  LogsTableEntry,
-  SortOrder,
-  VirtualizedTable,
-} from '@chopsui/log-viewer';
 import { LinearProgress, TableRow, Tooltip } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useEffect, useMemo, useRef } from 'react';
 import { TableVirtuosoHandle } from 'react-virtuoso';
 
+import {
+  LogsEntryTableCell,
+  LogsHeaderCell,
+  LogsTableEntry,
+  SortOrder,
+  VirtualizedTable,
+} from '@/common/components/log-viewer';
 import { Timestamp } from '@/common/components/timestamp';
 import { NUMERIC_TIME_FORMAT_WITH_MS } from '@/common/tools/time_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
