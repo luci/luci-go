@@ -106,7 +106,7 @@ func attemptInit(ctx context.Context, account string, attachScopes bool, scopes 
 	// Grab an email associated with the account. This must not be failing on
 	// a healthy VM if the account is present. If it does, the metadata server is
 	// broken.
-	email, err := metadataClient.Email(account)
+	email, err := metadataClient.EmailWithContext(ctx, account)
 	if err != nil {
 		// Note: we purposefully delay this check only after the first call to
 		// the metadata fails because metadata.OnGCE was observed to often report
