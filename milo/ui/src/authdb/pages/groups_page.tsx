@@ -66,7 +66,7 @@ export function GroupsPage() {
         >
           <Box className="groups-details-container">
             {groupName === 'new!' ? (
-              <GroupsFormNew />
+              <GroupsFormNew onCreate={refetchGroups}/>
             ) : (
               <>
                 <GroupsForm

@@ -28,6 +28,8 @@ import { useMutation } from '@tanstack/react-query';
 import { AuthGroup, CreateGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { addPrefixToItems, isGlob, nameRe, isMember, isSubgroup } from '@/authdb/common/helpers';
+import { useNavigate } from 'react-router-dom';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 const theme = createTheme({
   typography: {
@@ -55,7 +57,12 @@ const theme = createTheme({
   },
 });
 
-export function GroupsFormNew() {
+interface GroupsFormNewProps {
+  onCreate: () => void;
+}
+
+export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
+  const navigate = useNavigate();
   const [name, setName] = useState<string>('');
   const [nameErrorMessage, setNameErrorMessage] = useState<string>('');
   const [description, setDescription] = useState<string>('');
@@ -68,7 +75,6 @@ export function GroupsFormNew() {
   const [globsErrorMessage, setGlobsErrorMessage] = useState<string>('');
   const [subgroups, setSubgroups] = useState<string>('');
   const [subgroupsErrorMessage, setSubgroupsErrorMessage] = useState<string>('');
-  const [successCreatedGroup, setSuccessCreatedGroup] = useState<boolean>();
   const [errorMessage, setErrorMessage] = useState<string>();
 
   const client = useAuthServiceClient();
@@ -76,12 +82,13 @@ export function GroupsFormNew() {
     mutationFn: (request: CreateGroupRequest) => {
       return client.CreateGroup(request);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       setErrorMessage('');
-      setSuccessCreatedGroup(true);
+      onCreate();
+      console.log('navigate');
+      navigate(getURLPathFromAuthGroup(response.name), { replace: true });
     },
     onError: () => {
-      setSuccessCreatedGroup(false);
       setErrorMessage('Error creating group');
     },
     onSettled: () => {
@@ -89,63 +96,103 @@ export function GroupsFormNew() {
   })
 
   const createGroup = () => {
-    if (!nameRe.test(name)) {
-      setNameErrorMessage('Invalid group name.');
-    } else {
-      setNameErrorMessage('');
+    const validateFields = [validateName(), validateDescription(), validateOwners(), validateMembers(), validateGlobs(), validateSubgroups()]
+    if (validateFields.every(Boolean)) {
+      submitForm();
     }
+  }
+
+  const submitForm = () => {
+    let membersArray = members.split(/[\n ]+/).filter((item) => item !== "");
+    let globsArray = globs.split(/[\n ]+/).filter((item) => item !== "");
+    let subgroupsArray = subgroups.split(/[\n ]+/).filter((item) => item !== "");
+    const membersArr = membersArray ? addPrefixToItems('user', membersArray) : [];
+    const subgroupsArr = subgroupsArray || [];
+    const globsArr = globsArray ? addPrefixToItems('user', globsArray) : [];
+    const newGroup = AuthGroup.fromPartial({
+      "name": name,
+      "description": description,
+      "owners": owners,
+      "nested": subgroupsArr,
+      "members": membersArr,
+      "globs": globsArr,
+    });
+    createMutation.mutate({ 'group': newGroup });
+  }
+
+  const validateDescription = () => {
+    let noError = true;
     if (!description) {
       setDescriptionErrorMessage('Description is required.');
+      noError = false;
     } else {
       setDescriptionErrorMessage('');
     }
+    return noError;
+  }
+
+  const validateName = () => {
+    let noError = true;
+    if (!nameRe.test(name)) {
+      setNameErrorMessage('Invalid group name.');
+      noError = false;
+    } else {
+      setNameErrorMessage('');
+    }
+    return noError;
+  }
+
+  const validateOwners = () => {
+    let noError = true;
     if (owners !== '' && !nameRe.test(owners)) {
       setOwnersErrorMessage('Invalid owners name. Must be a group.');
+      noError = false;
     } else {
       setOwnersErrorMessage('');
     }
+    return noError;
+  }
+
+  const validateMembers = () => {
+    let noError = true;
     let membersArray = members.split(/[\n ]+/).filter((item) => item !== "");
     let invalidMembers = membersArray.filter((member) => !(isMember(member)));
     if (invalidMembers.length > 0) {
       let errorMessage = 'Invalid members: ' + invalidMembers.join(', ');
       setMembersErrorMessage(errorMessage);
+      noError = false;
     } else {
       setMembersErrorMessage('');
     }
+    return noError;
+  }
+
+  const validateGlobs = () => {
+    let noError = true;
     let globsArray = globs.split(/[\n ]+/).filter((item) => item !== "");
     let invalidGlobs = globsArray.filter((glob) => !isGlob(glob));
     if (invalidGlobs.length > 0) {
       let errorMessage = 'Invalid globs: ' + invalidGlobs.join(', ');
       setGlobsErrorMessage(errorMessage);
+      noError = false;
     } else {
       setGlobsErrorMessage('');
     }
+    return noError;
+  }
+
+  const validateSubgroups = () => {
+    let noError = true;
     let subgroupsArray = subgroups.split(/[\n ]+/).filter((item) => item !== "");
     let invalidSubgroups = subgroupsArray.filter((subgroup) => !isSubgroup(subgroup));
     if (invalidSubgroups.length > 0) {
       let errorMessage = 'Invalid subgroups: ' + invalidSubgroups.join(', ');
       setSubgroupsErrorMessage(errorMessage);
+      noError = false;
     } else {
       setSubgroupsErrorMessage('');
     }
-    if (!nameErrorMessage && !descriptionErrorMessage && !ownersErrorMessage && !membersErrorMessage && !globsErrorMessage && !subgroupsErrorMessage) {
-      submitForm(membersArray, globsArray, subgroupsArray);
-    }
-  }
-
-  const submitForm = (membersArray: string[], globsArray: string[], subgroupsArray: string[]) => {
-    const members = membersArray ? addPrefixToItems('user', membersArray) : [];
-    const subgroups = subgroupsArray || [];
-    const globs = globsArray ? addPrefixToItems('user', globsArray) : [];
-    const newGroup = AuthGroup.fromPartial({
-      "name": name,
-      "description": description,
-      "owners": owners,
-      "nested": subgroups,
-      "members": members,
-      "globs": globs,
-    });
-    createMutation.mutate({ 'group': newGroup });
+    return noError;
   }
 
   return (
@@ -163,7 +210,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField value={name} style={{ width: '100%' }} onChange={(e) => setName(e.target.value)} id='nameTextfield' data-testid='name-textfield' placeholder='required' error={nameErrorMessage !== ""} helperText={nameErrorMessage}></TextField>
+                    <TextField value={name} style={{ width: '100%' }} onChange={(e) => setName(e.target.value)} onBlur={validateName} id='nameTextfield' data-testid='name-textfield' placeholder='required' error={nameErrorMessage !== ""} helperText={nameErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -173,7 +220,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField value={description} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textfield' placeholder='required' error={descriptionErrorMessage !== ""} helperText={descriptionErrorMessage}></TextField>
+                    <TextField value={description} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setDescription(e.target.value)} onBlur={validateDescription} id='descriptionTextfield' data-testid='description-textfield' placeholder='required' error={descriptionErrorMessage !== ""} helperText={descriptionErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -183,7 +230,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField value={owners} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators' error={ownersErrorMessage !== ""} helperText={ownersErrorMessage}></TextField>
+                    <TextField value={owners} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setOwners(e.target.value)} onBlur={validateOwners} id='ownersTextfield' data-testid='owners-textfield' placeholder='administrators' error={ownersErrorMessage !== ""} helperText={ownersErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -193,7 +240,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of members, one per line' multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
+                    <TextField placeholder='List of members, one per line' multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} onBlur={validateMembers} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -203,7 +250,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of globs, one per line' multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
+                    <TextField placeholder='List of globs, one per line' multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} onBlur={validateGlobs} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -213,7 +260,7 @@ export function GroupsFormNew() {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of subgroups, one per line' multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
+                    <TextField placeholder='List of subgroups, one per line' multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} onBlur={validateSubgroups} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -225,9 +272,6 @@ export function GroupsFormNew() {
             </Button>
           </div>
           <div style={{ padding: '5px' }}>
-            {successCreatedGroup &&
-              <Alert severity="success">Group created</Alert>
-            }
             {errorMessage &&
               <Alert severity="error">{errorMessage}</Alert>
             }

@@ -17,14 +17,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
 import { GroupsFormNew } from './groups_form_new';
-import { mockResponseCreateGroup, createMockGroup, mockErrorCreateGroup } from '../testing_tools/mocks/create_group_mock';
+import { mockErrorCreateGroup } from '../testing_tools/mocks/create_group_mock';
 
 describe('<GroupsFormNew />', () => {
   test('if group name, description textarea is displayed', async () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -38,7 +38,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -74,7 +74,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -92,7 +92,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -108,7 +108,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -126,7 +126,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -143,7 +143,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -160,7 +160,7 @@ describe('<GroupsFormNew />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -173,34 +173,21 @@ describe('<GroupsFormNew />', () => {
     expect(screen.getByText('Invalid subgroups: Subgroup')).toBeInTheDocument();
   });
 
-  test('success shown on successfully created group', async () => {
-    const mockGroup = createMockGroup('new-group');
-    mockResponseCreateGroup(mockGroup);
-    render(
-        <FakeContextProvider>
-          <List>
-              <GroupsFormNew/>
-          </List>
-        </FakeContextProvider>,
-      );
-      await screen.findByTestId('groups-form-new');
-
-      const createButton = screen.getByTestId('create-button');
-      act(() => createButton.click());
-      await screen.findByRole('alert');
-      expect(screen.getByText('Group created'));
-  });
-
   test('error shown on error creating group', async () => {
     mockErrorCreateGroup();
     render(
         <FakeContextProvider>
           <List>
-              <GroupsFormNew/>
+            <GroupsFormNew onCreate={() => {}}/>
           </List>
         </FakeContextProvider>,
       );
       await screen.findByTestId('groups-form-new');
+
+      const textfield = screen.getByTestId('name-textfield').querySelector('input');
+      fireEvent.change(textfield!, {target: { value: 'valid-name'}});
+      const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+      fireEvent.change(descriptionTextfield!, {target: { value: 'valid description'}});
 
       const createButton = screen.getByTestId('create-button');
       act(() => createButton.click());
