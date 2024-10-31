@@ -21,7 +21,7 @@ import (
 )
 
 // Validate validates these configs.
-func (cfgs *Configs) Validate(c *validation.Context) {
+func (cfgs *Configs) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	prefixes := make([]string, 0, len(cfgs.GetVms()))
 	for i, cfg := range cfgs.GetVms() {
 		c.Enter("vms config %d", i)
@@ -40,7 +40,7 @@ func (cfgs *Configs) Validate(c *validation.Context) {
 			}
 		}
 		prefixes = append(prefixes, cfg.Prefix)
-		cfg.Validate(c)
+		cfg.Validate(c, metadataFromFileResolved)
 		c.Exit()
 	}
 }

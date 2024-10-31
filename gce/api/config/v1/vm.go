@@ -57,8 +57,7 @@ func (v *VM) SetZone(zone string) {
 }
 
 // Validate validates this VM description.
-// Metadata FromFile must already be converted to FromText.
-func (v *VM) Validate(c *validation.Context) {
+func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	if len(v.GetDisk()) == 0 {
 		c.Errorf("at least one disk is required")
 	}
@@ -72,10 +71,14 @@ func (v *VM) Validate(c *validation.Context) {
 	}
 	for i, meta := range v.GetMetadata() {
 		c.Enter("metadata %d", i)
-		// Implicitly rejects FromFile.
-		// FromFile must be converted to FromText before calling.
-		if !strings.Contains(meta.GetFromText(), ":") {
-			c.Errorf("metadata from text must be in key:value form")
+		if fromFile := meta.GetFromFile(); !metadataFromFileResolved && fromFile != "" {
+			if !strings.Contains(fromFile, ":") {
+				c.Errorf("metadata from file must be in key:value form")
+			}
+		} else {
+			if !strings.Contains(meta.GetFromText(), ":") {
+				c.Errorf("metadata from text must be in key:value form")
+			}
 		}
 		c.Exit()
 	}

@@ -19,11 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/config/validation"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/config/validation"
 )
 
 func TestConfig(t *testing.T) {
@@ -47,7 +46,7 @@ func TestConfig(t *testing.T) {
 		t.Run("invalid", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {
 				cfg := &Config{}
-				cfg.Validate(c)
+				cfg.Validate(c, true)
 				errs := c.Finalize().(*validation.Error).Errors
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("at least one disk is required"))
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("prefix is required"))
@@ -58,7 +57,7 @@ func TestConfig(t *testing.T) {
 				cfg := &Config{
 					CurrentAmount: 1,
 				}
-				cfg.Validate(c)
+				cfg.Validate(c, true)
 				errs := c.Finalize().(*validation.Error).Errors
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("current amount must not be specified"))
 			})
@@ -67,7 +66,7 @@ func TestConfig(t *testing.T) {
 				cfg := &Config{
 					Revision: "revision",
 				}
-				cfg.Validate(c)
+				cfg.Validate(c, true)
 				errs := c.Finalize().(*validation.Error).Errors
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("revision must not be specified"))
 			})
@@ -95,7 +94,7 @@ func TestConfig(t *testing.T) {
 				},
 				Prefix: "prefix",
 			}
-			cfg.Validate(c)
+			cfg.Validate(c, true)
 			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 	})

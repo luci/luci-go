@@ -547,6 +547,12 @@ func TestValidateVMsConfig(t *testing.T) {
 						disk {
 							image: "global/images/chrome-trusty-v1"
 						}
+						metadata {
+							from_file: "cipd_deployments:metadata/file.json"
+						}
+						metadata {
+							from_text: "enable-oslogin:TRUE"
+						}
 						machine_type: "zones/{{.Zone}}/machineTypes/n1-standard-2"
 						project: "google.com:chromecompute"
 						zone: "us-central1-b"

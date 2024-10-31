@@ -54,12 +54,12 @@ func (cfg *Config) ComputeAmount(proposed int32, now time.Time) (int32, error) {
 }
 
 // Validate validates this config.
-func (cfg *Config) Validate(c *validation.Context) {
+func (cfg *Config) Validate(c *validation.Context, metadataFromFileResolved bool) {
 	c.Enter("amount")
 	cfg.GetAmount().Validate(c)
 	c.Exit()
 	c.Enter("attributes")
-	cfg.GetAttributes().Validate(c)
+	cfg.GetAttributes().Validate(c, metadataFromFileResolved)
 	c.Exit()
 	if cfg.GetCurrentAmount() != 0 {
 		c.Errorf("current amount must not be specified")

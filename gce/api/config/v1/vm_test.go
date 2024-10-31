@@ -18,11 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/config/validation"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/config/validation"
 )
 
 func TestVM(t *testing.T) {
@@ -103,7 +102,7 @@ func TestVM(t *testing.T) {
 			t.Run("invalid", func(t *ftt.Test) {
 				t.Run("empty", func(t *ftt.Test) {
 					vm := &VM{}
-					vm.Validate(c)
+					vm.Validate(c, true)
 					err := c.Finalize().(*validation.Error).Errors
 					assert.Loosely(t, err, should.UnwrapToErrStringLike("at least one disk is required"))
 					assert.Loosely(t, err, should.UnwrapToErrStringLike("machine type is required"))
@@ -119,7 +118,7 @@ func TestVM(t *testing.T) {
 								{},
 							},
 						}
-						vm.Validate(c)
+						vm.Validate(c, true)
 						err := c.Finalize().(*validation.Error).Errors
 						assert.Loosely(t, err, should.UnwrapToErrStringLike("metadata from text must be in key:value form"))
 					})
@@ -134,7 +133,7 @@ func TestVM(t *testing.T) {
 								},
 							},
 						}
-						vm.Validate(c)
+						vm.Validate(c, true)
 						err := c.Finalize().(*validation.Error).Errors
 						assert.Loosely(t, err, should.UnwrapToErrStringLike("metadata from text must be in key:value form"))
 					})
@@ -163,7 +162,7 @@ func TestVM(t *testing.T) {
 					Project: "project",
 					Zone:    "zone",
 				}
-				vm.Validate(c)
+				vm.Validate(c, true)
 				assert.Loosely(t, c.Finalize(), should.BeNil)
 			})
 		})

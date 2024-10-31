@@ -91,7 +91,7 @@ func validateVMsCfg(ctx *validation.Context, configSet, path string, content []b
 		return nil
 	}
 
-	cfg.Validate(ctx)
+	cfg.Validate(ctx, false)
 	return nil
 }
 
@@ -167,7 +167,7 @@ func validate(c context.Context, cfg *Config) error {
 	v.SetFile(projectsFile)
 	cfg.Projects.Validate(v)
 	v.SetFile(vmsFile)
-	cfg.VMs.Validate(v)
+	cfg.VMs.Validate(v, true)
 	return v.Finalize()
 }
 

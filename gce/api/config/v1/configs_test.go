@@ -18,11 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/config/validation"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/config/validation"
 )
 
 func TestValidateConfigs(t *testing.T) {
@@ -33,7 +32,7 @@ func TestValidateConfigs(t *testing.T) {
 
 		t.Run("empty", func(t *ftt.Test) {
 			cfgs := &Configs{}
-			cfgs.Validate(c)
+			cfgs.Validate(c, true)
 			assert.Loosely(t, c.Finalize(), should.BeNil)
 		})
 
@@ -44,7 +43,7 @@ func TestValidateConfigs(t *testing.T) {
 						{},
 					},
 				}
-				cfgs.Validate(c)
+				cfgs.Validate(c, true)
 				errs := c.Finalize().(*validation.Error).Errors
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("prefix is required"))
 			})
@@ -63,7 +62,7 @@ func TestValidateConfigs(t *testing.T) {
 						},
 					},
 				}
-				cfgs.Validate(c)
+				cfgs.Validate(c, true)
 				errs := c.Finalize().(*validation.Error).Errors
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("is a prefix of"))
 			})
