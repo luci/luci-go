@@ -28,12 +28,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
@@ -326,6 +326,41 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 	r.OPTIONS("/prpc/:service/:method", base, s.handleOPTIONS)
 }
 
+// requestCodec decides what codec to use to deserialize requests, per format.
+//
+// TODO(b/376137855): Add a way to request V2 or use it by default.
+func (s *Server) requestCodec(f Format) protoCodec {
+	switch f {
+	case FormatBinary:
+		return codecWireV1
+	case FormatJSONPB:
+		if s.HackFixFieldMasksForJSON {
+			return codecJSONV1WithHack
+		}
+		return codecJSONV1
+	case FormatText:
+		return codecTextV1
+	default:
+		panic(fmt.Sprintf("impossible invalid format %v", f))
+	}
+}
+
+// responseCodec decides what codec to use to serialize responses, per format.
+//
+// TODO(b/376137855): Add a way to request V2 or use it by default.
+func (s *Server) responseCodec(f Format) protoCodec {
+	switch f {
+	case FormatBinary:
+		return codecWireV1
+	case FormatJSONPB:
+		return codecJSONV1
+	case FormatText:
+		return codecTextV1
+	default:
+		panic(fmt.Sprintf("impossible invalid format %v", f))
+	}
+}
+
 // maxRequestSize is a limit on the request size pre and post decompression.
 //
 // Use int64 (not int) in case the server is 32-bit. We need to be able to
@@ -387,7 +422,7 @@ func (s *Server) handlePOST(c *router.Context) {
 				c.Request.Header,
 				msg,
 				s.maxRequestSize(),
-				s.HackFixFieldMasksForJSON,
+				s.requestCodec,
 			)
 		}
 
@@ -409,7 +444,7 @@ func (s *Server) handlePOST(c *router.Context) {
 				c.Request.Context(),
 				c.Writer,
 				requestReadErr(err, "the override check"),
-				FormatText,
+				s.responseCodec(FormatText),
 			)
 			return
 		case stop:
@@ -442,7 +477,7 @@ func (s *Server) handlePOST(c *router.Context) {
 		case CompressAlways:
 			res.acceptsGZip = true
 		case CompressNotJSON:
-			res.acceptsGZip = res.fmt != FormatJSONPB
+			res.acceptsGZip = res.codec.Format() != FormatJSONPB
 		default:
 			res.acceptsGZip = false
 		}
@@ -513,7 +548,7 @@ func SetHeader(ctx context.Context, md metadata.MD) error {
 
 type response struct {
 	out             proto.Message
-	fmt             Format
+	codec           protoCodec
 	acceptsGZip     bool
 	maxResponseSize int64 // 0 => no limit
 	err             error
@@ -540,12 +575,12 @@ func (s *Server) lookup(serviceName, methodName string) (override Override, serv
 // `rw` is used to pass it to http.MaxBytesReader(...) and to write headers to
 // via SetHeader(...).
 func (s *Server) parseAndCall(req *http.Request, rw http.ResponseWriter, service *service, method grpc.MethodDesc, r *response) {
-	var perr *protocolError
-	r.fmt, perr = responseFormat(req.Header.Get(headerAccept))
+	respFmt, perr := responseFormat(req.Header.Get(headerAccept))
 	if perr != nil {
 		r.err = perr
 		return
 	}
+	r.codec = s.responseCodec(respFmt)
 
 	var err error
 	if r.acceptsGZip, err = acceptsGZipResponse(req.Header); err != nil {
@@ -590,7 +625,7 @@ func (s *Server) parseAndCall(req *http.Request, rw http.ResponseWriter, service
 			req.Header,
 			in.(proto.Message),
 			s.maxRequestSize(),
-			s.HackFixFieldMasksForJSON,
+			s.requestCodec,
 		)
 	}, s.UnaryServerInterceptor)
 

@@ -139,3 +139,13 @@ func (f Format) MediaType() string {
 		return mtPRPCBinary
 	}
 }
+
+// IsKnown returns true if this value is one of the recognized values.
+func (f Format) IsKnown() bool {
+	switch f {
+	case FormatBinary, FormatJSONPB, FormatText:
+		return true
+	default:
+		return false
+	}
+}

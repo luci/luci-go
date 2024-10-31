@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	protov1 "github.com/golang/protobuf/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 
@@ -112,7 +111,7 @@ func simpleRule(m *migration, svc, method string) {
 	}
 
 	m.srv.RegisterOverride(svc, method,
-		func(rw http.ResponseWriter, req *http.Request, _ func(protov1.Message) error) (bool, error) {
+		func(rw http.ResponseWriter, req *http.Request, _ func(proto.Message) error) (bool, error) {
 			return m.prx.DefaultOverride(route, rw, req), nil
 		},
 	)
@@ -133,7 +132,7 @@ func cursorCheckingRule[T any, TP interface {
 	}
 
 	m.srv.RegisterOverride(svc, method,
-		func(rw http.ResponseWriter, req *http.Request, body func(msg protov1.Message) error) (bool, error) {
+		func(rw http.ResponseWriter, req *http.Request, body func(msg proto.Message) error) (bool, error) {
 			ctx := req.Context()
 
 			// Decide based on request headers before doing anything else.
@@ -146,7 +145,7 @@ func cursorCheckingRule[T any, TP interface {
 			}
 
 			var msg T
-			if err := body(protov1.MessageV1(&msg)); err != nil {
+			if err := body(TP(&msg)); err != nil {
 				// The body is weird. Route it using the default random rule and let
 				// the real pRPC server handle the error, if any.
 				logging.Warningf(ctx, "Failed to decode RPC body: %s", err)

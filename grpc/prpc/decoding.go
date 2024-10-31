@@ -15,22 +15,17 @@
 package prpc
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"math"
 	"net/http"
-	"reflect"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
-	luciproto "go.chromium.org/luci/common/proto"
 
 	"go.chromium.org/luci/grpc/grpcutil"
 )
@@ -44,15 +39,15 @@ var decompressionLimitErr = errors.Reason("the decompressed request size exceeds
 
 // readMessage decodes a protobuf message from an HTTP request.
 //
-// Uses given headers to decide how to uncompress and deserialize the message.
-// When decompressing, makes sure to decompress no more than
-// `maxDecompressedBytes`. Assumes `body` is already a limited reader or
-// it doesn't exceed a limit (see Server.maxBytesReader).
+// Uses given headers (together with `codec` callback) to decide how to
+// uncompress and deserialize the message. When decompressing, makes sure to
+// decompress no more than `maxDecompressedBytes`. Assumes `body` is already a
+// limited reader or it doesn't exceed a limit (see Server.maxBytesReader).
 //
-// fixFieldMasksForJSON indicates whether to attempt a workaround for
-// https://github.com/golang/protobuf/issues/745 for requests with FormatJSONPB.
-// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecompressedBytes int64, fixFieldMasksForJSON bool) error {
+// `codec` defines what codec exactly to use to deserialize messages in
+// particular format. This callback is implemented by the server based on its
+// configuration.
+func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecompressedBytes int64, codec func(Format) protoCodec) error {
 	format, err := FormatFromContentType(header.Get(headerContentType))
 	if err != nil {
 		// Spec: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16
@@ -100,30 +95,7 @@ func readMessage(body io.Reader, header http.Header, msg proto.Message, maxDecom
 		}
 	}
 
-	switch format {
-	// Do not redefine "err" below.
-
-	case FormatJSONPB:
-		if fixFieldMasksForJSON {
-			t := reflect.TypeOf(msg)
-			if t.Kind() == reflect.Ptr {
-				t = t.Elem()
-			}
-			buf, err = luciproto.FixFieldMasksBeforeUnmarshal(buf, t)
-		}
-		if err == nil {
-			err = jsonpb.Unmarshal(bytes.NewBuffer(buf), msg)
-		}
-
-	case FormatText:
-		err = proto.UnmarshalText(string(buf), msg)
-
-	case FormatBinary:
-		err = proto.Unmarshal(buf, msg)
-
-	default:
-		panic(fmt.Errorf("impossible: invalid format %v", format))
-	}
+	err = codec(format).Decode(buf, msg)
 	if err != nil {
 		return protocolErr(
 			codes.InvalidArgument,

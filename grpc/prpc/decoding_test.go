@@ -22,10 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/gzip"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -38,6 +38,19 @@ import (
 
 func TestDecoding(t *testing.T) {
 	t.Parallel()
+
+	codecPicker := func(f Format) protoCodec {
+		switch f {
+		case FormatBinary:
+			return codecWireV1
+		case FormatJSONPB:
+			return codecJSONV1WithHack
+		case FormatText:
+			return codecTextV1
+		default:
+			panic("impossible")
+		}
+	}
 
 	ftt.Run("readMessage", t, func(t *ftt.Test) {
 		const maxDecompressedSize = 100
@@ -52,7 +65,7 @@ func TestDecoding(t *testing.T) {
 				},
 				&msg,
 				maxDecompressedSize,
-				true,
+				codecPicker,
 			)
 			if err != nil {
 				return err.(*protocolError)
@@ -66,7 +79,7 @@ func TestDecoding(t *testing.T) {
 			assert.That(t, err, should.Equal[*protocolError](nil), truth.LineContext())
 			assert.Loosely(t, &msg, should.Resemble(&testpb.HelloRequest{
 				Name: "Lucy",
-				Fields: &field_mask.FieldMask{
+				Fields: &fieldmaskpb.FieldMask{
 					Paths: []string{
 						"name",
 					},
@@ -77,7 +90,7 @@ func TestDecoding(t *testing.T) {
 		t.Run("binary", func(t *ftt.Test) {
 			testMsg := &testpb.HelloRequest{
 				Name: "Lucy",
-				Fields: &field_mask.FieldMask{
+				Fields: &fieldmaskpb.FieldMask{
 					Paths: []string{
 						"name",
 					},

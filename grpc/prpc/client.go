@@ -29,14 +29,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/sync/semaphore"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/common/clock"
@@ -174,16 +173,16 @@ func (c *Client) Invoke(ctx context.Context, method string, args any, reply any,
 	serviceName, methodName := parts[1], parts[2]
 
 	// Inputs and outputs must be proto messages.
-	in, ok := args.(proto.Message)
+	req, ok := args.(proto.Message)
 	if !ok {
 		return status.Errorf(codes.Internal, "prpc: bad argument type %T, not a proto", args)
 	}
-	out, ok := reply.(proto.Message)
+	resp, ok := reply.(proto.Message)
 	if !ok {
 		return status.Errorf(codes.Internal, "prpc: bad reply type %T, not a proto", reply)
 	}
 
-	return c.Call(ctx, serviceName, methodName, in, out, opts...)
+	return c.Call(ctx, serviceName, methodName, req, resp, opts...)
 }
 
 // NewStream begins a streaming RPC.
@@ -212,6 +211,38 @@ func (c *Client) prepareOptions(opts []grpc.CallOption, serviceName, methodName 
 	return options
 }
 
+// requestCodec decides what codec to use to serialize requests, per format.
+//
+// TODO(b/376137855): Add a way to request V2 or use it by default.
+func (c *Client) requestCodec(f Format) protoCodec {
+	switch f {
+	case FormatBinary:
+		return codecWireV1
+	case FormatJSONPB:
+		return codecJSONV1
+	case FormatText:
+		return codecTextV1
+	default:
+		panic(fmt.Sprintf("impossible invalid format %v", f))
+	}
+}
+
+// responseCodec decides what codec to use to deserialize responses, per format.
+//
+// TODO(b/376137855): Add a way to request V2 or use it by default.
+func (c *Client) responseCodec(f Format) protoCodec {
+	switch f {
+	case FormatBinary:
+		return codecWireV1
+	case FormatJSONPB:
+		return codecJSONV1
+	case FormatText:
+		return codecTextV1
+	default:
+		panic(fmt.Sprintf("impossible invalid format %v", f))
+	}
+}
+
 // Call performs a remote procedure call.
 //
 // Used by the generated code. Calling from multiple goroutines concurrently
@@ -232,56 +263,68 @@ func (c *Client) prepareOptions(opts []grpc.CallOption, serviceName, methodName 
 // Returns gRPC errors, perhaps with extra structured details if the server
 // provided them. Context errors are converted into gRPC errors as well.
 // See google.golang.org/grpc/status package.
-func (c *Client) Call(ctx context.Context, serviceName, methodName string, in, out proto.Message, opts ...grpc.CallOption) error {
+func (c *Client) Call(ctx context.Context, serviceName, methodName string, req, resp proto.Message, opts ...grpc.CallOption) error {
 	options := c.prepareOptions(opts, serviceName, methodName)
 
 	// Due to https://github.com/golang/protobuf/issues/745 bug
 	// in jsonpb handling of FieldMask, which are typically present in the
 	// request, not the response, do request via binary format.
-	options.inFormat = FormatBinary
-	reqBody, err := proto.Marshal(in)
+	//
+	// TODO(b/376137855): Stop using that or switch to v2 codec. Before this hack
+	// was added the format was picked based on Options.
+	options.reqCodec = c.requestCodec(FormatBinary)
+	reqBody, err := options.reqCodec.Encode(nil, req)
 	if err != nil {
 		return status.Errorf(codes.Internal, "prpc: failed to marshal the request: %s", err)
 	}
 
 	switch options.AcceptContentSubtype {
 	case "", mtPRPCEncodingBinary:
-		options.outFormat = FormatBinary
+		options.respCodec = c.responseCodec(FormatBinary)
 	case mtPRPCEncodingJSONPB:
-		options.outFormat = FormatJSONPB
+		options.respCodec = c.responseCodec(FormatJSONPB)
 	case mtPRPCEncodingText:
 		return status.Errorf(codes.Internal, "prpc: text encoding for pRPC calls is not implemented")
 	default:
 		return status.Errorf(codes.Internal, "prpc: unrecognized contentSubtype %q of CallAcceptContentSubtype", options.AcceptContentSubtype)
 	}
 
-	resp, err := c.call(ctx, options, reqBody)
+	respBody, err := c.call(ctx, options, reqBody)
 	if err != nil {
 		return err
 	}
-	return unmarshalMessage(resp, out, options.outFormat, "the response")
+	if err := options.respCodec.Decode(respBody, resp); err != nil {
+		return status.Errorf(codes.Internal, "prpc: failed to unmarshal the response: %s", err)
+	}
+	return nil
 }
 
 // CallWithFormats is like Call, but sends and returns raw data without
 // marshaling it.
 //
 // Trims JSONPBPrefix from the response if necessary.
-func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, in []byte, inf, outf Format, opts ...grpc.CallOption) ([]byte, error) {
+func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, req []byte, reqFormat, respFormat Format, opts ...grpc.CallOption) ([]byte, error) {
 	options := c.prepareOptions(opts, serviceName, methodName)
 	if options.AcceptContentSubtype != "" {
 		return nil, status.Errorf(codes.Internal,
 			"prpc: CallAcceptContentSubtype option is not allowed with CallWithFormats "+
 				"because input/output formats are already specified")
 	}
-	options.inFormat = inf
-	options.outFormat = outf
-	return c.call(ctx, options, in)
+	if !reqFormat.IsKnown() {
+		return nil, status.Errorf(codes.Internal, "prpc: unrecognized request format %v", reqFormat)
+	}
+	if !respFormat.IsKnown() {
+		return nil, status.Errorf(codes.Internal, "prpc: unrecognized response format %v", respFormat)
+	}
+	options.reqCodec = c.requestCodec(reqFormat)
+	options.respCodec = c.responseCodec(respFormat)
+	return c.call(ctx, options, req)
 }
 
 // call implements Call and CallWithFormats.
-func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte, error) {
+func (c *Client) call(ctx context.Context, options *Options, req []byte) ([]byte, error) {
 	md, _ := metadata.FromOutgoingContext(ctx)
-	req, err := c.prepareRequest(options, md, in)
+	httpReq, err := c.prepareRequest(options, md, req)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +342,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 	// signal from the loop body.
 	err = retry.Retry(ctx, transient.Only(options.Retry), func() (err error) {
 		// Note: `buf` is reset inside, it is safe to reuse it across attempts.
-		contentType, err = c.attemptCall(ctx, options, req, buf)
+		contentType, err = c.attemptCall(ctx, options, httpReq, buf)
 		if err == nil {
 			return
 		}
@@ -325,9 +368,9 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 		switch f, formatErr := FormatFromContentType(contentType); {
 		case formatErr != nil:
 			err = status.Errorf(codes.Internal, "prpc: bad response content type %q: %s", contentType, formatErr)
-		case f != options.outFormat:
+		case f != options.respCodec.Format():
 			err = status.Errorf(codes.Internal, "prpc: output format (%q) doesn't match expected format (%q)",
-				f.MediaType(), options.outFormat.MediaType())
+				f.MediaType(), options.respCodec.Format().MediaType())
 		}
 	}
 
@@ -365,9 +408,9 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 				logging.Warningf(ctx, "RPC failed permanently: %s", err)
 				if options.Debug {
 					if code == codes.InvalidArgument && strings.Contains(err.Error(), "could not decode body") {
-						logging.Warningf(ctx, "Original request size: %d", len(in))
-						logging.Warningf(ctx, "Content-type: %s", options.inFormat.MediaType())
-						b64 := base64.StdEncoding.EncodeToString(in)
+						logging.Warningf(ctx, "Original request size: %d", len(req))
+						logging.Warningf(ctx, "Content-type: %s", options.reqCodec.Format().MediaType())
+						b64 := base64.StdEncoding.EncodeToString(req)
 						logging.Warningf(ctx, "Original request in base64 encoding: %s", b64)
 					}
 				}
@@ -380,7 +423,7 @@ func (c *Client) call(ctx context.Context, options *Options, in []byte) ([]byte,
 	}
 
 	out := buf.Bytes()
-	if options.outFormat == FormatJSONPB {
+	if options.respCodec.Format() == FormatJSONPB {
 		out = bytes.TrimPrefix(out, bytesJSONPBPrefix)
 	}
 	return out, nil
@@ -507,8 +550,8 @@ func (c *Client) attemptCall(ctx context.Context, options *Options, req *http.Re
 	// that errors always have "text/plain" response Content-Type, so we can't
 	// rely on this header to know how to deserialize status details. Instead
 	// expect details to be encoded based on the "Accept" header in the request
-	// (which is the same as outFormat).
-	err = c.readStatus(res, buf, options.outFormat)
+	// (which matches the format of outCodec).
+	err = c.readStatus(res, buf, options.respCodec)
 
 	return res.Header.Get("Content-Type"), err
 }
@@ -580,7 +623,7 @@ func codeForErr(err error) codes.Code {
 // readStatus retrieves the detailed status from the response.
 //
 // Puts it into a status.New(...).Err() error.
-func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer, respFmt Format) error {
+func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer, respCodec protoCodec) error {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
 		if r.StatusCode >= 500 {
@@ -615,7 +658,7 @@ func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer, respFmt For
 		Message: strings.TrimSuffix(c.readErrorMessage(bodyBuf), "\n"),
 	}
 	if details := r.Header[HeaderStatusDetail]; len(details) != 0 {
-		if sp.Details, err = parseStatusDetails(details, respFmt); err != nil {
+		if sp.Details, err = parseStatusDetails(details, respCodec); err != nil {
 			return err
 		}
 	}
@@ -644,7 +687,7 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 // parseStatusDetails parses headers with google.rpc.Status.details.
 //
 // Returns gRPC errors.
-func parseStatusDetails(values []string, respFmt Format) ([]*anypb.Any, error) {
+func parseStatusDetails(values []string, respCodec protoCodec) ([]*anypb.Any, error) {
 	ret := make([]*anypb.Any, len(values))
 	var buf []byte
 	for i, v := range values {
@@ -659,38 +702,13 @@ func parseStatusDetails(values []string, respFmt Format) ([]*anypb.Any, error) {
 		}
 
 		msg := &anypb.Any{}
-		if err := unmarshalMessage(buf[:n], msg, respFmt, "the status details header"); err != nil {
-			return nil, err
+		if err := respCodec.Decode(buf[:n], msg); err != nil {
+			return nil, status.Errorf(codes.Internal, "prpc: failed to unmarshal the status details header: %s", err)
 		}
 		ret[i] = msg
 	}
 
 	return ret, nil
-}
-
-// unmarshalMessage unmarshals the message encoded in the given format.
-//
-// Returns gRPC errors.
-func unmarshalMessage(blob []byte, out proto.Message, format Format, what string) error {
-	var err error
-	switch format {
-	case FormatBinary:
-		err = proto.Unmarshal(blob, out)
-	case FormatJSONPB:
-		// We AllowUnknownFields because otherwise all prpc clients become tightly
-		// coupled to the server implementation and will break with codes.Internal
-		// when the server adds a new field to the response.
-		//
-		// We presume here that decoding a partial response will be easier to
-		// recover from in a deployment scenario than breaking all callers.
-		err = (&jsonpb.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewReader(blob), out)
-	default:
-		err = errors.Reason("unsupported response format: %s", format).Err()
-	}
-	if err != nil {
-		return status.Errorf(codes.Internal, "prpc: failed to unmarshal %s: %s", what, err)
-	}
-	return nil
 }
 
 // prepareRequest creates an HTTP request for an RPC.
@@ -710,8 +728,8 @@ func (c *Client) prepareRequest(options *Options, md metadata.MD, requestMessage
 	headers.Del("Host")
 
 	// Add protocol-related headers.
-	headers.Set("Content-Type", options.inFormat.MediaType())
-	headers.Set("Accept", options.outFormat.MediaType())
+	headers.Set("Content-Type", options.reqCodec.Format().MediaType())
+	headers.Set("Accept", options.respCodec.Format().MediaType())
 	headers.Set("User-Agent", options.UserAgent)
 
 	// This tells the server to give up sending very large responses. If the limit

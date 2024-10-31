@@ -27,13 +27,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -81,7 +80,7 @@ func sayHello(t testing.TB) http.HandlerFunc {
 
 		if req.Name == "ACCEPT JSONPB" {
 			assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/json"))
-			sbuf, err := (&jsonpb.Marshaler{}).MarshalToString(&res)
+			sbuf, err := codecJSONV1.Encode(nil, &res)
 			assert.Loosely(t, err, should.BeNil)
 			buf = []byte(sbuf)
 		} else {

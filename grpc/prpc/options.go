@@ -72,11 +72,11 @@ type Options struct {
 
 	// These are used internally.
 
-	host        string // a hostname of a service being called
-	serviceName string // a service being called
-	methodName  string // a method being called
-	inFormat    Format // encoding of the request
-	outFormat   Format // encoding of the response
+	host        string     // a hostname of a service being called
+	serviceName string     // a service being called
+	methodName  string     // a method being called
+	reqCodec    protoCodec // how to serialize the request
+	respCodec   protoCodec // how to deserialize the response
 }
 
 // DefaultOptions are used if no options are specified in Client.

@@ -19,10 +19,11 @@ import (
 	"net/http"
 	"testing"
 
+	"google.golang.org/grpc/metadata"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/grpc/metadata"
 )
 
 func TestBinaryHeader(t *testing.T) {

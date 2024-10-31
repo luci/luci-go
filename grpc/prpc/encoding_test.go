@@ -22,10 +22,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -102,12 +102,12 @@ func TestEncoding(t *testing.T) {
 		msg := &testpb.HelloReply{Message: "Hi"}
 		c := context.Background()
 
-		test := func(f Format, body []byte, contentType string) {
+		test := func(codec protoCodec, body []byte, contentType string) {
 			t.Run(contentType, func(t *ftt.Test) {
 				rec := httptest.NewRecorder()
 				writeResponse(c, rec, &response{
-					out: msg,
-					fmt: f,
+					out:   msg,
+					codec: codec,
 				})
 				assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 				assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("0"))
@@ -119,16 +119,16 @@ func TestEncoding(t *testing.T) {
 		msgBytes, err := proto.Marshal(msg)
 		assert.Loosely(t, err, should.BeNil)
 
-		test(FormatBinary, msgBytes, mtPRPCBinary)
-		test(FormatJSONPB, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
-		test(FormatText, []byte("message: \"Hi\"\n"), mtPRPCText)
+		test(codecWireV1, msgBytes, mtPRPCBinary)
+		test(codecJSONV1, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
+		test(codecTextV1, []byte("message: \"Hi\"\n"), mtPRPCText)
 
 		t.Run("compression", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:         msg,
-				fmt:         FormatText,
+				codec:       codecTextV1,
 				acceptsGZip: true,
 			})
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
@@ -141,7 +141,7 @@ func TestEncoding(t *testing.T) {
 			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:             msg,
-				fmt:             FormatJSONPB,
+				codec:           codecJSONV1,
 				maxResponseSize: 123,
 			})
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusServiceUnavailable))
@@ -160,7 +160,7 @@ func TestEncoding(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		t.Run("client error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.NotFound, "not found"), FormatBinary)
+			writeError(c, rec, status.Error(codes.NotFound, "not found"), codecWireV1)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("5"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -169,7 +169,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("internal error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.Internal, "errmsg"), FormatBinary)
+			writeError(c, rec, status.Error(codes.Internal, "errmsg"), codecWireV1)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("13"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -178,7 +178,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("unknown error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), FormatBinary)
+			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), codecWireV1)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("2"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -187,7 +187,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("status details", func(t *ftt.Test) {
-			testStatusDetails := func(format Format, expected []string) {
+			testStatusDetails := func(codec protoCodec, expected []string) {
 				st := status.New(codes.InvalidArgument, "invalid argument")
 
 				st, err := st.WithDetails(&errdetails.BadRequest{
@@ -204,26 +204,26 @@ func TestEncoding(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 
-				writeError(c, rec, st.Err(), format)
+				writeError(c, rec, st.Err(), codec)
 				assert.Loosely(t, rec.Header()[HeaderStatusDetail], should.Resemble(expected))
 			}
 
 			t.Run("binary", func(t *ftt.Test) {
-				testStatusDetails(FormatBinary, []string{
+				testStatusDetails(codecWireV1, []string{
 					"Cil0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdBIFCgMKAWE=",
 					"CiN0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscBIXChUSE2h0dHBzOi8vZXhhbXBsZS5jb20=",
 				})
 			})
 
 			t.Run("json", func(t *ftt.Test) {
-				testStatusDetails(FormatJSONPB, []string{
+				testStatusDetails(codecJSONV1, []string{
 					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwiZmllbGRWaW9sYXRpb25zIjpbeyJmaWVsZCI6ImEifV19",
 					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwibGlua3MiOlt7InVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifV19",
 				})
 			})
 
 			t.Run("text", func(t *ftt.Test) {
-				testStatusDetails(FormatText, []string{
+				testStatusDetails(codecTextV1, []string{
 					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdCIKdmFsdWU6ICJcblwwMDNcblwwMDFhIgo=",
 					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscCIKdmFsdWU6ICJcblwwMjVcMDIyXDAyM2h0dHBzOi8vZXhhbXBsZS5jb20iCg==",
 				})

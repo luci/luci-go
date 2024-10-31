@@ -25,12 +25,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -44,7 +44,7 @@ type greeterService struct {
 	testpb.UnimplementedGreeterServer
 
 	headerMD   metadata.MD
-	errDetails []proto.Message
+	errDetails *errdetails.DebugInfo
 }
 
 func (s *greeterService) SayHello(ctx context.Context, req *testpb.HelloRequest) (*testpb.HelloReply, error) {
@@ -52,8 +52,8 @@ func (s *greeterService) SayHello(ctx context.Context, req *testpb.HelloRequest)
 		return nil, status.Errorf(codes.InvalidArgument, "Name unspecified")
 	}
 
-	if len(s.errDetails) > 0 {
-		st, err := status.New(codes.Unknown, "").WithDetails(s.errDetails...)
+	if s.errDetails != nil {
+		st, err := status.New(codes.Unknown, "").WithDetails(s.errDetails)
 		if err == nil {
 			err = st.Err()
 		}
@@ -159,7 +159,7 @@ func TestServer(t *testing.T) {
 			})
 
 			t.Run("Status details", func(t *ftt.Test) {
-				greeterSvc.errDetails = []proto.Message{&errdetails.DebugInfo{Detail: "x"}}
+				greeterSvc.errDetails = &errdetails.DebugInfo{Detail: "x"}
 				r.ServeHTTP(res, req)
 				assert.Loosely(t, res.Result().Header, should.Resemble(http.Header{
 					"Content-Type":              {"text/plain; charset=utf-8"},

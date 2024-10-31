@@ -17,20 +17,17 @@ package prpc
 // This file implements encoding of RPC results to HTTP responses.
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/common/errors"
@@ -82,43 +79,26 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 	return formats[0].Format, nil
 }
 
-// marshalMessage marshals msg in the given format.
+// marshalMessage marshals msg using the given codec.
 //
-// If wrap is true and format is JSON, then prepends JSONPBPrefix and appends
-// \n.
-func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error) {
+// If wrap is true and the codec format is JSON, then prepends JSONPBPrefix and
+// appends \n.
+func marshalMessage(msg proto.Message, codec protoCodec, wrap bool) (buf []byte, err error) {
 	if msg == nil {
 		panic("msg is nil")
 	}
-
-	var buf bytes.Buffer
-	switch format {
-
-	case FormatBinary:
-		return proto.Marshal(msg)
-
-	case FormatJSONPB:
-		if wrap {
-			buf.WriteString(JSONPBPrefix)
-		}
-		m := jsonpb.Marshaler{}
-		if err := m.Marshal(&buf, msg); err != nil {
-			return nil, err
-		}
-		if wrap {
-			buf.WriteRune('\n')
-		}
-		return buf.Bytes(), nil
-
-	case FormatText:
-		if err := proto.MarshalText(&buf, msg); err != nil {
-			return nil, err
-		}
-		return buf.Bytes(), nil
-
-	default:
-		panic(fmt.Errorf("impossible: invalid format %d", format))
+	wrap = wrap && codec.Format() == FormatJSONPB
+	if wrap {
+		buf = append(buf, JSONPBPrefix...)
 	}
+	buf, err = codec.Encode(buf, msg)
+	if err != nil {
+		return nil, err
+	}
+	if wrap {
+		buf = append(buf, '\n')
+	}
+	return buf, nil
 }
 
 // writeResponse serializes and writes the response (successful or not).
@@ -126,24 +106,24 @@ func marshalMessage(msg proto.Message, format Format, wrap bool) ([]byte, error)
 // The context is used to log errors.
 func writeResponse(ctx context.Context, w http.ResponseWriter, res *response) {
 	if res.err != nil {
-		writeError(ctx, w, res.err, res.fmt)
+		writeError(ctx, w, res.err, res.codec)
 		return
 	}
 
-	body, err := marshalMessage(res.out, res.fmt, true)
+	body, err := marshalMessage(res.out, res.codec, true)
 	if err != nil {
-		writeError(ctx, w, status.Error(codes.Internal, err.Error()), res.fmt)
+		writeError(ctx, w, status.Error(codes.Internal, err.Error()), res.codec)
 		return
 	}
 
 	// Skip sending the response that exceeds the client's limit.
 	if res.maxResponseSize > 0 && int64(len(body)) > res.maxResponseSize {
-		writeError(ctx, w, errResponseTooBig(int64(len(body)), res.maxResponseSize), res.fmt)
+		writeError(ctx, w, errResponseTooBig(int64(len(body)), res.maxResponseSize), res.codec)
 		return
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
-	w.Header().Set(headerContentType, res.fmt.MediaType())
+	w.Header().Set(headerContentType, res.codec.Format().MediaType())
 
 	// Errors below most commonly happen if the client disconnects. The header
 	// is already written. There is nothing more we can do other than just log
@@ -211,11 +191,11 @@ func errorStatus(err error) (st *status.Status, httpStatus int, protocolErr bool
 	return
 }
 
-func statusDetailsToHeaderValues(details []*anypb.Any, format Format) ([]string, error) {
+func statusDetailsToHeaderValues(details []*anypb.Any, codec protoCodec) ([]string, error) {
 	ret := make([]string, len(details))
 
 	for i, det := range details {
-		msgBytes, err := marshalMessage(det, format, false)
+		msgBytes, err := marshalMessage(det, codec, false)
 		if err != nil {
 			return nil, err
 		}
@@ -227,12 +207,12 @@ func statusDetailsToHeaderValues(details []*anypb.Any, format Format) ([]string,
 }
 
 // writeError writes err to w and logs it.
-func writeError(ctx context.Context, w http.ResponseWriter, err error, format Format) {
+func writeError(ctx context.Context, w http.ResponseWriter, err error, codec protoCodec) {
 	st, httpStatus, isProtocolErr := errorStatus(err)
 
 	// use st.Proto instead of st.Details to avoid unnecessary unmarshaling of
 	// google.protobuf.Any underlying messages. We need Any protos themselves.
-	detailHeader, err := statusDetailsToHeaderValues(st.Proto().Details, format)
+	detailHeader, err := statusDetailsToHeaderValues(st.Proto().Details, codec)
 	if err != nil {
 		st = status.New(codes.Internal, "prpc: failed to write status details")
 		httpStatus = http.StatusInternalServerError
