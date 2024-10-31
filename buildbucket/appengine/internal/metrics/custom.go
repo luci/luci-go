@@ -270,7 +270,7 @@ func (cms *CustomMetrics) Flush(ctx context.Context, globalCfg *pb.SettingsCfg, 
 	}()
 
 	// Flush existing reports in state.
-	err := state.Flush(ctx, nil)
+	err := state.ParallelFlush(ctx, mon, 4)
 	if err != nil {
 		return err
 	}

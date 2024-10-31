@@ -128,6 +128,8 @@ func main() {
 					return // the context is canceled
 				}
 
+				// TODO(b/376569236): remove after confirming custom metric works.
+				logging.Infof(ctx, "Flushing custom metrics")
 				globalCfg, err := config.GetSettingsCfg(ctx)
 				if err != nil {
 					logging.Errorf(ctx, "failed to get service config: %s", err)
