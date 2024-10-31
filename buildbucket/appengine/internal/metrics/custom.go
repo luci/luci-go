@@ -523,15 +523,22 @@ func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomM
 		}
 
 		// Get metric fields.
-		fieldMap, err := buildcel.StringMapEval(build, cmp.ExtraFields)
-		if err != nil {
-			logging.Errorf(ctx, "failed to evaluate build %d with fields: %s", build.Id, err)
-			continue
+		var fieldMap map[string]string
+		if len(cmp.ExtraFields) > 0 {
+			fieldMap, err = buildcel.StringMapEval(build, cmp.ExtraFields)
+			if err != nil {
+				logging.Errorf(ctx, "failed to evaluate build %d with fields: %s", build.Id, err)
+				continue
+			}
 		}
 
 		// Add default metric fields.
-		for k, v := range defaultFields {
-			fieldMap[k] = v
+		if len(fieldMap) == 0 {
+			fieldMap = defaultFields
+		} else {
+			for k, v := range defaultFields {
+				fieldMap[k] = v
+			}
 		}
 		res[cmp.Name] = fieldMap
 	}

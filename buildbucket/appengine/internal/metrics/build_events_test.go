@@ -52,15 +52,19 @@ func pbTS(t time.Time) *timestamppb.Timestamp {
 }
 
 func setBuildCustomMetrics(b *model.Build, base pb.CustomMetricBase, name string) {
+	var extraFields map[string]string
+	if name != "/chrome/infra/custom/builds/completed" {
+		extraFields = map[string]string{
+			"os": `build.tags.get_value("os")`,
+		}
+	}
 	b.CustomMetrics = []model.CustomMetric{
 		{
 			Base: base,
 			Metric: &pb.CustomMetricDefinition{
-				Name:       name,
-				Predicates: []string{`build.tags.get_value("os")!=""`},
-				ExtraFields: map[string]string{
-					"os": `build.tags.get_value("os")`,
-				},
+				Name:        name,
+				Predicates:  []string{`build.tags.get_value("os")!=""`},
+				ExtraFields: extraFields,
 			},
 		},
 	}
@@ -79,7 +83,6 @@ custom_metrics {
 }
 custom_metrics {
 	name: "/chrome/infra/custom/builds/completed",
-	extra_fields: "os",
 	metric_base: CUSTOM_METRIC_BASE_COMPLETED,
 }
 custom_metrics {
@@ -295,7 +298,7 @@ func TestBuildEvents(t *testing.T) {
 				b.Proto.Status = pb.Status_SUCCESS
 				assert.Loosely(t, datastore.Put(ctx, b), should.BeNil)
 				BuildCompleted(ctx, b)
-				res, err := GetCustomMetricsData(ctx, base, name, fv("SUCCESS", "linux"))
+				res, err := GetCustomMetricsData(ctx, base, name, fv("SUCCESS"))
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Equal(1))
 			})
