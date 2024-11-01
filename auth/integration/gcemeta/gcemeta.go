@@ -70,6 +70,20 @@ type Server struct {
 	// Port is a local TCP port to bind to or 0 to allow the OS to pick one.
 	Port int
 
+	// InheritFromGCE enables inheriting some values from the real GCE MD server.
+	//
+	// Setting this to true will enable probing of the real GCE metadata server
+	// via metadata.OnGCE() when starting the emulated server. metadata.OnGCE()
+	// caches the first value it observed. Thus setting this field to true in
+	// tests that want to emulate GCE metadata server will lead to problems: if
+	// the test is not running on **real** GCE, the fact of just starting the
+	// emulation server will result in the process thinking that it runs NOT on
+	// GCE (even if the emulation server is later put into the process
+	// environment).
+	//
+	// Using this field in tests is likely a mistake.
+	InheritFromGCE bool
+
 	srv  localsrv.Server
 	addr string
 }
@@ -81,7 +95,10 @@ type Server struct {
 //
 // Returns "host:port" address of the launched metadata server.
 func (s *Server) Start(ctx context.Context) (string, error) {
-	root := s.emulatedMetadata()
+	root, err := s.emulatedMetadata(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	addr, err := s.srv.Start(ctx, "gcemeta", s.Port, func(ctx context.Context, l net.Listener, wg *sync.WaitGroup) error {
 		s.addr = l.Addr().String()
@@ -121,7 +138,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // emulatedMetadata creates emulated metadata tree.
-func (s *Server) emulatedMetadata() *node {
+func (s *Server) emulatedMetadata(ctx context.Context) (*node, error) {
 	root := &node{kind: kindDict}
 
 	// These are used by gcloud to probe that we are on GCE. Put in some fake
@@ -132,33 +149,56 @@ func (s *Server) emulatedMetadata() *node {
 		"project-id":         emit("none"),
 	})
 
-	// These are used by "gcp-metadata" npm package to probe that we are on GCE.
-	// Additionally some tools want a real zone when running on GCE, so pick it
-	// up if running there.
-	root.mount("/computeMetadata/v1/instance").dict(map[string]generator{
-		"name": fast(func(ctx context.Context, _ url.Values) (any, error) {
-			if s.onGCE() {
-				return metadata.InstanceNameWithContext(ctx)
+	// Use some of the real instance metadata when on real GCE. Some cloud
+	// libraries, like the Cloud Profiler library, require them. Additionally
+	// "gcp-metadata" npm package uses "name" to probe that we are on GCE.
+	//
+	// Note that delaying metadata.OnGCE() check until the metadata handler is
+	// actually called doesn't work, since at that point the emulated server may
+	// already be installed into the os.Environ and metadata.OnGCE() will just
+	// reply "true", even when not running on a real GCE (and calling metadata.XXX
+	// methods would result in an endless loop by hitting back the emulated
+	// metadata server).
+	//
+	// InheritFromGCE exists to avoid calling metadata.OnGCE() from tests that try
+	// to mock the GCE environment by using this Server. If metadata.OnGCE() is
+	// called when setting up these tests, it will just cache "false" forever
+	// making the metadata emulation mostly useless.
+	var name, zone string
+	var err error
+	if s.InheritFromGCE && metadata.OnGCE() {
+		// Expose both "name" and "zone" when on GCE and they are defined.
+		name, err = metadata.InstanceNameWithContext(ctx)
+		if err != nil {
+			var undef metadata.NotDefinedError
+			if !errors.As(err, &undef) {
+				return nil, errors.Annotate(err, "failed to get instance name").Err()
 			}
-			hostname, err := os.Hostname()
-			if err != nil {
-				return nil, errors.Annotate(err, "failed to get the hostname").Err()
+			// There' no instance name. Fallback to the hostname.
+			if name, err = shortHostname(); err != nil {
+				return nil, err
 			}
-			hostname, _, _ = strings.Cut(hostname, ".")
-			return hostname, nil
-		}),
-		"zone": fast(func(ctx context.Context, _ url.Values) (any, error) {
-			if s.onGCE() {
-				zone, err := metadata.ZoneWithContext(ctx)
-				if err != nil {
-					return nil, err
-				}
-				return "projects/0/zones/" + zone, nil
+		}
+		zone, err = metadata.ZoneWithContext(ctx)
+		if err != nil {
+			var undef metadata.NotDefinedError
+			if !errors.As(err, &undef) {
+				return nil, errors.Annotate(err, "failed to get GCE zone").Err()
 			}
-			return nil, errors.Reason("Not available when not on GCE").
-				Tag(statusTag(http.StatusNotFound)).Err()
-		}),
-	})
+			// Just don't expose the zone if the metadata server doesn't know it.
+			zone = ""
+		}
+	} else {
+		// Expose only "name" when not on GCE. We don't know the zone.
+		if name, err = shortHostname(); err != nil {
+			return nil, err
+		}
+	}
+	instanceMD := map[string]generator{"name": emit(name)}
+	if zone != "" {
+		instanceMD["zone"] = emit("projects/0/zones/" + zone)
+	}
+	root.mount("/computeMetadata/v1/instance").dict(instanceMD)
 
 	// Fully emulate service-accounts/... section.
 	for _, acc := range []string{s.Email, "default"} {
@@ -171,18 +211,17 @@ func (s *Server) emulatedMetadata() *node {
 		})
 	}
 
-	return root
+	return root, nil
 }
 
-// onGCE returns true when running in an environment with a metadata server.
-//
-// Returns false if GCE_METADATA_HOST is set to this server already (to avoid
-// infinite recursion).
-func (s *Server) onGCE() bool {
-	if s.addr != "" && os.Getenv("GCE_METADATA_HOST") == s.addr {
-		return false
+// shortHostname is the machine name without the domain.
+func shortHostname() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", errors.Annotate(err, "failed to get the hostname").Err()
 	}
-	return metadata.OnGCE()
+	hostname, _, _ = strings.Cut(hostname, ".")
+	return hostname, nil
 }
 
 // accountToken implements "/token" metadata leaf.

@@ -605,6 +605,7 @@ func (ac *Context) setupGCEEmulationAuth(ctx context.Context, tokens *auth.Token
 			Email:            ac.email,
 			Scopes:           tokens.Options().Scopes,
 			MinTokenLifetime: tokens.Options().MinTokenLifetime,
+			InheritFromGCE:   true, // expose some real GCE info if on GCE for real
 		}
 		var err error
 		if ac.gcemetaAddr, err = ac.gcemetaSrv.Start(ctx); err != nil {
