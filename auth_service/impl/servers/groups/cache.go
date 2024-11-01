@@ -98,7 +98,7 @@ func (cgp *CachingGroupsProvider) GetAllAuthGroups(ctx context.Context) (groups 
 // snapshot of AuthGroups.
 func (cgp *CachingGroupsProvider) RefreshPeriodically(ctx context.Context) {
 	for {
-		if r := <-clock.After(ctx, 5*time.Minute); r.Err != nil {
+		if r := <-clock.After(ctx, 30*time.Second); r.Err != nil {
 			return // the context is canceled
 		}
 		if _, err := cgp.GetAllAuthGroups(ctx); err != nil {
