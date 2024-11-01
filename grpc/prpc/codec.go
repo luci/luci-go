@@ -17,7 +17,6 @@ package prpc
 import (
 	"bytes"
 	"fmt"
-	"reflect"
 
 	jsonpbv1 "github.com/golang/protobuf/jsonpb"
 	protov1 "github.com/golang/protobuf/proto"
@@ -110,15 +109,7 @@ func (codec protoCodec) Decode(b []byte, m proto.Message) error {
 		return (&jsonpbv1.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewBuffer(b), protov1.MessageV1(m))
 
 	case codecJSONV1WithHack:
-		t := reflect.TypeOf(protov1.MessageV1(m))
-		if t.Kind() == reflect.Ptr {
-			t = t.Elem()
-		}
-		buf, err := luciproto.FixFieldMasksBeforeUnmarshal(b, t)
-		if err == nil {
-			err = (&jsonpbv1.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewBuffer(buf), protov1.MessageV1(m))
-		}
-		return err
+		return luciproto.UnmarshalJSONWithNonStandardFieldMasks(b, m)
 
 	case codecTextV1:
 		return protov1.UnmarshalText(string(b), protov1.MessageV1(m))

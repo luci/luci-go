@@ -24,7 +24,9 @@ import (
 	"sync"
 	"unicode"
 
-	"github.com/golang/protobuf/proto"
+	jsonpbv1 "github.com/golang/protobuf/jsonpb"
+	protov1 "github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -32,35 +34,56 @@ import (
 var (
 	fieldMaskType    = reflect.TypeOf((*fieldmaskpb.FieldMask)(nil))
 	structType       = reflect.TypeOf((*structpb.Struct)(nil))
-	protoMessageType = reflect.TypeOf((*proto.Message)(nil)).Elem()
+	protoMessageType = reflect.TypeOf((*protov1.Message)(nil)).Elem()
 )
 
-// FixFieldMasksBeforeUnmarshal reads FieldMask fields from a JSON-encoded message,
-// parses them as a string according to
+// UnmarshalJSONWithNonStandardFieldMasks unmarshals a JSONPB message that has
+// google.protobuf.FieldMask inside that uses non-standard field mask semantics
+// (like paths that contains `*`).
+//
+// Such field masks are not supported by the standard JSONPB unmarshaller.
+// If your message uses only standard field masks (i.e. only containing paths
+// like `a.b.c` with not extra syntax), use the standard JSON unmarshaler
+// from google.golang.org/protobuf/encoding/protojson package.
+//
+// Using non-standard field masks is discouraged. Giant name of this function
+// is a hint that it should not be used.
+func UnmarshalJSONWithNonStandardFieldMasks(buf []byte, msg proto.Message) error {
+	v1 := protov1.MessageV1(msg)
+	t := reflect.TypeOf(v1)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	buf, err := fixFieldMasksBeforeUnmarshal(buf, t)
+	if err == nil {
+		err = (&jsonpbv1.Unmarshaler{AllowUnknownFields: true}).Unmarshal(bytes.NewBuffer(buf), v1)
+	}
+	return err
+}
+
+// fixFieldMasksBeforeUnmarshal reads FieldMask fields from a JSON-encoded
+// message, parses them as a string according to
 // https://github.com/protocolbuffers/protobuf/blob/ec1a70913e5793a7d0a7b5fbf7e0e4f75409dd41/src/google/protobuf/field_mask.proto#L180
-// and converts them to a JSON serialization format that Golang Protobuf library
-// can unmarshal from.
+// and converts them to a JSON serialization format that Golang Protobuf v1
+// library can unmarshal from.
+//
 // It is a workaround for https://github.com/golang/protobuf/issues/745.
 //
-// This function is a reverse of FixFieldMasksAfterMarshal.
-//
 // messageType must be a struct, not a struct pointer.
-//
-// WARNING: AVOID. LIKELY BUGGY, see https://crbug.com/1028915.
-func FixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
+func fixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) ([]byte, error) {
 	var msg map[string]any
 	if err := json.Unmarshal(jsonMessage, &msg); err != nil {
 		return nil, err
 	}
 
-	if err := fixFieldMasksBeforeUnmarshal(make([]string, 0, 10), msg, messageType); err != nil {
+	if err := fixFieldMasks(make([]string, 0, 10), msg, messageType); err != nil {
 		return nil, err
 	}
 
 	return json.Marshal(msg)
 }
 
-func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]any, messageType reflect.Type) error {
+func fixFieldMasks(fieldPath []string, msg map[string]any, messageType reflect.Type) error {
 	fieldTypes := getFieldTypes(messageType)
 	for name, val := range msg {
 		localPath := append(fieldPath, name)
@@ -77,7 +100,7 @@ func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]any, messag
 
 		case map[string]any:
 			if typ != structType && typ.Implements(protoMessageType) {
-				if err := fixFieldMasksBeforeUnmarshal(localPath, val, typ.Elem()); err != nil {
+				if err := fixFieldMasks(localPath, val, typ.Elem()); err != nil {
 					return err
 				}
 			}
@@ -88,7 +111,7 @@ func fixFieldMasksBeforeUnmarshal(fieldPath []string, msg map[string]any, messag
 				for i, el := range val {
 					if subMsg, ok := el.(map[string]any); ok {
 						elPath := append(localPath, strconv.Itoa(i))
-						if err := fixFieldMasksBeforeUnmarshal(elPath, subMsg, subMsgType); err != nil {
+						if err := fixFieldMasks(elPath, subMsg, subMsgType); err != nil {
 							return err
 						}
 					}
@@ -182,7 +205,7 @@ func getFieldTypes(t reflect.Type) map[string]reflect.Type {
 
 	ret = map[string]reflect.Type{}
 
-	addFieldType := func(p *proto.Properties, fieldType reflect.Type) {
+	addFieldType := func(p *protov1.Properties, fieldType reflect.Type) {
 		jsonName := p.JSONName
 		if jsonName == "" {
 			// it set only for fields where the JSON name is different.
@@ -197,7 +220,7 @@ func getFieldTypes(t reflect.Type) map[string]reflect.Type {
 		f := t.Field(i)
 		fields[f.Name] = f
 	}
-	props := proto.GetProperties(t)
+	props := protov1.GetProperties(t)
 	for _, p := range props.Prop {
 		addFieldType(p, fields[p.Name].Type)
 	}

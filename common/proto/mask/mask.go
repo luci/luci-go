@@ -45,6 +45,11 @@
 //	boolean = 'true' | 'false';
 //	quoted_string = '`' { utf8-no-backtick | '``' } '`'
 //	star = '*'
+//
+// Deprecated: advanced field mask never became standard and FieldMask messages
+// that contain `*` or other non-standard syntax and not supported by Go's
+// jsonpb decoder (it fails to unmarshal them). Using them requires hacks, such
+// as go.chromium.org/luci/common/proto.UnmarshalJSONWithNonStandardFieldMasks.
 package mask
 
 import (

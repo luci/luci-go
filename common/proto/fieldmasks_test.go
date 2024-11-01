@@ -20,10 +20,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	jsonpbv1 "github.com/golang/protobuf/jsonpb"
+	protov1 "github.com/golang/protobuf/proto"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
@@ -45,15 +46,15 @@ func TestFixFieldMasks(t *testing.T) {
 		testFix := func(pb proto.Message, expected string) {
 			typ := reflect.TypeOf(pb).Elem()
 
-			actual, err := protojson.Marshal(proto.MessageV2(pb))
+			actual, err := protojson.Marshal(pb)
 			assert.Loosely(t, err, should.BeNil)
 
 			assert.Loosely(t, normalizeJSON(actual), should.Equal(normalizeJSON([]byte(expected))))
 
-			jsBadEmulated, err := FixFieldMasksBeforeUnmarshal([]byte(actual), typ)
+			jsBadEmulated, err := fixFieldMasksBeforeUnmarshal([]byte(actual), typ)
 			assert.Loosely(t, err, should.BeNil)
 
-			assert.Loosely(t, jsonpb.UnmarshalString(string(jsBadEmulated), pb), should.BeNil)
+			assert.Loosely(t, jsonpbv1.UnmarshalString(string(jsBadEmulated), protov1.MessageV1(pb)), should.BeNil)
 		}
 		t.Run("No field masks", func(t *ftt.Test) {
 			testFix(
@@ -121,7 +122,7 @@ func TestFixFieldMasks(t *testing.T) {
 			input := `{
 				"a": 1
 			}`
-			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			_, err := fixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			assert.Loosely(t, err, should.ErrLike(`unexpected field path "a"`))
 		})
 
@@ -129,7 +130,7 @@ func TestFixFieldMasks(t *testing.T) {
 			input := `{
 				"some": {"a": 1}
 			}`
-			_, err := FixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
+			_, err := fixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
 			assert.Loosely(t, err, should.ErrLike(`unexpected field path "some.a"`))
 		})
 
