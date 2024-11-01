@@ -133,7 +133,7 @@ func attemptInit(ctx context.Context, account string, attachScopes bool, scopes 
 	// use such scopes, one will have to use impersonation through Cloud IAM APIs,
 	// which *are* covered by cloud-platform (see ActAsServiceAccount in auth.go).
 	if audience == "" && !attachScopes {
-		availableScopes, err := metadataClient.Scopes(account)
+		availableScopes, err := metadataClient.ScopesWithContext(ctx, account)
 		if err != nil {
 			return nil, transient.Tag.Apply(err)
 		}
@@ -196,7 +196,7 @@ func (p gceTokenProvider) mintIDToken(ctx context.Context) (*Token, error) {
 		"format":   []string{"full"}, // include VM instance info into claims
 	}
 	urlSuffix := fmt.Sprintf("instance/service-accounts/%s/identity?%s", p.account, v.Encode())
-	token, err := metadataClient.Get(urlSuffix)
+	token, err := metadataClient.GetWithContext(ctx, urlSuffix)
 	if err != nil {
 		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
 	}
@@ -232,7 +232,7 @@ func (p *gceTokenProvider) mintAccessToken(ctx context.Context) (*Token, error) 
 		tokenURI = tokenURI + "?" + v.Encode()
 	}
 
-	tokenJSON, err := metadataClient.Get(tokenURI)
+	tokenJSON, err := metadataClient.GetWithContext(ctx, tokenURI)
 	if err != nil {
 		return nil, errors.Annotate(err, "auth/gce: metadata server call failed").Tag(transient.Tag).Err()
 	}
