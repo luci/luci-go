@@ -256,6 +256,10 @@ type Server struct {
 	// disable the limit (with the risk of OOMing the server).
 	MaxRequestSize int
 
+	// UseProtobufV2 is a temporary flag to opt in into using protobuf v2
+	// serialization rules before them become default.
+	UseProtobufV2 bool
+
 	mu        sync.RWMutex
 	services  map[string]*service
 	overrides map[string]map[string]Override
@@ -327,18 +331,25 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 }
 
 // requestCodec decides what codec to use to deserialize requests, per format.
-//
-// TODO(b/376137855): Add a way to request V2 or use it by default.
 func (s *Server) requestCodec(f Format) protoCodec {
 	switch f {
 	case FormatBinary:
+		if s.UseProtobufV2 {
+			return codecWireV2
+		}
 		return codecWireV1
 	case FormatJSONPB:
 		if s.HackFixFieldMasksForJSON {
-			return codecJSONV1WithHack
+			return codecJSONV1WithHack // the only codec that supports advanced field masks
+		}
+		if s.UseProtobufV2 {
+			return codecJSONV2
 		}
 		return codecJSONV1
 	case FormatText:
+		if s.UseProtobufV2 {
+			return codecTextV2
+		}
 		return codecTextV1
 	default:
 		panic(fmt.Sprintf("impossible invalid format %v", f))
@@ -346,15 +357,22 @@ func (s *Server) requestCodec(f Format) protoCodec {
 }
 
 // responseCodec decides what codec to use to serialize responses, per format.
-//
-// TODO(b/376137855): Add a way to request V2 or use it by default.
 func (s *Server) responseCodec(f Format) protoCodec {
 	switch f {
 	case FormatBinary:
+		if s.UseProtobufV2 {
+			return codecWireV2
+		}
 		return codecWireV1
 	case FormatJSONPB:
+		if s.UseProtobufV2 {
+			return codecJSONV2
+		}
 		return codecJSONV1
 	case FormatText:
+		if s.UseProtobufV2 {
+			return codecTextV2
+		}
 		return codecTextV1
 	default:
 		panic(fmt.Sprintf("impossible invalid format %v", f))

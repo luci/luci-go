@@ -111,6 +111,7 @@ func (s *service) getIncomingFields() []string {
 
 func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, testpb.GreeterClient) {
 	ts := prpctest.Server{}
+	ts.UseProtobufV2 = true
 	testpb.RegisterGreeterServer(&ts, svc)
 	ts.Start(ctx)
 
@@ -303,8 +304,8 @@ func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 func TestJSONFieldMaskWithoutHack(t *testing.T) {
 	t.Parallel()
 
-	// Doesn't support string serialization, but still supports advanced masks.
-	testJSONFieldMask(t, false, true, func(srv *prpc.Server) {
+	// Doesn't support advanced masks.
+	testJSONFieldMask(t, false, func(srv *prpc.Server) {
 		srv.HackFixFieldMasksForJSON = false
 	})
 }
@@ -312,17 +313,18 @@ func TestJSONFieldMaskWithoutHack(t *testing.T) {
 func TestJSONFieldMaskWithHack(t *testing.T) {
 	t.Parallel()
 
-	// Supports string serialization and advanced masks.
-	testJSONFieldMask(t, true, true, func(srv *prpc.Server) {
+	// Supports advanced masks.
+	testJSONFieldMask(t, true, func(srv *prpc.Server) {
 		srv.HackFixFieldMasksForJSON = true
 	})
 }
 
-func testJSONFieldMask(t *testing.T, testStr, testAdvanced bool, cfg func(srv *prpc.Server)) {
+func testJSONFieldMask(t *testing.T, testAdvanced bool, cfg func(srv *prpc.Server)) {
 	ctx := gologger.StdConfig.Use(context.Background())
 	svc := service{R: &testpb.HelloReply{Message: "sup"}}
 
 	ts := prpctest.Server{}
+	ts.UseProtobufV2 = true
 	testpb.RegisterGreeterServer(&ts, &svc)
 
 	if cfg != nil {
@@ -365,42 +367,22 @@ func testJSONFieldMask(t *testing.T, testStr, testAdvanced bool, cfg func(srv *p
 		return nil
 	}
 
-	t.Run(`Simple mask as object`, func(t *testing.T) {
-		err := jsonCall(`{"fields": {"paths": ["a", "a.b.c"]}}`)
+	t.Run(`Simple mask as str`, func(t *testing.T) {
+		err := jsonCall(`{"fields": "a,a.b.c"}`)
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, svc.getIncomingFields(), should.Match([]string{
 			"a", "a.b.c",
 		}))
 	})
 
-	if testStr {
-		t.Run(`Simple mask as str`, func(t *testing.T) {
-			err := jsonCall(`{"fields": "a,a.b.c"}`)
-			assert.That(t, err, should.ErrLike(nil))
-			assert.That(t, svc.getIncomingFields(), should.Match([]string{
-				"a", "a.b.c",
-			}))
-		})
-	}
-
 	if testAdvanced {
-		t.Run(`Advanced mask as object`, func(t *testing.T) {
-			err := jsonCall(`{"fields": {"paths": ["a.*.b", "a.0.c"]}}`)
+		t.Run(`Advanced mask as str`, func(t *testing.T) {
+			err := jsonCall(`{"fields": "a.*.b,a.0.c"}`)
 			assert.That(t, err, should.ErrLike(nil))
 			assert.That(t, svc.getIncomingFields(), should.Match([]string{
 				"a.*.b", "a.0.c",
 			}))
 		})
-
-		if testStr {
-			t.Run(`Advanced mask as str`, func(t *testing.T) {
-				err := jsonCall(`{"fields": "a.*.b,a.0.c"}`)
-				assert.That(t, err, should.ErrLike(nil))
-				assert.That(t, svc.getIncomingFields(), should.Match([]string{
-					"a.*.b", "a.0.c",
-				}))
-			})
-		}
 	}
 }
 

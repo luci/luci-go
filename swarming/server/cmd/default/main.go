@@ -282,6 +282,8 @@ func main() {
 		})
 
 		srv.ConfigurePRPC(func(prpcSrv *prpc.Server) {
+			// Opt-in into experimental protobuf v2 serialization.
+			prpcSrv.UseProtobufV2 = true
 			// Allow cross-origin calls (e.g. for Milo to call ListBots).
 			prpcSrv.AccessControl = prpc.AllowOriginAll
 			// Enable redirection to Python if running in prod where it is set.
