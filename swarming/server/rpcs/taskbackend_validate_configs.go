@@ -117,9 +117,9 @@ func validateBackendConfig(cfg *apipb.SwarmingTaskBackendConfig) []error {
 		}
 	}
 
-	for _, t := range cfg.Tags {
+	for i, t := range cfg.Tags {
 		if err := validate.Tag(t); err != nil {
-			errs = append(errs, errors.Annotate(err, "tags").Err())
+			errs = append(errs, errors.Annotate(err, "tag %d", i).Err())
 		}
 	}
 	return errs
