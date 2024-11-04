@@ -14,10 +14,20 @@
 
 import type { RouteObject } from 'react-router-dom';
 
+// We cannot use module alias (e.g. `@/<package>`) here because they are not
+// not supported in vite.config.ts. And we need to import those routes in
+// vite.config.ts to compute a regex at build time.
+import { fleetRoutes } from '../../fleet/routes';
+import { swarmingRoutes } from '../../swarming/routes';
+import { treeStatusRoutes } from '../../tree_status/routes';
+
 // IMPORTANT:
 // When adding new routes, ensure that the path param does not contain PII.
 // If you need PII in the path param, document it and scrub the URL param from
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
+//
+// New routes under a feature area should be added to `@/<feature-area>/routes`.
+// See go/luci-ui-path-segregation for details.
 export const routes: RouteObject[] = [
   {
     index: true,
@@ -33,7 +43,7 @@ export const routes: RouteObject[] = [
   },
   {
     path: 'search',
-    lazy: () => import('@/routes/search_loader/search_redirection_loader'),
+    lazy: () => import('@/core/routes/search_loader/search_redirection_loader'),
   },
   {
     path: 'builder-search',
@@ -203,36 +213,22 @@ export const routes: RouteObject[] = [
     ],
   },
   {
-    path: 'swarming',
-    children: [
-      {
-        path: 'task/:taskId',
-        lazy: () => import('@/swarming/pages/swarming_build_page'),
-      },
-    ],
-  },
-  {
     path: 'doc/release-notes',
     lazy: () => import('@/core/pages/release_notes_page'),
   },
-  {
-    path: 'tree-status/:tree',
-    lazy: () => import('@/tree_status/pages/list_page'),
-  },
+  // When promoting lab pages out of labs, move them to their respective feature
+  // area. See go/luci-ui-path-segregation for details.
+  // New lab pages should be mounted to `/ui/<feature>/labs/my-new-lab-page`
+  // instead.
+  // TODO: remove this comment once all existing lab routes are removed.
   {
     path: 'labs',
-    lazy: () => import('@/core/pages/labs_page'),
+    lazy: () => import('@/common/layouts/labs_layout'),
     children: [
       {
         // TODO(b/308856913): Fix all outstanding todo's before promoting the page to production.
         path: 'p/:project/inv/:invID/test/:testID/variant/:vHash',
         lazy: () => import('@/test_verdict/pages/test_verdict_page'),
-      },
-      // Prototype of a new unified UI for fleet management.
-      // See: go/streamline-fleet-UI
-      {
-        path: 'fleet',
-        lazy: () => import('@/fleet/pages/device_list_page'),
       },
       {
         path: 'monitoring',
@@ -306,5 +302,17 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/authdb/pages/groups_page'),
       },
     ],
+  },
+  {
+    path: 'fleet',
+    children: fleetRoutes,
+  },
+  {
+    path: 'swarming',
+    children: swarmingRoutes,
+  },
+  {
+    path: 'tree-status',
+    children: treeStatusRoutes,
   },
 ];

@@ -45,9 +45,9 @@ import { BaseLayout } from '@/common/layouts/base_layout';
 import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
+import { routes } from '@/core/routes';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
-import { routes } from '@/routes';
 
 import { PermCheckProvider } from './common/components/perm_check_provider';
 import { parseReleaseNotes } from './core/components/release_notes/common';

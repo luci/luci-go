@@ -34,8 +34,8 @@ import {
   stableUiVersionJsLinkPlugin,
 } from './dev_utils/ui_version_js_utils';
 import { getBoolEnv } from './dev_utils/utils';
+import { routes } from './src/core/routes';
 import { regexpsForRoutes } from './src/generic_libs/tools/react_router_utils';
-import { routes } from './src/routes';
 
 export default defineConfig(({ mode }) => {
   const env = {
