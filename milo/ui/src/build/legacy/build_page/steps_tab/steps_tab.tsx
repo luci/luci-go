@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LoaderFunctionArgs, redirect } from 'react-router-dom';
+import { LoaderFunctionArgs } from 'react-router-dom';
 
 import { getBuildURLPath } from '@/common/tools/url_utils';
+import { trackedRedirect } from '@/generic_libs/tools/react_router_utils';
 
 /**
  * Redirects users to the infra tab.
  */
-export function redirectToInfraTab({ params }: LoaderFunctionArgs): Response {
+export function redirectToInfraTab({
+  params,
+  request,
+}: LoaderFunctionArgs): Response {
   const { project, bucket, builder, buildNumOrId } = params;
   if (!project || !bucket || !builder || !buildNumOrId) {
     throw new Error(
@@ -27,8 +31,15 @@ export function redirectToInfraTab({ params }: LoaderFunctionArgs): Response {
     );
   }
 
+  const originalUrl = new URL(request.url);
   const buildUrl = getBuildURLPath({ project, bucket, builder }, buildNumOrId);
-  return redirect(`${buildUrl}/infra`);
+  return trackedRedirect({
+    contentGroup: 'redirect | build | steps',
+    // Track only origin + pathname to reduce the chance of including PII in the
+    // URL.
+    from: originalUrl.origin + originalUrl.pathname,
+    to: `${buildUrl}/infra`,
+  });
 }
 
 export const loader = redirectToInfraTab;

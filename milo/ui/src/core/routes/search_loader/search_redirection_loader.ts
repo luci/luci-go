@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { redirect } from 'react-router-dom';
+import { trackedRedirect } from '@/generic_libs/tools/react_router_utils';
 
 export enum SearchTarget {
   Builders = 'BUILDERS',
@@ -38,11 +38,16 @@ export const searchRedirectionLoader = ({
     ? (t as SearchTarget)
     : DEFAULT_SEARCH_TARGET;
 
-  if (searchTarget === SearchTarget.Builders) {
-    return redirect(`/ui/builder-search?q=${searchQuery}`);
-  } else {
-    return redirect(`/ui/p/${testProject}/test-search?q=${searchQuery}`);
-  }
+  return trackedRedirect({
+    contentGroup: 'redirect | search',
+    // Track only origin + pathname to reduce the chance of including PII in the
+    // URL.
+    from: url.origin + url.pathname,
+    to:
+      searchTarget === SearchTarget.Builders
+        ? `/ui/builder-search?q=${searchQuery}`
+        : `/ui/p/${testProject}/test-search?q=${searchQuery}`,
+  });
 };
 
 export const loader = searchRedirectionLoader;

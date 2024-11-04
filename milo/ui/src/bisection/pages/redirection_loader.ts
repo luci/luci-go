@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LoaderFunctionArgs, redirect } from 'react-router-dom';
+import { LoaderFunctionArgs } from 'react-router-dom';
+
+import { trackedRedirect } from '@/generic_libs/tools/react_router_utils';
 
 export const REDIRECT_TO_PROJECT = 'chromium';
 
@@ -26,7 +28,13 @@ export function redirectionLoader({ request }: LoaderFunctionArgs): Response {
     throw new Error('invariant violated: url must match /ui/bisection');
   }
   const subPath = matches[1].replace(/^\/analysis/, '/compile-analysis');
-  return redirect(`/ui/p/${REDIRECT_TO_PROJECT}/bisection${subPath}`);
+  return trackedRedirect({
+    contentGroup: 'redirect | bisection',
+    // Track only origin + pathname to reduce the chance of including PII in the
+    // URL.
+    from: url.origin + url.pathname,
+    to: `/ui/p/${REDIRECT_TO_PROJECT}/bisection${subPath}`,
+  });
 }
 
 export const loader = redirectionLoader;

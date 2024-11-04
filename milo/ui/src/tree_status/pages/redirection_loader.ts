@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LoaderFunctionArgs, redirect } from 'react-router-dom';
+import { LoaderFunctionArgs } from 'react-router-dom';
+
+import { trackedRedirect } from '@/generic_libs/tools/react_router_utils';
 
 // redirectionLoader redirects /ui/labs/tree-status/* to /ui/tree-status/*.
 // We need this for now because some clients are still linking to the labs page.
@@ -22,7 +24,13 @@ export function redirectionLoader({ request }: LoaderFunctionArgs): Response {
   if (!matches || matches.length < 2) {
     throw new Error('invariant violated: url must match /ui/labs/tree-status');
   }
-  return redirect(`/ui/tree-status${matches[1]}`);
+  return trackedRedirect({
+    contentGroup: 'redirect | tree-status',
+    // Track only origin + pathname to reduce the chance of including PII in the
+    // URL.
+    from: url.origin + url.pathname,
+    to: `/ui/tree-status${matches[1]}`,
+  });
 }
 
 export const loader = redirectionLoader;

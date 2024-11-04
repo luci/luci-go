@@ -12,7 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import type { RouteObject } from 'react-router-dom';
+import { redirect, type RouteObject } from 'react-router-dom';
+
+export interface TrackedRedirectionParams {
+  readonly contentGroup: string;
+  /**
+   * The path to be recorded as is as the location for a `page_view` event.
+   * If PII needs to be removed from the path, you need to remove it before
+   * using it here.
+   */
+  readonly from: string;
+  readonly to: string;
+}
+
+/**
+ * Similar to `redirect` from `react-router-dom` but also track the original URL
+ * visit as a page view event.
+ */
+export function trackedRedirect(
+  { contentGroup, from, to }: TrackedRedirectionParams,
+  init?: number | ResponseInit | undefined,
+) {
+  gtag('event', 'page_view', {
+    page_location: from,
+    content_group: contentGroup,
+  });
+  return redirect(to, init);
+}
 
 /**
  * Escape RegExp special characters. Adapted from [escape-string-regexp][1].
