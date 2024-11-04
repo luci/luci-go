@@ -16,7 +16,6 @@ package prpc
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -52,11 +51,19 @@ type Options struct {
 	// any other transient error per Retry policy.
 	PerRPCTimeout time.Duration
 
-	// AcceptContentSubtype defines acceptable Content-Type of responses.
+	// RequestFormat defines how to encode requests.
 	//
-	// Valid values are "binary" and "json". Empty value defaults to "binary".
-	// It can be overridden on per-call basis via CallAcceptContentSubtype().
-	AcceptContentSubtype string
+	// The default value is FormatBinary (i.e. use wirepb protobuf encoding).
+	//
+	// Can be overridden on per-call basis via RequestFormat() call option.
+	RequestFormat Format
+
+	// ResponseFormat defines how the server should encode responses.
+	//
+	// The default value is FormatBinary (i.e. use wirepb protobuf encoding).
+	//
+	// Can be overridden on per-call basis via ResponseFormat() call option.
+	ResponseFormat Format
 
 	// Debug is a flag indicate if we want to print more logs for debug purpose.
 	//
@@ -140,16 +147,29 @@ func ExpectedCode(codes ...codes.Code) *CallOption {
 	}
 }
 
-// CallAcceptContentSubtype returns a CallOption that sets Content-Type.
-// For example, if content-subtype is "json", the Content-Type over the wire
-// will be "application/json".
-// Unlike that of the grpc.CallContentSubtype, sets Content-Type only for
-// response, not for the request.
-func CallAcceptContentSubtype(contentSubtype string) *CallOption {
+// RequestFormat returns a CallOption that defines how to encode the request.
+//
+// This has no effect on the response encoding. Use ResponseFormat() call option
+// to change it.
+func RequestFormat(f Format) *CallOption {
 	return &CallOption{
 		grpc.EmptyCallOption{},
 		func(o *Options) {
-			o.AcceptContentSubtype = strings.ToLower(contentSubtype)
+			o.RequestFormat = f
+		},
+	}
+}
+
+// ResponseFormat returns a CallOption that defines how the server should encode
+// the response.
+//
+// This has no effect on the request encoding. Use RequestFormat() call option
+// to change it.
+func ResponseFormat(f Format) *CallOption {
+	return &CallOption{
+		grpc.EmptyCallOption{},
+		func(o *Options) {
+			o.ResponseFormat = f
 		},
 	}
 }

@@ -53,8 +53,19 @@ func sayHello(t testing.TB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		assert.Loosely(t, r.Method, should.Equal("POST"))
 		assert.Loosely(t, r.URL.Path == "/prpc/prpc.Greeter/SayHello" || r.URL.Path == "/python/prpc/prpc.Greeter/SayHello", should.BeTrue)
-		assert.Loosely(t, r.Header.Get("Content-Type"), should.Equal("application/prpc; encoding=binary"))
 		assert.Loosely(t, r.Header.Get("User-Agent"), should.Equal("prpc-test"))
+
+		var reqCodec protoCodec
+		switch r.Header.Get("Content-Type") {
+		case "application/json":
+			reqCodec = codecJSONV2
+		case "application/prpc; encoding=text":
+			reqCodec = codecTextV2
+		case "application/prpc; encoding=binary":
+			reqCodec = codecWireV2
+		default:
+			t.Fatalf("Unexpected Content-Type %q", r.Header.Get("Content-Type"))
+		}
 
 		if timeout := r.Header.Get(HeaderTimeout); timeout != "" {
 			assert.Loosely(t, timeout, should.Equal("10000000u"))
@@ -64,7 +75,7 @@ func sayHello(t testing.TB) http.HandlerFunc {
 		assert.Loosely(t, err, should.BeNil)
 
 		var req testpb.HelloRequest
-		err = proto.Unmarshal(reqBody, &req)
+		err = reqCodec.Decode(reqBody, &req)
 		assert.Loosely(t, err, should.BeNil)
 
 		if req.Name == "TOO BIG" {
@@ -76,18 +87,21 @@ func sayHello(t testing.TB) http.HandlerFunc {
 		if r.URL.Path == "/python/prpc/prpc.Greeter/SayHello" {
 			res.Message = res.Message + " from python service"
 		}
-		var buf []byte
 
-		if req.Name == "ACCEPT JSONPB" {
-			assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/json"))
-			sbuf, err := codecJSONV1.Encode(nil, &res)
-			assert.Loosely(t, err, should.BeNil)
-			buf = []byte(sbuf)
-		} else {
-			assert.Loosely(t, r.Header.Get("Accept"), should.Equal("application/prpc; encoding=binary"))
-			buf, err = proto.Marshal(&res)
-			assert.Loosely(t, err, should.BeNil)
+		var respCodec protoCodec
+		switch r.Header.Get("Accept") {
+		case "application/json":
+			respCodec = codecJSONV2
+		case "application/prpc; encoding=text":
+			respCodec = codecTextV2
+		case "application/prpc; encoding=binary":
+			respCodec = codecWireV2
+		default:
+			t.Fatalf("Unexpected Accept %q", r.Header.Get("Accept"))
 		}
+
+		buf, err := respCodec.Encode(nil, &res)
+		assert.Loosely(t, err, should.BeNil)
 
 		code := codes.OK
 		status := http.StatusOK
@@ -209,19 +223,20 @@ func TestClient(t *testing.T) {
 				assert.Loosely(t, res.Message, should.Equal("Hello John from python service"))
 			})
 
-			t.Run("Works with response in JSONPB", func(t *ftt.Test) {
-				req.Name = "ACCEPT JSONPB"
+			t.Run("Works with different formats", func(t *ftt.Test) {
 				client, server := setUp(sayHello(t))
-				client.Options.AcceptContentSubtype = "json"
 				defer server.Close()
 
-				var hd metadata.MD
-				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res, grpc.Header(&hd))
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res.Message, should.Equal("Hello ACCEPT JSONPB"))
-				assert.Loosely(t, hd["x-lower-case-header"], should.Resemble([]string{"CamelCaseValueStays"}))
-
-				shouldHaveMessagesLike(t, log, expectedCallLogEntry(client))
+				formats := []Format{FormatBinary, FormatJSONPB, FormatText}
+				for _, reqFmt := range formats {
+					for _, respFmt := range formats {
+						err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res,
+							RequestFormat(reqFmt),
+							ResponseFormat(respFmt),
+						)
+						assert.Loosely(t, err, should.BeNil)
+					}
+				}
 			})
 
 			t.Run("With outgoing metadata", func(t *ftt.Test) {

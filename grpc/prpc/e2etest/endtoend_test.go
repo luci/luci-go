@@ -148,22 +148,27 @@ func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpc
 
 func TestEndToEndBinary(t *testing.T) {
 	t.Parallel()
-	endToEndTest(t, "binary")
+	endToEndTest(t, prpc.FormatBinary)
 }
 
 func TestEndToEndJSON(t *testing.T) {
 	t.Parallel()
-	endToEndTest(t, "json")
+	endToEndTest(t, prpc.FormatJSONPB)
 }
 
-func endToEndTest(t *testing.T, responseType string) {
+func TestEndToEndText(t *testing.T) {
+	t.Parallel()
+	endToEndTest(t, prpc.FormatText)
+}
+
+func endToEndTest(t *testing.T, responseFormat prpc.Format) {
 	ftt.Run(`A client/server for the Greeter service`, t, func(t *ftt.Test) {
 		ctx := gologger.StdConfig.Use(context.Background())
 		svc := service{
 			sleep: func() time.Duration { return time.Millisecond },
 		}
 		ts, prpcC, client := newTestClient(ctx, &svc, &prpc.Options{
-			AcceptContentSubtype: responseType,
+			ResponseFormat: responseFormat,
 		})
 		defer ts.Close()
 

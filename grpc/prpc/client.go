@@ -212,34 +212,30 @@ func (c *Client) prepareOptions(opts []grpc.CallOption, serviceName, methodName 
 }
 
 // requestCodec decides what codec to use to serialize requests, per format.
-//
-// TODO(b/376137855): Add a way to request V2 or use it by default.
-func (c *Client) requestCodec(f Format) protoCodec {
+func (c *Client) requestCodec(f Format) (protoCodec, error) {
 	switch f {
 	case FormatBinary:
-		return codecWireV1
+		return codecWireV2, nil
 	case FormatJSONPB:
-		return codecJSONV1
+		return codecJSONV2, nil
 	case FormatText:
-		return codecTextV1
+		return codecTextV2, nil
 	default:
-		panic(fmt.Sprintf("impossible invalid format %v", f))
+		return 0, status.Errorf(codes.Internal, "prpc: unrecognized request format %v", f)
 	}
 }
 
 // responseCodec decides what codec to use to deserialize responses, per format.
-//
-// TODO(b/376137855): Add a way to request V2 or use it by default.
-func (c *Client) responseCodec(f Format) protoCodec {
+func (c *Client) responseCodec(f Format) (protoCodec, error) {
 	switch f {
 	case FormatBinary:
-		return codecWireV1
+		return codecWireV2, nil
 	case FormatJSONPB:
-		return codecJSONV1
+		return codecJSONV2, nil
 	case FormatText:
-		return codecTextV1
+		return codecTextV2, nil
 	default:
-		panic(fmt.Sprintf("impossible invalid format %v", f))
+		return 0, status.Errorf(codes.Internal, "prpc: unrecognized response format %v", f)
 	}
 }
 
@@ -248,8 +244,14 @@ func (c *Client) responseCodec(f Format) protoCodec {
 // Used by the generated code. Calling from multiple goroutines concurrently
 // is safe.
 //
-// `opts` must be created by this package. Options from google.golang.org/grpc
-// package are not supported. Panics if they are used.
+// `opts` may include pRPC-specific options (like prpc.ExpectedCode), as well as
+// some of gRPC standard options (but not all). Passing an unsupported gRPC call
+// option will cause a panic.
+//
+// Following gRPC options are supported:
+//   - grpc.Header
+//   - grpc.Trailer
+//   - grpc.StaticMethod
 //
 // Propagates outgoing gRPC metadata provided via metadata.NewOutgoingContext.
 // It will be available via metadata.FromIncomingContext on the other side.
@@ -266,29 +268,18 @@ func (c *Client) responseCodec(f Format) protoCodec {
 func (c *Client) Call(ctx context.Context, serviceName, methodName string, req, resp proto.Message, opts ...grpc.CallOption) error {
 	options := c.prepareOptions(opts, serviceName, methodName)
 
-	// Due to https://github.com/golang/protobuf/issues/745 bug
-	// in jsonpb handling of FieldMask, which are typically present in the
-	// request, not the response, do request via binary format.
-	//
-	// TODO(b/376137855): Stop using that or switch to v2 codec. Before this hack
-	// was added the format was picked based on Options.
-	options.reqCodec = c.requestCodec(FormatBinary)
+	var err error
+	if options.reqCodec, err = c.requestCodec(options.RequestFormat); err != nil {
+		return err
+	}
+	if options.respCodec, err = c.responseCodec(options.ResponseFormat); err != nil {
+		return err
+	}
+
 	reqBody, err := options.reqCodec.Encode(nil, req)
 	if err != nil {
 		return status.Errorf(codes.Internal, "prpc: failed to marshal the request: %s", err)
 	}
-
-	switch options.AcceptContentSubtype {
-	case "", mtPRPCEncodingBinary:
-		options.respCodec = c.responseCodec(FormatBinary)
-	case mtPRPCEncodingJSONPB:
-		options.respCodec = c.responseCodec(FormatJSONPB)
-	case mtPRPCEncodingText:
-		return status.Errorf(codes.Internal, "prpc: text encoding for pRPC calls is not implemented")
-	default:
-		return status.Errorf(codes.Internal, "prpc: unrecognized contentSubtype %q of CallAcceptContentSubtype", options.AcceptContentSubtype)
-	}
-
 	respBody, err := c.call(ctx, options, reqBody)
 	if err != nil {
 		return err
@@ -302,22 +293,19 @@ func (c *Client) Call(ctx context.Context, serviceName, methodName string, req, 
 // CallWithFormats is like Call, but sends and returns raw data without
 // marshaling it.
 //
+// Ignores RequestFormat and ResponseFormat options in favor of explicitly
+// passed formats. They are used to set corresponding headers on the request.
+//
 // Trims JSONPBPrefix from the response if necessary.
 func (c *Client) CallWithFormats(ctx context.Context, serviceName, methodName string, req []byte, reqFormat, respFormat Format, opts ...grpc.CallOption) ([]byte, error) {
 	options := c.prepareOptions(opts, serviceName, methodName)
-	if options.AcceptContentSubtype != "" {
-		return nil, status.Errorf(codes.Internal,
-			"prpc: CallAcceptContentSubtype option is not allowed with CallWithFormats "+
-				"because input/output formats are already specified")
+	var err error
+	if options.reqCodec, err = c.requestCodec(reqFormat); err != nil {
+		return nil, err
 	}
-	if !reqFormat.IsKnown() {
-		return nil, status.Errorf(codes.Internal, "prpc: unrecognized request format %v", reqFormat)
+	if options.respCodec, err = c.responseCodec(respFormat); err != nil {
+		return nil, err
 	}
-	if !respFormat.IsKnown() {
-		return nil, status.Errorf(codes.Internal, "prpc: unrecognized response format %v", respFormat)
-	}
-	options.reqCodec = c.requestCodec(reqFormat)
-	options.respCodec = c.responseCodec(respFormat)
 	return c.call(ctx, options, req)
 }
 
