@@ -6,9 +6,13 @@
     'milo': {
       'filepath': 'milo',
     },
+    'fleet_console_client': {
+      'filepath': 'milo/ui/src/fleet',
+    },
   },
   'WATCHLISTS': {
     'luci_notify': ['chops-tfs-team+reviews@google.com'],
     'milo': ['chops-tfs-team+reviews@google.com'],
+    'fleet_console_client': ['fleet-console-reviews+client@google.com'],
   },
 }
