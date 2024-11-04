@@ -15,7 +15,9 @@
 package prpc
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -26,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -102,7 +105,7 @@ func TestEncoding(t *testing.T) {
 		msg := &testpb.HelloReply{Message: "Hi"}
 		c := context.Background()
 
-		test := func(codec protoCodec, body []byte, contentType string) {
+		test := func(codec protoCodec, contentType string, expected []byte) {
 			t.Run(contentType, func(t *ftt.Test) {
 				rec := httptest.NewRecorder()
 				writeResponse(c, rec, &response{
@@ -112,23 +115,23 @@ func TestEncoding(t *testing.T) {
 				assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
 				assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("0"))
 				assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal(contentType))
-				assert.Loosely(t, rec.Body.Bytes(), should.Resemble(body))
+				assert.That(t, normalizeEnc(codec, rec.Body.Bytes()), should.Match(normalizeEnc(codec, expected)))
 			})
 		}
 
-		msgBytes, err := proto.Marshal(msg)
-		assert.Loosely(t, err, should.BeNil)
+		wirePB, err := codecWireV2.Encode(nil, msg)
+		assert.That(t, err, should.ErrLike(nil))
 
-		test(codecWireV1, msgBytes, mtPRPCBinary)
-		test(codecJSONV1, []byte(JSONPBPrefix+"{\"message\":\"Hi\"}\n"), mtPRPCJSONPB)
-		test(codecTextV1, []byte("message: \"Hi\"\n"), mtPRPCText)
+		test(codecWireV2, mtPRPCBinary, wirePB)
+		test(codecJSONV2, mtPRPCJSONPB, []byte(")]}'\n{\"message\":\"Hi\"}\n"))
+		test(codecTextV2, mtPRPCText, []byte(`message:"Hi"`))
 
 		t.Run("compression", func(t *ftt.Test) {
 			rec := httptest.NewRecorder()
 			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:         msg,
-				codec:       codecTextV1,
+				codec:       codecTextV2,
 				acceptsGZip: true,
 			})
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusOK))
@@ -141,7 +144,7 @@ func TestEncoding(t *testing.T) {
 			msg := &testpb.HelloReply{Message: strings.Repeat("A", 1024)}
 			writeResponse(c, rec, &response{
 				out:             msg,
-				codec:           codecJSONV1,
+				codec:           codecJSONV2,
 				maxResponseSize: 123,
 			})
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusServiceUnavailable))
@@ -160,7 +163,7 @@ func TestEncoding(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		t.Run("client error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.NotFound, "not found"), codecWireV1)
+			writeError(c, rec, status.Error(codes.NotFound, "not found"), codecWireV2)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusNotFound))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("5"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -169,7 +172,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("internal error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.Internal, "errmsg"), codecWireV1)
+			writeError(c, rec, status.Error(codes.Internal, "errmsg"), codecWireV2)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("13"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -178,7 +181,7 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("unknown error", func(t *ftt.Test) {
-			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), codecWireV1)
+			writeError(c, rec, status.Error(codes.Unknown, "errmsg"), codecWireV2)
 			assert.Loosely(t, rec.Code, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, rec.Header().Get(HeaderGRPCCode), should.Equal("2"))
 			assert.Loosely(t, rec.Header().Get(headerContentType), should.Equal("text/plain; charset=utf-8"))
@@ -187,47 +190,80 @@ func TestEncoding(t *testing.T) {
 		})
 
 		t.Run("status details", func(t *ftt.Test) {
-			testStatusDetails := func(codec protoCodec, expected []string) {
+			errDetails1 := &errdetails.BadRequest{
+				FieldViolations: []*errdetails.BadRequest_FieldViolation{
+					{Field: "a"},
+				},
+			}
+			errDetails2 := &errdetails.Help{
+				Links: []*errdetails.Help_Link{
+					{Url: "https://example.com"},
+				},
+			}
+
+			testStatusDetails := func(codec protoCodec, expected [][]byte) {
 				st := status.New(codes.InvalidArgument, "invalid argument")
 
-				st, err := st.WithDetails(&errdetails.BadRequest{
-					FieldViolations: []*errdetails.BadRequest_FieldViolation{
-						{Field: "a"},
-					},
-				})
+				st, err := st.WithDetails(errDetails1)
 				assert.Loosely(t, err, should.BeNil)
 
-				st, err = st.WithDetails(&errdetails.Help{
-					Links: []*errdetails.Help_Link{
-						{Url: "https://example.com"},
-					},
-				})
+				st, err = st.WithDetails(errDetails2)
 				assert.Loosely(t, err, should.BeNil)
 
 				writeError(c, rec, st.Err(), codec)
-				assert.Loosely(t, rec.Header()[HeaderStatusDetail], should.Resemble(expected))
+
+				assert.Loosely(t, rec.Header()[HeaderStatusDetail], should.HaveLength(len(expected)))
+				for i, val := range rec.Header()[HeaderStatusDetail] {
+					blob, err := base64.StdEncoding.DecodeString(val)
+					assert.That(t, err, should.ErrLike(nil))
+					assert.That(t, normalizeEnc(codec, blob), should.Match(normalizeEnc(codec, expected[i])))
+				}
+			}
+
+			wireAnyPB := func(msg proto.Message) []byte {
+				apb, err := anypb.New(msg)
+				if err != nil {
+					panic(apb)
+				}
+				blob, err := codecWireV2.Encode(nil, apb)
+				if err != nil {
+					panic(err)
+				}
+				return blob
 			}
 
 			t.Run("binary", func(t *ftt.Test) {
-				testStatusDetails(codecWireV1, []string{
-					"Cil0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdBIFCgMKAWE=",
-					"CiN0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscBIXChUSE2h0dHBzOi8vZXhhbXBsZS5jb20=",
+				testStatusDetails(codecWireV2, [][]byte{
+					wireAnyPB(errDetails1),
+					wireAnyPB(errDetails2),
 				})
 			})
 
 			t.Run("json", func(t *ftt.Test) {
-				testStatusDetails(codecJSONV1, []string{
-					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5CYWRSZXF1ZXN0IiwiZmllbGRWaW9sYXRpb25zIjpbeyJmaWVsZCI6ImEifV19",
-					"eyJAdHlwZSI6InR5cGUuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLnJwYy5IZWxwIiwibGlua3MiOlt7InVybCI6Imh0dHBzOi8vZXhhbXBsZS5jb20ifV19",
+				testStatusDetails(codecJSONV2, [][]byte{
+					[]byte(`{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"a"}]}`),
+					[]byte(`{"@type":"type.googleapis.com/google.rpc.Help","links":[{"url":"https://example.com"}]}`),
 				})
 			})
 
 			t.Run("text", func(t *ftt.Test) {
-				testStatusDetails(codecTextV1, []string{
-					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuQmFkUmVxdWVzdCIKdmFsdWU6ICJcblwwMDNcblwwMDFhIgo=",
-					"dHlwZV91cmw6ICJ0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuSGVscCIKdmFsdWU6ICJcblwwMjVcMDIyXDAyM2h0dHBzOi8vZXhhbXBsZS5jb20iCg==",
+				testStatusDetails(codecTextV2, [][]byte{
+					[]byte(`[type.googleapis.com/google.rpc.BadRequest]:{field_violations:{field:"a"}}`),
+					[]byte(`[type.googleapis.com/google.rpc.Help]:{links:{url:"https://example.com"}}`),
 				})
 			})
 		})
 	})
+}
+
+// normalizeEnc does lossy normalization of encoded data for comparisons.
+func normalizeEnc(codec protoCodec, blob []byte) []byte {
+	switch codec {
+	case codecWireV2:
+		return blob
+	case codecJSONV2, codecTextV2:
+		return bytes.Replace(blob, []byte(" "), nil, -1)
+	default:
+		panic("impossible")
+	}
 }

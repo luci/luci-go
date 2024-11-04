@@ -42,11 +42,11 @@ func TestDecoding(t *testing.T) {
 	codecPicker := func(f Format) protoCodec {
 		switch f {
 		case FormatBinary:
-			return codecWireV1
+			return codecWireV2
 		case FormatJSONPB:
-			return codecJSONV1WithHack
+			return codecJSONV2
 		case FormatText:
-			return codecTextV1
+			return codecTextV2
 		default:
 			panic("impossible")
 		}
@@ -77,7 +77,7 @@ func TestDecoding(t *testing.T) {
 			t.Helper()
 			err := read(contentType, "identity", body)
 			assert.That(t, err, should.Equal[*protocolError](nil), truth.LineContext())
-			assert.Loosely(t, &msg, should.Resemble(&testpb.HelloRequest{
+			assert.Loosely(t, &msg, should.Match(&testpb.HelloRequest{
 				Name: "Lucy",
 				Fields: &fieldmaskpb.FieldMask{
 					Paths: []string{
@@ -200,7 +200,7 @@ func TestDecoding(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			md, ok := metadata.FromIncomingContext(c)
 			assert.Loosely(t, ok, should.BeTrue)
-			assert.Loosely(t, md.Get("host"), should.Resemble([]string{"example.com"}))
+			assert.Loosely(t, md.Get("host"), should.Match([]string{"example.com"}))
 		})
 
 		header := func(name, value string) http.Header {
@@ -252,7 +252,7 @@ func TestDecoding(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				md, ok := metadata.FromIncomingContext(ctx)
 				assert.Loosely(t, ok, should.BeTrue)
-				assert.Loosely(t, md, should.Resemble(expectedMetadata))
+				assert.Loosely(t, md, should.Match(expectedMetadata))
 			}
 
 			headers := http.Header{
