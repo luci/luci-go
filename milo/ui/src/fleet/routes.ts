@@ -26,6 +26,7 @@ export const fleetRoutes: RouteObject[] = [
     lazy: () => import('@/common/layouts/labs_layout'),
     children: [
       { path: 'devices', lazy: () => import('@/fleet/pages/device_list_page') },
+      { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
     ],
   },
 ];
