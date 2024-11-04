@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import { styled } from '@mui/material';
-import { Outlet } from 'react-router-dom';
+import { ReactNode } from 'react';
+import { Outlet, UIMatch, useMatches } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
 import {
@@ -44,6 +45,18 @@ export const BaseLayout = () => {
   const [sidebarOpen = true, setSidebarOpen] = useLocalStorage<boolean>(
     SIDE_BAR_OPEN_CACHE_KEY,
   );
+  const matches = useMatches() as UIMatch<
+    unknown,
+    { layout?: () => ReactNode }
+  >[];
+
+  // [.at(-1)] If a custom layout is defined by multiple sub routes we want to
+  // use the deepest node
+  const CustomLayout = matches.filter((m) => m.handle?.layout).at(-1)
+    ?.handle?.layout;
+  if (CustomLayout) {
+    return <CustomLayout />;
+  }
 
   return (
     <ScrollingBase>
