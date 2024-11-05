@@ -235,7 +235,7 @@ func TestNotification(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, b, bi, bs, bo, binpProp), should.BeNil)
 
 		t.Run("build not exist", func(t *ftt.Test) {
-			err := PublishBuildsV2Notification(ctx, 999, nil, false)
+			err := PublishBuildsV2Notification(ctx, 999, nil, false, maxLargeBytesSize)
 			assert.Loosely(t, err, should.BeNil)
 			tasks := sch.Tasks()
 			assert.Loosely(t, tasks, should.HaveLength(0))
@@ -244,7 +244,7 @@ func TestNotification(t *testing.T) {
 		t.Run("To internal topic", func(t *ftt.Test) {
 
 			t.Run("success", func(t *ftt.Test) {
-				err := PublishBuildsV2Notification(ctx, 123, nil, false)
+				err := PublishBuildsV2Notification(ctx, 123, nil, false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
@@ -334,7 +334,7 @@ func TestNotification(t *testing.T) {
 				}
 				assert.Loosely(t, datastore.Put(ctx, b, bi), should.BeNil)
 
-				err := PublishBuildsV2Notification(ctx, 456, nil, false)
+				err := PublishBuildsV2Notification(ctx, 456, nil, false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
@@ -364,6 +364,68 @@ func TestNotification(t *testing.T) {
 					Output: &pb.Build_Output{},
 				}))
 			})
+
+			t.Run("success - too large fields are dropped", func(t *ftt.Test) {
+				b := &model.Build{
+					ID: 789,
+					Proto: &pb.Build{
+						Id: 789,
+						Builder: &pb.BuilderID{
+							Project: "project",
+							Bucket:  "bucket",
+							Builder: "builder",
+						},
+						Status: pb.Status_CANCELED,
+					},
+				}
+				bk := datastore.KeyForObj(ctx, b)
+				bi := &model.BuildInfra{
+					ID:    1,
+					Build: bk,
+					Proto: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "hostname",
+						},
+					},
+				}
+				bo := &model.BuildOutputProperties{
+					Build: bk,
+					Proto: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"output": {
+								Kind: &structpb.Value_StringValue{
+									StringValue: "large value ;)",
+								},
+							},
+						},
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, b, bi, bo), should.BeNil)
+
+				err := PublishBuildsV2Notification(ctx, 789, nil, false, 1)
+				assert.Loosely(t, err, should.BeNil)
+
+				tasks := sch.Tasks()
+				assert.Loosely(t, tasks, should.HaveLength(1))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuild(), should.Match(&pb.Build{
+					Id: 789,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_CANCELED,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "hostname",
+						},
+					},
+					Input:  &pb.Build_Input{},
+					Output: &pb.Build_Output{},
+				}))
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFields(), should.BeNil)
+				assert.Loosely(t, tasks[0].Payload.(*pb.BuildsV2PubSub).GetBuildLargeFieldsDropped(), should.BeTrue)
+			})
 		})
 
 		t.Run("To external topic (non callback)", func(t *ftt.Test) {
@@ -377,7 +439,10 @@ func TestNotification(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run("success (zlib compression)", func(t *ftt.Test) {
-				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"}, false)
+				err := PublishBuildsV2Notification(
+					ctx, 123,
+					&pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/my-topic"},
+					false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
@@ -453,7 +518,7 @@ func TestNotification(t *testing.T) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name:        "projects/my-cloud-project/topics/my-topic",
 					Compression: pb.Compression_ZSTD,
-				}, false)
+				}, false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.BeNil)
 
 				tasks := sch.Tasks()
@@ -529,7 +594,7 @@ func TestNotification(t *testing.T) {
 			t.Run("non-exist topic", func(t *ftt.Test) {
 				err := PublishBuildsV2Notification(ctx, 123, &pb.BuildbucketCfg_Topic{
 					Name: "projects/my-cloud-project/topics/non-exist-topic",
-				}, false)
+				}, false, maxLargeBytesSize)
 				assert.Loosely(t, err, should.NotBeNil)
 				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
 			})
@@ -564,7 +629,10 @@ func TestNotification(t *testing.T) {
 				},
 			}), should.BeNil)
 
-			err = PublishBuildsV2Notification(ctx, 999, &pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"}, true)
+			err = PublishBuildsV2Notification(
+				ctx, 999,
+				&pb.BuildbucketCfg_Topic{Name: "projects/my-cloud-project/topics/callback-topic"},
+				true, maxLargeBytesSize)
 			assert.Loosely(t, err, should.BeNil)
 
 			tasks := sch.Tasks()

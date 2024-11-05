@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/tq"
 
@@ -34,6 +35,11 @@ import (
 	// Enable datastore transactional tasks support.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
+
+// Maximum size of the compressed large build fields.
+// If the large fields of a build exceed this limit, they will be dropped
+// from the Pubsub message.
+const maxLargeBytesSize = pubsub.MaxPublishRequestBytes - 1000*1000
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
@@ -76,7 +82,7 @@ func init() {
 		Queue:     "notify-pubsub-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
 			t := payload.(*taskdefs.NotifyPubSubGo)
-			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic, t.Callback)
+			return PublishBuildsV2Notification(ctx, t.BuildId, t.Topic, t.Callback, maxLargeBytesSize)
 		},
 	})
 

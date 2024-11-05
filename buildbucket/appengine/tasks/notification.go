@@ -100,7 +100,7 @@ func EnqueueNotifyPubSubGo(ctx context.Context, buildID int64, project string) e
 
 // PublishBuildsV2Notification is the handler of notify-pubsub-go where it
 // actually sends build notifications to the internal or external topic.
-func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic, callback bool) error {
+func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.BuildbucketCfg_Topic, callback bool, largeBytesSizeLimit int) error {
 	b := &model.Build{ID: buildID}
 	switch err := datastore.Get(ctx, b); {
 	case err == datastore.ErrNoSuchEntity:
@@ -133,29 +133,22 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		p.Output.Properties = nil
 	}
 
-	buildLargeBytes, err := proto.Marshal(buildLarge)
+	compressed, err := compressLargeFields(buildID, buildLarge, topic)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal buildLarge").Err()
+		return err
 	}
-	var compressed []byte
-	// If topic is nil or empty, it gets Compression_ZLIB.
-	switch topic.GetCompression() {
-	case pb.Compression_ZLIB:
-		compressed, err = compression.ZlibCompress(buildLargeBytes)
-	case pb.Compression_ZSTD:
-		compressed = make([]byte, 0, len(buildLargeBytes)/2) // hope for at least 2x compression
-		compressed = compression.ZstdCompress(buildLargeBytes, compressed)
-	default:
-		return tq.Fatal.Apply(errors.Reason("unsupported compression method %s", topic.GetCompression().String()).Err())
-	}
-	if err != nil {
-		return errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
+	largeFieldsDropped := false
+	if len(compressed) > largeBytesSizeLimit {
+		// large fields are too big, drop them.
+		compressed = nil
+		largeFieldsDropped = true
 	}
 
 	bldV2 := &pb.BuildsV2PubSub{
-		Build:            p,
-		BuildLargeFields: compressed,
-		Compression:      topic.GetCompression(),
+		Build:                   p,
+		BuildLargeFields:        compressed,
+		Compression:             topic.GetCompression(),
+		BuildLargeFieldsDropped: largeFieldsDropped,
 	}
 
 	prj := b.Project // represent the project to make the pubsub call.
@@ -178,6 +171,28 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 			Payload: bldV2,
 		})
 	}
+}
+
+func compressLargeFields(buildID int64, buildLarge *pb.Build, topic *pb.BuildbucketCfg_Topic) ([]byte, error) {
+	buildLargeBytes, err := proto.Marshal(buildLarge)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to marshal buildLarge").Err()
+	}
+	var compressed []byte
+	// If topic is nil or empty, it gets Compression_ZLIB.
+	switch topic.GetCompression() {
+	case pb.Compression_ZLIB:
+		compressed, err = compression.ZlibCompress(buildLargeBytes)
+	case pb.Compression_ZSTD:
+		compressed = make([]byte, 0, len(buildLargeBytes)/2) // hope for at least 2x compression
+		compressed = compression.ZstdCompress(buildLargeBytes, compressed)
+	default:
+		return nil, tq.Fatal.Apply(errors.Reason("unsupported compression method %s", topic.GetCompression().String()).Err())
+	}
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to compress large fields for %d", buildID).Err()
+	}
+	return compressed, nil
 }
 
 // publishToExternalTopic publishes the given pubsub msg to the given topic
