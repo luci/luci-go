@@ -622,7 +622,7 @@ func updateEntities(ctx context.Context, req *pb.UpdateBuildRequest, parentID in
 		// details.
 		if !isEndedStatus {
 			if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, b, false); err != nil {
-				return errors.Annotate(err, "failed to update build's custom builder metrics").Err()
+				logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 			}
 		}
 

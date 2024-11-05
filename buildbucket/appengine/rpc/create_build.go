@@ -590,14 +590,12 @@ func (bc *buildCreator) createBuilds(ctx context.Context) ([]*model.Build, error
 		work <- func() error {
 			// Evaluate the builds for custom builder metrics.
 			// The builds have not been saved in datastore, so nothing to load as build details.
-			merr := make(errors.MultiError, len(validBlds))
-			for i, bld := range validBlds {
-				merr[i] = model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, false)
+			for _, bld := range validBlds {
+				if err := model.EvaluateBuildForCustomBuilderMetrics(ctx, bld, false); err != nil {
+					logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
+				}
 			}
-			if merr.First() == nil {
-				return nil
-			}
-			return merr
+			return nil
 		}
 	})
 	if err != nil {

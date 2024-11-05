@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/common"
@@ -162,7 +163,7 @@ func (u *Updater) Do(ctx context.Context) (*model.BuildStatus, error) {
 	if protoutil.IsEnded(newBuildStatus.Status) && newBuildStatus.Status != pb.Status_SUCCESS {
 		err := model.EvaluateBuildForCustomBuilderMetrics(ctx, u.Build, true)
 		if err != nil {
-			return nil, err
+			logging.Errorf(ctx, "failed to evaluate build for custom builder metrics: %s", err)
 		}
 	}
 
