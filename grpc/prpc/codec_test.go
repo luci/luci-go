@@ -122,13 +122,13 @@ func TestCodecRoundTripFieldMaskAdvanced(t *testing.T) {
 func TestFieldMaskJSONDecoder(t *testing.T) {
 	t.Parallel()
 
-	simpleStr := `{"fields": "a,b.c"}`
-	simpleObj := `{"fields": {"path": ["a", "b.c"]}}`
-	advancStr := `{"fields": "a,b.*.c"}`
-	advancObj := `{"fields": {"path": ["a", "b.*.c"]}}`
+	simpleStr := `{"fields": "a,b.someStr"}`
+	simpleObj := `{"fields": {"paths": ["a", "b.someStr"]}}`
+	advancStr := `{"fields": "a,b.*.someStr"}`
+	advancObj := `{"fields": {"paths": ["a", "b.*.someStr"]}}`
 
-	simpleFields := []string{"a", "b.c"}
-	advancFields := []string{"a", "b.*.c"}
+	simpleFields := []string{"a", "b.some_str"}
+	advancFields := []string{"a", "b.*.some_str"}
 
 	cases := []struct {
 		body   string
@@ -139,17 +139,17 @@ func TestFieldMaskJSONDecoder(t *testing.T) {
 		{simpleStr, codecJSONV1WithHack, simpleFields}, // v1 with the hack does
 		{simpleStr, codecJSONV2, simpleFields},         // v2 does as well
 
-		{simpleObj, codecJSONV1, simpleFields}, // v1 supports object field masks
-		{simpleObj, codecJSONV1WithHack, nil},  // v1 with a hack doesn't supports object field masks
-		{simpleObj, codecJSONV2, nil},          // v2 doesn't support object field masks
+		{simpleObj, codecJSONV1, simpleFields},         // v1 supports object field masks
+		{simpleObj, codecJSONV1WithHack, simpleFields}, // v1 supports object field masks
+		{simpleObj, codecJSONV2, nil},                  // v2 doesn't support object field masks
 
 		{advancStr, codecJSONV1, nil},                  // v1 doesn't support string field masks
 		{advancStr, codecJSONV1WithHack, advancFields}, // v1 with the hack does
 		{advancStr, codecJSONV2, nil},                  // v2 doesn't support advanced field masks
 
-		{advancObj, codecJSONV1, advancFields}, // v1 supports advanced object field masks
-		{advancObj, codecJSONV1WithHack, nil},  // v1 with a hack doesn't supports object field masks
-		{advancObj, codecJSONV2, nil},          // v2 doesn't support object field masks
+		{advancObj, codecJSONV1, advancFields},         // v1 supports advanced object field masks
+		{advancObj, codecJSONV1WithHack, advancFields}, // v1 supports advanced object field masks
+		{advancObj, codecJSONV2, nil},                  // v2 doesn't support object field masks
 	}
 
 	for idx, c := range cases {

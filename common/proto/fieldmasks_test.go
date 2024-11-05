@@ -15,16 +15,11 @@
 package proto
 
 import (
-	"bytes"
-	"encoding/json"
 	"reflect"
 	"testing"
 
-	jsonpbv1 "github.com/golang/protobuf/jsonpb"
-	protov1 "github.com/golang/protobuf/proto"
-	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
@@ -36,48 +31,41 @@ import (
 func TestFixFieldMasks(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("TestFixFieldMasks", t, func(t *ftt.Test) {
-		normalizeJSON := func(jsonData []byte) string {
-			buf := &bytes.Buffer{}
-			err := json.Indent(buf, jsonData, "", "  ")
-			assert.Loosely(t, err, should.BeNil)
-			return buf.String()
-		}
-		testFix := func(pb proto.Message, expected string) {
-			typ := reflect.TypeOf(pb).Elem()
-
-			actual, err := protojson.Marshal(pb)
-			assert.Loosely(t, err, should.BeNil)
-
-			assert.Loosely(t, normalizeJSON(actual), should.Equal(normalizeJSON([]byte(expected))))
-
-			jsBadEmulated, err := fixFieldMasksBeforeUnmarshal([]byte(actual), typ)
-			assert.Loosely(t, err, should.BeNil)
-
-			assert.Loosely(t, jsonpbv1.UnmarshalString(string(jsBadEmulated), protov1.MessageV1(pb)), should.BeNil)
-		}
-		t.Run("No field masks", func(t *ftt.Test) {
-			testFix(
+	ftt.Run("OK", t, func(t *ftt.Test) {
+		cases := []struct {
+			name     string
+			body     string
+			expected proto.Message
+		}{
+			{
+				"no field mask",
+				`{"id": "1"}`,
 				&testingpb.Simple{Id: 1},
-				`{
-					"id": "1"
-				}`,
-			)
-		})
-
-		t.Run("Works", func(t *ftt.Test) {
-			testFix(
-				&testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
+			},
+			{
+				"works with str",
+				`{"fields": "id,someField"}`,
+				&testingpb.Simple{Fields: &fieldmaskpb.FieldMask{Paths: []string{
 					"id", "some_field",
 				}}},
-				`{
-					"fields": "id,someField"
-				}`,
-			)
-		})
-
-		t.Run("Properties", func(t *ftt.Test) {
-			testFix(
+			},
+			{
+				"works with obj",
+				`{"fields": {"paths": ["id", "someField"]}}`,
+				&testingpb.Simple{Fields: &fieldmaskpb.FieldMask{Paths: []string{
+					"id", "some_field",
+				}}},
+			},
+			{
+				"works with obj and snake case",
+				`{"fields": {"paths": ["id", "some_field"]}}`,
+				&testingpb.Simple{Fields: &fieldmaskpb.FieldMask{Paths: []string{
+					"id", "some_field",
+				}}},
+			},
+			{
+				"structpb",
+				`{"properties": {"foo": "bar"}}`,
 				&testingpb.Props{
 					Properties: &structpb.Struct{
 						Fields: map[string]*structpb.Value{
@@ -85,39 +73,35 @@ func TestFixFieldMasks(t *testing.T) {
 						},
 					},
 				},
-				`{
-						"properties": {
-							"foo": "bar"
-						}
-					}`,
-			)
-		})
-
-		t.Run("Nested type", func(t *ftt.Test) {
-			testFix(
+			},
+			{
+				"nested type",
+				`{"msgs": [{"simple": {"fields": "id,someField"}}]}`,
 				&testingpb.WithInner{
 					Msgs: []*testingpb.WithInner_Inner{
 						{
 							Msg: &testingpb.WithInner_Inner_Simple{
-								Simple: &testingpb.Simple{Fields: &field_mask.FieldMask{Paths: []string{
+								Simple: &testingpb.Simple{Fields: &fieldmaskpb.FieldMask{Paths: []string{
 									"id", "some_field",
 								}}},
 							},
 						},
 					},
 				},
-				`{
-						"msgs": [
-							{
-								"simple": {
-									"fields": "id,someField"
-								}
-							}
-						]
-					}`,
-			)
-		})
+			},
+		}
 
+		for _, c := range cases {
+			t.Run(c.name, func(t *ftt.Test) {
+				clone := proto.Clone(c.expected)
+				proto.Reset(clone)
+				assert.That(t, UnmarshalJSONWithNonStandardFieldMasks([]byte(c.body), clone), should.ErrLike(nil))
+				assert.That(t, clone, should.Match(c.expected))
+			})
+		}
+	})
+
+	ftt.Run("Fails", t, func(t *ftt.Test) {
 		t.Run("invalid field", func(t *ftt.Test) {
 			input := `{
 				"a": 1
@@ -135,11 +119,11 @@ func TestFixFieldMasks(t *testing.T) {
 		})
 
 		t.Run("quotes", func(t *ftt.Test) {
-			assert.Loosely(t, parseFieldMaskString("`a,b`,c"), should.Resemble([]string{"`a,b`", "c"}))
+			assert.That(t, parseFieldMaskString("`a,b`,c"), should.Match([]string{"`a,b`", "c"}))
 		})
 
 		t.Run("two seps", func(t *ftt.Test) {
-			assert.Loosely(t, parseFieldMaskString("a,b,c"), should.Resemble([]string{"a", "b", "c"}))
+			assert.That(t, parseFieldMaskString("a,b,c"), should.Match([]string{"a", "b", "c"}))
 		})
 	})
 }

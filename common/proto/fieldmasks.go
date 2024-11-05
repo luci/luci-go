@@ -38,16 +38,21 @@ var (
 )
 
 // UnmarshalJSONWithNonStandardFieldMasks unmarshals a JSONPB message that has
-// google.protobuf.FieldMask inside that uses non-standard field mask semantics
-// (like paths that contains `*`).
+// google.protobuf.FieldMask inside that either uses non-standard field mask
+// semantics (like paths that contains `*`) or uses non-standard object encoding
+// (e.g. `"mask": {"paths": ["a", "b"]}` instead of `"mask": "a,b"`), or both.
 //
 // Such field masks are not supported by the standard JSONPB unmarshaller.
 // If your message uses only standard field masks (i.e. only containing paths
-// like `a.b.c` with not extra syntax), use the standard JSON unmarshaler
-// from google.golang.org/protobuf/encoding/protojson package.
+// like `a.b.c` with not extra syntax, with the field mask serialized as a
+// string), use the standard JSON unmarshaler from
+// google.golang.org/protobuf/encoding/protojson package.
 //
-// Using non-standard field masks is discouraged. Giant name of this function
-// is a hint that it should not be used.
+// Using non-standard field masks is discouraged. Deserializing them has
+// significant performance overhead. This function is also more likely to break
+// in the future (since it uses deprecated libraries under the hood).
+//
+// Giant name of this function is a hint that it should not be used.
 func UnmarshalJSONWithNonStandardFieldMasks(buf []byte, msg proto.Message) error {
 	v1 := protov1.MessageV1(msg)
 	t := reflect.TypeOf(v1)
@@ -99,7 +104,9 @@ func fixFieldMasks(fieldPath []string, msg map[string]any, messageType reflect.T
 			}
 
 		case map[string]any:
-			if typ != structType && typ.Implements(protoMessageType) {
+			if typ == fieldMaskType {
+				convertObjectFieldMask(val)
+			} else if typ != structType && typ.Implements(protoMessageType) {
 				if err := fixFieldMasks(localPath, val, typ.Elem()); err != nil {
 					return err
 				}
@@ -133,6 +140,28 @@ func convertFieldMask(s string) map[string]any {
 	return map[string]any{
 		"paths": paths,
 	}
+}
+
+// convertObjectFieldMask takes a JSON map with a field mask proto (i.e.
+// `{"paths": [...]}`), and converts (in place) paths inside to snake case.
+//
+// It ignores any extra keys or any type mismatches: all these errors will be
+// dealt with when trying to deserialize the resulting JSON for real.
+func convertObjectFieldMask(m map[string]any) {
+	paths := m["paths"]
+	slice, _ := paths.([]any)
+	if len(slice) == 0 {
+		return
+	}
+	fixed := make([]string, len(slice))
+	for i, p := range slice {
+		path, ok := p.(string)
+		if !ok {
+			return
+		}
+		fixed[i] = toSnakeCase(path)
+	}
+	m["paths"] = fixed
 }
 
 func toSnakeCase(s string) string {
