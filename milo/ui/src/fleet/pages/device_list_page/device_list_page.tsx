@@ -21,7 +21,7 @@ import { PageMeta } from '@/common/components/page_meta';
 import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
-export const DeviceListPage = () => {
+const DeviceListPage = () => {
   return (
     <>
       <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
