@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -45,14 +46,13 @@ import (
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
 	"go.chromium.org/luci/tokenserver/client"
 )
 
 // Version identifies the major revision of the tokend code.
 //
 // It is put in the status file (and subsequently reported to monitoring).
-const Version = "1.2"
+const Version = "1.3"
 
 // commandLine contains all command line flags.
 //
@@ -62,6 +62,7 @@ type commandLine struct {
 	CertificatePath string
 	Backend         string
 	TokenFile       string
+	TokenFileCopy   stringlistflag.Flag
 	StatusFile      string
 	Timeout         time.Duration
 	ForceRefresh    bool
@@ -78,6 +79,7 @@ func (c *commandLine) registerFlags(f *flag.FlagSet) {
 	f.StringVar(&c.CertificatePath, "cert-pem", c.CertificatePath, "path to a certificate file")
 	f.StringVar(&c.Backend, "backend", c.Backend, "hostname of the backend to use")
 	f.StringVar(&c.TokenFile, "token-file", c.TokenFile, "where to put the token file")
+	f.Var(&c.TokenFileCopy, "token-file-copy", "additional file path to copy the token file into, can be repeated")
 	f.StringVar(&c.StatusFile, "status-file", c.StatusFile, "where to put details about this run (optional)")
 	f.DurationVar(&c.Timeout, "timeout", c.Timeout, "how long to retry on errors before giving up")
 	f.BoolVar(&c.ForceRefresh, "force-refresh", c.ForceRefresh, "forcefully refresh the token even if it is still valid")
@@ -100,25 +102,28 @@ func (c *commandLine) check() error {
 }
 
 func main() {
-	os.Exit(realMain())
+	os.Exit(realMain(context.Background(), os.Args[1:]))
 }
 
-func realMain() int {
+func realMain(ctx context.Context, args []string) int {
+	flags := flag.NewFlagSet("", flag.ExitOnError)
+
 	opts := defaults()
-	opts.registerFlags(flag.CommandLine)
+	opts.registerFlags(flags)
 
 	tsmonFlags := tsmon.NewFlags()
 	tsmonFlags.Target.TargetType = target.TaskType
 	tsmonFlags.Target.TaskServiceName = "luci_machine_tokend"
 	tsmonFlags.Target.TaskJobName = "default"
 	tsmonFlags.Flush = "manual"
-	tsmonFlags.Register(flag.CommandLine)
+	tsmonFlags.Register(flags)
 
-	flag.Parse()
+	// This exits on errors.
+	_ = flags.Parse(args)
 
 	if err := opts.check(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		flag.Usage()
+		flags.Usage()
 		return 2
 	}
 
@@ -137,7 +142,7 @@ func realMain() int {
 			}
 		},
 	}
-	if strings.HasPrefix(clientParams.Backend, "localhost:") {
+	if strings.HasPrefix(clientParams.Backend, "localhost:") || strings.HasPrefix(clientParams.Backend, "127.0.0.1:") {
 		clientParams.Insecure = true
 	}
 
@@ -147,7 +152,7 @@ func realMain() int {
 	memLogFactory := func(context.Context) logging.Logger {
 		return log
 	}
-	root := teelogger.Use(context.Background(), memLogFactory, gologger.StdConfig.NewLogger)
+	root := teelogger.Use(ctx, memLogFactory, gologger.StdConfig.NewLogger)
 	root = logging.SetLevel(root, logging.Debug)
 
 	// Apply tsmon config. A failure here is non-fatal.
@@ -235,7 +240,21 @@ func run(ctx context.Context, clientParams client.Parameters, opts commandLine, 
 		status.UpdateReason = UpdateReasonForceRefresh
 	default:
 		logging.Infof(ctx, "The token is valid, skipping the update")
-		status.UpdateReason = UpdateReasonTokenIsGood
+		// Make sure all copies are up-to-date as well.
+		switch wrote, err := writeTokenFiles(ctx, existingToken, existingState, opts.TokenFileCopy); {
+		case err != nil:
+			status.UpdateReason = UpdateReasonMissingTokenCopy
+			if os.IsPermission(err) {
+				status.UpdateOutcome = OutcomePermissionError
+			} else {
+				status.UpdateOutcome = OutcomeUnknownSaveTokenError
+			}
+			return err
+		case wrote:
+			status.UpdateReason = UpdateReasonMissingTokenCopy
+		default:
+			status.UpdateReason = UpdateReasonTokenIsGood
+		}
 		status.UpdateOutcome = OutcomeTokenIsGood
 		return nil
 	}
@@ -294,8 +313,9 @@ func run(ctx context.Context, clientParams client.Parameters, opts commandLine, 
 		InputsDigest: inputsDigest,
 		Version:      Version,
 	}
-	if err = writeTokenFile(ctx, &newTokenFile, &newState, opts.TokenFile); err != nil {
-		logging.Errorf(ctx, "Failed to save token file - %s", err)
+
+	pathsToWrite := append([]string{opts.TokenFile}, opts.TokenFileCopy...)
+	if _, err = writeTokenFiles(ctx, &newTokenFile, &newState, pathsToWrite); err != nil {
 		status.FailureError = err
 		if os.IsPermission(err) {
 			status.UpdateOutcome = OutcomePermissionError

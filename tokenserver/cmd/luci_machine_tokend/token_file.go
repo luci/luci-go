@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"go.chromium.org/luci/common/logging"
+
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 )
 
@@ -59,20 +61,29 @@ func readTokenFile(ctx context.Context, path string) (*tokenserver.TokenFile, *s
 	return out, state
 }
 
-// writeTokenFile replaces the token file on disk.
+// writeTokenFiles replaces token files on disk.
 //
 // It updates tokenFile.TokendState field first, then serializes the token and
-// dumps it on disk.
+// dumps it on disk in multiple copies. Updates the file only if its current
+// content is different from the expected one (to avoid disrupting any potential
+// concurrent readers of the file).
 //
 // It replaces the token file atomically, retrying a bunch of times in case of
 // concurrent access errors (important on Windows).
 //
+// Returns true if wrote at least one token (i.e. returns false if all files
+// are already up-to-date). Logs some errors inside.
+//
 // The token file is world-readable (0644 permissions).
-func writeTokenFile(ctx context.Context, tokenFile *tokenserver.TokenFile, state *stateInToken, path string) error {
+func writeTokenFiles(ctx context.Context, tokenFile *tokenserver.TokenFile, state *stateInToken, paths []string) (bool, error) {
+	if len(paths) == 0 {
+		return false, nil
+	}
+
 	stateBlob, err := json.Marshal(state)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to marshal tokend_state - %s", err)
-		return err
+		return false, err
 	}
 	tokenFile.TokendState = stateBlob
 
@@ -80,8 +91,33 @@ func writeTokenFile(ctx context.Context, tokenFile *tokenserver.TokenFile, state
 	blob, err := opts.Marshal(tokenFile)
 	if err != nil {
 		logging.Errorf(ctx, "Failed to marshal the token file - %s", err)
-		return err
+		return false, err
 	}
 
-	return AtomicWriteFile(ctx, path, blob, 0644)
+	// A token file is never empty, we can use nil slice as an indicator of a
+	// missing or unreadable file.
+	bestEffortRead := func(path string) []byte {
+		blob, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		return blob
+	}
+
+	var firstErr error
+	var wroteFile bool
+	for _, path := range paths {
+		if bytes.Equal(blob, bestEffortRead(path)) {
+			continue
+		}
+		if err := AtomicWriteFile(ctx, path, blob, 0644); err != nil {
+			logging.Errorf(ctx, "Failed to write token file %s - %s", path, err)
+			if firstErr == nil {
+				firstErr = err
+			}
+		} else {
+			wroteFile = true
+		}
+	}
+	return wroteFile, firstErr
 }

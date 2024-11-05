@@ -71,6 +71,7 @@ const (
 	UpdateReasonNewToken         UpdateReason = "NEW_TOKEN"
 	UpdateReasonExpiration       UpdateReason = "TOKEN_EXPIRES"
 	UpdateReasonParametersChange UpdateReason = "PARAMS_CHANGE"
+	UpdateReasonMissingTokenCopy UpdateReason = "MISSING_TOKEN_COPY"
 	UpdateReasonForceRefresh     UpdateReason = "FORCE_REFRESH"
 )
 
