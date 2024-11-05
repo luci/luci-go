@@ -155,7 +155,7 @@ var buildJSON = `
   ]
 }`
 
-const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><green+h> SUCCESS   'chromium/try/linux-rel/1'<reset>
+const expectedBuildPrintedTemplate = `<white+b><white+u><green+h>http://cr-buildbucket.appspot.com/build/8917899588926498064<reset><white+b><green+h> SUCCESS   'chromium/try/linux-rel/1'<reset>
 <white+b>Summary<reset>: it was ok
 <white+b>Experimental<reset> <white+b>Canary<reset>
 <white+b>Created<reset> on 2019-03-26 at 18:33:47, <white+b>waited<reset> 4.5s, <white+b>started<reset> at 18:33:52, <white+b>ran<reset> for 3m21s, <white+b>ended<reset> at 18:37:13
@@ -215,7 +215,7 @@ func TestPrint(t *testing.T) {
 			assert.Loosely(t, protojson.Unmarshal([]byte(buildJSON), build), should.BeNil)
 
 			expectedBuildPrinted := ansifyTemplate(expectedBuildPrintedTemplate)
-			p.Build(build)
+			p.Build(build, "")
 
 			assert.Loosely(t, p.Err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal(expectedBuildPrinted))
@@ -232,8 +232,8 @@ func TestPrint(t *testing.T) {
 					Builder: "linux-rel",
 				},
 			}
-			expectedBuildPrinted := ansifyTemplate("<white+b><white+u><yellow+h>http://ci.chromium.org/b/8917899588926498064<reset><white+b><yellow+h> STARTED   'chromium/try/linux-rel'<reset>\n")
-			p.Build(build)
+			expectedBuildPrinted := ansifyTemplate("<white+b><white+u><yellow+h>http://cr-buildbucket-dev.appspot.com/build/8917899588926498064<reset><white+b><yellow+h> STARTED   'chromium/try/linux-rel'<reset>\n")
+			p.Build(build, "cr-buildbucket-dev.appspot.com")
 
 			assert.Loosely(t, p.Err, should.BeNil)
 			assert.Loosely(t, buf.String(), should.Equal(expectedBuildPrinted))
@@ -250,20 +250,20 @@ func TestPrint(t *testing.T) {
 				},
 			}
 			// Make sure Build can be printed
-			p.Build(validBuild)
+			p.Build(validBuild, "")
 			assert.Loosely(t, p.Err, should.BeNil)
 
 			buildWithoutID := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutID.Id = 0
-			assert.Loosely(t, func() { p.Build(buildWithoutID) }, should.Panic)
+			assert.Loosely(t, func() { p.Build(buildWithoutID, "") }, should.Panic)
 
 			buildWithoutStatus := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutStatus.Status = pb.Status_STATUS_UNSPECIFIED
-			assert.Loosely(t, func() { p.Build(buildWithoutStatus) }, should.Panic)
+			assert.Loosely(t, func() { p.Build(buildWithoutStatus, "") }, should.Panic)
 
 			buildWithoutBuilder := proto.Clone(validBuild).(*pb.Build)
 			buildWithoutBuilder.Builder = nil
-			assert.Loosely(t, func() { p.Build(buildWithoutBuilder) }, should.Panic)
+			assert.Loosely(t, func() { p.Build(buildWithoutBuilder, "") }, should.Panic)
 		})
 
 		t.Run("Chromium commit", func(t *ftt.Test) {

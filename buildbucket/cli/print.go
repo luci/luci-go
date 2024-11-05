@@ -136,7 +136,7 @@ func (p *printer) JSONPB(pb proto.Message, compact bool) {
 }
 
 // Build prints b. Panic when id, status or any fields under builder is missing
-func (p *printer) Build(b *pb.Build) {
+func (p *printer) Build(b *pb.Build, host string) {
 	// Id, Status and Builder are explicitly added to field mask so they should
 	// always be present. Doing defensive check here to avoid any unexpected
 	// conditions to corrupt the printed build.
@@ -152,7 +152,10 @@ func (p *printer) Build(b *pb.Build) {
 	}
 
 	// Print the build URL bold, underline and a color matching the status.
-	p.f("%s%s%shttp://ci.chromium.org/b/%d", ansiWhiteBold, ansiWhiteUnderline, ansiStatus[b.Status], b.Id)
+	if host == "" {
+		host = "cr-buildbucket.appspot.com"
+	}
+	p.f("%s%s%shttp://%s/build/%d", ansiWhiteBold, ansiWhiteUnderline, ansiStatus[b.Status], host, b.Id)
 	// Undo underline.
 	p.f("%s%s%s ", ansi.Reset, ansiWhiteBold, ansiStatus[b.Status])
 	p.fw(10, "%s", b.Status)

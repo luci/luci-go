@@ -172,7 +172,7 @@ func (r *printRun) printBuild(p *printer, build *pb.Build, first bool) error {
 				// Print a new line so it is easier to differentiate builds.
 				p.f("\n")
 			}
-			p.Build(build)
+			p.Build(build, r.host)
 		}
 	}
 	return p.Err
