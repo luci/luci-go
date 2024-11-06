@@ -456,6 +456,68 @@ func TestBatch(t *testing.T) {
 			assert.Loosely(t, res, should.Resemble(expectedRes))
 		})
 
+		t.Run("schedule batch with global error", func(t *ftt.Test) {
+			testutil.PutBucket(ctx, "project", "bucket", nil)
+			pBld := &model.Build{
+				ID: 654321,
+				Proto: &pb.Build{
+					Id: 654321,
+					Builder: &pb.BuilderID{
+						Project: "project",
+						Bucket:  "bucket",
+						Builder: "builder",
+					},
+					Status: pb.Status_STARTED,
+				},
+			}
+			pBldInfra := &model.BuildInfra{
+				Build: datastore.KeyForObj(ctx, pBld),
+			}
+			assert.Loosely(t, datastore.Put(ctx, pBld, pBldInfra), should.BeNil)
+			req := &pb.BatchRequest{
+				Requests: []*pb.BatchRequest_Request{
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+						},
+					}},
+					{Request: &pb.BatchRequest_Request_ScheduleBuild{
+						ScheduleBuild: &pb.ScheduleBuildRequest{
+							Builder: &pb.BuilderID{
+								Project: "project",
+								Bucket:  "bucket",
+								Builder: "builder",
+							},
+							DryRun: true,
+						},
+					}},
+				},
+			}
+			res, err := srv.Batch(ctx, req)
+			expectedRes := &pb.BatchResponse{
+				Responses: []*pb.BatchResponse_Response{
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    int32(codes.InvalidArgument),
+							Message: "bad request: all requests must have the same dry_run value",
+						},
+					}},
+					{Response: &pb.BatchResponse_Response_Error{
+						Error: &spb.Status{
+							Code:    int32(codes.InvalidArgument),
+							Message: "bad request: all requests must have the same dry_run value",
+						},
+					}},
+				},
+			}
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res, should.Resemble(expectedRes))
+		})
+
 		t.Run("cancel req", func(t *ftt.Test) {
 			now := testclock.TestRecentTimeLocal
 			ctx, _ = testclock.UseTime(ctx, now)

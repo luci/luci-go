@@ -97,7 +97,6 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 			ret, merr := b.scheduleBuilds(ctx, globalCfg, schBatchReq)
 			defer func() { endSpan(span, err) }()
 			for i := range schBatchReq {
-				r := ret[i]
 				var e error
 				if len(merr) > 0 {
 					e = merr[i]
@@ -106,15 +105,14 @@ func (b *Builds) Batch(ctx context.Context, req *pb.BatchRequest) (*pb.BatchResp
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: toBatchResponseError(ctx, e),
 					}
-					logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
 				} else {
 					res.Responses[schIndices[i]] = &pb.BatchResponse_Response{
 						Response: &pb.BatchResponse_Response_ScheduleBuild{
-							ScheduleBuild: r,
+							ScheduleBuild: ret[i],
 						},
 					}
-					logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
 				}
+				logToBQ(ctx, fmt.Sprintf("%s;%d", parent, schIndices[i]), parent, "ScheduleBuild")
 			}
 			return nil
 		}
