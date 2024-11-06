@@ -18,6 +18,11 @@ option go_package = "go.chromium.org/luci/common/proto/findings;findings";
 
 package luci.findings;
 
+// Findings are a collection of findings.
+message Findings {
+  repeated Finding findings = 1;
+}
+
 // Finding represents a code finding, which can be a bug, vulnerability,
 // style violation, or other issue identified in code.
 message Finding {
