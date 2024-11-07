@@ -12,20 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { GenFeedbackUrlArgs } from '@/common/tools/utils';
+import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
+import { FILTER_OPTIONS } from '@/fleet/components/multi_select_filter/mock_data';
+import { SelectedFilters } from '@/fleet/components/multi_select_filter/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
-const DeviceListPage = () => {
+export const DeviceListPage = () => {
+  const [selectedOptions, setSelectedOptions] = useState<SelectedFilters>({});
   return (
     <>
       <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
-      Hello world
+      <div>
+        hello from infra
+        <MultiSelectFilter
+          filterOptions={FILTER_OPTIONS}
+          selectedOptions={selectedOptions}
+          setSelectedOptions={setSelectedOptions}
+        />
+      </div>
     </>
   );
 };
