@@ -142,6 +142,7 @@ func PublishBuildsV2Notification(ctx context.Context, buildID int64, topic *pb.B
 		// large fields are too big, drop them.
 		compressed = nil
 		largeFieldsDropped = true
+		logging.Infof(ctx, "large fields are dropped")
 	}
 
 	bldV2 := &pb.BuildsV2PubSub{

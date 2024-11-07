@@ -39,7 +39,7 @@ import (
 // Maximum size of the compressed large build fields.
 // If the large fields of a build exceed this limit, they will be dropped
 // from the Pubsub message.
-const maxLargeBytesSize = pubsub.MaxPublishRequestBytes - 1000*1000
+const maxLargeBytesSize = pubsub.MaxPublishRequestBytes - 1500*1000
 
 func init() {
 	tq.RegisterTaskClass(tq.TaskClass{
