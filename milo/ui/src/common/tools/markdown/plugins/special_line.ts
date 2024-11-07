@@ -24,9 +24,9 @@
  */
 
 import MarkdownIt from 'markdown-it';
-import StateCore from 'markdown-it/lib/rules_core/state_core';
-import StateInline from 'markdown-it/lib/rules_inline/state_inline';
-import Token from 'markdown-it/lib/token';
+import StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
+import StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs';
+import Token from 'markdown-it/lib/token.mjs';
 
 export type TransformFn = (token: Token) => Token[];
 

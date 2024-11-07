@@ -27,7 +27,11 @@ export interface StickyOffsetProps {
  * Ensures child `<Sticky />` components don't overlap sibling `<Sticky />`
  * components. See [the documentation](./doc.md) for examples.
  */
-export function StickyOffset({ component, sx, children }: StickyOffsetProps) {
+export function StickyOffset({
+  component = 'div',
+  sx,
+  children,
+}: StickyOffsetProps) {
   const offsets = useOffsets();
   const depth = useDepth();
   const parentDepth = depth - 1;

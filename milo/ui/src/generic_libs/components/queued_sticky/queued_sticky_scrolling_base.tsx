@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, SxProps, Theme } from '@mui/material';
+import { Box, BoxProps, SxProps, Theme } from '@mui/material';
 import { ElementType, ForwardedRef, ReactNode, forwardRef } from 'react';
 
 import { DepthCtx, QueuedStickyContextProvider } from './context';
 
-export interface QueuedStickyScrollingBaseProps {
+export interface QueuedStickyScrollingBaseProps extends BoxProps {
   readonly component?: ElementType;
   readonly sx?: SxProps<Theme>;
   readonly className?: string;
@@ -31,7 +31,12 @@ export interface QueuedStickyScrollingBaseProps {
  */
 export const QueuedStickyScrollingBase = forwardRef(
   function QueuedStickyScrollingBase(
-    { component, sx, className, children }: QueuedStickyScrollingBaseProps,
+    {
+      component = 'div',
+      sx,
+      className,
+      children,
+    }: QueuedStickyScrollingBaseProps,
     ref: ForwardedRef<HTMLDivElement>,
   ) {
     return (

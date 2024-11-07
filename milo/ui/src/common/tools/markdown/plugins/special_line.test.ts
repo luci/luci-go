@@ -14,7 +14,7 @@
 
 import { fixture } from '@open-wc/testing-helpers';
 import markdownIt from 'markdown-it';
-import Token from 'markdown-it/lib/token';
+import Token from 'markdown-it/lib/token.mjs';
 
 import { specialLine } from './special_line';
 
