@@ -26,3 +26,11 @@ func BeNaN[T ~float32 | ~float64](actual T) *failure.Summary {
 	}
 	return comparison.NewSummaryBuilder("should.BeNaN", actual).Actual(actual).Summary
 }
+
+// NotBeNaN checks that `actual` is a floating point NaN.
+func NotBeNaN[T ~float32 | ~float64](actual T) *failure.Summary {
+	if actual == actual { // see `math.IsNaN` for why this works.
+		return nil
+	}
+	return comparison.NewSummaryBuilder("should.NotBeNaN", actual).Actual(actual).Summary
+}

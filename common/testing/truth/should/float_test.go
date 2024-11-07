@@ -27,3 +27,10 @@ func TestBeNaN(t *testing.T) {
 
 	t.Run("not NaN", shouldFail(BeNaN(10.1), "Actual"))
 }
+
+func TestNotBeNan(t *testing.T) {
+	t.Parallel()
+
+	t.Run("7.0 is not NaN", shouldPass(NotBeNaN(7.0)))
+	t.Run("NaN, however, is NaN", shouldFail(NotBeNaN(math.NaN())))
+}
