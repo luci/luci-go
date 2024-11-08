@@ -189,6 +189,13 @@ describe('Autocomplete', () => {
       'mapInt',
       'mapEnum',
       'mapMsg',
+      'anyMsg',
+      'durMsg',
+      'tsMsg',
+      'fmMsg',
+      'structMsg',
+      'strMsg',
+      'intMsg',
     ]);
 
     expect(fields('{"singleMsg": {')).toEqual(['fooBar']);
@@ -208,6 +215,11 @@ describe('Autocomplete', () => {
     expect(fields('{"missing": {')).toEqual([]);
     expect(fields('{"single_msg": {')).toEqual([]);
 
+    expect(fields('{"anyMsg": {')).toEqual(['@type']); // synthetic field
+    expect(fields('{"durMsg": {')).toEqual([]); // it is a string in JSON
+    expect(fields('{"structMsg": {')).toEqual([]); // can be any JSON object
+    expect(fields('{"strMsg": {')).toEqual([]); // it is a string in JSON
+
     expect(values('{"singleEnum": ')).toEqual(['V0', 'V1']);
     expect(values('{"repeatedEnum": [')).toEqual(['V0', 'V1']);
     expect(values('{"mapEnum": {0: ')).toEqual(['V0', 'V1']);
@@ -215,5 +227,9 @@ describe('Autocomplete', () => {
     expect(values('{"singleMsg": ')).toEqual([]);
     expect(values('{"repeatedMsg": ')).toEqual([]);
     expect(values('{"mapMsg": ')).toEqual([]);
+
+    expect(values('{"durMsg": ')).toEqual(['1s']);
+    expect(values('{"fmMsg": ')).toEqual(['field1.a.b.c,field2.a']);
+    expect(values('{"tsMsg": ')).toHaveLength(1); // the current timestamp
   });
 });

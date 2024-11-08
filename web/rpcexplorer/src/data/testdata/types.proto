@@ -6,6 +6,13 @@ syntax = "proto3";
 
 package rpcexplorer;
 
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
 // S1 service does something.
 //
 // And one more line.
@@ -60,4 +67,11 @@ message Autocomplete {
   map<int32, int32> map_int = 7;
   map<int32, E> map_enum = 8;
   map<int32, MultiWord> map_msg = 9;
+  google.protobuf.Any any_msg = 10;
+  google.protobuf.Duration dur_msg = 11;
+  google.protobuf.Timestamp ts_msg = 12;
+  google.protobuf.FieldMask fm_msg = 13;
+  google.protobuf.Struct struct_msg = 14;
+  google.protobuf.StringValue str_msg = 15;
+  google.protobuf.Int64Value int_msg = 16;
 }

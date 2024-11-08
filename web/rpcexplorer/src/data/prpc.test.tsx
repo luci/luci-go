@@ -101,6 +101,17 @@ describe('Descriptors', () => {
     );
   });
 
+  it('Well-known types in fields', () => {
+    const m = descs.message('rpcexplorer.Autocomplete');
+    expect(m!.fieldByJsonName('anyMsg')!.jsonType).toEqual(JSONType.Object);
+    expect(m!.fieldByJsonName('durMsg')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('tsMsg')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('fmMsg')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('structMsg')!.jsonType).toEqual(JSONType.Object);
+    expect(m!.fieldByJsonName('strMsg')!.jsonType).toEqual(JSONType.String);
+    expect(m!.fieldByJsonName('intMsg')!.jsonType).toEqual(JSONType.Scalar);
+  });
+
   it('Enums', () => {
     const e = descs.message('rpcexplorer.M')!.fieldByJsonName('e')!.enum!;
     expect(e.values[0].name).toEqual('V0');

@@ -69,20 +69,20 @@ export const tokenizeJSON = (text: string, visiter: (tok: Token) => void) => {
 
   const isWhitespace = (ch: string): boolean => {
     return (
-      ch == ' ' ||
-      ch == '\t' ||
-      ch == '\n' ||
-      ch == '\r'
+      ch === ' ' ||
+      ch === '\t' ||
+      ch === '\n' ||
+      ch === '\r'
     );
   };
   const isPunctuation = (ch: string): boolean => {
     return (
-      ch == '{' ||
-      ch == '}' ||
-      ch == '[' ||
-      ch == ']' ||
-      ch == ':' ||
-      ch == ','
+      ch === '{' ||
+      ch === '}' ||
+      ch === '[' ||
+      ch === ']' ||
+      ch === ':' ||
+      ch === ','
     );
   };
 
@@ -105,20 +105,20 @@ export const tokenizeJSON = (text: string, visiter: (tok: Token) => void) => {
 
     // Recognize strings (perhaps escaped). We just need to correctly detect
     // where it ends. Actual deescaping will be done with JSON.parse(...).
-    if (ch == '"') {
+    if (ch === '"') {
       let end = idx + 1;
       let kind = TokenKind.IncompleteString;
       while (end < text.length) {
         const ch = text[end];
-        if (ch == '\\') {
+        if (ch === '\\') {
           end += 2; // skip '\\' itself and one following escaped character
           continue;
         }
-        if (ch == '\n' || ch == '\r') {
+        if (ch === '\n' || ch === '\r') {
           break; // an incomplete string
         }
         end++; // include `ch` in the final value
-        if (ch == '"') {
+        if (ch === '"') {
           kind = TokenKind.String; // the string is complete now
           break;
         }
@@ -211,7 +211,7 @@ export const getContext = (text: string): Context | undefined => {
     },
 
     [State.AfterKey]: (tok) => {
-      if (tok.kind == TokenKind.Punctuation && tok.val == ':') {
+      if (tok.kind === TokenKind.Punctuation && tok.val === ':') {
         return State.BeforeValue;
       }
       return undefined;
@@ -220,11 +220,11 @@ export const getContext = (text: string): Context | undefined => {
     [State.BeforeValue]: (tok) => {
       switch (tok.kind) {
         case TokenKind.Punctuation:
-          if (tok.val == '{') {
+          if (tok.val === '{') {
             path.push({ kind: 'obj' });
             return State.BeforeKey;
           }
-          if (tok.val == '[') {
+          if (tok.val === '[') {
             path.push({ kind: 'list' });
             return State.BeforeValue;
           }
@@ -234,7 +234,7 @@ export const getContext = (text: string): Context | undefined => {
         case TokenKind.EverythingElse:
           path[path.length - 1].value = tok;
           return (
-            tok.kind == TokenKind.IncompleteString ?
+            tok.kind === TokenKind.IncompleteString ?
               State.InsideValue :
               State.AfterValue
           );
@@ -249,7 +249,7 @@ export const getContext = (text: string): Context | undefined => {
     },
 
     [State.AfterValue]: (tok) => {
-      if (tok.kind == TokenKind.Punctuation) {
+      if (tok.kind === TokenKind.Punctuation) {
         switch (tok.val) {
           case ',':
             switch (path[path.length - 1].kind) {
@@ -262,9 +262,9 @@ export const getContext = (text: string): Context | undefined => {
           case ']':
           case '}':
           {
-            const expect = tok.val == ']' ? 'list' : 'obj';
+            const expect = tok.val === ']' ? 'list' : 'obj';
             const last = path.pop();
-            if (!last || last.kind != expect) {
+            if (!last || last.kind !== expect) {
               return undefined;
             }
             return State.AfterValue;
@@ -277,7 +277,7 @@ export const getContext = (text: string): Context | undefined => {
 
   const visiter = (tok: Token) => {
     const next = perState[state](tok);
-    if (next == undefined) {
+    if (next === undefined) {
       throw new Confused();
     }
     state = next;
@@ -334,6 +334,16 @@ interface TraversalContext {
 }
 
 
+// traverseIfObject creates MessageTraversal if `msg` is represented in JSON by
+// an object.
+const traverseIfObject = (msg?: prpc.Message): MessageTraversal | undefined => {
+  if (msg && msg.jsonType === prpc.JSONType.Object) {
+    return new MessageTraversal(msg);
+  }
+  return undefined;
+};
+
+
 // MessageTraversal implements TraversalContext using prpc.Message as a source.
 //
 // It can descend into message fields.
@@ -365,7 +375,7 @@ class MessageTraversal implements TraversalContext {
       }
       return new ListTraversal(field);
     }
-    return inner ? new MessageTraversal(inner) : undefined;
+    return traverseIfObject(inner);
   }
 
   visitIndex(): TraversalContext | undefined {
@@ -394,8 +404,7 @@ class ListTraversal implements TraversalContext {
   }
 
   visitIndex(): TraversalContext | undefined {
-    const inner = this.field.message;
-    return inner ? new MessageTraversal(inner) : undefined;
+    return traverseIfObject(this.field.message);
   }
 }
 
@@ -427,8 +436,7 @@ class MapTraversal implements TraversalContext {
     if (!field) {
       return undefined;
     }
-    const inner = field.message;
-    return inner ? new MessageTraversal(inner) : undefined;
+    return traverseIfObject(field.message);
   }
 
   visitIndex(): TraversalContext | undefined {
@@ -439,19 +447,22 @@ class MapTraversal implements TraversalContext {
 
 
 // Helper for collecting possible values of a given field.
-//
-// Supports only enum-valued fields currently, since we can enumerate them.
 const fieldValues = (field: prpc.Field) : Value[] => {
   const enumObj = field.enum;
-  if (!enumObj) {
-    return [];
+  if (enumObj) {
+    return enumObj.values.map((val) => {
+      return {
+        value: val.name,
+        doc: val.doc,
+      };
+    });
   }
-  return enumObj.values.map((val) => {
-    return {
-      value: val.name,
-      doc: val.doc,
-    };
-  });
+  const msgObj = field.message;
+  if (msgObj) {
+    const val = msgObj.sampleWellKnownValue();
+    return val ? [val] : [];
+  }
+  return [];
 };
 
 
@@ -464,7 +475,7 @@ export const completionForPath = (
   for (const elem of path) {
     switch (elem.kind) {
       case 'root':
-        cur = new MessageTraversal(root);
+        cur = traverseIfObject(root);
         break;
       case 'obj':
         if (!elem.key) {

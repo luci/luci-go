@@ -80,14 +80,14 @@ export class Descriptors {
 
   // Returns a service by its name or undefined if no such service.
   service(serviceName: string): Service | undefined {
-    return this.services.find((service) => service.name == serviceName);
+    return this.services.find((service) => service.name === serviceName);
   }
 
   // Returns a message descriptor given its name or undefined if not found.
   message(messageName: string): Message | undefined {
     return this.messages.get(messageName, () => {
       const desc = this.types.message(messageName);
-      return desc ? new Message(desc, this) : undefined;
+      return desc ? new Message(messageName, desc, this) : undefined;
     });
   }
 
@@ -101,27 +101,69 @@ export class Descriptors {
 }
 
 
-// Describes a structure of a message.
+// Describes a structure of a message used for autocompletion.
 export class Message {
+  // Full type name, e.g. "google.protobuf.Empty".
+  readonly fullName: string;
+  // How this message is represented in JSON.
+  readonly jsonType: JSONType;
   // True if this message represents some map<K,V> entry.
   readonly mapEntry: boolean;
   // The list of fields of this message.
   readonly fields: Field[];
 
-  constructor(desc: DescriptorProto, root: Descriptors) {
+  constructor(fullName: string, desc: DescriptorProto, root: Descriptors) {
+    this.fullName = trimDot(fullName);
+    this.jsonType = wellKnownTypes[this.fullName] ?? JSONType.Object;
     this.mapEntry = desc.options?.mapEntry ?? false;
     this.fields = [];
-    for (const field of (desc.field ?? [])) {
-      this.fields.push(new Field(field, root));
+    if (wellKnownTypes[this.fullName] === undefined) {
+      // Expose underlying fields of regular (not well-known) types.
+      for (const field of (desc.field ?? [])) {
+        this.fields.push(new Field(field, root));
+      }
+    } else if (this.fullName === 'google.protobuf.Any') {
+      // google.protobuf.Any is special: it is the only well-known type that has
+      // a "synthetic" field "@type". Add it.
+      this.fields.push(new Field({
+        name: '@type',
+        jsonName: '@type',
+        type: 'TYPE_STRING',
+        label: '',
+      }, root));
     }
   }
 
   // Returns a field given its JSON name.
   fieldByJsonName(name: string): Field | undefined {
     for (const field of this.fields) {
-      if (field.jsonName == name) {
+      if (field.jsonName === name) {
         return field;
       }
+    }
+    return undefined;
+  }
+
+  // For well-known types returns a possible value to use as an example.
+  //
+  // It is a reminder of the expected format of the field value.
+  sampleWellKnownValue(): {value: string; doc: string} | undefined {
+    switch (this.fullName) {
+      case 'google.protobuf.Duration':
+        return {
+          value: '1s',
+          doc: 'A sample duration of 1 second',
+        };
+      case 'google.protobuf.FieldMask':
+        return {
+          value: 'field1.a.b.c,field2.a',
+          doc: 'A sample field mask',
+        };
+      case 'google.protobuf.Timestamp':
+        return {
+          value: new Date().toISOString(),
+          doc: 'The current timestamp',
+        };
     }
     return undefined;
   }
@@ -158,7 +200,7 @@ export class EnumValue {
 
   // Paragraphs with documentation extracted from comments in the proto file.
   get doc(): string {
-    if (this.cachedDoc == null) {
+    if (this.cachedDoc === null) {
       this.cachedDoc = extractDoc(this.desc.resolvedSourceLocation);
     }
     return this.cachedDoc;
@@ -208,7 +250,7 @@ export class Field {
     this.desc = desc;
     this.root = root;
     this.jsonName = desc.jsonName ?? '';
-    this.repeated = desc.label == 'LABEL_REPEATED';
+    this.repeated = desc.label === 'LABEL_REPEATED';
     this.cachedDoc = null;
   }
 
@@ -216,7 +258,7 @@ export class Field {
   //
   // Works for both singular and repeated fields.
   get message(): Message | undefined {
-    if (this.desc.type == 'TYPE_MESSAGE') {
+    if (this.desc.type === 'TYPE_MESSAGE') {
       return this.root.message(this.desc.typeName ?? '');
     }
     return undefined;
@@ -226,7 +268,7 @@ export class Field {
   //
   // Works for both singular and repeated fields.
   get enum(): Enum | undefined {
-    if (this.desc.type == 'TYPE_ENUM') {
+    if (this.desc.type === 'TYPE_ENUM') {
       return this.root.enum(this.desc.typeName ?? '');
     }
     return undefined;
@@ -251,7 +293,7 @@ export class Field {
 
   // Type of the field value in JSON representation.
   //
-  // Recognizes repeated fields and maps.
+  // Recognizes repeated fields, maps and well-known types.
   get jsonType(): JSONType {
     if (this.repeated) {
       if (this.message?.mapEntry) {
@@ -268,7 +310,7 @@ export class Field {
   get jsonElementType(): JSONType {
     switch (this.desc.type) {
       case 'TYPE_MESSAGE':
-        return JSONType.Object;
+        return this.message?.jsonType ?? JSONType.Object;
       case 'TYPE_ENUM':
       case 'TYPE_STRING':
       case 'TYPE_BYTES':
@@ -280,7 +322,7 @@ export class Field {
 
   // Paragraphs with documentation extracted from comments in the proto file.
   get doc(): string {
-    if (this.cachedDoc == null) {
+    if (this.cachedDoc === null) {
       this.cachedDoc = extractDoc(this.desc.resolvedSourceLocation);
     }
     return this.cachedDoc;
@@ -315,7 +357,7 @@ export class Service {
 
   // Returns a method by its name or undefined if no such method.
   method(methodName: string): Method | undefined {
-    return this.methods.find((method) => method.name == methodName);
+    return this.methods.find((method) => method.name === methodName);
   }
 }
 
@@ -399,7 +441,7 @@ class Cache<V> {
       case undefined:
       // Not in the cache yet.
         cached = val();
-        this.cache.set(key, cached == undefined ? 'none' : cached);
+        this.cache.set(key, cached === undefined ? 'none' : cached);
         return cached;
       default:
         return cached;
@@ -429,7 +471,7 @@ class Types {
     const [pkg, name] = splitFullName(fullName);
     return this.visitPackage(pkg, (fileDesc) => {
       for (const svc of (fileDesc.service ?? [])) {
-        if (svc.name == name) {
+        if (svc.name === name) {
           return svc;
         }
       }
@@ -443,7 +485,7 @@ class Types {
     const [pkg, name] = splitFullName(fullName);
     const found = this.visitPackage(pkg, (fileDesc) => {
       for (const desc of (fileDesc.messageType ?? [])) {
-        if (desc.name == name) {
+        if (desc.name === name) {
           return desc;
         }
       }
@@ -454,11 +496,13 @@ class Types {
     }
     // It might be a reference to a nested type, in which case `pkg` is actually
     // some message name itself. Try to find it.
-    const parent = this.message(pkg);
-    if (parent) {
-      for (const desc of (parent.nestedType ?? [])) {
-        if (desc.name == name) {
-          return desc;
+    if (pkg !== '') {
+      const parent = this.message(pkg);
+      if (parent) {
+        for (const desc of (parent.nestedType ?? [])) {
+          if (desc.name === name) {
+            return desc;
+          }
         }
       }
     }
@@ -471,7 +515,7 @@ class Types {
     const [pkg, name] = splitFullName(fullName);
     const found = this.visitPackage(pkg, (fileDesc) => {
       for (const msg of (fileDesc.enumType ?? [])) {
-        if (msg.name == name) {
+        if (msg.name === name) {
           return msg;
         }
       }
@@ -482,11 +526,13 @@ class Types {
     }
     // It might be a reference to a nested type, in which case `pkg` is actually
     // some message name. Try to find it.
-    const parent = this.message(pkg);
-    if (parent) {
-      for (const msg of (parent.enumType ?? [])) {
-        if (msg.name == name) {
-          return msg;
+    if (pkg !== '') {
+      const parent = this.message(pkg);
+      if (parent) {
+        for (const msg of (parent.enumType ?? [])) {
+          if (msg.name === name) {
+            return msg;
+          }
         }
       }
     }
@@ -510,6 +556,35 @@ class Types {
     return undefined;
   }
 }
+
+
+// wellKnownTypes maps a well-known protobuf type name to its JSON
+// representation form.
+//
+// See https://protobuf.dev/reference/protobuf/google.protobuf/ and following
+// proto files that ship with protoc:
+//   * google/protobuf/any.proto
+//   * google/protobuf/duration.proto
+//   * google/protobuf/field_mask.proto
+//   * google/protobuf/struct.proto
+//   * google/protobuf/timestamp.proto
+//   * google/protobuf/wrappers.proto
+const wellKnownTypes: { [type: string]: JSONType; } = {
+  'google.protobuf.Any': JSONType.Object,
+  'google.protobuf.Duration': JSONType.String,
+  'google.protobuf.FieldMask': JSONType.String,
+  'google.protobuf.Struct': JSONType.Object,
+  'google.protobuf.Timestamp': JSONType.String,
+  'google.protobuf.DoubleValue': JSONType.Scalar,
+  'google.protobuf.FloatValue': JSONType.Scalar,
+  'google.protobuf.Int64Value': JSONType.Scalar,
+  'google.protobuf.UInt64Value': JSONType.Scalar,
+  'google.protobuf.Int32Value': JSONType.Scalar,
+  'google.protobuf.UInt32Value': JSONType.Scalar,
+  'google.protobuf.BoolValue': JSONType.Scalar,
+  'google.protobuf.StringValue': JSONType.String,
+  'google.protobuf.BytesValue': JSONType.String,
+};
 
 
 // resolveSourceLocation recursively populates `resolvedSourceLocation`.
@@ -635,13 +710,13 @@ const extractDoc = (loc: SourceCodeInfoLocation | undefined): string => {
 // splitParagraph returns the first paragraph and what's left.
 const splitParagraph = (s: string): [string, string] => {
   let idx = s.indexOf('\n\n');
-  if (idx == -1) {
+  if (idx === -1) {
     idx = s.indexOf('.  ');
-    if (idx != -1) {
+    if (idx !== -1) {
       idx += 1; // include the dot
     }
   }
-  if (idx != -1) {
+  if (idx !== -1) {
     return [s.substring(0, idx).trim(), s.substring(idx).trim()];
   }
   return [s, ''];
@@ -739,7 +814,7 @@ const invokeMethod = async <T, >(
     grpcCode = StatusCode.INTERNAL;
   }
 
-  if (grpcCode != StatusCode.OK) {
+  if (grpcCode !== StatusCode.OK) {
     throw new RPCError(grpcCode, response.status, responseBody.trim());
   }
 

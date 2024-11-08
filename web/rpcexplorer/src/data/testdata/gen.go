@@ -38,6 +38,7 @@ func run() error {
 	protoc := exec.Command(
 		"protoc",
 		"--descriptor_set_out="+descFile.Name(),
+		"--include_imports",
 		"--include_source_info",
 		"types.proto")
 	protoc.Stdout = os.Stdout
