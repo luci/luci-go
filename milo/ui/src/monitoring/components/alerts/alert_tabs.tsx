@@ -127,7 +127,7 @@ export function AlertTabs() {
               <>
                 There are currently no alerts associated with bugs and the{' '}
                 <Link
-                  href={`https://b.corp.google.com/hotlists/${tree.hotlistId}`}
+                  href={`https://issuetracker.google.com/hotlists/${tree.hotlistId}`}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -182,7 +182,7 @@ export function AlertTabs() {
               This view displays both bugs associated with current alerts and
               the bugs in the{' '}
               <Link
-                href={`https://b.corp.google.com/hotlists/${tree.hotlistId}`}
+                href={`https://issuetracker.google.com/hotlists/${tree.hotlistId}`}
                 target="_blank"
                 rel="noreferrer"
               >

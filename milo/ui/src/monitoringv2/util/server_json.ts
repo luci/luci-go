@@ -220,7 +220,7 @@ export const bugFromJson = (issue: IssueJson): Bug => {
   const number = issue.issueId;
   return {
     number: number,
-    link: `http://b/${number}`,
+    link: `https://issuetracker.google.com/issues/${number}`,
     summary: issue.issueState.title,
     priority: parseInt(issue.issueState.priority.substring(1)),
     status:
@@ -234,7 +234,7 @@ export const bugFromId = (bug: string): Bug => {
   return {
     number: bug,
     labels: [],
-    link: `http://b/${bug}`,
+    link: `https://issuetracker.google.com/issues/${bug}`,
     priority: undefined,
     status: undefined,
     summary: undefined,
