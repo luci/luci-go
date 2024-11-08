@@ -1014,12 +1014,10 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		}
 	}
 
-	var authGroup *AuthGroup
 	err := runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
-		var err error
 		var ok bool
 		// Fetch the group and check the user is an admin or a group owner.
-		authGroup, err = GetAuthGroup(ctx, groupUpdate.ID)
+		authGroup, err := GetAuthGroup(ctx, groupUpdate.ID)
 		if err != nil {
 			return err
 		}
@@ -1124,7 +1122,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 	if err != nil {
 		return nil, err
 	}
-	return authGroup, nil
+	// Refetch the group as saved in datastore so subsequent updates work.
+	updatedGroup, err := GetAuthGroup(ctx, groupUpdate.ID)
+	if err != nil {
+		return nil, errors.Annotate(err, "get group after update failed").Err()
+	}
+	return updatedGroup, nil
 }
 
 func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
