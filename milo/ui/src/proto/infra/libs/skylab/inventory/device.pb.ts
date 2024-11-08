@@ -837,7 +837,7 @@ export interface Shard {
  *
  * Keep sorted by field name.
  *
- * NEXT TAG: 43
+ * NEXT TAG: 44
  */
 export interface SchedulableLabels {
   /** Whether this device supports ARC execution environment. */
@@ -915,7 +915,11 @@ export interface SchedulableLabels {
    * TODO(pprabhu) This should be an enum shared with stable_versions.proto
    * But there are 171 of them...
    */
-  readonly platform?: string | undefined;
+  readonly platform?:
+    | string
+    | undefined;
+  /** The RACC enabled status of the DUT. */
+  readonly raccEnabledStatus?: string | undefined;
   readonly referenceDesign?: string | undefined;
   readonly selfServePools: readonly string[];
   /** Refer to whether this DUT is stable enough to be scheduled for a test. */
@@ -3847,6 +3851,7 @@ function createBaseSchedulableLabels(): SchedulableLabels {
     peripherals: undefined,
     phase: 0,
     platform: "",
+    raccEnabledStatus: "",
     referenceDesign: "",
     selfServePools: [],
     stability: false,
@@ -3945,6 +3950,9 @@ export const SchedulableLabels: MessageFns<SchedulableLabels> = {
     }
     if (message.platform !== undefined && message.platform !== "") {
       writer.uint32(10).string(message.platform);
+    }
+    if (message.raccEnabledStatus !== undefined && message.raccEnabledStatus !== "") {
+      writer.uint32(346).string(message.raccEnabledStatus);
     }
     if (message.referenceDesign !== undefined && message.referenceDesign !== "") {
       writer.uint32(194).string(message.referenceDesign);
@@ -4224,6 +4232,14 @@ export const SchedulableLabels: MessageFns<SchedulableLabels> = {
           message.platform = reader.string();
           continue;
         }
+        case 43: {
+          if (tag !== 346) {
+            break;
+          }
+
+          message.raccEnabledStatus = reader.string();
+          continue;
+        }
         case 24: {
           if (tag !== 194) {
             break;
@@ -4351,6 +4367,7 @@ export const SchedulableLabels: MessageFns<SchedulableLabels> = {
       peripherals: isSet(object.peripherals) ? Peripherals.fromJSON(object.peripherals) : undefined,
       phase: isSet(object.phase) ? schedulableLabels_PhaseFromJSON(object.phase) : 0,
       platform: isSet(object.platform) ? globalThis.String(object.platform) : "",
+      raccEnabledStatus: isSet(object.raccEnabledStatus) ? globalThis.String(object.raccEnabledStatus) : "",
       referenceDesign: isSet(object.referenceDesign) ? globalThis.String(object.referenceDesign) : "",
       selfServePools: globalThis.Array.isArray(object?.selfServePools)
         ? object.selfServePools.map((e: any) => globalThis.String(e))
@@ -4450,6 +4467,9 @@ export const SchedulableLabels: MessageFns<SchedulableLabels> = {
     if (message.platform !== undefined && message.platform !== "") {
       obj.platform = message.platform;
     }
+    if (message.raccEnabledStatus !== undefined && message.raccEnabledStatus !== "") {
+      obj.raccEnabledStatus = message.raccEnabledStatus;
+    }
     if (message.referenceDesign !== undefined && message.referenceDesign !== "") {
       obj.referenceDesign = message.referenceDesign;
     }
@@ -4520,6 +4540,7 @@ export const SchedulableLabels: MessageFns<SchedulableLabels> = {
       : undefined;
     message.phase = object.phase ?? 0;
     message.platform = object.platform ?? "";
+    message.raccEnabledStatus = object.raccEnabledStatus ?? "";
     message.referenceDesign = object.referenceDesign ?? "";
     message.selfServePools = object.selfServePools?.map((e) => e) || [];
     message.stability = object.stability ?? false;

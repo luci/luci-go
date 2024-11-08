@@ -75,7 +75,11 @@ protoc \
   ./go.chromium.org/chromiumos/config/proto/chromiumos/test/api/device_manager_service.proto \
   ./go.chromium.org/luci/analysis/proto/v1/changepoints.proto \
   ./go.chromium.org/luci/analysis/proto/v1/clusters.proto \
+  ./go.chromium.org/luci/analysis/proto/v1/metrics.proto \
+  ./go.chromium.org/luci/analysis/proto/v1/projects.proto \
+  ./go.chromium.org/luci/analysis/proto/v1/rules.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_history.proto \
+  ./go.chromium.org/luci/analysis/proto/v1/test_variants.proto \
   ./go.chromium.org/luci/analysis/proto/v1/test_variant_branches.proto \
   ./go.chromium.org/luci/auth_service/api/rpcpb/groups.proto \
   ./go.chromium.org/luci/bisection/proto/v1/analyses.proto \

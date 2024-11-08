@@ -42,6 +42,7 @@ export interface HwidData {
   readonly stylus: boolean;
   readonly touchpad: boolean;
   readonly touchscreen: boolean;
+  readonly raccEnabledStatus: string;
 }
 
 function createBaseGetDutLabelResponse(): GetDutLabelResponse {
@@ -259,7 +260,16 @@ export const DutLabel_Label: MessageFns<DutLabel_Label> = {
 };
 
 function createBaseHwidData(): HwidData {
-  return { sku: "", variant: "", hwid: "", dutLabel: undefined, stylus: false, touchpad: false, touchscreen: false };
+  return {
+    sku: "",
+    variant: "",
+    hwid: "",
+    dutLabel: undefined,
+    stylus: false,
+    touchpad: false,
+    touchscreen: false,
+    raccEnabledStatus: "",
+  };
 }
 
 export const HwidData: MessageFns<HwidData> = {
@@ -284,6 +294,9 @@ export const HwidData: MessageFns<HwidData> = {
     }
     if (message.touchscreen !== false) {
       writer.uint32(56).bool(message.touchscreen);
+    }
+    if (message.raccEnabledStatus !== "") {
+      writer.uint32(66).string(message.raccEnabledStatus);
     }
     return writer;
   },
@@ -351,6 +364,14 @@ export const HwidData: MessageFns<HwidData> = {
           message.touchscreen = reader.bool();
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.raccEnabledStatus = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -369,6 +390,7 @@ export const HwidData: MessageFns<HwidData> = {
       stylus: isSet(object.stylus) ? globalThis.Boolean(object.stylus) : false,
       touchpad: isSet(object.touchpad) ? globalThis.Boolean(object.touchpad) : false,
       touchscreen: isSet(object.touchscreen) ? globalThis.Boolean(object.touchscreen) : false,
+      raccEnabledStatus: isSet(object.raccEnabledStatus) ? globalThis.String(object.raccEnabledStatus) : "",
     };
   },
 
@@ -395,6 +417,9 @@ export const HwidData: MessageFns<HwidData> = {
     if (message.touchscreen !== false) {
       obj.touchscreen = message.touchscreen;
     }
+    if (message.raccEnabledStatus !== "") {
+      obj.raccEnabledStatus = message.raccEnabledStatus;
+    }
     return obj;
   },
 
@@ -412,6 +437,7 @@ export const HwidData: MessageFns<HwidData> = {
     message.stylus = object.stylus ?? false;
     message.touchpad = object.touchpad ?? false;
     message.touchscreen = object.touchscreen ?? false;
+    message.raccEnabledStatus = object.raccEnabledStatus ?? "";
     return message;
   },
 };
