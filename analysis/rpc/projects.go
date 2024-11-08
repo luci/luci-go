@@ -135,18 +135,23 @@ func (*projectServer) List(ctx context.Context, request *pb.ListProjectsRequest)
 	if err != nil {
 		return nil, err
 	}
-	readableProjects := make([]string, 0)
+	readableProjects := make(map[string]struct{})
 	for _, r := range readableRealms {
 		project, realm := realms.Split(r)
 		if realm == realms.RootRealm || realm == realms.ProjectRealm {
-			readableProjects = append(readableProjects, project)
+			readableProjects[project] = struct{}{}
 		}
 	}
+
 	// Return projects in a stable order.
-	sort.Strings(readableProjects)
+	sortedProjects := make([]string, 0, len(readableProjects))
+	for project := range readableProjects {
+		sortedProjects = append(sortedProjects, project)
+	}
+	sort.Strings(sortedProjects)
 
 	return &pb.ListProjectsResponse{
-		Projects: createProjectPBs(readableProjects),
+		Projects: createProjectPBs(sortedProjects),
 	}, nil
 }
 

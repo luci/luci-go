@@ -196,6 +196,10 @@ func TestProjects(t *testing.T) {
 		t.Run("List", func(t *ftt.Test) {
 			authState.IdentityPermissions = []authtest.RealmPermission{
 				{
+					Realm:      "chromium:@root",
+					Permission: perms.PermGetConfig,
+				},
+				{
 					Realm:      "chromium:@project",
 					Permission: perms.PermGetConfig,
 				},
