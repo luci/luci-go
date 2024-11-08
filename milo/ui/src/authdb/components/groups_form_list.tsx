@@ -62,6 +62,14 @@ const asItems = (values: string[]) => {
   return items;
 };
 
+const asString = (items: Item[]) => {
+  let itemValues: string[] = [];
+  items.forEach((item) => {
+    itemValues.push(item.value);
+  })
+  return itemValues;
+}
+
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
     { initialValues, name }, ref
@@ -81,11 +89,12 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     useImperativeHandle(ref, () => ({
       getItems: () => {
-        return getCurrentItemList();
+        return asString(items);
       },
       setReadonly: () => {
         setAddingItem(false);
         setNewItems("");
+        uncheckItems();
       },
       changeItems: (newItems: string[]) => {
         setItems(asItems(newItems));
@@ -97,17 +106,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       setAddingItem(!addingItem);
       setNewItems("");
       setErrorMessage('');
-    }
-
-    // Returns item list with removed items taken away to be sent for update.
-    const getCurrentItemList = () => {
-      let updatedItems: string[] = []
-      items.forEach((item) => {
-        if (item.checked) {
-          updatedItems.push(item.value);
-        }
-      })
-      return updatedItems;
     }
 
     const hasValues = (value: string) => {
@@ -194,6 +192,12 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         }
       }
       return removedItems.join(', ');
+    }
+
+    const uncheckItems = () => {
+      for (const item of items) {
+        item.checked = false;
+      }
     }
 
     return (

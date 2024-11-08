@@ -33,7 +33,7 @@ import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useState, useEffect, createRef } from 'react';
+import { useState, createRef } from 'react';
 import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
@@ -103,12 +103,28 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
   const [isExternal, setIsExternal] = useState<boolean>();
   const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
   const [errorMessage, setErrorMessage] = useState<string>();
-  const [disableSubmit, setDisableSubmit] = useState<boolean>();
+  const [isUpdating, setIsUpdating] = useState<boolean>();
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
-  const [changedState, setChangedState] = useState<boolean>();
+  const [savedDescription, setSavedDescription] = useState<string>('');
+  const [savedOwners, setSavedOwners] = useState<string>('');
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
+
+  const client = useAuthServiceClient();
+  const {
+    isLoading,
+    isError,
+    data: response,
+    error,
+  } = useQuery({
+    ...client.GetGroup.query({ "name": name }),
+    onSuccess: (response) => {
+      setReadonlyMode();
+      setIsExternal(isExternalGroupName(response?.name!));
+    },
+    refetchOnWindowFocus: false,
+  })
 
   const updateMutation = useMutation({
     mutationFn: (request: UpdateGroupRequest) => {
@@ -120,16 +136,22 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
       membersRef.current?.changeItems(members);
       globsRef.current?.changeItems(response?.globs as string[]);
       subgroupsRef.current?.changeItems(response?.nested as string[]);
-      setDescription(response?.description);
-      setOwners(response?.owners);
+      if (!descriptionMode) {
+        setDescription(response?.description);
+      }
+      if (!ownersMode) {
+        setOwners(response?.owners);
+      }
+      setSavedDescription(response?.description);
+      setSavedOwners(response?.owners);
       setEtag(response?.etag);
     },
     onError: () => {
       setErrorMessage('Error editing group');
     },
     onSettled: () => {
-      setDisableSubmit(false);
-    }
+      setIsUpdating(false);
+    },
   })
 
   const deleteMutation = useMutation({
@@ -145,96 +167,34 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
     }
   })
 
-  const client = useAuthServiceClient();
-  const {
-    isLoading,
-    isError,
-    isFetched,
-    data: response,
-    error
-  } = useQuery({
-    ...client.GetGroup.query({ "name": name }),
-    onSuccess: (response) => {
-      setReadonlyMode();
-      setIsExternal(isExternalGroupName(response?.name!));
-    },
-    refetchOnWindowFocus: false,
-  })
-
   const setReadonlyMode = () => {
     setDescriptionMode(false);
     setOwnersMode(false);
     setErrorMessage("");
     setSuccessEditedGroup(false);
-  }
-  const changeDescriptionMode = () => {
-    setDescriptionMode(!descriptionMode);
-  }
-
-  useEffect(() => {
-    if (descriptionMode) {
-      addDescriptionEventListener();
-    }
-    if (ownersMode) {
-      addOwnersEventListener();
-    }
-    // When user presses enter or confirms the changes in description, we check for edited state.
-    if (isFetched) {
-      setChangedState(description != initialDescription || owners != initialOwners);
-    }
-  }, [descriptionMode, ownersMode]);
-
-  const changeOwnersMode = () => {
-    setOwnersMode(!ownersMode);
-  }
-
-  useEffect(() => {
-  }, [description]);
-
-  const addDescriptionEventListener = () => {
-    const descriptionTextfield = document.getElementById('descriptionTextfield');
-    if (descriptionTextfield) {
-      descriptionTextfield.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter') {
-          setDescriptionMode(false);
-        };
-      });
-    }
-  }
-
-  const addOwnersEventListener = () => {
-    const ownersTextfield = document.getElementById('ownersTextfield');
-    if (ownersTextfield) {
-      ownersTextfield.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter') {
-          setOwnersMode(false);
-        }
-      });
-    }
-  }
-
-  const resetForm = () => {
-    setDescriptionMode(false);
-    setOwnersMode(false);
-    setChangedState(false);
     membersRef.current?.setReadonly();
     globsRef.current?.setReadonly();
     subgroupsRef.current?.setReadonly();
   }
 
-  const resetFormValues = () => {
-    setDescription(initialDescription);
-    setOwners(initialOwners);
-    membersRef.current?.changeItems(members);
-    globsRef.current?.changeItems(response?.globs as string[]);
-    subgroupsRef.current?.changeItems(response?.nested as string[]);
-    resetForm();
+  const changeDescriptionMode = () => {
+    if (descriptionMode) {
+      submitField('description');
+    } else {
+      setDescriptionMode(!descriptionMode);
+    }
   }
 
-  const submitForm = () => {
-    setDisableSubmit(true);
-    resetForm();
-    setReadonlyMode();
+  const changeOwnersMode = () => {
+    if (ownersMode) {
+      submitField('owners');
+    } else {
+      setOwnersMode(!ownersMode);
+    }
+  }
+
+  const submitForm = (updateMask: string[]) => {
+    setIsUpdating(true);
     const editedMembers = addPrefixToItems('user', membersRef.current?.getItems()!);
     const editedSubgroups = subgroupsRef.current?.getItems();
     const editedGlobs = addPrefixToItems('user', globsRef.current?.getItems()!);
@@ -247,7 +207,30 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
       "members": editedMembers,
       "globs": editedGlobs,
     });
-    updateMutation.mutate({ 'group': editedGroup, updateMask: undefined });
+    updateMutation.mutate({ 'group': editedGroup, updateMask: updateMask });
+  }
+
+  const checkFieldSubmit = (keyPressed: string, field: string) => {
+    if (keyPressed != 'Enter') {
+      return;
+    }
+    submitField(field);
+  };
+
+  const submitField = (field: string) => {
+    if (field === 'description') {
+      setDescriptionMode(false);
+      if (description === savedDescription) {
+        return;
+      }
+    }
+    else if (field === 'owners') {
+      setOwnersMode(false);
+      if (owners === savedOwners) {
+        return;
+      }
+    }
+    submitForm([field]);
   }
 
   const deleteGroup = () => {
@@ -280,10 +263,12 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
 
   const initialDescription = response?.description;
   if (description == null) {
+    setSavedDescription(initialDescription || '');
     setDescription(initialDescription || '');
   }
   const initialOwners = response?.owners;
   if (owners == null) {
+    setSavedOwners(initialOwners || '');
     setOwners(initialOwners || '');
   }
   if (etag == null) {
@@ -322,7 +307,7 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {descriptionMode
-                        ? <TextField value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} id='descriptionTextfield' data-testid='description-textfield'></TextField>
+                        ? <TextField value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => checkFieldSubmit(e.key, 'description')} id='descriptionTextfield' data-testid='description-textfield'></TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
                       }
                     </TableCell>
@@ -347,7 +332,7 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {ownersMode
-                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} id='ownersTextfield' data-testid='owners-textfield'></TextField>
+                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')} id='ownersTextfield' data-testid='owners-textfield'></TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
                       }
                     </TableCell>
@@ -373,29 +358,21 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   }
                   <GroupsFormList name='Globs' initialValues={globs} ref={globsRef}/>
                   <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef}/>
-                  {(changedState && !successEditedGroup) &&
-                    <>
-                      <Typography variant="subtitle1" sx={{ pl: 1.5 }}> You have unsaved changes! </Typography>
-                      <Button variant="contained" color="error" disableElevation style={{ width: '15%' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={resetFormValues} data-testid='reset-button'>
-                        Reset Form
-                      </Button>
-                    </>
-                  }
-                  <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
-                    <Button variant="contained" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={submitForm} data-testid='submit-button' disabled={disableSubmit || !changedState}>
-                      Update Group
-                    </Button>
-                    <Button variant="contained" color="error" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
-                      Delete Group
-                    </Button>
-                  </div>
-                  <div style={{ padding: '5px' }}>
+                  <div>
                     {successEditedGroup &&
                       <Alert severity="success">Group updated</Alert>
                     }
                     {errorMessage &&
                       <Alert severity="error">{errorMessage}</Alert>
                     }
+                  </div>
+                  {isUpdating &&
+                    <CircularProgress></CircularProgress>
+                  }
+                  <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+                    <Button variant="contained" color="error" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
+                      Delete Group
+                    </Button>
                   </div>
                 </>
                 :
