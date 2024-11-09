@@ -17,12 +17,34 @@ package servertest
 import (
 	"context"
 	"testing"
+
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth/authtest"
 )
 
+// TestEmptyServer is a smoke test that just tests starting an empty server.
 func TestEmptyServer(t *testing.T) {
+	// t.Parallel() -- RunServer cannot run in parallel.
 	srv, err := RunServer(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer srv.Shutdown()
+}
+
+// TestServerTestAndFakeAuthDb tests using a fake auth DB and servertest at the same time.
+func TestServerTestAndFakeAuthDb(t *testing.T) {
+	// t.Parallel() -- RunServer cannot run in parallel.
+	ctx := context.Background()
+
+	testServer, err := RunServer(ctx, &Settings{
+		Options: &server.Options{
+			AuthDBProvider: (&authtest.FakeDB{}).AsProvider(),
+		},
+	})
+
+	assert.That(t, err, should.ErrLike(nil))
+	assert.Loosely(t, testServer, should.NotBeNil)
 }

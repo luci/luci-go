@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/realms"
@@ -226,6 +225,21 @@ func (db *FakeDB) Use(ctx context.Context) context.Context {
 		}
 		return cfg
 	})
+}
+
+// AsProvider returns the current database as an auth.DBProvider.
+//
+// Here is how you use it:
+//
+//	testServer, err := servertest.RunServer(ctx, &servertest.Settings{
+//		Options: &server.Options{
+//			AuthDBProvider: (&authtest.FakeDB{}).AsProvider(),
+//		},
+//	})
+func (db *FakeDB) AsProvider() auth.DBProvider {
+	return func(ctx context.Context) (authdb.DB, error) {
+		return db, nil
+	}
 }
 
 // IsMember is part of authdb.DB interface.

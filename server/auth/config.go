@@ -154,7 +154,7 @@ type Config struct {
 // Calling Initialize twice causes a panic.
 func Initialize(ctx context.Context, cfg *Config) context.Context {
 	if getConfig(ctx) != nil {
-		panic("auth.Initialize is called twice on same context")
+		panic("auth.Initialize is called twice on same context. If you are trying to pass in a fake authDB, use the AsProvider() method.")
 	}
 	return setConfig(ctx, cfg)
 }
