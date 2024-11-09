@@ -91,6 +91,11 @@ def main():
       '--check',
       action='store_true',
       help='if set, check existing configs are up-to-date')
+  parser.add_argument(
+      '--fix',
+      action='store_true',
+      help='if set, run "golangci-lint run --fix" after generating configs',
+  )
 
   args = parser.parse_args()
   os.chdir(args.root)
@@ -189,6 +194,19 @@ def main():
   for path, body in configs.items():
     with open(path, 'w') as f:
       f.write(body)
+
+  if args.fix:
+    fails = False
+    for path in sorted(configs):
+      pkg = os.path.dirname(path)
+      print('$ golangci-lint run --fix %s/...' % pkg)
+      try:
+        subprocess.run(['golangci-lint', 'run', '--fix', '%s/...' % pkg])
+      except subprocess.CalledProcessError:
+        fails = True
+    if fails:
+      return 1
+
   return 0
 
 
