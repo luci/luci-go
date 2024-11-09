@@ -19,17 +19,20 @@ package rpcexplorer
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-
 	"go.chromium.org/luci/web/rpcexplorer/internal"
 )
 
@@ -82,7 +85,7 @@ func Install(r *router.Router, auth AuthMethod) {
 			path = "index.html"
 		}
 
-		hash := internal.GetAssetSHA256(path)
+		hash := assetSHA256(path)
 		if hash == nil {
 			http.Error(c.Writer, "404 page not found", http.StatusNotFound)
 			return
@@ -91,7 +94,7 @@ func Install(r *router.Router, auth AuthMethod) {
 		c.Writer.Header().Set("ETag", fmt.Sprintf("%q", hex.EncodeToString(hash)))
 		http.ServeContent(
 			c.Writer, c.Request, path, time.Time{},
-			strings.NewReader(internal.GetAssetString(path)))
+			strings.NewReader(assetString(path)))
 	})
 }
 
@@ -144,4 +147,35 @@ func getConfigResponse(ctx context.Context, m AuthMethod) (*configResponse, erro
 	}
 
 	return &out, nil
+}
+
+// If set, use this local file system path to find the RPC Explorer build.
+//
+// This is **only** for local development of RPC Explorer.
+var devBuildPath = os.Getenv("LUCI_RPCEXPLORER_LOCAL_BUILD_DIST")
+
+func assetSHA256(path string) []byte {
+	if devBuildPath == "" {
+		return internal.GetAssetSHA256(path)
+	}
+	blob := assetString(path)
+	if blob == "" {
+		return nil // there should be no empty files
+	}
+	digest := sha256.Sum256([]byte(blob))
+	return digest[:]
+}
+
+func assetString(path string) string {
+	if devBuildPath == "" {
+		return internal.GetAssetString(path)
+	}
+	blob, err := os.ReadFile(filepath.Join(devBuildPath, path))
+	if errors.Is(err, os.ErrNotExist) {
+		return ""
+	}
+	if err != nil {
+		panic(err)
+	}
+	return string(blob)
 }
