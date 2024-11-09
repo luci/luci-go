@@ -23,12 +23,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/server/secrets"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/secrets"
 )
 
 func TestPageTokens(t *testing.T) {

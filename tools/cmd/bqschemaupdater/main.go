@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"

@@ -23,8 +23,9 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/logdog/common/storage"
 )
 
 func testStorageCache(t *testing.T, compress bool) {

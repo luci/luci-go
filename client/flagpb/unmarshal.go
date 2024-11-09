@@ -22,12 +22,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 )
 
 // UnmarshalMessage unmarshals the proto message from flags.

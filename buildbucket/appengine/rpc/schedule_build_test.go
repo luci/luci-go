@@ -7627,7 +7627,7 @@ func TestScheduleBuild(t *testing.T) {
 						}
 						pMap := &parentsMap{
 							fromRequests: map[int64]*parent{
-								1: &parent{bld: pBld},
+								1: {bld: pBld},
 							},
 						}
 						_, _, err := validateScheduleBuild(ctx, nil, req, pMap, nil)
@@ -8169,7 +8169,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Input: &pb.BuildInfra_Buildbucket_Agent_Input{
 					CipdSource: map[string]*pb.InputDataRef{
-						"cipd": &pb.InputDataRef{
+						"cipd": {
 							DataType: &pb.InputDataRef_Cipd{
 								Cipd: &pb.InputDataRef_CIPD{
 									Server: "cipd server",
@@ -8373,7 +8373,7 @@ func TestScheduleBuild(t *testing.T) {
 					},
 					Input: &pb.BuildInfra_Buildbucket_Agent_Input{
 						CipdSource: map[string]*pb.InputDataRef{
-							"cipd": &pb.InputDataRef{
+							"cipd": {
 								DataType: &pb.InputDataRef_Cipd{
 									Cipd: &pb.InputDataRef_CIPD{
 										Server: "cipd server",
@@ -8490,7 +8490,7 @@ func TestScheduleBuild(t *testing.T) {
 				},
 				Input: &pb.BuildInfra_Buildbucket_Agent_Input{
 					CipdSource: map[string]*pb.InputDataRef{
-						"cipd": &pb.InputDataRef{
+						"cipd": {
 							DataType: &pb.InputDataRef_Cipd{
 								Cipd: &pb.InputDataRef_CIPD{
 									Server: "cipd server",

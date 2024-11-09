@@ -23,9 +23,10 @@ import (
 	"io"
 	"os"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 func main() {

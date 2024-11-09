@@ -122,8 +122,8 @@ func (f Fields) Errorf(ctx context.Context, fmt string, args ...any) {
 // FieldEntry is a static representation of a single key/value entry in a
 // Fields.
 type FieldEntry struct {
-	Key   string      // The field's key.
-	Value any // The field's value.
+	Key   string // The field's key.
+	Value any    // The field's value.
 }
 
 // String returns the string representation of the field entry:

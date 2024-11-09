@@ -19,9 +19,10 @@ package projectbisector
 import (
 	"context"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection/analysis"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 type RerunOption struct {

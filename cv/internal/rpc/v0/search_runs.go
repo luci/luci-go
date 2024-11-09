@@ -19,10 +19,10 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/grpc/appstatus"
-
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/appstatus"
+
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/acls"
 	"go.chromium.org/luci/cv/internal/changelist"

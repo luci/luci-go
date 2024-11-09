@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/types/known/timestamppb"
 

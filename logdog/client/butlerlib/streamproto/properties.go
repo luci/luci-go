@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )

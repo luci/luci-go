@@ -36,7 +36,6 @@ import (
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
-
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/identityset"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/revocation"

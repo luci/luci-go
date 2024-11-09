@@ -27,9 +27,10 @@ import (
 	"go.chromium.org/luci/common/data/text"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"
+	"go.chromium.org/luci/swarming/client/swarming"
+
 	"go.chromium.org/luci/led/job"
 	"go.chromium.org/luci/led/ledcmd"
-	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 func launchCmd(opts cmdBaseOptions) *subcommands.Command {

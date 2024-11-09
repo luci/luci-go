@@ -24,13 +24,12 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/server/auth/delegation/messages"
-	"go.chromium.org/luci/server/auth/signing"
-	"go.chromium.org/luci/server/auth/signing/signingtest"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/auth/delegation/messages"
+	"go.chromium.org/luci/server/auth/signing"
+	"go.chromium.org/luci/server/auth/signing/signingtest"
 )
 
 func TestInspectToken(t *testing.T) {

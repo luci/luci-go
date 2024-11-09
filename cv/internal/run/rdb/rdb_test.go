@@ -19,9 +19,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"google.golang.org/protobuf/types/known/emptypb"
-
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
@@ -29,9 +28,10 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/grpc/appstatus"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
+
+	"go.chromium.org/luci/cv/internal/cvtesting"
 )
 
 func TestRecorderClient(t *testing.T) {

@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	configpb "go.chromium.org/luci/common/proto/config"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"

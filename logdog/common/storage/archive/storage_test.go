@@ -21,19 +21,20 @@ import (
 	"io"
 	"testing"
 
+	cloudStorage "cloud.google.com/go/storage"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/archive"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
-
-	cloudStorage "cloud.google.com/go/storage"
-	"google.golang.org/protobuf/proto"
 )
 
 const (

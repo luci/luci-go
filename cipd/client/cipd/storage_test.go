@@ -27,13 +27,14 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestUpload(t *testing.T) {

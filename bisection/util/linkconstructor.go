@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"go.chromium.org/luci/bisection/internal/gerrit"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
+	"go.chromium.org/luci/bisection/internal/gerrit"
 )
 
 // ConstructCompileAnalysisURL returns a link to the analysis page in LUCI Bisection

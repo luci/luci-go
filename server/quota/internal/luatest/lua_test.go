@@ -25,6 +25,7 @@ import (
 
 	luajson "github.com/alicebob/gopher-json"
 	lua "github.com/yuin/gopher-lua"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"

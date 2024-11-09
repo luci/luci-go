@@ -19,7 +19,6 @@ import (
 	"math"
 
 	"go.starlark.net/starlark"
-
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/starlark/typed"

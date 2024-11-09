@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"

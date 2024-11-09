@@ -38,13 +38,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
-
-	// Using datastore for user sessions.
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-
-	// Ensure registration of validation rules before registering cfgcache.
-	_ "go.chromium.org/luci/cv/internal/configs/validation"
 
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/buildbucket"
@@ -72,6 +65,12 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob/tjcancel"
 	tjupdate "go.chromium.org/luci/cv/internal/tryjob/update"
 	"go.chromium.org/luci/cv/internal/userhtml"
+
+	// Ensure registration of validation rules before registering cfgcache.
+	_ "go.chromium.org/luci/cv/internal/configs/validation"
+	// Using datastore for user sessions.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 func main() {

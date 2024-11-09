@@ -19,9 +19,10 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/appstatus"
-	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+
+	milopb "go.chromium.org/luci/milo/proto/v1"
 
 	// Ensure those permissions are registered in memory.
 	_ "go.chromium.org/luci/buildbucket/bbperms"

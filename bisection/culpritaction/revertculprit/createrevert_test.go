@@ -19,11 +19,6 @@ import (
 	"fmt"
 	"testing"
 
-	"go.chromium.org/luci/bisection/model"
-	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -31,6 +26,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/model"
+	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestGenerateRevertDescription(t *testing.T) {

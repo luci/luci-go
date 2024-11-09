@@ -17,8 +17,9 @@ package pkg
 import (
 	"runtime"
 
-	"go.chromium.org/luci/cipd/common/cipderr"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 // InstallMode defines how to install a package.

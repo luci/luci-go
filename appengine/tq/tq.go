@@ -34,13 +34,12 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/taskqueue"
-
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/router"
 )
 

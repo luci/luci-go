@@ -368,8 +368,8 @@ func TestListAccountEmails(t *testing.T) {
 		ctx := context.Background()
 		f := Fake{}
 		f.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "foo@google.com"},
-			&gerritpb.EmailInfo{Email: "foo@chromium.org"},
+			{Email: "foo@google.com"},
+			{Email: "foo@chromium.org"},
 		})
 
 		client, err := f.MakeClient(ctx, "foo", "bar")
@@ -383,8 +383,8 @@ func TestListAccountEmails(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Resemble(&gerritpb.ListAccountEmailsResponse{
 				Emails: []*gerritpb.EmailInfo{
-					&gerritpb.EmailInfo{Email: "foo@google.com"},
-					&gerritpb.EmailInfo{Email: "foo@chromium.org"},
+					{Email: "foo@google.com"},
+					{Email: "foo@chromium.org"},
 				},
 			}))
 		})

@@ -22,6 +22,10 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/bugs"
 	bugspb "go.chromium.org/luci/analysis/internal/bugs/proto"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -29,9 +33,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/testutil"
 	bqpb "go.chromium.org/luci/analysis/proto/bq"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestExportRules(t *testing.T) {

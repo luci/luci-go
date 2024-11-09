@@ -19,8 +19,9 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/proto/gitiles"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
+
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 // MiloInternalService implements milopb.MiloInternal

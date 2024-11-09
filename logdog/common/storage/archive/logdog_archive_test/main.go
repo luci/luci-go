@@ -25,6 +25,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
@@ -33,15 +36,12 @@ import (
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/maruel/subcommands"
-
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

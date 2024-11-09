@@ -397,7 +397,7 @@ func TestCheckRunCreate(t *testing.T) {
 			rs.RootCL = clid1
 			// make rootCL not submittable
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: "user-1@example.com"},
+				{Email: "user-1@example.com"},
 			})
 			cls[0].Snapshot.GetGerrit().Info = gf.CI(gChange1,
 				gf.Owner("user-1"),

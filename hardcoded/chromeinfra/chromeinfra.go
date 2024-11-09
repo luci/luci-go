@@ -26,6 +26,7 @@ import (
 	"sync"
 
 	homedir "github.com/mitchellh/go-homedir"
+
 	"go.chromium.org/luci/auth"
 )
 

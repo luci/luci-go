@@ -19,15 +19,14 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/deprecated"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/encryptedcookies/session/datastore"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/warmup"
-
-	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"
-	"go.chromium.org/luci/appengine/gaemiddleware"
 )
 
 var handlersInstalled = false

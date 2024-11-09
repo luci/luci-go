@@ -18,15 +18,17 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/span"
-	"google.golang.org/grpc/codes"
 )
 
 func TestQueryTestMetadata(t *testing.T) {

@@ -31,12 +31,13 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/exp/constraints"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"golang.org/x/exp/constraints"
 )
 
 // ShortDuration is the maximum difference allowed by similar times.

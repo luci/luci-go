@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	protoutil "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
+
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )

@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/vmihailenco/msgpack/v5"
+
 	"go.chromium.org/luci/common/errors"
 )
 

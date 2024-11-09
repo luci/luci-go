@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/golang/mock/gomock"
+
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 

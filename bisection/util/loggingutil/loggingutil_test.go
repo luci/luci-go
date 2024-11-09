@@ -18,12 +18,13 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/bisection/util/testutil"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestLogging(t *testing.T) {

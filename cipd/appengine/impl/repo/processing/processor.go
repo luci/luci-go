@@ -48,6 +48,6 @@ type Processor interface {
 //
 // It is either some JSON-serializable data or a fatal error.
 type Result struct {
-	Result any // JSON-serializable summary extracted by the processor
-	Err    error       // if non-nil, contains the fatal error message
+	Result any   // JSON-serializable summary extracted by the processor
+	Err    error // if non-nil, contains the fatal error message
 }

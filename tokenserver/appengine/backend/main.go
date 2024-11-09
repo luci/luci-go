@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
-
 	"go.chromium.org/luci/tokenserver/appengine/impl"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bq"
 )

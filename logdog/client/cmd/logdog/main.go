@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/logdog/client/cli"
 )
 

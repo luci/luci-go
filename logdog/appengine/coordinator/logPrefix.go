@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/logdog/common/types"
 )
 

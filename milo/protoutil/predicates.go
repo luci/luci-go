@@ -17,6 +17,7 @@ package protoutil
 import (
 	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
+
 	milopb "go.chromium.org/luci/milo/proto/v1"
 )
 

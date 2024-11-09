@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/server/auth/authdb/internal/realmset"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )

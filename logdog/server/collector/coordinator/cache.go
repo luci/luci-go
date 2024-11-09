@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/sync/promise"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+
 	"go.chromium.org/luci/logdog/common/types"
 )
 

@@ -19,8 +19,9 @@ import (
 	"regexp"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // ChangeLog represents the changes of a revision

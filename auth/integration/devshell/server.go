@@ -29,11 +29,10 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-
-	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // EnvKey is the name of the environment variable which contains the Devshell

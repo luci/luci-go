@@ -22,13 +22,14 @@ import (
 
 	"google.golang.org/grpc/codes"
 
-	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
 func TestGetSignedURL(t *testing.T) {

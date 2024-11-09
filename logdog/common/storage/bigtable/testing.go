@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/data/treapstore"
+
 	"go.chromium.org/luci/logdog/common/storage"
 )
 

@@ -23,24 +23,21 @@ import (
 	otelmetricnoop "go.opentelemetry.io/otel/metric/noop"
 	oteltracenoop "go.opentelemetry.io/otel/trace/noop"
 
+	"go.chromium.org/luci/appengine/gaesecrets"
+	"go.chromium.org/luci/appengine/gaesettings"
+	"go.chromium.org/luci/common/data/caching/cacheContext"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/filter/dscache"
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/filter/readonly"
 	"go.chromium.org/luci/gae/filter/txndefer"
 	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/common/data/caching/cacheContext"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/settings"
 	"go.chromium.org/luci/server/warmup"
-
-	"go.chromium.org/luci/appengine/gaesecrets"
-	"go.chromium.org/luci/appengine/gaesettings"
 )
 
 // errSimulatedMemcacheOutage is returned by all memcache calls if

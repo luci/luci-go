@@ -20,15 +20,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"github.com/maruel/subcommands"
 )
 
 type latestCommandRun struct {

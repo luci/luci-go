@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
-
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.chromium.org/luci/auth"

@@ -23,6 +23,10 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"go.chromium.org/luci/common/testing/truth"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -33,9 +37,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/config/compiledcfg"
 	configpb "go.chromium.org/luci/analysis/proto/config"
 	pb "go.chromium.org/luci/analysis/proto/v1"
-	"go.chromium.org/luci/common/testing/truth"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func emptyMetricValues() map[metrics.ID]metrics.TimewiseCounts {

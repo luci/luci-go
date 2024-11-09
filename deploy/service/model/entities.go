@@ -19,8 +19,9 @@ import (
 	"sort"
 	"time"
 
-	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/deploy/api/modelpb"
 )
 
 // Asset represents a Cloud resource (or a bunch of resources) actuated as

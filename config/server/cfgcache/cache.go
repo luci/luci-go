@@ -30,16 +30,16 @@ import (
 	protov1 "github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	luciproto "go.chromium.org/luci/common/proto"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/server/caching"
+
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/server/caching"
 )
 
 // Entry describes what service configuration file to fetch and how to

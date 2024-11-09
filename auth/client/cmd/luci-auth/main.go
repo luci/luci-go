@@ -26,7 +26,6 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth/client/luci_auth"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 

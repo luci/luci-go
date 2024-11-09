@@ -18,6 +18,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/flag/multiflag"
+
 	"go.chromium.org/luci/logdog/client/butler/output"
 )
 

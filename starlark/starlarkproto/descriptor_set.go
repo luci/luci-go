@@ -19,7 +19,6 @@ import (
 	"sync/atomic"
 
 	"go.starlark.net/starlark"
-
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 

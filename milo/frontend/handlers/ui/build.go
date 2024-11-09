@@ -32,12 +32,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/utils"
-
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 )
 
 var crosMainRE = regexp.MustCompile(`^cros/parent_buildbucket_id/(\d+)$`)

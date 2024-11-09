@@ -26,12 +26,13 @@ import (
 
 	"github.com/klauspost/compress/zip"
 
-	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/pkg"
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestBuildInstance(t *testing.T) {

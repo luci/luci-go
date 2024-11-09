@@ -28,6 +28,19 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/grpc/prpc"
+	luciserver "go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/cron"
+	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/pubsub"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/secrets"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/bisection/bqexporter"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/cancelanalysis"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
@@ -42,18 +55,6 @@ import (
 	"go.chromium.org/luci/bisection/testfailureanalysis/bisection"
 	"go.chromium.org/luci/bisection/testfailuredetection"
 	"go.chromium.org/luci/bisection/throttle"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/config/server/cfgmodule"
-	"go.chromium.org/luci/grpc/prpc"
-	luciserver "go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/cron"
-	"go.chromium.org/luci/server/gaeemulation"
-	"go.chromium.org/luci/server/module"
-	"go.chromium.org/luci/server/pubsub"
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/secrets"
-	"go.chromium.org/luci/server/tq"
 )
 
 const (

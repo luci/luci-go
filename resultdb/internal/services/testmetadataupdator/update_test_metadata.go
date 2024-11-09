@@ -22,13 +22,14 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
 // TestMetadataTask describes how to route update test metadata task.

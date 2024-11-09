@@ -23,15 +23,15 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/gae/filter/featureBreaker"
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
-	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 )
 
 func TestLoadStream(t *testing.T) {

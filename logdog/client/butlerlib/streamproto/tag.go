@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"go.chromium.org/luci/common/flag/stringmapflag"
+
 	"go.chromium.org/luci/logdog/common/types"
 )
 

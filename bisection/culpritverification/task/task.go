@@ -19,9 +19,11 @@ import (
 	"context"
 	"fmt"
 
-	tpb "go.chromium.org/luci/bisection/task/proto"
-	"go.chromium.org/luci/server/tq"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/server/tq"
+
+	tpb "go.chromium.org/luci/bisection/task/proto"
 )
 
 // CompileFailureTasks describes how to route compile failure culprit verification tasks.

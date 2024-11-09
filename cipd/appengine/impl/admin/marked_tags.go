@@ -20,11 +20,12 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/dsmapper"
+
+	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
 // markedTag is a root entity created for each tag marked by some particular

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/resultdb/cli"
 )
 

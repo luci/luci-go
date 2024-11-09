@@ -21,10 +21,11 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/router"
+
 	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/buildsource/buildbucket"
 	"go.chromium.org/luci/milo/internal/utils"
-	"go.chromium.org/luci/server/router"
 )
 
 // cancelBuildHandler parses inputs from HTTP form, cancels the build with the given buildbucket build ID

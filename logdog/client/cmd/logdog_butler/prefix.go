@@ -23,6 +23,7 @@ import (
 	"os/user"
 
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/common/types"
 )
 

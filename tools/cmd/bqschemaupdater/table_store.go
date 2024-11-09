@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
-
 	"google.golang.org/api/googleapi"
 )
 

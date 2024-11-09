@@ -16,12 +16,13 @@ package localsrv
 
 import (
 	"context"
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 	"net"
 	"sync"
 	"testing"
+
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func noopServe(context.Context, net.Listener, *sync.WaitGroup) error {

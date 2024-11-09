@@ -98,7 +98,7 @@ func TestPoke(t *testing.T) {
 		)
 		ct.AddMember("foo", dryRunners)
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "foo@example.com"},
+			{Email: "foo@example.com"},
 		})
 		cl := &changelist.CL{
 			ID:         gChange,

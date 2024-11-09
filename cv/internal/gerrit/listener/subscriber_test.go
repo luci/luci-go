@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
 )
 

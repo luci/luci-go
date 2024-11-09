@@ -20,13 +20,14 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -296,7 +297,7 @@ func TestNewPatchsetUploadRun(t *testing.T) {
 			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 			updated := ct.Clock.Now().Add(time.Minute)
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: "uploader-99@example.com"},
+				{Email: "uploader-99@example.com"},
 			})
 			ct.AddCommitter("uploader-99")
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(

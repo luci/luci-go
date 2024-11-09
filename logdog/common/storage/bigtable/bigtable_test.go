@@ -17,12 +17,13 @@ package bigtable
 import (
 	"testing"
 
+	"cloud.google.com/go/bigtable"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/logdog/common/storage"
 
-	"cloud.google.com/go/bigtable"
+	"go.chromium.org/luci/logdog/common/storage"
 )
 
 func TestBigTable(t *testing.T) {

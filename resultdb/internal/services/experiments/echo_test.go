@@ -19,16 +19,16 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 	"google.golang.org/grpc/codes"
-
-	pb "go.chromium.org/luci/resultdb/proto/v1"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
+	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 func TestEcho(t *testing.T) {

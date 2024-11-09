@@ -26,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+
 	snooperpb "go.chromium.org/luci/provenance/api/snooperpb/v1"
 )
 

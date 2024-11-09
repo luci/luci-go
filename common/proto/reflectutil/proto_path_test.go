@@ -17,10 +17,11 @@ package reflectutil
 import (
 	"testing"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 func TestPath(t *testing.T) {

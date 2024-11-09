@@ -26,10 +26,11 @@ import (
 	"os"
 	"os/signal"
 
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const gerritHost = "chromium-review.googlesource.com"

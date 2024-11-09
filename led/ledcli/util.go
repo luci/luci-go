@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maruel/subcommands"
-
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
+
 	job "go.chromium.org/luci/led/job"
 )
 

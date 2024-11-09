@@ -76,7 +76,7 @@ func TestConcurrentRunsSingular(t *testing.T) {
 			a.gChange = gChangeFirst + i
 			a.user = fmt.Sprintf("user-%d", (i%10)+1)
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: fmt.Sprintf("%s@example.com", a.user)},
+				{Email: fmt.Sprintf("%s@example.com", a.user)},
 			})
 			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(
 				a.gChange, gf.Project(gRepo), gf.Ref(gRef), gf.PS(1), gf.Owner(a.user),

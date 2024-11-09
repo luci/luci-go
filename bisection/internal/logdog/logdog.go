@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/bisection/util"
-
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/bisection/util"
 )
 
 var MockedLogdogClientKey = "mocked logdog client"

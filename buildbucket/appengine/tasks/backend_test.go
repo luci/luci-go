@@ -392,7 +392,7 @@ func TestCreateBackendTask(t *testing.T) {
 							},
 						},
 					},
-					"task_name": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bb-1-project/bucket"}},
+					"task_name": {Kind: &structpb.Value_StringValue{StringValue: "bb-1-project/bucket"}},
 				},
 			}))
 			assert.Loosely(c, req.BuildbucketHost, should.Equal("some unique host name"))

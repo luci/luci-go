@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/taskqueue"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 )

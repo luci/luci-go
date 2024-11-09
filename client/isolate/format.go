@@ -18,6 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"os"
 	"path"
@@ -28,11 +31,8 @@ import (
 	"strconv"
 	"strings"
 
-	"go/ast"
-	"go/parser"
-	"go/token"
-
 	"github.com/yosuke-furukawa/json5/encoding/json5"
+
 	"go.chromium.org/luci/common/errors"
 )
 

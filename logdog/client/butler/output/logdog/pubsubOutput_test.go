@@ -24,24 +24,23 @@ import (
 	"testing"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/recordio"
+	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/data/recordio"
-	gcps "go.chromium.org/luci/common/gcloud/pubsub"
 	"go.chromium.org/luci/logdog/api/logpb"
-
-	"cloud.google.com/go/pubsub"
-	"github.com/golang/protobuf/proto"
 )
 
 type testTopic struct {

@@ -446,8 +446,8 @@ func TestTryBackfillSwarming(t *testing.T) {
 				},
 				Config: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"priority":        &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 20}},
-						"service_account": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}},
+						"priority":        {Kind: &structpb.Value_NumberValue{NumberValue: 20}},
+						"service_account": {Kind: &structpb.Value_StringValue{StringValue: "account"}},
 					},
 				},
 				TaskDimensions: taskDims,
@@ -455,7 +455,7 @@ func TestTryBackfillSwarming(t *testing.T) {
 			t.Run("partially fail", func(t *ftt.Test) {
 				b.Infra.Backend.Task.Details = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"bot_dimensions": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "wrong format"}},
+						"bot_dimensions": {Kind: &structpb.Value_StringValue{StringValue: "wrong format"}},
 					},
 				}
 				assert.Loosely(t, tryBackfillSwarming(b), should.ErrLike("failed to unmarshal task details JSON for build 1"))
@@ -465,25 +465,25 @@ func TestTryBackfillSwarming(t *testing.T) {
 			t.Run("pass", func(t *ftt.Test) {
 				b.Infra.Backend.Task.Details = &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"bot_dimensions": &structpb.Value{
+						"bot_dimensions": {
 							Kind: &structpb.Value_StructValue{
 								StructValue: &structpb.Struct{
 									Fields: map[string]*structpb.Value{
-										"cpu": &structpb.Value{
+										"cpu": {
 											Kind: &structpb.Value_ListValue{
 												ListValue: &structpb.ListValue{
 													Values: []*structpb.Value{
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
 													},
 												},
 											},
 										},
-										"os": &structpb.Value{
+										"os": {
 											Kind: &structpb.Value_ListValue{
 												ListValue: &structpb.ListValue{
 													Values: []*structpb.Value{
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
 													},
 												},
 											},
@@ -616,8 +616,8 @@ func TestTryBackfillBackend(t *testing.T) {
 				},
 				Config: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"priority":        &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 20}},
-						"service_account": &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}},
+						"priority":        {Kind: &structpb.Value_NumberValue{NumberValue: 20}},
+						"service_account": {Kind: &structpb.Value_StringValue{StringValue: "account"}},
 					},
 				},
 				TaskDimensions: taskDims,
@@ -625,25 +625,25 @@ func TestTryBackfillBackend(t *testing.T) {
 
 			expected.Task.Details = &structpb.Struct{
 				Fields: map[string]*structpb.Value{
-					"bot_dimensions": &structpb.Value{
+					"bot_dimensions": {
 						Kind: &structpb.Value_StructValue{
 							StructValue: &structpb.Struct{
 								Fields: map[string]*structpb.Value{
-									"cpu": &structpb.Value{
+									"cpu": {
 										Kind: &structpb.Value_ListValue{
 											ListValue: &structpb.ListValue{
 												Values: []*structpb.Value{
-													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
-													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+													{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+													{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
 												},
 											},
 										},
 									},
-									"os": &structpb.Value{
+									"os": {
 										Kind: &structpb.Value_ListValue{
 											ListValue: &structpb.ListValue{
 												Values: []*structpb.Value{
-													&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+													{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
 												},
 											},
 										},

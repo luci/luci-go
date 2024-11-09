@@ -161,7 +161,7 @@ func (bbe *buildbucketEditor) TaskPayloadSource(cipdPkg, cipdVers string) {
 			DataType: &bbpb.InputDataRef_Cipd{
 				Cipd: &bbpb.InputDataRef_CIPD{
 					Specs: []*bbpb.InputDataRef_CIPD_PkgSpec{
-						&bbpb.InputDataRef_CIPD_PkgSpec{
+						{
 							Package: cipdPkg,
 							Version: usedCipdVers,
 						},

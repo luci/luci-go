@@ -20,16 +20,18 @@ import (
 	"strings"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/buildbucket/bbperms"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/milo/internal/testutils"
-	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/grpc/codes"
+
+	"go.chromium.org/luci/milo/internal/testutils"
+	milopb "go.chromium.org/luci/milo/proto/v1"
 )
 
 func TestBatchCheckPermissions(t *testing.T) {

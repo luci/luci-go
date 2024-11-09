@@ -47,7 +47,7 @@ func HandleCancelBackendTask(ctx context.Context, project, target, taskID string
 
 	res, err := backendClient.CancelTasks(ctx, &pb.CancelTasksRequest{
 		TaskIds: []*pb.TaskID{
-			&pb.TaskID{
+			{
 				Id:     taskID,
 				Target: target,
 			},

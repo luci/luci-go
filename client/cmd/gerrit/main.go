@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/api/gitiles"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 

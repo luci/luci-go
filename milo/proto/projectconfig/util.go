@@ -18,8 +18,9 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth/realms"
+
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // ParseCategory takes a Builder's Category and parses it into a list of

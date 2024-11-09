@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/data/disjointset"
+
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/prjmanager/prjpb"
 )

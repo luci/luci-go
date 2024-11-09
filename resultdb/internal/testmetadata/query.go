@@ -20,10 +20,11 @@ import (
 	"encoding/hex"
 	"text/template"
 
+	"cloud.google.com/go/spanner"
 	"google.golang.org/protobuf/proto"
 
-	"cloud.google.com/go/spanner"
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/resultdb/internal/pagination"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"

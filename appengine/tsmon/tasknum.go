@@ -19,15 +19,14 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/gae/filter/dscache"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/target"
+	"go.chromium.org/luci/gae/filter/dscache"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/tsmon"
 )
 

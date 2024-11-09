@@ -23,24 +23,23 @@ import (
 	"os"
 	"strings"
 
+	cloudBT "cloud.google.com/go/bigtable"
+	"github.com/golang/protobuf/proto"
+	"github.com/maruel/subcommands"
+	"google.golang.org/api/option"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
-
-	cloudBT "cloud.google.com/go/bigtable"
-	"github.com/golang/protobuf/proto"
-	"github.com/maruel/subcommands"
-
-	"google.golang.org/api/option"
-
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -31,14 +31,15 @@ import (
 	"go.chromium.org/luci/common/pagination/dscursor"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/protoutil"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
 )
 
 var queryConsoleSnapshotsPageTokenVault = dscursor.NewVault([]byte("luci.milo.v1.MiloInternal.QueryConsoleSnapshots"))

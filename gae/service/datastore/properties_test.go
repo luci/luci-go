@@ -22,11 +22,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/gae/service/blobstore"
 )
 

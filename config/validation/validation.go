@@ -22,7 +22,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
 	configpb "go.chromium.org/luci/common/proto/config"
 )
 

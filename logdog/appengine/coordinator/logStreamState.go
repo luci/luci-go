@@ -21,6 +21,7 @@ import (
 	"time"
 
 	ds "go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/logdog/common/types"
 )
 

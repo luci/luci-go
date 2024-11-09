@@ -18,17 +18,17 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/changelogutil"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/compilefailureanalysis/compilelog"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/changelogutil"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 func Analyze(

@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.chromium.org/luci/bisection/model"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -34,7 +31,10 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 var (

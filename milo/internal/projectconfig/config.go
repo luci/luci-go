@@ -36,10 +36,11 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/milo/internal/utils"
-	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/milo/internal/utils"
+	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )
 
 // Project is a datastore entity representing a single project.

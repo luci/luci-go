@@ -17,6 +17,7 @@ package config
 import (
 	protoutil "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
+
 	"go.chromium.org/luci/milo/internal/git/gitacls"
 	configpb "go.chromium.org/luci/milo/proto/config"
 )

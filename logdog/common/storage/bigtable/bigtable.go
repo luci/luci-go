@@ -18,15 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/logdog/common/storage"
+	"cloud.google.com/go/bigtable"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
-	"cloud.google.com/go/bigtable"
-	"google.golang.org/grpc/codes"
+	"go.chromium.org/luci/logdog/common/storage"
 )
 
 const (

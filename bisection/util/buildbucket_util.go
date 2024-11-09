@@ -16,10 +16,12 @@
 package util
 
 import (
+	"google.golang.org/protobuf/proto"
+
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"google.golang.org/protobuf/proto"
 )
 
 // Check if a step is compile step.

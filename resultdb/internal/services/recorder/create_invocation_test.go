@@ -400,7 +400,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 			t.Run(`invalid key`, func(t *ftt.Test) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-					"mykey_": &structpb.Struct{
+					"mykey_": {
 						Fields: map[string]*structpb.Value{
 							"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 							"child_key": structpb.NewStringValue("child_value"),
@@ -413,7 +413,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 			})
 			t.Run(`missing @type`, func(t *ftt.Test) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-					"mykey": &structpb.Struct{
+					"mykey": {
 						Fields: map[string]*structpb.Value{
 							"child_key": structpb.NewStringValue("child_value"),
 						},
@@ -425,7 +425,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 			t.Run(`invalid @type`, func(t *ftt.Test) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-					"mykey": &structpb.Struct{
+					"mykey": {
 						Fields: map[string]*structpb.Value{
 							"@type":     structpb.NewStringValue("foo.bar.com/x/_some.package.MyMessage"),
 							"child_key": structpb.NewStringValue("child_value"),
@@ -438,7 +438,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 
 			t.Run(`max size of value`, func(t *ftt.Test) {
 				request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-					"mykey": &structpb.Struct{
+					"mykey": {
 						Fields: map[string]*structpb.Value{
 							"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 							"child_key": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue)),

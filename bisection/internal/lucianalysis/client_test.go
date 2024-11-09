@@ -19,10 +19,11 @@ package lucianalysis
 import (
 	"testing"
 
-	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	tpb "go.chromium.org/luci/bisection/task/proto"
 )
 
 func TestUpdateAnalysisStatus(t *testing.T) {

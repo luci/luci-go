@@ -18,10 +18,9 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/gae/service/memcache"
-
-	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/caching"
 )
 

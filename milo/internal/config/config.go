@@ -27,8 +27,9 @@ import (
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/gae/service/datastore"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/caching"
+
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 const (

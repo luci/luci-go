@@ -20,12 +20,10 @@ import (
 	"os"
 	"strings"
 
+	cloudkms "cloud.google.com/go/kms/apiv1"
+	"github.com/maruel/subcommands"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
-
-	"github.com/maruel/subcommands"
-
-	cloudkms "cloud.google.com/go/kms/apiv1"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"

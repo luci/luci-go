@@ -28,6 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/buildbucket/bbperms"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -40,8 +41,8 @@ import (
 	"go.chromium.org/luci/server/caching/layered"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	"go.chromium.org/luci/milo/internal/buildsource"
 	"go.chromium.org/luci/milo/internal/config"
@@ -50,7 +51,6 @@ import (
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
-	tspb "go.chromium.org/luci/tree_status/proto/v1"
 )
 
 func logTimer(c context.Context, message string) func() {

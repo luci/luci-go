@@ -21,14 +21,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	log "go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	log "go.chromium.org/luci/common/logging"
 )
 
 // LoadStream loads the log stream state.

@@ -24,9 +24,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	log "go.chromium.org/luci/common/logging"
-
 	"gopkg.in/yaml.v2"
+
+	log "go.chromium.org/luci/common/logging"
 )
 
 // appYAML is a subset of the contents of an AppEngine application's "app.yaml"

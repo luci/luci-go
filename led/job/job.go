@@ -33,9 +33,10 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
-	"go.chromium.org/luci/led/job/experiments"
 	logdog_types "go.chromium.org/luci/logdog/common/types"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job/experiments"
 )
 
 type cipdInput struct {

@@ -24,10 +24,11 @@ import (
 	"strings"
 	"unicode"
 
+	"golang.org/x/exp/slices"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/sync/parallel"
-	"golang.org/x/exp/slices"
 
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"

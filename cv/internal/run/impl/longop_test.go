@@ -24,6 +24,7 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -37,8 +38,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/impl/longops"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
 	"go.chromium.org/luci/cv/internal/run/runtest"
-
-	"go.chromium.org/luci/common/retry/transient"
 )
 
 func TestLongOps(t *testing.T) {

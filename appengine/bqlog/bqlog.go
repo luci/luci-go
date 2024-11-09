@@ -36,20 +36,17 @@ import (
 	bqapi "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/taskqueue"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-
 	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/server/auth"
 )
 

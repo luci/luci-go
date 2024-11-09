@@ -23,7 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"

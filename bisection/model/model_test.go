@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	pb "go.chromium.org/luci/bisection/proto/v1"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -28,6 +26,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 func TestDatastoreModel(t *testing.T) {

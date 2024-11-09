@@ -19,6 +19,11 @@ import (
 	"fmt"
 	"testing"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
+	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/gae/filter/featureBreaker"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
@@ -27,11 +32,6 @@ import (
 	"go.chromium.org/luci/gae/service/memcache"
 	"go.chromium.org/luci/gae/service/taskqueue"
 	"go.chromium.org/luci/gae/service/user"
-
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/convey"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func shouldHaveSuccessesAndErrors(actual any, expected ...any) string {

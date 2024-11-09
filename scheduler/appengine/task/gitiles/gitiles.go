@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/api/pubsub/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

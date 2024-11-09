@@ -17,11 +17,12 @@ package main
 import (
 	"strings"
 
+	"github.com/maruel/subcommands"
+
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
-
-	"github.com/maruel/subcommands"
 )
 
 var subcommandServe = &subcommands.Command{

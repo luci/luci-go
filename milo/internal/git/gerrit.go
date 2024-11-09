@@ -24,8 +24,9 @@ import (
 	"google.golang.org/grpc/status"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/caching/layered"
+
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // errGRPCNotFound is what gRPC API would have returned for NotFound error.

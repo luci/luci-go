@@ -17,10 +17,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strings"
-
 	"go/ast"
 	"go/token"
+	"strings"
 )
 
 // service is the set of data extracted from a generated protobuf file (.pb.go)

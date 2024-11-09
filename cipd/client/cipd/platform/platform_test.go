@@ -15,11 +15,12 @@
 package platform
 
 import (
+	"runtime"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"runtime"
-	"testing"
 )
 
 func TestCurrentResolution(t *testing.T) {

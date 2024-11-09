@@ -19,11 +19,12 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 
-	"go.chromium.org/luci/casviewer"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/iap"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/casviewer"
 )
 
 func main() {

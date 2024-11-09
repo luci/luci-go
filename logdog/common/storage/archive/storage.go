@@ -30,17 +30,18 @@ import (
 	"sort"
 	"sync/atomic"
 
+	cloudStorage "cloud.google.com/go/storage"
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-
-	cloudStorage "cloud.google.com/go/storage"
-	"github.com/golang/protobuf/proto"
 )
 
 const (

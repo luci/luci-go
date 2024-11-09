@@ -24,6 +24,7 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	cfglib "go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/info"
+
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/server/config"
 )

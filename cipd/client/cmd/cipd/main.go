@@ -25,8 +25,9 @@ package main
 import (
 	"os"
 
-	"go.chromium.org/luci/cipd/client/cli"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
+	"go.chromium.org/luci/cipd/client/cli"
 )
 
 func main() {

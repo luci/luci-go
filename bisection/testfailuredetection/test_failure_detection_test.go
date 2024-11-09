@@ -23,14 +23,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
-	"go.chromium.org/luci/bisection/model"
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/rerun"
-	tpb "go.chromium.org/luci/bisection/task/proto"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -42,6 +35,15 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
+
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/rerun"
+	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 func TestRedundancyScore(t *testing.T) {

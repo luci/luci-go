@@ -19,7 +19,6 @@ import (
 	"sort"
 
 	"go.starlark.net/starlark"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 

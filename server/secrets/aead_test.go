@@ -24,11 +24,11 @@ import (
 	"github.com/google/tink/go/keyset"
 	tinkpb "github.com/google/tink/go/proto/tink_go_proto"
 
-	"go.chromium.org/luci/server/caching"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/server/caching"
 )
 
 func TestAEAD(t *testing.T) {

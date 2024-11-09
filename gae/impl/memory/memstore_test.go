@@ -15,10 +15,11 @@
 package memory
 
 import (
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"testing"
 )
 
 type keyLeftRight struct{ key, left, right []byte }

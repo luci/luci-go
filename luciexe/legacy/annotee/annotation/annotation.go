@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/srcman"
 	"go.chromium.org/luci/logdog/common/types"
+
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 

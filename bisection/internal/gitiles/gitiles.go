@@ -23,12 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/bisection/model"
-	"go.chromium.org/luci/bisection/util"
-
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
 )
 
 var MockedGitilesClientKey = "mocked gitiles client"

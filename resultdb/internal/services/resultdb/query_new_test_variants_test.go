@@ -22,6 +22,9 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -35,10 +38,6 @@ import (
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/resultdb/rdbperms"
-
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateNewTestVariantsRequest(t *testing.T) {
@@ -419,9 +418,9 @@ func TestE2E(t *testing.T) {
 		nt := resp.GetNewTestVariants()
 		assert.Loosely(t, len(nt), should.Equal(3))
 		expected := []*pb.QueryNewTestVariantsResponse_NewTestVariant{
-			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "A", VariantHash: vh},
-			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "B", VariantHash: vh},
-			&pb.QueryNewTestVariantsResponse_NewTestVariant{TestId: "E", VariantHash: vh},
+			{TestId: "A", VariantHash: vh},
+			{TestId: "B", VariantHash: vh},
+			{TestId: "E", VariantHash: vh},
 		}
 		assert.Loosely(t, nt, should.Resemble(expected))
 	})

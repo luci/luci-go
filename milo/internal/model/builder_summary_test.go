@@ -26,8 +26,9 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 func TestUpdateBuilder(t *testing.T) {

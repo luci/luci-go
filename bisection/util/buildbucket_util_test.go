@@ -17,11 +17,12 @@ package util
 import (
 	"testing"
 
+	"google.golang.org/protobuf/types/known/structpb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestGetGitilesCommitForBuild(t *testing.T) {

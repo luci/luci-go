@@ -22,8 +22,9 @@ import (
 	"time"
 
 	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/logdog/common/storage"
 )
 
 const (

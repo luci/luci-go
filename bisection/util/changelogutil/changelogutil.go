@@ -20,11 +20,12 @@ import (
 	"errors"
 	"fmt"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/bisection/internal/gitiles"
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	bbpb "go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/logging"
 )
 
 // GetChangeLogs queries Gitiles for changelogs in the regression range.

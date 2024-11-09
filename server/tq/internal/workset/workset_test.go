@@ -16,11 +16,12 @@ package workset
 
 import (
 	"context"
+	"sync"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"sync"
-	"testing"
 )
 
 func TestWorkSet(t *testing.T) {

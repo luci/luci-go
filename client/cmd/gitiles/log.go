@@ -22,9 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/maruel/subcommands"
-
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/gitiles"

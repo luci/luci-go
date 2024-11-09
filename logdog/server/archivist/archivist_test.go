@@ -23,6 +23,13 @@ import (
 	"testing"
 	"time"
 
+	cl "cloud.google.com/go/logging"
+	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
@@ -37,20 +44,13 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	gaemem "go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
 	srvcfg "go.chromium.org/luci/logdog/server/config"
-
-	"google.golang.org/protobuf/proto"
-
-	cl "cloud.google.com/go/logging"
-	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // testServicesClient implements logdog.ServicesClient sufficient for testing

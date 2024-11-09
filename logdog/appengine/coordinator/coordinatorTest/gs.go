@@ -19,6 +19,7 @@ import (
 	"io"
 
 	storage "cloud.google.com/go/storage"
+
 	"go.chromium.org/luci/common/gcloud/gs"
 )
 

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
 )

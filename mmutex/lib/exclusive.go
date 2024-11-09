@@ -20,6 +20,7 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/logging"
 )
 

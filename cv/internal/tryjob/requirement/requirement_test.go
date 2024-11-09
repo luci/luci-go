@@ -261,7 +261,7 @@ func TestGetDisallowedOwners(t *testing.T) {
 		}
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: userA.Email()},
+			{Email: userA.Email()},
 		})
 
 		t.Run("works", func(t *ftt.Test) {
@@ -291,15 +291,15 @@ func TestCompute(t *testing.T) {
 		ct.AddMember(userD.Email(), group2)
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: userA.Email()},
+			{Email: userA.Email()},
 		})
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: userB.Email()},
+			{Email: userB.Email()},
 		})
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: userD.Email()},
+			{Email: userD.Email()},
 		})
 
 		t.Run("fail if IncludedTryjobs and OverriddenTryjobs are both provided", func(t *ftt.Test) {

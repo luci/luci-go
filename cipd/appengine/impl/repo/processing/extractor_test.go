@@ -24,14 +24,15 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl/gs"
-	"go.chromium.org/luci/cipd/appengine/impl/testutil"
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func TestExtractor(t *testing.T) {

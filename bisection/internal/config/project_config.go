@@ -21,7 +21,7 @@ import (
 	"sort"
 	"time"
 
-	configpb "go.chromium.org/luci/bisection/proto/config"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -32,7 +32,8 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
-	"google.golang.org/protobuf/proto"
+
+	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
 var projectCacheSlot = caching.RegisterCacheSlot()

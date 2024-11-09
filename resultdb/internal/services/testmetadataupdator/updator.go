@@ -22,18 +22,20 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"golang.org/x/sync/errgroup"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
+
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testmetadata"
 	"go.chromium.org/luci/resultdb/internal/testresults"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
-	"golang.org/x/sync/errgroup"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 )
 
 // Expiration time of a test metadata.

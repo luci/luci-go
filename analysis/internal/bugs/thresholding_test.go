@@ -19,11 +19,12 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/analysis/internal/analysis/metrics"
-	configpb "go.chromium.org/luci/analysis/proto/config"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/analysis/internal/analysis/metrics"
+	configpb "go.chromium.org/luci/analysis/proto/config"
 )
 
 func TestThresholding(t *testing.T) {

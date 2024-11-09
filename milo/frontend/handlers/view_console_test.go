@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/milo/frontend/handlers/ui"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 )

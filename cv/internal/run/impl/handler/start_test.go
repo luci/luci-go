@@ -156,7 +156,7 @@ func TestStart(t *testing.T) {
 		ct.AddMember(owner, dryRunners)
 		ct.AddMember(owner, committers)
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: fmt.Sprintf("%s@example.com", owner)},
+			{Email: fmt.Sprintf("%s@example.com", owner)},
 		})
 
 		t.Run("Starts when Run is PENDING", func(t *ftt.Test) {

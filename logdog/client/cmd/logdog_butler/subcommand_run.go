@@ -22,16 +22,17 @@ import (
 	"os/exec"
 	"sync"
 
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/nestedflagset"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exitcode"
+
 	"go.chromium.org/luci/logdog/client/bootstrapResult"
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
-
-	"github.com/maruel/subcommands"
 )
 
 var subcommandRun = &subcommands.Command{

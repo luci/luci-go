@@ -22,6 +22,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/gomodule/redigo/redis"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/proto"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -31,11 +32,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
-	"go.chromium.org/luci/milo/internal/git/gitacls"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/redisconn"
+
+	"go.chromium.org/luci/milo/internal/git/gitacls"
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 func TestLog(t *testing.T) {

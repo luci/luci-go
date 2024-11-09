@@ -19,19 +19,19 @@ import (
 	"errors"
 	"testing"
 
-	"go.chromium.org/luci/gae/filter/featureBreaker"
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/taskqueue"
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"google.golang.org/grpc/codes"
-
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/appengine/coordinator"
-	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/featureBreaker"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/taskqueue"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/appengine/coordinator"
+	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 )
 
 func TestTerminateStream(t *testing.T) {

@@ -20,10 +20,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"google.golang.org/protobuf/proto"
 )
 
 // TestMetadataRow represents a row in the TestMetadata table.

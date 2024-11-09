@@ -19,15 +19,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"google.golang.org/grpc"
-
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 func init() {

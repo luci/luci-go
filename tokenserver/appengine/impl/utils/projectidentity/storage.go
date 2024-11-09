@@ -20,7 +20,6 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-
 	ds "go.chromium.org/luci/gae/service/datastore"
 )
 

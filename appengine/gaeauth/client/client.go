@@ -27,14 +27,13 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/caching"
 )
 

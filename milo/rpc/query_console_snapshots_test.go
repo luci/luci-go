@@ -29,6 +29,11 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/secrets"
+
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/projectconfig"
@@ -36,10 +41,6 @@ import (
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/secrets"
 )
 
 var projects = []*projectconfig.Project{

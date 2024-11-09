@@ -59,13 +59,12 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // batchSize is total number of items to pass to PutMulti or DeleteMulti RPCs.

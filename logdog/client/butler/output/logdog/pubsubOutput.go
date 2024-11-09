@@ -21,6 +21,8 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
@@ -29,13 +31,12 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/pubsubprotocol"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"cloud.google.com/go/pubsub"
 )
 
 // pubsubTopic is an interface for a Pub/Sub topic.

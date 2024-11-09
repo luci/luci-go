@@ -25,10 +25,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/deploy/api/modelpb"
-	"go.chromium.org/luci/deploy/api/rpcpb"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/deploy/api/modelpb"
+	"go.chromium.org/luci/deploy/api/rpcpb"
 )
 
 func TestExpireActuations(t *testing.T) {

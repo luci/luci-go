@@ -18,20 +18,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	computealpha "google.golang.org/api/compute/v0.alpha"
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/protobuf/testing/protocmp"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	computealpha "google.golang.org/api/compute/v0.alpha"
-	"google.golang.org/api/compute/v1"
-	"google.golang.org/protobuf/testing/protocmp"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/projects/v1"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestConfig(t *testing.T) {

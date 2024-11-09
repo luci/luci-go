@@ -23,10 +23,9 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
 	"go.chromium.org/luci/server/router"

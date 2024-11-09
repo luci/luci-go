@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
 )

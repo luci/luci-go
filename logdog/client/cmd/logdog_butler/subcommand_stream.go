@@ -17,14 +17,15 @@ package main
 import (
 	"os"
 
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/nestedflagset"
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"github.com/maruel/subcommands"
 )
 
 var subcommandStream = &subcommands.Command{

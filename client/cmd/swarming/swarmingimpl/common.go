@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
-
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
 )
 

@@ -76,7 +76,7 @@ func TestHandleCancelBackendTask(t *testing.T) {
 		t.Run("ok", func(t *ftt.Test) {
 			mockBackend.EXPECT().CancelTasks(gomock.Any(), gomock.Any()).Return(&pb.CancelTasksResponse{
 				Tasks: []*pb.Task{
-					&pb.Task{
+					{
 						Id:       &pb.TaskID{Id: "abc123", Target: "swarming://chromium-swarm"},
 						Link:     "this_is_a_url_link",
 						UpdateId: 1,

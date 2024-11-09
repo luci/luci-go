@@ -22,18 +22,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/flagenum"
 	log "go.chromium.org/luci/common/logging"
+	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/types"
-	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
-
-	"github.com/golang/protobuf/proto"
-	"github.com/maruel/subcommands"
 )
 
 type timestampsFlag string

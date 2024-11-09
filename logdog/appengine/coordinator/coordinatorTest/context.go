@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -34,21 +35,19 @@ import (
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/impl/resolving"
 	"go.chromium.org/luci/config/vars"
+	gaeMemory "go.chromium.org/luci/gae/impl/memory"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/caching"
+
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
 	logdogcfg "go.chromium.org/luci/logdog/server/config"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/caching"
-
-	gaeMemory "go.chromium.org/luci/gae/impl/memory"
-	ds "go.chromium.org/luci/gae/service/datastore"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // Environment contains all of the testing facilities that are installed into

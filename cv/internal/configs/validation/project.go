@@ -23,13 +23,14 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/auth/identity"
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
-	"google.golang.org/protobuf/encoding/prototext"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	apipb "go.chromium.org/luci/cv/api/v1"

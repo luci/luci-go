@@ -34,9 +34,10 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcmon"
-	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/resultdb/internal/tracing"
 )
 
 // RBEConn creates a gRPC connection to RBE authenticated as self.

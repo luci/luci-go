@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+
 	. "go.chromium.org/luci/cipd/common"
 )
 

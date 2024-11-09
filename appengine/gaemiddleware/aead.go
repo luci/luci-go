@@ -26,13 +26,12 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
-	"google.golang.org/api/option"
-	"google.golang.org/appengine"
-
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/insecurecleartextkeyset"
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
+	"google.golang.org/api/option"
+	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

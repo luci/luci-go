@@ -23,12 +23,12 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	pb "go.chromium.org/luci/buildbucket/proto"
 	annotpb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 

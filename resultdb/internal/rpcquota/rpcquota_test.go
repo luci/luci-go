@@ -22,8 +22,10 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/resultdb/internal/testutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	quota "go.chromium.org/luci/server/quotabeta"
@@ -31,9 +33,7 @@ import (
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
 	"go.chromium.org/luci/server/redisconn"
 
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/resultdb/internal/testutil"
 )
 
 // testQuotaContext returns a context with the given policies.

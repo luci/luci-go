@@ -15,11 +15,11 @@
 package logdog
 
 import (
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 // GetMessageProject implements ProjectBoundMessage.

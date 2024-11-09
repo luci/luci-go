@@ -34,6 +34,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/stringset"
@@ -45,8 +46,6 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/common/system/terminal"
-
-	"go.chromium.org/luci/auth/client/authcli"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd"

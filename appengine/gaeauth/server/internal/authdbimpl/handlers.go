@@ -23,11 +23,10 @@ import (
 
 	"google.golang.org/appengine"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/service"
 	"go.chromium.org/luci/server/router"
 )

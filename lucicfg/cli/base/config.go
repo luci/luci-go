@@ -23,12 +23,14 @@ import (
 	"strings"
 
 	"github.com/bazelbuild/buildtools/build"
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/filesystem"
+
 	"go.chromium.org/luci/lucicfg/buildifier"
 	"go.chromium.org/luci/lucicfg/vars"
-	"google.golang.org/protobuf/encoding/prototext"
 )
 
 // ConfigName is the file name we will be used for lucicfg formatting

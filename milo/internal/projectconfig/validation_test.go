@@ -17,13 +17,12 @@ package projectconfig
 import (
 	"testing"
 
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestValidation(t *testing.T) {

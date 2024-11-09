@@ -16,9 +16,10 @@
 package config
 
 import (
-	configpb "go.chromium.org/luci/bisection/proto/config"
 	luciproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/config/validation"
+
+	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
 func validateTestAnalysisConfig(ctx *validation.Context, testAnalysisConfig *configpb.TestAnalysisConfig) {

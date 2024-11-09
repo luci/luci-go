@@ -18,15 +18,15 @@ import (
 	"context"
 	"time"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/internal/rotationproxy"
 	"go.chromium.org/luci/bisection/model"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 // canCommit returns:

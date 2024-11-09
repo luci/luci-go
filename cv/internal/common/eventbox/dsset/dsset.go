@@ -59,13 +59,13 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/cv/internal/tracing"
-	"go.chromium.org/luci/gae/filter/txndefer"
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/filter/txndefer"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/cv/internal/tracing"
 )
 
 // Set holds a set of Items and uses tombstones to achieve idempotency of Add.

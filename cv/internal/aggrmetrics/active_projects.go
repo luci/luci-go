@@ -20,8 +20,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/server/caching/layered"
+
+	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 )
 
 const (

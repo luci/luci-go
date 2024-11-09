@@ -18,9 +18,6 @@ import (
 	"flag"
 	"fmt"
 
-	// Enable gRPC server side gzip compression.
-	_ "google.golang.org/grpc/encoding/gzip"
-
 	"go.chromium.org/luci/common/errors"
 	cfgValidation "go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
@@ -33,11 +30,6 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
-	// Register validation rules for LUCI Config itself.
-	_ "go.chromium.org/luci/config_service/internal/rules"
-	// Store auth sessions in the datastore.
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/importer"
 	"go.chromium.org/luci/config_service/internal/retention"
@@ -48,6 +40,13 @@ import (
 	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
 	"go.chromium.org/luci/config_service/rpc"
+
+	// Register validation rules for LUCI Config itself.
+	_ "go.chromium.org/luci/config_service/internal/rules"
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	// Enable gRPC server side gzip compression.
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 func main() {

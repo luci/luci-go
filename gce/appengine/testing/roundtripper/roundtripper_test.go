@@ -20,11 +20,12 @@ import (
 	"reflect"
 	"testing"
 
+	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/googleapi"
 )
 
 func TestJSONRoundTripper(t *testing.T) {

@@ -27,9 +27,10 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/led/job/experiments"
 	"go.chromium.org/luci/luciexe/exe"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job/experiments"
 )
 
 const phonyTagExperiment = "luci.test.add_phony_tag_experiment"

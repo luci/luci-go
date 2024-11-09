@@ -21,16 +21,15 @@ import (
 	"net/http"
 	"time"
 
+	gs "cloud.google.com/go/storage"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-
-	gs "cloud.google.com/go/storage"
-
-	"google.golang.org/api/googleapi"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 var (

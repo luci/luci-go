@@ -254,7 +254,7 @@ func TestSyncBuildsWithBackendTasksOneFetchBatch(t *testing.T) {
 	ftt.Run("syncBuildsWithBackendTasks", t, func(t *ftt.Test) {
 		ctx, sch := tq.TestingContext(ctx, nil)
 		backendSetting := []*pb.BackendSetting{
-			&pb.BackendSetting{
+			{
 				Target:   "swarming",
 				Hostname: "hostname",
 			},

@@ -26,11 +26,10 @@ import (
 	"google.golang.org/grpc/peer"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 )
 
 func TestAuthenticatingInterceptor(t *testing.T) {

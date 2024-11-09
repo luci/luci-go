@@ -21,10 +21,11 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 )
 
 func TestLoadPackageDef(t *testing.T) {

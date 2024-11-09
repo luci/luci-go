@@ -15,11 +15,12 @@
 package casimpl
 
 import (
+	"path/filepath"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"path/filepath"
-	"testing"
 )
 
 func TestScatterGatherAdd(t *testing.T) {

@@ -26,10 +26,11 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/realms"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/server/auth/realms"
 )
 
 // TestSecret returns a testing types.StreamPrefix.

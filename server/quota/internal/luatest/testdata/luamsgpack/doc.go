@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 // Package luamsgpack just contains .lua files which implement messagepack
 // in pure lua.
 // These are used to 'polyfill' msgpack support into miniredis for testing.
 package luamsgpack
-

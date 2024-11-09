@@ -17,6 +17,8 @@ package rpc
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -27,7 +29,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
-	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/perms"

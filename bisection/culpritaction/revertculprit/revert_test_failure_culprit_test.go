@@ -22,14 +22,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/internal/gerrit"
-	"go.chromium.org/luci/bisection/internal/lucianalysis"
-	"go.chromium.org/luci/bisection/model"
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/testutil"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -41,7 +35,15 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/lucianalysis"
+	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestProcessTestFailureCulpritTask(t *testing.T) {

@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
+
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )

@@ -19,11 +19,12 @@ import (
 	"fmt"
 
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/gae/service/datastore"
+
 	apiv0pb "go.chromium.org/luci/cv/api/v0"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
-	"go.chromium.org/luci/gae/service/datastore"
 )
 
 // GerritIntegrationServer implements the v0 API.

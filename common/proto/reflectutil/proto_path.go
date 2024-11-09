@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	"go.chromium.org/luci/common/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // PathItem is a single step in a Path.

@@ -21,8 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/bisection/model"
 )
 
 // First sorts the input slice and returns the first element in the sorted slice.

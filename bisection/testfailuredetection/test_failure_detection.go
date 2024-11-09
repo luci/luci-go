@@ -22,6 +22,16 @@ import (
 	"math"
 	"strings"
 
+	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/tq"
+
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/lucianalysis"
 	"go.chromium.org/luci/bisection/model"
@@ -33,14 +43,6 @@ import (
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/bisection/util/loggingutil"
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/proto"
 )
 
 const (

@@ -21,15 +21,15 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/gae/service/blobstore"
-	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/gae/service/blobstore"
+	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 )
 
 func mkKey(appID, namespace string, elems ...any) *ds.Key {

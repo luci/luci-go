@@ -17,9 +17,8 @@ package experiments
 import (
 	"context"
 
-	"go.chromium.org/luci/common/errors"
-
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/errors"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 

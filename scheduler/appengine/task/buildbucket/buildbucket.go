@@ -28,10 +28,9 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/api/pubsub/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/structpb"
-
-	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/appengine/tq"
 	bbpb "go.chromium.org/luci/buildbucket/proto"

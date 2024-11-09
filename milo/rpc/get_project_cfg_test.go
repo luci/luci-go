@@ -17,6 +17,9 @@ package rpc
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -24,13 +27,12 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestGetProjectCfg(t *testing.T) {

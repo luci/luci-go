@@ -70,10 +70,11 @@ import (
 	"sort"
 	"strings"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/iotools"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/iotools"
 )
 
 const luaMaxInt = 9007199254740991

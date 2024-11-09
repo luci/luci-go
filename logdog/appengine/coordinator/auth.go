@@ -22,10 +22,11 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/types"
-	"go.chromium.org/luci/logdog/server/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
+
+	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 var (

@@ -18,16 +18,16 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/bisection/internal/gerrit"
-	"go.chromium.org/luci/bisection/internal/rotationproxy"
-	"go.chromium.org/luci/bisection/model"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/rotationproxy"
+	"go.chromium.org/luci/bisection/model"
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 func commentSupportOnExistingRevert(ctx context.Context, gerritClient *gerrit.Client,

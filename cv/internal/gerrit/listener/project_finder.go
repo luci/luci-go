@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit/gobmap"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"

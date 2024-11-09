@@ -25,7 +25,6 @@ import (
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging/gologger"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 

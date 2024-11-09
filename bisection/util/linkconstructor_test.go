@@ -20,12 +20,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"go.chromium.org/luci/bisection/internal/gerrit"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/bisection/internal/gerrit"
 )
 
 func TestConstructAnalysisURL(t *testing.T) {

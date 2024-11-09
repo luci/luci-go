@@ -208,7 +208,7 @@ func TestTaskRequestToProto(t *testing.T) {
 			Key:     key,
 			TxnUUID: "txn-uuid",
 			TaskSlices: []TaskSlice{
-				TaskSlice{
+				{
 					Properties: TaskProperties{
 						Idempotent: true,
 						Dimensions: TaskDimensions{

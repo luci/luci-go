@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -30,7 +32,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota/quotapb"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/cvtesting"

@@ -60,7 +60,6 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 	"go.chromium.org/luci/server/tq/tqtesting"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
 
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/common"
@@ -71,6 +70,8 @@ import (
 	"go.chromium.org/luci/cv/internal/gerrit"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	listenerpb "go.chromium.org/luci/cv/settings/listener"
+
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 const gaeTopLevelDomain = ".appspot.com"

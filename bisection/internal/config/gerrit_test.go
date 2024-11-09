@@ -18,16 +18,16 @@ import (
 	"context"
 	"testing"
 
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestCanCreateRevert(t *testing.T) {

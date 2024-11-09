@@ -32,8 +32,9 @@ import (
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
-	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job"
 )
 
 // Returns "bbagent", "kitchen" or "raw" depending on the type of task detected.

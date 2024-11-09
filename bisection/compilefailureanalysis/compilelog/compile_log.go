@@ -20,15 +20,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"go.chromium.org/luci/bisection/internal/logdog"
-	"go.chromium.org/luci/bisection/model"
-	"go.chromium.org/luci/bisection/util"
-
-	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	"go.chromium.org/luci/bisection/internal/buildbucket"
+	"go.chromium.org/luci/bisection/internal/logdog"
+	"go.chromium.org/luci/bisection/model"
+	"go.chromium.org/luci/bisection/util"
 )
 
 // GetCompileLogs gets the compile log for a build bucket build

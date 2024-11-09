@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/protobuf/types/known/anypb"
+
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestStableHash(t *testing.T) {

@@ -22,11 +22,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-
 	"go.chromium.org/luci/common/gcloud/gae"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 )
 
 // The maximum, AppEngine response size, minus 1MB for overhead.

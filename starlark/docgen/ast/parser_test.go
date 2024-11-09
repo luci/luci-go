@@ -20,10 +20,11 @@ import (
 	"strings"
 	"testing"
 
+	"go.starlark.net/syntax"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.starlark.net/syntax"
 )
 
 const goodInput = `

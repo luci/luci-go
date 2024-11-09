@@ -20,13 +20,14 @@ import (
 	"errors"
 	"fmt"
 
-	"go.chromium.org/luci/common/data/recordio"
-	log "go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/logdog/common/storage"
-	"go.chromium.org/luci/logdog/common/types"
-
 	"cloud.google.com/go/bigtable"
 	"google.golang.org/grpc/metadata"
+
+	"go.chromium.org/luci/common/data/recordio"
+	log "go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/logdog/common/storage"
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 var (

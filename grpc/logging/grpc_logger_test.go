@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"testing"
 
+	"google.golang.org/grpc/grpclog"
+
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	"google.golang.org/grpc/grpclog"
 )
 
 // TestGRPCLogger assumes that it has exclusive ownership of the grpclog

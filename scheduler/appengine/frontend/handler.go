@@ -26,11 +26,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/luci/gae/service/info"
-
+	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/appengine/gaemiddleware/standard"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/config"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -40,18 +47,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/web/rpcexplorer"
 
-	gaeserver "go.chromium.org/luci/appengine/gaeauth/server"
-	"go.chromium.org/luci/appengine/gaemiddleware"
-	"go.chromium.org/luci/appengine/gaemiddleware/standard"
-	"go.chromium.org/luci/appengine/tq"
-
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/common/retry/transient"
-
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
-
 	"go.chromium.org/luci/scheduler/appengine/apiservers"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"

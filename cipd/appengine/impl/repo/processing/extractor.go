@@ -25,11 +25,10 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/common"
-
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 // Extractor can extract files from the package, writing them to the CAS.

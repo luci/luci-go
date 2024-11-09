@@ -18,14 +18,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/protocolbuffers/txtpbfmt/parser"
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
-
-	"github.com/protocolbuffers/txtpbfmt/parser"
 )
 
 // Message is a Starlark value that implements a struct-like type structured

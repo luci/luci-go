@@ -31,6 +31,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 	"go.chromium.org/luci/auth/integration/localauth/rpcs"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/stringset"
@@ -39,8 +40,6 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/lucictx"
-
-	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // TokenGenerator produces access or ID tokens.

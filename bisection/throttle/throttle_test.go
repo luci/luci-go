@@ -19,14 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/model"
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	tpb "go.chromium.org/luci/bisection/task/proto"
-	_ "go.chromium.org/luci/bisection/testfailuredetection"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/testutil"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -37,6 +29,16 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
+
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/testutil"
+
+	_ "go.chromium.org/luci/bisection/testfailuredetection"
 )
 
 func TestCronHandler(t *testing.T) {

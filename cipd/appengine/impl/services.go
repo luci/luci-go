@@ -33,14 +33,13 @@ import (
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/tq"
 
+	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
+	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
-
-	adminapi "go.chromium.org/luci/cipd/api/admin/v1"
-	cipdapi "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 // Services is a collection of initialized CIPD backend service subsystems.

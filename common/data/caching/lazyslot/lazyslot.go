@@ -54,7 +54,7 @@ type Slot struct {
 
 	lock        sync.RWMutex // protects the guts below
 	initialized bool         // true if fetched the initial value already
-	current     any  // currently known value (may be nil)
+	current     any          // currently known value (may be nil)
 	exp         time.Time    // when the currently known value expires or time.Time{} if never
 	fetching    bool         // true if some goroutine is fetching the value now
 }

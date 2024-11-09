@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

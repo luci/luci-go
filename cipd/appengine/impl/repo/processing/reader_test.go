@@ -21,10 +21,11 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
 type cbReaderAt struct {

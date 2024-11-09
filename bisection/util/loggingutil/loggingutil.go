@@ -18,9 +18,10 @@ package loggingutil
 import (
 	"context"
 
-	"go.chromium.org/luci/bisection/util/datastoreutil"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
 // UpdateLoggingWithAnalysisID returns a context with logging field analysis_id

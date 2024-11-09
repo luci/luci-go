@@ -25,16 +25,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/bisection/internal/config"
-	"go.chromium.org/luci/bisection/internal/gerrit"
-	"go.chromium.org/luci/bisection/internal/rotationproxy"
-	"go.chromium.org/luci/bisection/model"
-	configpb "go.chromium.org/luci/bisection/proto/config"
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/bisection/util/datastoreutil"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -46,6 +36,16 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/bisection/internal/config"
+	"go.chromium.org/luci/bisection/internal/gerrit"
+	"go.chromium.org/luci/bisection/internal/rotationproxy"
+	"go.chromium.org/luci/bisection/model"
+	configpb "go.chromium.org/luci/bisection/proto/config"
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
+	"go.chromium.org/luci/bisection/util/datastoreutil"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestRevertCulprit(t *testing.T) {

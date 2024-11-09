@@ -23,11 +23,12 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+
 	schedulerpb "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/internal"
-	"go.chromium.org/luci/server/auth"
 )
 
 // AdminServer implements internal.admin.Admin API.

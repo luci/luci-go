@@ -20,10 +20,10 @@ import (
 	"encoding/binary"
 	"time"
 
+	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-
-	log "go.chromium.org/luci/common/logging"
 )
 
 // cacheSchema represents the cache schema used by this version of the tail

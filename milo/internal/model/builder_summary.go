@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/milo/internal/model/milostatus"
-
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 
 // InvalidBuilderIDURL is returned if a BuilderID cannot be parsed and a URL generated.

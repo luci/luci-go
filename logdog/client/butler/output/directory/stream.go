@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 

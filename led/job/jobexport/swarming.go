@@ -16,8 +16,9 @@ package jobexport
 
 import (
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job"
 )
 
 var (

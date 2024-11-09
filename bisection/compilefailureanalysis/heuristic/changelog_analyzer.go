@@ -20,10 +20,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
-
-	"go.chromium.org/luci/common/logging"
 )
 
 // ScoringCriteria represents how we score in the heuristic analysis.

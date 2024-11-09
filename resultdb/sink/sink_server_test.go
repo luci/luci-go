@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 	sinkpb "go.chromium.org/luci/resultdb/sink/proto/v1"
@@ -576,7 +577,7 @@ func TestUpdateInvocation(t *testing.T) {
 
 		sinkInv := &sinkpb.Invocation{
 			ExtendedProperties: map[string]*structpb.Struct{
-				"abc": &structpb.Struct{
+				"abc": {
 					Fields: map[string]*structpb.Value{
 						"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key": structpb.NewStringValue("child_value"),

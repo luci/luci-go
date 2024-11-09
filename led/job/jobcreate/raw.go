@@ -15,8 +15,9 @@
 package jobcreate
 
 import (
-	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job"
 )
 
 func jobDefinitionFromSwarming(sw *job.Swarming, r *swarmingpb.NewTaskRequest) {

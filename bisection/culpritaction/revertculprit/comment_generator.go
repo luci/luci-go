@@ -22,10 +22,11 @@ import (
 	"strings"
 	"text/template"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/bisection/model"
 	"go.chromium.org/luci/bisection/util"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
-	"go.chromium.org/luci/common/errors"
 )
 
 var compileCommentTemplate = template.Must(template.New("").Parse(

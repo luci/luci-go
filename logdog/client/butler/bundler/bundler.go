@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 

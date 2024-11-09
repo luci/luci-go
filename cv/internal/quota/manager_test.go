@@ -98,7 +98,7 @@ func TestManager(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, rcls), should.BeNil)
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: tEmail},
+			{Email: tEmail},
 		})
 
 		genUserLimit := func(name string, limit int64, principals []string) *cfgpb.UserLimit {

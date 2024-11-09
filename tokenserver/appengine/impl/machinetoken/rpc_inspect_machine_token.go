@@ -27,7 +27,6 @@ import (
 
 	tokenserver "go.chromium.org/luci/tokenserver/api"
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
-
 	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 )

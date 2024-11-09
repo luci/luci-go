@@ -27,15 +27,16 @@ import (
 	"testing"
 	"time"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/client/cipd/builder"
-	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/builder"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 
 	. "go.chromium.org/luci/cipd/common"
 )

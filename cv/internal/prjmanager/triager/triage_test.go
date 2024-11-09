@@ -213,7 +213,7 @@ func TestTriage(t *testing.T) {
 					oldC := &prjpb.Component{Clids: []int64{cl31, cl32, cl33}, TriageRequired: true}
 					res = mustTriage(oldC)
 					assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
-						&prjpb.TriggeringCLDeps{
+						{
 							OriginClid:      cl33,
 							DepClids:        []int64{cl31, cl32},
 							Trigger:         pcl33.Triggers.GetCqVoteTrigger(),
@@ -224,7 +224,7 @@ func TestTriage(t *testing.T) {
 
 				t.Run("a dep has TriggeringCLDeps already", func(t *ftt.Test) {
 					pm.pb.TriggeringClDeps, _ = pm.pb.COWTriggeringCLDeps(nil, []*prjpb.TriggeringCLDeps{
-						&prjpb.TriggeringCLDeps{
+						{
 							OriginClid: cl32,
 							DepClids:   []int64{cl31},
 							Trigger:    pcl32.Triggers.GetCqVoteTrigger(),
@@ -272,7 +272,7 @@ func TestTriage(t *testing.T) {
 				// trigger CL32.
 				assert.Loosely(t, res.CLsToPurge, should.BeEmpty)
 				assert.Loosely(t, res.CLsToTriggerDeps, should.Resemble([]*prjpb.TriggeringCLDeps{
-					&prjpb.TriggeringCLDeps{
+					{
 						OriginClid:      cl34,
 						DepClids:        []int64{cl32},
 						Trigger:         pcl34.Triggers.GetCqVoteTrigger(),

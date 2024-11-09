@@ -19,7 +19,8 @@ import (
 	"testing"
 	"time"
 
-	configpb "go.chromium.org/luci/bisection/proto/config"
+	"google.golang.org/protobuf/encoding/prototext"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -30,7 +31,8 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
-	"google.golang.org/protobuf/encoding/prototext"
+
+	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
 var textPBMultiline = prototext.MarshalOptions{

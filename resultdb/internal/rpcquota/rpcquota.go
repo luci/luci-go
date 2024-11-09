@@ -38,10 +38,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/grpc/appstatus"
-	"go.chromium.org/luci/resultdb/internal/tracing"
 	"go.chromium.org/luci/server/auth"
 	quota "go.chromium.org/luci/server/quotabeta"
 	"go.chromium.org/luci/server/quotabeta/quotaconfig"
+
+	"go.chromium.org/luci/resultdb/internal/tracing"
 )
 
 var quotaResultCounter = metric.NewCounter(

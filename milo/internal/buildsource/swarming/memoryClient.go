@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
+
 	"go.chromium.org/luci/milo/internal/buildsource/rawpresentation"
 )
 

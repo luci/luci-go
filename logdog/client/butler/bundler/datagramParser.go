@@ -18,6 +18,7 @@ import (
 	"io"
 
 	"go.chromium.org/luci/common/data/recordio"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 )
 

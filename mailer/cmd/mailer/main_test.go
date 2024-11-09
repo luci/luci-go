@@ -30,10 +30,11 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/mailer/api/mailer"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching/cachingtest"
+
+	"go.chromium.org/luci/mailer/api/mailer"
 )
 
 func TestMailer(t *testing.T) {

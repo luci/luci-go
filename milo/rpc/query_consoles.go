@@ -17,19 +17,21 @@ package rpc
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/pagination"
 	"go.chromium.org/luci/common/pagination/dscursor"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
 	"go.chromium.org/luci/milo/protoutil"
-	"go.chromium.org/luci/server/auth"
-	"google.golang.org/grpc/codes"
 )
 
 var queryConsolesPageTokenVault = dscursor.NewVault([]byte("luci.milo.v1.MiloInternal.QueryConsoles"))

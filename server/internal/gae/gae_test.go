@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	gaebasepb "go.chromium.org/luci/server/internal/gae/base"
 	remotepb "go.chromium.org/luci/server/internal/gae/remote_api"
 )

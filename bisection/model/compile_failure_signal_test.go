@@ -16,10 +16,11 @@ package model
 
 import (
 	"context"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"testing"
 )
 
 func TestAddLine(t *testing.T) {

@@ -25,11 +25,11 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/context/ctxhttp"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 const contentType = "application/json; charset=UTF-8"

@@ -17,12 +17,13 @@ package internal
 import (
 	"testing"
 
-	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
-	"google.golang.org/protobuf/proto"
+	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 )
 
 func TestChecksumCheckingWorks(t *testing.T) {

@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -32,6 +31,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/flag"
+
 	"go.chromium.org/luci/grpc/prpc"
 )
 

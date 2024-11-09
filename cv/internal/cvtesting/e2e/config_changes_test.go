@@ -92,13 +92,13 @@ func TestConfigChangeStartsAndStopsRuns(t *testing.T) {
 		ct.AddDryRunner("user-12")
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+			{Email: "user-1@example.com"},
 		})
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "user-2@example.com"},
+			{Email: "user-2@example.com"},
 		})
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "user-12@example.com"},
+			{Email: "user-12@example.com"},
 		})
 
 		ct.LogPhase(ctx, "CV starts 2 runs while watching first repo only")

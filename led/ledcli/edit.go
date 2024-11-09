@@ -23,8 +23,9 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/flag/stringmapflag"
-	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job"
 )
 
 func editCmd(opts cmdBaseOptions) *subcommands.Command {

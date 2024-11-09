@@ -19,10 +19,9 @@
 package certauthorities
 
 import (
+	"go.chromium.org/luci/tokenserver/api/admin/v1"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certchecker"
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
-
-	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 
 // serverImpl implements admin.CertificateAuthoritiesServer RPC interface.

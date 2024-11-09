@@ -18,10 +18,9 @@ import (
 	"context"
 	"time"
 
-	"go.chromium.org/luci/gae/service/datastore"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"

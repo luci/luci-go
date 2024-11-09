@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/lucictx"
+
 	"go.chromium.org/luci/luciexe"
 )
 

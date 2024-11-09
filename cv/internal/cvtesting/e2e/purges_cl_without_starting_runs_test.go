@@ -415,7 +415,7 @@ func TestPurgesOnTriggerReuse(t *testing.T) {
 		assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
 
 		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-			&gerritpb.EmailInfo{Email: "user-1@example.com"},
+			{Email: "user-1@example.com"},
 		})
 		tStart := ct.Now()
 		ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), gf.CI(

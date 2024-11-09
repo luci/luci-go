@@ -20,14 +20,14 @@ import (
 	"regexp"
 	"strings"
 
+	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
 	"go.chromium.org/luci/bisection/internal/config"
 	"go.chromium.org/luci/bisection/internal/gerrit"
 	"go.chromium.org/luci/bisection/model"
 	bisectionpb "go.chromium.org/luci/bisection/proto/v1"
 	"go.chromium.org/luci/bisection/util/datastoreutil"
-
-	"go.chromium.org/luci/common/errors"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
 // isCulpritRevertible returns:

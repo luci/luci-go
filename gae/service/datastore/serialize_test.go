@@ -21,13 +21,12 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/cmpbin"
-
-	"go.chromium.org/luci/gae/service/blobstore"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/gae/service/blobstore"
 )
 
 func init() {

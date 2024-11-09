@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -273,7 +274,7 @@ func TestValidateInvocation(t *testing.T) {
 	ftt.Run(`ValidateInvocationExtendedProperties`, t, func(t *ftt.Test) {
 		t.Run(`Invalid key`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey_": &structpb.Struct{
+				"mykey_": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
@@ -285,7 +286,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Max size of value`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue(strings.Repeat("a", MaxSizeInvocationExtendedPropertyValue)),
@@ -298,7 +299,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Missing @type`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"child_key_1": structpb.NewStringValue("child_value_1"),
 					},
@@ -309,7 +310,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Invalid @type, missing slash`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
@@ -321,7 +322,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Invalid @type, invalid type url`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("[::1]/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
@@ -333,7 +334,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Invalid @type, invalid type name`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/_some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
@@ -345,7 +346,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Valid @type`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),
@@ -375,7 +376,7 @@ func TestValidateInvocation(t *testing.T) {
 		})
 		t.Run(`Valid`, func(t *ftt.Test) {
 			extendedProperties := map[string]*structpb.Struct{
-				"mykey": &structpb.Struct{
+				"mykey": {
 					Fields: map[string]*structpb.Value{
 						"@type":       structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 						"child_key_1": structpb.NewStringValue("child_value_1"),

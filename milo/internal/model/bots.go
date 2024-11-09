@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/data/strpair"
+
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 )
 

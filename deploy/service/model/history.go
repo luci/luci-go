@@ -17,8 +17,9 @@ package model
 import (
 	"context"
 
-	"go.chromium.org/luci/deploy/api/modelpb"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	"go.chromium.org/luci/deploy/api/modelpb"
 )
 
 // shouldRecordHistory returns true if the new history entry should be recorded.

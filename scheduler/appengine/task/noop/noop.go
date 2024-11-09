@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"

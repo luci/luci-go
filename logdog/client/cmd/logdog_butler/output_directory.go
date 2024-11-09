@@ -18,6 +18,7 @@ import (
 	"errors"
 
 	"go.chromium.org/luci/common/flag/multiflag"
+
 	"go.chromium.org/luci/logdog/client/butler/output"
 	dirOutput "go.chromium.org/luci/logdog/client/butler/output/directory"
 )

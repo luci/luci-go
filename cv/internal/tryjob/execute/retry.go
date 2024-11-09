@@ -18,8 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.chromium.org/luci/common/logging"
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/logging"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/api/recipe/v1"

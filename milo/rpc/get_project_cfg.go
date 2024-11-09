@@ -17,14 +17,16 @@ package rpc
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	projectconfigpb "go.chromium.org/luci/milo/proto/projectconfig"
 	milopb "go.chromium.org/luci/milo/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
 )
 
 // GetProjectCfg implements milopb.MiloInternal service

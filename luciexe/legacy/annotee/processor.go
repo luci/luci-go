@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
 	"go.chromium.org/luci/logdog/common/types"
+
 	"go.chromium.org/luci/luciexe/legacy/annotee/annotation"
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )

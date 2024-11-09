@@ -18,8 +18,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"go.chromium.org/luci/common/errors"
 	"go.starlark.net/starlark"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // ExpandDirectories recursively traverses directories in `paths` discovering

@@ -23,9 +23,9 @@ import (
 	"runtime"
 	"strings"
 
-	"go.chromium.org/luci/common/logging"
-
 	"google.golang.org/grpc/grpclog"
+
+	"go.chromium.org/luci/common/logging"
 )
 
 // Suppress is a sentinel logging level that instructs the logger to suppress

@@ -32,13 +32,14 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/router"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tokens"
+
 	"go.chromium.org/luci/resultdb/internal/artifacts"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/pbutil"
-	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tokens"
 )
 
 var artifactNameTokenKind = tokens.TokenKind{

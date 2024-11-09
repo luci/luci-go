@@ -19,15 +19,16 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/gae"
-	"go.chromium.org/luci/common/logging"
-	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/gcloud/gae"
+	"go.chromium.org/luci/common/logging"
+
+	s "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 )
 
 // The maximum, AppEngine request size, minus 1MB for overhead.

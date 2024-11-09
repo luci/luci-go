@@ -17,7 +17,6 @@ package nestedflagset
 import (
 	"flag"
 	"fmt"
-
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"

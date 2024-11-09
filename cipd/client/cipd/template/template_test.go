@@ -16,10 +16,11 @@ package template
 
 import (
 	"fmt"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"testing"
 )
 
 func TestTemplateExpander(t *testing.T) {

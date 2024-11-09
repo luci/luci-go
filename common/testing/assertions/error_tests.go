@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/smarty/assertions"
+
 	"go.chromium.org/luci/common/errors"
 )
 

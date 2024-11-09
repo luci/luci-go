@@ -15,11 +15,12 @@
 package storage
 
 import (
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // Entry is a logpb.LogEntry wrapper that lazily evaluates / unmarshals the

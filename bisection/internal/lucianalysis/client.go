@@ -24,17 +24,19 @@ import (
 	"text/template"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/server/auth"
+
 	"go.chromium.org/luci/bisection/model"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
 	tpb "go.chromium.org/luci/bisection/task/proto"
 	"go.chromium.org/luci/bisection/util"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
-	"go.chromium.org/luci/server/auth"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 )
 
 var internalDatasetID = "internal"

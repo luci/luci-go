@@ -18,6 +18,7 @@ import (
 	"math"
 
 	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 

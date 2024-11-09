@@ -24,14 +24,14 @@ import (
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 
 	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/registration"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints/services"
 	"go.chromium.org/luci/logdog/server/config"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/router"
 )
 
 // Run installs and executes this site.

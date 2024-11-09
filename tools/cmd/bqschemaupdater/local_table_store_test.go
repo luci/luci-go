@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"cloud.google.com/go/bigquery"
-
 	"google.golang.org/api/googleapi"
 )
 

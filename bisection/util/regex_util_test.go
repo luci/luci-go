@@ -15,11 +15,12 @@
 package util
 
 import (
+	"regexp"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"regexp"
-	"testing"
 )
 
 func TestRegexUtil(t *testing.T) {

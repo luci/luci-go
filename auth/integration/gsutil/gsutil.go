@@ -35,14 +35,13 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"go.chromium.org/luci/auth/integration/internal/localsrv"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
-
-	"go.chromium.org/luci/auth/integration/internal/localsrv"
 )
 
 // Server runs a local server that handles requests to token_uri.

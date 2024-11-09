@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/validation"
+
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 )
 

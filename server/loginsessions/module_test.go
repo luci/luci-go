@@ -36,16 +36,15 @@ import (
 	"go.chromium.org/luci/auth/loginsessionspb"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	"go.chromium.org/luci/server/loginsessions/internal"
 	"go.chromium.org/luci/server/loginsessions/internal/statepb"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/secrets"
-
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 const mockedAuthorizationEndpoint = "http://localhost/authorization"

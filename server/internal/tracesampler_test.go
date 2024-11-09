@@ -20,10 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"go.opentelemetry.io/otel/sdk/trace"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestSamplerParsing(t *testing.T) {

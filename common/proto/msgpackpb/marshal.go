@@ -22,10 +22,11 @@ import (
 	"sort"
 
 	"github.com/vmihailenco/msgpack/v5"
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/proto/reflectutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/reflectutil"
 )
 
 // internal type for marshalMessage

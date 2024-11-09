@@ -24,7 +24,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-
 	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 

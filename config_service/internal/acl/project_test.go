@@ -17,6 +17,8 @@ package acl
 import (
 	"testing"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/auth/identity"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -25,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/testutil"

@@ -18,12 +18,13 @@ import (
 	"bytes"
 	"testing"
 
-	"go.chromium.org/luci/cipd/client/cipd/deployer"
-	"go.chromium.org/luci/cipd/client/cipd/pkg"
-	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 )
 
 func mustMakePlatform(v string) template.Platform {

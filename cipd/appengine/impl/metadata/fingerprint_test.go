@@ -17,10 +17,11 @@ package metadata
 import (
 	"testing"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 func TestCalculateFingerprint(t *testing.T) {

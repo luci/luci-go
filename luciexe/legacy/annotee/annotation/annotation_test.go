@@ -27,6 +27,7 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -34,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/logdog/common/types"
+
 	annopb "go.chromium.org/luci/luciexe/legacy/annotee/proto"
 )
 

@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/grpc/grpcutil"
+
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"

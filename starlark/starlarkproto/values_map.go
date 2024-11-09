@@ -20,7 +20,6 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/syntax"
-
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/starlark/typed"

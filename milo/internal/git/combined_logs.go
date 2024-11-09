@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -31,6 +30,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+
 	"go.chromium.org/luci/milo/internal/utils"
 )
 

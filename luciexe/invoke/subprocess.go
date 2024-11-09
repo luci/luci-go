@@ -25,14 +25,14 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/lucictx"
-	"go.chromium.org/luci/luciexe"
 
-	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/luciexe"
 )
 
 // Subprocess represents a running luciexe.

@@ -38,12 +38,12 @@ import (
 	"go.chromium.org/luci/common/system/signals"
 	"go.chromium.org/luci/config"
 	grpcLogging "go.chromium.org/luci/grpc/logging"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
+
 	"go.chromium.org/luci/logdog/client/butler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 const (

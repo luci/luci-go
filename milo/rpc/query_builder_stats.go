@@ -17,6 +17,8 @@ package rpc
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket/bbperms"
 	"go.chromium.org/luci/buildbucket/protoutil"
@@ -24,12 +26,12 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
+
 	"go.chromium.org/luci/milo/internal/model/milostatus"
 	"go.chromium.org/luci/milo/internal/utils"
 	milopb "go.chromium.org/luci/milo/proto/v1"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/realms"
-	"google.golang.org/grpc/codes"
 )
 
 // QueryBuilderStats implements milopb.MiloInternal service

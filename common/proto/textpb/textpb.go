@@ -26,14 +26,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/protocolbuffers/txtpbfmt/ast"
+	"github.com/protocolbuffers/txtpbfmt/parser"
+	"github.com/protocolbuffers/txtpbfmt/unquote"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
-
-	"github.com/protocolbuffers/txtpbfmt/ast"
-	"github.com/protocolbuffers/txtpbfmt/parser"
-	"github.com/protocolbuffers/txtpbfmt/unquote"
 
 	"go.chromium.org/luci/common/errors"
 	luciproto "go.chromium.org/luci/common/proto"

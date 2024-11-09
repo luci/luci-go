@@ -22,12 +22,11 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"go.chromium.org/luci/gae/service/info"
-	"go.chromium.org/luci/gae/service/user"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/gae/service/user"
 	"go.chromium.org/luci/server/auth"
 )
 

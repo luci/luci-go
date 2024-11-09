@@ -22,9 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"
 )

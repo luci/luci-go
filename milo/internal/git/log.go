@@ -22,10 +22,9 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"google.golang.org/protobuf/proto"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -36,9 +35,10 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"go.chromium.org/luci/milo/internal/utils"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/redisconn"
+
+	"go.chromium.org/luci/milo/internal/utils"
 )
 
 // LogOptions are options for Log function.

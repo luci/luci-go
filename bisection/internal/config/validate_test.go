@@ -18,11 +18,12 @@ import (
 	"context"
 	"testing"
 
-	configpb "go.chromium.org/luci/bisection/proto/config"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
+
+	configpb "go.chromium.org/luci/bisection/proto/config"
 )
 
 func TestValidateProjectConfig(t *testing.T) {

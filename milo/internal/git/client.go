@@ -37,8 +37,9 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-	"go.chromium.org/luci/milo/internal/git/gitacls"
 	"go.chromium.org/luci/server/auth"
+
+	"go.chromium.org/luci/milo/internal/git/gitacls"
 )
 
 // Client provides high level API for Git/Gerrit data.

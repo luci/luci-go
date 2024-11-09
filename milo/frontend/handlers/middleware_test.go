@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -30,11 +31,12 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
-	"go.chromium.org/luci/milo/internal/git"
-	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
+
+	"go.chromium.org/luci/milo/internal/git"
+	"go.chromium.org/luci/milo/internal/projectconfig"
 )
 
 func TestFuncs(t *testing.T) {

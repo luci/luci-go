@@ -21,13 +21,14 @@ import (
 	"io"
 	"os"
 
+	"github.com/maruel/subcommands"
+
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/client/coordinator"
-
-	"github.com/maruel/subcommands"
 )
 
 const (

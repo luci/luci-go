@@ -17,15 +17,14 @@ package config
 import (
 	"testing"
 
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/gae/service/datastore"
-
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 )
 
 func TestConfig(t *testing.T) {

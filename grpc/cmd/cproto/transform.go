@@ -19,16 +19,15 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"strings"
-	"text/template"
-	"unicode/utf8"
-
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"os"
+	"strings"
+	"text/template"
+	"unicode/utf8"
 )
 
 const (

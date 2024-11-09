@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/git/footer"
+
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 )

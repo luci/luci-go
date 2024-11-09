@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	gol "github.com/op/go-logging"
+
 	"go.chromium.org/luci/common/logging"
 )
 

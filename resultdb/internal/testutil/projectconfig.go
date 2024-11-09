@@ -30,8 +30,9 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/server/caching"
+
+	rdbcfg "go.chromium.org/luci/resultdb/internal/config"
 )
 
 var textPBMultiline = prototext.MarshalOptions{

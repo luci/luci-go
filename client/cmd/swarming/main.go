@@ -30,15 +30,13 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/client/casclient"
+	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
 	"go.chromium.org/luci/client/versioncli"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging/gologger"
-
-	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl"
-	"go.chromium.org/luci/swarming/client/swarming"
-
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/swarming/client/swarming"
 )
 
 type authFlags struct {

@@ -16,6 +16,7 @@ package main
 
 import (
 	"go.chromium.org/luci/common/flag/multiflag"
+
 	"go.chromium.org/luci/logdog/client/butler/output"
 	logOutput "go.chromium.org/luci/logdog/client/butler/output/log"
 )

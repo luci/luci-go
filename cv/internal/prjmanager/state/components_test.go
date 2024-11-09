@@ -26,6 +26,9 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
@@ -43,10 +46,6 @@ import (
 	"go.chromium.org/luci/cv/internal/run/runcreator"
 	"go.chromium.org/luci/cv/internal/run/runquery"
 	"go.chromium.org/luci/cv/internal/tryjob"
-
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestEarliestDecisionTime(t *testing.T) {

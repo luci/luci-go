@@ -29,12 +29,11 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/errors"
-
-	"go.chromium.org/luci/gae/service/info"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	"go.chromium.org/luci/gae/service/info"
 )
 
 var (

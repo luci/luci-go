@@ -29,6 +29,9 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 	"go.chromium.org/luci/server/auth"
@@ -44,10 +47,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/testutil/insert"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/truth/assert"
-	"go.chromium.org/luci/common/testing/truth/should"
 )
 
 func TestValidateUpdateInvocationRequest(t *testing.T) {
@@ -379,7 +378,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				})
 				t.Run(`invalid`, func(t *ftt.Test) {
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-						"abc": &structpb.Struct{
+						"abc": {
 							Fields: map[string]*structpb.Value{
 								"child_key": structpb.NewStringValue(strings.Repeat("a", pbutil.MaxSizeInvocationExtendedPropertyValue)),
 							},
@@ -396,7 +395,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				t.Run(`backticks`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.`abc`"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-						"abc": &structpb.Struct{
+						"abc": {
 							Fields: map[string]*structpb.Value{
 								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
@@ -409,7 +408,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				t.Run(`valid`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-						"abc": &structpb.Struct{
+						"abc": {
 							Fields: map[string]*structpb.Value{
 								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
@@ -422,7 +421,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				t.Run(`invalid`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc_"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-						"abc_": &structpb.Struct{
+						"abc_": {
 							Fields: map[string]*structpb.Value{
 								"@type":     structpb.NewStringValue("foo.bar.com/x/some.package.MyMessage"),
 								"child_key": structpb.NewStringValue("child_value"),
@@ -435,7 +434,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 				t.Run(`too deep`, func(t *ftt.Test) {
 					request.UpdateMask.Paths = []string{"extended_properties.abc.fields"}
 					request.Invocation.ExtendedProperties = map[string]*structpb.Struct{
-						"abc": &structpb.Struct{
+						"abc": {
 							Fields: map[string]*structpb.Value{
 								"child_key": structpb.NewStringValue("child_value"),
 							},

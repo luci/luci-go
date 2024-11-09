@@ -23,9 +23,9 @@ import (
 	"net/http"
 	"time"
 
-	"go.chromium.org/luci/bisection/util"
-
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/bisection/util"
 )
 
 var MockedRotationProxyClientKey = "mocked chrome-ops-rotation-proxy client"

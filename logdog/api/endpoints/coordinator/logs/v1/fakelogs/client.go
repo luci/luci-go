@@ -19,16 +19,15 @@ import (
 	"fmt"
 	"sync"
 
-	"google.golang.org/protobuf/proto"
-
 	"google.golang.org/grpc"
-
-	"go.chromium.org/luci/gae/service/taskqueue"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/gae/service/taskqueue"
+
 	logs_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	reg_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
 	services_api "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"

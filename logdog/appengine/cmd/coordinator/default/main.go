@@ -24,16 +24,16 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config/server/cfgmodule"
-	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
-	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"go.chromium.org/luci/logdog/server/config"
-
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/router"
+
+	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	registrationPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1"
+	servicesPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	"go.chromium.org/luci/logdog/server/config"
 )
 
 // main is the entrypoint for the `default` service.

@@ -21,9 +21,10 @@ import (
 	"math"
 	"sort"
 
+	"go.chromium.org/luci/common/errors"
+
 	"go.chromium.org/luci/bisection/model"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/common/errors"
 )
 
 // Snapshot contains the current snapshot of the nth-section run

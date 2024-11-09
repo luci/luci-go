@@ -26,8 +26,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
+
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 // FromConfig returns ACLs if config is valid.

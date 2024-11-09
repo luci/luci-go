@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	luciProto "go.chromium.org/luci/common/proto"
+
 	"go.chromium.org/luci/config"
 )
 

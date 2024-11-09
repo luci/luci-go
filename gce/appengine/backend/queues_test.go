@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/genproto/googleapis/type/dayofweek"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -42,9 +44,6 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestQueues(t *testing.T) {
@@ -869,7 +868,7 @@ func TestQueues(t *testing.T) {
 func TestGetScalingType(t *testing.T) {
 	t.Parallel()
 	changes := []*config.Schedule{
-		&config.Schedule{
+		{
 			Min: 2,
 			Max: 2,
 			Length: &config.TimePeriod{

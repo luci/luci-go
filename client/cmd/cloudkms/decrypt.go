@@ -17,10 +17,9 @@ package main
 import (
 	"context"
 
-	"github.com/maruel/subcommands"
-
 	cloudkms "cloud.google.com/go/kms/apiv1"
 	"cloud.google.com/go/kms/apiv1/kmspb"
+	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/logging"

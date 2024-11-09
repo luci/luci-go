@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -29,7 +31,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/tq"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/bisection/hosts"
 	"go.chromium.org/luci/bisection/internal/buildbucket"
@@ -39,9 +40,8 @@ import (
 	"go.chromium.org/luci/bisection/nthsectionsnapshot"
 	configpb "go.chromium.org/luci/bisection/proto/config"
 	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util/testutil"
-
 	tpb "go.chromium.org/luci/bisection/task/proto"
+	"go.chromium.org/luci/bisection/util/testutil"
 )
 
 func TestCreateSnapshot(t *testing.T) {

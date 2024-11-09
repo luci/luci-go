@@ -20,12 +20,12 @@ import (
 	"net/http"
 	"net/url"
 
+	"golang.org/x/net/context/ctxhttp"
+	"google.golang.org/api/googleapi"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
-	"google.golang.org/api/googleapi"
-
-	"golang.org/x/net/context/ctxhttp"
 )
 
 const (

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/common/types"
 )

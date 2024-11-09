@@ -18,9 +18,9 @@ import (
 	"context"
 	"regexp"
 
-	"go.chromium.org/luci/bisection/internal/gerrit"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+
+	"go.chromium.org/luci/bisection/internal/gerrit"
 )
 
 // HasIrrevertibleAuthor returns whether the change's commit author is one that

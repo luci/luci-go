@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/storage"
+	"github.com/golang/mock/gomock"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
@@ -27,10 +28,9 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/testutil"
-
-	"github.com/golang/mock/gomock"
 )
 
 func TestCommon(t *testing.T) {

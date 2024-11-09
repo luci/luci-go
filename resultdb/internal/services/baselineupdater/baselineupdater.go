@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"cloud.google.com/go/spanner"
-
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
@@ -28,20 +27,18 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/server"
+	"go.chromium.org/luci/server/auth/realms"
+	"go.chromium.org/luci/server/span"
+	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/resultdb/internal/baselines"
 	btv "go.chromium.org/luci/resultdb/internal/baselines/testvariants"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/invocations/graph"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
-
 	tr "go.chromium.org/luci/resultdb/internal/testresults"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-
-	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth/realms"
-	"go.chromium.org/luci/server/span"
-	"go.chromium.org/luci/server/tq"
 )
 
 // BaselineUpdaterTasks describes how to route mark submitted tasks.

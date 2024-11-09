@@ -15,11 +15,12 @@
 package flagpb
 
 import (
+	"strings"
+	"testing"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"strings"
-	"testing"
 )
 
 func msg(keysValues ...any) map[string]any {

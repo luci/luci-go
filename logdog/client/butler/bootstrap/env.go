@@ -17,6 +17,7 @@ package bootstrap
 
 import (
 	"go.chromium.org/luci/common/system/environ"
+
 	"go.chromium.org/luci/logdog/client/butlerlib/bootstrap"
 )
 

@@ -19,13 +19,15 @@ import (
 	"context"
 	"net/http"
 
-	pb "go.chromium.org/luci/bisection/proto/v1"
-	"go.chromium.org/luci/bisection/util"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	pb "go.chromium.org/luci/bisection/proto/v1"
+	"go.chromium.org/luci/bisection/util"
 )
 
 const (

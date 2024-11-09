@@ -37,12 +37,11 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 )
 
 func TestGetBuild(t *testing.T) {

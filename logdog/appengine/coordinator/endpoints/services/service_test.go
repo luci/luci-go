@@ -17,15 +17,16 @@ package services
 import (
 	"testing"
 
-	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
-	"go.chromium.org/luci/server/auth"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	"go.chromium.org/luci/server/auth"
+
+	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
+	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
 )
 
 func TestServiceAuth(t *testing.T) {

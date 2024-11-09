@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/proto/gitiles"

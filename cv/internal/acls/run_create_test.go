@@ -19,14 +19,13 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
-
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
@@ -85,11 +84,11 @@ func TestCheckRunCLs(t *testing.T) {
 		var clid int64
 		addCL := func(triggerer, owner string, m run.Mode) (*changelist.CL, *run.Trigger) {
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: owner},
+				{Email: owner},
 			})
 
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: triggerer},
+				{Email: triggerer},
 			})
 
 			clid++
@@ -120,7 +119,7 @@ func TestCheckRunCLs(t *testing.T) {
 		}
 		addDep := func(base *changelist.CL, owner string) *changelist.CL {
 			ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
-				&gerritpb.EmailInfo{Email: owner},
+				{Email: owner},
 			})
 
 			clid++

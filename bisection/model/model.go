@@ -21,10 +21,11 @@ import (
 	"strings"
 	"time"
 
-	pb "go.chromium.org/luci/bisection/proto/v1"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+
+	pb "go.chromium.org/luci/bisection/proto/v1"
 )
 
 type RerunBuildType string

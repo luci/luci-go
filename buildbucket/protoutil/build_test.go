@@ -214,25 +214,25 @@ func TestBotDimensions(t *testing.T) {
 			Task: &pb.Task{
 				Details: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
-						"bot_dimensions": &structpb.Value{
+						"bot_dimensions": {
 							Kind: &structpb.Value_StructValue{
 								StructValue: &structpb.Struct{
 									Fields: map[string]*structpb.Value{
-										"cpu": &structpb.Value{
+										"cpu": {
 											Kind: &structpb.Value_ListValue{
 												ListValue: &structpb.ListValue{
 													Values: []*structpb.Value{
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
 													},
 												},
 											},
 										},
-										"os": &structpb.Value{
+										"os": {
 											Kind: &structpb.Value_ListValue{
 												ListValue: &structpb.ListValue{
 													Values: []*structpb.Value{
-														&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+														{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
 													},
 												},
 											},
@@ -268,25 +268,25 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 		}
 		expected := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
-				"bot_dimensions": &structpb.Value{
+				"bot_dimensions": {
 					Kind: &structpb.Value_StructValue{
 						StructValue: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"cpu": &structpb.Value{
+								"cpu": {
 									Kind: &structpb.Value_ListValue{
 										ListValue: &structpb.ListValue{
 											Values: []*structpb.Value{
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
 											},
 										},
 									},
 								},
-								"os": &structpb.Value{
+								"os": {
 									Kind: &structpb.Value_ListValue{
 										ListValue: &structpb.ListValue{
 											Values: []*structpb.Value{
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
 											},
 										},
 									},
@@ -318,35 +318,35 @@ func TestAddBotDimensionsToTaskDetails(t *testing.T) {
 		}
 		details := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
-				"a": &structpb.Value{
+				"a": {
 					Kind: &structpb.Value_StringValue{StringValue: "x86"},
 				},
 			},
 		}
 		expected := &structpb.Struct{
 			Fields: map[string]*structpb.Value{
-				"a": &structpb.Value{
+				"a": {
 					Kind: &structpb.Value_StringValue{StringValue: "x86"},
 				},
-				"bot_dimensions": &structpb.Value{
+				"bot_dimensions": {
 					Kind: &structpb.Value_StructValue{
 						StructValue: &structpb.Struct{
 							Fields: map[string]*structpb.Value{
-								"cpu": &structpb.Value{
+								"cpu": {
 									Kind: &structpb.Value_ListValue{
 										ListValue: &structpb.ListValue{
 											Values: []*structpb.Value{
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "x86"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "x86-64"}},
 											},
 										},
 									},
 								},
-								"os": &structpb.Value{
+								"os": {
 									Kind: &structpb.Value_ListValue{
 										ListValue: &structpb.ListValue{
 											Values: []*structpb.Value{
-												&structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
+												{Kind: &structpb.Value_StringValue{StringValue: "Linux"}},
 											},
 										},
 									},

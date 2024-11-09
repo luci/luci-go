@@ -47,11 +47,6 @@ import (
 	"go.chromium.org/luci/server/tq"
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
-	// Store auth sessions in the datastore.
-	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
-	// Enable datastore transactional tasks support.
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
-
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildcron"
 	"go.chromium.org/luci/buildbucket/appengine/internal/buildercron"
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
@@ -62,6 +57,11 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/rpc"
 	"go.chromium.org/luci/buildbucket/appengine/tasks"
 	pb "go.chromium.org/luci/buildbucket/proto"
+
+	// Store auth sessions in the datastore.
+	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
+	// Enable datastore transactional tasks support.
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 var cacheEnabled = stringset.NewFromSlice("Project", "BuildStatus")

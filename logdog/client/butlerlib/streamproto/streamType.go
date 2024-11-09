@@ -19,6 +19,7 @@ import (
 	"flag"
 
 	"go.chromium.org/luci/common/flag/flagenum"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
 )

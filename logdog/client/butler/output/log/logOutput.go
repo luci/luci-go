@@ -21,7 +21,9 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+
 	log "go.chromium.org/luci/common/logging"
+
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bootstrap"
 	"go.chromium.org/luci/logdog/client/butler/output"

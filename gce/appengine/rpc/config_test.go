@@ -26,10 +26,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/gce/api/config/v1"
-	"go.chromium.org/luci/gce/appengine/model"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+
+	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/appengine/model"
 )
 
 func TestConfig(t *testing.T) {

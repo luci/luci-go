@@ -18,8 +18,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"go.chromium.org/luci/cipd/common/cipderr"
 	"go.chromium.org/luci/common/errors"
+
+	"go.chromium.org/luci/cipd/common/cipderr"
 )
 
 const (

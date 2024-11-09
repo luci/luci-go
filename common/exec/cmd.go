@@ -28,9 +28,8 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/system/environ"
-
 	"go.chromium.org/luci/common/exec/internal/execmockctx"
+	"go.chromium.org/luci/common/system/environ"
 )
 
 var curExe, curExeErr = os.Executable()

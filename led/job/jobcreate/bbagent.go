@@ -19,8 +19,9 @@ import (
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	"go.chromium.org/luci/led/job"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+
+	"go.chromium.org/luci/led/job"
 )
 
 func bbCommonFromTaskRequest(bb *job.Buildbucket, r *swarmingpb.NewTaskRequest) {

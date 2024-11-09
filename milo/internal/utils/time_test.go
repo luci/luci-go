@@ -15,11 +15,12 @@
 package utils
 
 import (
+	"testing"
+	"time"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"testing"
-	"time"
 )
 
 func TestFuncs(t *testing.T) {

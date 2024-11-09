@@ -25,11 +25,12 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/milo/internal/git/gitacls"
-	configpb "go.chromium.org/luci/milo/proto/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
+
+	"go.chromium.org/luci/milo/internal/git/gitacls"
+	configpb "go.chromium.org/luci/milo/proto/config"
 )
 
 func TestCLEmail(t *testing.T) {

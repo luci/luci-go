@@ -23,8 +23,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	ds "go.chromium.org/luci/gae/service/datastore"
-	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth/realms"
+
+	"go.chromium.org/luci/logdog/common/types"
 )
 
 // MetadataFetcher fetches LogStream and LogPrefix metadata and checks ACLs.
