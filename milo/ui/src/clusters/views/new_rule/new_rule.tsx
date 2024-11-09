@@ -43,7 +43,6 @@ const NewRulePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSyncedSearchParams();
 
-  const [bugSystem, setBugSystem] = useState<string>('');
   const [bugId, setBugId] = useState<string>('');
   const [definition, setDefinition] = useState<string>('');
   const [sourceCluster, setSourceCluster] = useState<ClusterId>({
@@ -85,10 +84,6 @@ const NewRulePage = () => {
     );
   }
 
-  const handleBugSystemChange = (bugSystem: string) => {
-    setBugSystem(bugSystem);
-  };
-
   const handleBugIdChange = (bugId: string) => {
     setBugId(bugId);
   };
@@ -102,7 +97,7 @@ const NewRulePage = () => {
       parent: `projects/${project}`,
       rule: Rule.create({
         bug: {
-          system: bugSystem,
+          system: '',
           id: bugId,
         },
         ruleDefinition: definition,
@@ -166,12 +161,7 @@ const NewRulePage = () => {
           <Grid item container xs>
             <Grid item xs={6}>
               <Typography>Associated bug</Typography>
-              <BugPicker
-                bugSystem={bugSystem}
-                bugId={bugId}
-                handleBugSystemChanged={handleBugSystemChange}
-                handleBugIdChanged={handleBugIdChange}
-              />
+              <BugPicker bugId={bugId} handleBugIdChanged={handleBugIdChange} />
             </Grid>
           </Grid>
           <Grid item xs marginTop="1rem">
