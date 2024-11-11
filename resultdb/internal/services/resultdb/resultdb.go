@@ -129,7 +129,7 @@ func InitServer(srv *server.Server, opts Options) error {
 			}
 		}
 		// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-		p.HackFixFieldMasksForJSON = true
+		p.EnableNonStandardFieldMasks = true
 	})
 
 	srv.RegisterUnaryServerInterceptors(

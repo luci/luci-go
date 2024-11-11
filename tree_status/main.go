@@ -73,7 +73,7 @@ func main() {
 				}
 			}
 			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-			s.HackFixFieldMasksForJSON = true
+			s.EnableNonStandardFieldMasks = true
 		})
 		srv.RegisterUnaryServerInterceptors(span.SpannerDefaultsInterceptor())
 		pb.RegisterTreeStatusServer(srv, rpc.NewTreeStatusServer())

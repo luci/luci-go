@@ -45,7 +45,7 @@ func InitServer(srv *server.Server) error {
 
 	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
 	srv.ConfigurePRPC(func(p *prpc.Server) {
-		p.HackFixFieldMasksForJSON = true
+		p.EnableNonStandardFieldMasks = true
 	})
 
 	// Experiments run with medium priority, not high, to avoid starving more

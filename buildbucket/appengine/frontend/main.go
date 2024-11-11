@@ -202,7 +202,7 @@ func main() {
 			}
 			// TODO(crbug/1082369): Remove this workaround once field masks can be
 			// decoded.
-			p.HackFixFieldMasksForJSON = true
+			p.EnableNonStandardFieldMasks = true
 			// Opt-in into experimental protobuf v2 serialization.
 			p.UseProtobufV2 = true
 		})

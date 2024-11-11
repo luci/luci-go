@@ -306,7 +306,7 @@ func TestJSONFieldMaskWithoutHack(t *testing.T) {
 
 	// Doesn't support advanced masks.
 	testJSONFieldMask(t, false, func(srv *prpc.Server) {
-		srv.HackFixFieldMasksForJSON = false
+		srv.EnableNonStandardFieldMasks = false
 	})
 }
 
@@ -315,7 +315,7 @@ func TestJSONFieldMaskWithHack(t *testing.T) {
 
 	// Supports advanced masks.
 	testJSONFieldMask(t, true, func(srv *prpc.Server) {
-		srv.HackFixFieldMasksForJSON = true
+		srv.EnableNonStandardFieldMasks = true
 	})
 }
 

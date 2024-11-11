@@ -195,12 +195,6 @@ type Server struct {
 	// overview of CORS policies.
 	AccessControl func(ctx context.Context, origin string) AccessControlDecision
 
-	// HackFixFieldMasksForJSON indicates whether to attempt a workaround for
-	// https://github.com/golang/protobuf/issues/745 when the request has
-	// Content-Type: application/json. This hack is scheduled for removal.
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-	HackFixFieldMasksForJSON bool
-
 	// UnaryServerInterceptor provides a hook to intercept the execution of
 	// a unary RPC on the server. It is the responsibility of the interceptor to
 	// invoke handler to complete the RPC.
@@ -259,6 +253,41 @@ type Server struct {
 	// UseProtobufV2 is a temporary flag to opt in into using protobuf v2
 	// serialization rules before them become default.
 	UseProtobufV2 bool
+
+	// EnableNonStandardFieldMasks enables support for non-standard values of
+	// google.protobuf.FieldMask in requests.
+	//
+	// Avoid if possible, especially in new servers. This option exists primarily
+	// for backward compatibility with some existing servers. Has performance and
+	// maintainability risks. See below for details.
+	//
+	// If false, only standard field masks are supported. Such masks can only use
+	// field paths composed of JSON field names (any advanced syntax like `*` is
+	// forbidden). They serialize to JSON as strings. See:
+	//  - https://protobuf.dev/reference/protobuf/google.protobuf/#field-mask
+	//  - https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/field_mask.proto
+	//
+	// If true, field mask paths can have arbitrary values in them. Additionally,
+	// field masks represented in JSONPB by objects (e.g. `{"paths": [...]}`)
+	// would be accepted (in additional to the standard string form).
+	//
+	// WARNING: Enabling this option has performance and maintainability risks.
+	// Since google.protobuf.FieldMask is a "well-known" protobuf type, rules of
+	// how to serialize it to/from JSON are hardcoded in the protobuf library, and
+	// this library supports only standard field masks (failing with errors if
+	// masks have non-standard paths or represented as JSON objects). Non-standard
+	// field masks are supported here through JSON pre-processing (which takes CPU
+	// time) and deserializing pre-processed JSON through an old deprecated JSONPB
+	// decoder (since it's so old it doesn't know FieldMasks are "well-known"
+	// types and ignores them). This decoder may stop working when new features
+	// are added to JSONPB encoding (making usage of non-standard field masks
+	// a maintainability risk).
+	//
+	// Some related issues:
+	//  - https://github.com/golang/protobuf/issues/1315
+	//  - https://github.com/golang/protobuf/issues/1435
+	//  - https://github.com/protocolbuffers/protobuf/issues/8547
+	EnableNonStandardFieldMasks bool
 
 	mu        sync.RWMutex
 	services  map[string]*service
@@ -339,7 +368,7 @@ func (s *Server) requestCodec(f Format) protoCodec {
 		}
 		return codecWireV1
 	case FormatJSONPB:
-		if s.HackFixFieldMasksForJSON {
+		if s.EnableNonStandardFieldMasks {
 			return codecJSONV1WithHack // the only codec that supports advanced field masks
 		}
 		if s.UseProtobufV2 {

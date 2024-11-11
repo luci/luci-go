@@ -147,7 +147,7 @@ func main() {
 			// Allow cross-origin calls.
 			s.AccessControl = prpc.AllowOriginAll
 			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
-			s.HackFixFieldMasksForJSON = true
+			s.EnableNonStandardFieldMasks = true
 		})
 
 		// GAE crons
