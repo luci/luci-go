@@ -159,7 +159,7 @@ func (s *metricsReporterShardState) collect(ctx context.Context, bot *model.BotI
 		migrationState = "DEAD_" + migrationState
 	}
 
-	pools := bot.DimenionsByKey("pool")
+	pools := bot.DimensionsByKey("pool")
 	if len(pools) == 0 {
 		pools = []string{"unknown"}
 	}

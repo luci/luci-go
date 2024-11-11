@@ -303,8 +303,8 @@ func (b *BotInfo) GetStatus() string {
 	return "ready"
 }
 
-// DimenionsByKey returns a list of dimension values with the given key.
-func (b *BotInfo) DimenionsByKey(k string) (values []string) {
+// DimensionsByKey returns a list of dimension values with the given key.
+func (b *BotInfo) DimensionsByKey(k string) (values []string) {
 	pfx := k + ":"
 	for _, kv := range b.Dimensions {
 		if val, ok := strings.CutPrefix(kv, pfx); ok {
