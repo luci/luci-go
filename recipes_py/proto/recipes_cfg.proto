@@ -151,6 +151,19 @@ message RepoSpec {
   // `yield api.test("name", ..., status="FAILURE")`), which defaults to SUCCESS
   // if not specified.
   bool enforce_test_expected_status = 11;
+
+  // This is a list of recipe warnings which will be treated as errors. The list
+  // items must always be in the form of "repo_name/WARNING_NAME", e.g.
+  // "recipe_engine/CQ_MODULE_DEPRECATED".
+  //
+  // If a warning in this list is emitted when running the tests (e.g.
+  // `recipes.py test XXX`) it will be logged as an error and will cause the
+  // test command to return 1 instead of 0.
+  //
+  // If a warning in this list doesn't exist (e.g. the warning was removed from
+  // the upstream repo), it will be reported with `recipes.py test XXX` that it
+  // can be safely removed from this list.
+  repeated string forbidden_warnings = 12;
 }
 
 // Emitted by the `recipes.py dump_specs` command.
