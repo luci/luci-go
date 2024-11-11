@@ -26,11 +26,17 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import BugPicker from '@/clusters/components/bug_picker/bug_picker';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import RuleEditInput from '@/clusters/components/rule_edit_input/rule_edit_input';
-import { SnackbarContext } from '@/clusters/context/snackbar_context';
+import {
+  SnackbarContext,
+  SnackbarContextWrapper,
+} from '@/clusters/context/snackbar_context';
 import { useRulesService } from '@/clusters/services/services';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ClusterId } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 import {
@@ -38,7 +44,7 @@ import {
   Rule,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
-const NewRulePage = () => {
+export const NewRulePage = () => {
   const { project } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSyncedSearchParams();
@@ -97,7 +103,7 @@ const NewRulePage = () => {
       parent: `projects/${project}`,
       rule: Rule.create({
         bug: {
-          system: '',
+          system: 'buganizer',
           id: bugId,
         },
         ruleDefinition: definition,
@@ -190,4 +196,19 @@ const NewRulePage = () => {
   );
 };
 
-export default NewRulePage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="new-rule">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="new-rule"
+      >
+        <SnackbarContextWrapper>
+          <NewRulePage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

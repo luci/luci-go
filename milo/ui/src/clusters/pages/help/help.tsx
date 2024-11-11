@@ -28,7 +28,11 @@ import Typography, { TypographyProps } from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
 import { useLocation, useNavigate, Link as RouterLink } from 'react-router-dom';
 
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import ruleIdentifiersImageUrl from './images/failure_association_rule_identifiers.png';
 import monorailComponentImageUrl from './images/monorail_component.png';
@@ -42,7 +46,7 @@ const AccordionHeading = styled(Typography)<TypographyProps>(() => ({
   'font-size': 18,
 }));
 
-const HelpPage = () => {
+export const HelpPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -121,8 +125,9 @@ const HelpPage = () => {
             build page).
             <img
               src={ruleIdentifiersImageUrl}
-              alt="Test is the fully-qualified test ID. It appears under tFhe MILO Test Results tab
-                    under the heading ID. The reason is the failure reason, which appears in the MILO Test Results tab under the heading Failure Reason."
+              alt="Test is the fully-qualified test ID. It appears under the LUCI UI Test Results tab
+                    under the heading ID. The reason is the failure reason, which appears in the
+                     LUCI UI Test Results tab under the heading Failure Reason."
             ></img>
           </Typography>
           <Typography paragraph>
@@ -528,12 +533,12 @@ const HelpPage = () => {
             </Link>
             &nbsp;files in the directory hierarchy of the test. The component
             associated with a specific test failure can be validated by viewing
-            the failure in MILO (ci.chromium.org), and looking for the
+            the failure in LUCI UI (ci.chromium.org), and looking for the
             monorail_component tag.
           </Typography>
           <img
             src={monorailComponentImageUrl}
-            alt="Monorail component is the component that test matches, it appears in Milo in the test variant tags."
+            alt="Monorail component is the component that test matches, it appears in LUCI UI in the test variant tags."
           />
           <Typography paragraph>
             If a failure does not have this tag, it means the test result
@@ -586,4 +591,19 @@ const HelpPage = () => {
   );
 };
 
-export default HelpPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="help">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="help"
+      >
+        <SnackbarContextWrapper>
+          <HelpPage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

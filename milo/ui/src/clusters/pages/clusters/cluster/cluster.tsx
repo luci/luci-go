@@ -20,8 +20,12 @@ import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analys
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import ClusterTopPanel from '@/clusters/components/cluster/cluster_top_panel/cluster_top_panel';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
-const ClusterPage = () => {
+export const ClusterPage = () => {
   const { project, algorithm, id } = useParams();
 
   if (!project || !algorithm || !id) {
@@ -54,4 +58,19 @@ const ClusterPage = () => {
   );
 };
 
-export default ClusterPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="cluster">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="cluster"
+      >
+        <SnackbarContextWrapper>
+          <ClusterPage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

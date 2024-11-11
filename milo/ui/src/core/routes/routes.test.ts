@@ -96,5 +96,10 @@ describe('routes', () => {
       //   regex.test('/ui/tree-status/labs/cannot-found-this-route-here'),
       // ).toBeFalsy();
     });
+
+    it('analysis', () => {
+      expect(regex.test('/ui/clusters/labs/b/12345')).toBeTruthy();
+      expect(regex.test('/ui/clusters/undefined-page')).toBeFalsy();
+    });
   });
 });

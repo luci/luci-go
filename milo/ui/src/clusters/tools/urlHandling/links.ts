@@ -31,14 +31,14 @@ export const linkToCluster = (project: string, c: ClusterId): string => {
     const projectEncoded = encodeURIComponent(project);
     const algorithmEncoded = encodeURIComponent(c.algorithm);
     const idEncoded = encodeURIComponent(c.id);
-    return `/p/${projectEncoded}/clusters/${algorithmEncoded}/${idEncoded}`;
+    return `/ui/clusters/labs/p/${projectEncoded}/clusters/${algorithmEncoded}/${idEncoded}`;
   }
 };
 
 export const linkToRule = (project: string, ruleId: string): string => {
   const projectEncoded = encodeURIComponent(project);
   const ruleIdEncoded = encodeURIComponent(ruleId);
-  return `/p/${projectEncoded}/rules/${ruleIdEncoded}`;
+  return `/ui/clusters/labs/p/${projectEncoded}/rules/${ruleIdEncoded}`;
 };
 
 export const invocationName = (invocationId: string): string => {
@@ -65,9 +65,9 @@ export const failureLink = (
     .join(' ');
   const query = `ID:${testId} ${variantQuery}`;
   if (invocationId.startsWith('build-')) {
-    return `https://ci.chromium.org/ui/b/${invocationId.slice('build-'.length)}/test-results?q=${encodeURIComponent(query)}`;
+    return `/ui/b/${invocationId.slice('build-'.length)}/test-results?q=${encodeURIComponent(query)}`;
   }
-  return `https://ci.chromium.org/ui/inv/${invocationId}/test-results?q=${encodeURIComponent(query)}`;
+  return `/ui/inv/${invocationId}/test-results?q=${encodeURIComponent(query)}`;
 };
 
 export const clLink = (cl: Changelist): string => {
@@ -98,7 +98,7 @@ export const testHistoryLink = (
       );
     })
     .join(' ');
-  return `https://ci.chromium.org/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
+  return `/ui/test/${encodeURIComponent(project)}/${encodeURIComponent(testId)}?q=${encodeURIComponent(query)}`;
 };
 
 export const sourceRefLink = (sourceRef: SourceRef): string => {

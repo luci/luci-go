@@ -24,17 +24,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import MultiRulesFound from '@/clusters/components/bugs/multi_rules_found/multi_rules_found';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { useRulesService } from '@/clusters/services/services';
 import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
 import { parseRuleName } from '@/clusters/tools/rules';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { getLoginUrl } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { LookupBugRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
-const BugPage = () => {
+export const BugPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const service = useRulesService();
@@ -143,4 +147,19 @@ const BugPage = () => {
   );
 };
 
-export default BugPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="bug">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="bug"
+      >
+        <SnackbarContextWrapper>
+          <BugPage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

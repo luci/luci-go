@@ -93,7 +93,7 @@ describe('Test FailureTableGroup component', () => {
     expect(screen.getByLabelText('Test history link')).toBeInTheDocument();
     expect(screen.getByLabelText('Test history link')).toHaveAttribute(
       'href',
-      'https://ci.chromium.org/ui/test/testproject/ninja%3A%2F%2Fpackage%2Fsometest.Blah%3Fa%3D1?q=V%3Ak1%3Dv1%20V%3Akey%2520%2525%252B%3Dvalue%2520%2525%252B',
+      '/ui/test/testproject/ninja%3A%2F%2Fpackage%2Fsometest.Blah%3Fa%3D1?q=V%3Ak1%3Dv1%20V%3Akey%2520%2525%252B%3Dvalue%2520%2525%252B',
     );
     expect(screen.getAllByRole('row')).toHaveLength(1);
   });

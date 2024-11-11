@@ -17,9 +17,13 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { Link, useParams } from 'react-router-dom';
 
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import RulesTable from '@/clusters/components/rules_table/rules_table';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const rulesDescription =
   'Rules define an association between failures and bugs. LUCI Analysis uses these ' +
@@ -53,4 +57,19 @@ const RulesPage = () => {
   );
 };
 
-export default RulesPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="rules">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="rules"
+      >
+        <SnackbarContextWrapper>
+          <RulesPage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

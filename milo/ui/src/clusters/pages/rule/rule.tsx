@@ -20,12 +20,16 @@ import { useParams } from 'react-router-dom';
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import RuleArchivedMessage from '@/clusters/components/rule/rule_archived_message/rule_archived_message';
 import RuleTopPanel from '@/clusters/components/rule/rule_top_panel/rule_top_panel';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
-const Rule = () => {
+export const RulePage = () => {
   const { project, id } = useParams();
 
   const {
@@ -75,4 +79,19 @@ const Rule = () => {
   );
 };
 
-export default Rule;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="rule">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="rule"
+      >
+        <SnackbarContextWrapper>
+          <RulePage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}

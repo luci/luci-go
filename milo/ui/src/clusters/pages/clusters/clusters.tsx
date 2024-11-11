@@ -17,8 +17,12 @@ import Grid from '@mui/material/Grid';
 import { useParams } from 'react-router-dom';
 
 import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
+import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import PageHeading from '@/clusters/components/headings/page_heading/page_heading';
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
+import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const clustersDescription =
   "Clusters are groups of related test failures. LUCI Analysis's clusters " +
@@ -26,7 +30,7 @@ const clustersDescription =
   'and clusters defined by a failure association rule (where the cluster contains all failures ' +
   'associated with a specific bug).';
 
-const ClustersPage = () => {
+export const ClustersPage = () => {
   const { project } = useParams();
   return (
     <Container maxWidth={false}>
@@ -43,4 +47,19 @@ const ClustersPage = () => {
   );
 };
 
-export default ClustersPage;
+export function Component() {
+  return (
+    <TrackLeafRoutePageView contentGroup="clusters">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="clusters"
+      >
+        <SnackbarContextWrapper>
+          <ClustersPage />
+          <FeedbackSnackbar />
+        </SnackbarContextWrapper>
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
+  );
+}
