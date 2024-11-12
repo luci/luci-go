@@ -496,9 +496,15 @@ func (r *streamRun) runTestCmd(ctx context.Context, args []string) error {
 		cmdProcMu.Unlock()
 
 		if err != nil {
+			logging.Warningf(ctx, "rdb-stream: failed to start test process: %s", err)
 			return errors.Annotate(err, "cmd.start").Err()
 		}
-		return cmd.Wait()
+		err = cmd.Wait()
+		if err != nil {
+			logging.Warningf(ctx, "rdb-stream: test process exited with error: %s", err)
+			return err
+		}
+		return nil
 	})
 }
 
