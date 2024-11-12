@@ -14,11 +14,12 @@
 
 import '../components/groups_list.css';
 
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import { useEffect, createRef } from 'react';
-
 import { GroupsForm } from '@/authdb/components/groups_form';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
@@ -49,6 +50,14 @@ export function GroupsPage() {
 
   return (
     <Paper className="groups-container-paper">
+      <Alert severity="warning">
+        <AlertTitle>Integration of LUCI Auth Service here is under construction.</AlertTitle>
+          Only group editing is supported. Please visit {' '}
+          <a href='https://chrome-infra-auth.appspot.com/auth/groups/' target="_blank">
+            Auth Service
+          </a>
+          {' '} for other functionality.
+      </Alert>
       <Grid container className="groups-container">
         <Grid
           item
