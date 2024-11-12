@@ -93,16 +93,16 @@ interface GroupsFormProps {
 
 export function GroupsForm({name, onDelete}: GroupsFormProps) {
   const navigate = useNavigate();
-  const [descriptionMode, setDescriptionMode] = useState<boolean>();
-  const [ownersMode, setOwnersMode] = useState<boolean>();
+  const [descriptionMode, setDescriptionMode] = useState<boolean>(false);
+  const [ownersMode, setOwnersMode] = useState<boolean>(false);
   const [description, setDescription] = useState<string>();
   const [owners, setOwners] = useState<string>();
   const [etag, setEtag] = useState<string>();
   const [showOwnersEdit, setShowOwnersEdit] = useState<boolean>();
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
   const [isExternal, setIsExternal] = useState<boolean>();
-  const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>();
-  const [errorMessage, setErrorMessage] = useState<string>();
+  const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState<boolean>();
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
   const [savedDescription, setSavedDescription] = useState<string>('');
@@ -117,10 +117,10 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
     isError,
     data: response,
     error,
+    refetch,
   } = useQuery({
     ...client.GetGroup.query({ "name": name }),
     onSuccess: (response) => {
-      setReadonlyMode();
       setIsExternal(isExternalGroupName(response?.name!));
     },
     refetchOnWindowFocus: false,
@@ -131,7 +131,6 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
       return client.UpdateGroup(request);
     },
     onSuccess: (response) => {
-      setSuccessEditedGroup(true);
       const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
       membersRef.current?.changeItems(members);
       globsRef.current?.changeItems(response?.globs as string[]);
@@ -145,11 +144,14 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
       setSavedDescription(response?.description);
       setSavedOwners(response?.owners);
       setEtag(response?.etag);
+      // Refetch to update values as cache will display previous values.
+      refetch().then(() => {
+        setIsUpdating(false);
+        setSuccessEditedGroup(true);
+      })
     },
     onError: () => {
       setErrorMessage('Error editing group');
-    },
-    onSettled: () => {
       setIsUpdating(false);
     },
   })
@@ -166,16 +168,6 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
       setErrorMessage('Error deleting group');
     }
   })
-
-  const setReadonlyMode = () => {
-    setDescriptionMode(false);
-    setOwnersMode(false);
-    setErrorMessage("");
-    setSuccessEditedGroup(false);
-    membersRef.current?.setReadonly();
-    globsRef.current?.setReadonly();
-    subgroupsRef.current?.setReadonly();
-  }
 
   const changeDescriptionMode = () => {
     if (descriptionMode) {
@@ -353,11 +345,11 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
               {callerCanModify ?
                 <>
                   {callerCanViewMembers
-                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef}/>
+                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} submitValues={() => submitField('members')}/>
                     : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
                   }
-                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef}/>
-                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef}/>
+                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} submitValues={() => submitField('globs')}/>
+                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} submitValues={() => submitField('nested')}/>
                   <div>
                     {successEditedGroup &&
                       <Alert severity="success">Group updated</Alert>

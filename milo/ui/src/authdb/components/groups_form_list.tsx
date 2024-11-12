@@ -27,7 +27,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState, forwardRef, useImperativeHandle } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 
 import './groups_list.css';
@@ -37,11 +37,12 @@ interface GroupsFormListProps {
   initialValues: string[];
   // This will be either members, subgroups or globs. Used for header in form and to check validity of added items.
   name: string;
+  // Used on UpdateGroup call to backend to update this field's values.
+  submitValues: () => void;
 }
 
 export interface FormListElement {
   getItems: () => string[];
-  setReadonly: () => void;
   changeItems: (items: string[]) => void;
 }
 
@@ -57,7 +58,7 @@ const asItems = (values: string[]) => {
     items.push({
       value: item,
       checked: false,
-    })
+    });
   })
   return items;
 };
@@ -68,13 +69,13 @@ const asString = (items: Item[]) => {
     itemValues.push(item.value);
   })
   return itemValues;
-}
+};
 
 export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
   (
-    { initialValues, name }, ref
+    { initialValues, name, submitValues }, ref
   ) => {
-    const [addingItem, setAddingItem] = useState<boolean>();
+    const [addingItem, setAddingItem] = useState<boolean>(false);
     const [newItems, setNewItems] = useState<string>('');
     const [errorMessage, setErrorMessage] = useState<string>('');
     // The initial form items which reflect the items currently in auth service backend.
@@ -91,22 +92,19 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       getItems: () => {
         return asString(items);
       },
-      setReadonly: () => {
-        setAddingItem(false);
-        setNewItems("");
-        uncheckItems();
+      changeItems: (newValues: string[]) => {
+        if (!valuesEqual(newValues, savedValues)) {
+          setItems(asItems(newValues));
+          setSavedValues(newValues);
+        }
       },
-      changeItems: (newItems: string[]) => {
-        setItems(asItems(newItems));
-        setSavedValues(newItems);
-      },
-    }));
+    }))
 
     const resetTextfield = () => {
       setAddingItem(!addingItem);
       setNewItems("");
       setErrorMessage('');
-    }
+    };
 
     const hasValues = (value: string) => {
       for (const item of items) {
@@ -115,7 +113,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         }
       }
       return false;
-    }
+    };
 
     const addToItems = () => {
       // Make sure item added is not a duplicate.
@@ -143,20 +141,28 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setErrorMessage(errorMessage);
       } else {
         setErrorMessage('');
-        let updatedItems = items;
+        let updatedItems = [...items];
         updatedItems.push(...asItems(newItemsArray));
         setItems(updatedItems);
         resetTextfield();
       }
     }
 
+    useEffect(() => {
+      // If any items have been added or removed, we submit.
+      // This ensure we do not submit values on initial load & on checkbox polarity change.
+      if (!valuesEqual(asString(items), savedValues)) {
+        submitValues();
+      }
+    }, [items]);
+
     const handleChange = (index: number) => {
       const updatedItems = [...items];
       // This is a new item, so just remove.
       if (index >= savedValues.length) {
-        updatedItems.splice(index, 1)
+        updatedItems.splice(index, 1);
       } else {
-        updatedItems[index].checked = !updatedItems[index].checked
+        updatedItems[index].checked = !updatedItems[index].checked;
       }
       setItems(updatedItems);
     }
@@ -194,10 +200,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       return removedItems.join(', ');
     }
 
-    const uncheckItems = () => {
-      for (const item of items) {
-        item.checked = false;
-      }
+    const valuesEqual = (a: string[], b: string[]) => {
+      return(
+        a.length === b.length &&
+        a.every((val, index) => val === b[index])
+      );
     }
 
     return (
