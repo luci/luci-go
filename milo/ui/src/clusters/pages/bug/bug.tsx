@@ -20,6 +20,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import MultiRulesFound from '@/clusters/components/bugs/multi_rules_found/multi_rules_found';
@@ -62,6 +63,17 @@ export const BugPage = () => {
     },
   );
 
+  useEffect(() => {
+    if (isSuccess && data?.rules?.length === 1) {
+      const ruleKey = parseRuleName(data.rules[0]);
+      const link = linkToRule(ruleKey.project, ruleKey.ruleId);
+      // For automatic redirects, replace the history entry in the browser
+      // so that if the user clicks 'back', they are not redirected forward
+      // again.
+      navigate(link, { replace: true });
+    }
+  }, [data, isSuccess, navigate]);
+
   if (!id) {
     return (
       <ErrorAlert
@@ -70,15 +82,6 @@ export const BugPage = () => {
         showError
       />
     );
-  }
-
-  if (isSuccess && data && data.rules && data.rules.length === 1) {
-    const ruleKey = parseRuleName(data.rules[0]);
-    const link = linkToRule(ruleKey.project, ruleKey.ruleId);
-    // For automatic redirects, replace the history entry in the browser
-    // so that if the user clicks 'back', they are not redirected forward
-    // again.
-    navigate(link, { replace: true });
   }
 
   return (
