@@ -23,7 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import {useState, forwardRef, useImperativeHandle} from 'react';
+import {useState, forwardRef, useImperativeHandle } from 'react';
 import { Virtuoso } from 'react-virtuoso'
 import { Link } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
@@ -63,6 +63,16 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     },
   }));
 
+  const changeSearchQuery = (query: string) => {
+    setFilteredGroups(allGroups.filter(group => group.name.includes(query.toLowerCase())));
+  }
+
+  const groups = (filteredGroups) ? filteredGroups : allGroups;
+
+  const getIndexToSelect = () => {
+    return Math.max(groups.findIndex((g) => g.name === selectedGroup), 0);
+  }
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center">
@@ -82,11 +92,6 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     );
   }
 
-  const changeSearchQuery = (query: string) => {
-    setFilteredGroups(allGroups.filter(group => group.name.includes(query.toLowerCase())));
-  }
-
-  const groups = (filteredGroups) ? filteredGroups : allGroups;
   return (
     <>
     <Box sx={{ p: 2 }}>
@@ -114,6 +119,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
         style={{ height: '100%'}}
         totalCount={groups.length}
         initialItemCount={3}
+        initialTopMostItemIndex={getIndexToSelect()}
         itemContent={(index) => {
           return (
             <GroupsListItem
