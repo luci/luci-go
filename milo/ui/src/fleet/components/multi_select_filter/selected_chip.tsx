@@ -43,10 +43,10 @@ export function SelectedChip({
                 textOverflow: 'ellipsis',
               }}
             >
-              {`${option.options?.length} | [ ${option.label} ]: ${option?.options
+              {`${Object.values(selectedOptions[option.value] ?? {}).filter((x) => x).length} | [ ${option.label} ]: ${option?.options
                 ?.filter((o2) => selectedOptions[option.value]?.[o2.value])
                 ?.map((o2) => o2.label)
-                .join(', ')} `}
+                .join(', ')}`}
             </span>
             <ArrowDropDownIcon />
           </p>

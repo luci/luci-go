@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import SearchIcon from '@mui/icons-material/Search';
-import { Divider, MenuItem, TextField, Menu } from '@mui/material';
+import { MenuItem, TextField, Menu, Typography } from '@mui/material';
 import { useState } from 'react';
 
 import { OptionsDropdown } from './options_dropdown';
@@ -32,30 +33,24 @@ export function AddFilterDropdown({
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
 }) {
-  const [anchorEl2, setAnchorEL2] = useState<HTMLElement | null>(null);
-  const [open2, setOpen2] = useState<number>();
+  const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
+  const [open, setOpen] = useState<number>();
 
   const [searchQuery, setSearchQuery] = useState('');
 
   const closeMenu = () => {
-    setOpen2(undefined);
-    setAnchorEL2(null);
+    setOpen(undefined);
+    setAnchorELInner(null);
     setAnchorEL(null);
   };
 
-  const closeOnEscape = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      if (searchQuery === '') {
-        closeMenu();
-      }
-      setSearchQuery('');
-      e.currentTarget.blur();
-    }
-    e.stopPropagation();
-  };
-
   return (
-    <Menu open={!!anchorEl} anchorEl={anchorEl} onClose={closeMenu}>
+    <Menu
+      open={!!anchorEl}
+      anchorEl={anchorEl}
+      onClose={closeMenu}
+      elevation={2}
+    >
       <div
         style={{
           display: 'flex',
@@ -64,50 +59,72 @@ export function AddFilterDropdown({
           padding: '0 10px',
         }}
       >
-        <SearchIcon />
         <TextField
-          placeholder="Search"
+          placeholder="search"
           variant="standard"
           onChange={(e) => setSearchQuery(e.currentTarget.value)}
           value={searchQuery}
-          onKeyDown={closeOnEscape}
-          // TODO(pietroscutta) investigate accessibility implications of autofocus
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
+          InputProps={{
+            startAdornment: <SearchIcon />,
+            onKeyDown: (e) => {
+              if (e.key === 'Escape') {
+                e.currentTarget.blur();
+                e.stopPropagation();
+              }
+            },
+          }}
         />
       </div>
-      <Divider />
       {filterOptions
         .filter(
-          (opt) =>
+          (option) =>
             searchQuery === '' ||
-            opt.label.toLowerCase().startsWith(searchQuery.toLowerCase()),
+            option.label.toLowerCase().startsWith(searchQuery.toLowerCase()),
         ) // TODO(pietroscutta) would be nice if this was fuzzy
-        .map((o, idx) => (
+        .map((option, idx) => (
           <MenuItem
             onClick={(event) => {
               // The onClick fires also when closing the menu
-              if (open2 === undefined) {
-                setOpen2(idx);
-                setAnchorEL2(event.currentTarget);
+              if (open === undefined) {
+                setOpen(idx);
+                setAnchorELInner(event.currentTarget);
               }
             }}
-            key={`item-${idx}`}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') {
+                e.currentTarget.click();
+              }
+            }}
+            key={`item-${option.value}-${idx}`}
             disableRipple
+            selected={open === idx}
           >
             <button
               // Is there a better way to have semantic html without
               // the styling / functionality ?
-              style={{
+              css={{
                 all: 'initial',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
               }}
             >
-              <p>{o.label}</p>
+              <Typography variant="body2">{option.label}</Typography>
+              <ArrowRightIcon />
             </button>
             <OptionsDropdown
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') {
+                  setOpen(undefined);
+                  setAnchorELInner(null);
+                }
+              }}
               onClose={(_, reason) => {
-                setOpen2(undefined);
-                setAnchorEL2(null);
+                setOpen(undefined);
+                setAnchorELInner(null);
                 // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
                 // click is inside it
                 if (reason === 'backdropClick') {
@@ -116,9 +133,9 @@ export function AddFilterDropdown({
               }}
               setSelectedOptions={setSelectedOptions}
               selectedOptions={selectedOptions}
-              anchorEl={anchorEl2}
-              open={anchorEl2 !== null && open2 === idx}
-              option={o}
+              anchorEl={anchorElInner}
+              open={anchorElInner !== null && open === idx}
+              option={option}
             />
           </MenuItem>
         ))}
