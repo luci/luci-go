@@ -47,7 +47,9 @@ const ClusterDetails = ({ cluster }: ClusterDetailsProps) => {
   const sourceAlgEncoded = encodeURIComponent(clusterAlgorithm);
   const sourceIdEncoded = encodeURIComponent(clusterId);
 
-  const newRuleURL = `/p/${projectEncoded}/rules/new?rule=${ruleEncoded}&sourceAlg=${sourceAlgEncoded}&sourceId=${sourceIdEncoded}`;
+  const newRuleURL =
+    `/ui/clusters/labs/p/${projectEncoded}` +
+    `/rules/new?rule=${ruleEncoded}&sourceAlg=${sourceAlgEncoded}&sourceId=${sourceIdEncoded}`;
 
   return (
     <>
