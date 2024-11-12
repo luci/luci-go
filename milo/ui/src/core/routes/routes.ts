@@ -95,16 +95,6 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/test_verdict/legacy/test_results_tab'),
       },
       {
-        path: 'steps',
-        lazy: () => import('@/build/legacy/build_page/steps_tab'),
-        children: [
-          // Some old systems generate links to a step by
-          // appending suffix to /steps/ (crbug/1204954).
-          // This allows those links to continue to work.
-          { path: '*' },
-        ],
-      },
-      {
         path: 'related-builds',
         lazy: () => import('@/build/legacy/build_page/related_builds_tab'),
       },
