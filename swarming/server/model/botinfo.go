@@ -134,6 +134,9 @@ type BotCommon struct {
 	// Swarming clients.
 	State []byte `gae:"state,noindex"`
 
+	// SessionID is the current bot session ID reported when the bot connected.
+	SessionID string `gae:"session_id,noindex"`
+
 	// ExternalIP is the bot's IP address as seen by the server.
 	ExternalIP string `gae:"external_ip,noindex"`
 
@@ -328,6 +331,7 @@ func (b *BotInfo) ToProto() *apipb.BotInfo {
 		Dimensions:      DimensionsFlatToPb(b.Dimensions),
 		Version:         b.Version,
 		State:           string(b.State),
+		SessionId:       b.SessionID,
 	}
 	if !b.FirstSeen.IsZero() {
 		info.FirstSeenTs = timestamppb.New(b.FirstSeen)
@@ -479,6 +483,7 @@ func (e *BotEvent) ToProto() *apipb.BotEventResponse {
 		Message:         e.Message,
 		Dimensions:      DimensionsFlatToPb(e.Dimensions),
 		State:           string(e.State),
+		SessionId:       e.SessionID,
 		ExternalIp:      e.ExternalIP,
 		AuthenticatedAs: string(e.AuthenticatedAs),
 		Version:         e.Version,

@@ -67,6 +67,7 @@ func TestListBotEvents(t *testing.T) {
 			Dimensions: []string{"a:1", "b:2"},
 			BotCommon: model.BotCommon{
 				State:           []byte(`{"state": "1"}`),
+				SessionID:       "test-session",
 				ExternalIP:      "1.2.3.4",
 				AuthenticatedAs: identity.Identity("bot:" + botID),
 				Version:         "some-version",
@@ -90,6 +91,7 @@ func TestListBotEvents(t *testing.T) {
 				{Key: "b", Value: []string{"2"}},
 			},
 			State:           `{"state": "1"}`,
+			SessionId:       "test-session",
 			ExternalIp:      "1.2.3.4",
 			AuthenticatedAs: "bot:" + botID,
 			Version:         "some-version",

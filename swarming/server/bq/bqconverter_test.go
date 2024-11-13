@@ -643,6 +643,7 @@ func TestBotEventConversion(t *testing.T) {
 		return &model.BotEvent{
 			BotCommon: model.BotCommon{
 				State:           []byte(state),
+				SessionID:       "test-session",
 				ExternalIP:      "external-ip",
 				AuthenticatedAs: "authenticated-as",
 				Version:         "version",
@@ -674,6 +675,7 @@ func TestBotEventConversion(t *testing.T) {
 			EventTime: timestamppb.New(eventTime),
 			Bot: &bqpb.Bot{
 				BotId:         "bot-id",
+				SessionId:     "test-session",
 				Pools:         []string{"a", "b"},
 				Status:        status,
 				StatusMsg:     msg,

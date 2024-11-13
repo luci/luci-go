@@ -58,6 +58,7 @@ func TestGetBot(t *testing.T) {
 	fakeBotCommon := func(id string) model.BotCommon {
 		return model.BotCommon{
 			State:           []byte(`{"state": "1"}`),
+			SessionID:       "test-session",
 			ExternalIP:      "1.2.3.4",
 			AuthenticatedAs: identity.Identity("bot:" + id),
 			Version:         "some-version",
@@ -129,6 +130,7 @@ func TestGetBot(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "alive-bot",
+			SessionId:       "test-session",
 			TaskId:          "task-id",
 			TaskName:        "task-name",
 			ExternalIp:      "1.2.3.4",
@@ -150,6 +152,7 @@ func TestGetBot(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "deleted-bot",
+			SessionId:       "test-session",
 			TaskId:          "task-id",
 			ExternalIp:      "1.2.3.4",
 			AuthenticatedAs: "bot:deleted-bot",

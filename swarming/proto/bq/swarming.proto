@@ -709,7 +709,7 @@ message Bot {
   // This value is also included in dimensions for the key 'id'.
   string bot_id = 1;
 
-  // Unused.
+  // The bot session name as reported by the bot when it was connecting.
   string session_id = 2;
 
   // Pools that this bot belongs to.

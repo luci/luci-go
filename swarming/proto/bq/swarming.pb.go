@@ -1425,7 +1425,7 @@ type Bot struct {
 	//
 	// This value is also included in dimensions for the key 'id'.
 	BotId string `protobuf:"bytes,1,opt,name=bot_id,json=botId,proto3" json:"bot_id,omitempty"`
-	// Unused.
+	// The bot session name as reported by the bot when it was connecting.
 	SessionId string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	// Pools that this bot belongs to.
 	//

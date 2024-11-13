@@ -430,6 +430,7 @@ func botEvent(ev *model.BotEvent) *bqpb.BotEvent {
 
 	bot := &bqpb.Bot{
 		BotId:         ev.Key.Parent().StringID(),
+		SessionId:     ev.SessionID,
 		CurrentTaskId: ev.TaskID,
 		Dimensions:    make([]*bqpb.StringListPair, len(dims)),
 		Info: &bqpb.BotInfo{
