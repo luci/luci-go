@@ -56,7 +56,7 @@ func (cmd *deleteBotsImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.force, "f", false, "Alias for -force.")
 }
 
-func (cmd *deleteBotsImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *deleteBotsImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	cmd.botIDs = args
 	return nil
 }

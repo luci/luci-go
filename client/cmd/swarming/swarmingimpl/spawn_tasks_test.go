@@ -17,12 +17,14 @@ package swarmingimpl
 import (
 	"bytes"
 	"context"
+	"net/url"
 	"testing"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -34,6 +36,15 @@ import (
 var testSpawnEnv = subcommands.Env{
 	swarming.UserEnvVar:   {Value: "test", Exists: true},
 	swarming.TaskIDEnvVar: {Value: "293109284abc", Exists: true},
+	swarming.ServerEnvVar: {Value: "https://example.com", Exists: true},
+}
+
+func MustParseHostURL(t *testing.T, url string) *url.URL {
+	parsedURL, err := lhttp.ParseHostURL(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsedURL
 }
 
 func TestSpawnTasksParse(t *testing.T) {
@@ -58,9 +69,12 @@ func TestSpawnTasksParse(t *testing.T) {
 func TestProcessTasksStream(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+	serverURL := MustParseHostURL(t, "https://example.com")
+
 	ftt.Run(`Test disallow unknown fields`, t, func(t *ftt.Test) {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
-		_, err := processTasksStream(r, testSpawnEnv)
+		_, err := processTasksStream(ctx, r, testSpawnEnv, serverURL)
 		assert.Loosely(t, err, should.NotBeNil)
 	})
 
@@ -78,7 +92,7 @@ func TestProcessTasksStream(t *testing.T) {
 		}`))
 
 		// Set environment variables to ensure they get picked up.
-		result, err := processTasksStream(r, testSpawnEnv)
+		result, err := processTasksStream(ctx, r, testSpawnEnv, serverURL)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, result, should.HaveLength(1))
 		assert.Loosely(t, result[0], should.Resemble(&swarmingv2.NewTaskRequest{
@@ -90,6 +104,49 @@ func TestProcessTasksStream(t *testing.T) {
 				Outputs: []string{"my_output.bin"},
 			},
 		}))
+	})
+
+	ftt.Run(`Test with different server url`, t, func(t *ftt.Test) {
+		r := bytes.NewReader([]byte(`{
+			"requests": [
+				{
+					"name": "foo",
+					"properties": {
+						"command": ["/bin/ls"],
+						"outputs": ["my_output.bin"]
+					}
+				}
+			]
+		}`))
+
+		result, err := processTasksStream(ctx, r, testSpawnEnv, MustParseHostURL(t.T, "https://other-server.com"))
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.HaveLength(1))
+		assert.Loosely(t, result[0].ParentTaskId, should.BeEmpty)
+	})
+
+	ftt.Run(`Test with server env var unset`, t, func(t *ftt.Test) {
+		r := bytes.NewReader([]byte(`{
+			"requests": [
+				{
+					"name": "foo",
+					"properties": {
+						"command": ["/bin/ls"],
+						"outputs": ["my_output.bin"]
+					}
+				}
+			]
+		}`))
+
+		envWithoutServer := subcommands.Env{
+			swarming.UserEnvVar:   {Value: "test", Exists: true},
+			swarming.TaskIDEnvVar: {Value: "293109284abc", Exists: true},
+		}
+
+		result, err := processTasksStream(ctx, r, envWithoutServer, serverURL)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, result, should.HaveLength(1))
+		assert.Loosely(t, result[0].ParentTaskId, should.BeEmpty)
 	})
 }
 

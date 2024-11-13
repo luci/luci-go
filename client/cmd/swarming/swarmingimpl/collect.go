@@ -293,7 +293,7 @@ func (cmd *collectImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.IntVar(&cmd.outputFetchConcurrency, "output-fetch-concurrency", 8, "Limits how many concurrent result fetches are allowed (to avoid OOMs). 0 is unlimited.")
 }
 
-func (cmd *collectImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *collectImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.timeout < 0 {
 		return errors.Reason("negative timeout is not allowed").Err()
 	}

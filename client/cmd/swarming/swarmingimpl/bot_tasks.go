@@ -66,7 +66,7 @@ func (cmd *botTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.Float64Var(&cmd.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }
 
-func (cmd *botTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *botTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.botID == "" {
 		return errors.Reason("non-empty -id required").Err()
 	}

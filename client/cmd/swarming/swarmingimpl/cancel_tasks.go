@@ -64,7 +64,7 @@ func (cmd *cancelTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.Var(luciflag.Time(&cmd.end), "end", "Only tasks earlier or equal to end will be cancelled. No effect if unset. e.g:2024-01-16T13:24:56Z")
 }
 
-func (cmd *cancelTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *cancelTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.limit < 1 {
 		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
 	}

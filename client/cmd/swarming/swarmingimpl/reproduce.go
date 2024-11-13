@@ -92,7 +92,7 @@ func (cmd *reproduceImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.resultsHost, "results-host", chromeinfra.ResultDBHost, "Hostname of the ResultDB service to use. e.g. 'results.api.cr.dev'.")
 }
 
-func (cmd *reproduceImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *reproduceImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	var err error
 	if cmd.work, err = filepath.Abs(cmd.work); err != nil {
 		return errors.Annotate(err, "failed to get absolute representation of work directory").Err()

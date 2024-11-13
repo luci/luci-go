@@ -249,7 +249,7 @@ func (cmd *triggerImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.realm, "realm", "", "Realm name for this task.")
 }
 
-func (cmd *triggerImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *triggerImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if len(cmd.dimensions) == 0 {
 		return errors.Reason("please specify at least one dimension via -dimension").Err()
 	}

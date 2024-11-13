@@ -54,7 +54,7 @@ func (cmd *cancelImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.killRunning, "kill-running", false, "Kill the task even if it's running.")
 }
 
-func (cmd *cancelImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *cancelImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	cmd.taskID = args[0]
 	return nil
 }

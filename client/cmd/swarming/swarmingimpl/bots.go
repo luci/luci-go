@@ -67,7 +67,7 @@ func (cmd *botsImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.botIDOnly, "bare", false, "Print bot IDs to stdout as a list.")
 }
 
-func (cmd *botsImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *botsImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.count && len(cmd.fields) > 0 {
 		return errors.Reason("-field cannot be used with -count").Err()
 	}

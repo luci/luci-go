@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"io"
+	"net/url"
 	"os"
 	"sync"
 
@@ -28,6 +29,8 @@ import (
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/clipb"
 	"go.chromium.org/luci/client/cmd/swarming/swarmingimpl/output"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/swarming/client/swarming"
 	swarmingv2 "go.chromium.org/luci/swarming/proto/api_v2"
@@ -66,7 +69,7 @@ func (cmd *spawnTasksImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&cmd.cancelExtraTasks, "cancel-extra-tasks", false, "Legacy option that does absolutely nothing.")
 }
 
-func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *spawnTasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.jsonInput == "" {
 		return errors.Reason("input JSON file is required, pass it via -json-input").Err()
 	}
@@ -77,7 +80,7 @@ func (cmd *spawnTasksImpl) ParseInputs(args []string, env subcommands.Env) error
 	}
 	defer tasksFile.Close()
 
-	cmd.requests, err = processTasksStream(tasksFile, env)
+	cmd.requests, err = processTasksStream(ctx, tasksFile, env, extra.ServerURL)
 	return err
 }
 
@@ -89,7 +92,23 @@ func (cmd *spawnTasksImpl) Execute(ctx context.Context, svc swarming.Client, sin
 	return output.Proto(sink, &clipb.SpawnTasksOutput{Tasks: results})
 }
 
-func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.NewTaskRequest, error) {
+// usingDefaultServer returns true if serverURL is the same server as
+// swarming.ServerEnvVar.
+func usingDefaultServer(env subcommands.Env, serverURL *url.URL) (bool, error) {
+	serverEnvVar := env[swarming.ServerEnvVar]
+	if !serverEnvVar.Exists {
+		return false, nil
+	}
+
+	envServerURL, err := lhttp.ParseHostURL(serverEnvVar.Value)
+	if err != nil {
+		return false, errors.Annotate(err, "parsing %s env var", swarming.ServerEnvVar).Err()
+	}
+
+	return envServerURL.String() == serverURL.String(), nil
+}
+
+func processTasksStream(ctx context.Context, tasks io.Reader, env subcommands.Env, serverURL *url.URL) ([]*swarmingv2.NewTaskRequest, error) {
 	blob, err := io.ReadAll(tasks)
 	if err != nil {
 		return nil, errors.Annotate(err, "reading tasks file").Err()
@@ -98,14 +117,33 @@ func processTasksStream(tasks io.Reader, env subcommands.Env) ([]*swarmingv2.New
 	if err := protojson.Unmarshal(blob, &requests); err != nil {
 		return nil, errors.Annotate(err, "decoding tasks file").Err()
 	}
+
+	// usingSameServer is true when running on Swarming and creating tasks for
+	// the current server.
+	usingSameServer, err := usingDefaultServer(env, serverURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// When sending a request to a different Swarming server, skip setting
+	// ParentTaskId, as the request will fail if ParentTaskId cannot be found on
+	// the server.
+	warnLogged := false
+	currentTaskID := env[swarming.TaskIDEnvVar].Value
+
 	// Populate the tasks with information about the current environment
 	// if they're not already set.
 	for _, ntr := range requests.Requests {
 		if ntr.User == "" {
 			ntr.User = env[swarming.UserEnvVar].Value
 		}
-		if ntr.ParentTaskId == "" {
-			ntr.ParentTaskId = env[swarming.TaskIDEnvVar].Value
+		if ntr.ParentTaskId == "" && currentTaskID != "" {
+			if usingSameServer {
+				ntr.ParentTaskId = currentTaskID
+			} else if !warnLogged {
+				logging.Warningf(ctx, "Request is using %s instead of this task's server, not setting parent task ID in requests.", serverURL)
+				warnLogged = true
+			}
 		}
 	}
 	return requests.Requests, nil

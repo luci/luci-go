@@ -57,7 +57,7 @@ func (cmd *terminateImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.StringVar(&cmd.reason, "reason", "", "A human defined reason given for terminating bot,")
 }
 
-func (cmd *terminateImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *terminateImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	cmd.botID = args[0]
 	return nil
 }

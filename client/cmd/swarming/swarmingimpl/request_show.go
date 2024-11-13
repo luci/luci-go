@@ -53,7 +53,7 @@ func (cmd *requestShowImpl) RegisterFlags(fs *flag.FlagSet) {
 	// Nothing.
 }
 
-func (cmd *requestShowImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *requestShowImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	cmd.taskID = args[0]
 	return nil
 }

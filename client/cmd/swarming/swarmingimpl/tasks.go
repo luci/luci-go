@@ -70,7 +70,7 @@ func (cmd *tasksImpl) RegisterFlags(fs *flag.FlagSet) {
 	fs.Float64Var(&cmd.start, "start", 0, "Start time (in seconds since the epoch) for counting tasks.")
 }
 
-func (cmd *tasksImpl) ParseInputs(args []string, env subcommands.Env) error {
+func (cmd *tasksImpl) ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra base.Extra) error {
 	if cmd.limit < 1 {
 		return errors.Reason("invalid -limit %d, must be positive", cmd.limit).Err()
 	}

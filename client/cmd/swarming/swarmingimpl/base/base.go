@@ -47,7 +47,7 @@ type Subcommand interface {
 	// RegisterFlags registers subcommand flags, if any.
 	RegisterFlags(fs *flag.FlagSet)
 	// ParseInputs extracts information from flags, CLI args and environ.
-	ParseInputs(args []string, env subcommands.Env) error
+	ParseInputs(ctx context.Context, args []string, env subcommands.Env, extra Extra) error
 	// Execute executes the subcommand.
 	Execute(ctx context.Context, svc swarming.Client, sink *output.Sink, extra Extra) error
 }
@@ -253,10 +253,6 @@ func (cr *CommandRun) Run(app subcommands.Application, args []string, env subcom
 		fmt.Fprintf(cr.stderr(), "%s: %s\n", app.GetName(), err)
 		return 1
 	}
-	if err := cr.impl.ParseInputs(args, env); err != nil {
-		fmt.Fprintf(cr.stderr(), "%s: %s\n", app.GetName(), err)
-		return 1
-	}
 
 	// Prepare the base context with configured logging.
 	ctx := cr.testingContext
@@ -281,6 +277,17 @@ func (cr *CommandRun) Run(app subcommands.Application, args []string, env subcom
 		logging.Warningf(ctx, "Canceled via Ctrl+C or SIGTERM!")
 		cancel()
 	})()
+
+	if err := cr.impl.ParseInputs(ctx, args, env, Extra{
+		AuthFlags:  cr.authFlags,
+		ServerURL:  cr.serverURL,
+		OutputJSON: cr.jsonOutput,
+		Stdout:     cr.stdout(),
+		Stderr:     cr.stderr(),
+	}); err != nil {
+		fmt.Fprintf(cr.stderr(), "%s: %s\n", app.GetName(), err)
+		return 1
+	}
 
 	// Execute the subcommand and store the output.
 	if err := cr.execute(ctx); err != nil {
