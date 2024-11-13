@@ -14,7 +14,11 @@
 
 import { Duration } from 'luxon';
 
-import { displayCompactDuration, displayDuration } from './time_utils';
+import {
+  displayCompactDuration,
+  displayDuration,
+  displayApproxDuartion,
+} from './time_utils';
 
 describe('displayDuration', () => {
   it('should display correct duration in days and hours', async () => {
@@ -87,4 +91,131 @@ describe('displayCompactDuration', () => {
     const duration = Duration.fromISO('-PT15S');
     expect(displayCompactDuration(duration)).toEqual(['0ms', 'ms']);
   });
+});
+
+describe('displayApproxDuartion', () => {
+  it('should return "N/A" for null duration', () => {
+    expect(displayApproxDuartion(null)).toBe('N/A');
+  });
+
+  it.each([
+    [Duration.fromObject({ seconds: 0 }), 'a few seconds'],
+    [Duration.fromObject({ seconds: 30 }), 'a few seconds'],
+    [Duration.fromObject({ seconds: 44 }), 'a few seconds'],
+  ])(
+    'should handle seconds less that 45 returning "a few seconds"',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ seconds: 45 }), 'a minute'],
+    [Duration.fromObject({ seconds: 60 }), 'a minute'],
+    [Duration.fromObject({ seconds: 89 }), 'a minute'],
+  ])(
+    'should return "a minute" for durations between 45 and 89 seconds',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ minutes: 1.8 }), '2 minutes'],
+    [Duration.fromObject({ minutes: 20 }), '20 minutes'],
+    [Duration.fromObject({ minutes: 44 }), '44 minutes'],
+  ])(
+    'should return "X minutes" for durations between 90 seconds and 44 minutes',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ minutes: 45 }), 'an hour'],
+    [Duration.fromObject({ minutes: 75 }), 'an hour'],
+    [Duration.fromObject({ minutes: 89 }), 'an hour'],
+  ])(
+    'should return "an hour" for durations between 45 and 89 minutes',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ hours: 1.8 }), '2 hours'],
+    [Duration.fromObject({ hours: 10 }), '10 hours'],
+    [Duration.fromObject({ hours: 21 }), '21 hours'],
+  ])(
+    'should return "X hours" for durations between 90 minutes and 21 hours',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ hours: 22 }), 'a day'],
+    [Duration.fromObject({ hours: 30 }), 'a day'],
+    [Duration.fromObject({ hours: 35 }), 'a day'],
+  ])(
+    'should return "a day" for durations between 22 and 35 hours',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ days: 1.8 }), '2 days'],
+    [Duration.fromObject({ days: 15 }), '15 days'],
+    [Duration.fromObject({ days: 25 }), '25 days'],
+  ])(
+    'should return "X days" for durations between 36 hours and 25 days',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ days: 26 }), 'a month'],
+    [Duration.fromObject({ days: 30 }), 'a month'],
+    [Duration.fromObject({ days: 45 }), 'a month'],
+  ])(
+    'should return "a month" for durations between 26 and 45 days',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ days: 46 }), '2 months'],
+    [Duration.fromObject({ days: 100 }), '3 months'],
+    [Duration.fromObject({ days: 304 }), '10 months'],
+  ])(
+    'should return "X months" for durations between 46 and 304 days',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ days: 305 }), 'a year'],
+    [Duration.fromObject({ days: 400 }), 'a year'],
+    [Duration.fromObject({ days: 547 }), 'a year'],
+  ])(
+    'should return "a year" for durations between 305 and 547 days',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [Duration.fromObject({ days: 548 }), '2 years'],
+    [Duration.fromObject({ days: 1000 }), '3 years'],
+    [Duration.fromObject({ days: 2200 }), '6 years'],
+  ])(
+    'should return "X years" for durations greater than 547 days',
+    (duration, expected) => {
+      expect(displayApproxDuartion(duration)).toBe(expected);
+    },
+  );
 });

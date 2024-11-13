@@ -117,6 +117,61 @@ export function displayCompactDuration(
   return [`${shifted.milliseconds.toFixed(0)}ms`, 'ms'];
 }
 
+/**
+ * Returns a representation of a duration relative to current time.
+ * This method only works with positive durations as it assumes that the event
+ * occured in the past.
+ *
+ * Negative durations will be treated as 0.
+ *
+ * The caller should add "ago" or another suitable term after the duration string.
+ */
+export function displayApproxDuartion(duration: Duration | null): string {
+  if (!duration) {
+    return 'N/A';
+  }
+
+  const durationMs = duration.toMillis();
+  if (durationMs < 0) {
+    duration = Duration.fromMillis(0);
+  }
+
+  const { seconds } = duration.shiftTo('seconds');
+  const { minutes } = duration.shiftTo('minutes');
+  const { hours } = duration.shiftTo('hours');
+  const { days } = duration.shiftTo('days');
+
+  if (seconds <= 44) {
+    return 'a few seconds';
+  } else if (seconds <= 89) {
+    return 'a minute';
+  }
+
+  if (minutes <= 44) {
+    return `${Math.round(minutes)} minutes`;
+  } else if (minutes <= 89) {
+    return 'an hour';
+  }
+
+  if (hours <= 21) {
+    return `${Math.round(hours)} hours`;
+  } else if (hours <= 35) {
+    return 'a day';
+  }
+
+  if (days <= 25) {
+    return `${Math.round(days)} days`;
+  } else if (days <= 45) {
+    return 'a month';
+  } else if (days <= 304) {
+    return `${Math.round(days / 30)} months`;
+  } else if (days <= 547) {
+    return 'a year';
+  } else {
+    return `${Math.round(days / 365)} years`;
+  }
+}
+
 /* eslint-disable max-len */
 /**
  * Parses the JSON encoding of google.protobuf.Duration (e.g. '4.5s').
