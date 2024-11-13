@@ -48,7 +48,7 @@ message Finding {
   // Optional suggested fixes for the finding.
   //
   // If multiple fixes are present, they should be ordered by preference.
-  repeated Fix fix = 7;
+  repeated Fix fixes = 7;
 }
 
 // Location describes a location in the source code.
@@ -79,22 +79,22 @@ message Location {
   message Range {
     // Start line of the range (1-based).
     //
-    // If not provided, the entire file is included in the range. The rest of
-    // the fields will be omitted.
+    // If unset, the range includes the entire file, and all the other fields
+    // are ignored.
     int32 start_line = 1;
     // Start column of the range (1-based).
     //
-    // Must provide start_line if provided. If not provided, the entire line is
-    // included in the range.
+    // If unset, the range includes the entire line specified by start_line.
     int32 start_column = 2;
     // End line of the range (1-based).
     //
-    // Must provide start_line if provided. If not provided, the range will only
-    // include the entire line specified by start_line.
+    // If unset, the range includes the entire line specified by start_line.
     int32 end_line = 3;
     // End column of the range (1-based).
-    // Must provide all other fields if provided. If not provided, the range
-    // include the entire line specified by end_line.
+    //
+    // Must be set if start_column is set.
+    // Ignored, if start_column or end_line is unset.
+    // If unset, the range includes the entire line specified by end_line.
     int32 end_column = 4;
   }
   Range range = 3;
@@ -111,5 +111,5 @@ message Fix {
   // Optional human-readable description of the fix.
   string description = 1;
   // Replacements to be applied to fix the finding.
-  repeated Replacement replacement = 2;
+  repeated Replacement replacements = 2;
 }
