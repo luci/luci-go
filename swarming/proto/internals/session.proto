@@ -1,0 +1,118 @@
+// Copyright 2024 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package swarming.internals.session;
+
+option go_package = "go.chromium.org/luci/swarming/proto/internals;internalspb";
+
+import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/swarming/proto/config/bots.proto";
+
+
+// SessionToken is an encoded and (optionally) encrypted Session proto.
+//
+// It is sent to the bot in response to "/handshake" and other bot API calls,
+// and the bot then sends it back with every request. This allows to
+// authenticate the bot session and to round-trip server-specific session state
+// through the bot without making bot know too much about it.
+//
+// In JSON it is encoded using standard base64 encoding with paddings (just like
+// any other `bytes` JSONPB field).
+//
+// Secret key IDs used for HMAC and AEAD are part of the server configuration
+// and not included in the token.
+message SessionToken {
+  // Unencrypted token with its integrity protected by a HMAC256.
+  //
+  // Will be used temporarily until the Python backend is gone (since doing AEAD
+  // from Python2 GAE is hard).
+  //
+  // session = proto_wirepb(Session{...})
+  // hmac_sha256 = hmac_sha256("swarming.Session" + session, secret_key).
+  message HmacTagged {
+    bytes session = 1;
+    bytes hmac_sha256 = 2;
+  }
+
+  // An encrypted and authenticate token.
+  //
+  // cipher_text = aead_encrypt(
+  //     plain_text=proto_wirepb(Session{...}),
+  //     additional_data="swarming.Session",
+  //     key=secret_key,
+  // )
+  message AeadEncrypted {
+    bytes cipher_text = 1;
+  }
+
+  oneof kind {
+    HmacTagged hmac_tagged = 1;
+    AeadEncrypted aead_encrypted = 2;
+  }
+}
+
+
+// Session is a payload of a SessionToken.
+//
+// It is used to authenticate the bot session and to round-trip some
+// server-specific state through the bot. This state is used by the server to
+// decide how to handle bot calls or when to restart the bot, etc.
+message Session {
+  // ID of the bot as reported in /handshake.
+  string bot_id = 1;
+  // The session ID as reported in /handshake.
+  string session_id = 2;
+  // Expiration time of this message. Refreshed on RPC calls.
+  google.protobuf.Timestamp expiry = 3;
+  // Information for logs and debugging.
+  DebugInfo debug_info = 4;
+  // The snapshot of server's bots.cfg the last time /poll was called.
+  BotConfig bot_config = 5;
+  // A hash of a config assigned to bot in /handshake to know when to restart.
+  bytes handshake_config_hash = 6;
+  // ID of the RBE's BotSession if there's an established RBE session.
+  string rbe_bot_session_id = 7;
+  // The monotonic timestamp of the last server config used with this bot.
+  google.protobuf.Timestamp last_seen_config = 8;
+}
+
+
+// BotConfig is a snapshot of the server's bots.cfg the last time /poll
+// was called.
+//
+// It is used to authenticate the bot while it runs a task. That way even if
+// the bot is removed from the server config, it still is able to finish its
+// current task (as long as BotConfig hasn't expired yet or the bot session
+// hasn't been closed on the server).
+//
+// Its fields are taken from swarming.config.BotGroup proto that matches
+// the bot. Only fields that are needed to finishing running a task are
+// included.
+message BotConfig {
+  // When this config should no longer be used.
+  google.protobuf.Timestamp expiry = 1;
+  // Information for logs and debugging.
+  DebugInfo debug_info = 2;
+  // Instructions on how to authenticate the bot.
+  swarming.config.BotAuth bot_auth = 3;
+  // A service account to use to authenticate calls to system-level services.
+  string system_service_account = 4;
+  // The cloud project id where the bot saves its logs.
+  string logs_cloud_project = 5;
+  // Full RBE instance name to use if this is an RBE bot.
+  string rbe_instance = 6;
+}
+
+
+// DebugInfo captures when and where a message was created, for logs.
+message DebugInfo {
+  // When this message was created.
+  google.protobuf.Timestamp created = 1;
+  // Version of the Swarming server that generated the message.
+  string swarming_version = 2;
+  // Trace ID of the request that generated the message.
+  string request_id = 3;
+}

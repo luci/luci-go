@@ -982,6 +982,7 @@ message BotInfo {
   // Encoded as json since it's an arbitrary dict.
   string state = 13;
   bool deleted = 14;
+  string session_id = 15;
 }
 
 // Wraps a list of BotInfo.
@@ -1032,6 +1033,8 @@ message BotEventResponse {
   string maintenance_msg = 10;
   // Affected by event_type == 'request_task', 'task_completed', 'task_error'.
   string task_id = 11;
+  // The bot session that reported this event.
+  string session_id = 12;
 }
 
 
