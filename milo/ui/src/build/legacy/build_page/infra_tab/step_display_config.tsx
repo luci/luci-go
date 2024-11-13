@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import '@/generic_libs/components/dot_spinner';
+
 import { MobxLitElement } from '@adobe/lit-mobx';
 import createCache from '@emotion/cache';
 import { CacheProvider, EmotionCache } from '@emotion/react';
@@ -31,7 +33,6 @@ import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { createRoot, Root } from 'react-dom/client';
 
-import '@/generic_libs/components/dot_spinner';
 import {
   consumeStore,
   StoreInstance,

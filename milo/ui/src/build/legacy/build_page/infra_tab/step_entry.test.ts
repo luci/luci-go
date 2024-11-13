@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './step_entry';
+
 import { aTimeout, fixture, html } from '@open-wc/testing-helpers';
 import { css, LitElement } from 'lit';
 import { customElement } from 'lit/decorators.js';
 
-import './step_entry';
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { StepDisplayConfig } from '../steps_tab/step_display_config';
-import { StepList } from '../steps_tab/step_list';
+import { StepDisplayConfig } from './step_display_config';
+import { StepList } from './step_list';
 
 export function StepsSection() {
   return (

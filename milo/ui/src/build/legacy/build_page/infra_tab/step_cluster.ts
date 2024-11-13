@@ -13,13 +13,15 @@
 // limitations under the License.
 
 import '@material/mwc-icon';
+
+import './step_entry';
+
 import { css, html, render } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { DateTime } from 'luxon';
 import { action, computed, makeObservable, observable, reaction } from 'mobx';
 
-import './step_entry';
 import checkCircleStacked from '@/common/assets/svgs/check_circle_stacked_24dp.svg';
 import {
   HideTooltipEventDetail,

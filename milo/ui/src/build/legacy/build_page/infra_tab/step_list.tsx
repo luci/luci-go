@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import '@material/mwc-button';
+
+import '@/generic_libs/components/dot_spinner';
+
+import './step_cluster';
+
 import { css, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
 import { makeObservable, observable } from 'mobx';
 
-import '@/generic_libs/components/dot_spinner';
-import './step_cluster';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { commonStyles } from '@/common/styles/stylesheets';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';

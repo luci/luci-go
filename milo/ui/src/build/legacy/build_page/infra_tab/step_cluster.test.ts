@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './step_cluster';
+
 import { fixture, html } from '@open-wc/testing-helpers';
 
 import { BuildbucketStatus } from '@/common/services/buildbucket';
 import { Store } from '@/common/store';
 import { StepExt } from '@/common/store/build_state';
 
-import './step_cluster';
 import { BuildPageStepClusterElement } from './step_cluster';
 
 function createStep(index: number, startTime: string, endTime: string) {
