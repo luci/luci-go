@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -44,12 +45,77 @@ import (
 	"go.chromium.org/luci/auth_service/internal/realmsinternals"
 )
 
-// The maximum number of AuthDB revisions to produce when permissions
-// change and realms need to be reevaluated.
-const maxReevaluationRevisions int = 10
+const (
+	// The maximum age of the AuthDB where it is considered fresh.
+	maxAuthDBAge = 24 * time.Hour
+
+	// The maximum number of AuthDB revisions to produce when permissions
+	// change and realms need to be reevaluated.
+	maxReevaluationRevisions int = 10
+)
 
 // Set of config paths for configs that affect the AuthDB.
 var authDBConfigPaths = stringset.NewFromSlice("ip_allowlist.cfg", "oauth.cfg", "security.cfg")
+
+//////////////// Handling of stale replicated AuthDB //////////////////////
+
+// ReplicatedAuthDBRefresher triggers AuthDB replication if it hasn't been done
+// recently, as defined by maxAuthDBAge.
+//
+// Called periodically as a cron job. If it detects that the last AuthDB
+// revision was produced awhile ago, bumps AuthDB revision number and
+// triggers replication (actual contents of AuthDB is not changed).
+//
+// This is important to make sure the AuthDB replication configuration doesn't
+// rot and that the exported AuthDB blob has a relatively fresh signature.
+func ReplicatedAuthDBRefresher(ctx context.Context) error {
+	replicationState, err := GetReplicationState(ctx)
+	if err != nil {
+		return errors.Annotate(err, "failed to get current replication state").Err()
+	}
+
+	age := clock.Now(ctx).UTC().Sub(replicationState.ModifiedTS)
+	if age < maxAuthDBAge {
+		logging.Infof(ctx, "replicated AuthDB is fresh: %s < %s",
+			age, maxAuthDBAge)
+		return nil
+	}
+
+	logging.Warningf(ctx, "refreshing replicated AuthDB: %s > %s",
+		age, maxAuthDBAge)
+
+	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		// Get current AuthDB state and increment the revision.
+		state, err := GetReplicationState(ctx)
+		if err != nil {
+			return err
+		}
+
+		if state.AuthDBRev != replicationState.AuthDBRev {
+			// Nothing to do - the AuthDB was updated while we were checking
+			// its age.
+			return nil
+		}
+
+		// Increment the AuthDB revision and update the modified timestamp.
+		state.AuthDBRev = state.AuthDBRev + 1
+		state.ModifiedTS = clock.Now(ctx).UTC()
+
+		// Commit the updated replication state.
+		if err := datastore.Put(ctx, state); err != nil {
+			return err
+		}
+
+		// Enqueue a task to replicate the updated AuthDB to clients.
+		return EnqueueReplicationTask(ctx, state.AuthDBRev)
+	}, nil)
+	if err != nil {
+		logging.Errorf(ctx, "failed to refresh stale AuthDB: %s", err)
+		return err
+	}
+
+	return nil
+}
 
 //////////////////// Handling of stale authorizations //////////////////////////
 

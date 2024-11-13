@@ -52,6 +52,8 @@ func main() {
 			model.RegisterReplicationHandler(dryRunReplication, useV1Perms)
 
 			// Register cron task handlers.
+			cron.RegisterHandler("refresh-replicated-authdb",
+				model.ReplicatedAuthDBRefresher)
 			cron.RegisterHandler("revoke-stale-authorization",
 				model.StaleAuthorizationCronHandler(dryRunCronStaleAuth))
 			cron.RegisterHandler("update-config",
