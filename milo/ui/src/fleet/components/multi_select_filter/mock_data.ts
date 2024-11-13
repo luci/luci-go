@@ -18,6 +18,7 @@ export const FILTER_OPTIONS: FilterOption[] = [
   {
     label: 'Option 1',
     value: 'val-1',
+    nameSpace: 'default-namespace',
     options: [
       { label: 'The first option', value: 'o11' },
       { label: 'The second option', value: 'o12' },
@@ -26,6 +27,7 @@ export const FILTER_OPTIONS: FilterOption[] = [
   {
     label: 'Option 2',
     value: 'val-2',
+    nameSpace: 'default-namespace',
     options: [
       { label: 'The first option', value: 'o21' },
       { label: 'The second option', value: 'o22' },
@@ -34,6 +36,7 @@ export const FILTER_OPTIONS: FilterOption[] = [
   {
     label: 'Option 3',
     value: 'val-3',
+    nameSpace: 'default-namespace',
     options: [
       { label: 'The first option', value: 'o31' },
       { label: 'The second option', value: 'o32' },
@@ -42,6 +45,7 @@ export const FILTER_OPTIONS: FilterOption[] = [
   {
     label: 'Option 4',
     value: 'val-4',
+    nameSpace: 'default-namespace',
     options: [
       { label: 'The first option', value: 'o41' },
       { label: 'The second option', value: 'o42' },

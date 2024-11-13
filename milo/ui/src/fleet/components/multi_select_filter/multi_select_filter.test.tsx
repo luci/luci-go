@@ -90,7 +90,9 @@ describe('<MultiSelectFilter />', () => {
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'val-1': { o11: true },
+      'default-namespace': {
+        'val-1': ['o11'],
+      },
     });
     await act(() => jest.runAllTimersAsync());
 
@@ -105,7 +107,9 @@ describe('<MultiSelectFilter />', () => {
       ),
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'val-1': { o11: true, o12: true },
+      'default-namespace': {
+        'val-1': ['o11', 'o12'],
+      },
     });
     await act(() => jest.runAllTimersAsync());
 
@@ -119,8 +123,10 @@ describe('<MultiSelectFilter />', () => {
       screen.queryByText('1 | [ Option 2 ]: The second option'),
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'val-1': { o11: true, o12: true },
-      'val-2': { o22: true },
+      'default-namespace': {
+        'val-1': ['o11', 'o12'],
+        'val-2': ['o22'],
+      },
     });
   });
 
@@ -134,6 +140,11 @@ describe('<MultiSelectFilter />', () => {
     expect(mockSelectedOptions).not.toHaveBeenLastCalledWith({
       'val-1': { o11: true },
     });
+    expect(mockSelectedOptions).not.toHaveBeenLastCalledWith({
+      'default-namespace': {
+        'val-1': ['o11'],
+      },
+    });
   });
 
   it('should remove a filter when clicking on the x', () => {
@@ -144,14 +155,20 @@ describe('<MultiSelectFilter />', () => {
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'val-1': { o11: true },
+      'default-namespace': {
+        'val-1': ['o11'],
+      },
     });
 
     fireEvent.click(screen.getByTestId('CancelIcon'));
     expect(
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).not.toBeInTheDocument();
-    expect(mockSelectedOptions).toHaveBeenLastCalledWith({ 'val-1': {} });
+    expect(mockSelectedOptions).toHaveBeenLastCalledWith({
+      'default-namespace': {
+        'val-1': [],
+      },
+    });
   });
 
   it('should work with a keyboard', async () => {
@@ -191,7 +208,9 @@ describe('<MultiSelectFilter />', () => {
       screen.queryByText('1 | [ Option 1 ]: The second option'),
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'val-1': { o11: false, o12: true },
+      'default-namespace': {
+        'val-1': ['o12'],
+      },
     });
   });
 });

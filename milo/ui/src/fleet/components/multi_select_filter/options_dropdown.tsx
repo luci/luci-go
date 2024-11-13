@@ -39,14 +39,22 @@ export function OptionsDropdown({
   const [tempSelectedOptions, setTempSelectedOptions] =
     useState(selectedOptions);
 
-  const flipOption = (o2Value: string) =>
+  const flipOption = (o2Value: string) => {
+    const currentValues =
+      tempSelectedOptions[option.nameSpace]?.[option.value] ?? [];
+
+    const newValues = currentValues.includes(o2Value)
+      ? currentValues.filter((v) => v !== o2Value)
+      : currentValues.concat(o2Value);
+
     setTempSelectedOptions({
-      ...tempSelectedOptions,
-      [option.value]: {
-        ...(tempSelectedOptions[option.value] ?? {}),
-        [o2Value]: !tempSelectedOptions[option.value]?.[o2Value],
+      ...(tempSelectedOptions ?? {}),
+      [option.nameSpace]: {
+        ...tempSelectedOptions[option.nameSpace],
+        [option.value]: newValues,
       },
     });
+  };
 
   const resetTempOptions = () => setTempSelectedOptions(selectedOptions);
   const confirmTempOptions = () => {
@@ -106,7 +114,13 @@ export function OptionsDropdown({
             }}
           >
             <Checkbox
-              checked={!!tempSelectedOptions[option.value]?.[o2.value]}
+              inputProps={{ 'aria-label': 'controlled' }}
+              checked={
+                !!tempSelectedOptions[option.nameSpace]?.[
+                  option.value
+                ]?.includes(o2.value)
+              }
+              tabIndex={-1}
             />
             <Typography variant="body2">{o2.label}</Typography>
           </button>
@@ -132,7 +146,6 @@ export function OptionsDropdown({
           Confirm
         </Button>
       </div>
-      {/* Add apply/cancel buttons */}
     </Menu>
   );
 }

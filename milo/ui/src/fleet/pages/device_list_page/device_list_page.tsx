@@ -21,11 +21,24 @@ import { PageMeta } from '@/common/components/page_meta';
 import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import { FILTER_OPTIONS } from '@/fleet/components/multi_select_filter/mock_data';
+import {
+  filtersUpdater,
+  getFilters,
+} from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { SelectedFilters } from '@/fleet/components/multi_select_filter/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 export const DeviceListPage = () => {
-  const [selectedOptions, setSelectedOptions] = useState<SelectedFilters>({});
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const [selectedOptions, setSelectedOptions] = useState<SelectedFilters>(
+    getFilters(searchParams),
+  );
+  useEffect(() => {
+    setSearchParams(filtersUpdater(selectedOptions));
+  }, [selectedOptions, setSearchParams]);
+
   return (
     <>
       <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
