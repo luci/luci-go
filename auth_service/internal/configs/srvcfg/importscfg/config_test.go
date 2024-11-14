@@ -30,32 +30,6 @@ import (
 func TestConfigContext(t *testing.T) {
 	t.Parallel()
 	importsCfg := &configspb.GroupImporterConfig{
-		Tarball: []*configspb.GroupImporterConfig_TarballEntry{
-			{
-				Url: "some-url",
-				OauthScopes: []string{
-					"example-oauth",
-				},
-				Domain: "example.com",
-				Systems: []string{
-					"groups",
-				},
-				Groups: []string{
-					"committers",
-					"testers",
-				},
-			},
-		},
-		Plainlist: []*configspb.GroupImporterConfig_PlainlistEntry{
-			{
-				Url: "plainlistexampleurl",
-				OauthScopes: []string{
-					"example-oauth-scope",
-				},
-				Domain: "example.com",
-				Group:  "plain-group/example",
-			},
-		},
 		TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
 			{
 				Name: "example-tarball.tz",

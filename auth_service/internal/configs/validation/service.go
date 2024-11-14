@@ -147,29 +147,12 @@ func validateSecurityCfg(ctx *validation.Context, configSet, path string, conten
 func validateImportsCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	ctx.SetFile(path)
 	cfg := configspb.GroupImporterConfig{}
-	urlErr := errors.New("url field required")
 	ctx.Enter("validating imports.cfg")
 	defer ctx.Exit()
 
 	if err := prototext.Unmarshal(content, &cfg); err != nil {
 		ctx.Error(err)
 	}
-
-	ctx.Enter("checking tarball URLs...")
-	for _, tb := range cfg.GetTarball() {
-		if tb.Url == "" {
-			ctx.Error(urlErr)
-		}
-	}
-	ctx.Exit()
-
-	ctx.Enter("checking plainlist URLs...")
-	for _, pl := range cfg.GetPlainlist() {
-		if pl.Url == "" {
-			ctx.Error(urlErr)
-		}
-	}
-	ctx.Exit()
 
 	ctx.Enter("validating tarball_upload names...")
 	tarballUploadNames := make(map[string]bool)
@@ -201,31 +184,11 @@ func validateImportsCfg(ctx *validation.Context, configSet, path string, content
 	ctx.Enter("validating systems")
 	seenSystems := make(map[string]bool)
 	seenSystems["external"] = true
-	for _, entry := range cfg.GetTarball() {
-		title := fmt.Sprintf(`"tarball" entry with URL %q`, entry.GetUrl())
-		if err := validateSystems(entry.GetSystems(), seenSystems, title); err != nil {
-			ctx.Error(err)
-		}
-	}
 	for _, entry := range cfg.GetTarballUpload() {
 		title := fmt.Sprintf(`"tarball_upload" entry with name %q`, entry.GetName())
 		if err := validateSystems(entry.GetSystems(), seenSystems, title); err != nil {
 			ctx.Error(err)
 		}
-	}
-	ctx.Exit()
-
-	ctx.Enter("validating plainlist groups")
-	seenGroups := make(map[string]bool)
-	for _, entry := range cfg.GetPlainlist() {
-		group := entry.GetGroup()
-		if group == "" {
-			ctx.Errorf(`"plainlist" entry %q needs a "group" field`, entry.GetUrl())
-		}
-		if seenGroups[group] {
-			ctx.Errorf(`the group %q is imported twice`, group)
-		}
-		seenGroups[group] = true
 	}
 	ctx.Exit()
 

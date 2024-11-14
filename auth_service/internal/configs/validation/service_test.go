@@ -351,28 +351,6 @@ func TestImportsConfigValidation(t *testing.T) {
 		})
 
 		t.Run("load config bad config structure", func(t *ftt.Test) {
-			t.Run("no urls", func(t *ftt.Test) {
-				t.Run("url field required in tarball entry", func(t *ftt.Test) {
-					content := []byte(`
-						tarball {
-							systems: "s1"
-						}
-					`)
-					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("url field required"))
-				})
-
-				t.Run("url field required in plainlist entry", func(t *ftt.Test) {
-					content := []byte(`
-						plainlist {
-							group: "test-group"
-						}
-					`)
-					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("url field required"))
-				})
-			})
-
 			t.Run("tarball_upload entry \"ball\" is specified twice", func(t *ftt.Test) {
 				content := []byte(`
 					tarball_upload {
@@ -416,16 +394,6 @@ func TestImportsConfigValidation(t *testing.T) {
 			})
 
 			t.Run("bad systems", func(t *ftt.Test) {
-				t.Run("tarball entry with URL \"https//example.com/tarball\" needs systems field", func(t *ftt.Test) {
-					content := []byte(`
-						tarball {
-							url: "http://example.com/tarball"
-						}
-					`)
-					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("needs a \"systems\" field"))
-				})
-
 				t.Run("tarball_upload entry with name \"ball\" needs systems field", func(t *ftt.Test) {
 					content := []byte(`
 						tarball_upload {
@@ -439,18 +407,6 @@ func TestImportsConfigValidation(t *testing.T) {
 
 				t.Run("\"tarball_upload\" entry with name \"conflicting\" specifies duplicated system(s)", func(t *ftt.Test) {
 					content := []byte(`
-						tarball {
-							url: "http://example.com/tarball1"
-							systems: "s1"
-							systems: "s2"
-						}
-
-						tarball {
-							url: "http://example.com/tarball2"
-							systems: "s3"
-							systems: "s4"
-						}
-
 						tarball_upload {
 							name: "tarball3"
 							authorized_uploader: "abc@example.com"
@@ -469,34 +425,7 @@ func TestImportsConfigValidation(t *testing.T) {
 						}
 					  `)
 					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("\"conflicting\" is specifying a duplicated system(s): [external s1 s3 s5]"))
-				})
-			})
-
-			t.Run("bad plainlists", func(t *ftt.Test) {
-				t.Run("\"plainlist\" entry \"http://example.com/plainlist\" needs a \"group\" field", func(t *ftt.Test) {
-					content := []byte(`
-						plainlist {
-							url: "http://example.com/plainlist"
-						}
-					`)
-					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("entry \"http://example.com/plainlist\" needs a \"group\" field"))
-				})
-
-				t.Run("group \"gr\" is imported twice", func(t *ftt.Test) {
-					content := []byte(`
-						plainlist {
-							url: "http://example.com/plainlist1"
-							group: "gr"
-						}
-						plainlist {
-							url: "http://example.com/plainlist2"
-							group: "gr"
-						}
-					`)
-					assert.Loosely(t, validateImportsCfg(vctx, configSet, path, content), should.BeNil)
-					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("the group \"gr\" is imported twice"))
+					assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("\"conflicting\" is specifying a duplicated system(s): [external s5]"))
 				})
 			})
 		})
@@ -508,16 +437,6 @@ func TestImportsConfigValidation(t *testing.T) {
 					name: "should be ignored"
 					authorized_uploader: "example-service-account@example.com"
 					systems: "zzz"
-				}
-				tarball {
-					url: "https://fake_tarball"
-					groups: "ldap/new"
-					oauth_scopes: "scope"
-					systems: "ldap"
-				}
-				plainlist {
-					url: "example.com"
-					group: "test-group"
 				}
 			`)
 			assert.Loosely(t, validateImportsCfg(vctx, configSet, path, okCfg), should.BeNil)
