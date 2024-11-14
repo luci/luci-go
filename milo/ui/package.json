@@ -14,12 +14,12 @@
     "dev": "vite",
     "preview": "vite preview",
     "gen-utils": "rollup -c rollup.utils.config.mjs",
-    "gen-proto": "sh ./scripts/gen_proto.sh",
+    "gen-proto": "./scripts/gen_proto.sh",
     "postinstall": "patch-package",
     "type-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint -c .eslintrc.cjs ./",
     "test": "jest",
-    "e2e": "bash ./scripts/run_e2e.sh"
+    "e2e": "./scripts/run_e2e.sh"
   },
   "dependencies": {
     "@adobe/lit-mobx": "^2.2.2",

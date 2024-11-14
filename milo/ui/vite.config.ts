@@ -52,6 +52,10 @@ export default defineConfig(({ mode }) => {
     ),
   };
 
+  // Allow customizing the output directory so we can target another build when
+  // running integration tests in a builder.
+  const baseOutDir = env['VITE_LOCAL_BASE_OUT_DIR'] ?? 'dist';
+
   const virtualSettingsJs = getVirtualSettingsJsPlugin(mode, env);
   const virtualUiVersionJs = getVirtualUiVersionJsPlugin(mode, env);
   const overrideMiloHost = overrideMiloHostPlugin(env);
@@ -82,7 +86,7 @@ export default defineConfig(({ mode }) => {
       // served at `/ui/` or `/ui/immutable/`.
       // As a result, we need to output Vite generated assets to `dist/ui` and
       // split the `root_sw.js` generation to a separate built step.
-      outDir: 'dist/ui',
+      outDir: path.join(baseOutDir, '/ui'),
       assetsDir: 'immutable',
       sourcemap: true,
       rollupOptions: {
@@ -118,7 +122,7 @@ export default defineConfig(({ mode }) => {
       preloadModulesPlugin(),
       localAuthPlugin(),
       devServer(env),
-      previewServer(path.join(__dirname, 'dist'), env),
+      previewServer(path.join(__dirname, baseOutDir), env),
       react({
         babel: {
           configFile: true,
