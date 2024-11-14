@@ -22,6 +22,7 @@ import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { OutputBuild } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { getBuildURLPathFromBuildData } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { GetBuildRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 export function BuildPageShortLink() {
@@ -96,12 +97,14 @@ export function BuildPageShortLink() {
 
 export function Component() {
   return (
-    <RecoverableErrorBoundary
-      // See the documentation in `<LoginPage />` to learn why we handle error
-      // this way.
-      key="build-short-link"
-    >
-      <BuildPageShortLink />
-    </RecoverableErrorBoundary>
+    <TrackLeafRoutePageView contentGroup="build-short-link">
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle error
+        // this way.
+        key="build-short-link"
+      >
+        <BuildPageShortLink />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }
