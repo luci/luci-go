@@ -106,7 +106,13 @@ func ReplicatedAuthDBRefresher(ctx context.Context) error {
 			return err
 		}
 
-		// Enqueue a task to replicate the updated AuthDB to clients.
+		// Enqueue two backend tasks:
+		// - one to generate the changelog (which should be empty but now this
+		//   revision will have a record its changes were processed); and
+		// - one to replicate the updated AuthDB to clients.
+		if err := EnqueueProcessChangeTask(ctx, state.AuthDBRev); err != nil {
+			return err
+		}
 		return EnqueueReplicationTask(ctx, state.AuthDBRev)
 	}, nil)
 	if err != nil {
