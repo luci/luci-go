@@ -120,6 +120,26 @@ func TestGenerateToken(t *testing.T) {
 	})
 }
 
+func TestTagVerify(t *testing.T) {
+	t.Parallel()
+
+	s1 := NewStaticSecret(secrets.Secret{Active: []byte("secret")})
+
+	tag := s1.Tag([]byte("pfx"), []byte("body"))
+	assert.That(t, s1.Verify([]byte("pfx"), []byte("body"), tag), should.BeTrue)
+	assert.That(t, s1.Verify([]byte("pfx2"), []byte("body"), tag), should.BeFalse)
+	assert.That(t, s1.Verify([]byte("pfx"), []byte("body2"), tag), should.BeFalse)
+
+	s2 := NewStaticSecret(secrets.Secret{
+		Active: []byte("newer-secret"),
+		Passive: [][]byte{
+			[]byte("ignored"),
+			[]byte("secret"),
+		},
+	})
+	assert.That(t, s2.Verify([]byte("pfx"), []byte("body"), tag), should.BeTrue)
+}
+
 func genPollToken(state *internalspb.PollState, typ internalspb.TaggedMessage_PayloadType, secret []byte) []byte {
 	payload, err := proto.Marshal(state)
 	if err != nil {

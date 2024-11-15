@@ -97,12 +97,12 @@ message BotConfig {
   // Information for logs and debugging.
   DebugInfo debug_info = 2;
   // Instructions on how to authenticate the bot.
-  swarming.config.BotAuth bot_auth = 3;
+  repeated swarming.config.BotAuth bot_auth = 3;
   // A service account to use to authenticate calls to system-level services.
   string system_service_account = 4;
   // The cloud project id where the bot saves its logs.
   string logs_cloud_project = 5;
-  // Full RBE instance name to use if this is an RBE bot.
+  // The RBE instance to establish an RBE session at.
   string rbe_instance = 6;
 }
 

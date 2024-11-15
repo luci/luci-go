@@ -68,8 +68,33 @@ func NewStaticSecret(secret secrets.Secret) *Secret {
 	return s
 }
 
+// Tag generates a HMAC-SHA256 tag of `pfx+body`.
+func (s *Secret) Tag(pfx, body []byte) []byte {
+	secret := s.hmacSecret.Load().(secrets.Secret).Active
+	mac := hmac.New(sha256.New, secret)
+	_, _ = mac.Write(pfx)
+	_, _ = mac.Write(body)
+	return mac.Sum(nil)
+}
+
+// Verify checks the given tag matches the expected one for given `pfx+body`.
+func (s *Secret) Verify(pfx, body, tag []byte) bool {
+	secret := s.hmacSecret.Load().(secrets.Secret)
+	for _, key := range secret.Blobs() {
+		mac := hmac.New(sha256.New, key)
+		_, _ = mac.Write(pfx)
+		_, _ = mac.Write(body)
+		if hmac.Equal(mac.Sum(nil), tag) {
+			return true
+		}
+	}
+	return false
+}
+
 // ValidateToken deserializes a TaggedMessage, checks the HMAC and deserializes
 // the payload into `msg`.
+//
+// TODO: To be deleted once poll tokens are gone.
 func (s *Secret) ValidateToken(tok []byte, msg proto.Message) error {
 	// Deserialize the envelope.
 	var envelope internalspb.TaggedMessage
@@ -81,20 +106,9 @@ func (s *Secret) ValidateToken(tok []byte, msg proto.Message) error {
 	}
 
 	// Verify the HMAC. It must be produced using any of the secret versions.
-	valid := false
-	secret := s.hmacSecret.Load().(secrets.Secret)
-	for _, key := range secret.Blobs() {
-		// See rbe_pb2.TaggedMessage.
-		mac := hmac.New(sha256.New, key)
-		_, _ = fmt.Fprintf(mac, "%d\n", envelope.PayloadType)
-		_, _ = mac.Write(envelope.Payload)
-		expected := mac.Sum(nil)
-		if hmac.Equal(expected, envelope.HmacSha256) {
-			valid = true
-			break
-		}
-	}
-	if !valid {
+	// See rbe_pb2.TaggedMessage.
+	cryptoCtx := fmt.Sprintf("%d\n", envelope.PayloadType)
+	if !s.Verify([]byte(cryptoCtx), envelope.Payload, envelope.HmacSha256) {
 		return errors.Reason("bad token HMAC").Err()
 	}
 
@@ -108,6 +122,8 @@ func (s *Secret) ValidateToken(tok []byte, msg proto.Message) error {
 // GenerateToken wraps `msg` into a serialized TaggedMessage.
 //
 // The produced token can be validated and deserialized with validateToken.
+//
+// TODO: To be deleted once poll tokens are gone.
 func (s *Secret) GenerateToken(msg proto.Message) ([]byte, error) {
 	payload, err := proto.Marshal(msg)
 	if err != nil {
@@ -121,11 +137,8 @@ func (s *Secret) GenerateToken(msg proto.Message) ([]byte, error) {
 	}
 
 	// See rbe_pb2.TaggedMessage.
-	secret := s.hmacSecret.Load().(secrets.Secret).Active
-	mac := hmac.New(sha256.New, secret)
-	_, _ = fmt.Fprintf(mac, "%d\n", envelope.PayloadType)
-	_, _ = mac.Write(envelope.Payload)
-	envelope.HmacSha256 = mac.Sum(nil)
+	cryptoCtx := fmt.Sprintf("%d\n", envelope.PayloadType)
+	envelope.HmacSha256 = s.Tag([]byte(cryptoCtx), envelope.Payload)
 
 	token, err := proto.Marshal(&envelope)
 	if err != nil {
