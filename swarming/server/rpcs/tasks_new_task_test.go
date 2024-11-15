@@ -29,10 +29,22 @@ import (
 
 func simpliestValidRequest() *apipb.NewTaskRequest {
 	return &apipb.NewTaskRequest{
-		Name: "new",
+		Name:     "new",
+		Priority: 40,
 		TaskSlices: []*apipb.TaskSlice{
 			{
-				Properties:     &apipb.TaskProperties{},
+				Properties: &apipb.TaskProperties{
+					GracePeriodSecs:      60,
+					ExecutionTimeoutSecs: 300,
+					IoTimeoutSecs:        300,
+					Command:              []string{"command", "arg"},
+					Dimensions: []*apipb.StringPair{
+						{
+							Key:   "pool",
+							Value: "pool",
+						},
+					},
+				},
 				ExpirationSecs: 300,
 			},
 		},
@@ -194,16 +206,37 @@ func TestValidateNewTask(t *testing.T) {
 
 				t.Run("unmatch", func(t *ftt.Test) {
 					req := &apipb.NewTaskRequest{
-						Name: "new",
+						Name:     "new",
+						Priority: 40,
 						TaskSlices: []*apipb.TaskSlice{
 							{
 								Properties: &apipb.TaskProperties{
+									GracePeriodSecs:      60,
+									ExecutionTimeoutSecs: 300,
+									IoTimeoutSecs:        300,
+									Command:              []string{"command", "arg"},
+									Dimensions: []*apipb.StringPair{
+										{
+											Key:   "pool",
+											Value: "pool",
+										},
+									},
 									SecretBytes: []byte("this is a secret"),
 								},
 								ExpirationSecs: 300,
 							},
 							{
 								Properties: &apipb.TaskProperties{
+									GracePeriodSecs:      60,
+									ExecutionTimeoutSecs: 300,
+									IoTimeoutSecs:        300,
+									Command:              []string{"command", "arg"},
+									Dimensions: []*apipb.StringPair{
+										{
+											Key:   "pool",
+											Value: "pool",
+										},
+									},
 									SecretBytes: []byte("this is another secret"),
 								},
 								ExpirationSecs: 300,
@@ -244,6 +277,264 @@ func TestValidateNewTask(t *testing.T) {
 					assert.Loosely(t, err, should.ErrLike("must be between"))
 				})
 			})
+
+			t.Run("task_properties", func(t *ftt.Test) {
+				t.Run("nil", func(t *ftt.Test) {
+					req := &apipb.NewTaskRequest{
+						Name: "new",
+						TaskSlices: []*apipb.TaskSlice{
+							{
+								ExpirationSecs: 600,
+							},
+						},
+					}
+					err := validateNewTask(ctx, req)
+					assert.Loosely(t, err, should.ErrLike("invalid properties of slice 0: required"))
+				})
+				t.Run("grace_period_secs", func(t *ftt.Test) {
+					t.Run("too_short", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.GracePeriodSecs = 10
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("must be between"))
+					})
+					t.Run("too_long", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.GracePeriodSecs = maxGracePeriodSecs + 1
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("must be between"))
+					})
+				})
+
+				t.Run("command", func(t *ftt.Test) {
+					t.Run("empty", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.Command = []string{}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("command: required"))
+					})
+					t.Run("too_many_args", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						for i := 0; i < maxCmdArgs+1; i++ {
+							req.TaskSlices[0].Properties.Command = append(req.TaskSlices[0].Properties.Command, "arg")
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("can have up to 128 arguments"))
+					})
+				})
+
+				t.Run("env", func(t *ftt.Test) {
+					t.Run("too_many_keys", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						envItem := &apipb.StringPair{
+							Key:   "key",
+							Value: "value",
+						}
+						for i := 0; i < maxEnvKeyCount+1; i++ {
+							req.TaskSlices[0].Properties.Env = append(req.TaskSlices[0].Properties.Env, envItem)
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("can have up to 64 keys"))
+					})
+
+					t.Run("duplicate_keys", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+							{
+								Key:   "key",
+								Value: "value",
+							},
+							{
+								Key:   "key",
+								Value: "value",
+							},
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("same key cannot be specified twice"))
+					})
+
+					t.Run("key", func(t *ftt.Test) {
+						t.Run("empty", func(t *ftt.Test) {
+							req := simpliestValidRequest()
+							req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+								{
+									Value: "value",
+								},
+							}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("key is required"))
+						})
+
+						t.Run("too_long", func(t *ftt.Test) {
+							t.Run("empty", func(t *ftt.Test) {
+								req := simpliestValidRequest()
+								req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+									{
+										Key:   strings.Repeat("a", maxEnvKeyLength+1),
+										Value: "value",
+									},
+								}
+								err := validateNewTask(ctx, req)
+								assert.Loosely(t, err, should.ErrLike("too long"))
+							})
+						})
+
+						t.Run("invalid", func(t *ftt.Test) {
+							t.Run("empty", func(t *ftt.Test) {
+								req := simpliestValidRequest()
+								req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+									{
+										Key:   "1",
+										Value: "value",
+									},
+								}
+								err := validateNewTask(ctx, req)
+								assert.Loosely(t, err, should.ErrLike("should match"))
+							})
+						})
+					})
+
+					t.Run("value_too_long", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+							{
+								Key:   "key",
+								Value: strings.Repeat("a", maxEnvValueLength+1),
+							},
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("too long"))
+					})
+				})
+
+				t.Run("env_prefixes", func(t *ftt.Test) {
+					t.Run("too_many_keys", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						epItem := &apipb.StringListPair{
+							Key: "key",
+							Value: []string{
+								"value",
+							},
+						}
+						for i := 0; i < maxEnvKeyCount+1; i++ {
+							req.TaskSlices[0].Properties.EnvPrefixes = append(req.TaskSlices[0].Properties.EnvPrefixes, epItem)
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("can have up to 64 keys"))
+					})
+
+					t.Run("duplicate_keys", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						req.TaskSlices[0].Properties.EnvPrefixes = []*apipb.StringListPair{
+							{
+								Key:   "key",
+								Value: []string{"value"},
+							},
+							{
+								Key:   "key",
+								Value: []string{"value"},
+							},
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("same key cannot be specified twice"))
+					})
+
+					t.Run("value", func(t *ftt.Test) {
+						t.Run("empty", func(t *ftt.Test) {
+							req := simpliestValidRequest()
+							req.TaskSlices[0].Properties.EnvPrefixes = []*apipb.StringListPair{
+								{
+									Key: "key",
+								},
+							}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("value is required"))
+						})
+						t.Run("with_invalid_path", func(t *ftt.Test) {
+							cases := []struct {
+								name string
+								path string
+								err  any
+							}{
+								{"empty", "", "cannot be empty"},
+								{"too_long", strings.Repeat("a", maxEnvValueLength+1), "too long"},
+								{"with_double_backslashes", "a\\b", `cannot contain "\\".`},
+								{"with_leading_slash", "/a/b", `cannot start with "/"`},
+								{"not_normalized_dot", "./a/b", "is not normalized"},
+								{"not_normalized_double_dots", "a/../b", "is not normalized"},
+							}
+							for _, cs := range cases {
+								t.Run(cs.name, func(t *ftt.Test) {
+									req := simpliestValidRequest()
+									req.TaskSlices[0].Properties.EnvPrefixes = []*apipb.StringListPair{
+										{
+											Key: "key",
+											Value: []string{
+												cs.path,
+											},
+										},
+									}
+									err := validateNewTask(ctx, req)
+									assert.Loosely(t, err, should.ErrLike(cs.err))
+								})
+							}
+						})
+					})
+				})
+
+				t.Run("cas_input_root", func(t *ftt.Test) {
+					t.Run("cas_instance", func(t *ftt.Test) {
+						t.Run("empty", func(t *ftt.Test) {
+							req := simpliestValidRequest()
+							req.TaskSlices[0].Properties.CasInputRoot = &apipb.CASReference{}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("cas_instance is required"))
+						})
+						t.Run("invalid", func(t *ftt.Test) {
+							req := simpliestValidRequest()
+							req.TaskSlices[0].Properties.CasInputRoot = &apipb.CASReference{
+								CasInstance: "invalid",
+							}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("should match"))
+						})
+					})
+					t.Run("digest", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						casInputRoot := &apipb.CASReference{
+							CasInstance: "projects/project/instances/instance",
+						}
+						req.TaskSlices[0].Properties.CasInputRoot = casInputRoot
+						t.Run("empty", func(t *ftt.Test) {
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("digest: required"))
+						})
+						t.Run("empty_hash", func(t *ftt.Test) {
+							casInputRoot.Digest = &apipb.Digest{}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("hash is required"))
+						})
+						t.Run("zero_size", func(t *ftt.Test) {
+							casInputRoot.Digest = &apipb.Digest{
+								Hash: "hash",
+							}
+							err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike("size_bytes is required"))
+						})
+					})
+				})
+
+				t.Run("outputs", func(t *ftt.Test) {
+					t.Run("too_many", func(t *ftt.Test) {
+						req := simpliestValidRequest()
+						for i := 0; i < maxOutputCount+1; i++ {
+							req.TaskSlices[0].Properties.Outputs = append(req.TaskSlices[0].Properties.Outputs, "output")
+						}
+						err := validateNewTask(ctx, req)
+						assert.Loosely(t, err, should.ErrLike("can have up to 512 outputs"))
+					})
+				})
+			})
 		})
 
 		t.Run("OK", func(t *ftt.Test) {
@@ -254,6 +545,30 @@ func TestValidateNewTask(t *testing.T) {
 			})
 
 			t.Run("with_all_fields", func(t *ftt.Test) {
+				slice := func(secretBytes []byte) *apipb.TaskSlice {
+					s := &apipb.TaskSlice{
+						Properties: &apipb.TaskProperties{
+							GracePeriodSecs:      60,
+							ExecutionTimeoutSecs: 300,
+							IoTimeoutSecs:        300,
+							Command:              []string{"command", "arg"},
+							Dimensions: []*apipb.StringPair{
+								{
+									Key:   "pool",
+									Value: "pool",
+								},
+							},
+						},
+						ExpirationSecs: 300,
+					}
+
+					if len(secretBytes) > 0 {
+						s.Properties.SecretBytes = secretBytes
+					}
+
+					return s
+				}
+
 				req := &apipb.NewTaskRequest{
 					Name:                 "new",
 					ParentTaskId:         "60b2ed0a43023111",
@@ -268,35 +583,8 @@ func TestValidateNewTask(t *testing.T) {
 						"k2:v2",
 					},
 					TaskSlices: []*apipb.TaskSlice{
-						{
-							Properties: &apipb.TaskProperties{
-								SecretBytes: []byte("this is a secret"),
-							},
-							ExpirationSecs: 300,
-						},
-						{
-							Properties: &apipb.TaskProperties{
-								Env: []*apipb.StringPair{
-									{
-										Key:   "k",
-										Value: "v1",
-									},
-								},
-								EnvPrefixes: []*apipb.StringListPair{
-									{
-										Key:   "k",
-										Value: []string{"v1"},
-									},
-								},
-							},
-							ExpirationSecs: 300,
-						},
-						{
-							Properties: &apipb.TaskProperties{
-								SecretBytes: []byte("this is a secret"),
-							},
-							ExpirationSecs: 300,
-						},
+						slice([]byte("this is a secret")),
+						slice(nil),
 					},
 				}
 				err := validateNewTask(ctx, req)
