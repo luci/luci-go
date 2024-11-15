@@ -22,7 +22,7 @@ import TimestampInfoBar from './timestamp_info_bar';
 
 // Disabled until we can support dayjs relative time format.
 // eslint-disable-next-line jest/no-disabled-tests
-describe.skip('Test TimestampInfoBar component', () => {
+describe('Test TimestampInfoBar component', () => {
   it('when proved with rule, then should render username and timestamps', async () => {
     const rule = createDefaultMockRule();
     render(

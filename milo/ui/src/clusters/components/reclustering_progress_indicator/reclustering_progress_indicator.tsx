@@ -32,6 +32,7 @@ import {
 } from '@/clusters/tools/progress_tools';
 import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
+import { displayApproxDuartion } from '@/common/tools/time_utils';
 
 interface Props {
   project: string;
@@ -138,7 +139,12 @@ const ReclusteringProgressIndicator = ({
           </p>
           <small>
             {' '}
-            Last update <RelativeTimestamp timestamp={lastRefreshed} />.
+            Last update{' '}
+            <RelativeTimestamp
+              formatFn={displayApproxDuartion}
+              timestamp={lastRefreshed}
+            />
+            .
           </small>
         </>
       );

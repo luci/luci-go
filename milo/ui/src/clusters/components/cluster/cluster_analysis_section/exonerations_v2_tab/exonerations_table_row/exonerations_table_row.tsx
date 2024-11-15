@@ -29,13 +29,14 @@ import { DateTime } from 'luxon';
 import { useState } from 'react';
 
 import { ExoneratedTestVariantBranch } from '@/clusters/hooks/use_fetch_exonerated_test_variant_branches';
-import { TestStabilityCriteria } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 import {
   sourceRefLink,
   testHistoryLink,
 } from '@/clusters/tools/urlHandling/links';
 import { variantAsPairs } from '@/clusters/tools/variant_tools';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
+import { displayApproxDuartion } from '@/common/tools/time_utils';
+import { TestStabilityCriteria } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variants.pb';
 
 import ExonerationExplanationSection from '../exoneration_explanation_section/exoneration_explanation_section';
 import { CriteriaMetIndicator, anyCriteriaMetIndicator } from '../model/model';
@@ -148,6 +149,7 @@ const ExonerationsTableRow = ({
       </WrappingTableCell>
       <WrappingTableCell>
         <RelativeTimestamp
+          formatFn={displayApproxDuartion}
           timestamp={DateTime.fromISO(testVariantBranch.lastExoneration)}
         />
       </WrappingTableCell>
