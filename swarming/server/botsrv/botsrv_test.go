@@ -53,11 +53,13 @@ import (
 )
 
 type testRequest struct {
+	Session      []byte
 	Dimensions   map[string][]string
 	PollToken    []byte
 	SessionToken []byte
 }
 
+func (r *testRequest) ExtractSession() []byte                 { return r.Session }
 func (r *testRequest) ExtractPollToken() []byte               { return r.PollToken }
 func (r *testRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *testRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
@@ -85,6 +87,9 @@ func TestBotHandler(t *testing.T) {
 				Passive: [][]byte{[]byte("also-secret")},
 			}),
 			cfg: cfgtest.MockConfigs(ctx, cfgtest.NewMockedConfigs()),
+			knownBots: func(ctx context.Context, botID string) (*KnownBotInfo, error) {
+				return nil, nil
+			},
 		}
 
 		var lastBody *testRequest

@@ -21,8 +21,8 @@ import (
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/server/cfgmodule"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth/rpcacl"
@@ -135,7 +135,7 @@ func main() {
 		sessionsConns, reservationsConn := rbeConns[:*connPoolSize], rbeConns[*connPoolSize]
 
 		// A server that can authenticate bot API calls and route them to Python.
-		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, srv.Options.CloudProject, tokenSecret)
+		botSrv := botsrv.New(srv.Context, cfg, srv.Routes, proxy, knownBotProvider, srv.Options.CloudProject, tokenSecret)
 		// A server that actually handles core Bot API calls.
 		botAPI := botapi.NewBotAPIServer(cfg, srv.Options.CloudProject)
 
@@ -168,8 +168,7 @@ func main() {
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/task_error/:TaskID", botAPI.TaskError)
 
 		// Bot API endpoints to control RBE session.
-		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret)
-		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/ping", pingHandler)
+		rbeSessions := rbe.NewSessionServer(srv.Context, sessionsConns, tokenSecret, srv.Options.ImageVersion())
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/create", rbeSessions.CreateBotSession)
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/rbe/session/update", rbeSessions.UpdateBotSession)
 
@@ -296,45 +295,21 @@ func main() {
 	})
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
-// pingRequest is a JSON structure of the ping request payload.
-type pingRequest struct {
-	// Dimensions is dimensions reported by the bot.
-	Dimensions map[string][]string `json:"dimensions"`
-	// State is the state reported by the bot.
-	State map[string]any `json:"state"`
-	// Version is the bot version.
-	Version string `json:"version"`
-	// RBEState is RBE-related state reported by the bot.
-	RBEState struct {
-		// Instance if the full RBE instance name to use.
-		Instance string `json:"instance"`
-		// PollToken is base64-encoded HMAC-tagged internalspb.PollState.
-		PollToken []byte `json:"poll_token"`
-	} `json:"rbe_state"`
-}
-
-func (r *pingRequest) ExtractPollToken() []byte               { return r.RBEState.PollToken }
-func (r *pingRequest) ExtractSessionToken() []byte            { return nil }
-func (r *pingRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
-
-func (r *pingRequest) ExtractDebugRequest() any {
-	return &pingRequest{
-		Dimensions: r.Dimensions,
-		State:      r.State,
-		Version:    r.Version,
+// knownBotProvider returns info about a registered bot to use in Bot API.
+//
+// TODO: This will be very hot. May need to add a cache of some kind to avoid
+// hitting the datastore all the time.
+func knownBotProvider(ctx context.Context, botID string) (*botsrv.KnownBotInfo, error) {
+	info := &model.BotInfo{Key: model.BotInfoKey(ctx, botID)}
+	switch err := datastore.Get(ctx, info); {
+	case err == nil:
+		return &botsrv.KnownBotInfo{
+			SessionID:  info.SessionID,
+			Dimensions: info.Dimensions,
+		}, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, nil
+	default:
+		return nil, err
 	}
-}
-
-func pingHandler(ctx context.Context, body *pingRequest, r *botsrv.Request) (botsrv.Response, error) {
-	logging.Infof(ctx, "Dimensions: %v", r.Dimensions)
-	logging.Infof(ctx, "PollState: %v", r.PollState)
-	logging.Infof(ctx, "Bot version: %s", body.Version)
-	if body.RBEState.Instance != r.PollState.RbeInstance {
-		logging.Errorf(ctx, "RBE instance mismatch: reported %q, expecting %q",
-			body.RBEState.Instance, r.PollState.RbeInstance,
-		)
-	}
-	return nil, nil
 }

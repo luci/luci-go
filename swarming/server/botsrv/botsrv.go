@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/tokenserver/auth/machine"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/pyproxy"
@@ -51,19 +52,21 @@ import (
 // RequestBody should be implemented by a JSON-serializable struct representing
 // format of some particular request.
 type RequestBody interface {
+	ExtractSession() []byte                 // the token with bot Session proto
 	ExtractPollToken() []byte               // the poll token, if present
-	ExtractSessionToken() []byte            // the session token, if present
+	ExtractSessionToken() []byte            // the RBE session token, if present
 	ExtractDimensions() map[string][]string // dimensions reported by the bot, if present
 	ExtractDebugRequest() any               // serialized as JSON and logged on errors
 }
 
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
-	BotID               string                 // validated bot ID
-	SessionID           string                 // validated RBE bot session ID, if present
-	SessionTokenExpired bool                   // true if the request has expired session token
-	PollState           *internalspb.PollState // validated poll state
-	Dimensions          map[string][]string    // validated dimensions
+	BotID               string                 // validated bot ID, TODO: delete (part of Session)
+	SessionID           string                 // validated RBE bot session ID, if present, TODO: delete
+	SessionTokenExpired bool                   // true if the request has expired session token, TODO: delete
+	PollState           *internalspb.PollState // validated poll state, TODO: delete
+	Dimensions          map[string][]string    // validated dimensions, TODO: delete
+	Session             *internalspb.Session   // the bot session from the session token
 }
 
 // Response is serialized as JSON and sent to the bot.
@@ -78,16 +81,31 @@ type Response any
 // a gRPC error code that will be converted into an HTTP error.
 type Handler[B any] func(ctx context.Context, body *B, req *Request) (Response, error)
 
+// KnownBotInfo is information about a bot registered in the datastore.
+type KnownBotInfo struct {
+	// SessionID is the current bot session ID of this bot.
+	SessionID string
+	// Dimensions is "k:v" dimensions registered by this bot in the last poll.
+	Dimensions []string
+}
+
+// KnownBotProvider knows how to return information about existing bots.
+//
+// Returns nil and no error if the bot is not registered in the datastore. All
+// other errors can be considered transient.
+type KnownBotProvider func(ctx context.Context, botID string) (*KnownBotInfo, error)
+
 // Server knows how to authenticate bot requests and route them to handlers.
 type Server struct {
 	router      *router.Router
 	middlewares router.MiddlewareChain
 	hmacSecret  *hmactoken.Secret
 	cfg         *cfg.Provider
+	knownBots   KnownBotProvider
 }
 
 // New constructs new Server.
-func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, prx *pyproxy.Proxy, projectID string, hmacSecret *hmactoken.Secret) *Server {
+func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, prx *pyproxy.Proxy, bots KnownBotProvider, projectID string, hmacSecret *hmactoken.Secret) *Server {
 	gaeAppDomain := fmt.Sprintf("%s.appspot.com", projectID)
 
 	// Redirect to Python for eligible requests before hitting any other
@@ -121,6 +139,7 @@ func New(ctx context.Context, cfg *cfg.Provider, r *router.Router, prx *pyproxy.
 		),
 		hmacSecret: hmacSecret,
 		cfg:        cfg,
+		knownBots:  bots,
 	}
 }
 
@@ -168,6 +187,8 @@ func GET(s *Server, route string, handler router.Handler) {
 // some JSON-serialized response.
 //
 // It performs bot authentication and authorization based on bots.cfg config.
+//
+// TODO: Most of this will be gone once Bot Session tokens are rolled out.
 func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
 		ctx := c.Request.Context()
@@ -303,36 +324,8 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			}
 		}
 
-		// Authenticate the bot based on the config. Do it in a dry run mode for now
-		// to compare with the authentication based on the poll state token. Check
-		// various other bits of the poll state token as well (like enforced
-		// dimensions). Once it's confirmed there are no differences, the poll state
-		// token mechanism can be retired.
-		var dryRunAuthErr error
-		var ignoreDryRunAuthErr bool
-		dims := RB(body).ExtractDimensions()
-		botID, err := botIDFromDimensions(dims)
-		if err != nil {
-			logging.Errorf(ctx, "bot_auth: bad bot ID in dims: %s", err)
-			dryRunAuthErr = err
-		} else {
-			if fromPollState := extractBotID(pollState); fromPollState != botID {
-				logging.Errorf(ctx, "bot_auth: mismatch in bot ID from poll state (%q) and dims (%q)", fromPollState, botID)
-			}
-			botGroup := s.cfg.Cached(ctx).BotGroup(botID)
-			if !sameEnforcedDims(botID, botGroup.Dimensions, pollState.EnforcedDimensions) {
-				logging.Errorf(ctx, "bot_auth: mismatch in enforced dimensions (%v vs %v)", botGroup.Dimensions, pollState.EnforcedDimensions)
-			}
-			dryRunAuthErr = AuthorizeBot(ctx, botID, botGroup.Auth)
-			if transient.Tag.In(dryRunAuthErr) {
-				logging.Errorf(ctx, "bot_auth: ignoring transient error when checking bot creds: %s", dryRunAuthErr)
-				dryRunAuthErr = nil
-				ignoreDryRunAuthErr = true
-			}
-		}
-
 		// Extract bot ID from the validated PollToken.
-		botID = extractBotID(pollState)
+		botID := extractBotID(pollState)
 		if botID == "" {
 			writeErr(status.Errorf(codes.InvalidArgument, "no bot ID"))
 			return
@@ -348,21 +341,15 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			if transient.Tag.In(err) {
 				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
 			} else {
-				if !ignoreDryRunAuthErr && dryRunAuthErr == nil {
-					logging.Errorf(ctx, "bot_auth: bot auth mismatch: bots.cfg method succeeded, but poll token method failed")
-				}
 				writeErr(status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
 			}
 			return
 		}
 
-		if !ignoreDryRunAuthErr && dryRunAuthErr != nil {
-			logging.Errorf(ctx, "bot_auth: bot auth mismatch: bots.cfg method failed, but poll token method succeeded; poll token:\n%s", prettyProto(pollState))
-		}
-
 		// Apply verified state stored in PollState on top of whatever was reported
 		// by the bot. Normally functioning bots should report the same values as
 		// stored in the token.
+		dims := RB(body).ExtractDimensions()
 		for _, dim := range pollState.EnforcedDimensions {
 			reported := dims[dim.Key]
 			if !slices.Equal(reported, dim.Values) {
@@ -379,6 +366,42 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			return
 		}
 
+		// We'll soon switch to using the bot dimensions stored in the datastore.
+		// Verify they match what the bot is sending via tokens.
+		var swarmingSID string
+		switch knownBot, err := s.knownBots(ctx, botID); {
+		case err != nil:
+			logging.Errorf(ctx, "Failed to fetch BotInfo of %s: %s", botID, err)
+		case knownBot == nil:
+			logging.Errorf(ctx, "Missing BotInfo of %s", botID)
+		default:
+			swarmingSID = knownBot.SessionID
+			fromDS := dimsFlatToString(knownBot.Dimensions)
+			fromTok := dimsMapToString(dims)
+			if fromDS != fromTok {
+				logging.Errorf(ctx, "Dims from datastore != dims from token:\nDatastore: %s\nToken: %s", fromDS, fromTok)
+			}
+		}
+
+		// If have a Swarming bot session token, verify it is valid and the
+		// information inside matches what was extracted above from other
+		// (deprecated) tokens. This is a dry run check for now.
+		var swarmingSession *internalspb.Session
+		if sessionTok := RB(body).ExtractSession(); len(sessionTok) != 0 {
+			swarmingSession = checkSwarmingSession(ctx,
+				sessionTok,
+				s.hmacSecret,
+				botID,
+				swarmingSID,
+				sessionState.GetRbeBotSessionId(),
+			)
+			if swarmingSession != nil {
+				logging.Infof(ctx, "Swarming session ID: %s", swarmingSession.SessionId)
+			}
+		} else {
+			logging.Infof(ctx, "No Swarming session token")
+		}
+
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
 			BotID:               botID,
@@ -386,6 +409,7 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			SessionTokenExpired: sessionTokenExpired,
 			PollState:           pollState,
 			Dimensions:          dims,
+			Session:             swarmingSession,
 		})
 		if err != nil {
 			writeErr(err)
@@ -404,6 +428,41 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			logging.Errorf(ctx, "Error writing the response: %s", werr)
 		}
 	})
+}
+
+// checkSwarmingSession unmarshals Swarming bot session and compares it to given
+// values, logging discrepancies.
+//
+// This is a dry run check before session tokens become authoritative.
+func checkSwarmingSession(ctx context.Context, tok []byte, s *hmactoken.Secret, botID, swarmingSID, rbeSID string) *internalspb.Session {
+	session, err := botsession.Unmarshal(tok, s)
+	if err != nil {
+		logging.Errorf(ctx, "Bad session token: %s", err)
+		return nil
+	}
+	if clock.Now(ctx).After(session.Expiry.AsTime()) {
+		logging.Errorf(ctx, "Expired session:\n%s", botsession.FormatForDebug(session))
+		return nil
+	}
+	if session.BotId != botID {
+		logging.Errorf(ctx, "Wrong bot ID:\n%s", botsession.FormatForDebug(session))
+		return nil
+	}
+	if session.RbeBotSessionId != rbeSID {
+		logging.Errorf(ctx, "Wrong RBE session ID:\n%s", botsession.FormatForDebug(session))
+		return nil
+	}
+	// Following errors are "fine" in a sense that if they happen, something is
+	// still broken, but we can keep using the token for now. They will all become
+	// real errors once Swarming bot sessions are fully implemented.
+	if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.GetBotAuth()); err != nil {
+		logging.Errorf(ctx, "Failing bot authorization: %s", err)
+		logging.Errorf(ctx, "Session:\n%s", botsession.FormatForDebug(session))
+	}
+	if session.SessionId != swarmingSID {
+		logging.Errorf(ctx, "Wrong session ID: %s != %s", session.SessionId, swarmingSID)
+	}
+	return session
 }
 
 // prettyProto formats a proto message for logs.
@@ -433,31 +492,6 @@ func botIDFromDimensions(dims map[string][]string) (string, error) {
 		}
 		return botID, nil
 	}
-}
-
-// sameEnforcedDims compares enforced dimensions in bots.cfg to ones in the
-// poll state.
-//
-// This is temporary until the poll state token is removed.
-func sameEnforcedDims(botID string, cfgDims map[string][]string, tokDims []*internalspb.PollState_Dimension) bool {
-	var fromCfg []string
-	fromCfg = append(fromCfg, "id:"+botID)
-	for key, vals := range cfgDims {
-		for _, val := range vals {
-			fromCfg = append(fromCfg, fmt.Sprintf("%s:%s", key, val))
-		}
-	}
-	sort.Strings(fromCfg)
-
-	var fromTok []string
-	for _, d := range tokDims {
-		for _, val := range d.Values {
-			fromTok = append(fromTok, fmt.Sprintf("%s:%s", d.Key, val))
-		}
-	}
-	sort.Strings(fromTok)
-
-	return slices.Equal(fromCfg, fromTok)
 }
 
 // checkCredentials checks the bot credentials in the context match what is
@@ -547,4 +581,21 @@ func extractBotID(s *internalspb.PollState) string {
 		}
 	}
 	return ""
+}
+
+// dimsFlatToString converts a flat list of dimensions into a debug string.
+func dimsFlatToString(dims []string) string {
+	return strings.Join(dims, " | ")
+}
+
+// dimsMapToString converts a dimensions map into a debug string.
+func dimsMapToString(dims map[string][]string) string {
+	var kv []string
+	for k, vals := range dims {
+		for _, v := range vals {
+			kv = append(kv, fmt.Sprintf("%s:%s", k, v))
+		}
+	}
+	sort.Strings(kv)
+	return dimsFlatToString(kv)
 }

@@ -18,6 +18,7 @@ package botsession
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/encoding/prototext"
@@ -30,6 +31,9 @@ import (
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
+
+// Expiry is how long a new Swarming session token will last.
+const Expiry = time.Hour
 
 // cryptoCtx is used whe signing and checking the token as a cryptographic
 // context (to make sure produced token can't be incorrectly used in other

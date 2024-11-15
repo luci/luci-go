@@ -35,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/botsession"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
@@ -43,13 +44,15 @@ import (
 type SessionServer struct {
 	rbe        remoteworkers.BotsClient
 	hmacSecret *hmactoken.Secret // to generate session tokens
+	backendVer string            // to put into the DebugInfo in the tokens
 }
 
 // NewSessionServer creates a new session server given an RBE client connection.
-func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSecret *hmactoken.Secret) *SessionServer {
+func NewSessionServer(ctx context.Context, cc []grpc.ClientConnInterface, hmacSecret *hmactoken.Secret, backendVer string) *SessionServer {
 	return &SessionServer{
 		rbe:        botsConnectionPool(cc),
 		hmacSecret: hmacSecret,
+		backendVer: backendVer,
 	}
 }
 
@@ -75,18 +78,27 @@ type WorkerProperties struct {
 
 // CreateBotSessionRequest is a body of `/bot/rbe/session/create` request.
 type CreateBotSessionRequest struct {
+	// Session is a serialized Swarming Bot Session proto.
+	Session []byte `json:"session"`
+
 	// PollToken is a token produced by Python server in `/bot/poll`. Required.
 	//
 	// This token encodes configuration of the bot maintained by the Python
 	// Swarming server.
+	//
+	// TODO: To be removed.
 	PollToken []byte `json:"poll_token"`
 
 	// SessionToken is a session token of a previous session if recreating it.
 	//
 	// Optional. See the corresponding field in UpdateBotSessionRequest.
+	//
+	// TODO: To be removed.
 	SessionToken []byte `json:"session_token,omitempty"`
 
 	// Dimensions is dimensions reported by the bot. Required.
+	//
+	// TODO: To be removed.
 	Dimensions map[string][]string `json:"dimensions"`
 
 	// BotVersion identifies the bot software. It is reported to RBE as is.
@@ -96,6 +108,7 @@ type CreateBotSessionRequest struct {
 	WorkerProperties *WorkerProperties `json:"worker_properties,omitempty"`
 }
 
+func (r *CreateBotSessionRequest) ExtractSession() []byte                 { return r.Session }
 func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
 func (r *CreateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
@@ -110,6 +123,12 @@ func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
 
 // CreateBotSessionResponse is a body of `/bot/rbe/session/create` response.
 type CreateBotSessionResponse struct {
+	// Session is a serialized Swarming Bot Session proto.
+	//
+	// It is derived from the session in the request, except it has RBE session
+	// info populated now.
+	Session []byte `json:"session"`
+
 	// SessionToken is a freshly produced session token.
 	//
 	// It encodes the RBE bot session ID and bot configuration provided via the
@@ -117,11 +136,15 @@ type CreateBotSessionResponse struct {
 	//
 	// The session token is needed to call `/bot/rbe/session/update`. This call
 	// also will periodically refresh it.
+	//
+	// TODO: To be removed.
 	SessionToken []byte `json:"session_token"`
 
 	// SessionExpiry is when this session expires, as Unix timestamp in seconds.
 	//
 	// The bot should call `/bot/rbe/session/update` before that time.
+	//
+	// TODO: To be removed. Currently unused.
 	SessionExpiry int64 `json:"session_expiry"`
 
 	// SessionID is an RBE bot session ID as encoded in the token.
@@ -149,13 +172,28 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 		logging.Errorf(ctx, "Unexpected lease when just opening the session: %s", lease)
 	}
 
+	// Associate the RBE session with the Swarming session.
+	var swarmingSession []byte
+	if r.Session != nil {
+		r.Session.RbeBotSessionId = session.Name
+		r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
+		r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
+		swarmingSession, err = botsession.Marshal(r.Session, srv.hmacSecret)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
+		}
+	}
+
 	// Return the token that wraps the session ID. The bot will use it when
 	// calling `/bot/rbe/session/update`.
+	//
+	// TODO: Remove.
 	sessionToken, tokenExpiry, err := srv.genSessionToken(ctx, r.PollState, session.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 	}
 	return &CreateBotSessionResponse{
+		Session:       swarmingSession,
 		SessionToken:  sessionToken,
 		SessionExpiry: tokenExpiry.Unix(),
 		SessionID:     session.Name,
@@ -197,10 +235,18 @@ type Lease struct {
 // If PollToken is present, it will be used to refresh the state stored in the
 // session token.
 type UpdateBotSessionRequest struct {
+	// Session is a serialized Swarming Bot Session proto.
+	//
+	// It should have an RBE session info inside, as populated by
+	// `/bot/rbe/session/create`.
+	Session []byte `json:"session"`
+
 	// SessionToken is a token returned by the previous API call. Required.
 	//
 	// This token is initially returned by `/bot/rbe/session/create` and then
 	// refreshed with every `/bot/rbe/session/update` call.
+	//
+	// TODO: To be removed.
 	SessionToken []byte `json:"session_token"`
 
 	// PollToken is a token produced by Python server in `/bot/poll`.
@@ -211,9 +257,13 @@ type UpdateBotSessionRequest struct {
 	//
 	// Internals of this token will be copied into the session token returned in
 	// the response to this call.
+	//
+	// TODO: To be removed.
 	PollToken []byte `json:"poll_token,omitempty"`
 
 	// Dimensions is dimensions reported by the bot. Required.
+	//
+	// TODO: To be removed.
 	Dimensions map[string][]string `json:"dimensions"`
 
 	// BotVersion identifies the bot software. It is reported to RBE as is.
@@ -249,6 +299,7 @@ type UpdateBotSessionRequest struct {
 	Lease *Lease `json:"lease,omitempty"`
 }
 
+func (r *UpdateBotSessionRequest) ExtractSession() []byte                 { return r.Session }
 func (r *UpdateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
 func (r *UpdateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
 func (r *UpdateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
@@ -266,6 +317,12 @@ func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 
 // UpdateBotSessionResponse is a body of `/bot/rbe/session/update` response.
 type UpdateBotSessionResponse struct {
+	// Session is a serialized Swarming Bot Session proto.
+	//
+	// It is derived from the session in the request, except it has its expiration
+	// time bumped.
+	Session []byte `json:"session"`
+
 	// SessionToken is a refreshed session token, if available.
 	//
 	// It carries the same RBE bot session ID inside as the incoming token. The
@@ -273,6 +330,8 @@ type UpdateBotSessionResponse struct {
 	//
 	// If the incoming token has expired already, this field will be empty, since
 	// it is not possible to refresh an expired token.
+	//
+	// TODO: To be removed.
 	SessionToken []byte `json:"session_token,omitempty"`
 
 	// SessionExpiry is when this session expires, as Unix timestamp in seconds.
@@ -280,6 +339,8 @@ type UpdateBotSessionResponse struct {
 	// The bot should call `/bot/rbe/session/update` again before that time.
 	//
 	// If the session token has expired already, this field will be empty.
+	//
+	// TODO: To be removed. Currently unused.
 	SessionExpiry int64 `json:"session_expiry,omitempty"`
 
 	// The session status as seen by the server, as remoteworkers.BotStatus enum.
@@ -372,6 +433,18 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		}
 	}
 
+	// Bump Swarming bot session expiration time.
+	var swarmingSession []byte
+	var err error
+	if r.Session != nil {
+		r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
+		r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
+		swarmingSession, err = botsession.Marshal(r.Session, srv.hmacSecret)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
+		}
+	}
+
 	// If there are no pending leases, RBE seems to block for `<rpc deadline>-10s`
 	// (not doing anything at all if the RPC deadline is less than 10s).
 	var timeout time.Duration
@@ -412,6 +485,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 				return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 			}
 			return &UpdateBotSessionResponse{
+				Session:       swarmingSession,
 				SessionToken:  sessionToken,
 				SessionExpiry: tokenExpiry.Unix(),
 				Status:        "OK",
@@ -524,6 +598,7 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 	}
 	resp := &UpdateBotSessionResponse{
+		Session:       swarmingSession,
 		SessionToken:  sessionToken,
 		SessionExpiry: tokenExpiry.Unix(),
 		Status:        remoteworkers.BotStatus_name[int32(session.Status)],
