@@ -17,6 +17,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import GrainTwoToneIcon from '@mui/icons-material/GrainTwoTone';
+import GroupsIcon from '@mui/icons-material/Groups';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
@@ -40,13 +41,14 @@ export interface SidebarPage {
 }
 
 export interface SidebarSection {
-  readonly title: 'Builds' | 'Tests' | 'Monitoring' | 'Releases';
+  readonly title: 'Builds' | 'Tests' | 'Monitoring' | 'Releases' | 'Admin';
   readonly pages: SidebarPage[];
 }
 
 export function generateSidebarSections(
   project: string | undefined,
   treeNames: string[] | undefined,
+  email: string | undefined,
 ) {
   return (
     [
@@ -54,6 +56,7 @@ export function generateSidebarSections(
       generateTestsSection(project),
       generateMonitoringSection(project, treeNames),
       generateReleasesSection(project),
+      generateAuthServiceSection(email),
     ]
       // Remove empty sections.
       .filter((sec) => sec.pages.length)
@@ -236,6 +239,24 @@ function generateReleasesSection(project: string | undefined): SidebarSection {
 
   return {
     title: 'Releases',
+    pages,
+  };
+}
+
+function generateAuthServiceSection(email: string | undefined): SidebarSection {
+  const pages: SidebarPage[] = [];
+  // External users cannot see auth service, so only link it for Googlers.
+  const showAuthService = /@google\.com$/.test(email || '');
+  if (showAuthService) {
+    pages.push(
+      {
+        page: UiPage.AuthService,
+        url: '/ui/auth/groups',
+        icon: <GroupsIcon />,
+      });
+  }
+  return {
+    title: 'Admin',
     pages,
   };
 }

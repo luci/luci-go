@@ -33,6 +33,7 @@ import { UiPage, CommonColors } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import { QueryTreesRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
+import { useAuthState } from '@/common/components/auth_state_provider';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 
@@ -60,6 +61,7 @@ interface Props {
 export const Sidebar = ({ open }: Props) => {
   const project = useProject();
   const selectedPage = useSelectedPage();
+  const { email } = useAuthState();
 
   const client = useTreesClient();
   const { data, error } = useQuery({
@@ -77,8 +79,8 @@ export const Sidebar = ({ open }: Props) => {
   const treeNames = data?.trees.map((tree) => tree.name);
 
   const sidebarSections = useMemo(() => {
-    return generateSidebarSections(project, treeNames);
-  }, [project, treeNames]);
+    return generateSidebarSections(project, treeNames, email);
+  }, [project, treeNames, email]);
 
   return (
     <Drawer

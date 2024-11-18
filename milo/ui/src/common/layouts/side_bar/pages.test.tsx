@@ -17,6 +17,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BuildIcon from '@mui/icons-material/Build';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import GrainTwoToneIcon from '@mui/icons-material/GrainTwoTone';
+import GroupsIcon from '@mui/icons-material/Groups';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
@@ -37,7 +38,7 @@ import {
 
 describe('generateSidebarSections', () => {
   it('should generate list with only builders search if there is no project', () => {
-    const sidebarItems = generateSidebarSections(undefined, undefined);
+    const sidebarItems = generateSidebarSections(undefined, undefined, undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -52,8 +53,34 @@ describe('generateSidebarSections', () => {
     ]);
   });
 
+  it('should generate groups link when googler is logged in', () => {
+    const sidebarItems = generateSidebarSections(undefined, undefined, 'emailtest@google.com');
+    expect(sidebarItems).toEqual<SidebarSection[]>([
+      {
+        title: `Builds`,
+        pages: [
+          {
+            page: UiPage.BuilderSearch,
+            url: '/ui/builder-search',
+            icon: <SearchIcon />,
+          },
+        ],
+      },
+      {
+        title: `Admin`,
+        pages: [
+          {
+            page: UiPage.AuthService,
+            url: '/ui/auth/groups',
+            icon: <GroupsIcon />,
+          },
+        ],
+      },
+    ]);
+  });
+
   it('should generate basic items for all projects', () => {
-    const sidebarItems = generateSidebarSections('projecttest', undefined);
+    const sidebarItems = generateSidebarSections('projecttest', undefined, undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -111,7 +138,7 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate correct links for chromium', () => {
-    const sidebarItems = generateSidebarSections('chromium', undefined);
+    const sidebarItems = generateSidebarSections('chromium', undefined, undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -196,7 +223,7 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate correct links for chromeos', () => {
-    const sidebarItems = generateSidebarSections('chromeos', undefined);
+    const sidebarItems = generateSidebarSections('chromeos', undefined, undefined);
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,

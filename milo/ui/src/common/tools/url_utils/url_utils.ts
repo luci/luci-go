@@ -161,5 +161,5 @@ export function setSingleQueryParam(
 
 
 export function getURLPathFromAuthGroup(groupName: string): string {
-  return `/ui/labs/auth/groups/${groupName}`;
+  return `/ui/auth/groups/${groupName}`;
 }

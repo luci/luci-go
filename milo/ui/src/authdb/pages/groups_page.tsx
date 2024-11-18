@@ -28,6 +28,8 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useNavigate, useParams } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { GroupsListElement } from '@/authdb/components/groups_list';
+import { UiPage } from '@/common/constants/view';
+import { PageMeta } from '@/common/components/page_meta';
 
 export function GroupsPage() {
   const { ['__luci_ui__-raw-*']: groupName } = useParams();
@@ -50,13 +52,20 @@ export function GroupsPage() {
 
   return (
     <Paper className="groups-container-paper">
+      <PageMeta title="Groups" selectedPage={UiPage.AuthService} />
       <Alert severity="warning">
         <AlertTitle>Integration of LUCI Auth Service here is under construction.</AlertTitle>
-          Only group editing is supported. Please visit {' '}
-          <a href='https://chrome-infra-auth.appspot.com/auth/groups/' target="_blank">
-            Auth Service
-          </a>
-          {' '} for other functionality.
+        Only group editing is supported. Please visit {' '}
+        <a href='https://chrome-infra-auth.appspot.com/auth/groups/' target="_blank">
+          Auth Service
+        </a>
+        {' '} for other functionality. Please provide {' '}
+        <a
+          href='https://b.corp.google.com/issues/new?component=1435307&template=2026255'
+          target="_blank"
+        >
+          feedback.
+        </a>
       </Alert>
       <Grid container className="groups-container">
         <Grid
@@ -65,7 +74,7 @@ export function GroupsPage() {
           className="container-left"
           sx={{ display: 'flex', flexDirection: 'column' }}
         >
-          <GroupsList selectedGroup={groupName} ref={listRef}/>
+          <GroupsList selectedGroup={groupName} ref={listRef} />
         </Grid>
         <Grid
           item
@@ -75,7 +84,7 @@ export function GroupsPage() {
         >
           <Box className="groups-details-container">
             {groupName === 'new!' ? (
-              <GroupsFormNew onCreate={refetchGroups}/>
+              <GroupsFormNew onCreate={refetchGroups} />
             ) : (
               <>
                 <GroupsForm
@@ -101,7 +110,7 @@ export function Component() {
         key="authdb-group"
       >
         <GroupsPage />
-      </RecoverableErrorBoundary>
+      </RecoverableErrorBoundary >
     </TrackLeafRoutePageView>
   );
 }

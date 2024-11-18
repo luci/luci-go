@@ -38,6 +38,7 @@ export enum UiPage {
   RegressionDetails = 'regression-details',
   LogSearch = 'log-search',
   Blamelist = 'blamelist',
+  AuthService = 'authdb-group',
 }
 
 export enum CommonColors {

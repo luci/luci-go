@@ -101,5 +101,13 @@ describe('routes', () => {
       expect(regex.test('/ui/clusters/labs/b/12345')).toBeTruthy();
       expect(regex.test('/ui/clusters/undefined-page')).toBeFalsy();
     });
+
+    it('auth', () => {
+      // Ensure the regex is not rejecting everything.
+      expect(regex.test('/ui/auth/groups/test-group')).toBeTruthy();
+
+      // Unmatched route.
+      expect(regex.test('/ui/auth/cannot-found-this-route-here')).toBeFalsy();
+    });
   });
 });
