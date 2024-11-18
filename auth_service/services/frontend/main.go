@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -71,6 +70,8 @@ var (
 	// ErrCheckMembership is returned if there is an error looking up group
 	// memberships when checking API access.
 	ErrCheckMembership = errors.New("failed to check group membership")
+	// ErrAccessDenied is returned if the caller does not have access to an API.
+	ErrAccessDenied = errors.New("access denied")
 )
 
 func main() {
@@ -347,9 +348,12 @@ func authorizeAPIAccess(groups []string) func(ctx *router.Context, next router.H
 		case err != nil:
 			jsonErr(ErrCheckMembership, http.StatusInternalServerError)
 		case !yes:
-			jsonErr(fmt.Errorf("%s is not a member in any of: %s",
-				caller, strings.Join(groups, ", ")),
-				http.StatusForbidden)
+			// Internally log a few details of the unauthorized call.
+			logging.Warningf(
+				ctx.Request.Context(),
+				"%s is not a member in any of: %s",
+				caller, strings.Join(groups, ", "))
+			jsonErr(ErrAccessDenied, http.StatusForbidden)
 		default:
 			next(ctx)
 		}
