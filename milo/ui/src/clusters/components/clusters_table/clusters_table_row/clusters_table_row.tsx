@@ -17,22 +17,16 @@ import Link from '@mui/material/Link';
 import Skeleton from '@mui/material/Skeleton';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { ClusterSummary } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 import { getMetricColor } from '@/clusters/tools/metric_colors';
 import { linkToCluster } from '@/clusters/tools/urlHandling/links';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ClusterSummary } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
-import { ClusterTableContextData } from '../clusters_table_context';
-
-interface Props {
-  project: string;
-  cluster: ClusterSummary;
-  isBreakdownLoading?: boolean;
-  isBreakdownSuccess?: boolean;
-}
+import { ClusterTableContextData } from '../context/clusters_table_context';
 
 interface SparklineProps {
   isLoading?: boolean;
@@ -118,6 +112,13 @@ const Sparkline = ({ isLoading, isSuccess, values, color }: SparklineProps) => {
   );
 };
 
+interface Props {
+  project: string;
+  cluster: ClusterSummary;
+  isBreakdownLoading?: boolean;
+  isBreakdownSuccess?: boolean;
+}
+
 const ClustersTableRow = ({
   project,
   cluster,
@@ -151,38 +152,69 @@ const ClustersTableRow = ({
           </Link>
         )}
       </TableCell>
-      {filteredMetrics.map((metric) => {
-        const clusterMetrics = cluster.metrics || {};
-        const metricValue = clusterMetrics[metric.metricId] || {
-          value: '',
-          dailyBreakdown: [],
-        };
-
-        const metricColor = getMetricColor(metrics.indexOf(metric));
-        const dailyBreakdown = metricValue.dailyBreakdown || [];
-
-        // A sparkline may be added if the daily breakdown for the metric is:
-        // 1. being fetched; or
-        // 2. fetched and there are at least 2 data points.
-        const hasSparkline =
-          (isBreakdownLoading && !isBreakdownSuccess) ||
-          (isBreakdownSuccess && dailyBreakdown && dailyBreakdown.length > 1);
-        return (
-          <TableCell key={metric.metricId} className="number">
-            {metricValue.value || '0'}
-            {hasSparkline && (
-              <Sparkline
-                isLoading={isBreakdownLoading}
-                isSuccess={isBreakdownSuccess}
-                values={dailyBreakdown}
-                color={metricColor}
-              />
-            )}
-          </TableCell>
-        );
-      })}
+      {filteredMetrics.map((metric) => (
+        <ClusterRowMetrics
+          key={metric.metricId}
+          cluster={cluster}
+          metric={metric}
+          metrics={metrics}
+          isBreakdownLoading={isBreakdownLoading}
+          isBreakdownSuccess={isBreakdownSuccess}
+        />
+      ))}
     </TableRow>
   );
 };
+
+interface ClusterRowMetricsProps {
+  cluster: ClusterSummary;
+  metric: ProjectMetric;
+  metrics: ProjectMetric[];
+  isBreakdownSuccess: boolean | undefined;
+  isBreakdownLoading: boolean | undefined;
+}
+
+function ClusterRowMetrics({
+  cluster,
+  metric,
+  metrics,
+  isBreakdownSuccess,
+  isBreakdownLoading,
+}: ClusterRowMetricsProps) {
+  const clusterMetrics = cluster.metrics || {};
+  const metricValue = clusterMetrics[metric.metricId] || {
+    value: '',
+    dailyBreakdown: [],
+  };
+
+  const metricColor = getMetricColor(metrics.indexOf(metric));
+  const dailyBreakdown = useMemo(
+    () => metricValue.dailyBreakdown || [],
+    [metricValue.dailyBreakdown],
+  );
+
+  // A sparkline may be added if the daily breakdown for the metric is:
+  // 1. being fetched; or
+  // 2. fetched and there are at least 2 data points.
+  const hasSparkline = useMemo(() => {
+    return (
+      (isBreakdownLoading && !isBreakdownSuccess) ||
+      (isBreakdownSuccess && dailyBreakdown && dailyBreakdown.length > 1)
+    );
+  }, [dailyBreakdown, isBreakdownLoading, isBreakdownSuccess]);
+  return (
+    <TableCell key={metric.metricId} className="number">
+      {metricValue.value || '0'}
+      {hasSparkline && (
+        <Sparkline
+          isLoading={isBreakdownLoading}
+          isSuccess={isBreakdownSuccess}
+          values={dailyBreakdown}
+          color={metricColor}
+        />
+      )}
+    </TableCell>
+  );
+}
 
 export default ClustersTableRow;

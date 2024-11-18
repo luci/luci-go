@@ -25,10 +25,10 @@ import {
 } from '@/clusters/hooks/use_fetch_clusters';
 import { ClusterSummaryView } from '@/proto/go.chromium.org/luci/analysis/proto/v1/clusters.pb';
 
-import { ClusterTableContextData } from '../clusters_table_context';
 import { TIME_INTERVAL_OPTIONS } from '../clusters_table_form/clusters_table_interval_selection/constants';
 import ClustersTableHead from '../clusters_table_head/clusters_table_head';
 import ClustersTableRow from '../clusters_table_row/clusters_table_row';
+import { ClusterTableContextData } from '../context/clusters_table_context';
 import {
   useFilterParam as useFailureFilterParam,
   useIntervalParam,
@@ -64,7 +64,7 @@ const ClustersTableContent = ({ project }: Props) => {
     error: basicSummariesError,
   } = useFetchClusterSummaries(fetchOptions, ClusterSummaryView.BASIC);
   const {
-    isLoading: isFullSummariesLoading,
+    isInitialLoading: isFullSummariesLoading,
     isSuccess: isFullSummariesSuccess,
     data: fullSummaries,
   } = useFetchClusterSummaries(fetchOptions, ClusterSummaryView.FULL);

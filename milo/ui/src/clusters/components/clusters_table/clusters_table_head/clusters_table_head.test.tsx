@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { screen, waitFor } from '@testing-library/react';
 
-import { ClusterTableContextWrapper } from '@/clusters/components/clusters_table/clusters_table_context';
+import { ClusterTableContextProvider } from '@/clusters/components/clusters_table/context';
 import { renderWithRouter } from '@/clusters/testing_tools/libs/mock_router';
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 
@@ -26,11 +26,11 @@ describe('Test ClustersTableHead', () => {
   it('should display sortable table head', async () => {
     const metrics = getMockMetricsList('testproject');
     renderWithRouter(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <ClustersTableHead />
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,failures',
     );
 

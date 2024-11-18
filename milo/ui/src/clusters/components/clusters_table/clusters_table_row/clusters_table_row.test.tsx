@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { screen } from '@testing-library/react';
 
-import { ClusterTableContextWrapper } from '@/clusters/components/clusters_table/clusters_table_context';
+import { ClusterTableContextProvider } from '@/clusters/components/clusters_table/context';
 import { renderWithRouterAndClient } from '@/clusters/testing_tools/libs/mock_router';
 import {
   getMockRuleBasicClusterSummary,
@@ -34,13 +34,13 @@ describe('Test ClustersTableRow component', () => {
       'abcdef1234567890abcdef1234567890',
     );
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <tbody>
             <ClustersTableRow project="testproject" cluster={mockCluster} />
           </tbody>
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
       '/',
     );
@@ -63,13 +63,13 @@ describe('Test ClustersTableRow component', () => {
       'abcdef1234567890abcdef1234567890',
     );
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <tbody>
             <ClustersTableRow project="testproject" cluster={mockCluster} />
           </tbody>
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
       '/',
     );
@@ -89,7 +89,7 @@ describe('Test ClustersTableRow component', () => {
       'abcdef1234567890abcdef1234567890',
     );
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <tbody>
             <ClustersTableRow
@@ -100,7 +100,7 @@ describe('Test ClustersTableRow component', () => {
             />
           </tbody>
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
       '/',
     );
@@ -127,7 +127,7 @@ describe('Test ClustersTableRow component', () => {
       'abcdef1234567890abcdef1234567890',
     );
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <tbody>
             <ClustersTableRow
@@ -138,7 +138,7 @@ describe('Test ClustersTableRow component', () => {
             />
           </tbody>
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
       '/',
     );
@@ -165,7 +165,7 @@ describe('Test ClustersTableRow component', () => {
       'abcdef1234567890abcdef1234567890',
     );
     renderWithRouterAndClient(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <table>
           <tbody>
             <ClustersTableRow
@@ -176,7 +176,7 @@ describe('Test ClustersTableRow component', () => {
             />
           </tbody>
         </table>
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       '/?selectedMetrics=human-cls-failed-presubmit,critical-failures-exonerated,test-runs-failed,failures',
       '/',
     );

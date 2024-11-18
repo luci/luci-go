@@ -23,20 +23,3 @@ interface ClusterTableData {
 export const ClusterTableContextData = createContext<ClusterTableData>({
   metrics: [],
 });
-
-interface Props {
-  metrics: ProjectMetric[] | undefined;
-  children: React.ReactNode;
-}
-
-export const ClusterTableContextWrapper = ({ metrics, children }: Props) => {
-  return (
-    <ClusterTableContextData.Provider
-      value={{
-        metrics: metrics || [],
-      }}
-    >
-      {children}
-    </ClusterTableContextData.Provider>
-  );
-};

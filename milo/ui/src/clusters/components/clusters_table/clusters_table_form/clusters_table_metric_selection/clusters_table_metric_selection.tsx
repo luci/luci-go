@@ -15,7 +15,7 @@
 import { FormControl, Grid, InputLabel } from '@mui/material';
 import { useContext } from 'react';
 
-import { ClusterTableContextData } from '@/clusters/components/clusters_table/clusters_table_context';
+import { ClusterTableContextData } from '@/clusters/components/clusters_table/context/clusters_table_context';
 import { useSelectedMetricsParam } from '@/clusters/components/clusters_table/hooks';
 import MetricsSelector from '@/clusters/components/metrics_selector/metrics_selector';
 import { MetricId } from '@/clusters/types/metric_id';

@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { TimeInterval } from '@/clusters/hooks/use_fetch_clusters';
-import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { MetricId } from '@/clusters/types/metric_id';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 export interface OrderBy {
   metric: MetricId;
@@ -30,20 +30,18 @@ export function useFilterParam(): [
   const failureFilter = searchParams.get('q') || '';
 
   function updateFailureFilterParam(failureFilter: string, replace = false) {
-    const params = new URLSearchParams();
-
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'q') {
-        params.set(k, v);
-      }
-    }
-
-    if (failureFilter !== '') {
-      params.set('q', failureFilter);
-    }
-    setSearchParams(params, {
-      replace,
-    });
+    setSearchParams(
+      (stateParams) => {
+        const params = new URLSearchParams(stateParams);
+        if (failureFilter !== '') {
+          params.set('q', failureFilter);
+        }
+        return params;
+      },
+      {
+        replace,
+      },
+    );
   }
 
   return [failureFilter, updateFailureFilterParam];
@@ -66,19 +64,16 @@ export function useIntervalParam(
     selectedInterval: TimeInterval,
     replace = false,
   ) {
-    const params = new URLSearchParams();
-
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'interval') {
-        params.set(k, v);
-      }
-    }
-
-    params.set('interval', selectedInterval.id);
-
-    setSearchParams(params, {
-      replace,
-    });
+    setSearchParams(
+      (stateParams) => {
+        const params = new URLSearchParams(stateParams);
+        params.set('interval', selectedInterval.id);
+        return params;
+      },
+      {
+        replace,
+      },
+    );
   }
 
   return [interval, updateIntervalParam];
@@ -105,22 +100,27 @@ export function useOrderByParam(
   }
 
   function updateOrderByParams(orderBy: OrderBy, replace = false) {
-    const params = new URLSearchParams();
+    setSearchParams(
+      (stateParams) => {
+        const params = new URLSearchParams(stateParams);
 
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'orderBy' && k !== 'orderDir') {
-        params.set(k, v);
-      }
-    }
-    if (orderBy) {
-      params.set('orderBy', orderBy.metric);
-      if (orderBy.isAscending) {
-        params.set('orderDir', 'asc');
-      }
-    }
-    setSearchParams(params, {
-      replace,
-    });
+        for (const [k, v] of searchParams.entries()) {
+          if (k !== 'orderBy' && k !== 'orderDir') {
+            params.set(k, v);
+          }
+        }
+        if (orderBy) {
+          params.set('orderBy', orderBy.metric);
+          if (orderBy.isAscending) {
+            params.set('orderDir', 'asc');
+          }
+        }
+        return params;
+      },
+      {
+        replace,
+      },
+    );
   }
 
   return [orderBy, updateOrderByParams];
@@ -144,43 +144,36 @@ export function useSelectedMetricsParam(
     selectedMetrics: ProjectMetric[],
     replace = false,
   ) {
-    const params = new URLSearchParams();
+    setSearchParams(
+      (stateParams) => {
+        const params = new URLSearchParams(stateParams);
 
-    const selectedMetricsIds = selectedMetrics
-      .map((metric) => metric.metricId)
-      .join(',');
-    params.set('selectedMetrics', selectedMetricsIds);
+        const selectedMetricsIds = selectedMetrics
+          .map((metric) => metric.metricId)
+          .join(',');
+        params.set('selectedMetrics', selectedMetricsIds);
 
-    const orderByParam = searchParams.get('orderBy');
-    let addedOrderBy = false;
-    if (selectedMetrics.findIndex((m) => m.metricId === orderByParam) < 0) {
-      let orderByValue = '';
-      if (selectedMetrics.length > 0) {
-        let highestMetric = selectedMetrics[0];
-        selectedMetrics.forEach((m) => {
-          if (m.sortPriority > highestMetric.sortPriority) {
-            highestMetric = m;
+        const orderByParam = searchParams.get('orderBy');
+        if (selectedMetrics.findIndex((m) => m.metricId === orderByParam) < 0) {
+          let orderByValue = '';
+          if (selectedMetrics.length > 0) {
+            let highestMetric = selectedMetrics[0];
+            selectedMetrics.forEach((m) => {
+              if (m.sortPriority > highestMetric.sortPriority) {
+                highestMetric = m;
+              }
+            });
+            orderByValue = highestMetric.metricId;
           }
-        });
-        orderByValue = highestMetric.metricId;
-      }
-      params.set('orderBy', orderByValue);
-      params.set('orderDir', 'desc');
-      addedOrderBy = true;
-    }
-
-    for (const [k, v] of searchParams.entries()) {
-      if (
-        ((k === 'orderBy' || k === 'orderDir') && addedOrderBy) ||
-        k === 'selectedMetrics'
-      ) {
-        continue;
-      }
-      params.set(k, v);
-    }
-    setSearchParams(params, {
-      replace,
-    });
+          params.set('orderBy', orderByValue);
+          params.set('orderDir', 'desc');
+        }
+        return params;
+      },
+      {
+        replace,
+      },
+    );
   }
 
   return [selectedMetrics, updateSelectedMetricsParam];

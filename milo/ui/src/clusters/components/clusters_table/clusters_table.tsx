@@ -21,9 +21,9 @@ import useFetchMetrics from '@/clusters/hooks/use_fetch_metrics';
 import CentralizedProgress from '../centralized_progress/centralized_progress';
 
 import ClustersTableContent from './clusters_table_content/clusters_table_content';
-import { ClusterTableContextWrapper } from './clusters_table_context';
 import ClustersTableForm from './clusters_table_form/clusters_table_form';
 import { TIME_INTERVAL_OPTIONS } from './clusters_table_form/clusters_table_interval_selection/constants';
+import { ClusterTableContextProvider } from './context';
 import { useIntervalParam, useSelectedMetricsParam } from './hooks';
 
 interface Props {
@@ -65,7 +65,7 @@ const ClustersTable = ({ project }: Props) => {
   }, [selectedInterval, updateIntervalParam]);
 
   return (
-    <ClusterTableContextWrapper metrics={metrics}>
+    <ClusterTableContextProvider metrics={metrics}>
       <Grid container columnGap={2} rowGap={2}>
         <ClustersTableForm />
         {error && <LoadErrorAlert entityName="metrics" error={error} />}
@@ -74,7 +74,7 @@ const ClustersTable = ({ project }: Props) => {
           <ClustersTableContent project={project} />
         )}
       </Grid>
-    </ClusterTableContextWrapper>
+    </ClusterTableContextProvider>
   );
 };
 

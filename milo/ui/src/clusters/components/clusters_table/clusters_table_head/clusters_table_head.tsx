@@ -18,7 +18,7 @@ import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import { useContext } from 'react';
 
-import { ClusterTableContextData } from '@/clusters/components/clusters_table/clusters_table_context';
+import { ClusterTableContextData } from '@/clusters/components/clusters_table/context/clusters_table_context';
 import {
   OrderBy,
   useOrderByParam,

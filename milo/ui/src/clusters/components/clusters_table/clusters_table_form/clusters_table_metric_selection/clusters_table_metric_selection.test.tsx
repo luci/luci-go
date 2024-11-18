@@ -16,7 +16,7 @@ import '@testing-library/jest-dom';
 
 import { fireEvent, screen } from '@testing-library/react';
 
-import { ClusterTableContextWrapper } from '@/clusters/components/clusters_table/clusters_table_context';
+import { ClusterTableContextProvider } from '@/clusters/components/clusters_table/context';
 import { renderWithRouter } from '@/clusters/testing_tools/libs/mock_router';
 import { getMockMetricsList } from '@/clusters/testing_tools/mocks/metrics_mock';
 
@@ -26,9 +26,9 @@ describe('Test ClusterTableMetricSelection component', () => {
   it('given a list of metrics, should display select items', async () => {
     const metrics = getMockMetricsList('testproject');
     renderWithRouter(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <ClustersTableMetricSelection />
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
     );
 
     await screen.findAllByText('Metrics');
@@ -45,9 +45,9 @@ describe('Test ClusterTableMetricSelection component', () => {
 
     const selectedMetrics = [metrics[0].metricId, metrics[1].metricId];
     renderWithRouter(
-      <ClusterTableContextWrapper metrics={metrics}>
+      <ClusterTableContextProvider metrics={metrics}>
         <ClustersTableMetricSelection />
-      </ClusterTableContextWrapper>,
+      </ClusterTableContextProvider>,
       `/?selectedMetrics=${selectedMetrics.join(',')}`,
     );
 
