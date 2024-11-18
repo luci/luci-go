@@ -16,7 +16,9 @@
 package validate
 
 import (
+	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 
 	"go.chromium.org/luci/cipd/client/cipd/template"
@@ -39,12 +41,21 @@ const (
 	maxBotPingTolanceSecs = 1200
 	// Min time to keep the bot alive before it is declared dead.
 	minBotPingTolanceSecs = 60
+	maxPubsubTopicLength  = 1024
 )
 
 var (
 	dimensionKeyRe   = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
 	reservedTags     = stringset.NewFromSlice([]string{"swarming.terminate"}...)
 	serviceAccountRE = regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$`)
+
+	// cloudProjectIDRE is the cloud project identifier regex derived from
+	// https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin
+	cloudProjectIDRE = regexp.MustCompile(`^[a-z]([a-z0-9-]){4,28}[a-z0-9]$`)
+	// topicNameRE is the full topic name regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
+	topicNameRE = regexp.MustCompile(`^projects/(.*)/topics/(.*)$`)
+	// topicIDRE is the topic id regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
+	topicIDRE = regexp.MustCompile(`^[A-Za-z]([0-9A-Za-z\._\-~+%]){3,255}$`)
 )
 
 // DimensionKey checks if `key` can be a dimension key.
@@ -147,4 +158,55 @@ func BotPingTolerance(bpt int64) error {
 		return errors.Reason("invalid %d, must be between %d and %d", bpt, minBotPingTolanceSecs, maxBotPingTolanceSecs).Err()
 	}
 	return nil
+}
+
+// SecureURL checks a URL is valid and secure, except for localhost.
+func SecureURL(u string) error {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+	if parsed.Hostname() == "" {
+		return errors.Reason("invalid URL %q", u).Err()
+	}
+
+	localHosts := []string{"localhost", "127.0.0.1", "::1"}
+	if slices.Contains(localHosts, parsed.Hostname()) {
+		if parsed.Scheme != "http" && parsed.Scheme != "https" {
+			return errors.Reason("%q is not secure", u).Err()
+		}
+	} else if parsed.Scheme != "https" {
+		return errors.Reason("%q is not secure", u).Err()
+	}
+	return nil
+}
+
+// PubSubTopicName validates the format of topic, extract the cloud project and topic id, and return them.
+func PubSubTopicName(topic string) (string, string, error) {
+	if topic == "" {
+		return "", "", nil
+	}
+	if len(topic) > maxPubsubTopicLength {
+		return "", "", errors.Reason("too long %s: %d > %d", topic, len(topic), maxPubsubTopicLength).Err()
+	}
+
+	matches := topicNameRE.FindAllStringSubmatch(topic, -1)
+	if matches == nil || len(matches[0]) != 3 {
+		return "", "", errors.Reason("topic %q does not match %q", topic, topicNameRE).Err()
+	}
+
+	cloudProj := matches[0][1]
+	topicID := matches[0][2]
+	// Only internal App Engine projects start with "google.com:", all other
+	// project ids conform to cloudProjectIDRE.
+	if !strings.HasPrefix(cloudProj, "google.com:") && !cloudProjectIDRE.MatchString(cloudProj) {
+		return "", "", errors.Reason("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE).Err()
+	}
+	if strings.HasPrefix(topicID, "goog") {
+		return "", "", errors.Reason("topic id %q shouldn't begin with the string goog", topicID).Err()
+	}
+	if !topicIDRE.MatchString(topicID) {
+		return "", "", errors.Reason("topic id %q does not match %q", topicID, topicIDRE).Err()
+	}
+	return cloudProj, topicID, nil
 }

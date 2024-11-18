@@ -81,8 +81,8 @@ func ValidatePubSubTopicName(topic string) (string, string, error) {
 
 	cloudProj := matches[0][1]
 	topicID := matches[0][2]
-	// Only internal App Engine projects start "google.com:" with go/gae4g-setup#choosing-the-right-app-engine-version,
-	// all other project ids conform to cloudProjectIDRE.
+	// Only internal App Engine projects start with "google.com:", all other
+	// project ids conform to cloudProjectIDRE.
 	if !strings.HasPrefix(cloudProj, "google.com:") && !cloudProjectIDRE.MatchString(cloudProj) {
 		return "", "", errors.Reason("cloud project id %q does not match %q", cloudProj, cloudProjectIDRE).Err()
 	}

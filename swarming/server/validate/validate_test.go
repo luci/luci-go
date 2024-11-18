@@ -156,3 +156,60 @@ func TestBotPingTolerance(t *testing.T) {
 		})
 	}
 }
+
+func TestSecureURL(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		url string
+		err any
+	}{
+		{"https://example.com", nil},
+		{"https://user:pass@bar.com", nil},
+		{"http://127.0.0.1", nil},
+		{"https://localhost", nil},
+		{"http://localhost/", nil},
+		{"http://localhost/yo", nil},
+		{"http://localhost:1", nil},
+		{"https://localhost:1/yo", nil},
+		{"http://example.com", "not secure"},
+		{"ftp://example.com", "not secure"},
+		{"ftp://localhost", "not secure"},
+		{"invalid", "invalid"},
+		{"http://#yo", "invalid"},
+		{"http://", "invalid"},
+		{"http://localhost:pwd@evil.com", "not secure"},
+	}
+	for _, cs := range cases {
+		t.Run(cs.url, func(t *testing.T) {
+			assert.That(t, SecureURL(cs.url), should.ErrLike(cs.err))
+		})
+	}
+}
+
+func TestPubSubTopicName(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name      string
+		topicName string
+		project   string
+		topic     string
+		err       any
+	}{
+		{"empty", "", "", "", nil},
+		{"valid", "projects/project/topics/topic", "project", "topic", nil},
+		{"internal_project", "projects/google.com:proj/topics/topic", "google.com:proj", "topic", nil},
+		{"too_long", strings.Repeat("l", maxPubsubTopicLength+1), "", "", "too long"},
+		{"name_invalid", "invalid", "", "", "not match"},
+		{"project_invalid", "projects/1invalid/topics/topic", "", "", "not match"},
+		{"topic_invalid", "projects/project/topics/1invalid", "", "", "not match"},
+		{"topic_with_goog_prefix", "projects/project/topics/googtopic", "", "", "shouldn't begin with the string goog"},
+	}
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			project, topic, err := PubSubTopicName(cs.topicName)
+			assert.That(t, project, should.Equal(cs.project))
+			assert.That(t, topic, should.Equal(cs.topic))
+			assert.That(t, err, should.ErrLike(cs.err))
+		})
+	}
+}

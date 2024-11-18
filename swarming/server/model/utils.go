@@ -149,6 +149,18 @@ func SortStringPairs(pairs []*apipb.StringPair) {
 	})
 }
 
+// StringPairsToMap converts a []*apipb.StringPair to map[string][]string.
+// This function should also be moved to go.chromium.org/luci/common as part of
+// the refactor.
+// TODO (crbug.com/1508908): remove this once refactored.
+func StringPairsToMap(pairs []*apipb.StringPair) map[string][]string {
+	m := make(map[string][]string, len(pairs))
+	for _, p := range pairs {
+		m[p.Key] = append(m[p.Key], p.Value)
+	}
+	return m
+}
+
 // DimensionsFlatToPb converts a list of k:v pairs into []*apipb.StringListPair.
 func DimensionsFlatToPb(flat []string) []*apipb.StringListPair {
 	// In the vast majority of cases `flat` is already sorted and we can skip
