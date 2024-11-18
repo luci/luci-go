@@ -19,6 +19,7 @@ import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { GenFeedbackUrlArgs } from '@/common/tools/utils';
+import { DeviceTable } from '@/fleet/components/device_table';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import { FILTER_OPTIONS } from '@/fleet/components/multi_select_filter/mock_data';
 import {
@@ -49,6 +50,7 @@ export const DeviceListPage = () => {
           selectedOptions={selectedOptions}
           setSelectedOptions={setSelectedOptions}
         />
+        <DeviceTable />
       </div>
     </>
   );
