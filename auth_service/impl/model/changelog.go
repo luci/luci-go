@@ -379,7 +379,7 @@ func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
 	if authdbrev < 0 {
 		return errors.New("negative revision numbers are not allowed")
 	}
-	logging.Infof(ctx, "enqueuing %d", authdbrev)
+	logging.Debugf(ctx, "enqueuing ProcessChangeTask %d", authdbrev)
 	return tq.AddTask(ctx, &tq.Task{
 		Payload: &taskspb.ProcessChangeTask{AuthDbRev: authdbrev},
 		Title:   fmt.Sprintf("authdb-rev-%d", authdbrev),
