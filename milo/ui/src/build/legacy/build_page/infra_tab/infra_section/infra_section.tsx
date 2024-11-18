@@ -19,6 +19,7 @@ import { useBuild } from '../../context';
 import { BackendRows } from './backend_rows';
 import { BotLinkRow } from './bot_link_row';
 import { BuildbucketRow } from './buildbucket_row';
+import { CreatedByRow } from './created_by_row';
 import { InvocationRow } from './invocation_row';
 import { RecipeRow } from './recipe_row';
 import { ServiceAccountRow } from './service_account_row';
@@ -45,6 +46,7 @@ export function InfraSection() {
       >
         <tbody>
           <BuildbucketRow buildId={build.id} />
+          <CreatedByRow createdBy={build.createdBy} />
           {build.infra?.backend && (
             <BackendRows backend={build.infra.backend} />
           )}

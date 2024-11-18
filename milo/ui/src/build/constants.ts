@@ -22,6 +22,7 @@ export const BUILD_FIELD_MASK = Object.freeze([
   'builderInfo',
   'number',
   'canceledBy',
+  'createdBy',
   'createTime',
   'startTime',
   'endTime',
