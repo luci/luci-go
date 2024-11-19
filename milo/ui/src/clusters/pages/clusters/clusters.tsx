@@ -22,6 +22,8 @@ import PageHeading from '@/clusters/components/headings/page_heading/page_headin
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const clustersDescription =
@@ -32,8 +34,14 @@ const clustersDescription =
 
 export const ClustersPage = () => {
   const { project } = useParams();
+
   return (
     <Container maxWidth={false}>
+      <PageMeta
+        title="Clusters"
+        project={project}
+        selectedPage={UiPage.Clusters}
+      />
       <Grid container>
         <Grid item xs={8}>
           <PageHeading>

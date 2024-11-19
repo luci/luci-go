@@ -63,7 +63,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
-    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Test Analysis')).toBeInTheDocument();
+    expect(screen.getByText('Clusters')).toBeInTheDocument();
+    expect(screen.getByText('Rules')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
   });
@@ -96,7 +98,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
-    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Test Analysis')).toBeInTheDocument();
+    expect(screen.getByText('Clusters')).toBeInTheDocument();
+    expect(screen.getByText('Rules')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.getByText('Tree status')).toBeInTheDocument();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
@@ -126,7 +130,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
-    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Test Analysis')).toBeInTheDocument();
+    expect(screen.getByText('Clusters')).toBeInTheDocument();
+    expect(screen.getByText('Rules')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.queryByText('Tree status')).toBeNull();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();
@@ -163,7 +169,9 @@ describe('Sidebar', () => {
     expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('Builder groups (Consoles)')).toBeInTheDocument();
     expect(screen.getByText('Test history')).toBeInTheDocument();
-    expect(screen.getByText('Failure clusters')).toBeInTheDocument();
+    expect(screen.getByText('Test Analysis')).toBeInTheDocument();
+    expect(screen.getByText('Clusters')).toBeInTheDocument();
+    expect(screen.getByText('Rules')).toBeInTheDocument();
     expect(screen.getByText('Sheriff-o-Matic')).toBeInTheDocument();
     expect(screen.queryByText('Tree status')).toBeNull();
     expect(screen.getByText('ChromiumDash')).toBeInTheDocument();

@@ -27,6 +27,8 @@ import RuleTopPanel from '@/clusters/components/rule/rule_top_panel/rule_top_pan
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export const RulePage = () => {
@@ -51,6 +53,11 @@ export const RulePage = () => {
 
   return (
     <Container className="mt-1" maxWidth={false}>
+      <PageMeta
+        title={`Rule | ${id}`}
+        project={project}
+        selectedPage={UiPage.Rules}
+      />
       <Grid sx={{ mt: 1 }} container spacing={2}>
         {isLoading && <LinearProgress />}
         {error && <LoadErrorAlert entityName="rule" error={error} />}

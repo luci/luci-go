@@ -21,6 +21,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
+import RuleIcon from '@mui/icons-material/Rule';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import SearchIcon from '@mui/icons-material/Search';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -41,7 +42,13 @@ export interface SidebarPage {
 }
 
 export interface SidebarSection {
-  readonly title: 'Builds' | 'Tests' | 'Monitoring' | 'Releases' | 'Admin';
+  readonly title:
+    | 'Builds'
+    | 'Tests'
+    | 'Monitoring'
+    | 'Releases'
+    | 'Admin'
+    | 'Test Analysis';
   readonly pages: SidebarPage[];
 }
 
@@ -54,6 +61,7 @@ export function generateSidebarSections(
     [
       generateBuildsSection(project),
       generateTestsSection(project),
+      generateTestAnalysisSection(project),
       generateMonitoringSection(project, treeNames),
       generateReleasesSection(project),
       generateAuthServiceSection(email),
@@ -114,12 +122,6 @@ function generateTestsSection(project: string | undefined): SidebarSection {
         page: UiPage.TestHistory,
         url: `/ui/p/${project}/test-search`,
         icon: <AccessTimeIcon />,
-      },
-      {
-        page: UiPage.FailureClusters,
-        url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/${project}/clusters`,
-        icon: <SpokeIcon />,
-        external: true,
       },
       {
         page: UiPage.RecentRegressions,
@@ -248,15 +250,37 @@ function generateAuthServiceSection(email: string | undefined): SidebarSection {
   // External users cannot see auth service, so only link it for Googlers.
   const showAuthService = /@google\.com$/.test(email || '');
   if (showAuthService) {
-    pages.push(
-      {
-        page: UiPage.AuthService,
-        url: '/ui/auth/groups',
-        icon: <GroupsIcon />,
-      });
+    pages.push({
+      page: UiPage.AuthService,
+      url: '/ui/auth/groups',
+      icon: <GroupsIcon />,
+    });
   }
   return {
     title: 'Admin',
+    pages,
+  };
+}
+
+function generateTestAnalysisSection(
+  project: string | undefined,
+): SidebarSection {
+  const pages: SidebarPage[] = [];
+  if (project) {
+    pages.push({
+      page: UiPage.Clusters,
+      url: `/ui/clusters/labs/p/${project}/clusters`,
+      icon: <SpokeIcon />,
+    });
+    pages.push({
+      page: UiPage.Rules,
+      url: `/ui/clusters/labs/p/${project}/rules`,
+      icon: <RuleIcon />,
+    });
+  }
+
+  return {
+    title: 'Test Analysis',
     pages,
   };
 }

@@ -35,6 +35,7 @@ import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { LookupBugRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
@@ -86,6 +87,7 @@ export const BugPage = () => {
 
   return (
     <Container>
+      <PageMeta title={`Bug | ${id}`} />
       <Paper
         elevation={3}
         sx={{

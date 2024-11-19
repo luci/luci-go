@@ -23,6 +23,8 @@ import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import RulesTable from '@/clusters/components/rules_table/rules_table';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const rulesDescription =
@@ -34,6 +36,7 @@ const RulesPage = () => {
   const { project } = useParams();
   return (
     <Container maxWidth={false}>
+      <PageMeta title="Rules" project={project} selectedPage={UiPage.Rules} />
       <Grid container>
         <Grid item xs={8}>
           <PageHeading>

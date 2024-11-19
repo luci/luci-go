@@ -23,6 +23,8 @@ import ErrorAlert from '@/clusters/components/error_alert/error_alert';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export const ClusterPage = () => {
@@ -44,6 +46,11 @@ export const ClusterPage = () => {
       clusterAlgorithm={algorithm}
       clusterId={id}
     >
+      <PageMeta
+        title={`Cluster | ${algorithm} - ${id}`}
+        project={project}
+        selectedPage={UiPage.Clusters}
+      />
       <Container className="mt-1" maxWidth={false}>
         <Grid sx={{ mt: 1 }} container spacing={2}>
           <Grid item xs={12}>

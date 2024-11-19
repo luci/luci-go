@@ -36,6 +36,8 @@ import {
 import { useRulesService } from '@/clusters/services/services';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { ClusterId } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
@@ -152,7 +154,12 @@ export const NewRulePage = () => {
           mx: 2,
         }}
       >
-        <PanelHeading>New Rule</PanelHeading>
+        <PageMeta
+          title="New Rule"
+          project={project}
+          selectedPage={UiPage.Rules}
+        />
+        ;<PanelHeading>New Rule</PanelHeading>
         <Grid container direction="column" spacing={1}>
           <Grid item xs>
             {validationError && (

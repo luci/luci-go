@@ -39,6 +39,8 @@ export enum UiPage {
   LogSearch = 'log-search',
   Blamelist = 'blamelist',
   AuthService = 'authdb-group',
+  Clusters = 'clusters',
+  Rules = 'rules',
 }
 
 export enum CommonColors {

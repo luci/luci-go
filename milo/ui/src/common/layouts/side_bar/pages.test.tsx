@@ -21,6 +21,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import HouseIcon from '@mui/icons-material/House';
 import LineAxisIcon from '@mui/icons-material/LineAxis';
 import LineStyleIcon from '@mui/icons-material/LineStyle';
+import RuleIcon from '@mui/icons-material/Rule';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import SearchIcon from '@mui/icons-material/Search';
 import SpeedIcon from '@mui/icons-material/Speed';
@@ -38,7 +39,11 @@ import {
 
 describe('generateSidebarSections', () => {
   it('should generate list with only builders search if there is no project', () => {
-    const sidebarItems = generateSidebarSections(undefined, undefined, undefined);
+    const sidebarItems = generateSidebarSections(
+      undefined,
+      undefined,
+      undefined,
+    );
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -54,7 +59,11 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate groups link when googler is logged in', () => {
-    const sidebarItems = generateSidebarSections(undefined, undefined, 'emailtest@google.com');
+    const sidebarItems = generateSidebarSections(
+      undefined,
+      undefined,
+      'emailtest@google.com',
+    );
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -80,7 +89,11 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate basic items for all projects', () => {
-    const sidebarItems = generateSidebarSections('projecttest', undefined, undefined);
+    const sidebarItems = generateSidebarSections(
+      'projecttest',
+      undefined,
+      undefined,
+    );
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -117,12 +130,6 @@ describe('generateSidebarSections', () => {
             icon: <AccessTimeIcon />,
           },
           {
-            page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/projecttest/clusters`,
-            icon: <SpokeIcon />,
-            external: true,
-          },
-          {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/projecttest/regressions`,
             icon: <UTurnLeft />,
@@ -134,11 +141,30 @@ describe('generateSidebarSections', () => {
           },
         ],
       },
+      {
+        title: 'Test Analysis',
+        pages: [
+          {
+            page: UiPage.Clusters,
+            url: `/ui/clusters/labs/p/projecttest/clusters`,
+            icon: <SpokeIcon />,
+          },
+          {
+            page: UiPage.Rules,
+            url: `/ui/clusters/labs/p/projecttest/rules`,
+            icon: <RuleIcon />,
+          },
+        ],
+      },
     ]);
   });
 
   it('should generate correct links for chromium', () => {
-    const sidebarItems = generateSidebarSections('chromium', undefined, undefined);
+    const sidebarItems = generateSidebarSections(
+      'chromium',
+      undefined,
+      undefined,
+    );
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -180,12 +206,6 @@ describe('generateSidebarSections', () => {
             icon: <AccessTimeIcon />,
           },
           {
-            page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/chromium/clusters`,
-            icon: <SpokeIcon />,
-            external: true,
-          },
-          {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/chromium/regressions`,
             icon: <UTurnLeft />,
@@ -194,6 +214,21 @@ describe('generateSidebarSections', () => {
             page: UiPage.LogSearch,
             url: `/ui/labs/p/chromium/log-search`,
             icon: <PlagiarismOutlined />,
+          },
+        ],
+      },
+      {
+        title: 'Test Analysis',
+        pages: [
+          {
+            page: UiPage.Clusters,
+            url: `/ui/clusters/labs/p/chromium/clusters`,
+            icon: <SpokeIcon />,
+          },
+          {
+            page: UiPage.Rules,
+            url: `/ui/clusters/labs/p/chromium/rules`,
+            icon: <RuleIcon />,
           },
         ],
       },
@@ -223,7 +258,11 @@ describe('generateSidebarSections', () => {
   });
 
   it('should generate correct links for chromeos', () => {
-    const sidebarItems = generateSidebarSections('chromeos', undefined, undefined);
+    const sidebarItems = generateSidebarSections(
+      'chromeos',
+      undefined,
+      undefined,
+    );
     expect(sidebarItems).toEqual<SidebarSection[]>([
       {
         title: `Builds`,
@@ -260,12 +299,6 @@ describe('generateSidebarSections', () => {
             icon: <AccessTimeIcon />,
           },
           {
-            page: UiPage.FailureClusters,
-            url: `https://${SETTINGS.luciAnalysis.uiHost || SETTINGS.luciAnalysis.host}/p/chromeos/clusters`,
-            icon: <SpokeIcon />,
-            external: true,
-          },
-          {
             page: UiPage.RecentRegressions,
             url: `/ui/labs/p/chromeos/regressions`,
             icon: <UTurnLeft />,
@@ -286,6 +319,21 @@ describe('generateSidebarSections', () => {
             url: `https://healthmon.chromeos.goog/time_series`,
             icon: <SpeedIcon />,
             external: true,
+          },
+        ],
+      },
+      {
+        title: 'Test Analysis',
+        pages: [
+          {
+            page: UiPage.Clusters,
+            url: `/ui/clusters/labs/p/chromeos/clusters`,
+            icon: <SpokeIcon />,
+          },
+          {
+            page: UiPage.Rules,
+            url: `/ui/clusters/labs/p/chromeos/rules`,
+            icon: <RuleIcon />,
           },
         ],
       },
