@@ -21,6 +21,8 @@ import RuleInfo from '@/clusters/components/rule/rule_info/rule_info';
 import TimestampInfoBar from '@/clusters/components/timestamp_info_bar/timestamp_info_bar';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
 
+import BugInfo from '../bug_info/bug_info';
+
 interface Props {
   project: string;
   ruleId: string;
@@ -68,12 +70,12 @@ const RuleTopPanel = ({ project, ruleId }: Props) => {
             />
           </Grid>
           <Grid container item xs={12} columnSpacing={2}>
-            <Grid item xs={12} display="grid">
+            <Grid item xs={12} lg={8} display="grid">
               <RuleInfo project={project} rule={rule} />
             </Grid>
-            {/**
-             * TODO implement bug information section for Buganizer.
-             */}
+            <Grid item xs={12} lg={4} display="grid">
+              <BugInfo rule={rule} />
+            </Grid>
           </Grid>
         </Grid>
       )}
