@@ -22,7 +22,6 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"sort"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -30,7 +29,6 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -46,27 +44,22 @@ import (
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 	"go.chromium.org/luci/swarming/server/pyproxy"
-	"go.chromium.org/luci/swarming/server/validate"
 )
 
 // RequestBody should be implemented by a JSON-serializable struct representing
 // format of some particular request.
 type RequestBody interface {
-	ExtractSession() []byte                 // the token with bot Session proto
-	ExtractPollToken() []byte               // the poll token, if present
-	ExtractSessionToken() []byte            // the RBE session token, if present
-	ExtractDimensions() map[string][]string // dimensions reported by the bot, if present
-	ExtractDebugRequest() any               // serialized as JSON and logged on errors
+	ExtractSession() []byte      // the token with bot Session proto
+	ExtractPollToken() []byte    // the poll token, if present, TODO: delete
+	ExtractSessionToken() []byte // the RBE session token, if present, TODO: delete
+	ExtractDebugRequest() any    // serialized as JSON and logged on errors
 }
 
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
-	BotID               string                 // validated bot ID, TODO: delete (part of Session)
-	SessionID           string                 // validated RBE bot session ID, if present, TODO: delete
-	SessionTokenExpired bool                   // true if the request has expired session token, TODO: delete
-	PollState           *internalspb.PollState // validated poll state, TODO: delete
-	Dimensions          map[string][]string    // validated dimensions, TODO: delete
-	Session             *internalspb.Session   // the bot session from the session token
+	Session    *internalspb.Session   // the bot session from the session token
+	Dimensions []string               // bot's "k:v" dimensions as stored in the datastore
+	PollState  *internalspb.PollState // validated poll state, TODO: delete
 }
 
 // Response is serialized as JSON and sent to the bot.
@@ -186,9 +179,8 @@ func GET(s *Server, route string, handler router.Handler) {
 // This is a POST handler that receives JSON-serialized B and replies with
 // some JSON-serialized response.
 //
-// It performs bot authentication and authorization based on bots.cfg config.
-//
-// TODO: Most of this will be gone once Bot Session tokens are rolled out.
+// It performs bot authentication and authorization based on the bot session
+// token and the bot state in the datastore.
 func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
 	s.router.POST(route, s.middlewares, func(c *router.Context) {
 		ctx := c.Request.Context()
@@ -197,30 +189,26 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 
 		// Deserialized request body.
 		var body *B
-
-		// Deserialized and validated tokens in the request.
-		var pollTokenState *internalspb.PollState
-		var sessionState *internalspb.BotSession
-
-		// This is either pollTokenState or the poll state inside sessionState,
-		// depending on which token is non-expired. Populated below.
-		var pollState *internalspb.PollState
+		// Deserialized (but perhaps expired) session.
+		var session *internalspb.Session
 
 		// writeErr logs a gRPC error and writes it to the HTTP response.
 		writeErr := func(err error) {
 			// Log request details to help in debugging errors.
 			logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
 			logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
-			if pollState != nil {
-				logging.Infof(ctx, "Bot ID: %s", extractBotID(pollState))
-				logging.Infof(ctx, "Poll token ID: %s", pollState.Id)
-				logging.Infof(ctx, "RBE: %s", pollState.RbeInstance)
-				if pollState.DebugInfo != nil {
-					logging.Infof(ctx, "Poll token age: %s", clock.Now(ctx).Sub(pollState.DebugInfo.Created.AsTime()))
+			if session != nil {
+				logging.Infof(ctx, "Bot ID: %s", session.BotId)
+				logging.Infof(ctx, "Session ID: %s", session.SessionId)
+				logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
+				if session.DebugInfo != nil {
+					logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
+					logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
 				}
-			}
-			if sessionState != nil {
-				logging.Infof(ctx, "Session ID: %s", sessionState.RbeBotSessionId)
+				if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
+					logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
+					logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
+				}
 			}
 			if body != nil {
 				blob, _ := json.MarshalIndent(RB(body).ExtractDebugRequest(), "", "  ")
@@ -260,84 +248,31 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			return
 		}
 
-		// To authenticate the bot we need either a non-expired poll token, a
-		// non-expired session token or both (in which case the poll token is
-		// preferred, since it should be more recently produced in this case). If we
-		// have a poll token, we validate it to directly get PollState. If we have
-		// a session token, we validate it and grab PollState from within it. This
-		// PollState is then used to check bot credentials.
+		// A valid non-expired session token is required to authenticate the bot.
+		sessionTok := RB(body).ExtractSession()
+		if len(sessionTok) == 0 {
+			writeErr(status.Errorf(codes.Unauthenticated, "no session token"))
+			return
+		}
+		session, err = botsession.Unmarshal(sessionTok, s.hmacSecret)
+		if err != nil {
+			writeErr(status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err))
+			return
+		}
+		if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
+			writeErr(status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt))
+			return
+		}
+
+		// Verify the bot credentials match what's recorded in the session token.
+		// Since the session token is initially created by the server after it
+		// authorizes the bot, this check verifies the bot is known per the config
+		// when the token was initially created.
 		//
-		// This scheme is necessary because poll tokens can be produced only by
-		// Python Swarming server when bot calls "/bot/poll" endpoint. When the bot
-		// is running a task, it isn't polling Python Swarming server and its poll
-		// token expires. For that reason when running a task (or making other
-		// post-task calls that happen before the next poll), we use the session
-		// token instead, which has the most recently validated PollState stored in
-		// it in a "frozen" state.
-		//
-		// When the bot is polling for tasks, it sends both poll token and session
-		// token to us, which allows us to put up-to-date PollState into the
-		// session token. This happens in UpdateBotSession handler.
-
-		// If have a poll token, validate and deserialize it.
-		if pollToken := RB(body).ExtractPollToken(); len(pollToken) != 0 {
-			pollTokenState = &internalspb.PollState{}
-			if err := s.hmacSecret.ValidateToken(pollToken, pollTokenState); err != nil {
-				writeErr(status.Errorf(codes.Unauthenticated, "failed to verify poll token: %s", err))
-				return
-			}
-			if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
-				logging.Warningf(ctx, "Ignoring poll token (expired %s ago):\n%s", exp, prettyProto(pollTokenState))
-				pollTokenState = nil
-			}
-		}
-		// If have a session token, validate and deserialize it as well.
-		sessionTokenExpired := false
-		if sessionToken := RB(body).ExtractSessionToken(); len(sessionToken) != 0 {
-			sessionState = &internalspb.BotSession{}
-			if err := s.hmacSecret.ValidateToken(sessionToken, sessionState); err != nil {
-				writeErr(status.Errorf(codes.Unauthenticated, "failed to verify session token: %s", err))
-				return
-			}
-			if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
-				logging.Warningf(ctx, "Ignoring session token (expired %s ago):\n%s", exp, prettyProto(sessionState))
-				sessionState = nil
-				sessionTokenExpired = true
-			}
-		}
-
-		// Need at least one valid and fresh token.
-		if pollTokenState == nil && sessionState == nil {
-			writeErr(status.Errorf(codes.Unauthenticated, "no valid poll or state token"))
-			return
-		}
-
-		// Prefer the state from the poll token. It is fresher. Fallback to the
-		// state stored in the session token if there's no poll token or it has
-		// expired.
-		pollState = pollTokenState
-		if pollState == nil {
-			pollState = sessionState.GetPollState()
-			if pollState == nil {
-				writeErr(status.Errorf(codes.Unauthenticated, "no poll state available"))
-				return
-			}
-		}
-
-		// Extract bot ID from the validated PollToken.
-		botID := extractBotID(pollState)
-		if botID == "" {
-			writeErr(status.Errorf(codes.InvalidArgument, "no bot ID"))
-			return
-		}
-		// Session ID must be present if there's a session token.
-		if sessionState != nil && sessionState.RbeBotSessionId == "" {
-			writeErr(status.Errorf(codes.InvalidArgument, "no session ID"))
-			return
-		}
-
-		// Verify bot credentials match what's recorded in the validated poll state.
-		if err := checkCredentials(ctx, pollState); err != nil {
+		// TODO: Add a check for session.bot_config.expiry to limit how long a bot
+		// can reuse the "captured" config. This depends on actually populating this
+		// expiry correctly before launching long-running tasks.
+		if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.GetBotAuth()); err != nil {
 			if transient.Tag.In(err) {
 				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
 			} else {
@@ -346,70 +281,55 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			return
 		}
 
-		// Apply verified state stored in PollState on top of whatever was reported
-		// by the bot. Normally functioning bots should report the same values as
-		// stored in the token.
-		dims := RB(body).ExtractDimensions()
-		for _, dim := range pollState.EnforcedDimensions {
-			reported := dims[dim.Key]
-			if !slices.Equal(reported, dim.Values) {
-				logging.Errorf(ctx, "Dimension %q mismatch: reported %v, expecting %v",
-					dim.Key, reported, dim.Values,
-				)
-				dims[dim.Key] = dim.Values
-			}
-		}
-
-		// There must be `pool` dimension with at least one value (perhaps more).
-		if len(dims["pool"]) == 0 {
-			writeErr(status.Errorf(codes.InvalidArgument, "no pool dimension"))
+		// Verify this bot is known in the datastore and fetch its registered
+		// dimensions. Bots are registered in /handshake or /bot/poll.
+		knownBot, err := s.knownBots(ctx, session.BotId)
+		switch {
+		case err != nil:
+			writeErr(status.Errorf(codes.Internal, "error fetching bot info: %s", err))
+			return
+		case knownBot == nil:
+			writeErr(status.Errorf(codes.PermissionDenied, "%q is not a registered bot", session.BotId))
 			return
 		}
 
-		// We'll soon switch to using the bot dimensions stored in the datastore.
-		// Verify they match what the bot is sending via tokens.
-		var swarmingSID string
-		switch knownBot, err := s.knownBots(ctx, botID); {
-		case err != nil:
-			logging.Errorf(ctx, "Failed to fetch BotInfo of %s: %s", botID, err)
-		case knownBot == nil:
-			logging.Errorf(ctx, "Missing BotInfo of %s", botID)
-		default:
-			swarmingSID = knownBot.SessionID
-			fromDS := dimsFlatToString(knownBot.Dimensions)
-			fromTok := dimsMapToString(dims)
-			if fromDS != fromTok {
-				logging.Errorf(ctx, "Dims from datastore != dims from token:\nDatastore: %s\nToken: %s", fromDS, fromTok)
-			}
+		// TODO: Deal with concurrent sessions by "gracefully" closing an older one.
+		// Refusing an unexpected session is also an only way to quickly revoke
+		// access to a bot (before the session token expires).
+		if knownBot.SessionID != session.SessionId {
+			logging.Warningf(ctx, "Wrong session ID: expect %q, got %q", knownBot.SessionID, session.SessionId)
 		}
 
-		// If have a Swarming bot session token, verify it is valid and the
-		// information inside matches what was extracted above from other
-		// (deprecated) tokens. This is a dry run check for now.
-		var swarmingSession *internalspb.Session
-		if sessionTok := RB(body).ExtractSession(); len(sessionTok) != 0 {
-			swarmingSession = checkSwarmingSession(ctx,
-				sessionTok,
-				s.hmacSecret,
-				botID,
-				swarmingSID,
-				sessionState.GetRbeBotSessionId(),
-			)
-			if swarmingSession != nil {
-				logging.Infof(ctx, "Swarming session ID: %s", swarmingSession.SessionId)
-			}
-		} else {
-			logging.Infof(ctx, "No Swarming session token")
+		// Verify that required dimensions are present. This is enforced when the
+		// bot is registered. This check is here to avoid panics up the stack if
+		// something in the datastore is wrong for some reason.
+		if !slices.Equal(extractDim(knownBot.Dimensions, "id"), []string{session.BotId}) {
+			writeErr(status.Errorf(codes.Internal, `wrong stored "id" dimension`))
+			return
+		}
+		if len(extractDim(knownBot.Dimensions, "pool")) == 0 {
+			writeErr(status.Errorf(codes.Internal, `no stored "pool" dimension`))
+			return
+		}
+
+		// Temporary keep using old tokens in a minimal way (basically just refresh
+		// them) as long as the bot sends them. This is needed to allow rolling back
+		// the server deployment without blowing up all in-flight tasks: if we
+		// rollback the server to a version that verifies these old tokens, we need
+		// to make sure bots actually have them up-to-date.
+		//
+		// TODO: Stop doing that when the bot no longer uses old tokens at all.
+		pollState, err := extractPollState(ctx, RB(body).ExtractPollToken(), RB(body).ExtractSessionToken(), s.hmacSecret)
+		if err != nil {
+			writeErr(status.Errorf(codes.Unauthenticated, "%s", err))
+			return
 		}
 
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
-			BotID:               botID,
-			SessionID:           sessionState.GetRbeBotSessionId(),
-			SessionTokenExpired: sessionTokenExpired,
-			PollState:           pollState,
-			Dimensions:          dims,
-			Session:             swarmingSession,
+			Session:    session,
+			Dimensions: knownBot.Dimensions,
+			PollState:  pollState,
 		})
 		if err != nil {
 			writeErr(err)
@@ -430,39 +350,15 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 	})
 }
 
-// checkSwarmingSession unmarshals Swarming bot session and compares it to given
-// values, logging discrepancies.
-//
-// This is a dry run check before session tokens become authoritative.
-func checkSwarmingSession(ctx context.Context, tok []byte, s *hmactoken.Secret, botID, swarmingSID, rbeSID string) *internalspb.Session {
-	session, err := botsession.Unmarshal(tok, s)
-	if err != nil {
-		logging.Errorf(ctx, "Bad session token: %s", err)
-		return nil
+// extractDim extracts dimension values from a list of flat dimensions.
+func extractDim(dims []string, key string) []string {
+	var out []string
+	for _, kv := range dims {
+		if k, v, ok := strings.Cut(kv, ":"); ok && k == key {
+			out = append(out, v)
+		}
 	}
-	if clock.Now(ctx).After(session.Expiry.AsTime()) {
-		logging.Errorf(ctx, "Expired session:\n%s", botsession.FormatForDebug(session))
-		return nil
-	}
-	if session.BotId != botID {
-		logging.Errorf(ctx, "Wrong bot ID:\n%s", botsession.FormatForDebug(session))
-		return nil
-	}
-	if session.RbeBotSessionId != rbeSID {
-		logging.Errorf(ctx, "Wrong RBE session ID:\n%s", botsession.FormatForDebug(session))
-		return nil
-	}
-	// Following errors are "fine" in a sense that if they happen, something is
-	// still broken, but we can keep using the token for now. They will all become
-	// real errors once Swarming bot sessions are fully implemented.
-	if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.GetBotAuth()); err != nil {
-		logging.Errorf(ctx, "Failing bot authorization: %s", err)
-		logging.Errorf(ctx, "Session:\n%s", botsession.FormatForDebug(session))
-	}
-	if session.SessionId != swarmingSID {
-		logging.Errorf(ctx, "Wrong session ID: %s != %s", session.SessionId, swarmingSID)
-	}
-	return session
+	return out
 }
 
 // prettyProto formats a proto message for logs.
@@ -477,125 +373,57 @@ func prettyProto(msg proto.Message) string {
 	return string(blob)
 }
 
-// botIDFromDimensions extracts the bot ID from the dimensions dictionary.
-func botIDFromDimensions(dims map[string][]string) (string, error) {
-	var botID string
-	switch vals := dims["id"]; {
-	case len(vals) == 0:
-		return "", errors.Reason("bad dimensions: no bot ID").Err()
-	case len(vals) != 1:
-		return "", errors.Reason("bad dimensions: multiple bot IDs").Err()
-	default:
-		botID = vals[0]
-		if err := validate.DimensionValue(botID); err != nil {
-			return "", errors.Reason("bad bot ID %q: %s", botID, err).Err()
-		}
-		return botID, nil
-	}
-}
-
-// checkCredentials checks the bot credentials in the context match what is
-// required by the PollState.
+// extractPollState extracts PollState from either a poll or a session token.
 //
-// It ensures the Go portion of the Swarming server authenticates the bot in
-// the exact same way the Python portion did (since the Python portion produced
-// the PollState after it authenticated the bot).
+// This is temporary to allow rollbacks. The current code doesn't use this poll
+// state (other than generated legacy tokens for the rollback purposes).
 //
-// TODO(vadimsh): Get rid of this after switching to using bots.cfg config
-// instead of the poll token.
-func checkCredentials(ctx context.Context, pollState *internalspb.PollState) error {
-	switch m := pollState.AuthMethod.(type) {
-	case *internalspb.PollState_GceAuth:
-		gceInfo := openid.GetGoogleComputeTokenInfo(ctx)
-		if gceInfo == nil {
-			return errors.Reason("expecting GCE VM token auth").Err()
-		}
-		if gceInfo.Project != m.GceAuth.GceProject || gceInfo.Instance != m.GceAuth.GceInstance {
-			logging.Errorf(ctx, "Bad GCE VM auth: want %s@%s, got %s@%s",
-				m.GceAuth.GceInstance, m.GceAuth.GceProject,
-				gceInfo.Instance, gceInfo.Project,
-			)
-			return errors.Reason("wrong GCE VM token: %s@%s", gceInfo.Instance, gceInfo.Project).Err()
-		}
-
-	case *internalspb.PollState_ServiceAccountAuth_:
-		peerID := auth.GetState(ctx).PeerIdentity()
-		if peerID.Kind() != identity.User {
-			return errors.Reason("expecting service account credentials").Err()
-		}
-		if peerID.Email() != m.ServiceAccountAuth.ServiceAccount {
-			logging.Errorf(ctx, "Bad service account auth: want %s, got %s",
-				m.ServiceAccountAuth.ServiceAccount,
-				peerID.Email(),
-			)
-			return errors.Reason("wrong service account: %s", peerID.Email()).Err()
-		}
-
-	case *internalspb.PollState_LuciMachineTokenAuth:
-		tokInfo := machine.GetMachineTokenInfo(ctx)
-		if tokInfo == nil {
-			return errors.Reason("expecting LUCI machine token auth").Err()
-		}
-		if tokInfo.FQDN != m.LuciMachineTokenAuth.MachineFqdn {
-			logging.Errorf(ctx, "Bad LUCI machine token FQDN: want %s, got %s",
-				m.LuciMachineTokenAuth.MachineFqdn,
-				tokInfo.FQDN,
-			)
-			return errors.Reason("wrong FQDN in the LUCI machine token: %s", tokInfo.FQDN).Err()
-		}
-
-	case *internalspb.PollState_IpAllowlistAuth:
-		// The actual check is below. Here we just verify the PollState token is
-		// consistent.
-		if pollState.IpAllowlist == "" {
-			return errors.Reason("bad poll token: using IP allowlist auth without an IP allowlist").Err()
-		}
-
-	default:
-		return errors.Reason("unrecognized auth method in the poll token: %v", pollState.AuthMethod).Err()
+// TODO: Delete.
+func extractPollState(ctx context.Context, pollToken, sessionToken []byte, secret *hmactoken.Secret) (*internalspb.PollState, error) {
+	if len(pollToken) == 0 && len(sessionToken) == 0 {
+		logging.Infof(ctx, "Not using deprecated tokens")
+		return nil, nil
 	}
+	logging.Infof(ctx, "Using deprecated tokens")
 
-	// Verify the bot is in the required IP allowlist (if any).
-	if pollState.IpAllowlist != "" {
-		switch yes, err := auth.IsAllowedIP(ctx, pollState.IpAllowlist); {
-		case err != nil:
-			return errors.Annotate(err, "IP allowlist check failed").Tag(transient.Tag).Err()
-		case !yes:
-			return errors.Reason("bot IP %s is not in the allowlist", auth.GetState(ctx).PeerIP()).Err()
+	var pollTokenState *internalspb.PollState
+	var sessionState *internalspb.BotSession
+
+	if len(pollToken) != 0 {
+		pollTokenState = &internalspb.PollState{}
+		if err := secret.ValidateToken(pollToken, pollTokenState); err != nil {
+			return nil, errors.Annotate(err, "failed to verify poll token").Err()
+		}
+		if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
+			logging.Warningf(ctx, "Ignoring poll token (expired %s ago):\n%s", exp, prettyProto(pollTokenState))
+			pollTokenState = nil
 		}
 	}
 
-	return nil
-}
-
-// extractBotID extracts the bot ID from PollState.
-//
-// Returns "" if it is not present.
-func extractBotID(s *internalspb.PollState) string {
-	for _, dim := range s.EnforcedDimensions {
-		if dim.Key == "id" {
-			if len(dim.Values) > 0 {
-				return dim.Values[0]
-			}
-			return ""
+	if len(sessionToken) != 0 {
+		sessionState = &internalspb.BotSession{}
+		if err := secret.ValidateToken(sessionToken, sessionState); err != nil {
+			return nil, errors.Annotate(err, "failed to verify session token").Err()
+		}
+		if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
+			logging.Warningf(ctx, "Ignoring session token (expired %s ago):\n%s", exp, prettyProto(sessionState))
+			sessionState = nil
 		}
 	}
-	return ""
-}
 
-// dimsFlatToString converts a flat list of dimensions into a debug string.
-func dimsFlatToString(dims []string) string {
-	return strings.Join(dims, " | ")
-}
-
-// dimsMapToString converts a dimensions map into a debug string.
-func dimsMapToString(dims map[string][]string) string {
-	var kv []string
-	for k, vals := range dims {
-		for _, v := range vals {
-			kv = append(kv, fmt.Sprintf("%s:%s", k, v))
-		}
+	if pollTokenState == nil && sessionState == nil {
+		return nil, errors.Reason("both poll and state tokens have expired").Err()
 	}
-	sort.Strings(kv)
-	return dimsFlatToString(kv)
+
+	// Prefer the state from the poll token. It is fresher. Fallback to the
+	// state stored in the session token if there's no poll token or it has
+	// expired.
+	if pollTokenState != nil {
+		return pollTokenState, nil
+	}
+	if ps := sessionState.GetPollState(); ps != nil {
+		return ps, nil
+	}
+
+	return nil, errors.Reason("no poll state available in the session token").Err()
 }

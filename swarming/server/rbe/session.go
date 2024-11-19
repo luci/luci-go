@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"sort"
+	"strings"
 	"time"
 
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
@@ -96,11 +96,6 @@ type CreateBotSessionRequest struct {
 	// TODO: To be removed.
 	SessionToken []byte `json:"session_token,omitempty"`
 
-	// Dimensions is dimensions reported by the bot. Required.
-	//
-	// TODO: To be removed.
-	Dimensions map[string][]string `json:"dimensions"`
-
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
 
@@ -108,14 +103,11 @@ type CreateBotSessionRequest struct {
 	WorkerProperties *WorkerProperties `json:"worker_properties,omitempty"`
 }
 
-func (r *CreateBotSessionRequest) ExtractSession() []byte                 { return r.Session }
-func (r *CreateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
-func (r *CreateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
-func (r *CreateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
-
+func (r *CreateBotSessionRequest) ExtractSession() []byte      { return r.Session }
+func (r *CreateBotSessionRequest) ExtractPollToken() []byte    { return r.PollToken }
+func (r *CreateBotSessionRequest) ExtractSessionToken() []byte { return r.SessionToken }
 func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
 	return &CreateBotSessionRequest{
-		Dimensions:       r.Dimensions,
 		BotVersion:       r.BotVersion,
 		WorkerProperties: r.WorkerProperties,
 	}
@@ -140,13 +132,6 @@ type CreateBotSessionResponse struct {
 	// TODO: To be removed.
 	SessionToken []byte `json:"session_token"`
 
-	// SessionExpiry is when this session expires, as Unix timestamp in seconds.
-	//
-	// The bot should call `/bot/rbe/session/update` before that time.
-	//
-	// TODO: To be removed. Currently unused.
-	SessionExpiry int64 `json:"session_expiry"`
-
 	// SessionID is an RBE bot session ID as encoded in the token.
 	//
 	// Primarily for the bot debug log.
@@ -155,10 +140,16 @@ type CreateBotSessionResponse struct {
 
 // CreateBotSession is an RPC handler that creates a new bot session.
 func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotSessionRequest, r *botsrv.Request) (botsrv.Response, error) {
-	// Actually open the session. This should not block, since we aren't picking
-	// up any tasks yet (indicated by INITIALIZING status).
-	session, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
-		Parent:     r.PollState.RbeInstance,
+	// A non-RBE bot should not be attempting to open an RBE session.
+	rbeInstance := r.Session.BotConfig.GetRbeInstance()
+	if rbeInstance == "" {
+		return nil, status.Errorf(codes.FailedPrecondition, "the bot is not in RBE mode")
+	}
+
+	// Actually open the RBE session. This should not block, since we aren't
+	// picking up any tasks yet (indicated by INITIALIZING status).
+	rbeSession, err := srv.rbe.CreateBotSession(ctx, &remoteworkers.CreateBotSessionRequest{
+		Parent:     rbeInstance,
 		BotSession: rbeBotSession("", remoteworkers.BotStatus_INITIALIZING, r.Dimensions, body.BotVersion, body.WorkerProperties, nil),
 	})
 	if err != nil {
@@ -167,36 +158,31 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 		// the original RBE errors in the bot logs.
 		return nil, err
 	}
-	logging.Infof(ctx, "%s: %s", r.BotID, session.Name)
-	for _, lease := range session.Leases {
+	logging.Infof(ctx, "%s: %s", r.Session.BotId, rbeSession.Name)
+	for _, lease := range rbeSession.Leases {
 		logging.Errorf(ctx, "Unexpected lease when just opening the session: %s", lease)
 	}
 
 	// Associate the RBE session with the Swarming session.
-	var swarmingSession []byte
-	if r.Session != nil {
-		r.Session.RbeBotSessionId = session.Name
-		r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
-		r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
-		swarmingSession, err = botsession.Marshal(r.Session, srv.hmacSecret)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
-		}
+	sessionTok, err := srv.updateSessionToken(ctx, r.Session, rbeSession.Name)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
 	}
 
-	// Return the token that wraps the session ID. The bot will use it when
-	// calling `/bot/rbe/session/update`.
+	// Populate an old-format session token to allow roll backs if something goes
+	// horribly wrong: if we rollback the server to a version that verifies these
+	// old tokens, we need to make sure bots actually have them up-to-date.
 	//
-	// TODO: Remove.
-	sessionToken, tokenExpiry, err := srv.genSessionToken(ctx, r.PollState, session.Name)
+	// TODO: Stop doing that when the bot no longer reads old tokens.
+	oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSession.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 	}
+
 	return &CreateBotSessionResponse{
-		Session:       swarmingSession,
-		SessionToken:  sessionToken,
-		SessionExpiry: tokenExpiry.Unix(),
-		SessionID:     session.Name,
+		Session:      sessionTok,
+		SessionToken: oldSessionToken,
+		SessionID:    rbeSession.Name,
 	}, nil
 }
 
@@ -261,11 +247,6 @@ type UpdateBotSessionRequest struct {
 	// TODO: To be removed.
 	PollToken []byte `json:"poll_token,omitempty"`
 
-	// Dimensions is dimensions reported by the bot. Required.
-	//
-	// TODO: To be removed.
-	Dimensions map[string][]string `json:"dimensions"`
-
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
 
@@ -299,14 +280,11 @@ type UpdateBotSessionRequest struct {
 	Lease *Lease `json:"lease,omitempty"`
 }
 
-func (r *UpdateBotSessionRequest) ExtractSession() []byte                 { return r.Session }
-func (r *UpdateBotSessionRequest) ExtractPollToken() []byte               { return r.PollToken }
-func (r *UpdateBotSessionRequest) ExtractSessionToken() []byte            { return r.SessionToken }
-func (r *UpdateBotSessionRequest) ExtractDimensions() map[string][]string { return r.Dimensions }
-
+func (r *UpdateBotSessionRequest) ExtractSession() []byte      { return r.Session }
+func (r *UpdateBotSessionRequest) ExtractPollToken() []byte    { return r.PollToken }
+func (r *UpdateBotSessionRequest) ExtractSessionToken() []byte { return r.SessionToken }
 func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 	return &UpdateBotSessionRequest{
-		Dimensions:       r.Dimensions,
 		BotVersion:       r.BotVersion,
 		WorkerProperties: r.WorkerProperties,
 		Status:           r.Status,
@@ -333,15 +311,6 @@ type UpdateBotSessionResponse struct {
 	//
 	// TODO: To be removed.
 	SessionToken []byte `json:"session_token,omitempty"`
-
-	// SessionExpiry is when this session expires, as Unix timestamp in seconds.
-	//
-	// The bot should call `/bot/rbe/session/update` again before that time.
-	//
-	// If the session token has expired already, this field will be empty.
-	//
-	// TODO: To be removed. Currently unused.
-	SessionExpiry int64 `json:"session_expiry,omitempty"`
 
 	// The session status as seen by the server, as remoteworkers.BotStatus enum.
 	//
@@ -372,26 +341,13 @@ type UpdateBotSessionResponse struct {
 
 // UpdateBotSession is an RPC handler that updates a bot session.
 func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotSessionRequest, r *botsrv.Request) (botsrv.Response, error) {
-	if r.SessionID == "" {
-		// This can happen if the bot got stuck for a long time and its session
-		// token has expired. Its RBE session likely has expired as well. Return the
-		// corresponding response to let the bot know it needs to recreate
-		// the session.
-		if r.SessionTokenExpired {
-			logging.Warningf(ctx, "%s: expired session token", r.BotID)
-			logSession(ctx, "Input", body.Status, body.Lease)
-			resp := &UpdateBotSessionResponse{
-				Status: remoteworkers.BotStatus_name[int32(remoteworkers.BotStatus_BOT_TERMINATING)],
-			}
-			logSession(ctx, "Output", resp.Status, nil)
-			return resp, nil
-		}
-		// This can happen if the session token was omitted in the request. This is
-		// not allowed.
-		return nil, status.Errorf(codes.InvalidArgument, "missing session ID")
+	// A bot without an RBE session should not be attempting to update it.
+	rbeSessionID := r.Session.RbeBotSessionId
+	if rbeSessionID == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "no active RBE session")
 	}
 
-	logging.Infof(ctx, "%s: %s", r.BotID, r.SessionID)
+	logging.Infof(ctx, "%s: %s", r.Session.BotId, rbeSessionID)
 	logSession(ctx, "Input", body.Status, body.Lease)
 
 	// Need a recognizable status enum.
@@ -433,18 +389,6 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		}
 	}
 
-	// Bump Swarming bot session expiration time.
-	var swarmingSession []byte
-	var err error
-	if r.Session != nil {
-		r.Session.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
-		r.Session.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
-		swarmingSession, err = botsession.Marshal(r.Session, srv.hmacSecret)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
-		}
-	}
-
 	// If there are no pending leases, RBE seems to block for `<rpc deadline>-10s`
 	// (not doing anything at all if the RPC deadline is less than 10s).
 	var timeout time.Duration
@@ -469,8 +413,8 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	defer cancel()
 
 	session, err := srv.rbe.UpdateBotSession(rpcCtx, &remoteworkers.UpdateBotSessionRequest{
-		Name:       r.SessionID,
-		BotSession: rbeBotSession(r.SessionID, botStatus, r.Dimensions, body.BotVersion, body.WorkerProperties, leaseIn),
+		Name:       rbeSessionID,
+		BotSession: rbeBotSession(rbeSessionID, botStatus, r.Dimensions, body.BotVersion, body.WorkerProperties, leaseIn),
 	})
 
 	if err != nil {
@@ -480,15 +424,18 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		// and kills it.
 		if status.Code(err) == codes.DeadlineExceeded && leaseIn == nil && botStatus == remoteworkers.BotStatus_OK {
 			logging.Warningf(ctx, "Deadline exceeded when polling for new leases")
-			sessionToken, tokenExpiry, err := srv.genSessionToken(ctx, r.PollState, r.SessionID)
+			sessionTok, err := srv.updateSessionToken(ctx, r.Session, rbeSessionID)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
+			}
+			oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSessionID)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 			}
 			return &UpdateBotSessionResponse{
-				Session:       swarmingSession,
-				SessionToken:  sessionToken,
-				SessionExpiry: tokenExpiry.Unix(),
-				Status:        "OK",
+				Session:      sessionTok,
+				SessionToken: oldSessionToken,
+				Status:       "OK",
 			}, nil
 		}
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -590,19 +537,21 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 		}
 	}
 
-	// Refresh the session token and embed new, potentially updated, PollState
-	// into it. Note that generating this token is just a local HMAC operation,
-	// which is super fast so its fine to do it on every response.
-	sessionToken, tokenExpiry, err := srv.genSessionToken(ctx, r.PollState, r.SessionID)
+	// Bump the session expiration.
+	sessionTok, err := srv.updateSessionToken(ctx, r.Session, rbeSessionID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
+	}
+	oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSessionID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
 	}
+
 	resp := &UpdateBotSessionResponse{
-		Session:       swarmingSession,
-		SessionToken:  sessionToken,
-		SessionExpiry: tokenExpiry.Unix(),
-		Status:        remoteworkers.BotStatus_name[int32(session.Status)],
-		Lease:         respLease,
+		Session:      sessionTok,
+		SessionToken: oldSessionToken,
+		Status:       remoteworkers.BotStatus_name[int32(session.Status)],
+		Lease:        respLease,
 	}
 	logSession(ctx, "Output", resp.Status, resp.Lease)
 	return resp, nil
@@ -621,21 +570,35 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 // it is never populated.
 const sessionTokenExpiry = 4 * time.Hour
 
-// genSessionToken generates a new session token.
-func (srv *SessionServer) genSessionToken(ctx context.Context, ps *internalspb.PollState, rbeSessionID string) (tok []byte, expiry time.Time, err error) {
-	if rbeSessionID == "" {
-		return nil, time.Time{}, errors.Reason("RBE session ID is unexpectedly missing").Err()
+// genOldSessionToken generates a deprecated session token.
+//
+// TODO: Remove.
+func (srv *SessionServer) genOldSessionToken(ctx context.Context, ps *internalspb.PollState, rbeSessionID string) (tok []byte, err error) {
+	if ps == nil {
+		// The bot is no longer using old session tokens. Don't generate them.
+		return nil, nil
 	}
-	expiry = clock.Now(ctx).Add(sessionTokenExpiry).Round(time.Second)
+	if rbeSessionID == "" {
+		return nil, errors.Reason("RBE session ID is unexpectedly missing").Err()
+	}
+	expiry := clock.Now(ctx).Add(sessionTokenExpiry).Round(time.Second)
 	blob, err := srv.hmacSecret.GenerateToken(&internalspb.BotSession{
 		RbeBotSessionId: rbeSessionID,
 		PollState:       ps,
 		Expiry:          timestamppb.New(expiry),
 	})
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, err
 	}
-	return blob, expiry, nil
+	return blob, nil
+}
+
+// updateSessionToken generates a new session token with bumped expiry.
+func (srv *SessionServer) updateSessionToken(ctx context.Context, s *internalspb.Session, rbeSessionID string) ([]byte, error) {
+	s.RbeBotSessionId = rbeSessionID
+	s.DebugInfo = botsession.DebugInfo(ctx, srv.backendVer)
+	s.Expiry = timestamppb.New(clock.Now(ctx).Add(botsession.Expiry))
+	return botsession.Marshal(s, srv.hmacSecret)
 }
 
 // rbeBotSession constructs remoteworkers.BotSession based on validated bot
@@ -643,24 +606,23 @@ func (srv *SessionServer) genSessionToken(ctx context.Context, ps *internalspb.P
 func rbeBotSession(
 	sessionID string,
 	status remoteworkers.BotStatus,
-	dims map[string][]string,
+	dims []string,
 	botVersion string,
 	workerProps *WorkerProperties,
 	lease *remoteworkers.Lease,
 ) *remoteworkers.BotSession {
-	var props []*remoteworkers.Device_Property
-	var botID string
-
 	// Note that at this point `dims` are validated already by botsrv.Server and
 	// we can panic on unexpected values.
-	for key, values := range dims {
-		if key == "id" {
-			if len(values) != 1 {
-				panic(fmt.Sprintf("unexpected `id` dimension values: %v", values))
-			}
-			botID = values[0]
-		} else {
-			for _, val := range values {
+	botID := ""
+	props := make([]*remoteworkers.Device_Property, 0, len(dims))
+	for _, kv := range dims {
+		if key, val, ok := strings.Cut(kv, ":"); ok {
+			if key == "id" {
+				if botID != "" {
+					panic(fmt.Sprintf("duplicate `id` dimension in %q", dims))
+				}
+				botID = val
+			} else {
 				props = append(props, &remoteworkers.Device_Property{
 					Key:   "label:" + key,
 					Value: val,
@@ -671,14 +633,6 @@ func rbeBotSession(
 	if botID == "" {
 		panic("bot ID is missing in dimensions")
 	}
-
-	// Sort to make logging output more stable and to simplify tests.
-	sort.Slice(props, func(i, j int) bool {
-		if props[i].Key == props[j].Key {
-			return props[i].Value < props[j].Value
-		}
-		return props[i].Key < props[j].Key
-	})
 
 	// These are used to associated the RBE worker with its worker provider pool.
 	var workerPropsList []*remoteworkers.Worker_Property
