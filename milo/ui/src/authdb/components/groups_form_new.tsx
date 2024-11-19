@@ -121,78 +121,63 @@ export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
   }
 
   const validateDescription = () => {
-    let noError = true;
+    let message = '';
     if (!description) {
-      setDescriptionErrorMessage('Description is required.');
-      noError = false;
-    } else {
-      setDescriptionErrorMessage('');
+      message = 'Description is required.';
     }
-    return noError;
-  }
-
-  const validateName = () => {
-    let noError = true;
-    if (!nameRe.test(name)) {
-      setNameErrorMessage('Invalid group name.');
-      noError = false;
-    } else {
-      setNameErrorMessage('');
-    }
-    return noError;
+    setDescriptionErrorMessage(message);
+    return message === '';
   }
 
   const validateOwners = () => {
-    let noError = true;
-    if (owners !== '' && !nameRe.test(owners)) {
-      setOwnersErrorMessage('Invalid owners name. Must be a group.');
-      noError = false;
-    } else {
-      setOwnersErrorMessage('');
+    let message = '';
+    if (owners && !nameRe.test(owners)) {
+      message = 'Invalid owners name. Must be a group.';
     }
-    return noError;
+    setOwnersErrorMessage(message);
+    return message === '';
+  }
+
+  const validateName = () => {
+    let message = '';
+    if (!nameRe.test(name)) {
+      message = 'Invalid group name.';
+    }
+    setNameErrorMessage(message);
+    return message === '';
   }
 
   const validateMembers = () => {
-    let noError = true;
+    let message = '';
     let membersArray = members.split(/[\n ]+/).filter((item) => item !== "");
     let invalidMembers = membersArray.filter((member) => !(isMember(member)));
     if (invalidMembers.length > 0) {
-      let errorMessage = 'Invalid members: ' + invalidMembers.join(', ');
-      setMembersErrorMessage(errorMessage);
-      noError = false;
-    } else {
-      setMembersErrorMessage('');
+      message = 'Invalid members: ' + invalidMembers.join(', ');
     }
-    return noError;
+    setMembersErrorMessage(message);
+    return message === '';
   }
 
   const validateGlobs = () => {
-    let noError = true;
+    let message = '';
     let globsArray = globs.split(/[\n ]+/).filter((item) => item !== "");
     let invalidGlobs = globsArray.filter((glob) => !isGlob(glob));
     if (invalidGlobs.length > 0) {
-      let errorMessage = 'Invalid globs: ' + invalidGlobs.join(', ');
-      setGlobsErrorMessage(errorMessage);
-      noError = false;
-    } else {
-      setGlobsErrorMessage('');
+      message = 'Invalid globs: ' + invalidGlobs.join(', ');
     }
-    return noError;
+    setGlobsErrorMessage(message);
+    return message === '';
   }
 
   const validateSubgroups = () => {
-    let noError = true;
+    let message = '';
     let subgroupsArray = subgroups.split(/[\n ]+/).filter((item) => item !== "");
     let invalidSubgroups = subgroupsArray.filter((subgroup) => !isSubgroup(subgroup));
     if (invalidSubgroups.length > 0) {
-      let errorMessage = 'Invalid subgroups: ' + invalidSubgroups.join(', ');
-      setSubgroupsErrorMessage(errorMessage);
-      noError = false;
-    } else {
-      setSubgroupsErrorMessage('');
+      message = 'Invalid subgroups: ' + invalidSubgroups.join(', ');
     }
-    return noError;
+    setSubgroupsErrorMessage(message);
+    return message === '';
   }
 
   return (

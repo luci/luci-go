@@ -37,7 +37,7 @@ import { useState, createRef } from 'react';
 import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-import { addPrefixToItems } from '@/authdb/common/helpers';
+import { addPrefixToItems, nameRe } from '@/authdb/common/helpers';
 import { useNavigate } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
@@ -107,6 +107,8 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
   const [savedDescription, setSavedDescription] = useState<string>('');
   const [savedOwners, setSavedOwners] = useState<string>('');
+  const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>('');
+  const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>('');
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
@@ -209,14 +211,38 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
     submitField(field);
   };
 
+  const validateDescription = () => {
+    let message = '';
+    if (!description) {
+      message = 'Description is required.';
+    }
+    setDescriptionErrorMessage(message);
+    return message === '';
+  }
+
+  const validateOwners = () => {
+    let message = '';
+    if (owners && !nameRe.test(owners)) {
+      message = 'Invalid owners name. Must be a group.';
+    }
+    setOwnersErrorMessage(message);
+    return message === '';
+  }
+
   const submitField = (field: string) => {
     if (field === 'description') {
+      if (!validateDescription()) {
+        return;
+      }
       setDescriptionMode(false);
       if (description === savedDescription) {
         return;
       }
     }
     else if (field === 'owners') {
+      if (!validateOwners()) {
+        return;
+      }
       setOwnersMode(false);
       if (owners === savedOwners) {
         return;
@@ -299,7 +325,18 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {descriptionMode
-                        ? <TextField value={description} style={{ width: '100%', whiteSpace: 'pre-wrap' }} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => checkFieldSubmit(e.key, 'description')} id='descriptionTextfield' data-testid='description-textfield'></TextField>
+                        ? <TextField
+                            value={description}
+                            style={{ width: '100%', whiteSpace: 'pre-wrap' }}
+                            onChange={(e) => setDescription(e.target.value)}
+                            onKeyDown={(e) => checkFieldSubmit(e.key, 'description')}
+                            id='descriptionTextfield'
+                            data-testid='description-textfield'
+                            error={descriptionErrorMessage !== ""}
+                            helperText={descriptionErrorMessage}
+                            onBlur={validateDescription}
+                          >
+                          </TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
                       }
                     </TableCell>
@@ -324,7 +361,18 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   <TableRow>
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {ownersMode
-                        ? <TextField value={owners} style={{ width: '100%' }} onChange={(e) => setOwners(e.target.value)} onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')} id='ownersTextfield' data-testid='owners-textfield'></TextField>
+                        ? <TextField value={owners}
+                            style={{ width: '100%' }}
+                            onChange={(e) => setOwners(e.target.value)}
+                            onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
+                            id='ownersTextfield'
+                            data-testid='owners-textfield'
+                            error={ownersErrorMessage !== ""}
+                            helperText={ownersErrorMessage}
+                            onBlur={validateOwners}
+                            placeholder='administrators'
+                          >
+                          </TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
                       }
                     </TableCell>

@@ -29,9 +29,9 @@ describe('<GroupsForm />', () => {
 
     render(
         <FakeContextProvider
-          mountedPath="/ui/labs/auth/groups/*"
+          mountedPath="/ui/auth/groups/*"
           routerOptions={{
-            initialEntries: ['/ui/labs/auth/groups/123'],
+            initialEntries: ['/ui/auth/groups/123'],
           }}
         >
         <List>
@@ -71,9 +71,9 @@ describe('<GroupsForm />', () => {
 
     render(
         <FakeContextProvider
-          mountedPath="/ui/labs/auth/groups/*"
+          mountedPath="/ui/auth/groups/*"
           routerOptions={{
-            initialEntries: ['/ui/labs/auth/groups/external/123'],
+            initialEntries: ['/ui/auth/groups/external/123'],
           }}
         >
         <List>
@@ -254,5 +254,110 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('groups-form');
 
     expect(screen.getByText('2 members redacted')).toBeInTheDocument();
+  });
+
+  test('if appropriate message is displayed for an error updating group', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    mockErrorUpdateGroup();
+
+    render(
+      <FakeContextProvider>
+        <GroupsForm name='123' onDelete={() => {}}/>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    // Change something so updated button is not disabled.
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+    });
+    expect(descriptionTextfield!.value).toBe('new description');
+    act(() => editButton.click());
+
+    await screen.findByRole('alert');
+    expect(screen.getByText('Error editing group')).toBeInTheDocument();
+  });
+
+  test('error is shown on empty description', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' onDelete={() => {}}/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form');
+
+    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    await screen.findByTestId('edit-description-icon');
+    const editButton = screen.getByTestId('edit-description-icon');
+    act(() => editButton.click());
+    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    act(() => {
+      fireEvent.change(descriptionTextfield!, { target: { value: '' } });
+    });
+    act(() => editButton.click());
+    expect(screen.getByText('Description is required.')).toBeInTheDocument();
+  });
+
+  test('empty owners is allowed', async () => {
+    const mockGroup = createMockGroupIndividual('123', true, true);
+    mockFetchGetGroup(mockGroup);
+
+    const mockUpdatedGroup = createMockUpdatedGroup('123');
+    mockResponseUpdateGroup(mockUpdatedGroup);
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' onDelete={() => {}}/>
+        </List>
+      </FakeContextProvider>,
+    );
+
+    await screen.findByTestId('groups-form');
+
+    fireEvent.mouseEnter(screen.getByTestId('owners-table'));
+    await screen.findByTestId('edit-owners-icon');
+    const editButton = screen.getByTestId('edit-owners-icon');
+    act(() => editButton.click());
+    const textfield = screen.getByTestId('owners-textfield').querySelector('input');
+    fireEvent.change(textfield!, {target: { value: ''}});
+    act(() => editButton.click());
+    await screen.findByRole('alert');
+    expect(screen.getByText('Group updated')).toBeInTheDocument();
+  });
+
+
+  test('error is shown on invalid owners name', async () => {
+
+    render(
+      <FakeContextProvider>
+        <List>
+            <GroupsForm name='123' onDelete={() => {}}/>
+        </List>
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form');
+
+    fireEvent.mouseEnter(screen.getByTestId('owners-table'));
+    await screen.findByTestId('edit-owners-icon');
+    const editButton = screen.getByTestId('edit-owners-icon');
+    act(() => editButton.click());
+    const textfield = screen.getByTestId('owners-textfield').querySelector('input');
+    fireEvent.change(textfield!, {target: { value: 'Invalid owners'}});
+    act(() => editButton.click());
+    expect(screen.getByText('Invalid owners name. Must be a group.')).toBeInTheDocument();
   });
 });
