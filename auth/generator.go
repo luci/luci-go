@@ -150,6 +150,13 @@ func (g *TokenGenerator) Authenticator(scopes []string, audience string) (*Authe
 		}
 		cacheKey = "oidc\x00" + audience
 
+		// When running locally using user credentials, some refresh token is needed
+		// to generate user's ID token. Use the refresh token with the set of scopes
+		// passed to NewTokenGenerator in Options.Scopes, since it likely exists.
+		// Without this, the default "userinfo.email"-scoped token will be used,
+		// which may not exist, resulting in "interactive login required" errors.
+		scopes = g.opts.Scopes
+
 	default:
 		return nil, errors.New("no scopes or audience are given")
 	}
@@ -164,7 +171,7 @@ func (g *TokenGenerator) Authenticator(scopes []string, audience string) (*Authe
 		authenticator = g.authenticators[cacheKey]
 		if authenticator == nil {
 			opts := g.opts
-			opts.UseIDTokens = len(scopes) == 0
+			opts.UseIDTokens = audience != ""
 			opts.Scopes = scopes
 			opts.Audience = audience
 			authenticator = NewAuthenticator(g.ctx, SilentLogin, opts)

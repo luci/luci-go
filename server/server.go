@@ -424,13 +424,6 @@ func OptionsFromEnv(opts *Options) (*Options, error) {
 		opts.ClientAuth.LoginSessionsHost = authDefaults.LoginSessionsHost
 	}
 
-	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
-	// This is ignored when running in the cloud (the server uses the ambient
-	// credentials provided by the environment).
-	if len(opts.ClientAuth.Scopes) == 0 {
-		opts.ClientAuth.Scopes = auth.CloudOAuthScopes
-	}
-
 	// Prepopulate defaults for flags based on the runtime environment.
 	opts.FromGAEEnv()
 	if err := opts.FromCloudRunEnv(); err != nil {
@@ -2369,6 +2362,13 @@ func (s *Server) initAuthStart() error {
 		opts.SecretsDir = s.Options.TokenCacheDir
 	}
 
+	// Use CloudOAuthScopes by default when using UserCredentialsMethod auth mode.
+	// This is ignored when running in the cloud (the server uses the ambient
+	// credentials provided by the environment).
+	if len(opts.Scopes) == 0 {
+		opts.Scopes = auth.CloudOAuthScopes
+	}
+
 	// Annotate the context used for logging from the token generator.
 	ctx := logging.SetField(s.Context, "activity", "luci.auth")
 	tokens := clientauth.NewTokenGenerator(ctx, opts)
@@ -2407,19 +2407,19 @@ func (s *Server) initAuthStart() error {
 		IsDevMode:           !s.Options.Prod,
 	})
 
-	// Note: we initialize a token source for one arbitrary set of scopes here. In
+	// Note: we initialize a token source for the default set of scopes here. In
 	// many practical cases this is sufficient to verify that credentials are
 	// valid. For example, when we use service account JSON key, if we can
 	// generate a token with *some* scope (meaning Cloud accepted our signature),
 	// we can generate tokens with *any* scope, since there's no restrictions on
 	// what scopes are accessible to a service account, as long as the private key
 	// is valid (which we just verified by generating some token).
-	_, err := tokens.GenerateOAuthToken(ctx, auth.CloudOAuthScopes, 0)
+	_, err := tokens.GenerateOAuthToken(ctx, opts.Scopes, 0)
 	if err != nil {
 		// ErrLoginRequired may happen only when running the server locally using
 		// developer's credentials. Let them know how the problem can be fixed.
 		if !s.Options.Prod && err == clientauth.ErrLoginRequired {
-			scopes := fmt.Sprintf("-scopes %q", strings.Join(s.Options.ClientAuth.Scopes, " "))
+			scopes := fmt.Sprintf("-scopes %q", strings.Join(opts.Scopes, " "))
 			if opts.ActAsServiceAccount != "" && opts.ActViaLUCIRealm == "" {
 				scopes = "-scopes-iam"
 			}
