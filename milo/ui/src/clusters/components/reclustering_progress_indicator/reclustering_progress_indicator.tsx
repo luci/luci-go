@@ -16,7 +16,6 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 import { useEffect, useState } from 'react';
 
 import CircularProgressWithLabel from '@/clusters/components/circular_progress_with_label/circular_progress_with_label';
@@ -31,8 +30,6 @@ import {
   progressToRulesVersion,
 } from '@/clusters/tools/progress_tools';
 import { prpcRetrier } from '@/clusters/tools/prpc_retrier';
-import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { displayApproxDuartion } from '@/common/tools/time_utils';
 
 interface Props {
   project: string;
@@ -46,7 +43,6 @@ const ReclusteringProgressIndicator = ({
   rulePredicateLastUpdated,
 }: Props) => {
   const [show, setShow] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState(DateTime.now());
 
   const [progressPerMille, setProgressPerMille] = useState(noProgressToShow);
   const [reclusteringTarget, setReclusteringTarget] = useState('');
@@ -71,9 +67,6 @@ const ReclusteringProgressIndicator = ({
         return 1000;
       },
       retry: prpcRetrier,
-      onSuccess: () => {
-        setLastRefreshed(DateTime.now());
-      },
     },
   );
 
@@ -137,15 +130,6 @@ const ReclusteringProgressIndicator = ({
             {reclusteringTarget} ({progressText}). Cluster impact may be
             out-of-date.
           </p>
-          <small>
-            {' '}
-            Last update{' '}
-            <RelativeTimestamp
-              formatFn={displayApproxDuartion}
-              timestamp={lastRefreshed}
-            />
-            .
-          </small>
         </>
       );
     } else {
