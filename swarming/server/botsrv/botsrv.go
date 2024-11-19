@@ -448,10 +448,6 @@ func checkSwarmingSession(ctx context.Context, tok []byte, s *hmactoken.Secret, 
 		logging.Errorf(ctx, "Wrong bot ID:\n%s", botsession.FormatForDebug(session))
 		return nil
 	}
-	if session.RbeBotSessionId != rbeSID {
-		logging.Errorf(ctx, "Wrong RBE session ID:\n%s", botsession.FormatForDebug(session))
-		return nil
-	}
 	// Following errors are "fine" in a sense that if they happen, something is
 	// still broken, but we can keep using the token for now. They will all become
 	// real errors once Swarming bot sessions are fully implemented.
@@ -461,6 +457,9 @@ func checkSwarmingSession(ctx context.Context, tok []byte, s *hmactoken.Secret, 
 	}
 	if session.SessionId != swarmingSID {
 		logging.Errorf(ctx, "Wrong session ID: %s != %s", session.SessionId, swarmingSID)
+	}
+	if rbeSID != "" && session.RbeBotSessionId != rbeSID {
+		logging.Errorf(ctx, "Wrong RBE session ID (expecting %q):\n%s", rbeSID, botsession.FormatForDebug(session))
 	}
 	return session
 }
