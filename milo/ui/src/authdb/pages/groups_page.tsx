@@ -72,7 +72,7 @@ export function GroupsPage() {
           item
           xs={4}
           className="container-left"
-          sx={{ display: 'flex', flexDirection: 'column' }}
+          sx={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #bdbdbd' }}
         >
           <GroupsList selectedGroup={groupName} ref={listRef} />
         </Grid>
