@@ -485,6 +485,18 @@ func TestClient(t *testing.T) {
 				assert.Loosely(t, status.Code(err), should.Equal(codes.Unavailable))
 			})
 
+			t.Run("HTTP 403 without gRPC header", func(t *ftt.Test) {
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+					_, _ = w.Write([]byte(`<html><body><h1>Boom</hi></body></html>`))
+				})
+				defer server.Close()
+
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike("rpc error: code = PermissionDenied desc = Boom"))
+			})
+
 			t.Run("Forbidden", func(t *ftt.Test) {
 				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.PermissionDenied)))
@@ -565,4 +577,32 @@ func TestClient(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestRecognizeHTMLErr(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct{ html, out string }{
+		{"not html", "not html"},
+		{"<html><head><title>Ignore</title></head><body>Hi</body></html>", "Hi"},
+		{"<HTML><BODY>Hi</BODY></HTML>", "Hi"},
+		{"<html><body>Hi <span>you</span></body></html>", "Hi you"},
+		{`<html><body>
+<h1>Hello
+world</h1>
+<h2>yo</h2>
+</body></html>`, "Hello world yo"},
+		{`<html><head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<title>403 Forbidden</title>
+</head>
+<body text=#000000 bgcolor=#ffffff>
+<h1>Error: Forbidden</h1>
+<h2>Your client does not have permission to get URL <code>/prpc/Method</code> from this server.</h2>
+<h2></h2>
+</body></html>`, "Error: Forbidden Your client does not have permission to get URL /prpc/Method from this server."},
+	}
+	for _, c := range cases {
+		assert.That(t, recognizeHTMLErr(c.html), should.Equal(c.out))
+	}
 }

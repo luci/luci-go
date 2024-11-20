@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/html"
 	"golang.org/x/sync/semaphore"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
@@ -103,7 +104,7 @@ type Client struct {
 	// ErrBodySize is the number of bytes to truncate error messages from HTTP
 	// responses to.
 	//
-	// If non-positive, defaults to 256.
+	// If non-positive, defaults to 4096.
 	ErrBodySize int
 
 	// MaxResponseSize, if > 0, is the maximum response size, in bytes, that a
@@ -614,16 +615,23 @@ func codeForErr(err error) codes.Code {
 func (c *Client) readStatus(r *http.Response, bodyBuf *bytes.Buffer, respCodec protoCodec) error {
 	codeHeader := r.Header.Get(HeaderGRPCCode)
 	if codeHeader == "" {
-		if r.StatusCode >= 500 {
-			// It is possible that the request did not reach the pRPC server and
-			// that's why we don't have the code header. It's preferable to convert it
-			// to a gRPC status so that the client code treats the response
-			// appropriately.
+		// It is possible that the request did not reach the pRPC server and
+		// that's why we don't have the code header. This can happen either due to
+		// transient errors (HTTP status >= 500) or if some authenticating proxy
+		// aborts the request (HTTP statuses 401 and 403, happens on Cloud Run).
+		// It's preferable to convert the error to a gRPC status to make the client
+		// code treat the response appropriately.
+		if r.StatusCode >= 500 || r.StatusCode == http.StatusUnauthorized || r.StatusCode == http.StatusForbidden {
 			code := codes.Internal
-			if r.StatusCode == http.StatusServiceUnavailable {
+			switch r.StatusCode {
+			case http.StatusUnauthorized:
+				code = codes.Unauthenticated
+			case http.StatusForbidden:
+				code = codes.PermissionDenied
+			case http.StatusServiceUnavailable:
 				code = codes.Unavailable
 			}
-			return status.New(code, c.readErrorMessage(bodyBuf)).Err()
+			return status.New(code, recognizeHTMLErr(c.readErrorMessage(bodyBuf))).Err()
 		}
 
 		// Not a valid pRPC response.
@@ -663,13 +671,66 @@ func (c *Client) readErrorMessage(bodyBuf *bytes.Buffer) string {
 	// Apply limits.
 	limit := c.ErrBodySize
 	if limit <= 0 {
-		limit = 256
+		limit = 4096
 	}
 	if len(ret) > limit {
 		return strings.ToValidUTF8(string(ret[:limit]), "") + "..."
 	}
 
 	return string(ret)
+}
+
+// recognizeHTMLErr strips HTML framing from an error message.
+//
+// Google frontends like to reply with an HTML errors which look very odd inside
+// pRPC statuses. This function recognizes some known kinds of HTML responses
+// and extracts an error message from them (best effort).
+func recognizeHTMLErr(htmlText string) string {
+	doc, err := html.Parse(strings.NewReader(htmlText))
+	if err != nil {
+		return htmlText
+	}
+
+	// Find <body>...</body> element.
+	var findBody func(*html.Node) *html.Node
+	findBody = func(n *html.Node) *html.Node {
+		if n.Type == html.ElementNode && n.Data == "body" {
+			return n
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			if found := findBody(c); found != nil {
+				return found
+			}
+		}
+		return nil
+	}
+	body := findBody(doc)
+	if body == nil {
+		return htmlText
+	}
+
+	var chunks []string
+
+	// Collect all text within the body ignoring any HTML markup.
+	var collectText func(*html.Node)
+	collectText = func(n *html.Node) {
+		if n.Type == html.TextNode {
+			for _, line := range strings.Split(n.Data, "\n") {
+				if line = strings.TrimSpace(line); line != "" {
+					chunks = append(chunks, line)
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			collectText(c)
+		}
+	}
+	collectText(body)
+
+	if len(chunks) == 0 {
+		return htmlText
+	}
+	return strings.Join(chunks, " ")
 }
 
 // parseStatusDetails parses headers with google.rpc.Status.details.
