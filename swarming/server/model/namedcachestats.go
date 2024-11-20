@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"go.chromium.org/luci/gae/service/datastore"
@@ -51,4 +52,17 @@ type PerOSEntry struct {
 // NamedCacheStatsKey returns a NamedCacheStats key given a cache and a pool.
 func NamedCacheStatsKey(ctx context.Context, pool, cache string) *datastore.Key {
 	return datastore.NewKey(ctx, "NamedCacheStats", pool+":"+cache, 0, nil)
+}
+
+// DetermineOSFamily returns the OS family given "os" dimension values.
+func DetermineOSFamily(oses []string) string {
+	if len(oses) == 0 {
+		return "Unknown"
+	}
+	for _, known := range []string{"Windows", "Mac", "Android", "Linux"} {
+		if slices.Contains(oses, known) {
+			return known
+		}
+	}
+	return slices.Min(oses)
 }
