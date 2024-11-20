@@ -65,7 +65,7 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 	tfFieldMask := fieldmaskpb.FieldMask{
 		Paths: []string{"*"},
 	}
-	tfMask, err := mask.FromFieldMask(&tfFieldMask, &pb.TestFailure{}, false, false)
+	tfMask, err := mask.FromFieldMask(&tfFieldMask, &pb.TestFailure{}, mask.AdvancedSemantics())
 	if err != nil {
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}
@@ -95,7 +95,7 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 		nsaFieldMask := fieldmaskpb.FieldMask{
 			Paths: []string{"*"},
 		}
-		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, false, false)
+		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, mask.AdvancedSemantics())
 		if err != nil {
 			return nil, errors.Annotate(err, "from field mask").Err()
 		}
@@ -113,7 +113,7 @@ func TestFailureAnalysisToBqRow(ctx context.Context, tfa *model.TestFailureAnaly
 			culpritFieldMask := fieldmaskpb.FieldMask{
 				Paths: []string{"*"},
 			}
-			culpritMask, err := mask.FromFieldMask(&culpritFieldMask, &pb.TestCulprit{}, false, false)
+			culpritMask, err := mask.FromFieldMask(&culpritFieldMask, &pb.TestCulprit{}, mask.AdvancedSemantics())
 			if err != nil {
 				return nil, errors.Annotate(err, "from field mask").Err()
 			}

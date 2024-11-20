@@ -520,7 +520,7 @@ func TestValidateStep(t *testing.T) {
 func TestCheckBuildForUpdate(t *testing.T) {
 	t.Parallel()
 	updateMask := func(req *pb.UpdateBuildRequest) *mask.Mask {
-		fm, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+		fm, err := mask.FromFieldMask(req.UpdateMask, req, mask.AdvancedSemantics(), mask.ForUpdate())
 		assert.Loosely(t, err, should.BeNil)
 		return fm.MustSubmask("build")
 	}

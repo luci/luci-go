@@ -157,7 +157,7 @@ func NewBuildMask(legacyPrefix string, legacy *fieldmaskpb.FieldMask, bm *pb.Bui
 		m = DefaultBuildMask.m
 	} else {
 		var err error
-		if m, err = mask.FromFieldMask(fm, &buildPrototype, false, false); err != nil {
+		if m, err = mask.FromFieldMask(fm, &buildPrototype, mask.AdvancedSemantics()); err != nil {
 			return nil, err
 		}
 	}
@@ -194,9 +194,9 @@ func newLegacyBuildMask(legacyPrefix string, fields *fieldmaskpb.FieldMask) (*Bu
 	var err error
 	switch legacyPrefix {
 	case "":
-		m, err = mask.FromFieldMask(fields, &buildPrototype, false, false)
+		m, err = mask.FromFieldMask(fields, &buildPrototype, mask.AdvancedSemantics())
 	case "builds":
-		m, err = mask.FromFieldMask(fields, &searchBuildPrototype, false, false)
+		m, err = mask.FromFieldMask(fields, &searchBuildPrototype, mask.AdvancedSemantics())
 		if err == nil {
 			m, err = m.Submask("builds.*")
 		}

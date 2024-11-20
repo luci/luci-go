@@ -27,20 +27,15 @@ type path []string
 
 const pathDelimiter = '.'
 
-// parsePath parses a path string to a slice of segments (See grammar in pkg
+// parsePath parses a path string to a slice of segments (see grammar in pkg
 // doc).
-//
-// If isJSONName is true, parsing the field name using JSON field name instead
-// of its canonical form. However, the result segments in path will use
-// canonical field name.
-func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor, isJSONName bool) (path, error) {
-	ctx := &parseCtx{
+func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor) (path, error) {
+	return parsePathWithContext(rawPath, &parseCtx{
 		curDescriptor: descriptor,
-	}
-	return parsePathWithContext(rawPath, ctx, isJSONName)
+	})
 }
 
-func parsePathWithContext(rawPath string, ctx *parseCtx, isJSONName bool) (path, error) {
+func parsePathWithContext(rawPath string, ctx *parseCtx) (path, error) {
 	t := &tokenizer{
 		path:      rawPath,
 		delimiter: pathDelimiter,
@@ -50,7 +45,7 @@ func parsePathWithContext(rawPath string, ctx *parseCtx, isJSONName bool) (path,
 		if tok, err := t.nextToken(); err != nil {
 			return nil, err
 		} else {
-			seg, err := parseSegment(tok, isJSONName, ctx)
+			seg, err := parseSegment(tok, ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -72,20 +67,12 @@ type parseCtx struct {
 // Returns the canonical form of field name. Returns error when the supplied
 // field doesn't exist in message or the current message descriptor is nil
 // (meaning scalar field).
-//
-// If isJSONName is true, we will assume the given field name is JSON name and
-// look up the JSON name instead of the field name.
-func (ctx *parseCtx) advanceToField(fieldName string, isJSONName bool) (string, error) {
+func (ctx *parseCtx) advanceToField(fieldName string) (string, error) {
 	msgDesc := ctx.curDescriptor
 	if msgDesc == nil {
 		return "", fmt.Errorf("can't advance to field when current descriptor is nil")
 	}
-	var fieldDesc protoreflect.FieldDescriptor
-	if isJSONName {
-		fieldDesc = msgDesc.Fields().ByJSONName(fieldName)
-	} else {
-		fieldDesc = msgDesc.Fields().ByName(protoreflect.Name(fieldName))
-	}
+	fieldDesc := msgDesc.Fields().ByName(protoreflect.Name(fieldName))
 	if fieldDesc == nil {
 		return "", fmt.Errorf("field %q does not exist in message %s", fieldName, msgDesc.Name())
 	}
@@ -111,13 +98,9 @@ var mapKeyKindToTokenType = map[protoreflect.Kind]tokenType{
 	protoreflect.StringKind:   strLiteral,
 }
 
-// parseSegment parses a token to a segment string and updates the prase context
+// parseSegment parses a token to a segment string and updates the parse context
 // accordingly.
-//
-// If isJSONName is true, the token value is expected to be JSON name of
-// a field of a message instead of canonical name. However, the return segment
-// will always be canonical name.
-func parseSegment(tok token, isJSONName bool, ctx *parseCtx) (string, error) {
+func parseSegment(tok token, ctx *parseCtx) (string, error) {
 	switch desc := ctx.curDescriptor; {
 	case ctx.mustBeLast:
 		return "", fmt.Errorf("expected end of string; got token: %q", tok.value)
@@ -143,7 +126,7 @@ func parseSegment(tok token, isJSONName bool, ctx *parseCtx) (string, error) {
 			}
 		}
 
-		if _, err := ctx.advanceToField("value", false); err != nil {
+		if _, err := ctx.advanceToField("value"); err != nil {
 			return "", err
 		}
 		return tok.value, nil
@@ -158,7 +141,7 @@ func parseSegment(tok token, isJSONName bool, ctx *parseCtx) (string, error) {
 		return "", fmt.Errorf("expected a field name of type string; got token: %q", tok.value)
 
 	default:
-		return ctx.advanceToField(tok.value, isJSONName)
+		return ctx.advanceToField(tok.value)
 	}
 }
 

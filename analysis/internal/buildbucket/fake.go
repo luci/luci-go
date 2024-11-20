@@ -45,7 +45,7 @@ func (f *FakeClient) GetBuild(ctx context.Context, in *bbpb.GetBuildRequest, opt
 		// mask to allow detection of incorrect masks in tests.
 		buildCopy := proto.Clone(r).(*bbpb.Build)
 		if in.Mask != nil {
-			mask, err := mask.FromFieldMask(in.Mask.Fields, &bbpb.Build{}, false, false)
+			mask, err := mask.FromFieldMask(in.Mask.Fields, &bbpb.Build{}, mask.AdvancedSemantics())
 			if err != nil {
 				return nil, errors.Annotate(err, "invalid field mask").Err()
 			}

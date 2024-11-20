@@ -253,7 +253,7 @@ func (s *sinkServer) ReportInvocationLevelArtifacts(ctx context.Context, in *sin
 func (s *sinkServer) UpdateInvocation(ctx context.Context, sinkin *sinkpb.UpdateInvocationRequest) (*sinkpb.Invocation, error) {
 	// We are running this method (but ignoring its result) to validate the
 	// mask only refers to fields in the sinkpb.Invocation proto.
-	if _, err := mask.FromFieldMask(sinkin.UpdateMask, sinkin.Invocation, false, true); err != nil {
+	if _, err := mask.FromFieldMask(sinkin.UpdateMask, sinkin.Invocation, mask.AdvancedSemantics(), mask.ForUpdate()); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "update_mask: %s", err)
 	}
 	ctx = metadata.AppendToOutgoingContext(ctx, pb.UpdateTokenMetadataKey, s.cfg.UpdateToken)

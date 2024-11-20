@@ -332,9 +332,7 @@ func mockedQueryTestVariantsRsp() *rdbpb.QueryTestVariantsResponse {
 		},
 	}
 
-	isFieldNameJSON := false
-	isUpdateMask := false
-	m, err := mask.FromFieldMask(testVariantReadMask, &rdbpb.TestVariant{}, isFieldNameJSON, isUpdateMask)
+	m, err := mask.FromFieldMask(testVariantReadMask, &rdbpb.TestVariant{}, mask.AdvancedSemantics())
 	if err != nil {
 		panic(err)
 	}

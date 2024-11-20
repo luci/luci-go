@@ -678,7 +678,7 @@ func (*Builds) UpdateBuild(ctx context.Context, req *pb.UpdateBuildRequest) (*pb
 	if err := validateUpdate(ctx, req, &bs); err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "%s", err)
 	}
-	um, err := mask.FromFieldMask(req.UpdateMask, req, false, true)
+	um, err := mask.FromFieldMask(req.UpdateMask, req, mask.AdvancedSemantics(), mask.ForUpdate())
 	if err != nil {
 		return nil, appstatus.Errorf(codes.InvalidArgument, "update_mask: %s", err)
 	}

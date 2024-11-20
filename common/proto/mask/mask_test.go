@@ -17,10 +17,10 @@ package mask
 import (
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/proto/internal/testingpb"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -35,10 +35,12 @@ func init() {
 
 type testMsg = testingpb.Full
 
-var testMsgDescriptor = proto.MessageReflect(&testMsg{}).Descriptor()
+var testMsgDescriptor = (&testMsg{}).ProtoReflect().Descriptor()
 
 func TestNormalizePath(t *testing.T) {
-	ftt.Run("Retrun empty paths when given empty paths", t, func(t *ftt.Test) {
+	t.Parallel()
+
+	ftt.Run("Return empty paths when given empty paths", t, func(t *ftt.Test) {
 		assert.Loosely(t, normalizePaths([]path{}), should.Resemble([]path{}))
 	})
 	ftt.Run("Remove all deduplicate paths", t, func(t *ftt.Test) {
@@ -65,13 +67,15 @@ func TestNormalizePath(t *testing.T) {
 }
 
 func TestFromFieldMask(t *testing.T) {
+	t.Parallel()
+
 	ftt.Run("From", t, func(t *ftt.Test) {
-		parse := func(paths []string, isUpdateMask bool) (*Mask, error) {
-			return FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, isUpdateMask)
+		parse := func(paths []string, opts ...Option) (*Mask, error) {
+			return FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{}, opts...)
 		}
 
 		t.Run("empty field mask", func(t *ftt.Test) {
-			actual, err := parse([]string{}, false)
+			actual, err := parse([]string{})
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
@@ -79,7 +83,7 @@ func TestFromFieldMask(t *testing.T) {
 		})
 
 		t.Run("field mask with scalar and message fields", func(t *ftt.Test) {
-			actual, err := parse([]string{"str", "num", "msg.num"}, false)
+			actual, err := parse([]string{"str", "num", "msg.num"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
@@ -95,8 +99,9 @@ func TestFromFieldMask(t *testing.T) {
 				},
 			}))
 		})
+
 		t.Run("field mask with map field", func(t *ftt.Test) {
-			actual, err := parse([]string{"map_str_msg.some_key.str", "map_str_num.another_key"}, false)
+			actual, err := parse([]string{"map_str_msg.some_key.str", "map_str_num.another_key"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
@@ -123,8 +128,9 @@ func TestFromFieldMask(t *testing.T) {
 				},
 			}))
 		})
+
 		t.Run("field mask with repeated field", func(t *ftt.Test) {
-			actual, err := parse([]string{"nums", "msgs.*.str"}, false)
+			actual, err := parse([]string{"nums", "msgs.*.str"})
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
@@ -147,20 +153,24 @@ func TestFromFieldMask(t *testing.T) {
 				},
 			}))
 		})
+
 		t.Run("update mask", func(t *ftt.Test) {
-			_, err := parse([]string{"msgs.*.str"}, true)
+			_, err := parse([]string{"msgs.*.str"}, ForUpdate())
 			assert.Loosely(t, err, should.ErrLike("update mask allows a repeated field only at the last position; field: msgs is not last"))
-			_, err = parse([]string{"map_str_msg.*.str"}, true)
+			_, err = parse([]string{"map_str_msg.*.str"}, ForUpdate())
 			assert.Loosely(t, err, should.ErrLike("update mask allows a repeated field only at the last position; field: map_str_msg is not last"))
-			_, err = parse([]string{"map_str_num.some_key"}, true)
+			_, err = parse([]string{"map_str_num.some_key"}, ForUpdate())
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})
 }
+
 func TestTrim(t *testing.T) {
+	t.Parallel()
+
 	ftt.Run("Test", t, func(t *ftt.Test) {
 		testTrim := func(maskPaths []string, msg proto.Message) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(msg)
 			assert.Loosely(t, err, should.BeNil)
@@ -349,14 +359,14 @@ func TestTrim(t *testing.T) {
 			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
 		})
 		t.Run("Error when trim nil message", func(t *ftt.Test) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			var msg proto.Message
 			err = m.Trim(msg)
 			assert.Loosely(t, err, should.ErrLike("nil message"))
 		})
 		t.Run("Error when descriptor mismatch", func(t *ftt.Test) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(&testingpb.Simple{})
 			assert.Loosely(t, err, should.ErrLike("expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
@@ -365,9 +375,11 @@ func TestTrim(t *testing.T) {
 }
 
 func TestIncludes(t *testing.T) {
+	t.Parallel()
+
 	ftt.Run("Test include", t, func(t *ftt.Test) {
 		testIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			actual, err := m.Includes(path)
 			assert.Loosely(t, err, should.BeNil)
@@ -404,7 +416,7 @@ func TestIncludes(t *testing.T) {
 
 	ftt.Run("Test MustIncludes", t, func(t *ftt.Test) {
 		testMustIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			actual := m.MustIncludes(path)
 			assert.Loosely(t, actual, should.Equal(expectedIncl))
@@ -422,9 +434,11 @@ func TestIncludes(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
+	t.Parallel()
+
 	ftt.Run("Test merge", t, func(t *ftt.Test) {
 		testMerge := func(maskPaths []string, src *testMsg, dest *testMsg) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: maskPaths}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, m.Merge(src, dest), should.BeNil)
 		}
@@ -608,13 +622,13 @@ func TestMerge(t *testing.T) {
 			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1, Strs: []string{"a", "b"}}))
 		})
 		t.Run("Error when one of proto message is nil", func(t *ftt.Test) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			var src proto.Message
 			assert.Loosely(t, m.Merge(src, &testMsg{}), should.ErrLike("src message: nil message"))
 		})
 		t.Run("Error when proto message descriptors does not match", func(t *ftt.Test) {
-			m, err := FromFieldMask(&field_mask.FieldMask{Paths: []string{"str"}}, &testMsg{}, false, false)
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Merge(&testMsg{}, &testingpb.Simple{})
 			assert.Loosely(t, err, should.ErrLike("dest message: expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
@@ -623,8 +637,10 @@ func TestMerge(t *testing.T) {
 }
 
 func TestSubmask(t *testing.T) {
+	t.Parallel()
+
 	buildMask := func(paths ...string) *Mask {
-		m, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, &testMsg{}, false, false)
+		m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{})
 		assert.Loosely(t, err, should.BeNil)
 		return m
 	}

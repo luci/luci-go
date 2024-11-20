@@ -82,7 +82,7 @@ func ListMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
 	if len(readMask.GetPaths()) == 0 {
 		return defaultListMask, nil
 	}
-	return mask.FromFieldMask(readMask, &pb.TestResult{}, false, false)
+	return mask.FromFieldMask(readMask, &pb.TestResult{}, mask.AdvancedSemantics())
 }
 
 // Query specifies test results to fetch.

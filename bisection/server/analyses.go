@@ -157,7 +157,7 @@ func (server *AnalysesServer) ListTestAnalyses(ctx context.Context, req *pb.List
 	if fieldMask == nil {
 		fieldMask = defaultFieldMask()
 	}
-	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}
@@ -242,7 +242,7 @@ func (server *AnalysesServer) GetTestAnalysis(ctx context.Context, req *pb.GetTe
 	if fieldMask == nil {
 		fieldMask = defaultFieldMask()
 	}
-	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}
@@ -286,7 +286,7 @@ func (server *AnalysesServer) BatchGetTestAnalyses(ctx context.Context, req *pb.
 	if fieldMask == nil {
 		fieldMask = defaultFieldMask()
 	}
-	tfamask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+	tfamask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 	if err != nil {
 		return nil, errors.Annotate(err, "from field mask").Err()
 	}

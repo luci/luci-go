@@ -12,44 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mask provides utility functions for google protobuf field mask
-//
-// Supports advanced field mask semantics:
-//   - Refer to fields and map keys using . literals:
-//   - Supported map key types: string, integer, bool. (double, float, enum,
-//     and bytes keys are not supported by protobuf or this implementation)
-//   - Fields: "publisher.name" means field "name" of field "publisher"
-//   - String map keys: "metadata.year" means string key 'year' of map field
-//     metadata
-//   - Integer map keys (e.g. int32): 'year_ratings.0' means integer key 0 of
-//     a map field year_ratings
-//   - Bool map keys: 'access_text.true' means boolean key true of a map field
-//     access_text
-//   - String map keys that cannot be represented as an unquoted string literal,
-//     must be quoted using backticks: metadata.`year.published`, metadata.`17`,
-//     metadata.“. Backtick can be escaped with “: a.`b“c` means map key "b`c"
-//     of map field a.
-//   - Refer to all map keys using a * literal: "topics.*.archived" means field
-//     "archived" of all map values of map field "topic".
-//   - Refer to all elements of a repeated field using a * literal: authors.*.name
-//   - Refer to all fields of a message using * literal: publisher.*.
-//   - Prohibit addressing a single element in repeated fields: authors.0.name
-//
-// FieldMask.paths string grammar:
-//
-//	path = segment {'.' segment}
-//	segment = literal | star | quoted_string;
-//	literal = string | integer | boolean
-//	string = (letter | '_') {letter | '_' | digit}
-//	integer = ['-'] digit {digit};
-//	boolean = 'true' | 'false';
-//	quoted_string = '`' { utf8-no-backtick | '``' } '`'
-//	star = '*'
-//
-// Deprecated: advanced field mask never became standard and FieldMask messages
-// that contain `*` or other non-standard syntax and not supported by Go's
-// jsonpb decoder (it fails to unmarshal them). Using them requires hacks, such
-// as go.chromium.org/luci/common/proto.UnmarshalJSONWithNonStandardFieldMasks.
+// Package mask provides utility functions for google protobuf field masks.
 package mask
 
 import (
@@ -57,10 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/genproto/protobuf/field_mask"
-	protoV2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/data/stringset"
 )
@@ -92,37 +54,99 @@ type Mask struct {
 	children map[string]*Mask
 }
 
-// FromFieldMask parses a field mask to a mask.
+// Option is implemented by options that can be passed to FromFieldMask.
+type Option interface{ apply(*optionSet) }
+
+type optionSet struct {
+	advancedSemantics bool // TODO: currently ignored
+	isUpdateMask      bool
+}
+
+type advancedSemanticsOpt struct{}
+type forUpdateOpt struct{}
+
+func (advancedSemanticsOpt) apply(s *optionSet) { s.advancedSemantics = true }
+func (forUpdateOpt) apply(s *optionSet)         { s.isUpdateMask = true }
+
+// AdvancedSemantics enables non-standard field mask semantics.
 //
-// Trailing stars will be removed, e.g. parses ['a.*'] as ['a'].
-// Redundant paths will be removed, e.g. parses ['a', 'a.b'] as ['a'].
+// WARNING: advanced field masks never became standard and FieldMask messages
+// that contain `*` or other non-standard syntax are not supported by Go's
+// jsonpb decoder (it fails to unmarshal them). Using them requires hacks, such
+// as go.chromium.org/luci/common/proto.UnmarshalJSONWithNonStandardFieldMasks.
 //
-// If isFieldNameJSON is set to true, json name will be used instead of
-// canonical name defined in proto during parsing (e.g. "fooBar" instead of
-// "foo_bar"). However, the child field name in return mask will always be
-// in canonical form.
+// Advanced field mask semantics:
+//   - Refer to fields and map keys using . literals:
+//   - Supported map key types: string, integer, bool. (double, float, enum,
+//     and bytes keys are not supported by protobuf or this implementation)
+//   - Fields: "publisher.name" means field "name" of field "publisher"
+//   - String map keys: "metadata.year" means string key 'year' of map field
+//     metadata
+//   - Integer map keys (e.g. int32): 'year_ratings.0' means integer key 0 of
+//     a map field year_ratings
+//   - Bool map keys: 'access_text.true' means boolean key true of a map field
+//     access_text
+//   - String map keys that cannot be represented as an unquoted string literal,
+//     must be quoted using backticks: metadata.`year.published`, metadata.`17`,
+//     metadata.“. Backtick can be escaped with “: a.`b“c` means map key "b`c"
+//     of map field a.
+//   - Refer to all map keys using a * literal: "topics.*.archived" means field
+//     "archived" of all map values of map field "topic".
+//   - Refer to all elements of a repeated field using a * literal: authors.*.name
+//   - Refer to all fields of a message using * literal: publisher.*.
+//   - Prohibit addressing a single element in repeated fields: authors.0.name
 //
-// If isUpdateMask is set to true, a repeated field is allowed only as the last
-// field in a path string.
-func FromFieldMask(fieldMask *field_mask.FieldMask, targetMsg proto.Message, isFieldNameJSON bool, isUpdateMask bool) (*Mask, error) {
-	descriptor := proto.MessageReflect(targetMsg).Descriptor()
+// Advanced FieldMask.paths string grammar:
+//
+//	path = segment {'.' segment}
+//	segment = literal | star | quoted_string;
+//	literal = string | integer | boolean
+//	string = (letter | '_') {letter | '_' | digit}
+//	integer = ['-'] digit {digit};
+//	boolean = 'true' | 'false';
+//	quoted_string = '`' { utf8-no-backtick | '``' } '`'
+//	star = '*'
+func AdvancedSemantics() Option {
+	return advancedSemanticsOpt{}
+}
+
+// ForUpdate indicates this field mask is used for an update operation.
+//
+// In such field masks a repeated field is allowed only as the last field in a
+// path string.
+func ForUpdate() Option {
+	return forUpdateOpt{}
+}
+
+// FromFieldMask parses a field mask, matching it to the given proto message
+// descriptor.
+//
+// targetMsg is only used for its type. Use Trim to actually apply a mask to
+// a proto message.
+func FromFieldMask(fieldMask *fieldmaskpb.FieldMask, targetMsg proto.Message, opts ...Option) (*Mask, error) {
+	var optSet optionSet
+	for _, opt := range opts {
+		opt.apply(&optSet)
+	}
+	descriptor := targetMsg.ProtoReflect().Descriptor()
 	parsedPaths := make([]path, len(fieldMask.GetPaths()))
 	for i, p := range fieldMask.GetPaths() {
-		parsedPath, err := parsePath(p, descriptor, isFieldNameJSON)
+		parsedPath, err := parsePath(p, descriptor)
 		if err != nil {
 			return nil, err
 		}
 		parsedPaths[i] = parsedPath
 	}
-	return fromParsedPaths(parsedPaths, descriptor, isUpdateMask)
+	// TODO: Use optSet.advancedSemantics.
+	return fromParsedPaths(parsedPaths, descriptor, optSet.isUpdateMask)
 }
 
-// MustFromReadMask is a shortcut FromFieldMask with isFieldNameJSON and
-// isUpdateMask as false, that accepts field mask a variadic paths and
-// that panics if the mask is invalid.
-// It is useful when the mask is hardcoded.
+// MustFromReadMask is a shortcut FromFieldMask that accepts field mask as
+// variadic paths and that panics if the mask is invalid.
+//
+// It is useful when the mask is hardcoded. Understands advanced semantics.
 func MustFromReadMask(targetMsg proto.Message, paths ...string) *Mask {
-	ret, err := FromFieldMask(&field_mask.FieldMask{Paths: paths}, targetMsg, false, false)
+	ret, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, targetMsg, AdvancedSemantics())
 	if err != nil {
 		panic(err)
 	}
@@ -257,8 +281,8 @@ func (m *Mask) Trim(msg proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
-	reflectMsg := proto.MessageReflect(msg)
-	if err := checkMsgHaveDesc(reflectMsg, m.descriptor); err != nil {
+	reflectMsg, err := checkMsgHaveDesc(msg, m.descriptor)
+	if err != nil {
 		return err
 	}
 	m.trimImpl(reflectMsg)
@@ -334,10 +358,9 @@ const (
 
 // Includes tells the Inclusiveness of a field value at the given path.
 //
-// The path must have canonical field names, i.e. not JSON names.
 // Returns error if path parsing fails.
 func (m *Mask) Includes(path string) (Inclusiveness, error) {
-	parsedPath, err := parsePath(path, m.descriptor, false)
+	parsedPath, err := parsePath(path, m.descriptor)
 	if err != nil {
 		return Exclude, err
 	}
@@ -347,7 +370,8 @@ func (m *Mask) Includes(path string) (Inclusiveness, error) {
 
 // MustIncludes tells the Inclusiveness of a field value at the given path.
 //
-// This is essentially the same as Includes, but panics if the given path is invalid.
+// This is essentially the same as Includes, but panics if the given path is
+// invalid.
 func (m *Mask) MustIncludes(path string) Inclusiveness {
 	incl, err := m.Includes(path)
 	if err != nil {
@@ -396,12 +420,12 @@ func (m *Mask) Merge(src, dest proto.Message) error {
 	if m.IsEmpty() {
 		return nil
 	}
-	srcReflectMsg := proto.MessageReflect(src)
-	if err := checkMsgHaveDesc(srcReflectMsg, m.descriptor); err != nil {
+	srcReflectMsg, err := checkMsgHaveDesc(src, m.descriptor)
+	if err != nil {
 		return fmt.Errorf("src message: %s", err.Error())
 	}
-	destReflectMsg := proto.MessageReflect(dest)
-	if err := checkMsgHaveDesc(destReflectMsg, m.descriptor); err != nil {
+	destReflectMsg, err := checkMsgHaveDesc(dest, m.descriptor)
+	if err != nil {
 		return fmt.Errorf("dest message: %s", err.Error())
 	}
 	m.mergeImpl(srcReflectMsg, destReflectMsg)
@@ -455,7 +479,7 @@ func (m *Mask) mergeImpl(src, dest protoreflect.Message) {
 // expected as they have been explicitly handled in mergeImpl.
 func cloneValue(v protoreflect.Value, kind protoreflect.Kind) protoreflect.Value {
 	if kind == protoreflect.MessageKind {
-		clonedMsg := protoV2.Clone(v.Message().Interface()).ProtoReflect()
+		clonedMsg := proto.Clone(v.Message().Interface()).ProtoReflect()
 		return protoreflect.ValueOf(clonedMsg)
 	}
 	return v
@@ -477,7 +501,7 @@ func (m *Mask) Submask(path string) (*Mask, error) {
 		isList:        m.isRepeated && !(m.descriptor != nil && m.descriptor.IsMapEntry()),
 	}
 
-	parsedPath, err := parsePathWithContext(path, ctx, false)
+	parsedPath, err := parsePathWithContext(path, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -515,15 +539,16 @@ func (m *Mask) IsEmpty() bool {
 	return m == nil || (m.descriptor == nil && !m.isRepeated && len(m.children) == 0)
 }
 
-// checkMsgHaveDesc validates that the descriptor of given proto reflect message
-// matches the expected message descriptor. It returns error when the given
+// checkMsgHaveDesc validates that the descriptor of given proto message
+// matches the expected message descriptor. It returns an error when the given
 // message is nil or descriptor of which doesn't match the expectation.
-func checkMsgHaveDesc(msg protoreflect.Message, expectedDesc protoreflect.MessageDescriptor) error {
+func checkMsgHaveDesc(msg proto.Message, expectedDesc protoreflect.MessageDescriptor) (protoreflect.Message, error) {
 	if msg == nil {
-		return fmt.Errorf("nil message")
+		return nil, fmt.Errorf("nil message")
 	}
-	if msgDesc := msg.Descriptor(); msgDesc != expectedDesc {
-		return fmt.Errorf("expected message have descriptor: %s; got descriptor: %s", expectedDesc.FullName(), msgDesc.FullName())
+	refl := msg.ProtoReflect()
+	if msgDesc := refl.Descriptor(); msgDesc != expectedDesc {
+		return nil, fmt.Errorf("expected message have descriptor: %s; got descriptor: %s", expectedDesc.FullName(), msgDesc.FullName())
 	}
-	return nil
+	return refl, nil
 }

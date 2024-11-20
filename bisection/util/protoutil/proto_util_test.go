@@ -259,7 +259,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			fieldMask := &fieldmaskpb.FieldMask{
 				Paths: []string{"*"},
 			}
-			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 
 			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
@@ -478,7 +478,7 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 					"test_failures.*.start_hour",
 				},
 			}
-			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, false, false)
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 
 			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
@@ -555,7 +555,7 @@ func TestRegressionRange(t *testing.T) {
 		nsaFieldMask := fieldmaskpb.FieldMask{
 			Paths: []string{"*"},
 		}
-		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, false, false)
+		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, mask.AdvancedSemantics())
 		assert.Loosely(t, err, should.BeNil)
 		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
 		assert.Loosely(t, err, should.BeNil)

@@ -71,7 +71,7 @@ func validateUpdateInvocationRequest(req *pb.UpdateInvocationRequest, now time.T
 		return errors.Reason("update_mask: paths is empty").Err()
 	}
 
-	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.Invocation, false, true)
+	updateMask, err := mask.FromFieldMask(req.UpdateMask, req.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
 	if err != nil {
 		return errors.Annotate(err, "update_mask").Err()
 	}
@@ -281,7 +281,7 @@ func (s *recorderServer) UpdateInvocation(ctx context.Context, in *pb.UpdateInvo
 		// the fields are mentioned in the update mask.
 		wasSourcesFinal := ret.IsSourceSpecFinal
 
-		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, false, true)
+		updateMask, err := mask.FromFieldMask(in.UpdateMask, in.Invocation, mask.AdvancedSemantics(), mask.ForUpdate())
 		if err != nil {
 			return errors.Annotate(err, "update_mask").Err()
 		}

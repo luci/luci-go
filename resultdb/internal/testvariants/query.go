@@ -64,7 +64,7 @@ func QueryMask(readMask *field_mask.FieldMask) (*mask.Mask, error) {
 	if len(readMask.GetPaths()) == 0 {
 		return AllFields, nil
 	}
-	return mask.FromFieldMask(readMask, &pb.TestVariant{}, false, false)
+	return mask.FromFieldMask(readMask, &pb.TestVariant{}, mask.AdvancedSemantics())
 }
 
 // AdjustResultLimit takes the given requested resultLimit and adjusts as

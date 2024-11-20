@@ -25,6 +25,8 @@ import (
 )
 
 func TestParsePath(t *testing.T) {
+	t.Parallel()
+
 	ftt.Run("Expect path parsing", t, func(t *ftt.Test) {
 		t.Run("succeeds when parsing scalar field", func(t *ftt.Test) {
 			tryParsePath("str").andExpectPath(t, "str")
@@ -113,14 +115,6 @@ func TestParsePath(t *testing.T) {
 			tryParsePath("msg..str").andExpectErrorLike(t, "unexpected token: .")
 			tryParsePath("msg..").andExpectErrorLike(t, "unexpected token: .")
 		})
-		t.Run("succeeds for json name", func(t *ftt.Test) {
-			p, err := parsePath("jsonName", testMsgDescriptor, true)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Resemble(path{"json_name"}))
-			p, err = parsePath("another_json_name", testMsgDescriptor, true)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, p, should.Resemble(path{"json_name_option"}))
-		})
 	})
 }
 
@@ -131,7 +125,7 @@ type parseResult struct {
 }
 
 func tryParsePath(rawPath string) parseResult {
-	p, err := parsePath(rawPath, testMsgDescriptor, false)
+	p, err := parsePath(rawPath, testMsgDescriptor)
 	return parseResult{
 		p:   p,
 		err: err,
