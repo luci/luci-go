@@ -54,7 +54,7 @@ type Store struct {
 // projectCacheSlot returns a slot with a project config cache.
 func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot {
 	s.m.RLock()
-	slot, _ := s.projects[projectID]
+	slot := s.projects[projectID]
 	s.m.RUnlock()
 	if slot != nil {
 		return slot
@@ -63,7 +63,7 @@ func (s *Store) projectCacheSlot(projectID string) *lazyslot.Slot {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	if slot, _ = s.projects[projectID]; slot != nil {
+	if slot = s.projects[projectID]; slot != nil {
 		return slot
 	}
 	slot = &lazyslot.Slot{}

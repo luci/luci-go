@@ -168,7 +168,7 @@ func (r *pageRegistry) registerPage(pageKey string, p Page) {
 	if r.pages == nil {
 		r.pages = make(map[string]Page)
 	}
-	if existing, _ := r.pages[pageKey]; existing != nil {
+	if existing := r.pages[pageKey]; existing != nil {
 		panic(fmt.Errorf("portal page for %s is already registered: %T", pageKey, existing))
 	}
 	r.pages[pageKey] = p

@@ -170,8 +170,7 @@ func (bti prodBTIface) dropRowRange(c context.Context, rk *rowKey) error {
 			}
 		}
 		if len(batch) == 0 {
-			err, _ := <-readerC
-			return err
+			return <-readerC
 		}
 
 		errs, err := logTable.ApplyBulk(c, batch, allMuts[:len(batch)])

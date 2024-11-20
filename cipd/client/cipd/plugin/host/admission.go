@@ -188,7 +188,7 @@ func (p *AdmissionPlugin) CheckAdmission(pin common.Pin) plugin.Promise {
 	defer p.m.Unlock()
 
 	// Reuse an existing promise (either pending or finished) if available.
-	if existing, _ := p.checks[admission.AdmissionId]; existing != nil {
+	if existing := p.checks[admission.AdmissionId]; existing != nil {
 		return existing
 	}
 
@@ -401,7 +401,7 @@ func (p *AdmissionPlugin) dequeue(ctx context.Context) (*protocol.Admission, err
 // resolve is called when an admission request is resolved by the plugin.
 func (p *AdmissionPlugin) resolve(id string, err error) {
 	p.m.Lock()
-	promise, _ := p.checks[id]
+	promise := p.checks[id]
 	p.m.Unlock()
 	if promise != nil {
 		promise.resolve(err)

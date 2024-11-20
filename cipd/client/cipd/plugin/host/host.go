@@ -291,7 +291,7 @@ func (h *Host) pluginForRPC(ctx context.Context) (*PluginProcess, error) {
 	}
 	h.m.Lock()
 	defer h.m.Unlock()
-	if plugin, _ := h.plugins[tickets[0]]; plugin != nil {
+	if plugin := h.plugins[tickets[0]]; plugin != nil {
 		return plugin, nil
 	}
 	return nil, status.Errorf(codes.PermissionDenied, "invalid ticket in the request")

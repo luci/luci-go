@@ -145,7 +145,7 @@ func Get(ctx context.Context, section string, out proto.Message) error {
 // returns a deserialization error (if any), and a boolean indicating if the
 // section was actually found.
 func Lookup(ctx context.Context, section string, out proto.Message) (bool, error) {
-	data, _ := getCurrent(ctx).sections[section]
+	data := getCurrent(ctx).sections[section]
 	if data == nil {
 		return false, nil
 	}

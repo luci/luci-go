@@ -81,7 +81,7 @@ func (c *regexpCache) matches(pat, str string) ([]string, error) {
 
 func (c *regexpCache) exp(pat string) (*regexp.Regexp, error) {
 	c.m.RLock()
-	exp, _ := c.r[pat]
+	exp := c.r[pat]
 	c.m.RUnlock()
 	if exp != nil {
 		return exp, nil
@@ -89,7 +89,7 @@ func (c *regexpCache) exp(pat string) (*regexp.Regexp, error) {
 
 	c.m.Lock()
 	defer c.m.Unlock()
-	if exp, _ = c.r[pat]; exp != nil {
+	if exp = c.r[pat]; exp != nil {
 		return exp, nil
 	}
 
