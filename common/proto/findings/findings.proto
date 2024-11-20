@@ -76,25 +76,17 @@ message Location {
   string file_path = 2;
 
   // Range within the file where the finding is located.
+  //
+  // The semantic is the same as
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#comment-range
   message Range {
     // Start line of the range (1-based).
-    //
-    // If unset, the range includes the entire file, and all the other fields
-    // are ignored.
     int32 start_line = 1;
-    // Start column of the range (1-based).
-    //
-    // If unset, the range includes the entire line specified by start_line.
+    // Start column of the range (0-based).
     int32 start_column = 2;
     // End line of the range (1-based).
-    //
-    // If unset, the range includes the entire line specified by start_line.
     int32 end_line = 3;
-    // End column of the range (1-based).
-    //
-    // Must be set if start_column is set.
-    // Ignored, if start_column or end_line is unset.
-    // If unset, the range includes the entire line specified by end_line.
+    // End column of the range (0-based).
     int32 end_column = 4;
   }
   Range range = 3;
