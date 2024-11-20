@@ -141,6 +141,7 @@ type FakeBot struct {
 	Pool    []string
 	OS      []string
 	Dims    []string
+	State   []byte
 	Version string
 
 	Maintenance bool
@@ -164,7 +165,11 @@ func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
 		b.LastSeen = datastore.NewUnindexedOptional(time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC))
 	}
 
-	if !f.NoState {
+	var s []byte
+	switch {
+	case !f.NoState && len(f.State) > 0:
+		s = f.State
+	case !f.NoState:
 		var state struct {
 			Handshaking   bool   `json:"handshaking"`
 			RBEInstance   string `json:"rbe_instance"`
@@ -174,11 +179,12 @@ func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
 		state.RBEInstance = f.RBEInstance
 		state.RBEHybridMode = f.RBEHybridMode
 		var err error
-		b.State, err = json.Marshal(&state)
+		s, err = json.Marshal(&state)
 		if err != nil {
 			panic(err)
 		}
 	}
+	b.State = s
 
 	var dims []string
 	for _, pool := range f.Pool {

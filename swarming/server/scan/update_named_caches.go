@@ -18,10 +18,32 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"slices"
+	"strings"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/model"
+)
+
+const (
+	// smoothingPeriod can be adjusted to influence the EMA.
+	// Shorter period reacts more quickly to recent size changes,
+	// while longer periods provide smoother trends.
+	smoothingPeriod = 5
+	// namedCachesExpiryTime is how long NamedCacheStats are kept in datastore.
+	// Both NamedCacheStats entities and perOSEntries share the same expiry delay.
+	// Datastore automatically cleans up expired entities in accordance its TTL policy.
+	namedCachesExpiryTime = 8 * 24 * time.Hour
+	// percentileThreshold is the percentile of the cache sizes to use as a hint.
+	// 0.95 is a direct copy of the Python implementation.
+	percentileThreshold = 0.95
+	// batchSize represents the number of entities to process in a single datastore batch.
+	batchSize = 500
 )
 
 // NamedCachesAggregator is a BotVisitor that collects
@@ -64,15 +86,95 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 		merged.mergeFrom(shard)
 	}
 
-	// TODO: Finish implementation.
+	// This cron job processes entities independently.
+	// An error impacting 1 entity or 1 batch should not terminate the run.
+	// Instead, collect the errors and return them as a MultiError at the end of the run.
+	var gmerr errors.MultiError
+	// Batch get all the relevant NamedCacheStats entities.
+	toGet := make([]*model.NamedCacheStats, 0, len(merged.namedCacheMap))
+	for id := range merged.namedCacheMap {
+		if key := namedCacheStatsKeyFromStringID(ctx, id); key != nil {
+			toGet = append(toGet, &model.NamedCacheStats{Key: key})
+		}
+	}
 
-	return nil
+	// Process entities in batches sequentially to avoid
+	// exceeding datastore limits and prevent out-of-memory errors.
+	for len(toGet) > 0 {
+		var dsmerr errors.MultiError
+		var batch []*model.NamedCacheStats
+		size := min(len(toGet), batchSize)
+		batch, toGet = toGet[:size], toGet[size:]
+		if err := datastore.Get(ctx, batch); err != nil && !errors.As(err, &dsmerr) {
+			// `err` is not a MultiError in the case of an overall datastore failure (e.g. timed out).
+			// Skip the problematic batch and store the error in a global MultiError.
+			gmerr = append(gmerr, errors.Annotate(err, "fetching %d NamedCacheStats entities", len(batch)).Err())
+			continue
+		}
+
+		// Save the updated NamedCacheStats entities from this batch.
+		// Result is pushed to Datastore.
+		toPut := make([]*model.NamedCacheStats, 0, len(batch))
+		for index, ncs := range batch {
+			// New NamedCacheStats are not yet stored in datastore. Ignore the `ErrNoSuchEntity` error in this case.
+			if len(dsmerr) != 0 {
+				if err := dsmerr[index]; err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
+					gmerr = append(gmerr, errors.Annotate(err, "fetching NamedCacheStats entity: %s", ncs.Key.StringID()).Err())
+					continue
+				}
+			}
+
+			now := clock.Now(ctx)
+			expiry := now.Add(namedCachesExpiryTime)
+			// The key will always exist. No need to test.
+			osToSizesMap, _ := merged.namedCacheMap[ncs.Key.StringID()]
+			// Store all non-expired PerOSEntries for this entity.
+			perOSEntryMap := make(map[string]model.PerOSEntry, len(osToSizesMap))
+
+			for os, sizes := range osToSizesMap {
+				// Calculate the cache sizes hint based on a percentile.
+				slices.Sort(sizes)
+				hint := sizes[int(float32(len(sizes))*percentileThreshold)]
+
+				// Compute EMA only if there is a previous average.
+				if index := perOSEntryIndex(os, ncs.OS); index != -1 {
+					hint = computeEMA(hint, ncs.OS[index].Size)
+				}
+
+				perOSEntryMap[os] = model.PerOSEntry{
+					Name:       os,
+					Size:       hint,
+					LastUpdate: now,
+					ExpireAt:   expiry,
+				}
+			}
+
+			// Add any non-expired PerOSEntries that were not updated by this cron run.
+			for _, entry := range ncs.OS {
+				if _, ok := perOSEntryMap[entry.Name]; !ok && entry.ExpireAt.After(now) {
+					perOSEntryMap[entry.Name] = entry
+				}
+			}
+
+			ncs.LastUpdate = now
+			ncs.ExpireAt = expiry
+			ncs.OS = perOSMapToSlice(perOSEntryMap)
+
+			toPut = append(toPut, ncs)
+		}
+
+		if err := datastore.Put(ctx, toPut); err != nil {
+			errors.Append(gmerr, errors.Annotate(err, "updating NamedCacheStats entities").Err())
+		}
+	}
+
+	return gmerr.AsError()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 type namedCachesAggregatorShardState struct {
-	// The list of all observed cache sizes grouped by ("cache:pool") -> ("os") -> []size.
+	// The list of all observed cache sizes grouped by ("pool:cache") -> ("os") -> []size.
 	namedCacheMap map[string]map[string][]int64
 }
 
@@ -164,4 +266,42 @@ func (s *namedCachesAggregatorShardState) mergeFrom(another *namedCachesAggregat
 			s.namedCacheMap[key][os] = append(s.namedCacheMap[key][os], sizes...)
 		}
 	}
+}
+
+// perOSMapToSlice returns the values of osMap as a slice.
+func perOSMapToSlice(osMap map[string]model.PerOSEntry) []model.PerOSEntry {
+	entries := make([]model.PerOSEntry, 0, len(osMap))
+	for _, entry := range osMap {
+		entries = append(entries, entry)
+	}
+	return entries
+}
+
+// perOSEntryIndex returns the index of the perOSEntry with the given OS name.
+// Returns -1 if not found.
+func perOSEntryIndex(os string, entries []model.PerOSEntry) int {
+	return slices.IndexFunc(entries, func(e model.PerOSEntry) bool {
+		return e.Name == os
+	})
+}
+
+// computeEMA computes the exponential moving average (EMA) of the current and
+// previous EMA values. It uses a smoothing factor derived from smoothingPeriod.
+func computeEMA(current int64, previousEMA int64) int64 {
+	if previousEMA == 0 {
+		return current
+	}
+	// Smoothing factor.
+	alpha := 2 / (float64(smoothingPeriod + 1))
+	return int64(float64((current-previousEMA))*alpha + float64(previousEMA))
+}
+
+// namedCacheStatsKeyFromStringID returns a NamedCacheStats key given its StringID.
+// The format of id should be of the form "pool:cache".
+func namedCacheStatsKeyFromStringID(ctx context.Context, id string) *datastore.Key {
+	pool, cache, ok := strings.Cut(id, ":")
+	if !ok {
+		return nil
+	}
+	return model.NamedCacheStatsKey(ctx, pool, cache)
 }
