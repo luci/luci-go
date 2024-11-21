@@ -34,10 +34,10 @@ message Finding {
   string message = 3;
 
   enum SeverityLevel {
-    UNSET = 0;
-    INFO = 1;
-    WARNING = 2;
-    ERROR = 3;
+    SEVERITY_LEVEL_UNSPECIFIED = 0;
+    SEVERITY_LEVEL_INFO = 1;
+    SEVERITY_LEVEL_WARNING = 2;
+    SEVERITY_LEVEL_ERROR = 3;
   }
   // Severity level of finding.
   //
@@ -91,6 +91,8 @@ message Location {
   }
   Range range = 3;
 }
+
+
 
 // A suggested fix for the finding.
 message Fix {
