@@ -17,6 +17,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import LockIcon from '@mui/icons-material/Lock';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import { Link as RouterLink } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
@@ -54,9 +55,11 @@ export function GroupsListItem({ group, selected } :GroupsItemProps) {
         }}
         />
       {!group.callerCanModify &&
-      <IconButton>
-          <LockIcon />
-      </IconButton>
+        <Tooltip title="View Only">
+          <IconButton disableRipple disableFocusRipple>
+            <LockIcon />
+          </IconButton>
+        </Tooltip>
       }
       </ListItemButton>
     </ListItem>
