@@ -23,6 +23,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -34,14 +35,24 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/auth/integration/authtest"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/auth/integration/gcemeta"
+	"go.chromium.org/luci/auth/integration/localauth"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/lucictx"
 
 	"go.chromium.org/luci/server"
+	srvauth "go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/module"
 )
+
+// FakeClientIdentity is how clients authenticate as by default when using fake
+// RPC client auth.
+//
+// See DisableFakeClientRPCAuth in Settings for details.
+const FakeClientIdentity identity.Identity = "user:client@servertest.example.com"
 
 // Settings are parameters for launching a test server.
 type Settings struct {
@@ -72,8 +83,8 @@ type Settings struct {
 
 	// DisableFakeGCEMetadata can be used to **disable** fake GCE metadata server.
 	//
-	// The GCE metadata server is used to grab authentication tokens when making
-	// calls to other services.
+	// The GCE metadata server is used to grab authentication tokens when the
+	// server makes calls to other services.
 	//
 	// By default (when DisableFakeGCEMetadata is false), the test server is
 	// launched in an environment with a fake GCE metadata server that returns
@@ -88,14 +99,32 @@ type Settings struct {
 	// available in the execution environment or configured via Options. This
 	// generally means it will use real authentication tokens.
 	DisableFakeGCEMetadata bool
+
+	// DisableFakeClientRPCAuth can be used to **disable** fake RPC auth tokens.
+	//
+	// By default (when this option is false), the server is configured to accept
+	// fake per-RPC authentication tokens and reject real ones. Clients that make
+	// authenticated calls will need to be configured to send such fake tokens.
+	// This can be done by injecting lucictx.LocalAuth into the context, see
+	// FakeClientRPCAuth().
+	//
+	// RPC calls made from clients that use FakeClientRPCAuth() will be
+	// authenticated as coming from FakeClientIdentity.
+	//
+	// If DisableFakeClientRPCAuth is true the test server will accept only real
+	// OAuth and/or OpenID tokens (depending on Options). It means the test
+	// clients will also need to generate real tokens, which may require
+	// configuring tests to run under some real service account.
+	DisableFakeClientRPCAuth bool
 }
 
 // TestServer represents a running server-under-test.
 type TestServer struct {
-	srv     *server.Server
-	tm      *testingModule
-	cleanup []func()
-	cancel  context.CancelFunc
+	srv       *server.Server
+	tm        *testingModule
+	localAuth *lucictx.LocalAuth
+	cleanup   []func()
+	cancel    context.CancelFunc
 }
 
 // RunServer launches a test server and runs it in background.
@@ -167,8 +196,10 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 
 	if !settings.DisableFakeGCEMetadata {
 		metaSrv := &gcemeta.Server{
-			Generator: &authtest.FakeTokenGenerator{Email: "test@example.com"},
-			Email:     "test@example.com",
+			Generator: &FakeRPCTokenGenerator{
+				Email: "server@servertest.example.com",
+			},
+			Email: "server@servertest.example.com",
 			Scopes: []string{
 				"https://www.googleapis.com/auth/cloud-platform",
 				"https://www.googleapis.com/auth/userinfo.email",
@@ -205,6 +236,44 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 		panic("should not be possible: a successful server init initializes all modules")
 	}
 
+	// Override RPC authentication to support fake tokens.
+	if !settings.DisableFakeClientRPCAuth {
+		// Generate a random seed that would be part of generated tokens and the
+		// fake RPC auth will check it is there. This is a way to prevent unrelated
+		// tests from talking to one another.
+		seed := rand.Uint64()
+
+		// A local auth server that clients will use to generate fake tokens.
+		localAuthSrv := &localauth.Server{
+			TokenGenerators: map[string]localauth.TokenGenerator{
+				"default": &FakeRPCTokenGenerator{
+					Seed:  seed,
+					Email: FakeClientIdentity.Email(),
+				},
+			},
+			DefaultAccountID: "default",
+		}
+		if ts.localAuth, err = localAuthSrv.Start(ctx); err != nil {
+			return nil, errors.Annotate(err, "failed to start local auth server").Err()
+		}
+		ts.cleanup = append(ts.cleanup, func() { _ = localAuthSrv.Stop(ctx) })
+
+		// An RPC authentication that the server will use to check fake tokens.
+		var audiences stringset.Set
+		if opts.OpenIDRPCAuthEnable {
+			audiences = stringset.NewFromSlice(opts.OpenIDRPCAuthAudience...)
+			for _, host := range []string{ts.HTTPAddr(), ts.GRPCAddr()} {
+				audiences.Add(host)
+				audiences.Add("http://" + host)
+				audiences.Add("https://" + host)
+			}
+		}
+		ts.srv.SetRPCAuthMethods([]srvauth.Method{&FakeRPCAuth{
+			Seed:             seed,
+			IDTokensAudience: audiences,
+		}})
+	}
+
 	// Let the caller code register routes and other stuff. This is the same thing
 	// that server.Main is doing.
 	if settings.Init != nil {
@@ -212,7 +281,6 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 			return nil, errors.Annotate(err, "user-supplied init callback").Err()
 		}
 	}
-	srvCtx := ts.Context()
 
 	// Launch the server and wait until it responds to the health check. Note that
 	// the port is already open: our request will just queue up on the listening
@@ -224,6 +292,7 @@ func RunServer(ctx context.Context, settings *Settings) (*TestServer, error) {
 	healthCtx, healthCancel := context.WithTimeout(ctx, time.Minute)
 	defer healthCancel()
 
+	srvCtx := ts.Context()
 	logging.Infof(srvCtx, "Waiting for a health check to pass...")
 	healthDone := make(chan error, 1)
 	go func() {
@@ -301,6 +370,18 @@ func (ts *TestServer) GRPCConn(opts ...grpc.DialOption) (*grpc.ClientConn, error
 	finalOpts = append(finalOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	finalOpts = append(finalOpts, opts...)
 	return grpc.NewClient("passthrough:///"+ts.GRPCAddr(), finalOpts...)
+}
+
+// FakeClientRPCAuth can be used to inject a fake local auth token provider into
+// the LUCI context.
+//
+// It can be inserted into the client context using regular lucictx API:
+//
+//	ctx = lucictx.SetLocalAuth(ctx, srv.FakeClientRPCAuth())
+//
+// Return nil if DisableFakeClientRPCAuth is true.
+func (ts *TestServer) FakeClientRPCAuth() *lucictx.LocalAuth {
+	return ts.localAuth
 }
 
 ////////////////////////////////////////////////////////////////////////////////
