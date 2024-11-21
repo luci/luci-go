@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	cfgValidation "go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/info"
+	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
@@ -101,6 +102,13 @@ func main() {
 		importer.RegisterImportConfigsCron(&tq.Default)
 		ui.InstallHandlers(srv, configsServer, importer)
 		schema.InstallHandler(srv.Routes)
+
+		// Enable protobuf v2 for JSONPB field masks support. This will be default
+		// at some point.
+		srv.ConfigurePRPC(func(srv *prpc.Server) {
+			srv.UseProtobufV2 = true
+		})
+
 		return nil
 	})
 }

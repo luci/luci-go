@@ -25,11 +25,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/klauspost/compress/gzip"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcGzip "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/retry/transient"
@@ -122,7 +122,7 @@ func TestRemoteCalls(t *testing.T) {
 				mockClient.EXPECT().GetConfig(gomock.Any(), proto.MatcherEqual(&pb.GetConfigRequest{
 					ConfigSet: "projects/project1",
 					Path:      "config.cfg",
-					Fields: &field_mask.FieldMask{
+					Fields: &fieldmaskpb.FieldMask{
 						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
 					},
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.Config{
@@ -173,7 +173,7 @@ func TestRemoteCalls(t *testing.T) {
 			t.Run("ok - meta only", func(t *ftt.Test) {
 				mockClient.EXPECT().GetProjectConfigs(gomock.Any(), proto.MatcherEqual(&pb.GetProjectConfigsRequest{
 					Path: "config.cfg",
-					Fields: &field_mask.FieldMask{
+					Fields: &fieldmaskpb.FieldMask{
 						Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
 					},
 				}), grpc.UseCompressor(grpcGzip.Name)).Return(&pb.GetProjectConfigsResponse{
@@ -387,7 +387,7 @@ func TestRemoteCalls(t *testing.T) {
 			t.Run("ok", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
-					Fields: &field_mask.FieldMask{
+					Fields: &fieldmaskpb.FieldMask{
 						Paths: []string{"configs"},
 					},
 				})).Return(&pb.ConfigSet{
@@ -405,7 +405,7 @@ func TestRemoteCalls(t *testing.T) {
 			t.Run("rpc err", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
-					Fields: &field_mask.FieldMask{
+					Fields: &fieldmaskpb.FieldMask{
 						Paths: []string{"configs"},
 					},
 				})).Return(nil, status.Errorf(codes.Internal, "server internal error"))
@@ -422,7 +422,7 @@ func TestRemoteCalls(t *testing.T) {
 			t.Run("listing err", func(t *ftt.Test) {
 				mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 					ConfigSet: "projects/project",
-					Fields: &field_mask.FieldMask{
+					Fields: &fieldmaskpb.FieldMask{
 						Paths: []string{"configs"},
 					},
 				})).Return(nil, status.Errorf(codes.NotFound, "no config set"))
@@ -435,7 +435,7 @@ func TestRemoteCalls(t *testing.T) {
 				expectCall := func() {
 					mockClient.EXPECT().GetConfigSet(gomock.Any(), proto.MatcherEqual(&pb.GetConfigSetRequest{
 						ConfigSet: "projects/project",
-						Fields: &field_mask.FieldMask{
+						Fields: &fieldmaskpb.FieldMask{
 							Paths: []string{"configs"},
 						},
 					})).Return(&pb.ConfigSet{

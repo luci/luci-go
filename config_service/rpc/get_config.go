@@ -99,15 +99,19 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		}
 	}
 
-	// Convert to the response proto by the Fields mask.
+	// Convert to the response proto.
 	configPb := toConfigPb(cs, f)
+
+	// Fetch the actual content only if it is requested by the field mask.
 	if len(f.Content) != 0 && f.Size < int64(maxRawContentSize) {
-		rawContent, err := f.GetRawContent(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cs, f.Path, err)
-			return nil, status.Errorf(codes.Internal, "error while getting raw content")
+		if m.MustIncludes("raw_content") != mask.Exclude {
+			rawContent, err := f.GetRawContent(ctx)
+			if err != nil {
+				logging.Errorf(ctx, "failed to get the raw content of the config for %s-%s: %s", cs, f.Path, err)
+				return nil, status.Errorf(codes.Internal, "error while getting raw content")
+			}
+			configPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		}
-		configPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 	} else if m.MustIncludes("signed_url") != mask.Exclude {
 		urls, err := common.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
 		if err != nil {
@@ -116,6 +120,8 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 		}
 		configPb.Content = &pb.Config_SignedUrl{SignedUrl: urls[0]}
 	}
+
+	// Leave only fields specified in the field mask.
 	if err := m.Trim(configPb); err != nil {
 		logging.Errorf(ctx, "cannot trim the config proto: %s", err)
 		return nil, status.Errorf(codes.Internal, "error while constructing response")

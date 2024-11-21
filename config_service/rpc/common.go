@@ -61,7 +61,7 @@ func toConfigMask(fields *fieldmaskpb.FieldMask) (*mask.Mask, error) {
 		fieldSet.Add("signed_url")
 		fields.Paths = fieldSet.ToSlice()
 	}
-	return mask.FromFieldMask(fields, &pb.Config{}, mask.AdvancedSemantics())
+	return mask.FromFieldMask(fields, &pb.Config{})
 }
 
 // toConfigSetMask converts the given field mask for ConfigSet proto to a
@@ -70,7 +70,7 @@ func toConfigSetMask(fields *fieldmaskpb.FieldMask) (*mask.Mask, error) {
 	if len(fields.GetPaths()) == 0 {
 		return defaultConfigSetMask, nil
 	}
-	return mask.FromFieldMask(fields, &pb.ConfigSet{}, mask.AdvancedSemantics())
+	return mask.FromFieldMask(fields, &pb.ConfigSet{})
 }
 
 // toConfigPb converts *model.File to Config proto, excluding its content.

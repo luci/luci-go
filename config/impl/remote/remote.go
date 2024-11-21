@@ -26,11 +26,11 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -162,7 +162,7 @@ func (r *remoteImpl) GetConfig(ctx context.Context, configSet config.Set, path s
 		Path:      path,
 	}
 	if metaOnly {
-		req.Fields = &field_mask.FieldMask{
+		req.Fields = &fieldmaskpb.FieldMask{
 			Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
 		}
 	}
@@ -192,7 +192,7 @@ func (r *remoteImpl) GetConfigs(ctx context.Context, cfgSet config.Set, filter f
 	// Fetch the list of files in the config set together with their hashes.
 	confSetPb, err := r.grpcClient.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 		ConfigSet: string(cfgSet),
-		Fields: &field_mask.FieldMask{
+		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"configs"},
 		},
 	})
@@ -294,7 +294,7 @@ func (r *remoteImpl) GetProjectConfigs(ctx context.Context, path string, metaOnl
 	}
 	req := &pb.GetProjectConfigsRequest{Path: path}
 	if metaOnly {
-		req.Fields = &field_mask.FieldMask{
+		req.Fields = &fieldmaskpb.FieldMask{
 			Paths: []string{"config_set", "path", "content_sha256", "revision", "url"},
 		}
 	}
@@ -366,7 +366,7 @@ func (r *remoteImpl) ListFiles(ctx context.Context, configSet config.Set) ([]str
 
 	res, err := r.grpcClient.GetConfigSet(ctx, &pb.GetConfigSetRequest{
 		ConfigSet: string(configSet),
-		Fields: &field_mask.FieldMask{
+		Fields: &fieldmaskpb.FieldMask{
 			Paths: []string{"configs"},
 		},
 	})
