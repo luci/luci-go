@@ -28,7 +28,9 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 import './groups_list.css';
 
@@ -83,6 +85,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     // The current edited item list, including removed & added items.
     const [items, setItems] = useState<Item[]>(asItems(initialValues));
     const [removeDialogVisible, setRemoveDialogVisible] = useState<boolean>();
+    const navigate = useNavigate();
 
     const handleRemoveDialogClose = () => {
       setRemoveDialogVisible(false);
@@ -207,6 +210,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       );
     }
 
+    const navigateToGroup = (name: string) => {
+      navigate(getURLPathFromAuthGroup(name));
+    }
+
     return (
       <TableContainer data-testid='groups-form-list'>
         <Table sx={{ p: 0, pt: '15px', width: '100%' }} data-testid='mouse-enter-table'>
@@ -223,7 +230,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
               <TableRow key={index} style={{ height: '34px' }} sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }} className='item-row' data-testid={`item-row-${item.value}`}>
                 <TableCell sx={{ p: 0, pt: '1px' }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '30px' }}>
                   <Checkbox sx={{ pt: 0, pb: 0 }} checked={item.checked} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => { handleChange(index) }} />
-                  <Typography variant="body2">{item.value}</Typography>
+                  {(name === 'Subgroups') ?
+                    <a onClick={() => navigateToGroup(item.value)} className='subgroup-link'><Typography variant="body2">{item.value}</Typography></a>
+                    :
+                    <Typography variant="body2">{item.value}</Typography>
+                  }
                 </TableCell>
               </TableRow>
             )}

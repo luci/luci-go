@@ -36,3 +36,7 @@
 .item-row:hover .remove-icon {
     visibility: visible;
 }
+
+.subgroup-link:hover {
+    cursor: pointer;
+}

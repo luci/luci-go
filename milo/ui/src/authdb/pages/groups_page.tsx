@@ -40,6 +40,9 @@ export function GroupsPage() {
     if (!groupName) {
       navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
     }
+    if (groupName) {
+      listRef.current?.scrollToGroup(groupName);
+    }
   }, [navigate, groupName]);
 
   if (!groupName) {

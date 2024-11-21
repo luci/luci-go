@@ -23,8 +23,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import {useState, forwardRef, useImperativeHandle } from 'react';
-import { Virtuoso } from 'react-virtuoso'
+import {useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
 import { Link } from 'react-router-dom';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
@@ -34,6 +34,7 @@ interface GroupsListProps {
 
 export interface GroupsListElement {
   refetchList: () => void;
+  scrollToGroup: (name: string) => void;
 }
 
 export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
@@ -41,6 +42,11 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     { selectedGroup }, ref
   ) => {
   const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const [visibleRange, setVisibleRange] = useState({
+    startIndex: 0,
+    endIndex: 0,
+  })
 
   const client = useAuthServiceClient();
   const {
@@ -61,6 +67,9 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
         refetch();
       }
     },
+    scrollToGroup: (name: string) => {
+      scrollToGroup(name);
+    }
   }));
 
   const changeSearchQuery = (query: string) => {
@@ -71,6 +80,21 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
 
   const getIndexToSelect = () => {
     return Math.max(groups.findIndex((g) => g.name === selectedGroup), 0);
+  }
+
+  const scrollToGroup = (groupName: string) => {
+    let indexToSelect: number = 0;
+    for (let i = 0; i < groups.length; i++) {
+      if (groups[i].name === groupName) {
+        indexToSelect = i
+        break;
+      }
+    }
+    if (!(indexToSelect >= visibleRange.startIndex && indexToSelect <= visibleRange.endIndex)) {
+      virtuosoRef.current?.scrollToIndex({
+        index: indexToSelect,
+      });
+    }
   }
 
   if (isLoading) {
@@ -116,9 +140,11 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     </Box>
     <Box sx={{height: '100%'}} data-testid='groups-list'>
       <Virtuoso
+        ref={virtuosoRef}
         style={{ height: '100%'}}
         totalCount={groups.length}
         initialItemCount={3}
+        rangeChanged={setVisibleRange}
         initialTopMostItemIndex={getIndexToSelect()}
         itemContent={(index) => {
           return (
