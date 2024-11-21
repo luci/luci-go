@@ -87,6 +87,22 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     const [removeDialogVisible, setRemoveDialogVisible] = useState<boolean>();
     const navigate = useNavigate();
 
+    let placeHolderText: string;
+    switch (name) {
+      case 'Members':
+        placeHolderText = 'Add members, one per line (e.g., person@example.com, serviceAccount@project.com)'
+        break;
+      case 'Globs':
+        placeHolderText = 'Add globs, one per line (e.g., *@google.com, project:project-prefix-*)'
+        break;
+      case 'Subgroups':
+        placeHolderText = 'Add subgroups, one per line (e.g., administrators, mdb/chrome-troopers, google/committers@chromium.org)'
+        break;
+      default:
+        placeHolderText = 'Add new members, one per line'
+        break;
+    }
+
     const handleRemoveDialogClose = () => {
       setRemoveDialogVisible(false);
     }
@@ -242,7 +258,16 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
               <>
                 <TableRow>
                   <TableCell sx={{ p: 0, pt: '15px', pr: '15px' }} style={{ width: '94%' }}>
-                    <TextField multiline placeholder='Add new members, one per line' label='Add new members, one per line' style={{ width: '100%' }} onChange={(e) => setNewItems(e.target.value)} value={newItems} data-testid='add-textfield' error={errorMessage !== ''} helperText={errorMessage}></TextField>
+                    <TextField
+                      multiline
+                      placeholder={placeHolderText}
+                      label={placeHolderText}
+                      style={{ width: '100%' }}
+                      onChange={(e) => setNewItems(e.target.value)}
+                      value={newItems} data-testid='add-textfield'
+                      error={errorMessage !== ''}
+                      helperText={errorMessage}>
+                    </TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>

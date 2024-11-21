@@ -85,7 +85,6 @@ export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
     onSuccess: (response) => {
       setErrorMessage('');
       onCreate();
-      console.log('navigate');
       navigate(getURLPathFromAuthGroup(response.name), { replace: true });
     },
     onError: () => {
@@ -225,7 +224,16 @@ export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of members, one per line' multiline value={members} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setMembers(e.target.value)} onBlur={validateMembers} id='membersTextfield' data-testid='members-textfield' error={membersErrorMessage !== ""} helperText={membersErrorMessage}></TextField>
+                    <TextField
+                      placeholder='List of members, one per line (e.g., person@example.com, serviceAccount@project.com)'
+                      label='List of members, one per line (e.g., person@example.com, serviceAccount@project.com)'
+                      multiline value={members}
+                      style={{ width: '100%', minHeight: '60px' }}
+                      onChange={(e) => setMembers(e.target.value)}
+                      onBlur={validateMembers} id='membersTextfield'
+                      data-testid='members-textfield' error={membersErrorMessage !== ""}
+                      helperText={membersErrorMessage}>
+                    </TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -235,7 +243,19 @@ export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of globs, one per line' multiline value={globs} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setGlobs(e.target.value)} onBlur={validateGlobs} id='globsTextfield' data-testid='globs-textfield' error={globsErrorMessage !== ""} helperText={globsErrorMessage}></TextField>
+                    <TextField
+                      placeholder='List of globs, one per line (e.g., *@google.com, project:project-prefix-*)'
+                      label='List of globs, one per line (e.g., *@google.com, project:project-prefix-*)'
+                      multiline
+                      value={globs}
+                      style={{ width: '100%', minHeight: '60px' }}
+                      onChange={(e) => setGlobs(e.target.value)}
+                      onBlur={validateGlobs}
+                      id='globsTextfield'
+                      data-testid='globs-textfield'
+                      error={globsErrorMessage !== ""}
+                      helperText={globsErrorMessage}>
+                    </TextField>
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -245,7 +265,17 @@ export function GroupsFormNew({onCreate}: GroupsFormNewProps) {
                 </TableRow>
                 <TableRow>
                   <TableCell align='left' style={{ width: '95%' }} sx={{ pb: '8px' }}>
-                    <TextField placeholder='List of subgroups, one per line' multiline value={subgroups} style={{ width: '100%', minHeight: '60px' }} onChange={(e) => setSubgroups(e.target.value)} onBlur={validateSubgroups} id='subgroupsTextfield' data-testid='subgroups-textfield' error={subgroupsErrorMessage !== ""} helperText={subgroupsErrorMessage}></TextField>
+                    <TextField
+                      placeholder='List of subgroups, one per line (e.g., administrators, mdb/chrome-troopers, google/committers@chromium.org)'
+                      label='List of subgroups, one per line (e.g., administrators, mdb/chrome-troopers, google/committers@chromium.org)'
+                      multiline value={subgroups}
+                      style={{ width: '100%', minHeight: '60px' }}
+                      onChange={(e) => setSubgroups(e.target.value)}
+                      onBlur={validateSubgroups} id='subgroupsTextfield'
+                      data-testid='subgroups-textfield'
+                      error={subgroupsErrorMessage !== ""}
+                      helperText={subgroupsErrorMessage}>
+                    </TextField>
                   </TableCell>
                 </TableRow>
               </TableBody>
