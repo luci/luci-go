@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
+import { useCallback, useMemo } from 'react';
+
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 export interface HistoryTimeRange {
   id: string;
@@ -26,28 +28,33 @@ export function useAnnotatedParam(): [
   (isAnnotated: boolean, replace?: boolean) => void,
 ] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-  let annotatedParam = searchParams.get('annotated') || '';
-  annotatedParam = annotatedParam.toLowerCase();
-  let annotated: boolean | undefined = undefined;
-  if (annotatedParam === 'true') {
-    annotated = true;
-  } else if (annotatedParam === 'false') {
-    annotated = false;
-  }
+  const annotatedParam = searchParams.get('annotated') || '';
+  const annotatedParamLower = annotatedParam.toLowerCase();
 
-  function updateAnnotatedParam(newAnnotated: boolean, replace = false) {
-    const params = new URLSearchParams();
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'annotated') {
-        params.set(k, v);
-      }
+  const annotated: boolean | undefined = useMemo(() => {
+    if (annotatedParamLower === 'true') {
+      return true;
+    } else if (annotatedParamLower === 'false') {
+      return false;
     }
+    return undefined;
+  }, [annotatedParamLower]);
 
-    params.set('annotated', newAnnotated ? 'true' : 'false');
-    setSearchParams(params, {
-      replace,
-    });
-  }
+  const updateAnnotatedParam = useCallback(
+    (newAnnotated: boolean, replace = false) => {
+      setSearchParams(
+        (params) => {
+          const newParams = new URLSearchParams(params);
+          newParams.set('annotated', newAnnotated ? 'true' : 'false');
+          return newParams;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
+  );
 
   return [annotated, updateAnnotatedParam];
 }
@@ -60,27 +67,28 @@ export function useHistoryTimeRangeParam(
 ] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const timeRangeParam = searchParams.get('historyTimeRange') || '';
-  let timeRange: HistoryTimeRange | undefined = undefined;
-  if (timeRangeParam) {
-    timeRange = options.find((option) => option.id === timeRangeParam);
-  }
-
-  function updateHistoryTimeRangeParam(
-    selectedHistoryTimeRange: HistoryTimeRange,
-    replace = false,
-  ) {
-    const params = new URLSearchParams();
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'historyTimeRange') {
-        params.set(k, v);
-      }
+  const timeRange: HistoryTimeRange | undefined = useMemo(() => {
+    if (timeRangeParam) {
+      return options.find((option) => option.id === timeRangeParam);
     }
+    return undefined;
+  }, [options, timeRangeParam]);
 
-    params.set('historyTimeRange', selectedHistoryTimeRange.id);
-    setSearchParams(params, {
-      replace,
-    });
-  }
+  const updateHistoryTimeRangeParam = useCallback(
+    (selectedHistoryTimeRange: HistoryTimeRange, replace = false) => {
+      setSearchParams(
+        (params) => {
+          const newParams = new URLSearchParams(params);
+          newParams.set('historyTimeRange', selectedHistoryTimeRange.id);
+          return newParams;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
+  );
 
   return [timeRange, updateHistoryTimeRangeParam];
 }
@@ -93,32 +101,32 @@ export function useSelectedMetricsParam(
 ] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
-  const selectedMetricsIds = selectedMetricsParam.split(',');
+  const selectedMetrics = useMemo(() => {
+    const selectedMetricsIds = selectedMetricsParam.split(',');
+    return metrics.filter(
+      (metric) => selectedMetricsIds.indexOf(metric.metricId) > -1,
+    );
+  }, [metrics, selectedMetricsParam]);
 
-  const selectedMetrics = metrics.filter(
-    (metric) => selectedMetricsIds.indexOf(metric.metricId) > -1,
+  const updateSelectedMetricsParam = useCallback(
+    (selectedMetrics: ProjectMetric[], replace = false) => {
+      const selectedMetricsIds = selectedMetrics
+        .map((metric) => metric.metricId)
+        .join(',');
+
+      setSearchParams(
+        (params) => {
+          const newParams = new URLSearchParams(params);
+          newParams.set('selectedMetrics', selectedMetricsIds);
+          return newParams;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
   );
-
-  function updateSelectedMetricsParam(
-    selectedMetrics: ProjectMetric[],
-    replace = false,
-  ) {
-    const params = new URLSearchParams();
-    for (const [k, v] of searchParams.entries()) {
-      if (k !== 'selectedMetrics') {
-        params.set(k, v);
-      }
-    }
-
-    const selectedMetricsIds = selectedMetrics
-      .map((metric) => metric.metricId)
-      .join(',');
-    params.set('selectedMetrics', selectedMetricsIds);
-
-    setSearchParams(params, {
-      replace,
-    });
-  }
 
   return [selectedMetrics, updateSelectedMetricsParam];
 }

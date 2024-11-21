@@ -38,7 +38,6 @@ import { SingleMetricChart } from './single_metric_chart';
 export const HistoryChartsSection = () => {
   const clusterId = useContext(ClusterContext);
   const { metrics } = useContext(OverviewTabContextData);
-
   const [isAnnotated, updateAnnotatedParam] = useAnnotatedParam();
   const [selectedHistoryTimeRange, updateHistoryTimeRangeParam] =
     useHistoryTimeRangeParam(HISTORY_TIME_RANGE_OPTIONS);

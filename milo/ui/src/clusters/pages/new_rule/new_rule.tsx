@@ -159,7 +159,7 @@ export const NewRulePage = () => {
           project={project}
           selectedPage={UiPage.Rules}
         />
-        ;<PanelHeading>New Rule</PanelHeading>
+        <PanelHeading>New Rule</PanelHeading>
         <Grid container direction="column" spacing={1}>
           <Grid item xs>
             {validationError && (

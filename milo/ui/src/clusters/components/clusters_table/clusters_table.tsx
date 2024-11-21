@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Grid from '@mui/material/Grid';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import useFetchMetrics from '@/clusters/hooks/use_fetch_metrics';
@@ -38,10 +38,13 @@ const ClustersTable = ({ project }: Props) => {
     error,
   } = useFetchMetrics(project);
 
+  const stableMetrics = useMemo(() => {
+    return metrics || [];
+  }, [metrics]);
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedMetrics, updateSelectedMetricsParam] = useSelectedMetricsParam(
-    metrics || [],
-  );
+  const [selectedMetrics, updateSelectedMetricsParam] =
+    useSelectedMetricsParam(stableMetrics);
 
   // Set the default order by and the selected metrics
   // if there are none in the URL already.

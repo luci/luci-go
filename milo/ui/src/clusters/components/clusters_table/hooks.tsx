@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useCallback, useMemo } from 'react';
+
 import { TimeInterval } from '@/clusters/hooks/use_fetch_clusters';
 import { MetricId } from '@/clusters/types/metric_id';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -55,26 +57,28 @@ export function useIntervalParam(
 ] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const intervalParam = searchParams.get('interval') || '';
-  let interval: TimeInterval | undefined = undefined;
-  if (intervalParam) {
-    interval = intervals.find((option) => option.id === intervalParam);
-  }
+  const interval: TimeInterval | undefined = useMemo(() => {
+    if (intervalParam) {
+      return intervals.find((option) => option.id === intervalParam);
+    }
+    return undefined;
+  }, [intervalParam, intervals]);
 
-  function updateIntervalParam(
-    selectedInterval: TimeInterval,
-    replace = false,
-  ) {
-    setSearchParams(
-      (stateParams) => {
-        const params = new URLSearchParams(stateParams);
-        params.set('interval', selectedInterval.id);
-        return params;
-      },
-      {
-        replace,
-      },
-    );
-  }
+  const updateIntervalParam = useCallback(
+    (selectedInterval: TimeInterval, replace = false) => {
+      setSearchParams(
+        (stateParams) => {
+          const params = new URLSearchParams(stateParams);
+          params.set('interval', selectedInterval.id);
+          return params;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
+  );
 
   return [interval, updateIntervalParam];
 }
@@ -86,42 +90,42 @@ export function useOrderByParam(
   const orderByParam = searchParams.get('orderBy') || '';
   const orderDir = searchParams.get('orderDir') || '';
 
-  let orderBy: OrderBy | undefined = undefined;
-
-  if (orderByParam) {
-    // Ensure the metric we are being asked to order by
-    // is one of the metrics we are querying.
-    if (metrics.some((metric) => metric.metricId === orderByParam)) {
-      orderBy = {
+  const orderBy: OrderBy | undefined = useMemo(() => {
+    if (
+      orderByParam &&
+      metrics.some((metric) => metric.metricId === orderByParam)
+    ) {
+      return {
         metric: orderByParam,
         isAscending: orderDir === 'asc',
       };
     }
-  }
+    return undefined;
+  }, [metrics, orderByParam, orderDir]);
 
-  function updateOrderByParams(orderBy: OrderBy, replace = false) {
-    setSearchParams(
-      (stateParams) => {
-        const params = new URLSearchParams(stateParams);
-
-        for (const [k, v] of searchParams.entries()) {
-          if (k !== 'orderBy' && k !== 'orderDir') {
-            params.set(k, v);
+  const updateOrderByParams = useCallback(
+    (orderBy: OrderBy, replace = false) => {
+      setSearchParams(
+        (stateParams) => {
+          const params = new URLSearchParams(stateParams);
+          if (orderBy) {
+            params.set('orderBy', orderBy.metric);
+            if (orderBy.isAscending) {
+              params.set('orderDir', 'asc');
+            }
+          } else {
+            params.delete('orderBy');
+            params.delete('orderDir');
           }
-        }
-        if (orderBy) {
-          params.set('orderBy', orderBy.metric);
-          if (orderBy.isAscending) {
-            params.set('orderDir', 'asc');
-          }
-        }
-        return params;
-      },
-      {
-        replace,
-      },
-    );
-  }
+          return params;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
+  );
 
   return [orderBy, updateOrderByParams];
 }
@@ -134,47 +138,49 @@ export function useSelectedMetricsParam(
 ] {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const selectedMetricsParam = searchParams.get('selectedMetrics') || '';
-  const selectedMetricsIds = selectedMetricsParam.split(',');
 
-  const selectedMetrics = metrics.filter(
-    (metric) => selectedMetricsIds.indexOf(metric.metricId) > -1,
-  );
-
-  function updateSelectedMetricsParam(
-    selectedMetrics: ProjectMetric[],
-    replace = false,
-  ) {
-    setSearchParams(
-      (stateParams) => {
-        const params = new URLSearchParams(stateParams);
-
-        const selectedMetricsIds = selectedMetrics
-          .map((metric) => metric.metricId)
-          .join(',');
-        params.set('selectedMetrics', selectedMetricsIds);
-
-        const orderByParam = searchParams.get('orderBy');
-        if (selectedMetrics.findIndex((m) => m.metricId === orderByParam) < 0) {
-          let orderByValue = '';
-          if (selectedMetrics.length > 0) {
-            let highestMetric = selectedMetrics[0];
-            selectedMetrics.forEach((m) => {
-              if (m.sortPriority > highestMetric.sortPriority) {
-                highestMetric = m;
-              }
-            });
-            orderByValue = highestMetric.metricId;
-          }
-          params.set('orderBy', orderByValue);
-          params.set('orderDir', 'desc');
-        }
-        return params;
-      },
-      {
-        replace,
-      },
+  const selectedMetrics = useMemo(() => {
+    const selectedMetricsIds = selectedMetricsParam.split(',');
+    return metrics.filter(
+      (metric) => selectedMetricsIds.indexOf(metric.metricId) > -1,
     );
-  }
+  }, [metrics, selectedMetricsParam]);
+
+  const updateSelectedMetricsParam = useCallback(
+    (selectedMetrics: ProjectMetric[], replace = false) => {
+      setSearchParams(
+        (stateParams) => {
+          const params = new URLSearchParams(stateParams);
+
+          const selectedMetricsIds = selectedMetrics
+            .map((metric) => metric.metricId)
+            .join(',');
+          params.set('selectedMetrics', selectedMetricsIds);
+
+          const orderByParam = params.get('orderBy');
+          if (selectedMetrics.every((m) => m.metricId !== orderByParam)) {
+            const orderByMetric = selectedMetrics.reduce(
+              (prev: ProjectMetric | null, m) => {
+                if (!prev) {
+                  return m;
+                }
+                return m.sortPriority > prev.sortPriority ? m : prev;
+              },
+              null,
+            );
+            const orderByValue = orderByMetric?.metricId || '';
+            params.set('orderBy', orderByValue);
+            params.set('orderDir', 'desc');
+          }
+          return params;
+        },
+        {
+          replace,
+        },
+      );
+    },
+    [setSearchParams],
+  );
 
   return [selectedMetrics, updateSelectedMetricsParam];
 }

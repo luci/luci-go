@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext } from 'react';
+import { createContext, useMemo } from 'react';
 
 import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
@@ -30,10 +30,13 @@ interface Props {
 }
 
 export const OverviewTabContextProvider = ({ metrics, children }: Props) => {
+  const stableMetics = useMemo(() => {
+    return metrics || [];
+  }, [metrics]);
   return (
     <OverviewTabContextData.Provider
       value={{
-        metrics: metrics || [],
+        metrics: stableMetics,
       }}
     >
       {children}
