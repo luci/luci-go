@@ -71,7 +71,7 @@ message Location {
 
   // Path to the file where the finding is located in the source.
   //
-  // For Gerrit Change, "COMMIT_MSG" is a special file path indicating the
+  // For Gerrit Change, "/COMMIT_MSG" is a special file path indicating the
   // location is in commit message.
   string file_path = 2;
 

@@ -234,7 +234,7 @@ type Location struct {
 	Source isLocation_Source `protobuf_oneof:"source"`
 	// Path to the file where the finding is located in the source.
 	//
-	// For Gerrit Change, "COMMIT_MSG" is a special file path indicating the
+	// For Gerrit Change, "/COMMIT_MSG" is a special file path indicating the
 	// location is in commit message.
 	FilePath string          `protobuf:"bytes,2,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
 	Range    *Location_Range `protobuf:"bytes,3,opt,name=range,proto3" json:"range,omitempty"`
