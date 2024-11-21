@@ -92,8 +92,6 @@ message Location {
   Range range = 3;
 }
 
-
-
 // A suggested fix for the finding.
 message Fix {
   message Replacement {
