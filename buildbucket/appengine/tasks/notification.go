@@ -210,10 +210,10 @@ func publishToExternalTopic(ctx context.Context, msg proto.Message, attrs map[st
 	}
 
 	psClient, err := clients.NewPubsubClient(ctx, cloudProj, luciProject)
-	defer psClient.Close()
 	if err != nil {
 		return transient.Tag.Apply(err)
 	}
+	defer psClient.Close()
 
 	topic := psClient.Topic(topicID)
 	defer topic.Stop()

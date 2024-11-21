@@ -111,10 +111,10 @@ func setLocalAuth(ctx context.Context) context.Context {
 func getContextFromFile(ctx context.Context, contextFile string) (*bbpb.BuildbucketAgentContext, error) {
 	bbagentCtx := &bbpb.BuildbucketAgentContext{}
 	file, err := os.Open(contextFile)
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 	contents, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
