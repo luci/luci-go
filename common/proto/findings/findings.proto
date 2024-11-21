@@ -48,7 +48,7 @@ message Finding {
   // Optional suggested fixes for the finding.
   //
   // If multiple fixes are present, they should be ordered by preference.
-  repeated Fix fixes = 7;
+  repeated Fix fixes = 5;
 }
 
 // Location describes a location in the source code.
