@@ -125,7 +125,7 @@ type parseResult struct {
 }
 
 func tryParsePath(rawPath string) parseResult {
-	p, err := parsePath(rawPath, testMsgDescriptor)
+	p, err := parsePath(rawPath, testMsgDescriptor, true)
 	return parseResult{
 		p:   p,
 		err: err,

@@ -71,7 +71,7 @@ func TestFromFieldMask(t *testing.T) {
 
 	ftt.Run("From", t, func(t *ftt.Test) {
 		parse := func(paths []string, opts ...Option) (*Mask, error) {
-			return FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{}, opts...)
+			return FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{}, append(opts, AdvancedSemantics())...)
 		}
 
 		t.Run("empty field mask", func(t *ftt.Test) {
@@ -79,6 +79,7 @@ func TestFromFieldMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
+				isAdvanced: true,
 			}))
 		})
 
@@ -87,13 +88,15 @@ func TestFromFieldMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
+				isAdvanced: true,
 				children: map[string]*Mask{
-					"str": {},
-					"num": {},
+					"str": {isAdvanced: true},
+					"num": {isAdvanced: true},
 					"msg": {
 						descriptor: testMsgDescriptor,
+						isAdvanced: true,
 						children: map[string]*Mask{
-							"num": {},
+							"num": {isAdvanced: true},
 						},
 					},
 				},
@@ -105,24 +108,28 @@ func TestFromFieldMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
+				isAdvanced: true,
 				children: map[string]*Mask{
 					"map_str_msg": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_msg")).Message(),
+						isAdvanced: true,
 						isRepeated: true,
 						children: map[string]*Mask{
 							"some_key": {
 								descriptor: testMsgDescriptor,
+								isAdvanced: true,
 								children: map[string]*Mask{
-									"str": {},
+									"str": {isAdvanced: true},
 								},
 							},
 						},
 					},
 					"map_str_num": {
 						descriptor: testMsgDescriptor.Fields().ByName(protoreflect.Name("map_str_num")).Message(),
+						isAdvanced: true,
 						isRepeated: true,
 						children: map[string]*Mask{
-							"another_key": {},
+							"another_key": {isAdvanced: true},
 						},
 					},
 				},
@@ -134,20 +141,24 @@ func TestFromFieldMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.That(t, actual, should.Match(&Mask{
 				descriptor: testMsgDescriptor,
+				isAdvanced: true,
 				children: map[string]*Mask{
 					"msgs": {
 						descriptor: testMsgDescriptor,
+						isAdvanced: true,
 						isRepeated: true,
 						children: map[string]*Mask{
 							"*": {
 								descriptor: testMsgDescriptor,
+								isAdvanced: true,
 								children: map[string]*Mask{
-									"str": {},
+									"str": {isAdvanced: true},
 								},
 							},
 						},
 					},
 					"nums": {
+						isAdvanced: true,
 						isRepeated: true,
 					},
 				},
@@ -163,6 +174,18 @@ func TestFromFieldMask(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})
+
+	ftt.Run("Rejects advanced syntax in standard mode", t, func(t *ftt.Test) {
+		cases := []string{
+			"msgs.*",
+			"`nums`",
+			"map_num_str.0",
+		}
+		for _, c := range cases {
+			_, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{c}}, &testMsg{})
+			assert.Loosely(t, err, should.ErrLike("using unsupported advanced syntax"))
+		}
+	})
 }
 
 func TestTrim(t *testing.T) {
@@ -170,7 +193,7 @@ func TestTrim(t *testing.T) {
 
 	ftt.Run("Test", t, func(t *ftt.Test) {
 		testTrim := func(maskPaths []string, msg proto.Message) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(msg)
 			assert.Loosely(t, err, should.BeNil)
@@ -359,14 +382,14 @@ func TestTrim(t *testing.T) {
 			assert.Loosely(t, msg, should.Resemble(&testMsg{Num: 1}))
 		})
 		t.Run("Error when trim nil message", func(t *ftt.Test) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			var msg proto.Message
 			err = m.Trim(msg)
 			assert.Loosely(t, err, should.ErrLike("nil message"))
 		})
 		t.Run("Error when descriptor mismatch", func(t *ftt.Test) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Trim(&testingpb.Simple{})
 			assert.Loosely(t, err, should.ErrLike("expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
@@ -379,7 +402,7 @@ func TestIncludes(t *testing.T) {
 
 	ftt.Run("Test include", t, func(t *ftt.Test) {
 		testIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			actual, err := m.Includes(path)
 			assert.Loosely(t, err, should.BeNil)
@@ -416,7 +439,7 @@ func TestIncludes(t *testing.T) {
 
 	ftt.Run("Test MustIncludes", t, func(t *ftt.Test) {
 		testMustIncludes := func(maskPaths []string, path string, expectedIncl Inclusiveness) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			actual := m.MustIncludes(path)
 			assert.Loosely(t, actual, should.Equal(expectedIncl))
@@ -438,7 +461,7 @@ func TestMerge(t *testing.T) {
 
 	ftt.Run("Test merge", t, func(t *ftt.Test) {
 		testMerge := func(maskPaths []string, src *testMsg, dest *testMsg) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: maskPaths}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, m.Merge(src, dest), should.BeNil)
 		}
@@ -622,13 +645,13 @@ func TestMerge(t *testing.T) {
 			assert.Loosely(t, dest, should.Resemble(&testMsg{Num: 1, Strs: []string{"a", "b"}}))
 		})
 		t.Run("Error when one of proto message is nil", func(t *ftt.Test) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			var src proto.Message
 			assert.Loosely(t, m.Merge(src, &testMsg{}), should.ErrLike("src message: nil message"))
 		})
 		t.Run("Error when proto message descriptors does not match", func(t *ftt.Test) {
-			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{})
+			m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"str"}}, &testMsg{}, AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 			err = m.Merge(&testMsg{}, &testingpb.Simple{})
 			assert.Loosely(t, err, should.ErrLike("dest message: expected message have descriptor: internal.testing.Full; got descriptor: internal.testing.Simple"))
@@ -640,7 +663,7 @@ func TestSubmask(t *testing.T) {
 	t.Parallel()
 
 	buildMask := func(paths ...string) *Mask {
-		m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{})
+		m, err := FromFieldMask(&fieldmaskpb.FieldMask{Paths: paths}, &testMsg{}, AdvancedSemantics())
 		assert.Loosely(t, err, should.BeNil)
 		return m
 	}
@@ -654,7 +677,10 @@ func TestSubmask(t *testing.T) {
 		t.Run("when path is entirely included", func(t *ftt.Test) {
 			actual, err := buildMask("msg").Submask("msg.msgs.*.msg")
 			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, actual, should.Match(&Mask{descriptor: testMsgDescriptor}))
+			assert.That(t, actual, should.Match(&Mask{
+				descriptor: testMsgDescriptor,
+				isAdvanced: true,
+			}))
 		})
 		t.Run("Error when path is excluded", func(t *ftt.Test) {
 			_, err := buildMask("msg.msg.str").Submask("str")

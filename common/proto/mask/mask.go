@@ -47,6 +47,8 @@ type Mask struct {
 	// isRepeated indicates whether the segment represents a repeated field or
 	// not. Children of this node are the field elements.
 	isRepeated bool
+	// isAdvanced is true if this mask was parsed with AdvancedSemantics option.
+	isAdvanced bool
 	// children maps segments to its node. e.g. children of the root in the
 	// example above has keys "a" and "b", and values are Mask objects and the
 	// Mask object "b" maps to will have a single child "c". All types of segment
@@ -131,14 +133,13 @@ func FromFieldMask(fieldMask *fieldmaskpb.FieldMask, targetMsg proto.Message, op
 	descriptor := targetMsg.ProtoReflect().Descriptor()
 	parsedPaths := make([]path, len(fieldMask.GetPaths()))
 	for i, p := range fieldMask.GetPaths() {
-		parsedPath, err := parsePath(p, descriptor)
+		parsedPath, err := parsePath(p, descriptor, optSet.advancedSemantics)
 		if err != nil {
 			return nil, err
 		}
 		parsedPaths[i] = parsedPath
 	}
-	// TODO: Use optSet.advancedSemantics.
-	return fromParsedPaths(parsedPaths, descriptor, optSet.isUpdateMask)
+	return fromParsedPaths(parsedPaths, descriptor, optSet)
 }
 
 // MustFromReadMask is a shortcut FromFieldMask that accepts field mask as
@@ -159,9 +160,10 @@ func All(targetMsg proto.Message) *Mask {
 }
 
 // fromParsedPaths constructs a mask tree from a slice of parsed paths.
-func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, isUpdateMask bool) (*Mask, error) {
+func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, opts optionSet) (*Mask, error) {
 	root := &Mask{
 		descriptor: desc,
+		isAdvanced: opts.advancedSemantics,
 	}
 	ensureChildren := func(n *Mask, hint int) map[string]*Mask {
 		if n.children == nil {
@@ -173,11 +175,11 @@ func fromParsedPaths(parsedPaths []path, desc protoreflect.MessageDescriptor, is
 		curNode := root
 		curNodeName := ""
 		for _, seg := range p {
-			if err := validateMask(curNode, curNodeName, seg, isUpdateMask); err != nil {
+			if err := validateMask(curNode, curNodeName, seg, opts.isUpdateMask); err != nil {
 				return nil, err
 			}
 			if _, ok := curNode.children[seg]; !ok {
-				child := &Mask{}
+				child := &Mask{isAdvanced: opts.advancedSemantics}
 				switch curDesc := curNode.descriptor; {
 				case curDesc.IsMapEntry():
 					child.descriptor = curDesc.Fields().ByName(protoreflect.Name("value")).Message()
@@ -360,7 +362,7 @@ const (
 //
 // Returns error if path parsing fails.
 func (m *Mask) Includes(path string) (Inclusiveness, error) {
-	parsedPath, err := parsePath(path, m.descriptor)
+	parsedPath, err := parsePath(path, m.descriptor, m.isAdvanced)
 	if err != nil {
 		return Exclude, err
 	}
@@ -498,6 +500,7 @@ func cloneValue(v protoreflect.Value, kind protoreflect.Kind) protoreflect.Value
 func (m *Mask) Submask(path string) (*Mask, error) {
 	ctx := &parseCtx{
 		curDescriptor: m.descriptor,
+		allowAdvanced: m.isAdvanced,
 		isList:        m.isRepeated && !(m.descriptor != nil && m.descriptor.IsMapEntry()),
 	}
 
@@ -510,6 +513,7 @@ func (m *Mask) Submask(path string) (*Mask, error) {
 		return &Mask{
 			descriptor: ctx.curDescriptor,
 			isRepeated: ctx.isList || (ctx.curDescriptor != nil && ctx.curDescriptor.IsMapEntry()),
+			isAdvanced: m.isAdvanced,
 		}, nil
 	case Exclude:
 		return nil, fmt.Errorf("the given path %q is excluded from mask", path)

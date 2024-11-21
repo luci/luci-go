@@ -29,9 +29,10 @@ const pathDelimiter = '.'
 
 // parsePath parses a path string to a slice of segments (see grammar in pkg
 // doc).
-func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor) (path, error) {
+func parsePath(rawPath string, descriptor protoreflect.MessageDescriptor, allowAdvanced bool) (path, error) {
 	return parsePathWithContext(rawPath, &parseCtx{
 		curDescriptor: descriptor,
+		allowAdvanced: allowAdvanced,
 	})
 }
 
@@ -45,6 +46,9 @@ func parsePathWithContext(rawPath string, ctx *parseCtx) (path, error) {
 		if tok, err := t.nextToken(); err != nil {
 			return nil, err
 		} else {
+			if !ctx.allowAdvanced && tok.isAdvancedSyntax() {
+				return nil, fmt.Errorf("using unsupported advanced syntax")
+			}
 			seg, err := parseSegment(tok, ctx)
 			if err != nil {
 				return nil, err
@@ -59,6 +63,7 @@ func parsePathWithContext(rawPath string, ctx *parseCtx) (path, error) {
 // parseCtx defines context during path parsing
 type parseCtx struct {
 	curDescriptor protoreflect.MessageDescriptor
+	allowAdvanced bool
 	isList        bool
 	mustBeLast    bool
 }
@@ -155,8 +160,16 @@ type tokenizer struct {
 // token is a composite of token type and the raw string value. It represents
 // a segment in the path
 type token struct {
-	typ   tokenType
-	value string
+	typ    tokenType
+	value  string
+	quoted bool
+}
+
+// isAdvancedSyntax is true if this token is not part of a standard grammar.
+//
+// In the standard grammar tokens are always just simple field names.
+func (t *token) isAdvancedSyntax() bool {
+	return t.typ != strLiteral || t.quoted
 }
 
 // tokenType models different types of segment defined in grammar (see pkg doc).
@@ -211,8 +224,9 @@ func (t *tokenizer) nextToken() (token, error) {
 			t.pos++ // Swallow the escaped backtick
 		}
 		return token{
-			typ:   strLiteral,
-			value: sb.String(),
+			typ:    strLiteral,
+			value:  sb.String(),
+			quoted: true,
 		}, nil
 
 	case b == '*':
