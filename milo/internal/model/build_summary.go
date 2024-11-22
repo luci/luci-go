@@ -367,8 +367,11 @@ func BuildSummaryFromBuild(c context.Context, host string, build *buildbucketpb.
 		for i, gc := range outputProperties.BlamelistPins {
 			blamelistPins[i] = protoutil.GitilesBuildSet(gc)
 		}
+	} else if gc := build.GetOutput().GetGitilesCommit(); gc != nil {
+		// Fallback to Output.GitilesCommit when there are no blamelist pins.
+		blamelistPins = []string{protoutil.GitilesBuildSet(gc)}
 	} else if gc := build.GetInput().GetGitilesCommit(); gc != nil {
-		// Fallback to Input.GitilesCommit when there are no blamelist pins.
+		// Then Fallback to Input.GitilesCommit when there are no blamelist pins.
 		blamelistPins = []string{protoutil.GitilesBuildSet(gc)}
 	}
 
