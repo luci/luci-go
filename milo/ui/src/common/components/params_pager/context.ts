@@ -16,34 +16,12 @@
  * @fileoverview
  *
  * Pager context is the mechanism to hold state associated with a (set of) param
- * pager.
- *
- * Design decisions:
- * 1. Force the pager context to be constructed via a hook.
- *    This allows us to enforce that the state is always created and persisted
- *    when the pager is used. `eslint(react-hooks/rules-of-hooks)` will enforce
- *    that the state is not accidentally unloaded. If we hold the state in the
- *    pager component, users may unload the pager therefore accidentally discard
- *    the previous page tokens state when rendering a loading spinner.
- * 2. Force all page token/size getters/setters to take a pager context.
- *    This encourage users to lift the `usePagerContext` call to the top level
- *    component under which the pager and the state (e.g. page size, page token)
- *    it hold is used. As long as the pager is used in any form in the
- *    component, the pager state will not be discarded, even when the pager
- *    component itself is not rendered.
- * 3. Hold most pager configuration in the pager context.
- *    This ensures the pager component and the pager state getters/setters uses
- *    the same set of configuration. If different sets of configurations are
- *    used (e.g. different default page sizes are passed to `getPageSize` and
- *    `<ParamPager />`), the state may appear to be inconsistent (e.g. the
- *    page size used in the query is 50 but the highlighted selected page size
- *    is 25). Some pager configuration (e.g. `nextPageToken`) are not hold in
- *    the context because they may have not been initialized when pager context
- *    is constructed.
+ * pager. See the design decisions section in doc.md for details.
  */
 
 import { useRef } from 'react';
 
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { NonNullableProps } from '@/generic_libs/types';
 
 export interface PagerOptions {
@@ -114,8 +92,9 @@ export interface PagerContext {
 }
 
 export function usePagerContext(options: PagerOptions): PagerContext {
+  const [searchParams] = useSyncedSearchParams();
   const prevTokens = useRef<string[]>([]);
-  return {
+  const pagerCtx = {
     [stateSymbol]: {
       ...options,
       pageSizeKey: options.pageSizeKey || 'limit',
@@ -123,6 +102,31 @@ export function usePagerContext(options: PagerOptions): PagerContext {
       prevTokens: prevTokens.current,
     },
   };
+
+  // In theory, we don't need to use those getters because we have access to the
+  // internals of the `pagerCtx` directly here. But use those getters anyway
+  // just for consistency.
+  const pageToken = getPageToken(pagerCtx, searchParams);
+  const state = getState(pagerCtx);
+
+  // Keep the prevTokens house keeping here so we don't need to rely on the
+  // existence of `<ParamPager />` to perform the house keeping work.
+  if (pageToken) {
+    // If we are not on the first page (i.e. page token is not empty), always
+    // allow users to go back to the first page by inserting an empty page
+    // token.
+    if (!state.prevTokens.length) {
+      state.prevTokens.push('');
+    }
+  } else {
+    // If we are on the first page (i.e. page token is empty), discard all the
+    // previous tokens.
+    // This is needed when the caller decided that the page token should be
+    // reset (e.g. due to a filter change, all page tokens are no longer valid).
+    state.prevTokens.length = 0;
+  }
+
+  return pagerCtx;
 }
 
 // DO NOT EXPORT OUTSIDE OF param_pager module.

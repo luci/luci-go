@@ -58,22 +58,8 @@ export function ParamsPager({ pagerCtx, nextPageToken }: ParamsPagerProps) {
   const pageToken = getPageToken(pagerCtx, searchParams);
 
   const state = getState(pagerCtx);
-  if (pageToken) {
-    // If we are not on the first page (i.e. page token is not empty), always
-    // allow users to go back to the first page by inserting an empty page
-    // token.
-    if (!state.prevTokens.length) {
-      state.prevTokens.push('');
-    }
-  } else {
-    // If we are on the first page (i.e. page token is empty), discard all the
-    // previous tokens.
-    // This is needed when the caller decided that the page token should be
-    // reset (e.g. due to a filter change, all page tokens are no longer valid).
-    state.prevTokens.length = 0;
-  }
-
   const prevPageToken = state.prevTokens.at(-1) ?? null;
+
   return (
     <>
       <Box sx={{ mt: '5px' }}>

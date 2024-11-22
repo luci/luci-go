@@ -15,6 +15,7 @@ General React development guides should not be placed in this directory
    * [Add a new (pRPC) host](./add_new_host.md)
    * [Add a new pRPC service](./add_new_prpc_service.md)
    * [Make (regular/batched/virtualized) pRPC queries](./make_prpc_queries.md)
+ * [Effective pagination](./effective_pagination.md)
  * [Make non-overlapping sticky elements](./make_non_overlapping_sticky_elements.md)
 
 ## Maintenance
