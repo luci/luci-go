@@ -490,6 +490,49 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task Task, perm realms.Pe
 	}
 }
 
+// CheckNewTaskAllowed checks permissions to create a task in a realm.
+//
+// It checks
+// * if the caller has the permissions to create a task in the task realm;
+// * if the provided service account is allowed to run in the task realm.
+//
+// Assume the provided taskRealm, serviceAccount have been validated.
+func (chk *Checker) CheckNewTaskAllowed(ctx context.Context, taskRealm, serviceAccount string) CheckResult {
+	// `swarming.tasks.createInRealm`
+	res := chk.hasPermission(ctx, PermTasksCreateInRealm, taskRealm)
+	if res.InternalError {
+		return res
+	}
+	if !res.Permitted {
+		return CheckResult{
+			err: status.Errorf(
+				codes.PermissionDenied,
+				"the caller %q doesn't have permission %q in the realm %q",
+				chk.caller, PermTasksCreateInRealm, taskRealm),
+		}
+	}
+
+	// `swarming.pools.createTask`
+	if serviceAccount == "" {
+		return res
+	}
+	saIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, serviceAccount))
+	if err != nil {
+		panic(fmt.Sprintf("invalid service account: %s", err))
+	}
+	res = chk.hasPermissionWithIdentity(ctx, PermTasksActAs, taskRealm, saIdentity)
+	if res.Permitted || res.InternalError {
+		return res
+	}
+
+	return CheckResult{
+		err: status.Errorf(
+			codes.PermissionDenied,
+			"the service account %q doesn't have permission %q in the realm %q",
+			serviceAccount, PermTasksActAs, taskRealm),
+	}
+}
+
 // CheckBotPerm checks if the caller has a permission in a specific bot.
 //
 // It looks up a realm the bot belong to (based on "pool" dimension) and then
@@ -581,21 +624,28 @@ func (chk *Checker) hasPermission(ctx context.Context, perm realms.Permission, r
 		return res
 	}
 
+	res := chk.hasPermissionWithIdentity(ctx, perm, realm, chk.caller)
+
+	if chk.cachedRealmPerms == nil {
+		chk.cachedRealmPerms = make(map[realmAndPerm]CheckResult, 1)
+	}
+	chk.cachedRealmPerms[key] = res
+
+	return res
+}
+
+// hasPermissionWithIdentity checks if the provided identity has a permission in a realm.
+func (chk *Checker) hasPermissionWithIdentity(ctx context.Context, perm realms.Permission, realm string, id identity.Identity) CheckResult {
 	var res CheckResult
-	switch yes, err := chk.db.HasPermission(ctx, chk.caller, perm, realm, nil); {
+	switch yes, err := chk.db.HasPermission(ctx, id, perm, realm, nil); {
 	case err != nil:
-		logging.Errorf(ctx, "Error in HasPermission(%q, %q): %s", perm, realm, err)
+		logging.Errorf(ctx, "Error in hasPermission(%q, %q): %s", perm, realm, err)
 		res = CheckResult{InternalError: true}
 	case yes:
 		res = CheckResult{Permitted: true}
 	default:
 		res = CheckResult{err: errGenericPerm}
 	}
-
-	if chk.cachedRealmPerms == nil {
-		chk.cachedRealmPerms = make(map[realmAndPerm]CheckResult, 1)
-	}
-	chk.cachedRealmPerms[key] = res
 
 	return res
 }

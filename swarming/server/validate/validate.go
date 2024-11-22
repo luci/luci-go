@@ -16,11 +16,13 @@
 package validate
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"slices"
 	"strings"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/stringset"
@@ -45,9 +47,8 @@ const (
 )
 
 var (
-	dimensionKeyRe   = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
-	reservedTags     = stringset.NewFromSlice([]string{"swarming.terminate"}...)
-	serviceAccountRE = regexp.MustCompile(`^[0-9a-zA-Z_\-\.\+\%]+@[0-9a-zA-Z_\-\.]+$`)
+	dimensionKeyRe = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
+	reservedTags   = stringset.NewFromSlice([]string{"swarming.terminate"}...)
 
 	// cloudProjectIDRE is the cloud project identifier regex derived from
 	// https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin
@@ -139,7 +140,7 @@ func ServiceAccount(sa string) error {
 		return errors.Reason("too long %q: %d > %d", sa, len(sa), maxServiceAccountLength).Err()
 	}
 
-	if !serviceAccountRE.MatchString(sa) {
+	if _, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, sa)); err != nil {
 		return errors.Reason("invalid %q: must be an email", sa).Err()
 	}
 	return nil

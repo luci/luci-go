@@ -17,6 +17,7 @@ package rpcs
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"path"
 	"regexp"
 	"strings"
@@ -28,9 +29,11 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
 )
@@ -80,8 +83,31 @@ var (
 
 // NewTask implements the corresponding RPC method.
 func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
-	if err := validateNewTask(ctx, req); err != nil {
+	pool, err := validateNewTask(ctx, req)
+	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
+	}
+
+	// Check permissions
+	state := State(ctx)
+
+	// pool level check
+	checkResult := state.ACL.CheckPoolPerm(ctx, pool, acls.PermPoolsCreateTask)
+	if !checkResult.Permitted || checkResult.InternalError {
+		return nil, checkResult.ToGrpcErr()
+	}
+
+	// task realm level checks
+	if err = setTaskRealm(ctx, state, req, pool); err != nil {
+		return nil, err
+	}
+	saToCheck := req.ServiceAccount
+	if nonEmailServiceAccount(req.ServiceAccount) {
+		saToCheck = ""
+	}
+	checkResult = State(ctx).ACL.CheckNewTaskAllowed(ctx, req.Realm, saToCheck)
+	if !checkResult.Permitted || checkResult.InternalError {
+		return nil, checkResult.ToGrpcErr()
 	}
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
@@ -92,97 +118,95 @@ func teeErr(err error, keep *error) error {
 	return err
 }
 
-func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest) error {
-	var err error
+func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest) (pool string, err error) {
 	switch {
 	case req.GetName() == "":
-		return errors.New("name is required")
+		return "", errors.New("name is required")
 	case req.GetProperties() != nil:
-		return errors.New("properties is deprecated, use task_slices instead.")
+		return "", errors.New("properties is deprecated, use task_slices instead.")
 	case req.GetExpirationSecs() != 0:
-		return errors.New("expiration_secs is deprecated, set it in task_slices instead.")
+		return "", errors.New("expiration_secs is deprecated, set it in task_slices instead.")
 	case len(req.GetTaskSlices()) == 0:
-		return errors.New("task_slices is required")
+		return "", errors.New("task_slices is required")
 	case len(req.GetTaskSlices()) > maxSliceCount:
-		return errors.Reason("can have up to %d slices", maxSliceCount).Err()
+		return "", errors.Reason("can have up to %d slices", maxSliceCount).Err()
 	case teeErr(validateParentTaskID(ctx, req.GetParentTaskId()), &err) != nil:
-		return errors.Annotate(err, "parent_task_id").Err()
+		return "", errors.Annotate(err, "parent_task_id").Err()
 	case teeErr(validate.Priority(req.GetPriority()), &err) != nil:
-		return errors.Annotate(err, "priority").Err()
+		return "", errors.Annotate(err, "priority").Err()
 	case teeErr(validateServiceAccount(req.GetServiceAccount()), &err) != nil:
-		return errors.Annotate(err, "service_account").Err()
+		return "", errors.Annotate(err, "service_account").Err()
 	case req.GetPubsubTopic() == "" && req.GetPubsubAuthToken() != "":
-		return errors.New("pubsub_auth_token requires pubsub_topic")
+		return "", errors.New("pubsub_auth_token requires pubsub_topic")
 	case req.GetPubsubTopic() == "" && req.GetPubsubUserdata() != "":
-		return errors.New("pubsub_userdata requires pubsub_topic")
+		return "", errors.New("pubsub_userdata requires pubsub_topic")
 	case teeErr(validateLength(req.GetPubsubUserdata(), maxPubsubUserDataLength), &err) != nil:
-		return errors.Annotate(err, "pubsub_userdata").Err()
+		return "", errors.Annotate(err, "pubsub_userdata").Err()
 	case teeErr(validateBotPingToleranceSecs(req.GetBotPingToleranceSecs()), &err) != nil:
-		return errors.Annotate(err, "bot_ping_tolerance").Err()
+		return "", errors.Annotate(err, "bot_ping_tolerance").Err()
 	case teeErr(validateRealm(req.GetRealm()), &err) != nil:
-		return err
+		return "", err
 	case len(req.GetTags()) > maxTagCount:
-		return errors.Reason("up to %d tags", maxTagCount).Err()
+		return "", errors.Reason("up to %d tags", maxTagCount).Err()
 	}
 
 	_, _, err = validate.PubSubTopicName(req.GetPubsubTopic())
 	if err != nil {
-		return errors.Annotate(err, "pubsub_topic").Err()
+		return "", errors.Annotate(err, "pubsub_topic").Err()
 	}
 
 	for i, tag := range req.GetTags() {
 		if err := validate.Tag(tag); err != nil {
-			return errors.Annotate(err, "tag %d", i).Err()
+			return "", errors.Annotate(err, "tag %d", i).Err()
 		}
 	}
 
 	var sb []byte
-	var pool string
 	for i, s := range req.TaskSlices {
 		curSecret := s.Properties.GetSecretBytes()
 		curLen := len(curSecret)
 		if curLen > maxSecretBytesLength {
-			return errors.Reason("secret_bytes of slice %d has size %d, exceeding limit %d", i, curLen, maxSecretBytesLength).Err()
+			return "", errors.Reason("secret_bytes of slice %d has size %d, exceeding limit %d", i, curLen, maxSecretBytesLength).Err()
 		}
 		if len(sb) == 0 {
 			sb = curSecret
 		} else {
 			if curLen > 0 && !bytes.Equal(sb, curSecret) {
-				return errors.New("when using secret_bytes multiple times, all values must match")
+				return "", errors.New("when using secret_bytes multiple times, all values must match")
 			}
 		}
 
 		if err := validateTimeoutSecs(s.ExpirationSecs, maxExpirationSecs); err != nil {
-			return errors.Annotate(err, "invalid expiration_secs of slice %d", i).Err()
+			return "", errors.Annotate(err, "invalid expiration_secs of slice %d", i).Err()
 		}
 
 		curPool, err := validateProperties(s.Properties)
 		if err != nil {
-			return errors.Annotate(err, "invalid properties of slice %d", i).Err()
+			return "", errors.Annotate(err, "invalid properties of slice %d", i).Err()
 		}
 
 		if pool == "" {
 			pool = curPool
 		} else if pool != curPool {
-			return errors.Reason("each task slice must use the same pool dimensions; %q != %q", pool, curPool).Err()
+			return "", errors.Reason("each task slice must use the same pool dimensions; %q != %q", pool, curPool).Err()
 		}
 	}
 
 	if len(req.TaskSlices) == 1 {
-		return nil
+		return pool, nil
 	}
 
 	propsSet := stringset.New(len(req.TaskSlices))
 	for i, s := range req.TaskSlices {
 		pb, err := proto.Marshal(s.Properties)
 		if err != nil {
-			return errors.Reason("failed to marshal properties for slice %d", i).Err()
+			return "", errors.Reason("failed to marshal properties for slice %d", i).Err()
 		}
 		if !propsSet.Add(string(pb)) {
-			return errors.New("cannot request duplicate task slice")
+			return "", errors.New("cannot request duplicate task slice")
 		}
 	}
-	return nil
+	return pool, nil
 }
 
 func validateParentTaskID(ctx context.Context, id string) error {
@@ -193,8 +217,12 @@ func validateParentTaskID(ctx context.Context, id string) error {
 	return err
 }
 
+func nonEmailServiceAccount(sa string) bool {
+	return sa == "" || sa == "none" || sa == "bot"
+}
+
 func validateServiceAccount(sa string) error {
-	if sa == "" || sa == "none" || sa == "bot" {
+	if nonEmailServiceAccount(sa) {
 		return nil
 	}
 	return validate.ServiceAccount(sa)
@@ -229,8 +257,7 @@ func validateTimeoutSecs(timeoutSecs int32, max int32) error {
 	return nil
 }
 
-func validateProperties(props *apipb.TaskProperties) (string, error) {
-	var err error
+func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	switch {
 	case props == nil:
 		return "", errors.New("required")
@@ -263,7 +290,7 @@ func validateProperties(props *apipb.TaskProperties) (string, error) {
 		return "", errors.Annotate(err, "cipd_input").Err()
 	}
 
-	pool, err := validateDimensions(props.Dimensions)
+	pool, err = validateDimensions(props.Dimensions)
 	if err != nil {
 		return "", errors.Annotate(err, "dimensions").Err()
 	}
@@ -595,4 +622,29 @@ func validateDimensions(dims []*apipb.StringPair) (string, error) {
 	}
 
 	return pool, nil
+}
+
+// setTaskRealm updates req in place if it doesn't have Realm using pool's default task realm.
+//
+// Assumes it is called after pool perm check, so pool config should exist.
+//
+// If there's an issue, returns a grpc error.
+func setTaskRealm(ctx context.Context, state *RequestState, req *apipb.NewTaskRequest, pool string) error {
+	if req.Realm != "" {
+		logging.Infof(ctx, "Using task realm %s", req.Realm)
+		return nil
+	}
+
+	poolCfg := state.Config.Pool(pool)
+	if poolCfg == nil {
+		panic(fmt.Sprintf("pool %q not found after pool perm check", pool))
+	}
+
+	if poolCfg.DefaultTaskRealm == "" {
+		return status.Error(codes.InvalidArgument, "task realm is required")
+	}
+
+	logging.Infof(ctx, "Using default_task_realm %s", poolCfg.DefaultTaskRealm)
+	req.Realm = poolCfg.DefaultTaskRealm
+	return nil
 }

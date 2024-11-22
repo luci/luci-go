@@ -67,8 +67,13 @@ func NewMockedRequestState() *MockedRequestState {
 
 // MockPerm mocks a permission the caller will have in some realm.
 func (s *MockedRequestState) MockPerm(realm string, perm ...realms.Permission) {
+	s.MockPermWithIdentity(realm, s.Caller, perm...)
+}
+
+// MockPermWithIdentity mocks a permission id will have in some realm.
+func (s *MockedRequestState) MockPermWithIdentity(realm string, id identity.Identity, perm ...realms.Permission) {
 	for _, p := range perm {
-		s.AuthDB.AddMocks(authtest.MockPermission(s.Caller, realm, p))
+		s.AuthDB.AddMocks(authtest.MockPermission(id, realm, p))
 	}
 }
 
