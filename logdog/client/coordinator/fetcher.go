@@ -110,8 +110,6 @@ func (s *coordinatorSource) Descriptor() *logpb.LogStreamDescriptor {
 func (s *Stream) Fetcher(c context.Context, o *fetcher.Options) *fetcher.Fetcher {
 	if o == nil {
 		o = &fetcher.Options{}
-	} else {
-		o = &(*o)
 	}
 	o.Source = &coordinatorSource{
 		stream: s, tidx: -1, requireCompleteStream: o.RequireCompleteStream}
