@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 
 import { FilterOption, SelectedFilters } from './types';
+import { keyboardUpDownHandler } from './utils';
 
 export type OptionsDropdownProps = MenuProps & {
   onClose?: (event: object, reason: 'backdropClick' | 'escapeKeyDown') => void;
@@ -74,7 +75,9 @@ export function OptionsDropdown({
       anchorOrigin={anchorOrigin}
       elevation={2}
       onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Enter') confirmTempOptions();
+        if (e.key === 'Enter' && e.ctrlKey) {
+          confirmTempOptions();
+        }
 
         if (onKeyDown) onKeyDown(e);
       }}
@@ -95,26 +98,11 @@ export function OptionsDropdown({
               if (e.type === 'keydown' || e.type === 'keyup') {
                 const parsedE =
                   e as unknown as React.KeyboardEvent<HTMLLIElement>;
-                if (parsedE.key === 'Enter' || parsedE.key === ' ') return;
+                if (parsedE.key === ' ') return;
               }
               flipOption(o2.value);
             }}
-            onKeyDown={(e) => {
-              switch (e.key) {
-                case 'ArrowDown':
-                  (e.currentTarget.nextSibling as HTMLElement)?.focus();
-                  e.stopPropagation();
-                  break;
-                case 'ArrowUp':
-                  (e.currentTarget.previousSibling as HTMLElement)?.focus();
-                  e.stopPropagation();
-                  break;
-                case ' ':
-                  e.currentTarget.click();
-                  e.stopPropagation();
-                  break;
-              }
-            }}
+            onKeyDown={keyboardUpDownHandler}
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={idx === 0}
           >

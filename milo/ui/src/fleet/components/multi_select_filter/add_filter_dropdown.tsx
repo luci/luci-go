@@ -15,11 +15,11 @@
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import SearchIcon from '@mui/icons-material/Search';
 import { MenuItem, TextField, Menu, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { OptionsDropdown } from './options_dropdown';
 import { FilterOption, SelectedFilters } from './types';
-import { fuzzySort } from './utils';
+import { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from './utils';
 
 export function AddFilterDropdown({
   filterOptions,
@@ -36,6 +36,7 @@ export function AddFilterDropdown({
 }) {
   const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState<number>();
+  const searchInput = useRef<HTMLInputElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -56,37 +57,64 @@ export function AddFilterDropdown({
           maxHeight: 300,
         },
       }}
+      onKeyDown={(e) => {
+        keyboardUpDownHandler(e);
+        switch (e.key) {
+          case 'Delete':
+          case 'Cancel':
+          case 'Backspace':
+            setSearchQuery('');
+            searchInput.current?.focus();
+        }
+        // if the key is a single alphanumeric character without modifier
+        if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+          searchInput.current?.focus();
+          setSearchQuery((old) => old + e.key);
+          e.preventDefault(); // Avoid race condition to type twice in the input
+        }
+      }}
     >
       <div
+        role="menu"
+        tabIndex={0}
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 15,
           padding: '0 10px',
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            searchInput.current?.focus();
+          }
+        }}
       >
         <TextField
+          inputRef={searchInput}
           placeholder="search"
           variant="standard"
-          onChange={(e) => setSearchQuery(e.currentTarget.value)}
+          onChange={(e) => {
+            setSearchQuery(e.currentTarget.value);
+          }}
           value={searchQuery}
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Esc' || e.key === 'Enter' || e.key === 'ArrowDown') {
-              return;
+            if (e.key === 'Escape' || (e.key === 'j' && e.ctrlKey)) {
+              e.currentTarget.parentElement?.focus();
+              e.stopPropagation();
             }
-            e.stopPropagation();
+            if (
+              e.key === 'Backspace' ||
+              e.key === 'Delete' ||
+              e.key === 'Cancel'
+            ) {
+              e.stopPropagation();
+            }
           }}
           slotProps={{
             input: {
               startAdornment: <SearchIcon />,
-              onKeyDown: (e) => {
-                if (e.key === 'Escape') {
-                  e.currentTarget.blur();
-                  e.stopPropagation();
-                }
-              },
             },
           }}
         />
@@ -109,21 +137,15 @@ export function AddFilterDropdown({
             key={`item-${option.value}-${idx}`}
             disableRipple
             selected={open === idx}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
           >
-            <button
-              // Is there a better way to have semantic html without
-              // the styling / functionality ?
-              css={{
-                all: 'initial',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}
-            >
-              <Typography variant="body2">{option.label}</Typography>
-              <ArrowRightIcon />
-            </button>
+            <Typography variant="body2">{option.label}</Typography>
+            <ArrowRightIcon />
             <OptionsDropdown
               onKeyDown={(e) => {
                 if (e.key === 'ArrowLeft') {

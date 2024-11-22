@@ -69,39 +69,69 @@ export const fuzzySort =
     minScore: number = 0,
     scoringFunction = fuzzySubstring,
   ) =>
-    /**
-     * @param list the list to sort
-     * @param get a function to get a string from a list item, only required if
-     * the input list is not string
-     *
-     * @retuns all the item with at least the @param minScore sorted based on
-     * @param scoringFunction
-     */
-    <T>(
-      list: T[],
-      get?: T extends string ? undefined : (x: T) => string,
-    ): T[] => {
-      if (
-        list.some((element) => typeof element !== 'string') &&
-        get === undefined
-      ) {
-        throw Error(
-          'If the list is not of strings you need to provide a getter function',
-        );
-      }
+  /**
+   * @param list the list to sort
+   * @param get a function to get a string from a list item, only required if
+   * the input list is not string
+   *
+   * @retuns all the item with at least the @param minScore sorted based on
+   * @param scoringFunction
+   */
+  <T>(
+    list: T[],
+    get?: T extends string ? undefined : (x: T) => string,
+  ): T[] => {
+    if (
+      list.some((element) => typeof element !== 'string') &&
+      get === undefined
+    ) {
+      throw Error(
+        'If the list is not of strings you need to provide a getter function',
+      );
+    }
 
-      if (searchString.length === 0) {
-        return list;
-      }
+    if (searchString.length === 0) {
+      return list;
+    }
 
-      const out = list
-        .map((s) => {
-          const string = get ? get(s) : (s as string);
-          return [s, scoringFunction(searchString, string)] as const;
-        })
-        .filter(([_, score]) => score >= minScore)
-        .sort(([_, score1], [__, score2]) => score2 - score1)
-        .map(([s, _]) => s);
+    const out = list
+      .map((s) => {
+        const string = get ? get(s) : (s as string);
+        return [s, scoringFunction(searchString, string)] as const;
+      })
+      .filter(([_, score]) => score >= minScore)
+      .sort(([_, score1], [__, score2]) => score2 - score1)
+      .map(([s, _]) => s);
 
-      return out;
-    };
+    return out;
+  };
+
+export function hasAnyModifier(e: React.KeyboardEvent<HTMLDivElement>) {
+  return e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
+}
+
+/**
+ * Handles up/down key to move to next/prev siblings and space to click.
+ * Also works with cltr+j/k for up/down respectively.
+ */
+export function keyboardUpDownHandler(e: React.KeyboardEvent) {
+  const target = e.target as HTMLElement;
+  const nextSibling = target?.nextSibling as HTMLElement | undefined;
+  const prevSibling = target?.previousSibling as HTMLElement | undefined;
+  switch (e.key) {
+    case e.ctrlKey && 'j':
+    case 'ArrowDown':
+      nextSibling?.focus();
+      e.stopPropagation();
+      break;
+    case e.ctrlKey && 'k':
+    case 'ArrowUp':
+      prevSibling?.focus();
+      e.stopPropagation();
+      break;
+    case ' ':
+      target.click();
+      e.stopPropagation();
+      break;
+  }
+}

@@ -56,7 +56,6 @@ function keyDown(key: object) {
 const DOWN_KEY = {
   key: 'ArrowDown',
   code: 'ArrowDown',
-  charCode: 'ArrowDown'.charCodeAt(0),
 };
 const RIGHT_KEY = {
   key: 'ArrowRight',
@@ -69,6 +68,29 @@ const SPACE_KEY = {
 const ENTER_KEY = {
   key: 'Enter',
   code: 'Enter',
+};
+const CTRL_ENTER_KEY = {
+  key: 'Enter',
+  code: 'Enter',
+  ctrlKey: true,
+};
+const BACKSPACE_KEY = {
+  key: 'Backspace',
+  code: 'Backspace',
+};
+const A_KEY = {
+  key: 'a',
+  code: 'KeyA',
+};
+const CTRL_J_KEY = {
+  key: 'j',
+  code: 'KeyJ',
+  ctrlKey: true,
+};
+const CTRL_K_KEY = {
+  key: 'k',
+  code: 'KeyK',
+  ctrlKey: true,
 };
 
 describe('<MultiSelectFilter />', () => {
@@ -171,46 +193,99 @@ describe('<MultiSelectFilter />', () => {
     });
   });
 
-  it('should work with a keyboard', async () => {
-    render(<TestComponent />);
+  describe('should work with a keyboard', () => {
+    it('should be able to select options with keyboard', async () => {
+      render(<TestComponent />);
 
-    screen.getByText('+ add filter').parentElement!.focus();
-    keyDown(ENTER_KEY);
-    expect(document.activeElement).toContainHTML('search');
+      screen.getByText('+ add filter').parentElement!.focus();
+      keyDown(ENTER_KEY);
+      expect(document.activeElement).toContainHTML('search');
 
-    keyDown(DOWN_KEY);
-    keyDown(DOWN_KEY);
-    keyDown(RIGHT_KEY);
-    expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
-    expect(document.activeElement).toContainHTML('The first option');
+      keyDown(DOWN_KEY);
+      keyDown(DOWN_KEY);
+      keyDown(RIGHT_KEY);
+      expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
+      expect(document.activeElement).toContainHTML('The first option');
 
-    fireEvent.keyDown(document.activeElement!, SPACE_KEY);
-    expect(
-      within(document.activeElement! as HTMLElement).getByRole('checkbox'),
-    ).toBeChecked();
+      fireEvent.keyDown(document.activeElement!, SPACE_KEY);
+      expect(
+        within(document.activeElement! as HTMLElement).getByRole('checkbox'),
+      ).toBeChecked();
 
-    fireEvent.keyDown(document.activeElement!, SPACE_KEY);
-    expect(
-      within(document.activeElement! as HTMLElement).getByRole('checkbox'),
-    ).not.toBeChecked();
+      fireEvent.keyDown(document.activeElement!, SPACE_KEY);
+      expect(
+        within(document.activeElement! as HTMLElement).getByRole('checkbox'),
+      ).not.toBeChecked();
 
-    keyDown(DOWN_KEY);
-    expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
-    expect(document.activeElement).toContainHTML('The second option');
+      keyDown(DOWN_KEY);
+      expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
+      expect(document.activeElement).toContainHTML('The second option');
 
-    fireEvent.keyDown(document.activeElement!, SPACE_KEY);
-    expect(
-      within(document.activeElement! as HTMLElement).getByRole('checkbox'),
-    ).toBeChecked();
+      // You can use both enter and space to select options
+      fireEvent.keyDown(document.activeElement!, ENTER_KEY);
+      expect(
+        within(document.activeElement! as HTMLElement).getByRole('checkbox'),
+      ).toBeChecked();
 
-    act(() => keyDown(ENTER_KEY));
-    expect(
-      screen.queryByText('1 | [ Option 1 ]: The second option'),
-    ).toBeInTheDocument();
-    expect(mockSelectedOptions).toHaveBeenLastCalledWith({
-      'default-namespace': {
-        'val-1': ['o12'],
-      },
+      act(() => keyDown(CTRL_ENTER_KEY));
+      expect(
+        screen.queryByText('1 | [ Option 1 ]: The second option'),
+      ).toBeInTheDocument();
+      expect(mockSelectedOptions).toHaveBeenLastCalledWith({
+        'default-namespace': {
+          'val-1': ['o12'],
+        },
+      });
+    });
+
+    it('should clear the search on backspace', () => {
+      render(<TestComponent />);
+      act(() => screen.getByText('+ add filter').click());
+
+      const search = screen.getByPlaceholderText('search');
+
+      const searchQuery = 'Opt';
+      fireEvent.change(search, { target: { value: searchQuery } });
+      expect(search).toHaveValue(searchQuery);
+
+      fireEvent.keyDown(screen.getByText('Option 1'), BACKSPACE_KEY);
+      expect(search).toHaveValue('');
+      expect(search).toHaveFocus();
+    });
+
+    it('should focus on search when typing', () => {
+      render(<TestComponent />);
+      act(() => screen.getByText('+ add filter').click());
+
+      const search = screen.getByPlaceholderText('search');
+
+      fireEvent.keyDown(screen.getByText('Option 1'), A_KEY);
+      expect(search).toHaveValue('a');
+      expect(search).toHaveFocus();
+    });
+
+    it('should go up and down with ctrl+j/k', () => {
+      render(<TestComponent />);
+      act(() => screen.getByText('+ add filter').click());
+
+      screen.getByText('Option 1').focus();
+
+      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
+      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
+      expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
+      expect(document.activeElement).toContainHTML('Option 1');
+
+      fireEvent.keyDown(document.activeElement!, CTRL_J_KEY);
+      expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
+      expect(document.activeElement).toContainHTML('Option 2');
+
+      fireEvent.keyDown(document.activeElement!, CTRL_K_KEY);
+      expect(document.activeElement!.nodeName.toLowerCase()).toBe('li');
+      expect(document.activeElement).toContainHTML('Option 1');
+
+      fireEvent.keyDown(document.activeElement!, CTRL_K_KEY);
+      fireEvent.keyDown(document.activeElement!, SPACE_KEY);
+      expect(screen.getByPlaceholderText('search')).toHaveFocus();
     });
   });
 });
