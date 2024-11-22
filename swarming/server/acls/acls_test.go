@@ -94,6 +94,7 @@ func TestServerLevel(t *testing.T) {
 			PermPoolsDeleteBot,
 			PermPoolsTerminateBot,
 			PermPoolsCancelTask,
+			PermPoolsCreateHighPriorityTask,
 		})
 	})
 

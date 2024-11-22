@@ -19,18 +19,25 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/convey"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 func simpliestValidSlice(pool string) *apipb.TaskSlice {
@@ -58,6 +65,103 @@ func simpliestValidRequest(pool string) *apipb.NewTaskRequest {
 		TaskSlices: []*apipb.TaskSlice{
 			simpliestValidSlice(pool),
 		},
+	}
+}
+
+func fullSlice(secretBytes []byte) *apipb.TaskSlice {
+	s := &apipb.TaskSlice{
+		Properties: &apipb.TaskProperties{
+			GracePeriodSecs:      60,
+			ExecutionTimeoutSecs: 300,
+			IoTimeoutSecs:        300,
+			Idempotent:           true,
+			Command:              []string{"command", "arg"},
+			RelativeCwd:          "cwd",
+			Env: []*apipb.StringPair{
+				{
+					Key:   "key",
+					Value: "value",
+				},
+			},
+			EnvPrefixes: []*apipb.StringListPair{
+				{
+					Key: "key",
+					Value: []string{
+						"a/b",
+					},
+				},
+			},
+			CasInputRoot: &apipb.CASReference{
+				CasInstance: "projects/project/instances/instance",
+				Digest: &apipb.Digest{
+					Hash:      "hash",
+					SizeBytes: 1024,
+				},
+			},
+			Outputs: []string{
+				"output",
+			},
+			Caches: []*apipb.CacheEntry{
+				{
+					Name: "name",
+					Path: "path",
+				},
+			},
+			CipdInput: &apipb.CipdInput{
+				Server: "https://cipd.com",
+				ClientPackage: &apipb.CipdPackage{
+					PackageName: "some/pkg",
+					Version:     "version",
+				},
+				Packages: []*apipb.CipdPackage{
+					{
+						PackageName: "some/pkg",
+						Version:     "good:tag",
+						Path:        "c/d",
+					},
+				},
+			},
+			Dimensions: []*apipb.StringPair{
+				{
+					Key:   "pool",
+					Value: "pool",
+				},
+			},
+		},
+		ExpirationSecs: 300,
+	}
+
+	if len(secretBytes) > 0 {
+		s.Properties.SecretBytes = secretBytes
+	}
+
+	return s
+}
+
+func fullRequest() *apipb.NewTaskRequest {
+	return &apipb.NewTaskRequest{
+		Name:                 "new",
+		ParentTaskId:         "60b2ed0a43023111",
+		Priority:             30,
+		User:                 "user",
+		ServiceAccount:       "bot",
+		PubsubTopic:          "projects/project/topics/topic",
+		PubsubAuthToken:      "token",
+		PubsubUserdata:       "userdata",
+		BotPingToleranceSecs: 300,
+		Realm:                "project:realm",
+		Tags: []string{
+			"k1:v1",
+			"k2:v2",
+		},
+		TaskSlices: []*apipb.TaskSlice{
+			fullSlice([]byte("this is a secret")),
+			fullSlice(nil),
+		},
+		Resultdb: &apipb.ResultDBCfg{
+			Enable: true,
+		},
+		PoolTaskTemplate: apipb.NewTaskRequest_AUTO,
 	}
 }
 
@@ -1001,103 +1105,165 @@ func TestValidateNewTask(t *testing.T) {
 			})
 
 			t.Run("with_all_fields", func(t *ftt.Test) {
-				slice := func(secretBytes []byte) *apipb.TaskSlice {
-					s := &apipb.TaskSlice{
-						Properties: &apipb.TaskProperties{
-							GracePeriodSecs:      60,
-							ExecutionTimeoutSecs: 300,
-							IoTimeoutSecs:        300,
-							Idempotent:           true,
-							Command:              []string{"command", "arg"},
-							RelativeCwd:          "cwd",
-							Env: []*apipb.StringPair{
-								{
-									Key:   "key",
-									Value: "value",
-								},
-							},
-							EnvPrefixes: []*apipb.StringListPair{
-								{
-									Key: "key",
-									Value: []string{
-										"a/b",
-									},
-								},
-							},
-							CasInputRoot: &apipb.CASReference{
-								CasInstance: "projects/project/instances/instance",
-								Digest: &apipb.Digest{
-									Hash:      "hash",
-									SizeBytes: 1024,
-								},
-							},
-							Outputs: []string{
-								"output",
-							},
-							Caches: []*apipb.CacheEntry{
-								{
-									Name: "name",
-									Path: "path",
-								},
-							},
-							CipdInput: &apipb.CipdInput{
-								Server: "https://cipd.com",
-								ClientPackage: &apipb.CipdPackage{
-									PackageName: "some/pkg",
-									Version:     "version",
-								},
-								Packages: []*apipb.CipdPackage{
-									{
-										PackageName: "some/pkg",
-										Version:     "good:tag",
-										Path:        "c/d",
-									},
-								},
-							},
-							Dimensions: []*apipb.StringPair{
-								{
-									Key:   "pool",
-									Value: "pool",
-								},
-							},
-						},
-						ExpirationSecs: 300,
-					}
-
-					if len(secretBytes) > 0 {
-						s.Properties.SecretBytes = secretBytes
-					}
-
-					return s
-				}
-
-				req := &apipb.NewTaskRequest{
-					Name:                 "new",
-					ParentTaskId:         "60b2ed0a43023111",
-					Priority:             30,
-					ServiceAccount:       "bot",
-					PubsubTopic:          "projects/project/topics/topic",
-					PubsubAuthToken:      "token",
-					PubsubUserdata:       "userdata",
-					BotPingToleranceSecs: 300,
-					Realm:                "project:realm",
-					Tags: []string{
-						"k1:v1",
-						"k2:v2",
-					},
-					TaskSlices: []*apipb.TaskSlice{
-						slice([]byte("this is a secret")),
-						slice(nil),
-					},
-					Resultdb: &apipb.ResultDBCfg{
-						Enable: true,
-					},
-					PoolTaskTemplate: apipb.NewTaskRequest_AUTO,
-				}
+				req := fullRequest()
 				pool, err := validateNewTask(ctx, req)
 				assert.That(t, err, should.ErrLike(nil))
 				assert.That(t, pool, should.Equal("pool"))
 			})
+		})
+	})
+}
+
+func TestLogNewRequest(t *testing.T) {
+	ctx := memory.Use(context.Background())
+	ctx = memlogger.Use(ctx)
+	logs := logging.Get(ctx).(*memlogger.MemLogger)
+	secret := []byte("this is a secret")
+	req := &apipb.NewTaskRequest{
+		TaskSlices: []*apipb.TaskSlice{
+			{
+				Properties: &apipb.TaskProperties{
+					SecretBytes: secret,
+				},
+			},
+		},
+	}
+	redacted := &apipb.NewTaskRequest{
+		TaskSlices: []*apipb.TaskSlice{
+			{
+				Properties: &apipb.TaskProperties{
+					SecretBytes: []byte("<REDACTED>"),
+				},
+			},
+		},
+	}
+	logNewRequest(ctx, req)
+	assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+		logging.Info, fmt.Sprintf(`NewTaskRequest %+v`, redacted)))
+	assert.Loosely(t, req.TaskSlices[0].Properties.SecretBytes, should.Match(secret))
+}
+
+func TestToTaskRequestEntities(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(context.Background())
+	state := NewMockedRequestState()
+	ctx = MockRequestState(ctx, state)
+
+	ftt.Run("toTaskRequestEntities", t, func(t *ftt.Test) {
+		t.Run("high_priority", func(t *ftt.Test) {
+			req := simpliestValidRequest("pool")
+			req.Priority = 10
+			t.Run("from_normal_user", func(t *ftt.Test) {
+				ents, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, ents.request.Priority, should.Equal(int64(20)))
+			})
+			t.Run("from_admin", func(t *ftt.Test) {
+				ctx := MockRequestState(ctx, state.SetCaller(AdminFakeCaller))
+				ents, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(nil))
+				assert.That(t, ents.request.Priority, should.Equal(int64(10)))
+			})
+		})
+
+		t.Run("apply_default_values", func(t *ftt.Test) {
+			req := simpliestValidRequest("pool")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.ServiceAccount, should.Equal("none"))
+			assert.That(t, ents.request.BotPingToleranceSecs, should.Equal(int64(1200)))
+		})
+		t.Run("from_full_request", func(t *ftt.Test) {
+			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
+			req := fullRequest()
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.secretBytes, should.Match(
+				&model.SecretBytes{SecretBytes: []byte("this is a secret")}))
+			expectedProps := func(hasSecretBytes bool) model.TaskProperties {
+				return model.TaskProperties{
+					GracePeriodSecs:      int64(60),
+					ExecutionTimeoutSecs: int64(300),
+					IOTimeoutSecs:        int64(300),
+					Idempotent:           true,
+					Command:              []string{"command", "arg"},
+					RelativeCwd:          "cwd",
+					HasSecretBytes:       hasSecretBytes,
+					CASInputRoot: model.CASReference{
+						CASInstance: "projects/project/instances/instance",
+						Digest: model.CASDigest{
+							Hash:      "hash",
+							SizeBytes: 1024,
+						},
+					},
+					Env: model.Env{
+						"key": "value",
+					},
+					EnvPrefixes: model.EnvPrefixes{
+						"key": []string{"a/b"},
+					},
+					Dimensions: model.TaskDimensions{
+						"pool": []string{"pool"},
+					},
+					Caches: []model.CacheEntry{
+						{
+							Name: "name",
+							Path: "path",
+						},
+					},
+					CIPDInput: model.CIPDInput{
+						Server: "https://cipd.com",
+						ClientPackage: model.CIPDPackage{
+							PackageName: "some/pkg",
+							Version:     "version",
+						},
+						Packages: []model.CIPDPackage{
+							{
+								PackageName: "some/pkg",
+								Version:     "good:tag",
+								Path:        "c/d",
+							},
+						},
+					},
+					Outputs: []string{
+						"output",
+					},
+				}
+			}
+			expectedTR := &model.TaskRequest{
+				Name:          "new",
+				Created:       now,
+				ParentTaskID:  datastore.NewIndexedNullable("60b2ed0a43023111"),
+				Authenticated: DefaultFakeCaller,
+				User:          "user",
+				ManualTags: []string{
+					"k1:v1",
+					"k2:v2",
+				},
+				ServiceAccount:       "bot",
+				Realm:                "project:realm",
+				RealmsEnabled:        true,
+				Priority:             int64(30),
+				PubSubTopic:          "projects/project/topics/topic",
+				PubSubAuthToken:      "token",
+				PubSubUserData:       "userdata",
+				BotPingToleranceSecs: int64(300),
+				Expiration:           now.Add(time.Duration(600) * time.Second),
+				ResultDB:             model.ResultDBConfig{Enable: true},
+				TaskSlices: []model.TaskSlice{
+					{
+						ExpirationSecs: int64(300),
+						Properties:     expectedProps(true),
+					},
+					{
+						ExpirationSecs: int64(300),
+						Properties:     expectedProps(false),
+					},
+				},
+			}
+			assert.That(t, ents.request.ToProto(), should.Match(expectedTR.ToProto()))
 		})
 	})
 }

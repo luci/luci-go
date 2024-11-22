@@ -184,6 +184,11 @@ func NewChecker(ctx context.Context, cfg *cfg.Config) *Checker {
 	}
 }
 
+// Caller returns the identity of the caller.
+func (chk *Checker) Caller() identity.Identity {
+	return chk.caller
+}
+
 // CheckServerPerm checks if the caller has a permission on a server level.
 //
 // Having a permission on a server level means it applies to all pools, tasks
@@ -230,7 +235,7 @@ func (chk *Checker) CheckServerPerm(ctx context.Context, perm realms.Permission)
 			serverGroups.AdminsGroup,
 		})
 
-	case PermTasksCancel, PermPoolsCancelTask, PermPoolsDeleteBot, PermPoolsTerminateBot:
+	case PermTasksCancel, PermPoolsCancelTask, PermPoolsDeleteBot, PermPoolsTerminateBot, PermPoolsCreateHighPriorityTask:
 		yes, err = chk.db.IsMember(ctx, chk.caller, []string{
 			serverGroups.AdminsGroup,
 		})

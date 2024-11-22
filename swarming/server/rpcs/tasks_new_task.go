@@ -21,15 +21,18 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -73,6 +76,8 @@ const (
 	maxDimensionValueCount  = 16
 	orDimSep                = "|"
 	maxOrDimCount           = 8
+
+	defaultBotPingToleranceSecs = 1200
 )
 
 var (
@@ -83,6 +88,8 @@ var (
 
 // NewTask implements the corresponding RPC method.
 func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
+	logNewRequest(ctx, req)
+
 	pool, err := validateNewTask(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
@@ -108,6 +115,11 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	checkResult = State(ctx).ACL.CheckNewTaskAllowed(ctx, req.Realm, saToCheck)
 	if !checkResult.Permitted || checkResult.InternalError {
 		return nil, checkResult.ToGrpcErr()
+	}
+
+	_, err = toTaskRequestEntities(ctx, req, pool)
+	if err != nil {
+		return nil, err
 	}
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
@@ -647,4 +659,177 @@ func setTaskRealm(ctx context.Context, state *RequestState, req *apipb.NewTaskRe
 	logging.Infof(ctx, "Using default_task_realm %s", poolCfg.DefaultTaskRealm)
 	req.Realm = poolCfg.DefaultTaskRealm
 	return nil
+}
+
+func logNewRequest(ctx context.Context, req *apipb.NewTaskRequest) {
+	secrets := make([][]byte, len(req.TaskSlices))
+	for i, s := range req.TaskSlices {
+		secrets[i] = s.GetProperties().GetSecretBytes()
+		if len(s.GetProperties().GetSecretBytes()) > 0 {
+			s.Properties.SecretBytes = []byte("<REDACTED>")
+		}
+	}
+	logging.Infof(ctx, "NewTaskRequest %+v", req)
+	for i, s := range req.TaskSlices {
+		s.Properties.SecretBytes = secrets[i]
+	}
+}
+
+type trEntities struct {
+	request     *model.TaskRequest
+	secretBytes *model.SecretBytes
+}
+
+// toTaskRequestEntities converts NewTaskRequest to trEntities.
+//
+// Returns a grpc error if there's an issue.
+func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool string) (*trEntities, error) {
+	chk := State(ctx).ACL
+	now := clock.Now(ctx).UTC()
+
+	tr := &model.TaskRequest{
+		Created: now,
+		Name:    req.Name,
+		// TODO(chanli): check parent task then update this request using parent
+		// data.
+		ParentTaskID:         datastore.NewIndexedNullable(req.ParentTaskId),
+		Authenticated:        chk.Caller(),
+		User:                 req.User,
+		ManualTags:           req.Tags,
+		ServiceAccount:       req.ServiceAccount,
+		Realm:                req.Realm,
+		RealmsEnabled:        true,
+		Priority:             int64(req.Priority),
+		PubSubTopic:          req.PubsubTopic,
+		PubSubAuthToken:      req.PubsubAuthToken,
+		PubSubUserData:       req.PubsubUserdata,
+		ResultDB:             model.ResultDBConfig{Enable: req.Resultdb.GetEnable()},
+		BotPingToleranceSecs: int64(req.BotPingToleranceSecs),
+	}
+	res := &trEntities{
+		request: tr,
+	}
+
+	// Priority
+	if tr.Priority < 20 {
+		res := chk.CheckPoolPerm(ctx, pool, acls.PermPoolsCreateHighPriorityTask)
+		if res.InternalError {
+			return nil, res.ToGrpcErr()
+		}
+		if !res.Permitted {
+			// Silently drop the priority for normal users.
+			tr.Priority = 20
+		}
+	}
+
+	// ServiceAccount
+	if tr.ServiceAccount == "" {
+		tr.ServiceAccount = "none"
+	}
+
+	// BotPingToleranceSecs
+	if tr.BotPingToleranceSecs == 0 {
+		tr.BotPingToleranceSecs = defaultBotPingToleranceSecs
+	}
+
+	// TaskSlices
+	var totalExpirationSecs int32
+	for _, s := range req.GetTaskSlices() {
+		totalExpirationSecs += s.ExpirationSecs
+		props := toTaskProperties(s.Properties)
+		ts := model.TaskSlice{
+			Properties:     props,
+			ExpirationSecs: int64(s.ExpirationSecs),
+		}
+		tr.TaskSlices = append(tr.TaskSlices, ts)
+
+		if res.secretBytes == nil && props.HasSecretBytes {
+			res.secretBytes = &model.SecretBytes{
+				SecretBytes: s.Properties.SecretBytes,
+			}
+		}
+	}
+	tr.Expiration = now.Add(time.Duration(totalExpirationSecs) * time.Second)
+
+	// TODO(chanli): apply template.
+	// TODO(chanli): add auto generated tags.
+	// TODO(chanli): apply server defaults.
+	// TODO(chanli): apply pool config.
+
+	return res, nil
+}
+
+func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
+	props := model.TaskProperties{
+		Idempotent:           p.Idempotent,
+		ExecutionTimeoutSecs: int64(p.ExecutionTimeoutSecs),
+		GracePeriodSecs:      int64(p.GracePeriodSecs),
+		IOTimeoutSecs:        int64(p.IoTimeoutSecs),
+		Command:              p.Command,
+		RelativeCwd:          p.RelativeCwd,
+		Outputs:              p.Outputs,
+		HasSecretBytes:       len(p.SecretBytes) > 0,
+		CASInputRoot: model.CASReference{
+			CASInstance: p.GetCasInputRoot().GetCasInstance(),
+			Digest: model.CASDigest{
+				Hash:      p.GetCasInputRoot().GetDigest().GetHash(),
+				SizeBytes: p.GetCasInputRoot().GetDigest().GetSizeBytes(),
+			},
+		},
+		CIPDInput: model.CIPDInput{
+			Server: p.GetCipdInput().GetServer(),
+			ClientPackage: model.CIPDPackage{
+				PackageName: p.GetCipdInput().GetClientPackage().GetPackageName(),
+				Version:     p.GetCipdInput().GetClientPackage().GetVersion(),
+			},
+		},
+	}
+
+	// Dimensions
+	if len(p.Dimensions) > 0 {
+		props.Dimensions = make(model.TaskDimensions, len(p.Dimensions))
+		for _, d := range p.Dimensions {
+			props.Dimensions[d.Key] = append(props.Dimensions[d.Key], d.Value)
+		}
+	}
+
+	// Env
+	if len(p.Env) > 0 {
+		props.Env = make(model.Env, len(p.Env))
+		for _, e := range p.Env {
+			props.Env[e.Key] = e.Value
+		}
+	}
+
+	// EnvPrefixes
+	if len(p.EnvPrefixes) > 0 {
+		props.EnvPrefixes = make(model.EnvPrefixes, len(p.EnvPrefixes))
+		for _, ep := range p.EnvPrefixes {
+			props.EnvPrefixes[ep.Key] = ep.Value
+		}
+	}
+
+	// Caches
+	if len(p.Caches) > 0 {
+		props.Caches = make([]model.CacheEntry, len(p.Caches))
+		for i, c := range p.Caches {
+			props.Caches[i] = model.CacheEntry{
+				Name: c.Name,
+				Path: c.Path,
+			}
+		}
+	}
+
+	// CIPDInput
+	if len(p.GetCipdInput().GetPackages()) > 0 {
+		props.CIPDInput.Packages = make([]model.CIPDPackage, len(p.CipdInput.Packages))
+		for i, pkg := range p.CipdInput.Packages {
+			props.CIPDInput.Packages[i] = model.CIPDPackage{
+				PackageName: pkg.PackageName,
+				Version:     pkg.Version,
+				Path:        pkg.Path,
+			}
+		}
+	}
+	return props
 }

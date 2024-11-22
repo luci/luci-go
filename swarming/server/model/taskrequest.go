@@ -244,8 +244,12 @@ func (p *TaskRequest) ToProto() *apipb.TaskRequestResponse {
 	if len(taskSlices) != 0 {
 		properties = taskSlices[0].Properties
 	}
+	taskID := ""
+	if p.Key != nil {
+		taskID = RequestKeyToTaskID(p.Key, AsRequest)
+	}
 	return &apipb.TaskRequestResponse{
-		TaskId:               RequestKeyToTaskID(p.Key, AsRequest),
+		TaskId:               taskID,
 		ExpirationSecs:       int32(p.Expiration.Sub(p.Created) / time.Second),
 		Name:                 p.Name,
 		ParentTaskId:         p.ParentTaskID.Get(),

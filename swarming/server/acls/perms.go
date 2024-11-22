@@ -43,4 +43,6 @@ var (
 	PermPoolsCreateTask = realms.RegisterPermission("swarming.pools.createTask")
 	// PermPoolsCancelTask controls who can cancel tasks in the pool.
 	PermPoolsCancelTask = realms.RegisterPermission("swarming.pools.cancelTask")
+	// PermPoolsCreateHighPriorityTask controls who can submit high priority (<20) tasks into the pool.
+	PermPoolsCreateHighPriorityTask = realms.RegisterPermission("swarming.pools.createHighPriorityTask")
 )
