@@ -16,6 +16,7 @@ package servertest
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -41,18 +42,32 @@ func TestEmptyServer(t *testing.T) {
 	defer srv.Shutdown()
 }
 
+func TestInitCallbackError(t *testing.T) {
+	// t.Parallel() -- RunServer cannot run in parallel.
+	boomErr := errors.New("BOOM")
+	srv, err := RunServer(context.Background(), &Settings{
+		Init: func(srv *server.Server) error {
+			return boomErr
+		},
+	})
+	assert.That(t, errors.Unwrap(err), should.Equal(boomErr))
+	assert.Loosely(t, srv, should.BeNil)
+}
+
 func TestServerTestAndFakeAuthDb(t *testing.T) {
 	// t.Parallel() -- RunServer cannot run in parallel.
 	ctx := context.Background()
 
-	testServer, err := RunServer(ctx, &Settings{
+	srv, err := RunServer(ctx, &Settings{
 		Options: &server.Options{
 			AuthDBProvider: (&authtest.FakeDB{}).AsProvider(),
 		},
 	})
 
 	assert.That(t, err, should.ErrLike(nil))
-	assert.Loosely(t, testServer, should.NotBeNil)
+	assert.Loosely(t, srv, should.NotBeNil)
+
+	srv.Shutdown()
 }
 
 func TestFakeRPCAuth(t *testing.T) {

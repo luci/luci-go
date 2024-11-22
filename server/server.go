@@ -1683,21 +1683,25 @@ func (s *Server) Serve() error {
 // Blocks until the server is stopped. Can be called multiple times.
 func (s *Server) Shutdown() {
 	// Tell all ports to stop and signal Serve it can exit.
-	s.shutdownPorts()
-	// Wait for Serve to finish running the cleanup.
-	<-s.done
-	logging.Infof(s.Context, "The server has stopped")
+	if s.shutdownPorts() {
+		// Wait for Serve to finish running the cleanup.
+		<-s.done
+		logging.Infof(s.Context, "The server has stopped")
+	}
 }
 
 // shutdownPorts closes all ports and signals Serve it can exit.
 //
 // Unlike Shutdown, it doesn't wait for Serve to exit. This is used inside
 // Serve itself to shutdown after an error.
-func (s *Server) shutdownPorts() {
+//
+// Returns true if stopped serving or false if the server hasn't started yet or
+// was already stopped.
+func (s *Server) shutdownPorts() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.stopped {
-		return
+	if s.stopped || !s.started {
+		return false
 	}
 
 	logging.Infof(s.Context, "Shutting down the server...")
@@ -1724,6 +1728,7 @@ func (s *Server) shutdownPorts() {
 	// Notify Serve that it can exit now.
 	s.stopped = true
 	close(s.stop)
+	return true
 }
 
 // Fatal logs the error and immediately shuts down the process with exit code 3.
