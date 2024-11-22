@@ -17,20 +17,21 @@ import {
   DataGrid,
   gridClasses,
   GridColDef,
-  GridPaginationInitialState,
   GridSlots,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   useGridApiRef,
+  GridPaginationModel,
 } from '@mui/x-data-grid';
 import * as React from 'react';
+
+const UNKNOWN_ROW_COUNT = -1;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 // This is done for proper typing
 // For more info refer to: https://mui.com/x/common-concepts/custom-components/#using-module-augmentation
 interface CustomToolbarProps {
-  setColumnsButtonEl: React.Dispatch<
-    React.SetStateAction<HTMLButtonElement | null>
-  >;
+  setColumnsButtonEl: (element: HTMLButtonElement | null) => void;
 }
 
 function CustomToolbar({ setColumnsButtonEl }: CustomToolbarProps) {
@@ -45,23 +46,33 @@ function CustomToolbar({ setColumnsButtonEl }: CustomToolbarProps) {
 export const DataTable = ({
   columns,
   rows,
+  nextPageToken,
+  isLoading,
+  paginationModel,
+  onPaginationModelChange,
 }: {
   columns: GridColDef[];
   rows: { [key: string]: string }[];
+  nextPageToken: string;
+  isLoading: boolean;
+  paginationModel: GridPaginationModel;
+  onPaginationModelChange: (model: GridPaginationModel) => void;
 }) => {
   const apiRef = useGridApiRef();
   const [columnsButtonEl, setColumnsButtonEl] =
     React.useState<HTMLButtonElement | null>(null);
 
-  const paginationModel: GridPaginationInitialState = {
-    paginationModel: { page: 0, pageSize: 25 },
-  };
-
   // This is a way to autosize columns to fit its content,
-  // TODO: call autosizeColumns when data is fetched from backend
+  // TODO(vaghinak): call autosizeColumns when data is fetched from backend
   React.useEffect(() => {
     apiRef.current?.autosizeColumns();
   });
+
+  // On the last page we will have the total number of rows
+  const rowCount =
+    paginationModel.page * paginationModel.pageSize + rows.length;
+  const hasNextPage = nextPageToken !== '';
+  const isLastPage = !isLoading && !hasNextPage;
 
   return (
     <DataGrid
@@ -98,14 +109,18 @@ export const DataTable = ({
         },
         toolbar: { setColumnsButtonEl },
       }}
-      rows={rows}
-      columns={columns}
       getRowHeight={() => 'auto'}
-      initialState={{
-        pagination: paginationModel,
-      }}
       disableRowSelectionOnClick
       disableColumnMenu
+      rowCount={isLastPage ? rowCount : UNKNOWN_ROW_COUNT}
+      paginationMode="server"
+      pageSizeOptions={DEFAULT_PAGE_SIZE_OPTIONS}
+      paginationMeta={{ hasNextPage: hasNextPage }}
+      paginationModel={paginationModel}
+      onPaginationModelChange={onPaginationModelChange}
+      loading={isLoading}
+      rows={rows}
+      columns={columns}
     />
   );
 };

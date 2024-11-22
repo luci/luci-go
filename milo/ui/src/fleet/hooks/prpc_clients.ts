@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Device,
-  DeviceType,
-} from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { FleetConsoleClientImpl } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-// TODO(vaghinak): Should be adjusted later based on the real data
-export const BASE_DIMENSIONS = {
-  id: (device: Device) => device.id,
-  dutId: (device: Device) => device.dutId,
-  dutType: (device: Device) => DeviceType[device.type],
-  dutState: (device: Device) => DeviceType[device.type],
-  dutHost: (device: Device) => device.address?.host || '',
-  dutPort: (device: Device) => String(device.address?.port) || '',
-};
+export function useFleetConsoleClient() {
+  return usePrpcServiceClient({
+    host: 'localhost:8800', // TODO(vaghinak): should be changed to get the host from the SETTINGS
+    insecure: true, // TODO(vaghinak): remove this line when auth works
+    ClientImpl: FleetConsoleClientImpl,
+  });
+}

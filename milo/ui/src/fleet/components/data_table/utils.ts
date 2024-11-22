@@ -16,11 +16,11 @@ import { GridColDef } from '@mui/x-data-grid';
 
 export function generateColDefs(
   columns: string[],
-  columnHeaders: { [key: string]: string },
+  columnHeaders?: { [key: string]: string },
 ): GridColDef[] {
   const colDefs: GridColDef[] = columns.map((column) => ({
     field: column,
-    headerName: columnHeaders[column] || column,
+    headerName: columnHeaders?.[column] ?? column,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
