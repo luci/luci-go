@@ -53,7 +53,6 @@ export const MultiSelectFilter = ({
             <SelectedChip
               option={option}
               key={`selected-chip-${idx}`}
-              filterOptions={filterOptions}
               selectedOptions={selectedOptions}
               setSelectedOptions={setSelectedOptions}
             />

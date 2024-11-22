@@ -25,7 +25,6 @@ export function SelectedChip({
   setSelectedOptions,
 }: {
   option: FilterOption;
-  filterOptions: FilterOption[]; // TODO(pietroscutta) remove
   selectedOptions: SelectedFilters;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
 }) {

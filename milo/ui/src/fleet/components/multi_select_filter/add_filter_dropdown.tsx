@@ -19,6 +19,7 @@ import { useState } from 'react';
 
 import { OptionsDropdown } from './options_dropdown';
 import { FilterOption, SelectedFilters } from './types';
+import { fuzzySort } from './utils';
 
 export function AddFilterDropdown({
   filterOptions,
@@ -50,6 +51,11 @@ export function AddFilterDropdown({
       anchorEl={anchorEl}
       onClose={closeMenu}
       elevation={2}
+      MenuListProps={{
+        sx: {
+          maxHeight: 300,
+        },
+      }}
     >
       <div
         style={{
@@ -66,24 +72,27 @@ export function AddFilterDropdown({
           value={searchQuery}
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
-          InputProps={{
-            startAdornment: <SearchIcon />,
-            onKeyDown: (e) => {
-              if (e.key === 'Escape') {
-                e.currentTarget.blur();
-                e.stopPropagation();
-              }
+          onKeyDown={(e) => {
+            if (e.key === 'Esc' || e.key === 'Enter' || e.key === 'ArrowDown') {
+              return;
+            }
+            e.stopPropagation();
+          }}
+          slotProps={{
+            input: {
+              startAdornment: <SearchIcon />,
+              onKeyDown: (e) => {
+                if (e.key === 'Escape') {
+                  e.currentTarget.blur();
+                  e.stopPropagation();
+                }
+              },
             },
           }}
         />
       </div>
-      {filterOptions
-        .filter(
-          (option) =>
-            searchQuery === '' ||
-            option.label.toLowerCase().startsWith(searchQuery.toLowerCase()),
-        ) // TODO(pietroscutta) would be nice if this was fuzzy
-        .map((option, idx) => (
+      {fuzzySort(searchQuery)(filterOptions, (x) => x.label).map(
+        (option, idx) => (
           <MenuItem
             onClick={(event) => {
               // The onClick fires also when closing the menu
@@ -138,7 +147,8 @@ export function AddFilterDropdown({
               option={option}
             />
           </MenuItem>
-        ))}
+        ),
+      )}
     </Menu>
   );
 }

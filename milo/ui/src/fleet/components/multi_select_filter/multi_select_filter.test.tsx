@@ -22,7 +22,7 @@ import {
 } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 
-import { FILTER_OPTIONS } from './mock_data';
+import { TEST_FILTER_OPTIONS } from './mock_data';
 import { SelectedFilters } from './types';
 
 import { MultiSelectFilter } from '.';
@@ -37,7 +37,7 @@ const TestComponent = () => {
 
   return (
     <MultiSelectFilter
-      filterOptions={FILTER_OPTIONS}
+      filterOptions={TEST_FILTER_OPTIONS}
       selectedOptions={selectedOptions}
       setSelectedOptions={(...args) => {
         setSelectedOptions(...args);

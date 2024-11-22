@@ -80,52 +80,64 @@ export function OptionsDropdown({
       }}
       {...menuProps}
     >
-      {option.options.map((o2) => (
-        <MenuItem
-          key={`innerMenu-${option.value}-${o2.value}`}
-          disableRipple
-          onClick={(e) => {
-            if (e.type === 'keydown' || e.type === 'keyup') {
-              const parsedE =
-                e as unknown as React.KeyboardEvent<HTMLLIElement>;
-              if (parsedE.key === 'Enter' || parsedE.key === ' ') return;
-            }
-            flipOption(o2.value);
-          }}
-          onKeyDown={(e) => {
-            switch (e.key) {
-              case 'ArrowDown':
-                (e.currentTarget.nextSibling as HTMLElement)?.focus();
-                break;
-              case 'ArrowUp':
-                (e.currentTarget.previousSibling as HTMLElement)?.focus();
-                break;
-              case ' ':
-                e.currentTarget.click();
-                break;
-            }
-          }}
-        >
-          <button
-            css={{
-              all: 'initial',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Checkbox
-              inputProps={{ 'aria-label': 'controlled' }}
-              checked={
-                !!tempSelectedOptions[option.nameSpace]?.[
-                  option.value
-                ]?.includes(o2.value)
+      <div
+        css={{
+          maxHeight: 200,
+          overflow: 'auto',
+        }}
+        tabIndex={-1}
+      >
+        {option.options.map((o2, idx) => (
+          <MenuItem
+            key={`innerMenu-${option.value}-${o2.value}`}
+            disableRipple
+            onClick={(e) => {
+              if (e.type === 'keydown' || e.type === 'keyup') {
+                const parsedE =
+                  e as unknown as React.KeyboardEvent<HTMLLIElement>;
+                if (parsedE.key === 'Enter' || parsedE.key === ' ') return;
               }
-              tabIndex={-1}
-            />
-            <Typography variant="body2">{o2.label}</Typography>
-          </button>
-        </MenuItem>
-      ))}
+              flipOption(o2.value);
+            }}
+            onKeyDown={(e) => {
+              switch (e.key) {
+                case 'ArrowDown':
+                  (e.currentTarget.nextSibling as HTMLElement)?.focus();
+                  e.stopPropagation();
+                  break;
+                case 'ArrowUp':
+                  (e.currentTarget.previousSibling as HTMLElement)?.focus();
+                  e.stopPropagation();
+                  break;
+                case ' ':
+                  e.currentTarget.click();
+                  e.stopPropagation();
+                  break;
+              }
+            }}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus={idx === 0}
+          >
+            <button
+              css={{
+                all: 'initial',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Checkbox
+                checked={
+                  !!tempSelectedOptions[option.nameSpace]?.[
+                    option.value
+                  ]?.includes(o2.value)
+                }
+                tabIndex={-1}
+              />
+              <Typography variant="body2">{o2.label}</Typography>
+            </button>
+          </MenuItem>
+        ))}
+      </div>
       <Divider />
       <div
         css={{
