@@ -126,8 +126,8 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 
 			now := clock.Now(ctx)
 			expiry := now.Add(namedCachesExpiryTime)
-			// The key will always exist. No need to test.
-			osToSizesMap, _ := merged.namedCacheMap[ncs.Key.StringID()]
+			// The key will always exist.
+			osToSizesMap := merged.namedCacheMap[ncs.Key.StringID()]
 			// Store all non-expired PerOSEntries for this entity.
 			perOSEntryMap := make(map[string]model.PerOSEntry, len(osToSizesMap))
 
