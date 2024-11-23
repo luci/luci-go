@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -26,10 +25,10 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
-	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/hardcoded/chromeinfra"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/realms"
@@ -43,17 +42,13 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-func init() {
-	registry.RegisterCmpOption(cmp.AllowUnexported(incompatibleTryjobOptions{}))
-}
-
 func TestIsModeAllowed(t *testing.T) {
-	ftt.Run("isModeAllowed works", t, func(t *ftt.Test) {
-		t.Run("when the mode is allowed", func(t *ftt.Test) {
-			assert.Loosely(t, isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.DryRun)}), should.BeTrue)
+	t.Run("isModeAllowed works", func(t *testing.T) {
+		t.Run("when the mode is allowed", func(t *testing.T) {
+			assert.That(t, isModeAllowed(run.DryRun, []string{string(run.FullRun), string(run.DryRun)}), should.BeTrue)
 		})
-		t.Run("when the mode is not allowed", func(t *ftt.Test) {
-			assert.Loosely(t, isModeAllowed(run.DryRun, []string{string(run.FullRun)}), should.BeFalse)
+		t.Run("when the mode is not allowed", func(t *testing.T) {
+			assert.That(t, isModeAllowed(run.DryRun, []string{string(run.FullRun)}), should.BeFalse)
 		})
 	})
 }
@@ -66,6 +61,7 @@ func TestDefinitionMaker(t *testing.T) {
 		invalidLong := "f/g/h/i"
 
 		b := &cfgpb.Verifiers_Tryjob_Builder{
+			Host: "buildbucket.example.com",
 			Name: valid,
 			EquivalentTo: &cfgpb.Verifiers_Tryjob_EquivalentBuilder{
 				Name: alternateValid,
@@ -80,10 +76,10 @@ func TestDefinitionMaker(t *testing.T) {
 					equivalence: mainOnly,
 					criticality: nonCritical,
 				}).make()
-				assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
+				assert.That(t, def, should.Match(&tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "cr-buildbucket.appspot.com",
+							Host: "buildbucket.example.com",
 							Builder: &buildbucketpb.BuilderID{
 								Project: "a",
 								Bucket:  "b",
@@ -102,14 +98,14 @@ func TestDefinitionMaker(t *testing.T) {
 					equivalence: mainOnly,
 					criticality: critical,
 				}).make()
-				assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
+				assert.That(t, def, should.Match(&tryjob.Definition{
 					DisableReuse:     true,
 					Critical:         true,
 					Optional:         true,
 					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "cr-buildbucket.appspot.com",
+							Host: "buildbucket.example.com",
 							Builder: &buildbucketpb.BuilderID{
 								Project: "a",
 								Bucket:  "b",
@@ -126,10 +122,10 @@ func TestDefinitionMaker(t *testing.T) {
 				equivalence: equivalentOnly,
 				criticality: nonCritical,
 			}).make()
-			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
+			assert.That(t, def, should.Match(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
-						Host: "cr-buildbucket.appspot.com",
+						Host: "buildbucket.example.com",
 						Builder: &buildbucketpb.BuilderID{
 							Project: "a",
 							Bucket:  "b",
@@ -145,10 +141,10 @@ func TestDefinitionMaker(t *testing.T) {
 				equivalence: bothMainAndEquivalent,
 				criticality: nonCritical,
 			}).make()
-			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
+			assert.That(t, def, should.Match(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
-						Host: "cr-buildbucket.appspot.com",
+						Host: "buildbucket.example.com",
 						Builder: &buildbucketpb.BuilderID{
 							Project: "a",
 							Bucket:  "b",
@@ -159,7 +155,7 @@ func TestDefinitionMaker(t *testing.T) {
 				EquivalentTo: &tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "cr-buildbucket.appspot.com",
+							Host: "buildbucket.example.com",
 							Builder: &buildbucketpb.BuilderID{
 								Project: "a",
 								Bucket:  "b",
@@ -176,10 +172,10 @@ func TestDefinitionMaker(t *testing.T) {
 				equivalence: flipMainAndEquivalent,
 				criticality: nonCritical,
 			}).make()
-			assert.Loosely(t, def, should.Resemble(&tryjob.Definition{
+			assert.That(t, def, should.Match(&tryjob.Definition{
 				Backend: &tryjob.Definition_Buildbucket_{
 					Buildbucket: &tryjob.Definition_Buildbucket{
-						Host: "cr-buildbucket.appspot.com",
+						Host: "buildbucket.example.com",
 						Builder: &buildbucketpb.BuilderID{
 							Project: "a",
 							Bucket:  "b",
@@ -190,12 +186,33 @@ func TestDefinitionMaker(t *testing.T) {
 				EquivalentTo: &tryjob.Definition{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
-							Host: "cr-buildbucket.appspot.com",
+							Host: "buildbucket.example.com",
 							Builder: &buildbucketpb.BuilderID{
 								Project: "a",
 								Bucket:  "b",
 								Builder: "c",
 							},
+						},
+					},
+				},
+			}))
+		})
+
+		t.Run("empty host name", func(t *ftt.Test) {
+			b.Host = ""
+			def := (&definitionMaker{
+				builder:     b,
+				equivalence: mainOnly,
+				criticality: nonCritical,
+			}).make()
+			assert.That(t, def, should.Match(&tryjob.Definition{
+				Backend: &tryjob.Definition_Buildbucket_{
+					Buildbucket: &tryjob.Definition_Buildbucket{
+						Host: chromeinfra.BuildbucketHost,
+						Builder: &buildbucketpb.BuilderID{
+							Project: "a",
+							Bucket:  "b",
+							Builder: "c",
 						},
 					},
 				},
@@ -208,7 +225,7 @@ func TestDefinitionMaker(t *testing.T) {
 				equivalence: mainOnly,
 				criticality: critical,
 			}
-			assert.Loosely(t, func() { dm.make() }, should.PanicLike("unexpectedly empty"))
+			assert.That(t, func() { dm.make() }, should.PanicLikeString("unexpectedly empty"))
 		})
 		t.Run("empty buildername in equivalent", func(t *ftt.Test) {
 			b.EquivalentTo.Name = ""
@@ -217,13 +234,13 @@ func TestDefinitionMaker(t *testing.T) {
 				equivalence: equivalentOnly,
 				criticality: critical,
 			}
-			assert.Loosely(t, func() { dm.make() }, should.PanicLike("unexpectedly empty"))
+			assert.That(t, func() { dm.make() }, should.PanicLikeString("unexpectedly empty"))
 		})
 		t.Run("short buildername", func(t *ftt.Test) {
-			assert.Loosely(t, func() { makeBuildbucketDefinition(invalidShort) }, should.PanicLike("unexpected format"))
+			assert.That(t, func() { makeBuildbucketDefinition("bb.example.com", invalidShort) }, should.PanicLikeString("unexpected format"))
 		})
 		t.Run("long buildername", func(t *ftt.Test) {
-			assert.Loosely(t, func() { makeBuildbucketDefinition(invalidLong) }, should.PanicLike("unexpected format"))
+			assert.That(t, func() { makeBuildbucketDefinition("bb.example.com", invalidLong) }, should.PanicLikeString("unexpected format"))
 		})
 	})
 }
@@ -309,13 +326,11 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ComputationResult{
-				ComputationFailure: &incompatibleTryjobOptions{
-					hasIncludedTryjobs:   true,
-					hasOverriddenTryjobs: true,
-				},
-			}))
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.Loosely(t, res.ComputationFailure, should.HaveType[*incompatibleTryjobOptions])
+			failure := res.ComputationFailure.(*incompatibleTryjobOptions)
+			assert.That(t, failure.hasIncludedTryjobs, should.BeTrue)
+			assert.That(t, failure.hasOverriddenTryjobs, should.BeTrue)
 		})
 
 		t.Run("with a minimal test case", func(t *ftt.Test) {

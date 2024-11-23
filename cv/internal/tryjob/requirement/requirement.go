@@ -504,7 +504,7 @@ func computeEnabledExperiments(ctx context.Context, in Input, allOwners []string
 }
 
 // makeBuildbucketDefinition converts a builder name to a minimal Definition.
-func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
+func makeBuildbucketDefinition(host, builderName string) *tryjob.Definition {
 	if builderName == "" {
 		panic(fmt.Errorf("builderName unexpectedly empty"))
 	}
@@ -512,11 +512,13 @@ func makeBuildbucketDefinition(builderName string) *tryjob.Definition {
 	if err != nil {
 		panic(err)
 	}
-
+	if host == "" {
+		host = chromeinfra.BuildbucketHost
+	}
 	return &tryjob.Definition{
 		Backend: &tryjob.Definition_Buildbucket_{
 			Buildbucket: &tryjob.Definition_Buildbucket{
-				Host:    chromeinfra.BuildbucketHost,
+				Host:    host,
 				Builder: builderID,
 			},
 		},
@@ -551,15 +553,15 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 	var definition *tryjob.Definition
 	switch dm.equivalence {
 	case mainOnly:
-		definition = makeBuildbucketDefinition(dm.builder.GetName())
+		definition = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetName())
 	case equivalentOnly:
-		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+		definition = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetEquivalentTo().GetName())
 	case bothMainAndEquivalent:
-		definition = makeBuildbucketDefinition(dm.builder.GetName())
-		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
+		definition = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetEquivalentTo().GetName())
 	case flipMainAndEquivalent:
-		definition = makeBuildbucketDefinition(dm.builder.GetEquivalentTo().GetName())
-		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetName())
+		definition = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetEquivalentTo().GetName())
+		definition.EquivalentTo = makeBuildbucketDefinition(dm.builder.GetHost(), dm.builder.GetName())
 	default:
 		panic(fmt.Errorf("unknown equivalentUsage(%d)", dm.equivalence))
 	}
