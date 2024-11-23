@@ -35,6 +35,7 @@ def _project(
         notify = None,
         scheduler = None,
         swarming = None,
+        change_verifier = None,
         tricium = None,
         acls = None,
         bindings = None,
@@ -64,6 +65,8 @@ def _project(
       scheduler: appspot hostname of a LUCI Scheduler service to use (if any).
       swarming: appspot hostname of a Swarming service to use by default
         (if any).
+      change_verifier: appspot hostname of a LUCI Change Verifier (LUCI CV)
+        service to use by default (if any).
       tricium: appspot hostname of a Tricium service to use by default
         (if any).
       acls: list of acl.entry(...) objects, will be inherited by all buckets.
@@ -98,6 +101,7 @@ def _project(
         "notify": service.from_host("notify", notify),
         "scheduler": service.from_host("scheduler", scheduler),
         "swarming": service.from_host("swarming", swarming),
+        "change_verifier": service.from_host("change_verifier", change_verifier),
         "tricium": service.from_host("tricium", tricium),
         "acls": aclimpl.validate_acls(acls, project_level = True),
         "omit_lucicfg_metadata": validate.bool("omit_lucicfg_metadata", omit_lucicfg_metadata, required = False, default = False),

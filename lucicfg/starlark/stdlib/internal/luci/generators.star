@@ -1109,7 +1109,14 @@ def gen_cq_cfg(ctx):
             cq_node.props.honor_gerrit_linked_accounts if cq_node else None
         ),
     )
-    set_config(ctx, "commit-queue.cfg", cfg)
+
+    # TODO: b/380367260 - migrate commit-queue.cfg to luci-change-verifier.cfg
+    # for prod configuration.
+    config_name = "commit-queue.cfg"
+    if get_project().props.dev:
+        service = get_service("change_verifier", "defining LUCI CV config")
+        config_name = service.cfg_file
+    set_config(ctx, config_name, cfg)
 
     if cq_node and cq_node.props.submit_max_burst:
         cfg.submit_options = cq_pb.SubmitOptions(

@@ -1015,6 +1015,7 @@ luci.project(
     notify = None,
     scheduler = None,
     swarming = None,
+    change_verifier = None,
     tricium = None,
     acls = None,
     bindings = None,
@@ -1044,6 +1045,7 @@ be used to setup permissions that apply to all resources in the project. See
 * **notify**: appspot hostname of a LUCI Notify service to use (if any).
 * **scheduler**: appspot hostname of a LUCI Scheduler service to use (if any).
 * **swarming**: appspot hostname of a Swarming service to use by default (if any).
+* **change_verifier**: appspot hostname of a LUCI Change Verifier (LUCI CV) service to use by default (if any).
 * **tricium**: appspot hostname of a Tricium service to use by default (if any).
 * **acls**: list of [acl.entry(...)](#acl.entry) objects, will be inherited by all buckets. Being gradually replaced by [luci.binding(...)](#luci.binding) in `bindings`.
 * **bindings**: a list of [luci.binding(...)](#luci.binding) to add to the root realm. They will be inherited by all realms in the project. Will eventually replace `acls`.
