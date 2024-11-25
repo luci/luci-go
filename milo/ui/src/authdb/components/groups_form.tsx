@@ -88,10 +88,10 @@ function isExternalGroupName(name: string) {
 
 interface GroupsFormProps {
   name: string;
-  onDelete: () => void;
+  refetchList: () => void;
 }
 
-export function GroupsForm({ name, onDelete }: GroupsFormProps) {
+export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   const navigate = useNavigate();
   const [descriptionMode, setDescriptionMode] = useState<boolean>(false);
   const [ownersMode, setOwnersMode] = useState<boolean>(false);
@@ -150,6 +150,7 @@ export function GroupsForm({ name, onDelete }: GroupsFormProps) {
       refetch().then(() => {
         setIsUpdating(false);
         setSuccessEditedGroup(true);
+        refetchList();
       })
     },
     onError: () => {
@@ -164,7 +165,7 @@ export function GroupsForm({ name, onDelete }: GroupsFormProps) {
     },
     onSuccess: () => {
       navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
-      onDelete();
+      refetchList();
     },
     onError: () => {
       setErrorMessage('Error deleting group');

@@ -35,7 +35,7 @@ describe('<GroupsForm />', () => {
           }}
         >
         <List>
-          <GroupsForm name='123' onDelete={() => {}}/>
+          <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -56,7 +56,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' onDelete={() => {}}/>
+        <GroupsForm name='123' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-error');
@@ -77,7 +77,7 @@ describe('<GroupsForm />', () => {
           }}
         >
         <List>
-          <GroupsForm name='external/123' onDelete={() => {}}/>
+          <GroupsForm name='external/123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -102,7 +102,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' onDelete={() => {}}/>
+          <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -132,7 +132,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' onDelete={() => {}}/>
+        <GroupsForm name='123' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -163,7 +163,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' onDelete={() => {}}/>
+          <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -182,7 +182,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' onDelete={() => {}}/>
+        <GroupsForm name='123' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -202,7 +202,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' onDelete={() => {}}/>
+        <GroupsForm name='123' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -220,7 +220,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='google/testGoogleGroup' onDelete={() => {}}/>
+        <GroupsForm name='google/testGoogleGroup' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -234,7 +234,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' onDelete={() => {}}/>
+        <GroupsForm name='test-group' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -248,7 +248,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' onDelete={() => {}}/>
+        <GroupsForm name='test-group' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -264,7 +264,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' onDelete={() => {}}/>
+        <GroupsForm name='123' refetchList={() => {}}/>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -292,7 +292,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' onDelete={() => {}}/>
+            <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -321,7 +321,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' onDelete={() => {}}/>
+            <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );
@@ -345,7 +345,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' onDelete={() => {}}/>
+            <GroupsForm name='123' refetchList={() => {}}/>
         </List>
       </FakeContextProvider>,
     );

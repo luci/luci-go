@@ -93,7 +93,7 @@ export function GroupsPage() {
                 <GroupsForm
                   key={groupName}
                   name={groupName}
-                  onDelete={refetchGroups}
+                  refetchList={refetchGroups}
                 />
               </>
             )}
