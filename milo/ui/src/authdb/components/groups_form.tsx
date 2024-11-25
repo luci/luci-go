@@ -91,7 +91,7 @@ interface GroupsFormProps {
   onDelete: () => void;
 }
 
-export function GroupsForm({name, onDelete}: GroupsFormProps) {
+export function GroupsForm({ name, onDelete }: GroupsFormProps) {
   const navigate = useNavigate();
   const [descriptionMode, setDescriptionMode] = useState<boolean>(false);
   const [ownersMode, setOwnersMode] = useState<boolean>(false);
@@ -326,17 +326,17 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {descriptionMode
                         ? <TextField
-                            value={description}
-                            style={{ width: '100%', whiteSpace: 'pre-wrap' }}
-                            onChange={(e) => setDescription(e.target.value)}
-                            onKeyDown={(e) => checkFieldSubmit(e.key, 'description')}
-                            id='descriptionTextfield'
-                            data-testid='description-textfield'
-                            error={descriptionErrorMessage !== ""}
-                            helperText={descriptionErrorMessage}
-                            onBlur={validateDescription}
-                          >
-                          </TextField>
+                          value={description}
+                          style={{ width: '100%', whiteSpace: 'pre-wrap' }}
+                          onChange={(e) => setDescription(e.target.value)}
+                          onKeyDown={(e) => checkFieldSubmit(e.key, 'description')}
+                          id='descriptionTextfield'
+                          data-testid='description-textfield'
+                          error={descriptionErrorMessage !== ""}
+                          helperText={descriptionErrorMessage}
+                          onBlur={validateDescription}
+                        >
+                        </TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
                       }
                     </TableCell>
@@ -362,17 +362,17 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                     <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
                       {ownersMode
                         ? <TextField value={owners}
-                            style={{ width: '100%' }}
-                            onChange={(e) => setOwners(e.target.value)}
-                            onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
-                            id='ownersTextfield'
-                            data-testid='owners-textfield'
-                            error={ownersErrorMessage !== ""}
-                            helperText={ownersErrorMessage}
-                            onBlur={validateOwners}
-                            placeholder='administrators'
-                          >
-                          </TextField>
+                          style={{ width: '100%' }}
+                          onChange={(e) => setOwners(e.target.value)}
+                          onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
+                          id='ownersTextfield'
+                          data-testid='owners-textfield'
+                          error={ownersErrorMessage !== ""}
+                          helperText={ownersErrorMessage}
+                          onBlur={validateOwners}
+                          placeholder='administrators'
+                        >
+                        </TextField>
                         : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
                       }
                     </TableCell>
@@ -385,7 +385,7 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
             <>
               {callerCanViewMembers
                 ? <GroupsFormListReadonly name='Members' initialItems={members} />
-                : <Typography variant="h6" sx={{p: 1.5}}> {numRedacted} members redacted</Typography>
+                : <Typography variant="h6" sx={{ p: 1.5 }}> {numRedacted} members redacted</Typography>
               }
             </>
             :
@@ -393,11 +393,11 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
               {callerCanModify ?
                 <>
                   {callerCanViewMembers
-                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} submitValues={() => submitField('members')}/>
-                    : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
+                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} submitValues={() => submitField('members')} />
+                    : <Typography variant="h6" sx={{ p: '16px' }}> {numRedacted} members redacted</Typography>
                   }
-                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} submitValues={() => submitField('globs')}/>
-                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} submitValues={() => submitField('nested')}/>
+                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} submitValues={() => submitField('globs')} />
+                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} submitValues={() => submitField('nested')} />
                   <div>
                     {successEditedGroup &&
                       <Alert severity="success">Group updated</Alert>
@@ -409,17 +409,27 @@ export function GroupsForm({name, onDelete}: GroupsFormProps) {
                   {isUpdating &&
                     <CircularProgress></CircularProgress>
                   }
-                  <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
-                    <Button variant="contained" color="error" disableElevation style={{ width: '170px' }} sx={{ mt: 1.5, ml: 1.5 }} onClick={() => setOpenDeleteDialog(true)} data-testid='delete-button'>
-                      Delete Group
-                    </Button>
-                  </div>
+                  {name !== 'administrators' &&
+                    <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+                      <Button
+                        variant="contained"
+                        color="error"
+                        disableElevation
+                        style={{ width: '170px' }}
+                        sx={{ mt: 1.5, ml: 1.5 }}
+                        onClick={() => setOpenDeleteDialog(true)}
+                        data-testid='delete-button'
+                      >
+                        Delete Group
+                      </Button>
+                    </div>
+                  }
                 </>
                 :
                 <>
                   {callerCanViewMembers
                     ? <GroupsFormListReadonly name='Members' initialItems={members} />
-                    : <Typography variant="h6" sx={{p: '16px'}}> {numRedacted} members redacted</Typography>
+                    : <Typography variant="h6" sx={{ p: '16px' }}> {numRedacted} members redacted</Typography>
                   }
                   <GroupsFormListReadonly name='Globs' initialItems={globs} />
                   <GroupsFormListReadonly name='Subgroups' initialItems={subgroups} />
