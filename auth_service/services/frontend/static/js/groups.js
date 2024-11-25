@@ -714,11 +714,11 @@ class EditGroupForm extends GroupForm {
 
     if (!group.callerCanModify) {
       // Read-only UI if the caller has insufficient permissions.
-      this.makeReadOnly();
+      this.makeReadOnly(group);
     }
     if (isExternalGroupName(group.name)) {
       // Read-only UI for external groups.
-      this.makeReadOnly();
+      this.makeReadOnly(group);
       this.makeExternal();
     }
 
@@ -732,7 +732,7 @@ class EditGroupForm extends GroupForm {
     super.setInteractionDisabled(disabled);
   }
 
-  makeReadOnly() {
+  makeReadOnly(group) {
     // Exit early if this has previously been called, as form elements
     // have already been changed.
     if (this.readOnly) {
@@ -748,11 +748,17 @@ class EditGroupForm extends GroupForm {
     this.form.removeChild(editBtn);
     this.form.removeChild(deleteBtn);
 
-    // Add explaining text.
-    const insufficientPermDiv = document.createElement('div');
-    insufficientPermDiv.style.textAlign = 'center';
-    insufficientPermDiv.textContent = 'You do not have sufficient permissions to modify this group.';
-    this.form.appendChild(insufficientPermDiv);
+    // Add explanation on how to make group changes.
+    const template = document.querySelector('#insufficient-perms-template');
+    const clone = template.content.cloneNode(true);
+    const ownersSection = clone.querySelector('#insufficient-perms-owners-section');
+    if (group.owners != group.name) {
+      // The group is not self-owned, so we should link to the owners.
+      ownersSection.querySelector('a').setAttribute('href', common.getGroupPageURL(group.owners));
+    } else {
+      clone.removeChild(ownersSection);
+    }
+    this.form.appendChild(clone);
 
     this.readOnly = true;
   }
