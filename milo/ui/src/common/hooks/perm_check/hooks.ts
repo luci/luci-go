@@ -26,7 +26,7 @@ import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
  *
  * N.B. Only permissions registered [here][1] can be checked.
  *
- * [1]: https://source.corp.google.com/h/github/googlesource/codesearch/+/master:luci/luci-go/milo/rpc/batch_check_permissions.go;l=26;drc=e952557609eade6037c66866ebc00c506d8800a8
+ * [1]: https://chromium.googlesource.com/infra/luci/luci-go/+/main/milo/rpc/batch_check_permissions.go#27
  */
 export function usePermCheck(
   realm?: string | null,
