@@ -51,7 +51,7 @@ export function previewServer(
 
       // Serve files in `./dist/` but not in `./dist/ui/` (e.g. `root_sw.js`).
       server.middlewares.use((req, res, next) => {
-        if (!req.url || req.url.match(/^\/ui\/.*$/)) {
+        if (!req.url || req.url.match(/^\/(ui(\/.*)?)?$/)) {
           return next();
         }
         const stat = fs.statSync(path.join(assetDir, req.url), {
