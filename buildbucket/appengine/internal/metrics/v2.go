@@ -101,6 +101,7 @@ var (
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_SCHEDULING_DURATIONS:      {standardOnly: []string{"experiments"}},
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT: {common: []string{"status"}},
 		pb.CustomMetricBase_CUSTOM_METRIC_BASE_MAX_AGE_SCHEDULED:         {},
+		pb.CustomMetricBase_CUSTOM_METRIC_BASE_AGE:                       {common: []string{"status"}},
 	}
 
 	opt = &metric.Options{
@@ -127,6 +128,7 @@ var (
 		BuilderPresence         metric.Bool
 		ConsecutiveFailureCount metric.Int
 		MaxAgeScheduled         metric.Float
+		Age                     metric.CumulativeDistribution
 	}{
 		BuildCount: metric.NewIntWithOptions(
 			"buildbucket/v2/builds/count",
@@ -198,6 +200,14 @@ var (
 			opt,
 			"Age of the oldest SCHEDULED build",
 			&types.MetricMetadata{Units: types.Seconds},
+		),
+		Age: metric.NewCumulativeDistributionWithOptions(
+			"buildbucket/v2/builds/age",
+			opt,
+			"Age of pending builds",
+			&types.MetricMetadata{Units: types.Seconds},
+			bucketer,
+			generateBaseFields(pb.CustomMetricBase_CUSTOM_METRIC_BASE_AGE)...,
 		),
 	}
 )

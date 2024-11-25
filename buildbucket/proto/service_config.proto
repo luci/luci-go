@@ -382,6 +382,9 @@ enum CustomMetricBase {
   // Number of consecutive failures since the last successful build.
   // Default metric field: status.
   CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT = 9;
+  // Age of builds for pending(may be extended to other statuses later) status.
+	// Default metric field: status.
+	CUSTOM_METRIC_BASE_AGE = 10;
 }
 
 // CustomMetric is a metric object that collects a series of data

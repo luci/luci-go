@@ -54,6 +54,7 @@ var bbInternalMetrics = stringset.NewFromSlice([]string{
 	"/chrome/infra/buildbucket/v2/builds/max_age_scheduled",
 	"/chrome/infra/buildbucket/v2/builds/count",
 	"/chrome/infra/buildbucket/v2/builds/consecutive_failure_count",
+	"/chrome/infra/buildbucket/v2/builds/age",
 }...)
 
 // Cached settings config.
