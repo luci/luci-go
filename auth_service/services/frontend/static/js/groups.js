@@ -839,13 +839,18 @@ class EditGroupForm extends GroupForm {
     }
 
     const deleteBtn = this.element.querySelector('#delete-btn');
-    deleteBtn.addEventListener('click', () => {
-      let result = confirm(`Are you sure you want to delete ${group.name}?`)
-      if (result) {
-        console.log(`attempting to delete ${group.name}...`);
-        this.onDelete(group);
-      }
-    })
+    if (group.name != 'administrators') {
+      deleteBtn.addEventListener('click', () => {
+        let result = confirm(`Are you sure you want to delete ${group.name}?`)
+        if (result) {
+          console.log(`attempting to delete ${group.name}...`);
+          this.onDelete(group);
+        }
+      });
+    } else {
+      // Remove the delete button.
+      this.form.removeChild(deleteBtn);
+    }
   }
 
   doSubmit(authGroup) {
