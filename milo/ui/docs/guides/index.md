@@ -18,6 +18,7 @@ General React development guides should not be placed in this directory
  * [Effective pagination](./effective_pagination.md)
  * [Google Analytics integration](./google_analytics_integration.md)
  * [Make non-overlapping sticky elements](./make_non_overlapping_sticky_elements.md)
+ * [Working with Lit](./working_with_lit.md)
 
 ## Maintenance / Operation
  * [Rollback changes/releases with Push-on-Green](./push_on_green.md)
