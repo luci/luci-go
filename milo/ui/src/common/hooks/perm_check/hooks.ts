@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { useContext } from 'react';
 
-import { ClientCtx } from './context';
+import { useBatchedMiloInternalClient } from '@/common/hooks/prpc_clients';
 
 /**
  * Checks whether the user has permission `perm` in realm `realm`.
@@ -33,10 +32,7 @@ export function usePermCheck(
   realm?: string | null,
   perm?: string | null,
 ): [allowed: boolean, isLoading: boolean] {
-  const client = useContext(ClientCtx);
-  if (!client) {
-    throw new Error('usePermCheck can only be used in a PermCheckProvider');
-  }
+  const client = useBatchedMiloInternalClient();
 
   const { data, isError, error, isLoading } = useQuery({
     ...client.BatchCheckPermissions.query({

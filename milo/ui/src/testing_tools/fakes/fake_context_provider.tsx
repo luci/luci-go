@@ -26,7 +26,6 @@ import {
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
-import { PermCheckProvider } from '@/common/components/perm_check_provider';
 import { UiPage } from '@/common/constants/view';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
@@ -98,9 +97,7 @@ export function FakeContextProvider({
           // e.g. `errorElement` shall not rely on `<AuthStateProvider />`.
           <SyncedSearchParamsProvider>
             <FakeAuthStateProvider>
-              <PermCheckProvider>
-                <Outlet />
-              </PermCheckProvider>
+              <Outlet />
             </FakeAuthStateProvider>
           </SyncedSearchParamsProvider>
         ),

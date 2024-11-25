@@ -18,7 +18,7 @@ import { useState } from 'react';
 
 import { PERM_BUILDS_CANCEL } from '@/build/constants';
 import { OutputBuild } from '@/build/types';
-import { usePermCheck } from '@/common/components/perm_check_provider';
+import { usePermCheck } from '@/common/hooks/perm_check';
 
 import { CancelBuildDialog } from './cancel_build_dialog';
 

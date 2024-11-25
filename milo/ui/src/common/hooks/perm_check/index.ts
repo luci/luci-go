@@ -13,5 +13,3 @@
 // limitations under the License.
 
 export { usePermCheck } from './hooks';
-export { PermCheckProvider } from './context';
-export type { PermCheckProviderProps } from './context';

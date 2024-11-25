@@ -18,7 +18,7 @@ import { useState } from 'react';
 
 import { PERM_BUILDS_ADD } from '@/build/constants';
 import { OutputBuild } from '@/build/types';
-import { usePermCheck } from '@/common/components/perm_check_provider';
+import { usePermCheck } from '@/common/hooks/perm_check';
 import { Trinary } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 import { RetryBuildDialog } from './retry_build_dialog';
