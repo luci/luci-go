@@ -560,7 +560,7 @@ message Verifiers {
     Toggle cancel_stale_tryjobs = 3 [deprecated = true];
 
     message Builder {
-      // Next field number: 17
+      // Next field number: 18
       reserved 3; // triggered_by
 
       // The buildbucket host name.
@@ -734,6 +734,19 @@ message Verifiers {
       // modes in this list. If unset, it implies that only FULL_RUN and
       // DRY_RUN are allowed. Optional.
       repeated string mode_allowlist = 14;
+
+      // SkipFooter specifies a git footer and its value pattern that if found
+      // in the commit message, this builder will be skipped in all LUCI CV
+      // Runs.
+      message SkipFooter {
+        // The footer key. Need to match exactly. Required.
+        string key = 1;
+        // The regexp pattern for the footer value. If unset, `.*` will be used
+        // which implies any value would skip the builder.
+        string value_regexp = 2;
+      }
+      // skip this builder if any footer in the commit message matches.
+      repeated SkipFooter skip_footers = 17;
     }
 
     message EquivalentBuilder {
