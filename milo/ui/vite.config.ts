@@ -21,6 +21,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { devServer } from './dev_utils/dev_server';
+import { HASH_TAG, importMapPlugin } from './dev_utils/import_map_plugin';
 import { localAuthPlugin } from './dev_utils/local_auth_plugin';
 import { preloadModulesPlugin } from './dev_utils/preload_modules_plugin';
 import { previewServer } from './dev_utils/preview_server';
@@ -90,6 +91,10 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'immutable',
       sourcemap: true,
       rollupOptions: {
+        output: {
+          chunkFileNames: `immutable/[name]-${HASH_TAG}.js`,
+          entryFileNames: `immutable/[name]-${HASH_TAG}.js`,
+        },
         // Silence source map generattion warning. This is a workaround for
         // https://github.com/vitejs/vite/issues/15012.
         onwarn: (warning, defaultHandler) =>
@@ -130,6 +135,11 @@ export default defineConfig(({ mode }) => {
       }),
       // Support custom path mapping declared in tsconfig.json.
       tsconfigPaths(),
+      // Use JS import map to avoid cascading cache invalidation.
+      // This reduces the time to update the service worker from ~1mins to
+      // several seconds, which increases the chance of user getting the new
+      // version of LUCI UI when they refresh the page.
+      importMapPlugin(),
       // Needed to add workbox powered service workers, which enables us to
       // implement some cache strategy that's not possible with regular HTTP
       // cache due to dynamic URLs.
