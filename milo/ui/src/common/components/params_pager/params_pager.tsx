@@ -20,10 +20,9 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import {
   PagerContext,
   getPageSize,
-  getPageToken,
+  getPrevPageToken,
   pageSizeUpdater,
   pageTokenUpdater,
-  getState,
 } from './context';
 
 export interface ParamsPagerProps {
@@ -55,17 +54,15 @@ export interface ParamsPagerProps {
 export function ParamsPager({ pagerCtx, nextPageToken }: ParamsPagerProps) {
   const [searchParams] = useSyncedSearchParams();
   const pageSize = getPageSize(pagerCtx, searchParams);
-  const pageToken = getPageToken(pagerCtx, searchParams);
 
-  const state = getState(pagerCtx);
-  const prevPageToken = state.prevTokens.at(-1) ?? null;
+  const prevPageToken = getPrevPageToken(pagerCtx);
 
   return (
     <>
       <Box sx={{ mt: '5px' }}>
         Page Size:{' '}
         <ToggleButtonGroup exclusive value={pageSize} size="small">
-          {state.pageSizeOptions.map((s) => (
+          {pagerCtx.options.pageSizeOptions.map((s) => (
             <ToggleButton
               key={s}
               component={Link}
@@ -75,7 +72,7 @@ export function ParamsPager({ pagerCtx, nextPageToken }: ParamsPagerProps) {
                 if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
                   return;
                 }
-                return state.onPageSizeUpdated?.();
+                return pagerCtx.options.onPageSizeUpdated?.();
               }}
             >
               {s}
@@ -90,12 +87,7 @@ export function ParamsPager({ pagerCtx, nextPageToken }: ParamsPagerProps) {
             if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
               return;
             }
-            // Add a check to ensure the token is not popped multiple times
-            // before the component rerenders.
-            if (state.prevTokens.at(-1) === prevPageToken) {
-              state.prevTokens.pop();
-              state.onPrevPage?.();
-            }
+            pagerCtx.options.onPrevPage?.();
           }}
         >
           Previous Page
@@ -108,12 +100,7 @@ export function ParamsPager({ pagerCtx, nextPageToken }: ParamsPagerProps) {
             if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
               return;
             }
-            // Add a check to ensure the token is not pushed multiple times
-            // before the component rerenders.
-            if (state.prevTokens.at(-1) !== pageToken) {
-              state.prevTokens.push(pageToken);
-              state.onNextPage?.();
-            }
+            pagerCtx.options.onNextPage?.();
           }}
         >
           Next Page

@@ -19,7 +19,7 @@
  * pager. See the design decisions section in doc.md for details.
  */
 
-import { useRef } from 'react';
+import { useState } from 'react';
 
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { NonNullableProps } from '@/generic_libs/types';
@@ -49,6 +49,9 @@ export interface PagerOptions {
    *
    * This is useful for performing some post navigation option (e.g. scroll to
    * the top of the page).
+   *
+   * If you use a custom pager component implementation, the custom pager
+   * component needs to call this function when appropriate.
    */
   readonly onPrevPage?: () => void;
   /**
@@ -56,6 +59,9 @@ export interface PagerOptions {
    *
    * This is useful for performing some post navigation option (e.g. scroll to
    * the top of the page).
+   *
+   * If you use a custom pager component implementation, the custom pager
+   * component needs to call this function when appropriate.
    */
   readonly onNextPage?: () => void;
   /**
@@ -63,6 +69,9 @@ export interface PagerOptions {
    *
    * This is useful for performing some post navigation option (e.g. scroll to
    * the top of the page).
+   *
+   * If you use a custom pager component implementation, the custom pager
+   * component needs to call this function when appropriate.
    */
   readonly onPageSizeUpdated?: () => void;
 }
@@ -70,15 +79,16 @@ export interface PagerOptions {
 // DO NOT EXPORT OUTSIDE OF param_pager module.
 //
 // So the state is private to the params_pager module.
-export interface PagerState
-  extends NonNullableProps<PagerOptions, 'pageSizeKey' | 'pageTokenKey'> {
+export interface PagerState {
   /**
-   * Hold the previous page tokens.
+   * Hold the previous page tokens and the current page token.
+   *
+   * `pageTokens[i]` is the page token for `i+1`th page.
    *
    * There could be a lot of previous pages. Do not keep those tokens in the
    * URL.
    */
-  readonly prevTokens: string[];
+  readonly pageTokens: string[];
 }
 
 // DO NOT EXPORT.
@@ -88,18 +98,39 @@ export interface PagerState
 const stateSymbol = Symbol('pagerState');
 
 export interface PagerContext {
+  /**
+   * Options used to construct this pager context, with default values
+   * populated.
+   */
+  readonly options: NonNullableProps<
+    PagerOptions,
+    'pageSizeKey' | 'pageTokenKey'
+  >;
   readonly [stateSymbol]: PagerState;
 }
 
 export function usePagerContext(options: PagerOptions): PagerContext {
   const [searchParams] = useSyncedSearchParams();
-  const prevTokens = useRef<string[]>([]);
+
+  // This state does not actually affect rendering. It's used as an immutable
+  // ref. We use `useState` instead of `useRef` here so we don't accidentally
+  // assign value to `.current`.
+  //
+  // Mutation to the array is allowed.
+  // Mutation to the reference to the array is not allowed.
+  //
+  // This ensures we always have a stable reference to the pageTokens array
+  // while having the ability to update it without triggering a rerender.
+  const [pageTokens] = useState(['']);
+
   const pagerCtx = {
     [stateSymbol]: {
+      pageTokens,
+    },
+    options: {
       ...options,
       pageSizeKey: options.pageSizeKey || 'limit',
       pageTokenKey: options.pageTokenKey || 'cursor',
-      prevTokens: prevTokens.current,
     },
   };
 
@@ -107,65 +138,63 @@ export function usePagerContext(options: PagerOptions): PagerContext {
   // internals of the `pagerCtx` directly here. But use those getters anyway
   // just for consistency.
   const pageToken = getPageToken(pagerCtx, searchParams);
-  const state = getState(pagerCtx);
 
-  // Keep the prevTokens house keeping here so we don't need to rely on the
-  // existence of `<ParamPager />` to perform the house keeping work.
-  if (pageToken) {
-    // If we are not on the first page (i.e. page token is not empty), always
-    // allow users to go back to the first page by inserting an empty page
-    // token.
-    if (!state.prevTokens.length) {
-      state.prevTokens.push('');
-    }
+  // Keep the `pageTokens` house keeping here so we don't need to rely on any
+  // pager component implementation to perform the house keeping work. This
+  // allows this package to be used in a headless way.
+  const pageTokenIndex = pageTokens.indexOf(pageToken);
+  if (pageTokenIndex === -1) {
+    // If the new page token is not found, assume it's a new page.
+    // Record it in the page token array.
+    pageTokens.push(pageToken);
   } else {
-    // If we are on the first page (i.e. page token is empty), discard all the
-    // previous tokens.
-    // This is needed when the caller decided that the page token should be
-    // reset (e.g. due to a filter change, all page tokens are no longer valid).
-    state.prevTokens.length = 0;
+    // If the new page token is found, discard all the page tokens after it.
+    pageTokens.splice(pageTokenIndex + 1);
   }
 
   return pagerCtx;
 }
 
-// DO NOT EXPORT OUTSIDE OF param_pager module.
-//
-// So the state is private to the params_pager module.
-export function getState(pagerCtx: PagerContext) {
-  return pagerCtx[stateSymbol];
-}
-
 export function getPageSize(pagerCtx: PagerContext, params: URLSearchParams) {
   return (
-    Number(params.get(pagerCtx[stateSymbol].pageSizeKey)) ||
-    pagerCtx[stateSymbol].defaultPageSize
+    Number(params.get(pagerCtx.options.pageSizeKey)) ||
+    pagerCtx.options.defaultPageSize
   );
 }
 
 export function pageSizeUpdater(pagerCtx: PagerContext, newPageSize: number) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
-    if (newPageSize === pagerCtx[stateSymbol].defaultPageSize) {
-      searchParams.delete(pagerCtx[stateSymbol].pageSizeKey);
+    if (newPageSize === pagerCtx.options.defaultPageSize) {
+      searchParams.delete(pagerCtx.options.pageSizeKey);
     } else {
-      searchParams.set(pagerCtx[stateSymbol].pageSizeKey, String(newPageSize));
+      searchParams.set(pagerCtx.options.pageSizeKey, String(newPageSize));
     }
     return searchParams;
   };
 }
 
 export function getPageToken(pagerCtx: PagerContext, params: URLSearchParams) {
-  return params.get(pagerCtx[stateSymbol].pageTokenKey) || '';
+  return params.get(pagerCtx.options.pageTokenKey) || '';
+}
+
+/**
+ * Get the page token for the previous page.
+ *
+ * Returns an empty string if the previous page is the first page.
+ * Returns null if there's no previous page.
+ */
+export function getPrevPageToken(pagerCtx: PagerContext) {
+  return pagerCtx[stateSymbol].pageTokens.at(-2) ?? null;
 }
 
 export function pageTokenUpdater(pagerCtx: PagerContext, newPageToken: string) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
     if (!newPageToken) {
-      searchParams.delete(pagerCtx[stateSymbol].pageTokenKey);
+      searchParams.delete(pagerCtx.options.pageTokenKey);
     } else {
-      searchParams.set(pagerCtx[stateSymbol].pageTokenKey, newPageToken);
+      searchParams.set(pagerCtx.options.pageTokenKey, newPageToken);
     }
     return searchParams;
   };
