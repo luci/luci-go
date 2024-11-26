@@ -76,7 +76,9 @@ cron:
   schedule: every 1 minutes
   target: backend
 
-- description: Report bot metrics from go service
+- description: >-
+    Efficiently visit all the bots. Any operation requiring some type of
+    bot state aggregation should be done here.
   url: /internal/cron/report-bots
   schedule: every 1 minutes
   target: monitor

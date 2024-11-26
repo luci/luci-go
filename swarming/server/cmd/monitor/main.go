@@ -56,6 +56,7 @@ func main() {
 					Monitor:     mon,
 				},
 				&scan.BotsDimensionsAggregator{},
+				&scan.NamedCachesAggregator{},
 			})
 		})
 
