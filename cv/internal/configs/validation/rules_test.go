@@ -18,7 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config/validation"
@@ -28,7 +27,7 @@ import (
 func TestValidationRules(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Validation Rules", t, func(t *ftt.Test) {
+	t.Run("Validation Rules", func(t *testing.T) {
 		ctx := memory.UseWithAppID(context.Background(), "luci-change-verifier")
 		r := validation.NewRuleSet()
 		r.Vars.Register("appid", func(context.Context) (string, error) { return "luci-change-verifier", nil })
@@ -37,23 +36,37 @@ func TestValidationRules(t *testing.T) {
 
 		patterns, err := r.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
-		assert.Loosely(t, len(patterns), should.Equal(2))
-		t.Run("project-scope cq.cfg", func(t *ftt.Test) {
-			assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
-			assert.Loosely(t, patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
-			assert.Loosely(t, patterns[0].Path.Match("commit-queue.cfg"), should.BeTrue)
+		assert.That(t, len(patterns), should.Equal(3))
+		t.Run("project-scope commit-queue.cfg", func(t *testing.T) {
+			assert.That(t, patterns[0].ConfigSet.Match("projects/xyz"), should.BeTrue)
+			assert.That(t, patterns[0].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
+			assert.That(t, patterns[0].Path.Match("commit-queue.cfg"), should.BeTrue)
 		})
-		t.Run("service-scope listener-settings.cfg", func(t *ftt.Test) {
-			assert.Loosely(t, patterns[1].ConfigSet.Match("services/luci-change-verifier"), should.BeTrue)
-			assert.Loosely(t, patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
-			assert.Loosely(t, patterns[1].Path.Match("listener-settings.cfg"), should.BeTrue)
+		t.Run("project-scope luci-change-verifier.cfg", func(t *testing.T) {
+			assert.That(t, patterns[1].ConfigSet.Match("projects/xyz"), should.BeTrue)
+			assert.That(t, patterns[1].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
+			assert.That(t, patterns[1].Path.Match("luci-change-verifier.cfg"), should.BeTrue)
 		})
-		t.Run("Dev", func(t *ftt.Test) {
-			ctx = memory.UseWithAppID(context.Background(), "luci-change-verifier-dev")
-			patterns, err := r.ConfigPatterns(ctx)
-			assert.NoErr(t, err)
-			assert.Loosely(t, patterns[0].Path.Match("commit-queue-dev.cfg"), should.BeTrue)
+		t.Run("service-scope listener-settings.cfg", func(t *testing.T) {
+			assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier"), should.BeTrue)
+			assert.That(t, patterns[2].ConfigSet.Match("projects/xyz/refs/heads/master"), should.BeFalse)
+			assert.That(t, patterns[2].Path.Match("listener-settings.cfg"), should.BeTrue)
 		})
+	})
+
+	t.Run("Dev", func(t *testing.T) {
+		ctx := memory.UseWithAppID(context.Background(), "luci-change-verifier-dev")
+		r := validation.NewRuleSet()
+		r.Vars.Register("appid", func(context.Context) (string, error) { return "luci-change-verifier-dev", nil })
+		addRules(r)
+		patterns, err := r.ConfigPatterns(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, patterns[0].Path.Match("commit-queue-dev.cfg"), should.BeTrue)
+		assert.That(t, patterns[0].Path.Match("commit-queue.cfg"), should.BeFalse)
+		assert.That(t, patterns[1].Path.Match("luci-change-verifier-dev.cfg"), should.BeTrue)
+		assert.That(t, patterns[1].Path.Match("luci-change-verifier.cfg"), should.BeFalse)
+		assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier-dev"), should.BeTrue)
+		assert.That(t, patterns[2].ConfigSet.Match("services/luci-change-verifier"), should.BeFalse)
 	})
 }
 

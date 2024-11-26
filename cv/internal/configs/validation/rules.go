@@ -41,6 +41,7 @@ func addRules(r *validation.RuleSet) {
 		return "commit-queue.cfg", nil
 	})
 	r.Add("regex:projects/[^/]+", "${cqCfgName}", validateProject)
+	r.Add("regex:projects/[^/]+", "${appid}.cfg", validateProject)
 	r.Add("services/${appid}", "listener-settings.cfg", validateListenerSettings)
 }
 
