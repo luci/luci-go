@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, createContext, useCallback, useMemo } from 'react';
+import { ReactNode, useCallback, useMemo } from 'react';
 import {
-  NavigateOptions,
   // `useSyncedSearchParams` replaces `useSearchParams` but its own implementation
   // depends on `useSearchParams`.
   // eslint-disable-next-line no-restricted-imports
@@ -22,14 +21,7 @@ import {
 } from 'react-router-dom';
 import { useLatest } from 'react-use';
 
-type SetURLSearchParams = (
-  action: URLSearchParams | ((prev: URLSearchParams) => URLSearchParams),
-  navigateOpts?: NavigateOptions,
-) => void;
-
-export const SyncedSearchParamsContext = createContext<
-  readonly [URLSearchParams, SetURLSearchParams] | undefined
->(undefined);
+import { SetURLSearchParams, SyncedSearchParamsContext } from './context';
 
 export interface ContextProviderProps {
   readonly children: ReactNode;

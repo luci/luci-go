@@ -14,7 +14,7 @@
 
 import { useContext } from 'react';
 
-import { SyncedSearchParamsContext } from './synced_search_params';
+import { SyncedSearchParamsContext } from './context';
 
 /**
  * Similar to `useSearchParams` from `'react-router-dom'`, except that
