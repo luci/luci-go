@@ -48,3 +48,15 @@ export function formatNum(num: number, hasMore: boolean, cap?: number) {
   }
   return `${num}`;
 }
+
+/**
+ * Hashes a string to a number, it uses the Java style hashing algorithm.
+ *
+ * Note: This method can return negative values as it uses bit shifts.
+ */
+export function hashStringToNum(str: string) {
+  return str.split('').reduce((acc, char) => {
+    const charCode = char.charCodeAt(0);
+    return (acc << 5) - acc + charCode;
+  }, 0);
+}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getLongestCommonPrefix } from './string_utils';
+import { getLongestCommonPrefix, hashStringToNum } from './string_utils';
 
 describe('getLongestCommonPrefix', () => {
   it('should work with empty array', () => {
@@ -45,5 +45,19 @@ describe('getLongestCommonPrefix', () => {
 
   it('has empty string', () => {
     expect(getLongestCommonPrefix(['', 'aaa', 'aaab', 'aaac'])).toEqual('');
+  });
+});
+
+describe('hashStringToNum', () => {
+  it('should hash a string to a stable value', () => {
+    const firstHash = hashStringToNum('test-string');
+    const secondHash = hashStringToNum('test-string');
+    expect(firstHash).toEqual(secondHash);
+  });
+
+  it('should generate different hashes for different strings', () => {
+    const firstHash = hashStringToNum('test-string-1');
+    const secondHash = hashStringToNum('test-string-2');
+    expect(firstHash).not.toEqual(secondHash);
   });
 });

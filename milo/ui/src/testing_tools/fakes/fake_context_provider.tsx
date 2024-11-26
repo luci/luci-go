@@ -27,6 +27,7 @@ import {
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
 import { UiPage } from '@/common/constants/view';
+import { FeatureFlagsProvider } from '@/common/feature_flags/provider';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
 import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
@@ -97,7 +98,9 @@ export function FakeContextProvider({
           // e.g. `errorElement` shall not rely on `<AuthStateProvider />`.
           <SyncedSearchParamsProvider>
             <FakeAuthStateProvider>
-              <Outlet />
+              <FeatureFlagsProvider>
+                <Outlet />
+              </FeatureFlagsProvider>
             </FakeAuthStateProvider>
           </SyncedSearchParamsProvider>
         ),
