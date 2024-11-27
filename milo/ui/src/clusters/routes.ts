@@ -20,57 +20,50 @@ import { RouteObject } from 'react-router-dom';
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
 export const clustersRoutes: RouteObject[] = [
   {
-    path: 'labs',
-    lazy: () => import('@/common/layouts/labs_layout'),
+    lazy: () => import('@/clusters/pages/base'),
     children: [
       {
-        lazy: () => import('@/clusters/pages/base'),
+        path: 'help',
+        lazy: () => import('@/clusters/pages/help/help'),
+      },
+      {
+        path: 'b/:bugTracker/:id',
+        lazy: () => import('@/clusters/pages/bug/bug'),
+      },
+      {
+        path: 'b/:id',
+        lazy: () => import('@/clusters/pages/bug/bug'),
+      },
+      {
+        path: 'p/:project',
         children: [
           {
-            path: 'help',
-            lazy: () => import('@/clusters/pages/help/help'),
-          },
-          {
-            path: 'b/:bugTracker/:id',
-            lazy: () => import('@/clusters/pages/bug/bug'),
-          },
-          {
-            path: 'b/:id',
-            lazy: () => import('@/clusters/pages/bug/bug'),
-          },
-          {
-            path: 'p/:project',
+            path: 'rules',
             children: [
               {
-                path: 'rules',
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import('@/clusters/pages/rules/rules'),
-                  },
-                  {
-                    path: 'new',
-                    lazy: () => import('@/clusters/pages/new_rule/new_rule'),
-                  },
-                  {
-                    path: ':id',
-                    lazy: () => import('@/clusters/pages/rule/rule'),
-                  },
-                ],
+                index: true,
+                lazy: () => import('@/clusters/pages/rules/rules'),
               },
               {
-                path: 'clusters',
-                children: [
-                  {
-                    index: true,
-                    lazy: () => import('@/clusters/pages/clusters/clusters'),
-                  },
-                  {
-                    path: ':algorithm/:id',
-                    lazy: () =>
-                      import('@/clusters/pages/clusters/cluster/cluster'),
-                  },
-                ],
+                path: 'new',
+                lazy: () => import('@/clusters/pages/new_rule/new_rule'),
+              },
+              {
+                path: ':id',
+                lazy: () => import('@/clusters/pages/rule/rule'),
+              },
+            ],
+          },
+          {
+            path: 'clusters',
+            children: [
+              {
+                index: true,
+                lazy: () => import('@/clusters/pages/clusters/clusters'),
+              },
+              {
+                path: ':algorithm/:id',
+                lazy: () => import('@/clusters/pages/clusters/cluster/cluster'),
               },
             ],
           },

@@ -62,8 +62,8 @@ describe('Test BugInfo component', () => {
   it('when clicking edit, should open dialog, even if bug does not load', async () => {
     renderWithRouterAndClient(
       <BugInfo rule={mockRule} />,
-      '/ui/clusters/labs/p/chromium/rules/123456',
-      '/ui/clusters/labs/p/:project/rules/:id',
+      '/ui/tests/p/chromium/rules/123456',
+      '/ui/tests/p/:project/rules/:id',
     );
 
     await screen.findByText('Associated Bug');

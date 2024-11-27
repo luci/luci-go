@@ -304,11 +304,11 @@ export const routes: RouteObject[] = [
     children: treeStatusRoutes,
   },
   {
-    path: 'clusters',
+    path: 'tests',
     children: clustersRoutes,
   },
   {
     path: 'auth',
     children: authRoutes,
-  }
+  },
 ];

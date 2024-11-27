@@ -269,12 +269,12 @@ function generateTestAnalysisSection(
   if (project) {
     pages.push({
       page: UiPage.Clusters,
-      url: `/ui/clusters/labs/p/${project}/clusters`,
+      url: `/ui/tests/p/${project}/clusters`,
       icon: <SpokeIcon />,
     });
     pages.push({
       page: UiPage.Rules,
-      url: `/ui/clusters/labs/p/${project}/rules`,
+      url: `/ui/tests/p/${project}/rules`,
       icon: <RuleIcon />,
     });
   }

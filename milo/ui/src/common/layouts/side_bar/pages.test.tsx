@@ -146,12 +146,12 @@ describe('generateSidebarSections', () => {
         pages: [
           {
             page: UiPage.Clusters,
-            url: `/ui/clusters/labs/p/projecttest/clusters`,
+            url: `/ui/tests/p/projecttest/clusters`,
             icon: <SpokeIcon />,
           },
           {
             page: UiPage.Rules,
-            url: `/ui/clusters/labs/p/projecttest/rules`,
+            url: `/ui/tests/p/projecttest/rules`,
             icon: <RuleIcon />,
           },
         ],
@@ -222,12 +222,12 @@ describe('generateSidebarSections', () => {
         pages: [
           {
             page: UiPage.Clusters,
-            url: `/ui/clusters/labs/p/chromium/clusters`,
+            url: `/ui/tests/p/chromium/clusters`,
             icon: <SpokeIcon />,
           },
           {
             page: UiPage.Rules,
-            url: `/ui/clusters/labs/p/chromium/rules`,
+            url: `/ui/tests/p/chromium/rules`,
             icon: <RuleIcon />,
           },
         ],
@@ -327,12 +327,12 @@ describe('generateSidebarSections', () => {
         pages: [
           {
             page: UiPage.Clusters,
-            url: `/ui/clusters/labs/p/chromeos/clusters`,
+            url: `/ui/tests/p/chromeos/clusters`,
             icon: <SpokeIcon />,
           },
           {
             page: UiPage.Rules,
-            url: `/ui/clusters/labs/p/chromeos/rules`,
+            url: `/ui/tests/p/chromeos/rules`,
             icon: <RuleIcon />,
           },
         ],

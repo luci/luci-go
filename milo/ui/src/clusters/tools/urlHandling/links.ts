@@ -31,14 +31,14 @@ export const linkToCluster = (project: string, c: ClusterId): string => {
     const projectEncoded = encodeURIComponent(project);
     const algorithmEncoded = encodeURIComponent(c.algorithm);
     const idEncoded = encodeURIComponent(c.id);
-    return `/ui/clusters/labs/p/${projectEncoded}/clusters/${algorithmEncoded}/${idEncoded}`;
+    return `/ui/tests/p/${projectEncoded}/clusters/${algorithmEncoded}/${idEncoded}`;
   }
 };
 
 export const linkToRule = (project: string, ruleId: string): string => {
   const projectEncoded = encodeURIComponent(project);
   const ruleIdEncoded = encodeURIComponent(ruleId);
-  return `/ui/clusters/labs/p/${projectEncoded}/rules/${ruleIdEncoded}`;
+  return `/ui/tests/p/${projectEncoded}/rules/${ruleIdEncoded}`;
 };
 
 export const invocationName = (invocationId: string): string => {

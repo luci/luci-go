@@ -98,8 +98,8 @@ describe('routes', () => {
     });
 
     it('analysis', () => {
-      expect(regex.test('/ui/clusters/labs/b/12345')).toBeTruthy();
-      expect(regex.test('/ui/clusters/undefined-page')).toBeFalsy();
+      expect(regex.test('/ui/tests/b/12345')).toBeTruthy();
+      expect(regex.test('/ui/tests/undefined-page')).toBeFalsy();
     });
 
     it('auth', () => {
