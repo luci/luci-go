@@ -1311,6 +1311,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
     seen[name] = verifier
 
     return cq_pb.Verifiers.Tryjob.Builder(
+        host = "cr-buildbucket-dev.appspot.com" if get_project().props.dev else None,
         name = name,
         result_visibility = _cq_visibility(verifier.props.result_visibility),
         includable_only = verifier.props.includable_only,
