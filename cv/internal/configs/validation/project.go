@@ -43,7 +43,7 @@ const (
 	// CQStatusHostInternal is the internal host of the CQ status app.
 	CQStatusHostInternal = "internal-cq-status.appspot.com"
 
-	dummyProjectSkipListenerValidation = "dummy-project-skip-listener-validation-deabeef-abc"
+	dummyProjectSkipListenerValidation = "dummy-project-skip-listener-validation-deadbeaf-abc"
 )
 
 var limitNameRe = regexp.MustCompile(`^[0-9A-Za-z][0-9A-Za-z.\-@_+]{0,511}$`)

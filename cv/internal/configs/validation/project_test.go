@@ -53,17 +53,17 @@ func TestValidateProjectHighLevel(t *testing.T) {
 
 		cfg := cfgpb.Config{}
 		vctx := &validation.Context{Context: ctx}
-		assert.Loosely(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg), should.BeNil)
-		assert.Loosely(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
+		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
 
 		t.Run("OK", func(t *ftt.Test) {
-			assert.Loosely(t, ValidateProject(vctx, &cfg, project), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.BeNil)
+			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
+			assert.NoErr(t, vctx.Finalize())
 		})
 		t.Run("Error", func(t *ftt.Test) {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			assert.Loosely(t, ValidateProject(vctx, &cfg, project), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.ErrLike("must match"))
+			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
+			assert.That(t, vctx.Finalize(), should.ErrLikeString("must match"))
 		})
 	})
 
@@ -73,16 +73,16 @@ func TestValidateProjectHighLevel(t *testing.T) {
 
 		cfg := cfgpb.Config{}
 		vctx := &validation.Context{Context: ctx}
-		assert.Loosely(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
 
 		t.Run("OK", func(t *ftt.Test) {
-			assert.Loosely(t, ValidateProjectConfig(vctx, &cfg), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.BeNil)
+			assert.NoErr(t, ValidateProjectConfig(vctx, &cfg))
+			assert.NoErr(t, vctx.Finalize())
 		})
 		t.Run("Error", func(t *ftt.Test) {
 			cfg.GetConfigGroups()[0].Name = "!invalid! name"
-			assert.Loosely(t, ValidateProject(vctx, &cfg, project), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.ErrLike("must match"))
+			assert.NoErr(t, ValidateProject(vctx, &cfg, project))
+			assert.That(t, vctx.Finalize(), should.ErrLikeString("must match"))
 		})
 	})
 }
@@ -144,82 +144,82 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 		t.Run("Loading bad proto", func(t *ftt.Test) {
 			content := []byte(` bad: "config" `)
-			assert.Loosely(t, validateProject(vctx, configSet, path, content), should.BeNil)
-			assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
+			assert.NoErr(t, validateProject(vctx, configSet, path, content))
+			assert.That(t, vctx.Finalize().Error(), should.ContainSubstring("unknown field"))
 		})
 
 		// It's easier to manipulate Go struct than text.
 		cfg := cfgpb.Config{}
-		assert.Loosely(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg), should.BeNil)
-		assert.Loosely(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"), should.BeNil)
+		assert.NoErr(t, prototext.Unmarshal([]byte(validConfigTextPB), &cfg))
+		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
 
 		t.Run("OK", func(t *ftt.Test) {
 			t.Run("good proto, good config", func(t *ftt.Test) {
-				assert.Loosely(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)))
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("good config", func(t *ftt.Test) {
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 		})
 
 		t.Run("Missing gerrit subscription", func(t *ftt.Test) {
 			// reset the listener settings to make the validation fail.
-			assert.Loosely(t, mockListenerSettings(ctx), should.BeNil)
+			assert.NoErr(t, mockListenerSettings(ctx))
 
 			t.Run("validation fails", func(t *ftt.Test) {
-				assert.Loosely(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)), should.BeNil)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("Gerrit pub/sub"))
+				assert.NoErr(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("Gerrit pub/sub"))
 			})
 			t.Run("OK if the project is disabled in listener settings", func(t *ftt.Test) {
 				ct.DisableProjectInGerritListener(ctx, project)
-				assert.Loosely(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)), should.BeNil)
+				assert.NoErr(t, validateProject(vctx, configSet, path, []byte(validConfigTextPB)))
 			})
 		})
-		assert.Loosely(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"), should.BeNil)
+		assert.NoErr(t, mockListenerSettings(ctx, "chromium-review.googlesource.com"))
 
 		t.Run("Top-level config", func(t *ftt.Test) {
 			t.Run("Top level opts can be omitted", func(t *ftt.Test) {
 				cfg.CqStatusHost = ""
 				cfg.SubmitOptions = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("draining time not allowed crbug/1208569", func(t *ftt.Test) {
 				cfg.DrainingStartTime = "2017-12-23T15:47:58Z"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike(`https://crbug.com/1208569`))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString(`https://crbug.com/1208569`))
 			})
 			t.Run("CQ status host can be internal", func(t *ftt.Test) {
 				cfg.CqStatusHost = CQStatusHostInternal
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("CQ status host can be empty", func(t *ftt.Test) {
 				cfg.CqStatusHost = ""
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("CQ status host can be public", func(t *ftt.Test) {
 				cfg.CqStatusHost = CQStatusHostPublic
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 			t.Run("CQ status host can not be something else", func(t *ftt.Test) {
 				cfg.CqStatusHost = "nope.example.com"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("cq_status_host must be"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("cq_status_host must be"))
 			})
 			t.Run("Bad max_burst", func(t *ftt.Test) {
 				cfg.SubmitOptions.MaxBurst = -1
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.NotBeNil)
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("max_burst must be >= 0"))
 			})
 			t.Run("Bad burst_delay ", func(t *ftt.Test) {
 				cfg.SubmitOptions.BurstDelay.Seconds = -1
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.NotBeNil)
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("burst_delay must be positive or 0"))
 			})
 			t.Run("config_groups", func(t *ftt.Test) {
 				orig := cfg.ConfigGroups[0]
@@ -246,7 +246,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				t.Run("at least 1 Config Group", func(t *ftt.Test) {
 					cfg.ConfigGroups = nil
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("at least 1 config_group is required"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("at least 1 config_group is required"))
 				})
 
 				t.Run("at most 1 fallback", func(t *ftt.Test) {
@@ -256,7 +256,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 					add("refs/branch-heads/.+")
 					cfg.ConfigGroups[1].Fallback = cfgpb.Toggle_YES
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("At most 1 config_group with fallback=YES allowed"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("At most 1 config_group with fallback=YES allowed"))
 				})
 
 				t.Run("with unique names", func(t *ftt.Test) {
@@ -269,7 +269,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 						cfg.ConfigGroups[1].Name = "bbb"
 						cfg.ConfigGroups[2].Name = "bbb"
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("duplicate config_group name \"bbb\" not allowed"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("duplicate config_group name \"bbb\" not allowed"))
 					})
 				})
 			})
@@ -279,48 +279,48 @@ func TestValidateProjectDetailed(t *testing.T) {
 			t.Run("with no Name", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].Name = ""
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, mustError(t, vctx.Finalize()), should.ErrLike("name is required"))
+				assert.That(t, mustError(t, vctx.Finalize()), should.ErrLikeString("name is required"))
 			})
 			t.Run("with valid Name", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].Name = "!invalid!"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, mustError(t, vctx.Finalize()), should.ErrLike("name must match"))
+				assert.That(t, mustError(t, vctx.Finalize()), should.ErrLikeString("name must match"))
 			})
 			t.Run("with Gerrit", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].Gerrit = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("at least 1 gerrit is required"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("at least 1 gerrit is required"))
 			})
 			t.Run("with Verifiers", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].Verifiers = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("verifiers are required"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("verifiers are required"))
 			})
 			t.Run("no dup Gerrit blocks", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].Gerrit = append(cfg.ConfigGroups[0].Gerrit, cfg.ConfigGroups[0].Gerrit[0])
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("duplicate gerrit url in the same config_group"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("duplicate gerrit url in the same config_group"))
 			})
 			t.Run("CombineCLs", func(t *ftt.Test) {
 				cfg.ConfigGroups[0].CombineCls = &cfgpb.CombineCLs{}
 				t.Run("Needs stabilization_delay", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("stabilization_delay is required"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("stabilization_delay is required"))
 				})
 				cfg.ConfigGroups[0].CombineCls.StabilizationDelay = &durationpb.Duration{}
 				t.Run("Needs stabilization_delay > 10s", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("stabilization_delay must be at least 10 seconds"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("stabilization_delay must be at least 10 seconds"))
 				})
 				cfg.ConfigGroups[0].CombineCls.StabilizationDelay.Seconds = 20
 				t.Run("OK", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				})
 				t.Run("Can't use with allow_submit_with_open_deps", func(t *ftt.Test) {
 					cfg.ConfigGroups[0].Verifiers.GerritCqAbility.AllowSubmitWithOpenDeps = true
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("allow_submit_with_open_deps=true"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("allow_submit_with_open_deps=true"))
 				})
 			})
 
@@ -334,12 +334,12 @@ func TestValidateProjectDetailed(t *testing.T) {
 				cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 				t.Run("OK", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				})
 				t.Run("name", func(t *ftt.Test) {
 					check := func(t testing.TB) {
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("does not match regex pattern"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("does not match regex pattern"))
 					}
 					t.Run("empty", func(t *ftt.Test) {
 						mode.Name = ""
@@ -354,7 +354,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				t.Run("cq_label_value", func(t *ftt.Test) {
 					check := func(t testing.TB) {
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("must be in list [1 2]"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("must be in list [1 2]"))
 					}
 
 					t.Run("with -1", func(t *ftt.Test) {
@@ -379,19 +379,19 @@ func TestValidateProjectDetailed(t *testing.T) {
 					t.Run("empty", func(t *ftt.Test) {
 						mode.TriggeringLabel = ""
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("length must be at least 1 runes"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("length must be at least 1 runes"))
 					})
 					t.Run("with Commit-Queue", func(t *ftt.Test) {
 						mode.TriggeringLabel = "Commit-Queue"
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("must not be in list [Commit-Queue]"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("must not be in list [Commit-Queue]"))
 					})
 				})
 
 				t.Run("triggering_value", func(t *ftt.Test) {
 					check := func(t testing.TB) {
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("must be greater than 0"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("must be greater than 0"))
 					}
 
 					t.Run("with 0", func(t *ftt.Test) {
@@ -411,7 +411,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				t.Run("duplicate names", func(t *ftt.Test) {
 					cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode, mode}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"TEST_RUN" is already in use`))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(`"TEST_RUN" is already in use`))
 				})
 			})
 
@@ -439,21 +439,21 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 				t.Run("works", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				})
 
 				t.Run("name", func(t *ftt.Test) {
 					t.Run("missing", func(t *ftt.Test) {
 						pa.Name = ""
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike("Name: value length must be at least 1"))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString("Name: value length must be at least 1"))
 					})
 
 					t.Run("duplicate", func(t *ftt.Test) {
 						cfg.ConfigGroups[0].PostActions = append(cfg.ConfigGroups[0].PostActions,
 							cfg.ConfigGroups[0].PostActions[0])
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"CQ verified"' is already in use`))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString(`"CQ verified"' is already in use`))
 					})
 				})
 
@@ -461,24 +461,24 @@ func TestValidateProjectDetailed(t *testing.T) {
 					t.Run("missing", func(t *ftt.Test) {
 						pa.Action = nil
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike(`Action: value is required`))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString(`Action: value is required`))
 					})
 					t.Run("vote_gerrit_labels", func(t *ftt.Test) {
 						w := pa.GetAction().(*cfgpb.ConfigGroup_PostAction_VoteGerritLabels_).VoteGerritLabels
 						t.Run("empty pairs", func(t *ftt.Test) {
 							w.Votes = nil
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike("Votes: value must contain"))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString("Votes: value must contain"))
 						})
 						t.Run("a pair with an empty name", func(t *ftt.Test) {
 							w.Votes[0].Name = ""
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike("Name: value length must be"))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString("Name: value length must be"))
 						})
 						t.Run("pairs with duplicate names", func(t *ftt.Test) {
 							w.Votes = append(w.Votes, w.Votes[0])
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"CQ-verified" already specified`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`"CQ-verified" already specified`))
 
 						})
 					})
@@ -489,33 +489,33 @@ func TestValidateProjectDetailed(t *testing.T) {
 					t.Run("missing", func(t *ftt.Test) {
 						pa.Conditions = nil
 						validateProjectConfig(vctx, &cfg)
-						assert.Loosely(t, vctx.Finalize(), should.ErrLike(`Conditions: value must contain at least 1`))
+						assert.That(t, vctx.Finalize(), should.ErrLikeString(`Conditions: value must contain at least 1`))
 					})
 					t.Run("mode", func(t *ftt.Test) {
 						t.Run("missing", func(t *ftt.Test) {
 							tc.Mode = ""
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`Mode: value length must be at least 1`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`Mode: value length must be at least 1`))
 						})
 
 						cfg.ConfigGroups[0].AdditionalModes = []*cfgpb.Mode{mode}
 						t.Run("with an existing additional mode", func(t *ftt.Test) {
 							tc.Mode = mode.Name
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.BeNil)
+							assert.NoErr(t, vctx.Finalize())
 						})
 
 						t.Run("with an non-existing additional mode", func(t *ftt.Test) {
 							tc.Mode = "NON_EXISTING_RUN"
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`invalid mode "NON_EXISTING_RUN"`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`invalid mode "NON_EXISTING_RUN"`))
 						})
 					})
 					t.Run("statuses", func(t *ftt.Test) {
 						t.Run("missing", func(t *ftt.Test) {
 							tc.Statuses = nil
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`Statuses: value must contain at least 1`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`Statuses: value must contain at least 1`))
 						})
 						t.Run("non-terminal status", func(t *ftt.Test) {
 							tc.Statuses = []apipb.Run_Status{
@@ -523,7 +523,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 								apipb.Run_PENDING,
 							}
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"PENDING" is not a terminal status`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`"PENDING" is not a terminal status`))
 						})
 						t.Run("duplicates", func(t *ftt.Test) {
 							tc.Statuses = []apipb.Run_Status{
@@ -531,7 +531,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 								apipb.Run_SUCCEEDED,
 							}
 							validateProjectConfig(vctx, &cfg)
-							assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"SUCCEEDED" was specified already`))
+							assert.That(t, vctx.Finalize(), should.ErrLikeString(`"SUCCEEDED" was specified already`))
 						})
 					})
 				})
@@ -549,26 +549,26 @@ func TestValidateProjectDetailed(t *testing.T) {
 
 			t.Run("works", func(t *ftt.Test) {
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.BeNil)
+				assert.NoErr(t, vctx.Finalize())
 			})
 
 			t.Run("name", func(t *ftt.Test) {
 				t.Run("missing", func(t *ftt.Test) {
 					exp.Name = ""
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("Name: value length must be at least 1"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("Name: value length must be at least 1"))
 				})
 
 				t.Run("duplicate", func(t *ftt.Test) {
 					cfg.ConfigGroups[0].TryjobExperiments = []*cfgpb.ConfigGroup_TryjobExperiment{exp, exp}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(`duplicate name "infra.experiment.foo"`))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(`duplicate name "infra.experiment.foo"`))
 				})
 
 				t.Run("invalid name", func(t *ftt.Test) {
 					exp.Name = "^&*()"
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(`"^&*()" does not match`))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(`"^&*()" does not match`))
 				})
 			})
 
@@ -576,7 +576,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				t.Run("owner_group_allowlist has empty string", func(t *ftt.Test) {
 					exp.Condition.OwnerGroupAllowlist = []string{"infra.chromium.foo", ""}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("OwnerGroupAllowlist[1]: value length must be at least 1 "))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("OwnerGroupAllowlist[1]: value length must be at least 1 "))
 				})
 			})
 		})
@@ -586,41 +586,41 @@ func TestValidateProjectDetailed(t *testing.T) {
 			t.Run("needs valid URL", func(t *ftt.Test) {
 				g.Url = ""
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("url is required"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("url is required"))
 
 				g.Url = ":badscheme, bad URL"
 				vctx = &validation.Context{Context: ctx}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("failed to parse url"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("failed to parse url"))
 			})
 
 			t.Run("without fancy URL components", func(t *ftt.Test) {
 				g.Url = "bad://ok/path-not-good?query=too#neither-is-fragment"
 				validateProjectConfig(vctx, &cfg)
 				err := vctx.Finalize()
-				assert.Loosely(t, err, should.ErrLike("path component not yet allowed in url"))
-				assert.Loosely(t, err, should.ErrLike("and 5 other errors"))
+				assert.That(t, err, should.ErrLikeString("path component not yet allowed in url"))
+				assert.That(t, err, should.ErrLikeString("and 5 other errors"))
 			})
 
 			t.Run("current limitations", func(t *ftt.Test) {
 				g.Url = "https://not.yet.allowed.com"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("only *.googlesource.com hosts supported for now"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("only *.googlesource.com hosts supported for now"))
 
 				vctx = &validation.Context{Context: ctx}
 				g.Url = "new-scheme://chromium-review.googlesource.com"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("only 'https' scheme supported for now"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("only 'https' scheme supported for now"))
 			})
 			t.Run("at least 1 project required", func(t *ftt.Test) {
 				g.Projects = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("at least 1 project is required"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("at least 1 project is required"))
 			})
 			t.Run("no dup project blocks", func(t *ftt.Test) {
 				g.Projects = append(g.Projects, g.Projects[0])
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("duplicate project in the same gerrit"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("duplicate project in the same gerrit"))
 			})
 		})
 
@@ -629,38 +629,38 @@ func TestValidateProjectDetailed(t *testing.T) {
 			t.Run("project name required", func(t *ftt.Test) {
 				p.Name = ""
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("name is required"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("name is required"))
 			})
 			t.Run("incorrect project names", func(t *ftt.Test) {
 				p.Name = "a/prefix-not-allowed/so-is-.git-suffix/.git"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.NotBeNil)
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("name must not start with '/' or 'a/'"))
 
 				vctx = &validation.Context{Context: ctx}
 				p.Name = "/prefix-not-allowed/so-is-/-suffix/"
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.NotBeNil)
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("name must not start with '/' or 'a/'"))
 			})
 			t.Run("bad regexp", func(t *ftt.Test) {
 				p.RefRegexp = []string{"refs/heads/master", "*is-bad-regexp"}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("ref_regexp #2): error parsing regexp:"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("ref_regexp #2): error parsing regexp:"))
 			})
 			t.Run("bad regexp_exclude", func(t *ftt.Test) {
 				p.RefRegexpExclude = []string{"*is-bad-regexp"}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("ref_regexp_exclude #1): error parsing regexp:"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("ref_regexp_exclude #1): error parsing regexp:"))
 			})
 			t.Run("duplicate regexp", func(t *ftt.Test) {
 				p.RefRegexp = []string{"refs/heads/master", "refs/heads/master"}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("ref_regexp #2): duplicate regexp:"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("ref_regexp #2): duplicate regexp:"))
 			})
 			t.Run("duplicate regexp include/exclude", func(t *ftt.Test) {
 				p.RefRegexp = []string{"refs/heads/.+"}
 				p.RefRegexpExclude = []string{"refs/heads/.+"}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("ref_regexp_exclude #1): duplicate regexp:"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("ref_regexp_exclude #1): duplicate regexp:"))
 			})
 		})
 
@@ -670,55 +670,55 @@ func TestValidateProjectDetailed(t *testing.T) {
 			t.Run("fake not allowed", func(t *ftt.Test) {
 				v.Fake = &cfgpb.Verifiers_Fake{}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("fake verifier is not allowed"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("fake verifier is not allowed"))
 			})
 			t.Run("deprecator not allowed", func(t *ftt.Test) {
 				v.Cqlinter = &cfgpb.Verifiers_CQLinter{}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("cqlinter verifier is not allowed"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("cqlinter verifier is not allowed"))
 			})
 			t.Run("tree_status", func(t *ftt.Test) {
 				v.TreeStatus = &cfgpb.Verifiers_TreeStatus{}
 				t.Run("require tree name", func(t *ftt.Test) {
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("tree name is required"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("tree name is required"))
 				})
 				t.Run("needs https URL", func(t *ftt.Test) {
 					v.TreeStatus.Url = "http://example.com/test"
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("url scheme must be 'https'"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("url scheme must be 'https'"))
 				})
 			})
 			t.Run("gerrit_cq_ability", func(t *ftt.Test) {
 				t.Run("sane defaults", func(t *ftt.Test) {
-					assert.Loosely(t, v.GerritCqAbility.AllowSubmitWithOpenDeps, should.BeFalse)
-					assert.Loosely(t, v.GerritCqAbility.AllowOwnerIfSubmittable, should.Equal(
+					assert.That(t, v.GerritCqAbility.AllowSubmitWithOpenDeps, should.BeFalse)
+					assert.That(t, v.GerritCqAbility.AllowOwnerIfSubmittable, should.Equal(
 						cfgpb.Verifiers_GerritCQAbility_UNSET))
 				})
 				t.Run("is required", func(t *ftt.Test) {
 					v.GerritCqAbility = nil
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("gerrit_cq_ability verifier is required"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("gerrit_cq_ability verifier is required"))
 				})
 				t.Run("needs committer_list", func(t *ftt.Test) {
 					v.GerritCqAbility.CommitterList = nil
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("committer_list is required"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("committer_list is required"))
 				})
 				t.Run("no empty committer_list", func(t *ftt.Test) {
 					v.GerritCqAbility.CommitterList = []string{""}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("must not be empty"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("must not be empty"))
 				})
 				t.Run("no empty dry_run_access_list", func(t *ftt.Test) {
 					v.GerritCqAbility.DryRunAccessList = []string{""}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("must not be empty"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("must not be empty"))
 				})
 				t.Run("may grant CL owners extra rights", func(t *ftt.Test) {
 					v.GerritCqAbility.AllowOwnerIfSubmittable = cfgpb.Verifiers_GerritCQAbility_COMMIT
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				})
 			})
 		})
@@ -733,7 +733,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				v.RetryConfig.TransientFailureWeight = -1
 				v.RetryConfig.TimeoutWeight = -1
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike(
+				assert.That(t, vctx.Finalize(), should.ErrLikeString(
 					"negative single_quota not allowed (-1 given) (and 4 other errors)"))
 			})
 		})
@@ -792,35 +792,35 @@ func TestValidateProjectDetailed(t *testing.T) {
 				},
 			}
 			validateProjectConfig(vctx, &cfg)
-			assert.Loosely(t, vctx.Finalize(), should.BeNil)
+			assert.NoErr(t, vctx.Finalize())
 
 			t.Run("UserLimits doesn't allow nil", func(t *ftt.Test) {
 				cg.UserLimits[1] = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("user_limits #2): cannot be nil"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("user_limits #2): cannot be nil"))
 			})
 			t.Run("Names in UserLimits should be unique", func(t *ftt.Test) {
 				cg.UserLimits[0].Name = cg.UserLimits[1].Name
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("user_limits #2 / name): duplicate name"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("user_limits #2 / name): duplicate name"))
 			})
 			t.Run("UserLimitDefault.Name should be unique", func(t *ftt.Test) {
 				cg.UserLimitDefault.Name = cg.UserLimits[0].Name
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("user_limit_default / name): duplicate name"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("user_limit_default / name): duplicate name"))
 			})
 			t.Run("Limit names must be valid", func(t *ftt.Test) {
 				ok := func(n string) {
 					vctx := &validation.Context{Context: ctx}
 					cg.UserLimits[0].Name = n
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				}
 				fail := func(n string) {
 					vctx := &validation.Context{Context: ctx}
 					cg.UserLimits[0].Name = n
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike("does not match"))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString("does not match"))
 				}
 				ok("UserLimits")
 				ok("User-_@.+Limits")
@@ -832,25 +832,25 @@ func TestValidateProjectDetailed(t *testing.T) {
 			t.Run("UserLimits require principals", func(t *ftt.Test) {
 				cg.UserLimits[0].Principals = nil
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("user_limits #1 / principals): must have at least one"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("user_limits #1 / principals): must have at least one"))
 			})
 			t.Run("UserLimitDefault require no principals", func(t *ftt.Test) {
 				cg.UserLimitDefault.Principals = []string{"group:committers"}
 				validateProjectConfig(vctx, &cfg)
-				assert.Loosely(t, vctx.Finalize(), should.ErrLike("user_limit_default / principals): must not have any"))
+				assert.That(t, vctx.Finalize(), should.ErrLikeString("user_limit_default / principals): must not have any"))
 			})
 			t.Run("principals must be valid", func(t *ftt.Test) {
 				ok := func(id string) {
 					vctx := &validation.Context{Context: ctx}
 					cg.UserLimits[0].Principals[0] = id
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				}
 				fail := func(id, msg string) {
 					vctx := &validation.Context{Context: ctx}
 					cg.UserLimits[0].Principals[0] = id
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(msg))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(msg))
 				}
 				ok("user:test@example.org")
 				ok("group:committers")
@@ -864,7 +864,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 				fail := func(msg string) {
 					vctx := &validation.Context{Context: ctx}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(msg))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(msg))
 				}
 
 				cg.UserLimits[0].Run = nil
@@ -881,7 +881,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 						l.Limit = &cfgpb.UserLimit_Limit_Value{Value: val}
 					}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.BeNil)
+					assert.NoErr(t, vctx.Finalize())
 				}
 				fail := func(l *cfgpb.UserLimit_Limit, val int64, unlimited bool, msg string) {
 					vctx := &validation.Context{Context: ctx}
@@ -890,7 +890,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 						l.Limit = &cfgpb.UserLimit_Limit_Value{Value: val}
 					}
 					validateProjectConfig(vctx, &cfg)
-					assert.Loosely(t, vctx.Finalize(), should.ErrLike(msg))
+					assert.That(t, vctx.Finalize(), should.ErrLikeString(msg))
 				}
 
 				// run limits
@@ -938,59 +938,59 @@ func TestTryjobValidation(t *testing.T) {
 			return vctx.Finalize()
 		}
 
-		assert.Loosely(t, validate(``), should.BeNil) // allow empty builders.
+		assert.NoErr(t, validate(``)) // allow empty builders.
 
-		assert.Loosely(t, mustError(t, validate(`
+		assert.That(t, mustError(t, validate(`
 			cancel_stale_tryjobs: YES
-			builders {name: "a/b/c"}`)), should.ErrLike("please remove"))
-		assert.Loosely(t, mustError(t, validate(`
+			builders {name: "a/b/c"}`)), should.ErrLikeString("please remove"))
+		assert.That(t, mustError(t, validate(`
 			cancel_stale_tryjobs: NO
-			builders {name: "a/b/c"}`)), should.ErrLike("use per-builder `cancel_stale` instead"))
+			builders {name: "a/b/c"}`)), should.ErrLikeString("use per-builder `cancel_stale` instead"))
 
 		t.Run("builder name", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`builders {}`), should.ErrLike("name is required"))
-			assert.Loosely(t, validate(`builders {name: ""}`), should.ErrLike("name is required"))
-			assert.Loosely(t, validate(`builders {name: "a"}`), should.ErrLike(
+			assert.That(t, validate(`builders {}`), should.ErrLikeString("name is required"))
+			assert.That(t, validate(`builders {name: ""}`), should.ErrLikeString("name is required"))
+			assert.That(t, validate(`builders {name: "a"}`), should.ErrLikeString(
 				`name "a" doesn't match required format`))
-			assert.Loosely(t, validate(`builders {name: "a/b/c" equivalent_to {name: "z"}}`), should.ErrLike(
+			assert.That(t, validate(`builders {name: "a/b/c" equivalent_to {name: "z"}}`), should.ErrLikeString(
 				`name "z" doesn't match required format`))
-			assert.Loosely(t, validate(`builders {name: "b/luci.b.try/c"}`), should.ErrLike(
+			assert.That(t, validate(`builders {name: "b/luci.b.try/c"}`), should.ErrLikeString(
 				`name "b/luci.b.try/c" is highly likely malformed;`))
 
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 			  builders {name: "a/b/c"}
 			  builders {name: "a/b/c"}
-			`), should.ErrLike("duplicate"))
+			`), should.ErrLikeString("duplicate"))
 
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`
 				builders {name: "m/n/o"}
 			  builders {name: "a/b/c" equivalent_to {name: "x/y/z"}}
-			`), should.BeNil)
+			`))
 
-			assert.Loosely(t, validate(`builders {name: "123/b/c"}`), should.ErrLike(
+			assert.That(t, validate(`builders {name: "123/b/c"}`), should.ErrLikeString(
 				`first part of "123/b/c" is not a valid LUCI project name`))
 		})
 
 		t.Run("result_visibility", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`
 				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_UNSET}
-			`), should.BeNil)
-			assert.Loosely(t, validate(`
+			`))
+			assert.NoErr(t, validate(`
 				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_FULL}
-			`), should.BeNil)
-			assert.Loosely(t, validate(`
+			`))
+			assert.NoErr(t, validate(`
 				builders {name: "a/b/c" result_visibility: COMMENT_LEVEL_RESTRICTED}
-			`), should.BeNil)
+			`))
 		})
 
 		t.Run("experiment", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`builders {name: "a/b/c" experiment_percentage: 1}`), should.BeNil)
-			assert.Loosely(t, validate(`builders {name: "a/b/c" experiment_percentage: -1}`), should.NotBeNil)
-			assert.Loosely(t, validate(`builders {name: "a/b/c" experiment_percentage: 101}`), should.NotBeNil)
+			assert.NoErr(t, validate(`builders {name: "a/b/c" experiment_percentage: 1}`))
+			assert.That(t, validate(`builders {name: "a/b/c" experiment_percentage: -1}`), should.ErrLikeString("experiment_percentage must between 0 and 100"))
+			assert.That(t, validate(`builders {name: "a/b/c" experiment_percentage: 101}`), should.ErrLikeString("experiment_percentage must between 0 and 100"))
 		})
 
 		t.Run("location_filters", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					location_filters: {
@@ -1005,7 +1005,7 @@ func TestTryjobValidation(t *testing.T) {
 						path_regexp: "README.md"
 						exclude: true
 					}
-				}`), should.BeNil)
+				}`))
 
 			err := validate(`
 				builders {
@@ -1014,8 +1014,8 @@ func TestTryjobValidation(t *testing.T) {
 						gerrit_host_regexp: "bad \\c regexp"
 					}
 				}`)
-			assert.Loosely(t, err, should.ErrLike("gerrit_host_regexp"))
-			assert.Loosely(t, err, should.ErrLike("invalid regexp"))
+			assert.That(t, err, should.ErrLikeString("gerrit_host_regexp"))
+			assert.That(t, err, should.ErrLikeString("invalid regexp"))
 
 			err = validate(`
 				builders {
@@ -1024,9 +1024,9 @@ func TestTryjobValidation(t *testing.T) {
 						gerrit_host_regexp: "https://chromium-review.googlesource.com"
 					}
 				}`)
-			assert.Loosely(t, err, should.ErrLike("gerrit_host_regexp"))
-			assert.Loosely(t, err, should.ErrLike("scheme"))
-			assert.Loosely(t, err, should.ErrLike("not needed"))
+			assert.That(t, err, should.ErrLikeString("gerrit_host_regexp"))
+			assert.That(t, err, should.ErrLikeString("scheme"))
+			assert.That(t, err, should.ErrLikeString("not needed"))
 
 			err = validate(`
 				builders {
@@ -1035,8 +1035,8 @@ func TestTryjobValidation(t *testing.T) {
 						gerrit_project_regexp: "bad \\c regexp"
 					}
 				}`)
-			assert.Loosely(t, err, should.ErrLike("gerrit_project_regexp"))
-			assert.Loosely(t, err, should.ErrLike("invalid regexp"))
+			assert.That(t, err, should.ErrLikeString("gerrit_project_regexp"))
+			assert.That(t, err, should.ErrLikeString("invalid regexp"))
 
 			err = validate(`
 				builders {
@@ -1045,32 +1045,31 @@ func TestTryjobValidation(t *testing.T) {
 						path_regexp: "bad \\c regexp"
 					}
 				}`)
-			assert.Loosely(t, err, should.ErrLike("path_regexp"))
-			assert.Loosely(t, err, should.ErrLike("invalid regexp"))
+			assert.That(t, err, should.ErrLikeString("path_regexp"))
+			assert.That(t, err, should.ErrLikeString("invalid regexp"))
 		})
 
 		t.Run("equivalent_to", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					equivalent_to {name: "x/y/z" percentage: 10 owner_whitelist_group: "group"}
-				}`),
-				should.BeNil)
+				}`))
 
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					equivalent_to {name: "x/y/z" percentage: -1 owner_whitelist_group: "group"}
 				}`),
-				should.ErrLike("percentage must be between 0 and 100"))
-			assert.Loosely(t, validate(`
+				should.ErrLikeString("percentage must be between 0 and 100"))
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					equivalent_to {name: "a/b/c"}
 				}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					`equivalent_to.name must not refer to already defined "a/b/c" builder`))
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					equivalent_to {name: "c/d/e"}
@@ -1079,62 +1078,62 @@ func TestTryjobValidation(t *testing.T) {
 					name: "x/y/z"
 					equivalent_to {name: "c/d/e"}
 				}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					`duplicate name "c/d/e"`))
 		})
 
 		t.Run("owner_whitelist_group", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`builders { name: "a/b/c" owner_whitelist_group: "ok" }`), should.BeNil)
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`builders { name: "a/b/c" owner_whitelist_group: "ok" }`))
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					owner_whitelist_group: "ok"
-				}`), should.BeNil)
-			assert.Loosely(t, validate(`
+				}`))
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					owner_whitelist_group: "ok"
 					owner_whitelist_group: ""
 					owner_whitelist_group: "also-ok"
-				}`), should.ErrLike(
+				}`), should.ErrLikeString(
 				"must not be empty string"))
 		})
 
 		t.Run("mode_allowlist", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`builders {name: "a/b/c" mode_allowlist: "DRY_RUN"}`), should.BeNil)
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`builders {name: "a/b/c" mode_allowlist: "DRY_RUN"}`))
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "DRY_RUN"
 					mode_allowlist: "FULL_RUN"
-				}`), should.BeNil)
+				}`))
 
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "DRY"
 					mode_allowlist: "FULL_RUN"
-				}`), should.ErrLike(
+				}`), should.ErrLikeString(
 				"must be one of"))
 
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "NEW_PATCHSET_RUN"
-				}`), should.ErrLike(
+				}`), should.ErrLikeString(
 				"cannot be used unless a new_patchset_run_access_list is set"))
 
 			t.Run("contains ANALYZER_RUN", func(t *ftt.Test) {
-				assert.Loosely(t, validate(`
+				assert.That(t, validate(`
 					builders {
 						name: "a/b/c"
 						location_filters: {
 							path_regexp: ".*"
 						}
 						mode_allowlist: "ANALYZER_RUN"
-					}`), should.ErrLike(
+					}`), should.ErrLikeString(
 					`analyzer location filter path pattern must match`))
-				assert.Loosely(t, validate(`
+				assert.That(t, validate(`
 					builders {
 						name: "a/b/c"
 						location_filters: {
@@ -1142,9 +1141,9 @@ func TestTryjobValidation(t *testing.T) {
 							path_regexp: ".+\\.go"
 						}
 						mode_allowlist: "ANALYZER_RUN"
-					}`), should.ErrLike(
+					}`), should.ErrLikeString(
 					`analyzer location filter must include both host and project or neither`))
-				assert.Loosely(t, validate(`
+				assert.That(t, validate(`
 					builders {
 						name: "a/b/c"
 						location_filters: {
@@ -1152,17 +1151,17 @@ func TestTryjobValidation(t *testing.T) {
 							exclude: True
 						}
 						mode_allowlist: "ANALYZER_RUN"
-					}`), should.ErrLike(
+					}`), should.ErrLikeString(
 					`location_filters exclude filters are not combinable`))
-				assert.Loosely(t, validate(`
+				assert.NoErr(t, validate(`
 				builders {
 					name: "x/y/z"
 				}
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "ANALYZER_RUN"
-				}`), should.BeNil)
-				assert.Loosely(t, validate(`
+				}`))
+				assert.NoErr(t, validate(`
 				builders {
 					name: "x/y/z"
 				}
@@ -1172,8 +1171,8 @@ func TestTryjobValidation(t *testing.T) {
 					location_filters: {
 						path_regexp: ".+\\.go"
 					}
-				}`), should.BeNil)
-				assert.Loosely(t, validate(`
+				}`))
+				assert.NoErr(t, validate(`
 				builders {
 					name: "x/y/z"
 				}
@@ -1185,19 +1184,18 @@ func TestTryjobValidation(t *testing.T) {
 						gerrit_project_regexp: "proj"
 						path_regexp: ".+\\.go"
 					}
-				}`), should.BeNil)
+				}`))
 			})
 		})
 
 		t.Run("allowed combinations", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					experiment_percentage: 1
 					owner_whitelist_group: "owners"
-				}`),
-				should.BeNil)
-			assert.Loosely(t, validate(`
+				}`))
+			assert.NoErr(t, validate(`
 				builders {
 					name: "a/b/c"
 					location_filters: {
@@ -1209,37 +1207,35 @@ func TestTryjobValidation(t *testing.T) {
 					location_filters: {
 						path_regexp: ".+\\.cpp"
 					}
-				} `),
-				should.BeNil)
-			assert.Loosely(t, validate(`
+				} `))
+			assert.NoErr(t, validate(`
 				builders {name: "pa/re/nt"}
 				builders {
 					name: "a/b/c"
 					includable_only: true
-				}`),
-				should.BeNil)
+				}`))
 		})
 
 		t.Run("disallowed combinations", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					experiment_percentage: 1
 					equivalent_to {name: "c/d/e"}}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					"experiment_percentage is not combinable with equivalent_to"))
 		})
 
 		t.Run("includable_only", func(t *ftt.Test) {
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					experiment_percentage: 1
 					includable_only: true
 				}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					"includable_only is not combinable with experiment_percentage"))
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					location_filters: {
@@ -1247,18 +1243,18 @@ func TestTryjobValidation(t *testing.T) {
 					}
 					includable_only: true
 				}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					"includable_only is not combinable with location_filters"))
-			assert.Loosely(t, validate(`
+			assert.That(t, validate(`
 				builders {
 					name: "a/b/c"
 					mode_allowlist: "DRY_RUN"
 					includable_only: true
 				}`),
-				should.ErrLike(
+				should.ErrLikeString(
 					"includable_only is not combinable with mode_allowlist"))
 
-			assert.Loosely(t, validate(`builders {name: "one/is/enough" includable_only: true}`), should.BeNil)
+			assert.NoErr(t, validate(`builders {name: "one/is/enough" includable_only: true}`))
 		})
 	})
 }
