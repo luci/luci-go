@@ -505,7 +505,8 @@ func TestBatchCreateArtifacts(t *testing.T) {
 			bReq.Requests = make([]*pb.CreateArtifactRequest, 1000)
 			_, err := recorder.BatchCreateArtifacts(ctx, bReq)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-			assert.Loosely(t, err, should.ErrLike("the number of requests in the batch exceeds 500"))
+			assert.Loosely(t, err, should.ErrLike("the number of requests in the batch"))
+			assert.Loosely(t, err, should.ErrLike("exceeds 500"))
 		})
 	})
 }

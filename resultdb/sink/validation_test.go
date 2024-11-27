@@ -76,7 +76,7 @@ func TestValidateTestResult(t *testing.T) {
 					},
 				}
 				err := validateTestResult(testclock.TestRecentTimeUTC, tr)
-				assert.Loosely(t, err, should.ErrLike(`properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 		})

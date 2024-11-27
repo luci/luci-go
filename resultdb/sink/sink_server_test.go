@@ -317,7 +317,7 @@ func TestReportTestResults(t *testing.T) {
 
 				req := &sinkpb.ReportTestResultsRequest{TestResults: []*sinkpb.TestResult{tr}}
 				_, err = sink.ReportTestResults(ctx, req)
-				assert.Loosely(t, err, should.ErrLike(`properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 		})

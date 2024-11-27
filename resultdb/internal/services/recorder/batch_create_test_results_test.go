@@ -88,7 +88,8 @@ func TestValidateBatchCreateTestResultRequest(t *testing.T) {
 			t.Run(`Too many requests`, func(t *ftt.Test) {
 				req.Requests = make([]*pb.CreateTestResultRequest, 1000)
 				err := validateBatchCreateTestResultsRequest(req, now)
-				assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
+				assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds 500`))
 			})
 
 			t.Run("invocation", func(t *ftt.Test) {

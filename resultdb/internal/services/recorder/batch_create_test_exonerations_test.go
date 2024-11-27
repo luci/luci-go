@@ -62,7 +62,8 @@ func TestValidateBatchCreateTestExonerationsRequest(t *testing.T) {
 				Invocation: "invocations/a",
 				Requests:   make([]*pb.CreateTestExonerationRequest, 1000),
 			})
-			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
+			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
+			assert.Loosely(t, err, should.ErrLike(`exceeds 500`))
 		})
 
 		t.Run(`Invalid sub-request`, func(t *ftt.Test) {

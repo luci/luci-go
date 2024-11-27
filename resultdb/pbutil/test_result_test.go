@@ -461,7 +461,7 @@ func TestValidateTestResult(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, validateTR(msg), should.ErrLike("properties: exceeds the maximum size"))
+				assert.Loosely(t, validateTR(msg), should.ErrLike("exceeds the maximum size"))
 			})
 			t.Run("no properties_schema with non-empty properties", func(t *ftt.Test) {
 				msg.TestMetadata = &pb.TestMetadata{
@@ -498,7 +498,7 @@ func TestValidateTestResult(t *testing.T) {
 					"key": structpb.NewStringValue(strings.Repeat("1", MaxSizeTestResultProperties)),
 				},
 			}
-			assert.Loosely(t, validateTR(msg), should.ErrLike("properties: exceeds the maximum size"))
+			assert.Loosely(t, validateTR(msg), should.ErrLike("exceeds the maximum size"))
 		})
 
 		t.Run("Validate failure reason", func(t *ftt.Test) {

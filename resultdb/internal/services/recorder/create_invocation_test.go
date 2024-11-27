@@ -392,7 +392,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 				},
 			}
 			err := validateCreateInvocationRequest(request, now, addedInvs)
-			assert.Loosely(t, err, should.ErrLike(`properties: exceeds the maximum size of`))
+			assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 			assert.Loosely(t, err, should.ErrLike(`bytes`))
 		})
 
@@ -446,7 +446,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateCreateInvocationRequest(request, now, addedInvs)
-				assert.Loosely(t, err, should.ErrLike(`extended_properties: ["mykey"]: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 
@@ -465,7 +465,7 @@ func TestValidateCreateInvocationRequest(t *testing.T) {
 					"mykey_5": tempValue,
 				}
 				err := validateCreateInvocationRequest(request, now, addedInvs)
-				assert.Loosely(t, err, should.ErrLike(`extended_properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 		})

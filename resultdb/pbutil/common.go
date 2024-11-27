@@ -115,7 +115,7 @@ func ValidateRequestID(requestID string) error {
 func ValidateBatchRequestCount(count int) error {
 	const limit = 500
 	if count > limit {
-		return errors.Reason("the number of requests in the batch exceeds %d", limit).Err()
+		return errors.Reason("the number of requests in the batch (%d) exceeds %d", count, limit).Err()
 	}
 	return nil
 }
@@ -149,8 +149,9 @@ func MustMarshal(m protoreflect.ProtoMessage) []byte {
 
 // validateProperties returns a non-nil error if properties is invalid.
 func validateProperties(properties *structpb.Struct, maxSize int) error {
-	if proto.Size(properties) > maxSize {
-		return errors.Reason("exceeds the maximum size of %d bytes", maxSize).Err()
+	size := proto.Size(properties)
+	if size > maxSize {
+		return errors.Reason("the size of properties (%d) exceeds the maximum size of %d bytes", size, maxSize).Err()
 	}
 	return nil
 }

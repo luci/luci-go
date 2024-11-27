@@ -294,7 +294,7 @@ func TestValidateInvocation(t *testing.T) {
 				},
 			}
 			err := ValidateInvocationExtendedProperties(extendedProperties)
-			assert.Loosely(t, err, should.ErrLike(`["mykey"]: exceeds the maximum size of `))
+			assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of `))
 			assert.Loosely(t, err, should.ErrLike(`bytes`))
 		})
 		t.Run(`Missing @type`, func(t *ftt.Test) {

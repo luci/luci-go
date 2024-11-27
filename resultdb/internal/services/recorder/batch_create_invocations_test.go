@@ -77,7 +77,8 @@ func TestValidateBatchCreateInvocationsRequest(t *testing.T) {
 				make([]*pb.CreateInvocationRequest, 1000),
 				"valid",
 			)
-			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch exceeds 500`))
+			assert.Loosely(t, err, should.ErrLike(`the number of requests in the batch`))
+			assert.Loosely(t, err, should.ErrLike(`exceeds 500`))
 		})
 		t.Run(`valid`, func(t *ftt.Test) {
 			ids, _, err := validateBatchCreateInvocationsRequest(

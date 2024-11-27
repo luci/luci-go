@@ -157,7 +157,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 					},
 				}
 				err := validateUpdateInvocationRequest(request, now)
-				assert.Loosely(t, err, should.ErrLike(`invocation: properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, err, should.ErrLike(`bytes`))
 			})
 			t.Run(`valid`, func(t *ftt.Test) {
@@ -385,7 +385,7 @@ func TestValidateUpdateInvocationRequest(t *testing.T) {
 						},
 					}
 					err := validateUpdateInvocationRequest(request, now)
-					assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: ["abc"]: exceeds the maximum size`))
+					assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size`))
 					assert.Loosely(t, err, should.ErrLike(`bytes`))
 				})
 			})
@@ -942,7 +942,7 @@ func TestUpdateInvocation(t *testing.T) {
 				}}
 				inv, err := run(extendedPropertiesOrg, extendedPropertiesNew, updateMask)
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-				assert.Loosely(t, err, should.ErrLike(`invocation: extended_properties: exceeds the maximum size of`))
+				assert.Loosely(t, err, should.ErrLike(`exceeds the maximum size of`))
 				assert.Loosely(t, inv, should.BeNil)
 			})
 		})
