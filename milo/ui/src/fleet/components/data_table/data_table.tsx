@@ -17,16 +17,25 @@ import {
   DataGrid,
   gridClasses,
   GridColDef,
+  GridPaginationModel,
   GridSlots,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   useGridApiRef,
-  GridPaginationModel,
 } from '@mui/x-data-grid';
 import * as React from 'react';
 
+import {
+  PagerContext,
+  getCurrentPageIndex,
+  getPageSize,
+  nextPageTokenUpdater,
+  prevPageTokenUpdater,
+  pageSizeUpdater,
+} from '@/common/components/params_pager';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+
 const UNKNOWN_ROW_COUNT = -1;
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 // This is done for proper typing
 // For more info refer to: https://mui.com/x/common-concepts/custom-components/#using-module-augmentation
@@ -48,19 +57,36 @@ export const DataTable = ({
   rows,
   nextPageToken,
   isLoading,
-  paginationModel,
-  onPaginationModelChange,
+  pagerCtx,
 }: {
   columns: GridColDef[];
   rows: { [key: string]: string }[];
   nextPageToken: string;
   isLoading: boolean;
-  paginationModel: GridPaginationModel;
-  onPaginationModelChange: (model: GridPaginationModel) => void;
+  pagerCtx: PagerContext;
 }) => {
   const apiRef = useGridApiRef();
   const [columnsButtonEl, setColumnsButtonEl] =
     React.useState<HTMLButtonElement | null>(null);
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const paginationModel = {
+    page: getCurrentPageIndex(pagerCtx),
+    pageSize: getPageSize(pagerCtx, searchParams),
+  };
+
+  const onPaginationModelChange = (newPaginationModel: GridPaginationModel) => {
+    const isPrevPage = newPaginationModel.page < paginationModel.page;
+    const isNextPage = newPaginationModel.page > paginationModel.page;
+
+    setSearchParams(pageSizeUpdater(pagerCtx, newPaginationModel.pageSize));
+
+    if (isPrevPage) {
+      setSearchParams(prevPageTokenUpdater(pagerCtx));
+    } else if (isNextPage) {
+      setSearchParams(nextPageTokenUpdater(pagerCtx, nextPageToken));
+    }
+  };
 
   // This is a way to autosize columns to fit its content,
   // TODO(vaghinak): call autosizeColumns when data is fetched from backend
@@ -114,7 +140,7 @@ export const DataTable = ({
       disableColumnMenu
       rowCount={isLastPage ? rowCount : UNKNOWN_ROW_COUNT}
       paginationMode="server"
-      pageSizeOptions={DEFAULT_PAGE_SIZE_OPTIONS}
+      pageSizeOptions={pagerCtx.options.pageSizeOptions}
       paginationMeta={{ hasNextPage: hasNextPage }}
       paginationModel={paginationModel}
       onPaginationModelChange={onPaginationModelChange}

@@ -13,9 +13,14 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import * as React from 'react';
 
+import {
+  getPageSize,
+  getPageToken,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   ListDevicesRequest,
   Device,
@@ -25,7 +30,8 @@ import { DataTable, generateColDefs } from '../data_table';
 
 import { BASE_DIMENSIONS } from './columns';
 
-const PAGE_SIZE = 25;
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
+const DEFAULT_PAGE_SIZE = 25;
 
 function processDeviceData({ devices }: { devices: readonly Device[] }): {
   columns: string[];
@@ -65,20 +71,18 @@ function processDeviceData({ devices }: { devices: readonly Device[] }): {
 }
 
 export function DeviceTable() {
-  const [nextPageTokens, setNextPageTokens] = React.useState<{
-    [page: number]: string;
-  }>({});
-  const [paginationModel, setPaginationModel] = React.useState({
-    page: 0,
-    pageSize: PAGE_SIZE,
+  const [searchParams] = useSyncedSearchParams();
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
+    defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
   const client = useFleetConsoleClient();
   const { data, isLoading, isError, error } = useQuery(
     client.ListDevices.query(
       ListDevicesRequest.fromPartial({
-        pageSize: paginationModel.pageSize,
-        pageToken: nextPageTokens[paginationModel.page - 1],
+        pageSize: getPageSize(pagerCtx, searchParams),
+        pageToken: getPageToken(pagerCtx, searchParams),
       }),
     ),
   );
@@ -90,21 +94,11 @@ export function DeviceTable() {
   const { devices = [], nextPageToken = '' } = data || {};
   const { columns, rows } = processDeviceData({ devices });
 
-  React.useEffect(() => {
-    if (nextPageToken) {
-      setNextPageTokens((prev) => ({
-        ...prev,
-        [paginationModel.page]: nextPageToken,
-      }));
-    }
-  }, [paginationModel.page, nextPageToken, setNextPageTokens]);
-
   return (
     <DataTable
       nextPageToken={nextPageToken}
       isLoading={isLoading}
-      paginationModel={paginationModel}
-      onPaginationModelChange={(model) => setPaginationModel(model)}
+      pagerCtx={pagerCtx}
       columns={generateColDefs(columns)}
       rows={rows}
     />

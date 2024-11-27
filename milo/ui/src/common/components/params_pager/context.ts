@@ -165,7 +165,9 @@ export function getPageSize(pagerCtx: PagerContext, params: URLSearchParams) {
 export function pageSizeUpdater(pagerCtx: PagerContext, newPageSize: number) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
-    if (newPageSize === pagerCtx.options.defaultPageSize) {
+    if (getPageSize(pagerCtx, searchParams) === newPageSize) {
+      // Page isn't changed, so do nothing.
+    } else if (newPageSize === pagerCtx.options.defaultPageSize) {
       searchParams.delete(pagerCtx.options.pageSizeKey);
     } else {
       searchParams.set(pagerCtx.options.pageSizeKey, String(newPageSize));
@@ -200,6 +202,10 @@ export function pageTokenUpdater(pagerCtx: PagerContext, newPageToken: string) {
   };
 }
 
+export function getCurrentPageIndex(pagerCtx: PagerContext) {
+  return pagerCtx[stateSymbol].pageTokens.length - 1;
+}
+
 /**
  * Returns an updater that sets the page token to empty. This will also cause
  * all the previous page tokens to be discarded.
@@ -210,4 +216,15 @@ export function pageTokenUpdater(pagerCtx: PagerContext, newPageToken: string) {
  */
 export function emptyPageTokenUpdater(pagerCtx: PagerContext) {
   return pageTokenUpdater(pagerCtx, '');
+}
+
+export function prevPageTokenUpdater(pagerCtx: PagerContext) {
+  return pageTokenUpdater(pagerCtx, getPrevPageToken(pagerCtx) || '');
+}
+
+export function nextPageTokenUpdater(
+  pagerCtx: PagerContext,
+  nextPageToken: string,
+) {
+  return pageTokenUpdater(pagerCtx, nextPageToken);
 }
