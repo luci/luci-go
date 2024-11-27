@@ -40,7 +40,7 @@ import (
 func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustNotExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.MustProjectSet(project): {refresher.ConfigFileName: prototext.Format(cfg)},
+		config.MustProjectSet(project): {prjcfg.ConfigFileName(ctx): prototext.Format(cfg)},
 	}))
 	err := refresher.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {
@@ -54,7 +54,7 @@ func Create(ctx context.Context, project string, cfg *cfgpb.Config) {
 func Update(ctx context.Context, project string, cfg *cfgpb.Config) {
 	MustExist(ctx, project)
 	ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-		config.MustProjectSet(project): {refresher.ConfigFileName: prototext.Format(cfg)},
+		config.MustProjectSet(project): {prjcfg.ConfigFileName(ctx): prototext.Format(cfg)},
 	}))
 	err := refresher.UpdateProject(ctx, project, func(context.Context) error { return nil })
 	if err != nil {

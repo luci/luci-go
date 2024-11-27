@@ -113,9 +113,10 @@ func TestUpdateProject(t *testing.T) {
 			},
 			HonorGerritLinkedAccounts: true,
 		}
+		configFileName := prjcfg.ConfigFileName(ctx)
 		verifyEntitiesInDatastore := func(ctx context.Context, expectedEVersion int64) {
 			cfg, meta := &cfgpb.Config{}, &config.Meta{}
-			err := cfgclient.Get(ctx, config.MustProjectSet("chromium"), ConfigFileName, cfgclient.ProtoText(cfg), meta)
+			err := cfgclient.Get(ctx, config.MustProjectSet("chromium"), configFileName, cfgclient.ProtoText(cfg), meta)
 			assert.NoErr(t, err)
 			localHash := prjcfg.MustComputeHash(cfg)
 			projKey := prjcfg.ProjectConfigKey(ctx, "chromium")
@@ -179,7 +180,7 @@ func TestUpdateProject(t *testing.T) {
 		t.Run("Creates new ProjectConfig", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 				config.MustProjectSet("chromium"): {
-					ConfigFileName: toProtoText(t, chromiumConfig),
+					configFileName: toProtoText(t, chromiumConfig),
 				},
 			}))
 			err := UpdateProject(ctx, "chromium", notify)
@@ -232,7 +233,7 @@ func TestUpdateProject(t *testing.T) {
 				})
 				ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 					config.MustProjectSet("chromium"): {
-						ConfigFileName: toProtoText(t, updatedConfig),
+						configFileName: toProtoText(t, updatedConfig),
 					},
 				}))
 				err := UpdateProject(ctx, "chromium", notify)
@@ -246,7 +247,7 @@ func TestUpdateProject(t *testing.T) {
 				t.Run("Roll back to previous version", func(t *ftt.Test) {
 					ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
 						config.MustProjectSet("chromium"): {
-							ConfigFileName: toProtoText(t, chromiumConfig),
+							configFileName: toProtoText(t, chromiumConfig),
 						},
 					}))
 

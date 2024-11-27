@@ -31,15 +31,12 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/validation"
 )
 
-// ConfigFileName is the filename of CV project configs.
-const ConfigFileName = "commit-queue.cfg"
-
 // projectsWithConfig returns all LUCI projects which have CV config.
-func projectsWithConfig(ctx context.Context) ([]string, error) {
-	projects, err := cfgclient.ProjectsWithConfig(ctx, ConfigFileName)
+func projectsWithConfig(ctx context.Context, configFileName string) ([]string, error) {
+	projects, err := cfgclient.ProjectsWithConfig(ctx, configFileName)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get projects with %q from LUCI Config",
-			ConfigFileName).Tag(transient.Tag).Err()
+			configFileName).Tag(transient.Tag).Err()
 	}
 	return projects, nil
 }
@@ -51,7 +48,8 @@ type NotifyCallback func(context.Context) error
 // UpdateProject imports the latest CV Config for a given LUCI Project
 // from LUCI Config if the config in CV is outdated.
 func UpdateProject(ctx context.Context, project string, notify NotifyCallback) error {
-	need, existingPC, err := needsUpdate(ctx, project)
+	configFileName := prjcfg.ConfigFileName(ctx)
+	need, existingPC, err := needsUpdate(ctx, project, configFileName)
 	switch {
 	case err != nil:
 		return err
@@ -59,7 +57,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 		return nil
 	}
 
-	cfg, meta, err := fetchCfg(ctx, project)
+	cfg, meta, err := fetchCfg(ctx, project, configFileName)
 	if err != nil {
 		return err
 	}
@@ -149,7 +147,7 @@ func UpdateProject(ctx context.Context, project string, notify NotifyCallback) e
 // needsUpdate checks if there is a new config version.
 //
 // Loads and returns the ProjectConfig stored in Datastore.
-func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfig, error) {
+func needsUpdate(ctx context.Context, project string, configFileName string) (bool, prjcfg.ProjectConfig, error) {
 	pc := prjcfg.ProjectConfig{Project: project}
 	var meta config.Meta
 	// NOTE: config metadata fetched here can't be used later to fetch actual
@@ -159,7 +157,7 @@ func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfi
 	if err != nil {
 		return false, pc, err
 	}
-	switch err := cfgclient.Get(ctx, ps, ConfigFileName, nil, &meta); {
+	switch err := cfgclient.Get(ctx, ps, configFileName, nil, &meta); {
 	case err != nil:
 		return false, pc, errors.Annotate(err, "failed to fetch meta from LUCI Config").Tag(transient.Tag).Err()
 	case meta.ContentHash == "":
@@ -189,7 +187,7 @@ func needsUpdate(ctx context.Context, project string) (bool, prjcfg.ProjectConfi
 }
 
 // fetchCfg a project config contents from luci-config.
-func fetchCfg(ctx context.Context, project string) (*cfgpb.Config, *config.Meta, error) {
+func fetchCfg(ctx context.Context, project string, configFileName string) (*cfgpb.Config, *config.Meta, error) {
 	meta := &config.Meta{}
 	ret := &cfgpb.Config{}
 	ps, err := config.ProjectSet(project)
@@ -199,7 +197,7 @@ func fetchCfg(ctx context.Context, project string) (*cfgpb.Config, *config.Meta,
 	err = cfgclient.Get(
 		ctx,
 		ps,
-		ConfigFileName,
+		configFileName,
 		cfgclient.ProtoText(ret),
 		meta,
 	)

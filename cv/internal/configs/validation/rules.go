@@ -35,7 +35,7 @@ func init() {
 // of the service after CQD is deleted.
 func addRules(r *validation.RuleSet) {
 	r.Vars.Register("cqCfgName", func(ctx context.Context) (string, error) {
-		if appID := info.AppID(ctx); strings.Contains(appID, "dev") {
+		if appID := info.AppID(ctx); strings.HasSuffix(appID, "dev") {
 			return "commit-queue-dev.cfg", nil
 		}
 		return "commit-queue.cfg", nil

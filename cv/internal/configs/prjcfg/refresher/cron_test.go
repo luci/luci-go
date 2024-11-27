@@ -48,9 +48,11 @@ func TestConfigRefreshCron(t *testing.T) {
 		qm := mockQM{}
 		pcr := NewRefresher(ct.TQDispatcher, &pm, &qm, ct.Env)
 
+		configFileName := prjcfg.ConfigFileName(ctx)
+
 		t.Run("for a new project", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.MustProjectSet("chromium"): {ConfigFileName: ""},
+				config.MustProjectSet("chromium"): {configFileName: ""},
 			}))
 			// Project chromium doesn't exist in datastore.
 			err := pcr.SubmitRefreshTasks(ctx)
@@ -65,7 +67,7 @@ func TestConfigRefreshCron(t *testing.T) {
 
 		t.Run("for an existing project", func(t *ftt.Test) {
 			ctx = cfgclient.Use(ctx, cfgmemory.New(map[config.Set]cfgmemory.Files{
-				config.MustProjectSet("chromium"): {ConfigFileName: ""},
+				config.MustProjectSet("chromium"): {configFileName: ""},
 			}))
 			assert.Loosely(t, datastore.Put(ctx, &prjcfg.ProjectConfig{
 				Project: "chromium",

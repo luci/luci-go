@@ -15,8 +15,12 @@
 package prjcfg
 
 import (
+	"context"
 	"fmt"
 	"net/url"
+	"strings"
+
+	"go.chromium.org/luci/gae/service/info"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
@@ -38,4 +42,12 @@ func GerritHost(cfg *cfgpb.ConfigGroup_Gerrit) string {
 	default:
 		return p.Hostname()
 	}
+}
+
+// ConfigFileName returns the project config file name used by LUCI CV.
+func ConfigFileName(ctx context.Context) string {
+	if appid := info.AppID(ctx); strings.HasSuffix(appid, "dev") {
+		return fmt.Sprintf("%s.cfg", appid)
+	}
+	return "commit-queue.cfg"
 }

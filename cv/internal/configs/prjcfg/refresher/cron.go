@@ -81,22 +81,9 @@ func NewRefresher(tqd *tq.Dispatcher, pm PM, qm QM, env *common.Env) *Refresher 
 //
 // It's expected to be called by a cron.
 func (r *Refresher) SubmitRefreshTasks(ctx context.Context) error {
-	projects, err := projectsWithConfig(ctx)
+	projects, err := projectsWithConfig(ctx, prjcfg.ConfigFileName(ctx))
 	if err != nil {
 		return err
-	}
-
-	// Consider only some projects, regardless of which projects are registered.
-	// TODO(crbug/1158505): switch to -dev configs.
-	if r.env.IsGAEDev {
-		projects = []string{"cq-test"}
-	} else {
-		for i, p := range projects {
-			if p == "cq-test" {
-				projects = append(projects[:i], projects[i+1:]...)
-				break
-			}
-		}
 	}
 
 	tasks := make([]*tq.Task, len(projects))
