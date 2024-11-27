@@ -19,6 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/errors"
 
@@ -208,7 +211,8 @@ func (ul *uiLogEntry) LegacyTryjobsByStatus() map[string][]*uiTryjob {
 	tjs := ul.runLog.GetTryjobsUpdated().GetTryjobs()
 	ret := make(map[string][]*uiTryjob, len(tjs))
 	for _, tj := range tjs {
-		k := strings.Title(strings.ToLower(tj.Status.String()))
+		caser := cases.Title(language.English)
+		k := caser.String(strings.ToLower(tj.Status.String()))
 		ret[k] = append(ret[k], &uiTryjob{
 			ExternalID: tryjob.ExternalID(tj.ExternalId),
 			Definition: tj.Definition,

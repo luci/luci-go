@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
@@ -76,7 +78,8 @@ func prepareTemplates(opts *server.Options, templatesPath string) *templates.Bun
 				return strings.Split(s, "/")
 			},
 			"Title": func(s string) string {
-				return strings.Title(strings.ToLower(strings.Replace(s, "_", " ", -1)))
+				caser := cases.Title(language.English)
+				return caser.String(strings.ToLower(strings.Replace(s, "_", " ", -1)))
 			},
 			// Shortens a cl id for display purposes.
 			// Accepts string or changelist.ExternalID.

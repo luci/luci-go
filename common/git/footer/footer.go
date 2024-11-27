@@ -18,6 +18,9 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
 )
@@ -34,8 +37,9 @@ var (
 // by `-`) to title case.
 func NormalizeKey(footerKey string) string {
 	segs := strings.Split(strings.TrimSpace(footerKey), "-")
+	caser := cases.Title(language.English)
 	for i, seg := range segs {
-		segs[i] = strings.Title(strings.ToLower(seg))
+		segs[i] = caser.String(strings.ToLower(seg))
 	}
 	return strings.Join(segs, "-")
 }

@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/strpair"
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -27,16 +26,16 @@ import (
 func TestNormalizeKey(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("NormalizeKey", t, func(t *ftt.Test) {
-		t.Run("Remove surrounding whitespace", func(t *ftt.Test) {
-			assert.Loosely(t, NormalizeKey("   R   "), should.Equal("R"))
+	t.Run("NormalizeKey", func(t *testing.T) {
+		t.Run("Remove surrounding whitespace", func(t *testing.T) {
+			assert.That(t, NormalizeKey("   R   "), should.Equal("R"))
 		})
 
-		t.Run("Convert key to title case", func(t *ftt.Test) {
-			assert.Loosely(t, NormalizeKey("BUG"), should.Equal("Bug"))
-			assert.Loosely(t, NormalizeKey("GIT-FOOTER"), should.Equal("Git-Footer"))
-			assert.Loosely(t, NormalizeKey("GiT-fOoTeR"), should.Equal("Git-Footer"))
-			assert.Loosely(t, NormalizeKey("123-_ABC"), should.Equal("123-_abc"))
+		t.Run("Convert key to title case", func(t *testing.T) {
+			assert.That(t, NormalizeKey("BUG"), should.Equal("Bug"))
+			assert.That(t, NormalizeKey("GIT-FOOTER"), should.Equal("Git-Footer"))
+			assert.That(t, NormalizeKey("GiT-fOoTeR"), should.Equal("Git-Footer"))
+			assert.That(t, NormalizeKey("123-x_ABC"), should.Equal("123-X_abc"))
 		})
 	})
 }
@@ -46,18 +45,18 @@ func TestParseLine(t *testing.T) {
 
 	parse := func(line, expectedKey, expectedValue string) {
 		actualKey, actualValue := ParseLine(line)
-		assert.Loosely(t, actualKey, should.Equal(expectedKey))
-		assert.Loosely(t, actualValue, should.Equal(expectedValue))
+		assert.That(t, actualKey, should.Equal(expectedKey))
+		assert.That(t, actualValue, should.Equal(expectedValue))
 	}
 
-	ftt.Run("ParseLine", t, func(t *ftt.Test) {
-		t.Run("Parse valid footer line", func(t *ftt.Test) {
+	t.Run("ParseLine", func(t *testing.T) {
+		t.Run("Parse valid footer line", func(t *testing.T) {
 			parse("GIT-FOOTER: 12345", "Git-Footer", "12345")
 			parse("GIT-FOOTER: here could be anything",
 				"Git-Footer", "here could be anything")
 			parse("    GIT-FOOTER:     whitespace     ", "Git-Footer", "whitespace")
 		})
-		t.Run("Parse invalid footer line", func(t *ftt.Test) {
+		t.Run("Parse invalid footer line", func(t *testing.T) {
 			parseInvalid := func(line string) {
 				parse(line, "", "")
 			}
@@ -74,37 +73,37 @@ func TestParseLine(t *testing.T) {
 func TestParseLines(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("ParseLines", t, func(t *ftt.Test) {
-		t.Run("Simple", func(t *ftt.Test) {
+	t.Run("ParseLines", func(t *testing.T) {
+		t.Run("Simple", func(t *testing.T) {
 			actual := ParseLines([]string{
 				"Git-Foo: foo",
 				"Git-Bar: bar",
 			})
-			assert.Loosely(t, actual, should.Resemble(strpair.ParseMap([]string{
+			assert.That(t, actual, should.Match(strpair.ParseMap([]string{
 				"Git-Foo:foo",
 				"Git-Bar:bar",
 			})))
 		})
-		t.Run("Omit malformed lines", func(t *ftt.Test) {
+		t.Run("Omit malformed lines", func(t *testing.T) {
 			actual := ParseLines([]string{
 				"Git-Foo: foo",
 				"Random string in the middle",
 				"Git-Bar: bar",
 				"Random string at the end",
 			})
-			assert.Loosely(t, actual, should.Resemble(strpair.ParseMap([]string{
+			assert.That(t, actual, should.Match(strpair.ParseMap([]string{
 				"Git-Foo:foo",
 				"Git-Bar:bar",
 			})))
 		})
 
-		t.Run("Honer footer ordering", func(t *ftt.Test) {
+		t.Run("Honer footer ordering", func(t *testing.T) {
 			actual := ParseLines([]string{
 				"Git-Footer:foo",
 				"Git-Footer:bar",
 				"Git-Footer:baz",
 			})
-			assert.Loosely(t, actual["Git-Footer"], should.Resemble([]string{"baz", "bar", "foo"}))
+			assert.That(t, actual["Git-Footer"], should.Match([]string{"baz", "bar", "foo"}))
 		})
 	})
 }
@@ -116,12 +115,12 @@ func TestSplitLines(t *testing.T) {
 		nonFooterLines, footerLines := SplitLines(message)
 		messageLines := strings.Split(message, "\n")
 
-		assert.Loosely(t, nonFooterLines, should.Resemble(messageLines[:splitLineNum]))
-		assert.Loosely(t, footerLines, should.Resemble(messageLines[splitLineNum:]))
+		assert.That(t, nonFooterLines, should.Match(messageLines[:splitLineNum]))
+		assert.That(t, footerLines, should.Match(messageLines[splitLineNum:]))
 	}
 
-	ftt.Run("SplitLines", t, func(t *ftt.Test) {
-		t.Run("Simple", func(t *ftt.Test) {
+	t.Run("SplitLines", func(t *testing.T) {
+		t.Run("Simple", func(t *testing.T) {
 			message := `commit message
 
 commit details...
@@ -131,7 +130,7 @@ Git-Footer: 23456`
 			assertSplitAt(message, 4)
 		})
 
-		t.Run("Include malformed lines in last paragraph", func(t *ftt.Test) {
+		t.Run("Include malformed lines in last paragraph", func(t *testing.T) {
 			message := `commit message
 
 commit details...
@@ -143,15 +142,15 @@ Random Stuff at the end`
 			assertSplitAt(message, 4)
 		})
 
-		t.Run("Does not split when whole message is footer", func(t *ftt.Test) {
+		t.Run("Does not split when whole message is footer", func(t *testing.T) {
 			message := `Git-Footer: 12345
 Git-Footer: 23456`
 			nonFooterLines, footerLines := SplitLines(message)
 			assert.Loosely(t, footerLines, should.BeNil)
-			assert.Loosely(t, nonFooterLines, should.Resemble(strings.Split(message, "\n")))
+			assert.That(t, nonFooterLines, should.Match(strings.Split(message, "\n")))
 		})
 
-		t.Run("Splits last paragraph when it starts with text", func(t *ftt.Test) {
+		t.Run("Splits last paragraph when it starts with text", func(t *testing.T) {
 			message := `commit message
 
 commit details...
@@ -162,13 +161,13 @@ Git-Footer: 23456`
 			nonFooterLines, footerLines := SplitLines(message)
 			messageLines := strings.Split(message, "\n")
 
-			assert.Loosely(t, footerLines, should.Resemble(messageLines[len(messageLines)-2:]))
+			assert.That(t, footerLines, should.Match(messageLines[len(messageLines)-2:]))
 			expectedNonFooterLines := append([]string(nil), messageLines[:len(messageLines)-2]...)
 			expectedNonFooterLines = append(expectedNonFooterLines, "")
-			assert.Loosely(t, nonFooterLines, should.Resemble(expectedNonFooterLines))
+			assert.That(t, nonFooterLines, should.Match(expectedNonFooterLines))
 		})
 
-		t.Run("Trims leading and trailing new lines", func(t *ftt.Test) {
+		t.Run("Trims leading and trailing new lines", func(t *testing.T) {
 			message := `
 
 commit message
@@ -178,8 +177,8 @@ Git-Footer: 12345
 
 `
 			nonFooterLines, footerLines := SplitLines(message)
-			assert.Loosely(t, nonFooterLines, should.Resemble([]string{"commit message", ""}))
-			assert.Loosely(t, footerLines, should.Resemble([]string{"Git-Footer: 12345"}))
+			assert.That(t, nonFooterLines, should.Match([]string{"commit message", ""}))
+			assert.That(t, footerLines, should.Match([]string{"Git-Footer: 12345"}))
 		})
 	})
 }
