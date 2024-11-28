@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+function isStringArray(x: unknown): x is string[] {
+  return Array.isArray(x) && x.every((element) => typeof element === 'string');
+}
+
 /**
  * Inspired by vscode fuzzy finding it requires that all the
  * characters in the query are present in the target in the same
@@ -77,33 +81,41 @@ export const fuzzySort =
    * @retuns all the item with at least the @param minScore sorted based on
    * @param scoringFunction
    */
-  <T>(
-    list: T[],
-    get?: T extends string ? undefined : (x: T) => string,
-  ): T[] => {
-    if (
-      list.some((element) => typeof element !== 'string') &&
-      get === undefined
-    ) {
-      throw Error(
-        'If the list is not of strings you need to provide a getter function',
-      );
-    }
-
+  <T>(list: T[], get?: (x: T) => string | string[]): T[] => {
     if (searchString.length === 0) {
       return list;
     }
 
-    const out = list
-      .map((s) => {
-        const string = get ? get(s) : (s as string);
-        return [s, scoringFunction(searchString, string)] as const;
-      })
+    if (
+      !isStringArray(list) &&
+      !list.every((e) => isStringArray(e)) &&
+      get === undefined
+    ) {
+      throw Error(
+        'If the list is not of type strings[] or string[][] you need to provide a getter function',
+      );
+    }
+    get ??= (s) => s as string;
+
+    const mapper: Record<string, T[]> = {};
+    for (const el of list) {
+      const getResoult = get(el);
+      if (!Array.isArray(getResoult)) {
+        mapper[getResoult] ??= [];
+        mapper[getResoult].push(el);
+        continue;
+      }
+      for (const s of getResoult) {
+        mapper[s] ??= [];
+        mapper[s].push(el);
+      }
+    }
+
+    return Object.keys(mapper)
+      .map((s) => [s, scoringFunction(searchString, s)] as const)
       .filter(([_, score]) => score >= minScore)
       .sort(([_, score1], [__, score2]) => score2 - score1)
-      .map(([s, _]) => s);
-
-    return out;
+      .flatMap(([el, _]) => mapper[el]);
   };
 
 export function hasAnyModifier(e: React.KeyboardEvent<HTMLDivElement>) {

@@ -64,5 +64,13 @@ describe('multi_select_filter/utils', () => {
       const result = fuzzySort(query, Infinity)(options);
       expect(result).toEqual([]);
     });
+
+    it('works with nested options', () => {
+      const options = [['abc', 'def'], ['ghi']];
+      const query = 'ab';
+
+      const result = fuzzySort(query)(options);
+      expect(result).toContain(options[0]);
+    });
   });
 });

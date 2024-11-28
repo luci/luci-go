@@ -15,6 +15,7 @@
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import SearchIcon from '@mui/icons-material/Search';
 import { MenuItem, TextField, Menu, Typography } from '@mui/material';
+import _ from 'lodash';
 import { useRef, useState } from 'react';
 
 import { OptionsDropdown } from './options_dropdown';
@@ -119,58 +120,66 @@ export function AddFilterDropdown({
           }}
         />
       </div>
-      {fuzzySort(searchQuery)(filterOptions, (x) => x.label).map(
-        (option, idx) => (
-          <MenuItem
-            onClick={(event) => {
-              // The onClick fires also when closing the menu
-              if (open === undefined) {
-                setOpen(idx);
-                setAnchorELInner(event.currentTarget);
-              }
-            }}
+      {_.uniqBy(
+        // It's possible to have duplicate results if the searchQuery matches
+        // multiple second level options of the same first level option
+        //
+        // I.E. {Status: [active, inactive]} with searchQuery='active'
+        fuzzySort(searchQuery)(filterOptions, (o) => [
+          o.label,
+          ...o.options.map((o) => o.label),
+        ]),
+        (o) => o.value,
+      ).map((option, idx) => (
+        <MenuItem
+          onClick={(event) => {
+            // The onClick fires also when closing the menu
+            if (open === undefined) {
+              setOpen(idx);
+              setAnchorELInner(event.currentTarget);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') {
+              e.currentTarget.click();
+            }
+          }}
+          key={`item-${option.value}-${idx}`}
+          disableRipple
+          selected={open === idx}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          <Typography variant="body2">{option.label}</Typography>
+          <ArrowRightIcon />
+          <OptionsDropdown
             onKeyDown={(e) => {
-              if (e.key === 'ArrowRight') {
-                e.currentTarget.click();
-              }
-            }}
-            key={`item-${option.value}-${idx}`}
-            disableRipple
-            selected={open === idx}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
-            <Typography variant="body2">{option.label}</Typography>
-            <ArrowRightIcon />
-            <OptionsDropdown
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowLeft') {
-                  setOpen(undefined);
-                  setAnchorELInner(null);
-                }
-              }}
-              onClose={(_, reason) => {
+              if (e.key === 'ArrowLeft') {
                 setOpen(undefined);
                 setAnchorELInner(null);
-                // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
-                // click is inside it
-                if (reason === 'backdropClick') {
-                  setAnchorEL(null);
-                }
-              }}
-              setSelectedOptions={setSelectedOptions}
-              selectedOptions={selectedOptions}
-              anchorEl={anchorElInner}
-              open={anchorElInner !== null && open === idx}
-              option={option}
-            />
-          </MenuItem>
-        ),
-      )}
+              }
+            }}
+            onClose={(_, reason) => {
+              setOpen(undefined);
+              setAnchorELInner(null);
+              // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
+              // click is inside it
+              if (reason === 'backdropClick') {
+                setAnchorEL(null);
+              }
+            }}
+            setSelectedOptions={setSelectedOptions}
+            selectedOptions={selectedOptions}
+            anchorEl={anchorElInner}
+            open={anchorElInner !== null && open === idx}
+            option={option}
+          />
+        </MenuItem>
+      ))}
     </Menu>
   );
 }

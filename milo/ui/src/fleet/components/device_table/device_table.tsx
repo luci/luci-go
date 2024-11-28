@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
+import { Alert } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
 import {
@@ -32,6 +34,17 @@ import { BASE_DIMENSIONS } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof GrpcError) {
+    if (error.code === 7) {
+      return 'You dont have permission to list devices';
+    }
+
+    return error.description;
+  }
+  return 'Unknown error';
+}
 
 function processDeviceData({ devices }: { devices: readonly Device[] }): {
   columns: string[];
@@ -87,20 +100,25 @@ export function DeviceTable() {
     ),
   );
 
-  if (isError) {
-    throw error;
-  }
-
   const { devices = [], nextPageToken = '' } = data || {};
   const { columns, rows } = processDeviceData({ devices });
 
   return (
-    <DataTable
-      nextPageToken={nextPageToken}
-      isLoading={isLoading}
-      pagerCtx={pagerCtx}
-      columns={generateColDefs(columns)}
-      rows={rows}
-    />
+    <>
+      {isError ? (
+        <Alert severity="error">
+          {' '}
+          Something went wrong: {getErrorMessage(error)}
+        </Alert>
+      ) : (
+        <DataTable
+          nextPageToken={nextPageToken}
+          isLoading={isLoading}
+          pagerCtx={pagerCtx}
+          columns={generateColDefs(columns)}
+          rows={rows}
+        />
+      )}
+    </>
   );
 }
