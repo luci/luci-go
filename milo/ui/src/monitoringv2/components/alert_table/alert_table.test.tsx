@@ -18,7 +18,7 @@ import { act } from 'react';
 import { configuredTrees } from '@/monitoringv2/util/config';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { testAlert, testAlert2 } from '../testing_tools/test_utils';
+import { testAlerts, testAlerts2 } from '../testing_tools/test_utils';
 
 import { AlertTable } from './alert_table';
 
@@ -26,23 +26,22 @@ describe('<AlertTable />', () => {
   it('displays an alert', async () => {
     render(
       <FakeContextProvider>
-        <AlertTable tree={configuredTrees[0]} alerts={[testAlert]} bugs={[]} />
+        <AlertTable tree={configuredTrees[0]} alerts={testAlerts} bugs={[]} />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
-    expect(screen.getByText('compile')).toBeInTheDocument();
   });
 
   it('expands an alert on click', async () => {
     render(
       <FakeContextProvider>
-        <AlertTable tree={configuredTrees[0]} alerts={[testAlert]} bugs={[]} />
+        <AlertTable tree={configuredTrees[0]} alerts={testAlerts} bugs={[]} />
       </FakeContextProvider>,
     );
-    expect(screen.getByText('compile')).toBeInTheDocument();
-    expect(screen.queryByText('test.Example')).toBeNull();
-    await act(() => fireEvent.click(screen.getByText('compile')));
-    expect(screen.getByText('test.Example')).toBeInTheDocument();
+    expect(screen.getByText('linux-rel')).toBeInTheDocument();
+    expect(screen.queryByText('Step:')).toBeNull();
+    await act(() => fireEvent.click(screen.getByText('linux-rel')));
+    expect(screen.getByText('Step:')).toBeInTheDocument();
   });
 
   it('sorts alerts on header click', async () => {
@@ -50,7 +49,7 @@ describe('<AlertTable />', () => {
       <FakeContextProvider>
         <AlertTable
           tree={configuredTrees[0]}
-          alerts={[testAlert, testAlert2]}
+          alerts={[...testAlerts, ...testAlerts2]}
           bugs={[]}
         />
       </FakeContextProvider>,
@@ -58,14 +57,14 @@ describe('<AlertTable />', () => {
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
     expect(screen.getByText('win-rel')).toBeInTheDocument();
     // Sort asc
-    await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+    await act(() => fireEvent.click(screen.getByText('Failure')));
     let linux = screen.getByText('linux-rel');
     let win = screen.getByText('win-rel');
     expect(linux.compareDocumentPosition(win)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     // Sort desc
-    await act(() => fireEvent.click(screen.getByText('Failed Builder')));
+    await act(() => fireEvent.click(screen.getByText('Failure')));
     linux = screen.getByText('linux-rel');
     win = screen.getByText('win-rel');
     expect(linux.compareDocumentPosition(win)).toBe(

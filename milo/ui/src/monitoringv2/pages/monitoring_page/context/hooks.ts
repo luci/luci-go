@@ -34,8 +34,13 @@ export function useAlerts() {
   }
 
   return {
+    // FIXME: remove alerts.
     alerts: context.alerts,
+    builderAlerts: context.builderAlerts,
+    stepAlerts: context.stepAlerts,
+    testAlerts: context.testAlerts,
     alertsLoading: context.alertsLoading,
+    alertsLoadingStatus: context.alertsLoadingStatus,
   };
 }
 

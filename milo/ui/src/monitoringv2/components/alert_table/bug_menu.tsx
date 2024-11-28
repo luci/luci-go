@@ -18,7 +18,7 @@ import { useState } from 'react';
 
 import { FileBugDialog } from '@/monitoringv2/components/file_bug_dialog/file_bug_dialog';
 import { useNotifyAlertsClient } from '@/monitoringv2/hooks/prpc_clients';
-import { AlertJson, Bug, TreeJson } from '@/monitoringv2/util/server_json';
+import { Bug, TreeJson } from '@/monitoringv2/util/server_json';
 import {
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
@@ -28,7 +28,7 @@ interface BugMenuProps {
   anchorEl: HTMLElement | null;
   onClose: () => void;
   tree: TreeJson;
-  alerts: AlertJson[];
+  alerts: string[];
   bugs: Bug[];
 }
 // TODO(b/319315200): Dialog to confirm multiple alert bug linking
@@ -44,20 +44,21 @@ export const BugMenu = ({
   const open = Boolean(anchorEl) && !linkBugOpen;
   const queryClient = useQueryClient();
 
-  const isLinkedToBugs = alerts.filter((a) => !!a.bug).length > 0;
+  // FIXME!
+  const isLinkedToBugs = false; // alerts.filter((a) => !!a.bug).length > 0;
 
   const client = useNotifyAlertsClient();
   const linkBugMutation = useMutation({
     mutationFn: (bug: string) => {
-      // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
           requests: alerts.map((a) => {
             return UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${encodeURIComponent(a.key)}`,
+                name: `alerts/${encodeURIComponent(a)}`,
                 bug: bug,
-                silenceUntil: a.silenceUntil,
+                // FIXME!
+                silenceUntil: '0', // a.silenceUntil,
               },
             });
           }),
@@ -65,6 +66,7 @@ export const BugMenu = ({
       );
     },
     onSuccess: () => queryClient.invalidateQueries(),
+    onSettled: () => onClose(),
   });
   return (
     <>
@@ -73,7 +75,7 @@ export const BugMenu = ({
           <MenuItem
             onClick={(e) => {
               e.stopPropagation();
-              linkBugMutation.mutateAsync('0').finally(() => onClose());
+              linkBugMutation.mutateAsync('0');
             }}
           >
             Unlink bug {alerts.length !== 1 && 'from all alerts'}
@@ -89,9 +91,7 @@ export const BugMenu = ({
             key={bug.link}
             onClick={(e) => {
               e.stopPropagation();
-              linkBugMutation
-                .mutateAsync(`${bug.number}`)
-                .finally(() => onClose());
+              linkBugMutation.mutateAsync(`${bug.number}`);
             }}
           >
             {bug.summary}

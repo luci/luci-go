@@ -14,6 +14,19 @@
 
 import { Tooltip, TooltipProps, styled, tooltipClasses } from '@mui/material';
 
+// TODO(weiweilin): posible optimization.  Delete this code if not needed.
+// export const HtmlTooltip = ({ children, ...props }: TooltipProps) => {
+//   const [render, setRender] = useState(false);
+//   return (
+//     <div onMouseEnter={() => !render && setRender(true)}>
+//       {!render && children}
+//       {render && (
+//         <HtmlTooltipComponent {...props}>{children}</HtmlTooltipComponent>
+//       )}
+//     </div>
+//   );
+// };
+
 export const HtmlTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip arrow {...props} classes={{ popper: className }} />
 ))(({ theme }) => ({

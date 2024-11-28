@@ -22,7 +22,7 @@ interface PrefillFilterIconProps {
 }
 
 /**
- * An AlertTable shows a list of alerts.  There are usually several on the page at once.
+ * An PrefillFilterIcon shows a search icon that sets the page filter to the given value when clicked.
  */
 export const PrefillFilterIcon = ({ filter }: PrefillFilterIconProps) => {
   const [_, updateFilter] = useFilterQuery();

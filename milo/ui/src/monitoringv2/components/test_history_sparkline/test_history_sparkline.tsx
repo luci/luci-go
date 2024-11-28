@@ -12,24 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LinearProgress } from '@mui/material';
 import Link from '@mui/material/Link';
-import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 
-import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { QueryTestHistoryRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
-import {
-  TestVerdict,
-  TestVerdictStatus,
-  testVerdictStatusToJSON,
-} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
-import { BatchGetTestVariantsRequest } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/resultdb.pb';
-import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
+import { OneTestHistory } from '@/monitoringv2/pages/monitoring_page/context/context';
+import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
+import { testVariantStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 
-const VERDICT_STATUS_CLASS_MAP: { [status: string]: string } = {
+const VARIANT_STATUS_CLASS_MAP: { [status: string]: string } = {
   [TestVerdictStatus.UNEXPECTED]: 'failure',
   [TestVerdictStatus.UNEXPECTEDLY_SKIPPED]: 'failure',
   [TestVerdictStatus.FLAKY]: 'started',
@@ -39,89 +31,56 @@ const VERDICT_STATUS_CLASS_MAP: { [status: string]: string } = {
 
 export interface TestHistorySparklineProps {
   project: string;
-  subRealm: string;
   testId: string;
   variantHash: string;
+  history: (OneTestHistory | undefined)[];
+  numHighlighted: number;
 }
 
 export const TestHistorySparkline = ({
   project,
-  subRealm,
   testId,
   variantHash,
+  history,
 }: TestHistorySparklineProps) => {
-  const client = useTestHistoryClient();
-  const req = QueryTestHistoryRequest.fromPartial({
-    predicate: {
-      subRealm,
-      variantPredicate: {
-        hashEquals: variantHash,
-      },
-    },
-    project,
-    pageSize: 10,
-    testId,
-  });
-  const { data, isError, error } = useQuery({
-    ...client.Query.query(req),
-  });
-  if (isError) {
-    return (
-      <HtmlTooltip
-        title={
-          <>
-            <div css={{ color: 'var(--failure-color)' }}>
-              Error loading test history
-            </div>
-            <div>{(error as Error).message}</div>
-          </>
-        }
-      >
-        <div css={{ color: 'var(--failure-color)' }}>error</div>
-      </HtmlTooltip>
-    );
-  }
-
   return (
     <div css={{ display: 'flex' }}>
-      {data?.verdicts.map((verdict) => (
+      {history.map((history, i) => (
         <HtmlTooltip
-          key={verdict.invocationId}
+          key={i}
           title={
             <>
               <div>
                 <span
                   css={{ fontWeight: '700' }}
-                  className={VERDICT_STATUS_CLASS_MAP[verdict.status] || ''}
+                  className={
+                    (history && VARIANT_STATUS_CLASS_MAP[status]) || ''
+                  }
                 >
-                  {testVerdictStatusToJSON(verdict.status)}
+                  {history?.status && testVariantStatusToJSON(history.status)}
                 </span>{' '}
-                {verdict.partitionTime ? (
+                {history?.startTime ? (
                   <RelativeTimestamp
-                    timestamp={DateTime.fromISO(verdict.partitionTime)}
+                    timestamp={DateTime.fromISO(history.startTime)}
                   />
                 ) : null}
               </div>
               <div>
-                {verdict.status !== TestVerdictStatus.EXPECTED ? (
-                  <FailureReasonDisplay
-                    invocationId={verdict.invocationId}
-                    testId={verdict.testId}
-                    variantHash={verdict.variantHash}
-                  />
-                ) : null}
+                <pre css={{ whiteSpace: 'pre-wrap' }}>
+                  {history?.failureReason}
+                </pre>
               </div>
             </>
           }
         >
           <Link
-            href={testVerdictLink(verdict)}
+            href={testVerdictLink(testId, history)}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className={`${VERDICT_STATUS_CLASS_MAP[verdict.status] || 'scheduled'}-bg-pattern`}
+              className={`${(history?.status && VARIANT_STATUS_CLASS_MAP[history.status]) || 'scheduled'}-bg-pattern`}
               css={{
                 width: '11px',
                 height: '18px',
@@ -132,7 +91,7 @@ export const TestHistorySparkline = ({
       ))}
       <HtmlTooltip title="View full test history">
         <Link
-          href={`/ui/test/${project}/${encodeURIComponent(testId)}?q=VHash%3A${variantHash}`}
+          href={`/ui/test/${project}/${encodeURIComponent(testId)}?q=VHash%3A${encodeURIComponent(variantHash)}`}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -156,53 +115,9 @@ export const TestHistorySparkline = ({
   );
 };
 
-const testVerdictLink = (verdict: TestVerdict): string => {
-  if (verdict.invocationId.startsWith('build-')) {
-    return `/ui/b/${verdict.invocationId.substring('build-'.length)}/test-results?q=ID%3A${encodeURIComponent(verdict.testId)}`;
-  }
-  return `/ui/inv/${verdict.invocationId}/test-results?q=ID%3A${encodeURIComponent(verdict.testId)}`;
-};
-
-interface FailureReasonDisplayProps {
-  invocationId: string;
-  testId: string;
-  variantHash: string;
-}
-const FailureReasonDisplay = ({
-  invocationId,
-  testId,
-  variantHash,
-}: FailureReasonDisplayProps) => {
-  const client = useResultDbClient();
-  const { data, error, isError, isLoading } = useQuery(
-    client.BatchGetTestVariants.query(
-      BatchGetTestVariantsRequest.fromPartial({
-        invocation: `invocations/${invocationId}`,
-        testVariants: [
-          {
-            testId,
-            variantHash,
-          },
-        ],
-      }),
-    ),
-  );
-  if (isLoading) {
-    return <LinearProgress />;
-  }
-  if (isError) {
-    return (
-      <div css={{ color: 'var(--failure-color)' }}>
-        {(error as Error).message}
-      </div>
-    );
-  }
-  const failureReason = data?.testVariants[0].results.find(
-    (r) => !r.result?.expected && r.result?.failureReason?.primaryErrorMessage,
-  )?.result?.failureReason?.primaryErrorMessage;
-
-  if (failureReason) {
-    return <pre css={{ whiteSpace: 'pre-wrap' }}>{failureReason}</pre>;
-  }
-  return null;
+const testVerdictLink = (
+  testId: string,
+  verdict: OneTestHistory | undefined,
+): string => {
+  return `/ui/b/${verdict?.buildId}/test-results?q=ID%3A${encodeURIComponent(testId)}`;
 };

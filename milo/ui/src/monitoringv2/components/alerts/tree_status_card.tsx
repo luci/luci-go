@@ -48,7 +48,6 @@ interface AlertGroupProps {
 export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
   const treeStatusClient = useTreeStatusClient();
   const statusQuery = useQuery({
-    // eslint-disable-next-line new-cap
     ...treeStatusClient.ListStatus.query(
       ListStatusRequest.fromPartial({
         parent: `trees/${tree.treeStatusName}/status`,
@@ -104,7 +103,7 @@ export const TreeStatusCard = ({ tree }: AlertGroupProps) => {
           sx={{ marginTop: '16px' }}
           size="small"
           component={Link}
-          to={`/ui/tree-status/${tree.treeStatusName}`}
+          to={`/ui/labs/tree-status/${tree.treeStatusName}`}
           target="_blank"
           variant="outlined"
         >

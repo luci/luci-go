@@ -48,11 +48,8 @@ const alert: AlertJson = {
 };
 
 describe('fileBugLink', () => {
-  it('contains alert title', () => {
-    expect(fileBugLink(configuredTrees[0], [alert])).toContain('title');
-  });
   it('contains LUCI Monitoring label', () => {
-    expect(fileBugLink(configuredTrees[0], [alert])).toContain(
+    expect(fileBugLink(configuredTrees[0], [alert.key])).toContain(
       'Filed-Via-LUCI-Monitoring',
     );
   });

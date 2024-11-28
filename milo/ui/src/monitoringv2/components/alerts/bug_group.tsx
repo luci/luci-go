@@ -24,18 +24,22 @@ import {
   Typography,
 } from '@mui/material';
 
-import { AlertJson, TreeJson, Bug } from '@/monitoringv2/util/server_json';
+import { TreeJson, Bug } from '@/monitoringv2/util/server_json';
 
 import { AlertTable } from '../../components/alert_table';
 
+import { StructuredAlert } from './alert_tabs';
+
 interface BugGroupProps {
   bug: Bug;
-  alerts: AlertJson[];
+  alerts: StructuredAlert[];
   tree: TreeJson;
   bugs: Bug[];
 }
-// A collapsible group of failures that are associated with a bug.
-// Similar to AlertGroup, but displays bug information as well.
+/**
+ * A collapsible group of failures that are associated with a bug.
+ * Similar to AlertGroup, but displays bug information as well.
+ */
 export const BugGroup = ({ bug, alerts, tree, bugs }: BugGroupProps) => {
   return (
     <>

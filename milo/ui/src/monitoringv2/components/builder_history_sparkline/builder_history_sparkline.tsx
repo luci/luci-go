@@ -13,73 +13,35 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 
 import { BUILD_STATUS_CLASS_MAP } from '@/build/constants';
-import { useBuildsClient } from '@/build/hooks/prpc_clients';
 import { SpecifiedStatus } from '@/build/types';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
+import { OneBuildHistory } from '@/monitoringv2/pages/monitoring_page/context/context';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
-import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
-import {
-  Status,
-  statusToJSON,
-} from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
-
-const FIELD_MASK = Object.freeze([
-  'builds.*.id',
-  'builds.*.status',
-  'builds.*.startTime',
-  'builds.*.summaryMarkdown',
-]);
+import { statusToJSON } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 
 export interface BuilderHistorySparklineProps {
   builderId: BuilderID;
+  history: OneBuildHistory[];
+  numHighlighted: number;
 }
 
 export const BuilderHistorySparkline = ({
   builderId,
+  history,
+  numHighlighted,
 }: BuilderHistorySparklineProps) => {
-  const client = useBuildsClient();
-  const req = SearchBuildsRequest.fromPartial({
-    predicate: {
-      builder: builderId,
-      includeExperimental: true,
-      status: Status.ENDED_MASK,
-    },
-    pageSize: 10,
-    fields: FIELD_MASK,
-  });
-  const { data, isError, error } = useQuery({
-    ...client.SearchBuilds.query(req),
-  });
-  if (isError) {
-    return (
-      <HtmlTooltip
-        title={
-          <>
-            <div css={{ color: 'var(--failure-color)' }}>
-              Error loading builder history
-            </div>
-            <div>{(error as Error).message}</div>
-          </>
-        }
-      >
-        <div css={{ color: 'var(--failure-color)' }}>error</div>
-      </HtmlTooltip>
-    );
-  }
-
   return (
     <div css={{ display: 'flex' }}>
-      {data?.builds.map((build) => (
+      {history.map((build, i) => (
         <HtmlTooltip
-          key={build.id}
+          key={build.buildId}
           title={
             <>
               <div>
@@ -90,7 +52,9 @@ export const BuilderHistorySparkline = ({
                     ''
                   }
                 >
-                  {statusToJSON(build.status)}
+                  {build.status === undefined // This can be undefined if the step didn't execute in this build.
+                    ? 'NOT RUN'
+                    : statusToJSON(build.status)}
                 </span>{' '}
                 {build.startTime ? (
                   <RelativeTimestamp
@@ -103,17 +67,18 @@ export const BuilderHistorySparkline = ({
           }
         >
           <Link
-            href={`/ui/b/${build.id}`}
+            href={`/ui/b/${build.buildId}`}
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              key={build.id}
+              key={build.buildId}
               className={`${BUILD_STATUS_CLASS_MAP[build.status as SpecifiedStatus]}-bg-pattern`}
               css={{
                 width: '11px',
                 height: '18px',
+                opacity: i < numHighlighted ? 1 : 0.5,
               }}
             ></div>
           </Link>

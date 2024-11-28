@@ -75,10 +75,9 @@ describe('<Alerts />', () => {
       </FakeContextProvider>,
     );
     expect(
-      screen.getByText(
-        'There are currently no alerts associated with bugs',
-        { exact: false },
-      ),
+      screen.getByText('There are currently no alerts associated with bugs', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
   });
 

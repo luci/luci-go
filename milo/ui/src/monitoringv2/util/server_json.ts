@@ -14,6 +14,7 @@
 
 import { IssueJson } from '@/common/hooks/gapi_query/corp_issuetracker';
 import { TestCulprit } from '@/proto/go.chromium.org/luci/bisection/proto/v1/analyses.pb';
+import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 
 export type TreesJson = TreeJson[];
 
@@ -244,4 +245,8 @@ export const bugFromId = (bug: string): Bug => {
 // Extract a build ID from a URL, because the int64 build IDs are rounded by JS floating point conversion.
 export const buildIdFromUrl = (url: string | undefined): string | undefined => {
   return url ? /b([0-9]+)$/.exec(url)?.[1] : undefined;
+};
+
+export const builderPath = (id: BuilderID): string => {
+  return `${id.project}/${id.bucket}/${id.builder}`;
 };

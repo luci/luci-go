@@ -22,21 +22,25 @@ import {
   Typography,
 } from '@mui/material';
 
-import { AlertJson, TreeJson, Bug } from '@/monitoringv2/util/server_json';
+import { TreeJson, Bug } from '@/monitoringv2/util/server_json';
 
 import { AlertTable } from '../../components/alert_table';
 
+import { StructuredAlert } from './alert_tabs';
+
 interface AlertGroupProps {
   tree: TreeJson;
-  alerts: AlertJson[];
+  alerts: StructuredAlert[];
   hiddenAlertsCount: number;
   groupName: string;
   groupDescription: string;
   defaultExpanded: boolean;
   bugs: Bug[];
 }
-// A collapsible group of alerts like 'consistent failures' or 'new failures'.
-// Similar to BugGroup, but is never associated with a bug.
+/**
+ * A collapsible group of alerts like 'consistent failures' or 'new failures'.
+ * Similar to BugGroup, but is never associated with a bug.
+ */
 export const AlertGroup = ({
   tree,
   alerts,

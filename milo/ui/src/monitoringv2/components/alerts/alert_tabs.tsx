@@ -20,16 +20,24 @@ import {
   Link,
   Tab,
   Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   useAlerts,
   useBugs,
   useTree,
 } from '@/monitoringv2/pages/monitoring_page/context';
-import { AlertJson } from '@/monitoringv2/util/server_json';
+import {
+  GenericAlert,
+  BuilderAlert,
+  StepAlert,
+  TestAlert,
+  AlertKind,
+} from '@/monitoringv2/pages/monitoring_page/context/context';
 
 import { AlertGroup } from './alert_group';
 import { BugGroup } from './bug_group';
@@ -37,10 +45,18 @@ import { DEFAULT_ALERT_TAB, useFilterQuery, useSelectedTab } from './hooks';
 
 export function AlertTabs() {
   const [filter] = useFilterQuery('');
-  const { alerts, alertsLoading } = useAlerts();
+  const {
+    alerts,
+    builderAlerts,
+    stepAlerts,
+    testAlerts,
+    alertsLoading,
+    alertsLoadingStatus,
+  } = useAlerts();
   const { bugs, bugsLoading, bugsError, isBugsError } = useBugs();
   const tree = useTree();
   const [selectedTab, setSelectedTab] = useSelectedTab();
+  const [organizeBy, setOrganizeBy] = useState('builder' as AlertKind);
 
   // This should be only called once to select the default tab.
   useEffect(() => {
@@ -53,8 +69,14 @@ export function AlertTabs() {
     return <></>;
   }
 
-  const filtered = filterAlerts(alerts || [], filter);
-  const unfilteredCategories = categorizeAlerts(alerts || []);
+  const organizedAlerts = organizeAlerts(
+    organizeBy,
+    builderAlerts,
+    stepAlerts,
+    testAlerts,
+  );
+  const filtered = filterAlerts(organizedAlerts, filter);
+  const unfilteredCategories = categorizeAlerts(organizedAlerts || []);
   const categories = categorizeAlerts(filtered);
 
   const bugsWithAlerts =
@@ -72,7 +94,12 @@ export function AlertTabs() {
   }
 
   if (alertsLoading) {
-    return <CircularProgress />;
+    return (
+      <>
+        <CircularProgress />
+        <Typography>{alertsLoadingStatus}</Typography>
+      </>
+    );
   }
 
   return (
@@ -88,27 +115,38 @@ export function AlertTabs() {
         </Tabs>
       </Box>
       <TabPanel value="untriaged">
+        <label htmlFor="organizeByGroup">Organize By: </label>
+        <ToggleButtonGroup
+          id="organizeByGroup"
+          exclusive
+          value={organizeBy}
+          onChange={(_, v) => setOrganizeBy(v)}
+        >
+          <ToggleButton value="builder">Builder</ToggleButton>
+          <ToggleButton value="step">Step</ToggleButton>
+          <ToggleButton value="test">Test</ToggleButton>
+        </ToggleButtonGroup>
         <AlertGroup
-          groupName={'Untriaged Consistent Failures'}
+          groupName={'Consistent Failures'}
           alerts={categories.consistentFailures}
           hiddenAlertsCount={
             unfilteredCategories.consistentFailures.length -
             categories.consistentFailures.length
           }
           tree={tree}
-          groupDescription="Failures that have occurred at least 2 times in a row and are not linked with a bug"
+          groupDescription="Failures that have occurred at least 2 times in a row"
           defaultExpanded={true}
           bugs={bugs || []}
         />
         <AlertGroup
-          groupName={'Untriaged New Failures'}
+          groupName={'New Failures'}
           alerts={categories.newFailures}
           hiddenAlertsCount={
             unfilteredCategories.consistentFailures.length -
             categories.newFailures.length
           }
           tree={tree}
-          groupDescription="Failures that have only been seen once and are not linked with a bug"
+          groupDescription="Failures that have only been seen once"
           defaultExpanded={false}
           bugs={bugs || []}
         />
@@ -199,38 +237,98 @@ export function AlertTabs() {
   );
 }
 
+export interface StructuredAlert {
+  alert: GenericAlert;
+  children: StructuredAlert[];
+  consecutiveFailures: number;
+  consecutivePasses: number;
+}
+
+// exported for testing only.
+export const organizeAlerts = (
+  kind: AlertKind,
+  builderAlerts: BuilderAlert[],
+  stepAlerts: StepAlert[],
+  testAlerts: TestAlert[],
+): StructuredAlert[] => {
+  if (kind === 'builder') {
+    return organizeRelatedAlerts([builderAlerts, stepAlerts, testAlerts]);
+  } else if (kind === 'step') {
+    return organizeRelatedAlerts([stepAlerts, builderAlerts, testAlerts]);
+  } else if (kind === 'test') {
+    return organizeRelatedAlerts([testAlerts, stepAlerts, builderAlerts]);
+  }
+  return [];
+};
+
+const organizeRelatedAlerts = (
+  alertGroups: GenericAlert[][],
+): StructuredAlert[] => {
+  if (alertGroups.length === 0) {
+    // Should never happen.
+    return [];
+  }
+  const alerts = alertGroups[0].map(makeStructuredAlert);
+  if (alertGroups.length > 1) {
+    alerts.forEach((alert) => {
+      alert.children = sortAlertsByFailurePattern(
+        organizeRelatedAlerts([
+          alertGroups[1].filter((a) => isAlertRelated(a, alert.alert)),
+          ...alertGroups.slice(2),
+        ]),
+        alert.consecutiveFailures,
+      );
+    });
+  }
+  return alerts;
+};
+
+const isAlertRelated = (a: GenericAlert, b: GenericAlert): boolean => {
+  return a.key.startsWith(b.key) || b.key.startsWith(a.key);
+};
+
+const makeStructuredAlert = (alert: GenericAlert): StructuredAlert => {
+  return {
+    alert,
+    children: [],
+    consecutiveFailures: alert.consecutiveFailures,
+    consecutivePasses: alert.consecutivePasses,
+  };
+};
+
+const sortAlertsByFailurePattern = (
+  alerts: StructuredAlert[],
+  parentConsecutiveFailures: number,
+): StructuredAlert[] => {
+  return alerts.sort((a, b) => {
+    const af = Math.abs(parentConsecutiveFailures - a.consecutiveFailures);
+    const bf = Math.abs(parentConsecutiveFailures - b.consecutiveFailures);
+    return af === bf
+      ? af === 0
+        ? a.consecutivePasses - b.consecutivePasses
+        : a.alert.key.localeCompare(b.alert.key)
+      : af - bf;
+  });
+};
+
 interface CategorizedAlerts {
   // Alerts not associated with a bug that have occurred in more than one consecutive build.
-  consistentFailures: AlertJson[];
+  consistentFailures: StructuredAlert[];
   // Alerts not associated with bugs that have only happened once.
-  newFailures: AlertJson[];
-  // All the alerts assoctiated with each bug.
-  bugAlerts: { [bug: string]: AlertJson[] };
+  newFailures: StructuredAlert[];
+  bugAlerts: { [bug: string]: StructuredAlert[] };
 }
 
 // Sort alerts into categories - one for each bug, and the leftovers into
 // either consistent (multiple failures) or new (a single failure).
-const categorizeAlerts = (alerts: AlertJson[]): CategorizedAlerts => {
+const categorizeAlerts = (alerts: StructuredAlert[]): CategorizedAlerts => {
   const categories: CategorizedAlerts = {
     consistentFailures: [],
     newFailures: [],
     bugAlerts: {},
   };
   for (const alert of alerts) {
-    if (alert.bug) {
-      categories.bugAlerts[alert.bug] = categories.bugAlerts[alert.bug] || [];
-      categories.bugAlerts[alert.bug].push(alert);
-      continue;
-    }
-    const builder = alert.extension?.builders?.[0];
-    const failureCount =
-      builder && builder.first_failure_build_number === 0
-        ? undefined
-        : builder.latest_failure_build_number -
-          builder.first_failure_build_number +
-          1;
-    const isNewFailure = failureCount === 1;
-    if (isNewFailure) {
+    if (alert.consecutiveFailures <= 1) {
       categories.newFailures.push(alert);
     } else {
       categories.consistentFailures.push(alert);
@@ -241,26 +339,19 @@ const categorizeAlerts = (alerts: AlertJson[]): CategorizedAlerts => {
 
 // filterAlerts returns the alerts that match the given filter string typed by the user.
 // alerts can match in step name, builder name, test id, or whatever else is useful to users.
-const filterAlerts = (alerts: AlertJson[], filter: string): AlertJson[] => {
+const filterAlerts = (
+  alerts: StructuredAlert[],
+  filter: string,
+): StructuredAlert[] => {
   if (filter === '') {
     return alerts;
   }
   const re = new RegExp(filter, 'i');
   return alerts.filter((alert) => {
-    if (
-      alert.extension.builders.filter(
-        (b) => re.test(b.bucket) || re.test(b.builder_group) || re.test(b.name),
-      ).length > 0
-    ) {
+    const b = alert.alert.builderID;
+    if (re.test(b.bucket) || re.test(b.builder)) {
       return true;
     }
-    if (
-      alert.extension.reason?.tests?.filter(
-        (t) => re.test(t.test_id) || re.test(t.test_id),
-      ).length > 0
-    ) {
-      return true;
-    }
-    return re.test(alert.title) || re.test(alert.extension.reason?.step);
+    return filterAlerts(alert.children, filter).length > 0;
   });
 };

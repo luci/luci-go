@@ -30,53 +30,55 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 
 import { useNotifyAlertsClient } from '@/monitoringv2/hooks/prpc_clients';
-import {
-  AlertJson,
-  TreeJson,
-  Bug,
-  buildIdFromUrl,
-} from '@/monitoringv2/util/server_json';
+import { GenericAlert } from '@/monitoringv2/pages/monitoring_page/context/context';
+import { TreeJson, Bug } from '@/monitoringv2/util/server_json';
 import {
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
 } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
 
-import { AlertDetailsRow } from './alert_details';
+import { StructuredAlert } from '../alerts/alert_tabs';
+
 import { BugMenu } from './bug_menu';
-import { AlertSummaryRow } from './summary_row';
+import { BuildAlertRow } from './build_alert_row';
+import { TestAlertRow } from './test_alert_row';
 
 interface AlertTableProps {
   tree: TreeJson;
-  alerts: AlertJson[];
+  alerts: StructuredAlert[];
   bug?: Bug;
   bugs: Bug[];
 }
 
-// An AlertTable shows a list of alerts.  There are usually several on the page at once.
-export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
+type SortColumn = 'failure' | 'history';
+
+/**
+ * An AlertTable shows a list of alerts.  There are usually several on the page at once.
+ */
+export const AlertTable = ({ tree, alerts, bugs }: AlertTableProps) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string | undefined>(undefined);
+  const [sortColumn, setSortColumn] = useState<SortColumn | undefined>(
+    undefined,
+  );
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const latestBuild = (alert: AlertJson): string | undefined => {
-    // We have to use the URL instead of the 'latest_failure', because the int64 is rounded by JS.
-    return buildIdFromUrl(alert.extension.builders?.[0].latest_failure_url);
-  };
   const queryClient = useQueryClient();
   const client = useNotifyAlertsClient();
   const silenceAllMutation = useMutation({
-    mutationFn: (alerts: AlertJson[]) => {
+    mutationFn: (alerts: StructuredAlert[]) => {
+      /* FIXME! do step and test alerts too. */
       // eslint-disable-next-line new-cap
       return client.BatchUpdateAlerts(
         BatchUpdateAlertsRequest.fromPartial({
           requests: alerts.map((a) =>
             UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${encodeURIComponent(a.key)}`,
-                bug: a.bug || '0',
-                silenceUntil: `${latestBuild(a) || 0}`,
+                name: `alerts/${encodeURIComponent(a.alert.key)}`,
+                // FIXME!
+                bug: '0', // a.bug || '0',
+                silenceUntil: `${a.alert.history[0].buildId || 0}`,
               },
             }),
           ),
@@ -89,13 +91,16 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
     return null;
   }
   const toggleExpandAll = () => {
-    setExpanded(Object.fromEntries(alerts.map((a) => [a.key, !expandAll])));
+    setExpanded(
+      Object.fromEntries(alerts.map((a) => [a.alert.key, !expandAll])),
+    );
     setExpandAll(!expandAll);
   };
-  const isSilenced = (alert: AlertJson): boolean => {
-    return (latestBuild(alert) || '') === alert.silenceUntil;
+  const isSilenced = (_alert: StructuredAlert): boolean => {
+    // FIXME!
+    return false; // (latestBuild(alert) || '') === alert.silenceUntil;
   };
-  const sortAlerts = (alerts: AlertJson[]): AlertJson[] => {
+  const sortAlerts = (alerts: StructuredAlert[]): StructuredAlert[] => {
     if (!sortColumn) {
       return alerts;
     }
@@ -111,10 +116,10 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
   };
   const sortedAlerts = [
     ...sortAlerts(alerts.filter((a) => !isSilenced(a))),
-    ...sortAlerts(alerts.filter(isSilenced)),
+    ...sortAlerts(alerts.filter((a) => isSilenced(a))),
   ];
 
-  const clickSortColumn = (column: string) => {
+  const clickSortColumn = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -134,41 +139,24 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
           </TableCell>
           <TableCell>
             <TableSortLabel
-              active={sortColumn === 'failed_builder'}
-              onClick={() => clickSortColumn('failed_builder')}
+              active={sortColumn === 'failure'}
+              onClick={() => clickSortColumn('failure')}
               direction={sortDirection}
             >
-              Failed Builder
-            </TableSortLabel>
-          </TableCell>
-          <TableCell>Builder History</TableCell>
-          <TableCell>
-            <TableSortLabel
-              active={sortColumn === 'failed_step'}
-              onClick={() => clickSortColumn('failed_step')}
-              direction={sortDirection}
-            >
-              Failed Step
+              Failure
             </TableSortLabel>
           </TableCell>
           <TableCell>
             <TableSortLabel
-              active={sortColumn === 'failed_builds'}
-              onClick={() => clickSortColumn('failed_builds')}
+              active={sortColumn === 'history'}
+              onClick={() => clickSortColumn('history')}
               direction={sortDirection}
             >
-              Failed Builds
+              History
             </TableSortLabel>
           </TableCell>
-          <TableCell>
-            <TableSortLabel
-              active={sortColumn === 'blamelist'}
-              onClick={() => clickSortColumn('blamelist')}
-              direction={sortDirection}
-            >
-              Blamelist
-            </TableSortLabel>
-          </TableCell>
+          <TableCell>First Failure</TableCell>
+          <TableCell>Blamelist</TableCell>
           <TableCell>
             <div css={{ display: 'flex' }}>
               <Tooltip title="Link bug to all displayed alerts">
@@ -179,7 +167,11 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
               <BugMenu
                 anchorEl={menuAnchorEl}
                 onClose={() => setMenuAnchorEl(null)}
-                alerts={alerts}
+                alerts={
+                  alerts.map(
+                    (a) => a.alert.key,
+                  ) /* FIXME: need step and test alerts too */
+                }
                 tree={tree}
                 bugs={bugs}
               />
@@ -193,75 +185,93 @@ export const AlertTable = ({ tree, alerts, bug, bugs }: AlertTableProps) => {
         </TableRow>
       </TableHead>
       <TableBody>
-        {sortedAlerts.map((alert) => {
-          // There should only be one builder, but we iterate the builders just in case.
-          // It will result in some UI weirdness if there are ever more than one builder, but better
-          // than not showing data.
-          return (
-            <Fragment key={alert.key}>
-              {alert.extension.builders.map((builder) => {
-                return (
-                  <Fragment key={builder.name}>
-                    <AlertSummaryRow
-                      alert={alert}
-                      builder={builder}
-                      expanded={expanded[alert.key]}
-                      onExpand={() => {
-                        const copy = { ...expanded };
-                        copy[alert.key] = !copy[alert.key];
-                        setExpanded(copy);
-                      }}
-                      tree={tree}
-                      bugs={bugs}
-                    />
-                    {expanded[alert.key] && (
-                      <AlertDetailsRow
-                        tree={tree}
-                        alert={alert}
-                        bug={bug}
-                        key={alert.key + builder.name}
-                      />
-                    )}
-                  </Fragment>
-                );
-              })}
-            </Fragment>
-          );
-        })}
+        <AlertRows
+          alerts={sortedAlerts}
+          indent={0}
+          bugs={bugs}
+          tree={tree}
+          expanded={expanded}
+          setExpanded={setExpanded}
+        />
       </TableBody>
     </Table>
   );
 };
 
-const sortValue = (alert: AlertJson, sortColumn: string): number | string => {
-  const builder = alert.extension.builders?.[0];
-  switch (sortColumn) {
-    case 'failed_builder':
-      return builder?.name || '';
-    case 'failed_step':
-      return stepRe.exec(alert.title)?.[1] || '';
-    case 'failed_builds':
-      return builder.first_failure_build_number === 0
-        ? -1
-        : builder.latest_failure_build_number -
-            builder.first_failure_build_number +
-            1;
-    case 'blamelist':
-      if (
-        builder.first_failing_rev?.commit_position &&
-        builder.last_passing_rev?.commit_position
-      ) {
+interface AlertRowsProps {
+  alerts: StructuredAlert[];
+  parentAlert?: GenericAlert;
+  indent: number;
+  bugs: Bug[];
+  tree: TreeJson;
+  expanded: { [alertPath: string]: boolean };
+  setExpanded: (value: { [alertPath: string]: boolean }) => void;
+}
+const AlertRows = ({
+  alerts,
+  parentAlert,
+  indent,
+  bugs,
+  tree,
+  expanded,
+  setExpanded,
+}: AlertRowsProps) => {
+  return (
+    <>
+      {alerts.map((alert) => {
+        const path = alert.alert.key;
         return (
-          builder.first_failing_rev?.commit_position -
-          builder.last_passing_rev?.commit_position
+          <Fragment key={path}>
+            {alert.alert.kind === 'test' ? (
+              <TestAlertRow
+                bugs={bugs}
+                tree={tree}
+                alert={alert}
+                expanded={expanded[path]}
+                onExpand={() =>
+                  setExpanded({ ...expanded, [path]: !expanded[path] })
+                }
+                parentAlert={parentAlert}
+                indent={indent}
+              />
+            ) : (
+              <BuildAlertRow
+                alert={alert}
+                parentAlert={parentAlert}
+                expanded={expanded[path]}
+                onExpand={() =>
+                  setExpanded({ ...expanded, [path]: !expanded[path] })
+                }
+                indent={indent}
+                tree={tree}
+                bugs={bugs}
+              />
+            )}
+            {expanded[path] && (
+              <AlertRows
+                alerts={alert.children}
+                parentAlert={alert.alert}
+                indent={indent + 1}
+                bugs={bugs}
+                tree={tree}
+                expanded={expanded}
+                setExpanded={setExpanded}
+              />
+            )}
+          </Fragment>
         );
-      } else {
-        return -1;
-      }
-    default:
-      return 0;
-  }
+      })}
+    </>
+  );
 };
 
-// stepRE extracts the step name from an alert title.
-const stepRe = /Step "([^"]*)/;
+const sortValue = (a: StructuredAlert, column: SortColumn): string | number => {
+  switch (column) {
+    case 'failure':
+      return a.alert.key;
+    case 'history':
+      return a.alert.consecutiveFailures;
+    default:
+      throw new Error(`Unknown sort column: ${column}`);
+  }
+};

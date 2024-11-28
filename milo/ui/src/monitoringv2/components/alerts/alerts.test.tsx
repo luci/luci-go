@@ -43,6 +43,9 @@ describe('<Alerts />', () => {
             alerts: [],
             bugs: [],
             tree: configuredTrees[0],
+            builderAlerts: [],
+            stepAlerts: [],
+            testAlerts: [],
           }}
         >
           <Alerts />
@@ -50,10 +53,8 @@ describe('<Alerts />', () => {
       </FakeContextProvider>,
     );
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
-    expect(
-      screen.getByText('Untriaged Consistent Failures'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Untriaged New Failures')).toBeInTheDocument();
+    expect(screen.getByText('Consistent Failures')).toBeInTheDocument();
+    expect(screen.getByText('New Failures')).toBeInTheDocument();
   });
 
   it('displays no bugs mesage', async () => {
@@ -68,6 +69,9 @@ describe('<Alerts />', () => {
             alerts: [],
             bugs: [],
             tree: configuredTrees[0],
+            builderAlerts: [],
+            stepAlerts: [],
+            testAlerts: [],
           }}
         >
           <Alerts />
@@ -75,10 +79,9 @@ describe('<Alerts />', () => {
       </FakeContextProvider>,
     );
     expect(
-      screen.getByText(
-        'There are currently no alerts associated with bugs',
-        { exact: false },
-      ),
+      screen.getByText('There are currently no alerts associated with bugs', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -94,6 +97,9 @@ describe('<Alerts />', () => {
             alerts: [],
             bugs: [hotlistBug],
             tree: configuredTrees[0],
+            builderAlerts: [],
+            stepAlerts: [],
+            testAlerts: [],
           }}
         >
           <Alerts />
@@ -116,6 +122,9 @@ describe('<Alerts />', () => {
             alerts: [],
             bugs: [hotlistBug],
             tree: configuredTrees[0],
+            builderAlerts: [],
+            stepAlerts: [],
+            testAlerts: [],
           }}
         >
           <Alerts />

@@ -28,7 +28,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { useNotifyAlertsClient } from '@/monitoringv2/hooks/prpc_clients';
-import { AlertJson, TreeJson } from '@/monitoringv2/util/server_json';
+import { TreeJson } from '@/monitoringv2/util/server_json';
 import {
   BatchUpdateAlertsRequest,
   UpdateAlertRequest,
@@ -37,7 +37,7 @@ import {
 import { fileBugLink } from './file_bug_link';
 
 interface FileBugDialogProps {
-  alerts: AlertJson[];
+  alerts: string[];
   tree: TreeJson;
   open: boolean;
   onClose: () => void;
@@ -60,9 +60,10 @@ export const FileBugDialog = ({
           requests: alerts.map((a) => {
             return UpdateAlertRequest.fromPartial({
               alert: {
-                name: `alerts/${encodeURIComponent(a.key)}`,
+                name: `alerts/${encodeURIComponent(a)}`,
                 bug: bug,
-                silenceUntil: a.silenceUntil,
+                // FIXME!
+                silenceUntil: '0', // a.silenceUntil,
               },
             });
           }),

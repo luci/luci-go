@@ -93,11 +93,11 @@ const Link = forwardRef<HTMLAnchorElement, RouterLinkProps>(
 
 export function Component() {
   return (
-    <TrackLeafRoutePageView contentGroup="monitoring">
+    <TrackLeafRoutePageView contentGroup="monitoring-v2">
       <RecoverableErrorBoundary
-        // See the documentation in `<LoginPage />` to learn why we handle error
-        // this way.
-        key="monitoring"
+        // See the documentation for `<LoginPage />` for why we handle error this
+        // way.
+        key="monitoring-page-v2"
       >
         <MonitoringPage />
       </RecoverableErrorBoundary>
