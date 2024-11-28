@@ -1,0 +1,29 @@
+indexes:
+
+- kind: AuthDBChange
+  ancestor: yes
+  properties:
+  - name: target
+  - name: __key__
+    direction: desc
+
+- kind: AuthDBChange
+  ancestor: yes
+  properties:
+  - name: __key__
+    direction: desc
+
+### Required for Auth Service v2 validation.
+
+- kind: V2AuthDBChange
+  ancestor: yes
+  properties:
+  - name: target
+  - name: __key__
+    direction: desc
+
+- kind: V2AuthDBChange
+  ancestor: yes
+  properties:
+  - name: __key__
+    direction: desc
