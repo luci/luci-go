@@ -19,6 +19,9 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import IconButton from '@mui/material/IconButton';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -33,6 +36,8 @@ import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
 import './groups_list.css';
+
+const expansionThreshold = 10;
 
 interface GroupsFormListProps {
   // Sets the starting items array. Used on initial GetGroup call from groups_form.
@@ -85,6 +90,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     // The current edited item list, including removed & added items.
     const [items, setItems] = useState<Item[]>(asItems(initialValues));
     const [removeDialogVisible, setRemoveDialogVisible] = useState<boolean>();
+    const [expanded, setExpanded] = useState<boolean>(true);
     const navigate = useNavigate();
 
     let placeHolderText: string;
@@ -228,7 +234,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     }
 
     const valuesEqual = (a: string[], b: string[]) => {
-      return(
+      return (
         a.length === b.length &&
         a.every((val, index) => val === b[index])
       );
@@ -249,23 +255,35 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             <TableRow>
               <TableCell colSpan={2} sx={{ pb: 0 }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
                 <Typography variant="h6"> {name}</Typography>
+                {items.length > expansionThreshold &&
+                  <IconButton onClick={() => { setExpanded(!expanded) }}>
+                    {expanded
+                      ? <ExpandLessIcon />
+                      : <ExpandMoreIcon />
+                    }
+                  </IconButton>
+                }
                 {hasSelected() &&
                   <Button variant="contained" color="error" sx={{ ml: 2 }} startIcon={<RemoveCircleOutlineIcon />} onClick={() => setRemoveDialogVisible(true)} data-testid='remove-button'>Remove</Button>
                 }
               </TableCell>
             </TableRow>
-            {items && items.map((item, index) =>
-              <TableRow key={index} style={{ height: '34px' }} sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }} className='item-row' data-testid={`item-row-${item.value}`}>
-                <TableCell sx={{ p: 0, pt: '1px' }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '30px' }}>
-                  <Checkbox sx={{ pt: 0, pb: 0 }} checked={item.checked} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => { handleChange(index) }} />
-                  {(name === 'Subgroups') ?
-                    <a onClick={() => navigateToGroup(item.value)} className='subgroup-link'><Typography variant="body2">{item.value}</Typography></a>
-                    :
-                    <Typography variant="body2">{item.value}</Typography>
-                  }
-                </TableCell>
-              </TableRow>
-            )}
+            {(expanded || items.length <= expansionThreshold) &&
+              <>
+                {items && items.map((item, index) =>
+                  <TableRow key={index} style={{ height: '34px' }} sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }} className='item-row' data-testid={`item-row-${item.value}`}>
+                    <TableCell sx={{ p: 0, pt: '1px' }} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '30px' }}>
+                      <Checkbox sx={{ pt: 0, pb: 0 }} checked={item.checked} data-testid={`checkbox-button-${item.value}`} id={`${index}`} onChange={() => { handleChange(index) }} />
+                      {(name === 'Subgroups') ?
+                        <a onClick={() => navigateToGroup(item.value)} className='subgroup-link'><Typography variant="body2">{item.value}</Typography></a>
+                        :
+                        <Typography variant="body2">{item.value}</Typography>
+                      }
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            }
             {addingItem && (
               <>
                 <TableRow>
