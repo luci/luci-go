@@ -14,9 +14,15 @@
 
 import validator from 'validator';
 
+// Pattern for a valid group name.
 export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
-export const membersRe = /^((user|bot|project|service|anonymous):)?[\w+%.@*\[\]-]+$/;
-export const nonUserMemberRe = /^(bot|project|service|anonymous):.+/;
+
+// Patterns for valid member identities.
+const memberRe = /^((user|bot|project|service|anonymous):)?[\w\.\+\@\%\-\:]+$/;
+const anonymousIdentityRe = /^anonymous:anonymous$/;
+const botIdentityRe = /^bot:[\w\.\@\-]+$/;
+const projectIdentityRe = /^project:[a-z0-9\_\-]+$/;
+const serviceIdentityRe = /^service:[\w\.\-\:]+$/;
 
 // Glob pattern should contain at least one '*' and be limited to the superset
 // of allowed characters across all kinds.
@@ -37,20 +43,28 @@ export const isGlob = (item: string) => {
 };
 
 export const isMember = (item: string) => {
-    return membersRe.test(item!) && isValidMember(item!);
-}
+    if (!memberRe.test(item)) {
+        return false;
+    }
+
+    switch (item.split(':', 1)[0]) {
+        case 'anonymous':
+            return anonymousIdentityRe.test(item);
+        case 'bot':
+            return botIdentityRe.test(item);
+        case 'project':
+            return projectIdentityRe.test(item);
+        case 'service':
+            return serviceIdentityRe.test(item);
+        case 'user':
+        default:
+            // The member identity type is "user" (either explicitly,
+            // or implicitly assumed when no type is specified).
+            // It must be an email.
+            return validator.isEmail(item.replace('user:', ''));
+    }
+};
 
 export const isSubgroup = (item: string) => {
     return nameRe.test(item!);
-}
-
-const isValidMember = (item: string) => {
-    // Non user members are valid as long as prefix is specified.
-    if (nonUserMemberRe.test(item!)) {
-        return true;
-    }
-    // The member identity type is "user" (either explicitly,
-    // or implicitly assumed when no type is specified).
-    // It must be an email.
-    return validator.isEmail(item.replace('user:', ''));
-}
+};

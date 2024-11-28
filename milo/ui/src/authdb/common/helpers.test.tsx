@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { isGlob } from './helpers';
+import { isGlob, isMember } from './helpers';
 
 describe('isGlob validation works', () => {
     test.each([
@@ -24,5 +24,24 @@ describe('isGlob validation works', () => {
         ['service:*-test-*-pattern', true],
     ])('item is "%s"', (item, expected) => {
         expect(isGlob(item)).toBe(expected);
+    });
+});
+
+describe('isMember validation works', () => {
+    test.each([
+        ['unknown:kind', false],
+        ['anonymous:user', false],
+        ['bot:invalid:character', false],
+        ['project:Invalid-uppercase', false],
+        ['service:test@example.com', false],
+        ['not-an-email', false],
+        ['anonymous:anonymous', true],
+        ['bot:mega.tron@bots_r-us', true],
+        ['project:open-source-123', true],
+        ['service:example-service:name', true],
+        ['user:test@example.com', true],
+        ['test@example.com', true],
+    ])('item is "%s"', (item, expected) => {
+        expect(isMember(item)).toBe(expected);
     });
 });
