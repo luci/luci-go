@@ -91,6 +91,11 @@ span.flaky {
   background-color: var(--canceled-bg-color);
 }
 
+.undefined-bg-pattern {
+  border: 1px solid rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 0);
+}
+
 .scheduled-bg-pattern {
   border: 1px solid var(--scheduled-color);
   background-color: var(--scheduled-bg-color);

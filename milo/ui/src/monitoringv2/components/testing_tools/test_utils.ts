@@ -46,6 +46,7 @@ export const testStepAlert: StepAlert = {
 
 export const testAlerts: StructuredAlert[] = organizeAlerts(
   'builder',
+  true,
   [testBuilderAlert],
   [testStepAlert],
   [],
@@ -68,6 +69,7 @@ export const testBuilderAlert2: BuilderAlert = {
 
 export const testAlerts2: StructuredAlert[] = organizeAlerts(
   'builder',
+  true,
   [testBuilderAlert2],
   [],
   [],

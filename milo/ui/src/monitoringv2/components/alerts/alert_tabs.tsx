@@ -24,6 +24,8 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import { useEffect, useState } from 'react';
 
 import {
@@ -57,6 +59,7 @@ export function AlertTabs() {
   const tree = useTree();
   const [selectedTab, setSelectedTab] = useSelectedTab();
   const [organizeBy, setOrganizeBy] = useState('builder' as AlertKind);
+  const [showResolved, setShowResolved] = useState(false);
 
   // This should be only called once to select the default tab.
   useEffect(() => {
@@ -71,6 +74,7 @@ export function AlertTabs() {
 
   const organizedAlerts = organizeAlerts(
     organizeBy,
+    showResolved,
     builderAlerts,
     stepAlerts,
     testAlerts,
@@ -115,17 +119,30 @@ export function AlertTabs() {
         </Tabs>
       </Box>
       <TabPanel value="untriaged">
-        <label htmlFor="organizeByGroup">Organize By: </label>
-        <ToggleButtonGroup
-          id="organizeByGroup"
-          exclusive
-          value={organizeBy}
-          onChange={(_, v) => setOrganizeBy(v)}
-        >
-          <ToggleButton value="builder">Builder</ToggleButton>
-          <ToggleButton value="step">Step</ToggleButton>
-          <ToggleButton value="test">Test</ToggleButton>
-        </ToggleButtonGroup>
+        <Box sx={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label htmlFor="organizeByGroup">Organize By: </label>
+          <ToggleButtonGroup
+            id="organizeByGroup"
+            exclusive
+            value={organizeBy}
+            onChange={(_, v) => setOrganizeBy(v)}
+          >
+            <ToggleButton value="builder">Builder</ToggleButton>
+            <ToggleButton value="step">Step</ToggleButton>
+            <ToggleButton value="test">Test</ToggleButton>
+          </ToggleButtonGroup>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showResolved}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setShowResolved(event.target.checked)
+                }
+              />
+            }
+            label="Show Resolved"
+          />
+        </Box>
         <AlertGroup
           groupName={'Consistent Failures'}
           alerts={categories.consistentFailures}
@@ -247,10 +264,16 @@ export interface StructuredAlert {
 // exported for testing only.
 export const organizeAlerts = (
   kind: AlertKind,
+  showResolved: boolean,
   builderAlerts: BuilderAlert[],
   stepAlerts: StepAlert[],
   testAlerts: TestAlert[],
 ): StructuredAlert[] => {
+  if (!showResolved) {
+    builderAlerts = builderAlerts.filter((a) => a.consecutiveFailures > 0);
+    stepAlerts = stepAlerts.filter((a) => a.consecutiveFailures > 0);
+    testAlerts = testAlerts.filter((a) => a.consecutiveFailures > 0);
+  }
   if (kind === 'builder') {
     return organizeRelatedAlerts([builderAlerts, stepAlerts, testAlerts]);
   } else if (kind === 'step') {
@@ -296,18 +319,59 @@ const makeStructuredAlert = (alert: GenericAlert): StructuredAlert => {
   };
 };
 
+/**
+ * sortAlertsByFailurePattern attempts to sort child alerts in the order most interesting to
+ * a user looking at them.
+ *
+ * First present any alerts where the number of consecutive failures matches the parent alert
+ * exactly.  These are most likely to be the cause of the parent failure.
+ *
+ * Next present any alerts where the number of consecustive failures is less than the parent,
+ * in descending order of the consecutive failures.  If there are no exact matches these are
+ * most likely to be the cause (with earlier failures having a different cause).
+ *
+ * Next present any alerts with a larger number of consecutive failures than the parent.  These
+ * are unlikely to be the cause because the parent passed when these were failing.
+ *
+ * Last present any alerts that have zero consecutive failures, these are already resolved and
+ * Are likely only of interest for verifying a fix.
+ *
+ * For any alerts that are equal under the above rules, break ties with a localeCompare of the alert keys.
+ *
+ * @param alerts The child alerts to sort
+ * @param parentConsecutiveFailures The number of consecutive failures observed in the parent of these alerts.
+ * @returns The child alerts sorted as described above.
+ */
 const sortAlertsByFailurePattern = (
   alerts: StructuredAlert[],
   parentConsecutiveFailures: number,
 ): StructuredAlert[] => {
   return alerts.sort((a, b) => {
-    const af = Math.abs(parentConsecutiveFailures - a.consecutiveFailures);
-    const bf = Math.abs(parentConsecutiveFailures - b.consecutiveFailures);
-    return af === bf
-      ? af === 0
-        ? a.consecutivePasses - b.consecutivePasses
-        : a.alert.key.localeCompare(b.alert.key)
-      : af - bf;
+    if (a.consecutiveFailures === b.consecutiveFailures) {
+      if (a.consecutiveFailures === 0) {
+        return a.consecutivePasses === b.consecutivePasses
+          ? a.alert.key.localeCompare(b.alert.key)
+          : a.consecutivePasses - b.consecutivePasses;
+      }
+      return a.alert.key.localeCompare(b.alert.key);
+    }
+    if (a.consecutiveFailures === parentConsecutiveFailures) {
+      return b.consecutiveFailures === parentConsecutiveFailures
+        ? a.alert.key.localeCompare(b.alert.key)
+        : -1;
+    } else if (b.consecutiveFailures === parentConsecutiveFailures) {
+      return 1;
+    }
+
+    if (a.consecutiveFailures < parentConsecutiveFailures) {
+      return b.consecutiveFailures < parentConsecutiveFailures
+        ? b.consecutiveFailures - a.consecutiveFailures
+        : -1;
+    } else if (b.consecutiveFailures < parentConsecutiveFailures) {
+      return 1;
+    }
+
+    return a.consecutiveFailures - b.consecutiveFailures;
   });
 };
 

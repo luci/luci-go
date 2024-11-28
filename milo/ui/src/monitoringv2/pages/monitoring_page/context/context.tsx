@@ -360,10 +360,10 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
 const createBuilderAlerts = (histories: BuildAndTestVariants[][]) => {
   return histories.map((history) => {
     const firstPassIndex = history.findIndex(
-      (btv) => btv.build.status === Status.SUCCESS,
+      (btv) => !btv.build.status || btv.build.status === Status.SUCCESS,
     );
     const firstFailIndex = history.findIndex(
-      (btv) => btv.build.status !== Status.SUCCESS,
+      (btv) => btv.build.status && btv.build.status !== Status.SUCCESS,
     );
     const alert: BuilderAlert = {
       kind: 'builder',
@@ -409,10 +409,10 @@ const createStepAlertsforBuilder = (history: BuildAndTestVariants[]) => {
       return h;
     });
     const firstPassIndex = stepHistory.findIndex(
-      (h) => !h || h.status === Status.SUCCESS,
+      (h) => !h.status || h.status === Status.SUCCESS,
     );
     const firstFailIndex = stepHistory.findIndex(
-      (h) => h && h.status !== Status.SUCCESS,
+      (h) => h.status && h.status !== Status.SUCCESS,
     );
     const alert: StepAlert = {
       kind: 'step',
@@ -457,10 +457,10 @@ const createTestAlertsForBuilder = (history: BuildAndTestVariants[]) => {
       return h;
     });
     const firstPassIndex = testHistory.findIndex(
-      (h) => !h || h.status === TestVariantStatus.EXPECTED,
+      (h) => !h.status || h.status === TestVariantStatus.EXPECTED,
     );
     const firstFailIndex = testHistory.findIndex(
-      (h) => h && h.status !== TestVariantStatus.EXPECTED,
+      (h) => h.status && h.status !== TestVariantStatus.EXPECTED,
     );
     const stepName =
       failingTest.results[0].result?.tags
