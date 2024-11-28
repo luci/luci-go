@@ -18,6 +18,10 @@ export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 export const membersRe = /^((user|bot|project|service|anonymous):)?[\w+%.@*\[\]-]+$/;
 export const nonUserMemberRe = /^(bot|project|service|anonymous):.+/;
 
+// Glob pattern should contain at least one '*' and be limited to the superset
+// of allowed characters across all kinds.
+const globRe = /^[\w\.\+\*\@\%\-\:]*\*[\w\.\+\*\@\%\-\:]*$/;
+
 // Appends '<prefix>:' to a string if it doesn't have a prefix.
 const addPrefix = (prefix: string, str: string) => {
     return str.indexOf(':') == -1 ? prefix + ':' + str : str;
@@ -27,10 +31,9 @@ export const addPrefixToItems = (prefix: string, items: string[]) => {
     return items.map((item) => addPrefix(prefix, item));
 };
 
-// True if string looks like a glob pattern (and not a group member name).
+// True if string looks like a glob pattern.
 export const isGlob = (item: string) => {
-    // Glob patterns contain '*' and '[]' not allowed in member names.
-    return item.search(/[\*\[\]]/) != -1;
+    return globRe.test(item);
 };
 
 export const isMember = (item: string) => {
