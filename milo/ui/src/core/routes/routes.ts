@@ -17,6 +17,7 @@ import type { RouteObject } from 'react-router-dom';
 // We cannot use module alias (e.g. `@/<package>`) here because they are not
 // not supported in vite.config.ts. And we need to import those routes in
 // vite.config.ts to compute a regex at build time.
+
 import { authRoutes } from '../../authdb/routes';
 import { clustersRoutes } from '../../clusters/routes';
 import { fleetRoutes } from '../../fleet/routes';

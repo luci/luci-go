@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   FleetClientImpl,
@@ -27,9 +24,6 @@ import {
 } from '@/proto/infra/unifiedfleet/api/v1/rpc/fleet.pb';
 
 const SandboxPage = () => {
-  // TODO(b/369951471): Update this page to use a shared base layout with
-  // shared code for setting the favicon, fedback URL, etc.
-
   // See go/luci-ui-rpc-tutorial for more info on how to make pRPC requests.
   const ufsClient = usePrpcServiceClient({
     host: 'staging.ufs.api.cr.dev',
@@ -61,17 +55,6 @@ const SandboxPage = () => {
 };
 
 export function Component() {
-  const { setFeedbackUrlArgs } = useOutletContext() as {
-    setFeedbackUrlArgs: React.Dispatch<
-      React.SetStateAction<GenFeedbackUrlArgs>
-    >;
-  };
-
-  useEffect(() => {
-    setFeedbackUrlArgs({ bugComponent: '1664178' });
-    return () => setFeedbackUrlArgs(undefined);
-  }, [setFeedbackUrlArgs]);
-
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-sandbox">
       <RecoverableErrorBoundary

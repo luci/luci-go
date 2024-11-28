@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './device_list_page';
+import { FleetLayout } from './layouts';
+
+export const handle = {
+  layout: FleetLayout,
+};

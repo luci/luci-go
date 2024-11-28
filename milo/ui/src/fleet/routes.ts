@@ -19,14 +19,23 @@ import type { RouteObject } from 'react-router-dom';
 // If you need PII in the path param, document it and scrub the URL param from
 // GA4 tracking. See http://go/ooga-config#scrub-urls.
 export const fleetRoutes: RouteObject[] = [
-  // Prototype of a new unified UI for fleet management.
-  // See: go/streamline-fleet-UI
   {
-    path: 'labs',
-    lazy: () => import('@/common/layouts/labs_layout'),
+    path: '',
+    lazy: () => import('@/fleet/root'),
     children: [
-      { path: 'devices', lazy: () => import('@/fleet/pages/device_list_page') },
-      { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
+      {
+        path: 'labs',
+        lazy: () => import('@/fleet/layouts/fleet_labs_layout'),
+        children: [
+          {
+            path: 'devices',
+            lazy: () => import('@/fleet/pages/device_list_page'),
+          },
+          { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
+        ],
+      },
     ],
   },
+  // Prototype of a new unified UI for fleet management.
+  // See: go/streamline-fleet-UI
 ];

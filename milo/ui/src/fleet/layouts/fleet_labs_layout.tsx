@@ -12,8 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FleetLayout } from '@/fleet/layouts';
+import { Outlet } from 'react-router-dom';
 
-export const handle = {
-  layout: FleetLayout,
-};
+import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
+
+export function Component() {
+  return (
+    <>
+      <LabsWarningAlert
+        sx={{
+          backgroundColor: 'hsl(198, 86%, 95%)',
+          position: 'sticky',
+          left: 0,
+          width: '100%',
+          boxSizing: 'border-box',
+        }}
+        feedbackUrlArgs={{ bugComponent: '1664178' }}
+      />
+      <Outlet />
+    </>
+  );
+}

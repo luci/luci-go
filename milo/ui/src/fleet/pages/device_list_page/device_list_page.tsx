@@ -13,12 +13,10 @@
 // limitations under the License.
 
 import { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
-import { GenFeedbackUrlArgs } from '@/common/tools/utils';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import { FILTER_OPTIONS } from '@/fleet/components/multi_select_filter/mock_data';
@@ -57,18 +55,6 @@ export const DeviceListPage = () => {
 };
 
 export function Component() {
-  const { setFeedbackUrlArgs } = useOutletContext() as {
-    feedbackUrlArgs: GenFeedbackUrlArgs;
-    setFeedbackUrlArgs: React.Dispatch<
-      React.SetStateAction<GenFeedbackUrlArgs>
-    >;
-  };
-
-  useEffect(() => {
-    setFeedbackUrlArgs({ bugComponent: '1664178' });
-    return () => setFeedbackUrlArgs(undefined);
-  }, [setFeedbackUrlArgs]);
-
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <RecoverableErrorBoundary

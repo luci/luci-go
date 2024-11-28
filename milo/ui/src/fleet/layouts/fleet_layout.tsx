@@ -12,28 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import { useLocalStorage } from 'react-use';
+
+import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
+import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
+import { PrivacyFooter } from '@/common/layouts/privacy_footer';
+
+import { Header } from './header';
+import { Sidebar } from './sidebar';
 
 export const FleetLayout = () => {
+  const [sidebarOpen = false, setSidebarOpen] = useLocalStorage<boolean>(
+    SIDE_BAR_OPEN_CACHE_KEY,
+  );
+
   return (
-    <div>
-      <header
+    <div
+      css={{
+        minHeight: '100vh',
+        minWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <Sidebar open={sidebarOpen} />
+      <Outlet />
+
+      <div
         css={{
-          display: 'flex',
-          flexDirection: 'row',
-          gap: 20,
-          alignItems: 'center',
-          backgroundColor: 'white',
-          border: 'solid black 1px',
-          margin: 5,
-          padding: 5,
+          marginTop: 'auto',
         }}
       >
-        <Link to="/ui">Home</Link>
-        <p>Fleet custom layout</p>
-      </header>
-      <Outlet />
-      {/* TODO add privacy footer and cookie consent bar as per org policy */}
+        <PrivacyFooter />
+      </div>
+      <CookieConsentBar />
     </div>
   );
 };
