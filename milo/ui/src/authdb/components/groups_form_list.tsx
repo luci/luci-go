@@ -135,6 +135,16 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     };
 
     const addToItems = () => {
+      if (validateItems()) {
+        let updatedItems = [...items];
+        let newItemsArray = newItems.split(/[\n ]+/).filter((item) => item !== "");
+        updatedItems.push(...asItems(newItemsArray));
+        setItems(updatedItems);
+        resetTextfield();
+      }
+    }
+
+    const validateItems = () => {
       // Make sure item added is not a duplicate.
       let newItemsArray = newItems.split(/[\n ]+/).filter((item) => item !== "");
       const duplicateValues = newItemsArray.filter(value => hasValues(value));
@@ -158,12 +168,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         let allInvalidItems = duplicateValues.concat(invalidValues);
         let errorMessage = `Invalid ${name}: ` + allInvalidItems.join(', ');
         setErrorMessage(errorMessage);
+        return false;
       } else {
         setErrorMessage('');
-        let updatedItems = [...items];
-        updatedItems.push(...asItems(newItemsArray));
-        setItems(updatedItems);
-        resetTextfield();
+        return true;
       }
     }
 
@@ -226,6 +234,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       );
     }
 
+    useEffect(() => {
+      validateItems();
+    }, [newItems]);
+
     const navigateToGroup = (name: string) => {
       navigate(getURLPathFromAuthGroup(name));
     }
@@ -272,9 +284,11 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ p: 0 }}>
-                    <Button sx={{ mt: '10px', mr: 1.5 }} variant='contained' color='success' onClick={() => { addToItems() }} data-testid='confirm-button'>
-                      Confirm
-                    </Button>
+                    {errorMessage === '' && newItems !== '' &&
+                      <Button sx={{ mt: '10px', mr: 1.5 }} variant='contained' color='success' onClick={() => { addToItems() }} data-testid='confirm-button'>
+                        Confirm
+                      </Button>
+                    }
                     <Button sx={{ mt: '10px' }} variant='contained' color='error' onClick={resetTextfield} data-testid='clear-button'>
                       Cancel
                     </Button>

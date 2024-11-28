@@ -87,8 +87,7 @@ describe('<GroupsFormList editable/>', () => {
     await userEvent.type(textfield!, 'newMember');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
+    expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Members: newMember')).toBeInTheDocument();
   })
@@ -104,8 +103,7 @@ describe('<GroupsFormList editable/>', () => {
     await userEvent.type(textfield!, 'newMember@email/com');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
+    expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Members: newMember@email/com')).toBeInTheDocument();
   })
@@ -121,8 +119,7 @@ describe('<GroupsFormList editable/>', () => {
     await userEvent.type(textfield!, 'member1@email.com');
     // Add member that already exists.
     const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
+    expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Members: member1@email.com')).toBeInTheDocument();
   })
@@ -167,8 +164,7 @@ describe('<GroupsFormList editable globs/>', () => {
     await userEvent.type(textfield!, '.glob');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
+    expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Globs: .glob')).toBeInTheDocument();
   })
@@ -195,8 +191,7 @@ describe('<GroupsFormList editable subgroups/>', () => {
     await userEvent.type(textfield!, 'Subgroup');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
-    expect(confirmButton).not.toBeNull();
-    act(() => confirmButton!.click());
+    expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Subgroups: Subgroup')).toBeInTheDocument();
   })

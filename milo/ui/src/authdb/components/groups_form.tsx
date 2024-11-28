@@ -33,7 +33,7 @@ import Typography from '@mui/material/Typography';
 import { FormControl } from '@mui/material';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useState, createRef } from 'react';
+import { useState, createRef, useEffect } from 'react';
 import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
 import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
@@ -229,6 +229,14 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     setOwnersErrorMessage(message);
     return message === '';
   }
+
+  useEffect(() => {
+    validateDescription();
+  }, [description]);
+
+  useEffect(() => {
+    validateOwners();
+  }, [owners]);
 
   const submitField = (field: string) => {
     if (field === 'description') {
