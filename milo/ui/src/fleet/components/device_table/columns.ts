@@ -14,15 +14,45 @@
 
 import {
   Device,
+  DeviceState,
   DeviceType,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-// TODO(vaghinak): Should be adjusted later based on the real data
-export const BASE_DIMENSIONS = {
-  id: (device: Device) => device.id,
-  dutId: (device: Device) => device.dutId,
-  dutType: (device: Device) => DeviceType[device.type],
-  dutState: (device: Device) => DeviceType[device.type],
-  dutHost: (device: Device) => device.address?.host || '',
-  dutPort: (device: Device) => String(device.address?.port) || '',
-};
+interface Dimension {
+  id: string, // unique id used for sorting and filtering
+  displayName: string,
+  getValue: (device: Device) => string
+}
+
+export const BASE_DIMENSIONS : Dimension[] = [
+  {
+    id: 'id',
+    displayName: 'ID',
+    getValue: (device: Device) => device.id,
+  },
+  {
+    id: 'dut_id',
+    displayName: 'Dut ID',
+    getValue: (device: Device) => device.dutId,
+  },
+  {
+    id: 'type',
+    displayName: 'Type',
+    getValue: (device: Device) => DeviceType[device.type],
+  },
+  {
+    id: 'state',
+    displayName: 'State',
+    getValue: (device: Device) => DeviceState[device.state],
+  },
+  {
+    id: 'address.host',
+    displayName: 'Address',
+    getValue: (device: Device) => device.address?.host || '',
+  },
+  {
+    id: 'address.port',
+    displayName: 'Port',
+    getValue: (device: Device) => String(device.address?.port) || '',
+  }
+]

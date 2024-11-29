@@ -24,12 +24,14 @@ import {
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
-  ListDevicesRequest,
   Device,
+  ListDevicesRequest,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DataTable, generateColDefs } from '../data_table';
 
+import { GridColDef, GridSortModel } from '@mui/x-data-grid';
+import { useState } from 'react';
 import { BASE_DIMENSIONS } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -47,32 +49,27 @@ function getErrorMessage(error: unknown): string {
 }
 
 function processDeviceData({ devices }: { devices: readonly Device[] }): {
-  columns: string[];
+  columns: GridColDef[];
   rows: Record<string, string>[];
 } {
   const rows: Record<string, string>[] = [];
-  const columns: string[] = [
-    'id',
-    'dutId',
-    'dutType',
-    'dutState',
-    'dutHost',
-    'dutPort',
-  ];
+  const columns: { [key: string]: string } = BASE_DIMENSIONS.reduce((acc: { [key: string]: string }, dim) => {
+    acc[dim.id] = dim.displayName;
+    return acc;
+  }, {});
 
   devices.forEach((device) => {
     const row: Record<string, string> = Object.fromEntries(
-      Object.entries(BASE_DIMENSIONS).map(([key, fn]) => [key, fn(device)]),
+      BASE_DIMENSIONS.map((dim) => [dim.id, dim.getValue(device)]),
     );
 
     if (device.deviceSpec) {
-      device.deviceSpec.labels;
       for (const label of Object.keys(device.deviceSpec.labels)) {
         // TODO(b/378634266): should be discussed how to show multiple values
-        row[label] = device.deviceSpec.labels[label].values[0];
+        row[label] = device.deviceSpec.labels[label].values.concat().sort((a, b) => a.length < b.length ? -1 : 1)[0].toString();
         // TODO(vaghinak): later this will be replaced with the GetDimensions api
-        if (!columns.includes(label)) {
-          columns.push(label);
+        if (!columns[label]) {
+          columns[label] = label;
         }
       }
     }
@@ -80,7 +77,7 @@ function processDeviceData({ devices }: { devices: readonly Device[] }): {
     rows.push(row);
   });
 
-  return { columns, rows };
+  return { columns: generateColDefs(columns), rows };
 }
 
 export function DeviceTable() {
@@ -89,6 +86,19 @@ export function DeviceTable() {
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
+  const [sortModel, setSortModel] = useState<GridSortModel>([])
+
+  const getOrderByFromSortModel = () => {
+    if (sortModel.length !== 1) {
+      return '';
+    }
+    const sortItem = sortModel[0];
+    const baseDimension = BASE_DIMENSIONS.filter(dim => dim.id === sortItem.field)[0]
+
+    const sortKey = baseDimension ? baseDimension.id : `labels.${sortItem.field}`
+
+    return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey
+  };
 
   const client = useFleetConsoleClient();
   const { data, isLoading, isError, error } = useQuery(
@@ -96,6 +106,7 @@ export function DeviceTable() {
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
+        orderBy: getOrderByFromSortModel()
       }),
     ),
   );
@@ -115,7 +126,9 @@ export function DeviceTable() {
           nextPageToken={nextPageToken}
           isLoading={isLoading}
           pagerCtx={pagerCtx}
-          columns={generateColDefs(columns)}
+          columns={columns}
+          sortModel={sortModel}
+          onSortModelChange={setSortModel}
           rows={rows}
         />
       )}

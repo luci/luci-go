@@ -19,6 +19,7 @@ import {
   GridColDef,
   GridPaginationModel,
   GridSlots,
+  GridSortModel,
   GridToolbarColumnsButton,
   GridToolbarContainer,
   useGridApiRef,
@@ -26,12 +27,12 @@ import {
 import * as React from 'react';
 
 import {
-  PagerContext,
   getCurrentPageIndex,
   getPageSize,
   nextPageTokenUpdater,
-  prevPageTokenUpdater,
+  PagerContext,
   pageSizeUpdater,
+  prevPageTokenUpdater,
 } from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -52,19 +53,27 @@ function CustomToolbar({ setColumnsButtonEl }: CustomToolbarProps) {
   );
 }
 
+interface DataTableProps {
+  columns: GridColDef[];
+  rows: {
+    [key: string]: string;
+  }[];
+  nextPageToken: string;
+  isLoading: boolean;
+  pagerCtx: PagerContext;
+  sortModel: GridSortModel;
+  onSortModelChange: (newSortModel: GridSortModel) => void;
+}
+
 export const DataTable = ({
   columns,
   rows,
   nextPageToken,
   isLoading,
   pagerCtx,
-}: {
-  columns: GridColDef[];
-  rows: { [key: string]: string }[];
-  nextPageToken: string;
-  isLoading: boolean;
-  pagerCtx: PagerContext;
-}) => {
+  sortModel,
+  onSortModelChange,
+}: DataTableProps) => {
   const apiRef = useGridApiRef();
   const [columnsButtonEl, setColumnsButtonEl] =
     React.useState<HTMLButtonElement | null>(null);
@@ -138,6 +147,8 @@ export const DataTable = ({
       getRowHeight={() => 'auto'}
       disableRowSelectionOnClick
       disableColumnMenu
+      sortModel={sortModel}
+      onSortModelChange={onSortModelChange}
       rowCount={isLastPage ? rowCount : UNKNOWN_ROW_COUNT}
       paginationMode="server"
       pageSizeOptions={pagerCtx.options.pageSizeOptions}
