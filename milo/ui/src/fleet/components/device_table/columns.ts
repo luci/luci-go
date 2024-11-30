@@ -17,6 +17,7 @@ import {
   DeviceState,
   DeviceType,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+import { GridColDef } from '@mui/x-data-grid';
 
 interface Dimension {
   id: string, // unique id used for sorting and filtering
@@ -24,7 +25,7 @@ interface Dimension {
   getValue: (device: Device) => string
 }
 
-export const BASE_DIMENSIONS : Dimension[] = [
+export const BASE_DIMENSIONS: Dimension[] = [
   {
     id: 'id',
     displayName: 'ID',
@@ -56,3 +57,25 @@ export const BASE_DIMENSIONS : Dimension[] = [
     getValue: (device: Device) => String(device.address?.port) || '',
   }
 ]
+
+export const getColumns = (columnIds: string[]): GridColDef[] => {
+  // order columns as in BASE_DIMENSIONS and put labels at the end
+  const columnsOrdered = columnIds.sort((a, b) => {
+    const aindex = BASE_DIMENSIONS.findIndex(dim => dim.id === a);
+    const bindex = BASE_DIMENSIONS.findIndex(dim => dim.id === b);
+    if (aindex === bindex) return 0;
+    if (aindex < 0) return 1; //a is a label
+    if (bindex < 0) return -1; //b is a label
+    return aindex < bindex ? -1 : 1;
+  })
+
+  const columns: GridColDef[] = columnsOrdered.map(id => ({
+    field: id,
+    headerName: BASE_DIMENSIONS.find(dim => dim.id === id)?.displayName || id,
+    editable: false,
+    minWidth: 70,
+    maxWidth: 700,
+  }));
+
+  return columns;
+}

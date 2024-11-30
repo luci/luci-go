@@ -13,4 +13,3 @@
 // limitations under the License.
 
 export { DataTable } from './data_table';
-export { generateColDefs } from './utils';

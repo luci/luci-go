@@ -25,14 +25,14 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
-  ListDevicesRequest,
+  ListDevicesRequest
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { DataTable, generateColDefs } from '../data_table';
+import { DataTable } from '../data_table';
 
-import { GridColDef, GridSortModel } from '@mui/x-data-grid';
+import { GridSortModel } from '@mui/x-data-grid';
 import { useState } from 'react';
-import { BASE_DIMENSIONS } from './columns';
+import { BASE_DIMENSIONS, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -48,36 +48,19 @@ function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-function processDeviceData({ devices }: { devices: readonly Device[] }): {
-  columns: GridColDef[];
-  rows: Record<string, string>[];
-} {
-  const rows: Record<string, string>[] = [];
-  const columns: { [key: string]: string } = BASE_DIMENSIONS.reduce((acc: { [key: string]: string }, dim) => {
-    acc[dim.id] = dim.displayName;
-    return acc;
-  }, {});
+function getRow(device: Device): Record<string, string> {
+  const row: Record<string, string> = Object.fromEntries(
+    BASE_DIMENSIONS.map((dim) => [dim.id, dim.getValue(device)]),
+  );
 
-  devices.forEach((device) => {
-    const row: Record<string, string> = Object.fromEntries(
-      BASE_DIMENSIONS.map((dim) => [dim.id, dim.getValue(device)]),
-    );
-
-    if (device.deviceSpec) {
-      for (const label of Object.keys(device.deviceSpec.labels)) {
-        // TODO(b/378634266): should be discussed how to show multiple values
-        row[label] = device.deviceSpec.labels[label].values.concat().sort((a, b) => a.length < b.length ? -1 : 1)[0].toString();
-        // TODO(vaghinak): later this will be replaced with the GetDimensions api
-        if (!columns[label]) {
-          columns[label] = label;
-        }
-      }
+  if (device.deviceSpec) {
+    for (const label of Object.keys(device.deviceSpec.labels)) {
+      // TODO(b/378634266): should be discussed how to show multiple values
+      row[label] = device.deviceSpec.labels[label].values.concat().sort((a, b) => a.length < b.length ? -1 : 1)[0].toString();
     }
+  }
 
-    rows.push(row);
-  });
-
-  return { columns: generateColDefs(columns), rows };
+  return row;
 }
 
 export function DeviceTable() {
@@ -101,7 +84,7 @@ export function DeviceTable() {
   };
 
   const client = useFleetConsoleClient();
-  const { data, isLoading, isError, error } = useQuery(
+  const devicesQuery = useQuery(
     client.ListDevices.query(
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
@@ -111,25 +94,28 @@ export function DeviceTable() {
     ),
   );
 
-  const { devices = [], nextPageToken = '' } = data || {};
-  const { columns, rows } = processDeviceData({ devices });
+  const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
+
+  const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
+
+  const columns = dimensionsQuery.data ? getColumns(Object.keys(dimensionsQuery.data.baseDimensions).concat(Object.keys(dimensionsQuery.data.labels))) : [];
 
   return (
     <>
-      {isError ? (
+      {devicesQuery.isError || dimensionsQuery.isError ? (
         <Alert severity="error">
           {' '}
-          Something went wrong: {getErrorMessage(error)}
+          Something went wrong: {getErrorMessage(devicesQuery.error || dimensionsQuery.error)}
         </Alert>
       ) : (
         <DataTable
           nextPageToken={nextPageToken}
-          isLoading={isLoading}
+          isLoading={devicesQuery.isLoading || dimensionsQuery.isLoading}
           pagerCtx={pagerCtx}
           columns={columns}
           sortModel={sortModel}
           onSortModelChange={setSortModel}
-          rows={rows}
+          rows={devices.map(getRow)}
         />
       )}
     </>
