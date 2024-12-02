@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BiotechOutlinedIcon from '@mui/icons-material/BiotechOutlined';
 import DevicesIcon from '@mui/icons-material/Devices';
 import LaunchIcon from '@mui/icons-material/Launch';
 import MuiDrawer from '@mui/material/Drawer';

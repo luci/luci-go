@@ -129,6 +129,8 @@ export const AlertSummaryRow = ({
             bucket: builder.bucket,
             builder: builder.name,
           }}
+          history={[]}
+          numHighlighted={0}
         />
       </TableCell>
       <TableCell>
@@ -214,7 +216,8 @@ export const AlertSummaryRow = ({
           <BugMenu
             anchorEl={menuAnchorEl}
             onClose={() => setMenuAnchorEl(null)}
-            alerts={[alert]}
+            alerts={[]}
+            // alerts={[alert]}
             tree={tree}
             bugs={bugs}
           />
