@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
 
 import ErrorAlert from '@/clusters/components/error_alert/error_alert';
@@ -54,14 +54,14 @@ const RuleTopPanel = ({ project, ruleId }: Props) => {
     <>
       {rule && (
         <Grid container columnSpacing={2}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <ReclusteringProgressIndicator
               hasRule={true}
               project={project}
               rulePredicateLastUpdated={rule.predicateLastUpdateTime}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <TimestampInfoBar
               createUsername={rule.createUser}
               createTime={rule.createTime}
@@ -69,11 +69,23 @@ const RuleTopPanel = ({ project, ruleId }: Props) => {
               updateTime={rule.lastAuditableUpdateTime}
             />
           </Grid>
-          <Grid container item xs={12} columnSpacing={2}>
-            <Grid item xs={12} lg={8} display="grid">
+          <Grid container columnSpacing={2} size={12}>
+            <Grid
+              display="grid"
+              size={{
+                xs: 12,
+                lg: 8,
+              }}
+            >
               <RuleInfo project={project} rule={rule} />
             </Grid>
-            <Grid item xs={12} lg={4} display="grid">
+            <Grid
+              display="grid"
+              size={{
+                xs: 12,
+                lg: 4,
+              }}
+            >
               <BugInfo rule={rule} />
             </Grid>
           </Grid>

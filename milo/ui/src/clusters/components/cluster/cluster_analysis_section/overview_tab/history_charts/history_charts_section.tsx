@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { useContext, useEffect } from 'react';
@@ -96,10 +96,9 @@ export const HistoryChartsSection = () => {
         <Grid container columns={90} data-testid="history-charts-container">
           {selectedMetrics.map((m) => (
             <Grid
-              item
               key={m.metricId}
-              xs={itemSize}
               data-testid={'chart-' + m.metricId}
+              size={itemSize}
             >
               <SingleMetricChart
                 height={chartHeight}

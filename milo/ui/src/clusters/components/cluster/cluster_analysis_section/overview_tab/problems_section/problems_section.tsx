@@ -29,13 +29,13 @@ import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';
 import { useFetchProjectConfig } from '@/clusters/hooks/use_fetch_project_config';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
-import { BugManagement } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
-import { BugManagementState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 import {
   Problem,
   identifyProblems,
   sortProblemsByDescendingActiveAndPriority,
 } from '@/clusters/tools/problems';
+import { BugManagement } from '@/proto/go.chromium.org/luci/analysis/proto/v1/projects.pb';
+import { BugManagementState } from '@/proto/go.chromium.org/luci/analysis/proto/v1/rules.pb';
 
 import { ProblemExplanationDialog } from './problem_explanation_dialog/problem_explanation_dialog';
 import { ProblemRow } from './problem_row/problem_row';

@@ -17,7 +17,7 @@ import LoadingButton from '@mui/lab/LoadingButton';
 import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useMutation } from '@tanstack/react-query';
@@ -161,7 +161,7 @@ export const NewRulePage = () => {
         />
         <PanelHeading>New Rule</PanelHeading>
         <Grid container direction="column" spacing={1}>
-          <Grid item xs>
+          <Grid size="grow">
             {validationError && (
               <ErrorAlert
                 errorTitle="Validation error"
@@ -171,20 +171,20 @@ export const NewRulePage = () => {
               />
             )}
           </Grid>
-          <Grid item container xs>
-            <Grid item xs={6}>
+          <Grid container size="grow">
+            <Grid size={6}>
               <Typography>Associated bug</Typography>
               <BugPicker bugId={bugId} handleBugIdChanged={handleBugIdChange} />
             </Grid>
           </Grid>
-          <Grid item xs marginTop="1rem">
+          <Grid marginTop="1rem" size="grow">
             <Typography>Rule definition</Typography>
             <RuleEditInput
               definition={definition}
               onDefinitionChange={handleRuleDefinitionChange}
             />
           </Grid>
-          <Grid item xs>
+          <Grid size="grow">
             <LoadingButton
               variant="contained"
               data-testid="create-rule-save"

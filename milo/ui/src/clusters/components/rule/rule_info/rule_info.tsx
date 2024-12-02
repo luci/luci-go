@@ -17,7 +17,7 @@ import Unarchive from '@mui/icons-material/Unarchive';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import { useState } from 'react';
@@ -83,7 +83,7 @@ const RuleInfo = ({ project, rule }: Props) => {
           <GridLabel text="Rule definition">
             <HelpTooltip text={definitionTooltipText} />
           </GridLabel>
-          <Grid item xs={10} alignItems="center">
+          <Grid alignItems="center" size={10}>
             <RuleDefinition
               definition={rule.ruleDefinition}
               onEditClicked={() => setEditDialogOpen(true)}
@@ -92,7 +92,7 @@ const RuleInfo = ({ project, rule }: Props) => {
           <GridLabel text="Source cluster">
             <HelpTooltip text={sourceClusterTooltipText} />
           </GridLabel>
-          <Grid item xs={10} alignItems="center">
+          <Grid alignItems="center" size={10}>
             <Box sx={{ display: 'inline-block' }} paddingTop={1}>
               {rule.sourceCluster?.algorithm && rule.sourceCluster?.id ? (
                 <Link
@@ -110,7 +110,7 @@ const RuleInfo = ({ project, rule }: Props) => {
           <GridLabel text="Archived">
             <HelpTooltip text={archivedTooltipText} />
           </GridLabel>
-          <Grid item xs={10} alignItems="center" columnGap={1}>
+          <Grid alignItems="center" columnGap={1} size={10}>
             <Box
               data-testid="rule-archived"
               sx={{ display: 'inline-block' }}

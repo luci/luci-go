@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -37,11 +37,11 @@ interface Props {
 const MultiRulesFound = ({ bugSystem, bugId, rules }: Props) => {
   return (
     <>
-      <Grid item xs={12}>
+      <Grid size={12}>
         Multiple projects have rules matching the specified bug ({bugSystem}:
         {bugId})
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <Table>
           <TableBody>
             {rules.map((rule) => (

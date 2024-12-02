@@ -15,7 +15,7 @@
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
@@ -109,7 +109,7 @@ export const BugPage = () => {
                 rules={data.rules}
               />
             ) : (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <AlertTitle>
                     Could not find a rule for this bug (or you may not have

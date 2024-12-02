@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import { useContext } from 'react';
@@ -83,7 +83,7 @@ const ClustersTableContent = ({ project }: Props) => {
   }
 
   return (
-    <Grid item xs={12}>
+    <Grid size={12}>
       <Table size="small" sx={{ overflowWrap: 'anywhere' }}>
         <ClustersTableHead />
         {isBasicSummariesSuccess && (
@@ -105,7 +105,7 @@ const ClustersTableContent = ({ project }: Props) => {
         )}
       </Table>
       {isBasicSummariesSuccess && rows.length === 0 && (
-        <Grid container item alignItems="center" justifyContent="center">
+        <Grid container alignItems="center" justifyContent="center">
           Hooray! There are no failures matching the specified criteria.
         </Grid>
       )}

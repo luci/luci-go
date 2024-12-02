@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useEffect, useMemo } from 'react';
 
 import LoadErrorAlert from '@/clusters/components/load_error_alert/load_error_alert';

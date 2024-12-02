@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useParams } from 'react-router-dom';
 
 import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
@@ -43,7 +43,7 @@ export const ClustersPage = () => {
         selectedPage={UiPage.Clusters}
       />
       <Grid container>
-        <Grid item xs={8}>
+        <Grid size={8}>
           <PageHeading>
             Clusters in project {project}
             <HelpTooltip text={clustersDescription} />

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useContext } from 'react';
 
 import ClusterInfo from '@/clusters/components/cluster/cluster_info/cluster_info';
@@ -25,10 +25,10 @@ const ClusterTopPanel = () => {
 
   return (
     <Grid container columnSpacing={2}>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <ReclusteringProgressIndicator hasRule={true} project={project} />
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <ClusterInfo />
       </Grid>
     </Grid>

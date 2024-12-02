@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import TextField from '@mui/material/TextField';
 import { ChangeEvent } from 'react';
 import { useParams } from 'react-router-dom';
@@ -53,8 +53,8 @@ const BugPicker = ({ bugId, handleBugIdChanged }: Props) => {
   };
 
   return (
-    <Grid container item columnSpacing={1}>
-      <Grid item xs={6}>
+    <Grid container columnSpacing={1}>
+      <Grid size={6}>
         <TextField
           label="Bug number"
           variant="standard"

@@ -46,7 +46,7 @@ const isFlakyCriteriaAlmostMet = (
   if (!criteria.flakeRate) {
     return false;
   }
-  if (tvb.flakeRate.totalVerdicts == 0) {
+  if (tvb.flakeRate.totalVerdicts === 0) {
     return false;
   }
   const runFlakyRate =
@@ -160,10 +160,10 @@ export const sortTestVariantBranches = (
         throw new Error('unknown field: ' + field);
     }
     // Try secondary sort orders.
-    if (result == 0) {
+    if (result === 0) {
       result = compareTestIds(a.testId, b.testId);
     }
-    if (result == 0) {
+    if (result === 0) {
       result = compareSourceRefs(a.sourceRef, b.sourceRef);
     }
     return result;
@@ -182,20 +182,20 @@ const compareSourceRefs = (a: SourceRef, b: SourceRef): number => {
     // Both a and b have empty source refs.
     return 0;
   }
-  if (a.gitiles.host != b.gitiles.host) {
+  if (a.gitiles.host !== b.gitiles.host) {
     return a.gitiles.host > b.gitiles.host ? 1 : -1;
   }
-  if (a.gitiles.project != b.gitiles.project) {
+  if (a.gitiles.project !== b.gitiles.project) {
     return a.gitiles.project > b.gitiles.project ? 1 : -1;
   }
-  if (a.gitiles.ref != b.gitiles.ref) {
+  if (a.gitiles.ref !== b.gitiles.ref) {
     return a.gitiles.ref > b.gitiles.ref ? 1 : -1;
   }
   return 0;
 };
 
 const compareTestIds = (a: string, b: string): number => {
-  if (a != b) {
+  if (a !== b) {
     return a > b ? 1 : -1;
   }
   return 0;

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import { MetricName } from '@/clusters/tools/failures_tools';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 export function useSelectedVariantGroupsParam(): [
   string[],

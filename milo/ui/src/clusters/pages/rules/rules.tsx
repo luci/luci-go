@@ -14,7 +14,7 @@
 
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { Link, useParams } from 'react-router-dom';
 
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
@@ -38,13 +38,13 @@ const RulesPage = () => {
     <Container maxWidth={false}>
       <PageMeta title="Rules" project={project} selectedPage={UiPage.Rules} />
       <Grid container>
-        <Grid item xs={8}>
+        <Grid size={8}>
           <PageHeading>
             Rules in project {project}
             <HelpTooltip text={rulesDescription}></HelpTooltip>
           </PageHeading>
         </Grid>
-        <Grid item xs={4} sx={{ textAlign: 'right' }}>
+        <Grid sx={{ textAlign: 'right' }} size={4}>
           <Button
             component={Link}
             variant="contained"

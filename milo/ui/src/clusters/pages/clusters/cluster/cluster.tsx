@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useParams } from 'react-router-dom';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
@@ -53,10 +53,10 @@ export const ClusterPage = () => {
       />
       <Container className="mt-1" maxWidth={false}>
         <Grid sx={{ mt: 1 }} container spacing={2}>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <ClusterTopPanel />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <ClusterAnalysisSection />
           </Grid>
         </Grid>

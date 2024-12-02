@@ -18,8 +18,8 @@ import Tooltip, { TooltipProps, tooltipClasses } from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
 import { useState, Fragment, MouseEvent } from 'react';
 
-import { Changelist } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 import { clLink } from '@/clusters/tools/urlHandling/links';
+import { Changelist } from '@/proto/go.chromium.org/luci/analysis/proto/v1/sources.pb';
 
 interface Props {
   changelists: readonly Changelist[];

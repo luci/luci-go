@@ -14,7 +14,7 @@
 
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -152,16 +152,16 @@ const ReclusteringProgressIndicator = ({
             alignItems="center"
             columnSpacing={{ xs: 2 }}
           >
-            <Grid item>
+            <Grid>
               <CircularProgressWithLabel
                 variant="determinate"
                 value={Math.max(0, progressPerMille / 10)}
               />
             </Grid>
-            <Grid item data-testid="reclustering-progress-description">
+            <Grid data-testid="reclustering-progress-description">
               {progressContent()}
             </Grid>
-            <Grid item>
+            <Grid>
               {progressPerMille >= 1000 && (
                 <Button
                   color="inherit"

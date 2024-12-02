@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 
 const CentralizedProgress = () => {
   return (
-    <Grid container item alignItems="center" justifyContent="center">
+    <Grid container alignItems="center" justifyContent="center">
       <CircularProgress />
     </Grid>
   );

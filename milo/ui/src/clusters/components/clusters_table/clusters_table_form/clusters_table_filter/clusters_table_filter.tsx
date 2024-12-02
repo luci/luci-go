@@ -93,7 +93,7 @@ const ClustersTableFilter = () => {
   }, [isDirty, failureFilter]);
 
   const handleFailureFilterChanged = (newFilter: string) => {
-    if (newFilter == failureFilter) {
+    if (newFilter === failureFilter) {
       return;
     }
     updateFailureFilterParam(newFilter);
@@ -112,7 +112,7 @@ const ClustersTableFilter = () => {
             setDirty(true);
           }}
           onKeyUp={(e) => {
-            if (e.key == 'Enter' && inputRef.current) {
+            if (e.key === 'Enter' && inputRef.current) {
               handleFailureFilterChanged(inputRef.current.value);
               setDirty(false);
             }

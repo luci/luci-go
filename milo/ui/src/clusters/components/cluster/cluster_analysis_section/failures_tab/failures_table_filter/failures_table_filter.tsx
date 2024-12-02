@@ -15,18 +15,18 @@
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 
-import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 import {
   ImpactFilter,
   ImpactFilters,
   VariantGroup,
 } from '@/clusters/tools/failures_tools';
+import { ProjectMetric } from '@/proto/go.chromium.org/luci/analysis/proto/v1/metrics.pb';
 
 interface Props {
   metrics: ProjectMetric[];
@@ -56,7 +56,7 @@ const FailuresTableFilter = ({
         data-testid="failure_table_filter"
         sx={{ paddingTop: '8px', paddingBottom: '12px' }}
       >
-        <Grid item xs={3} sx={{ paddingRight: '1rem' }}>
+        <Grid sx={{ paddingRight: '1rem' }} size={3}>
           <FormControl fullWidth data-testid="failure_filter">
             <InputLabel id="failure_filter_label">Failure filter</InputLabel>
             <Select
@@ -82,7 +82,7 @@ const FailuresTableFilter = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={3} sx={{ paddingRight: '1rem' }}>
+        <Grid sx={{ paddingRight: '1rem' }} size={3}>
           <FormControl fullWidth data-testid="impact_filter">
             <InputLabel id="impact_filter_label">Impact filter</InputLabel>
             <Select
@@ -101,7 +101,7 @@ const FailuresTableFilter = ({
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={6}>
           <FormControl fullWidth data-testid="group_by">
             <InputLabel id="group_by_label">Group by</InputLabel>
             <Select

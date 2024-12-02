@@ -15,7 +15,7 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
@@ -55,7 +55,6 @@ const ClusterDetails = ({ cluster }: ClusterDetailsProps) => {
     <>
       <Grid
         container
-        item
         alignItems="center"
         sx={{
           mb: 2,
@@ -65,7 +64,7 @@ const ClusterDetails = ({ cluster }: ClusterDetailsProps) => {
           <CodeBlock code={cluster.title} />
         </Box>
       </Grid>
-      <Grid item xs={12}>
+      <Grid size={12}>
         <Button component={Link} variant="contained" to={newRuleURL}>
           create rule from cluster
         </Button>

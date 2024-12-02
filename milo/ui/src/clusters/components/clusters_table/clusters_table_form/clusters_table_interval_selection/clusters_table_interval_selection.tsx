@@ -14,7 +14,7 @@
 
 import {
   FormControl,
-  Grid,
+  Grid2 as Grid,
   InputLabel,
   MenuItem,
   OutlinedInput,
@@ -55,7 +55,7 @@ export const ClustersTableIntervalSelection = () => {
   }
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl data-testid="interval-selection" sx={{ width: '100%' }}>
         <InputLabel id="interval-selection-label">Time range</InputLabel>
         <Select

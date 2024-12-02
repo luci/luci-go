@@ -14,7 +14,7 @@
 
 import './styles.css';
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Link from '@mui/material/Link';
 import { DateTime } from 'luxon';
 
@@ -58,7 +58,7 @@ const TimestampInfoBar = ({
 }: Props) => {
   return (
     <Grid container>
-      <Grid item>
+      <Grid>
         <small
           data-testid="timestamp-info-bar-create"
           className="timestamp-text"

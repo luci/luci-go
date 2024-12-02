@@ -15,7 +15,7 @@
 import Edit from '@mui/icons-material/Edit';
 import CircularProgress from '@mui/material/CircularProgress';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
@@ -84,7 +84,15 @@ const BugInfo = ({ rule }: Props) => {
         <PanelHeading>Associated Bug</PanelHeading>
         <Grid container rowGap={0}>
           <GridLabel xs={4} lg={2} text="Bug"></GridLabel>
-          <Grid container item xs={8} lg={5} alignItems="center" columnGap={1}>
+          <Grid
+            container
+            alignItems="center"
+            columnGap={1}
+            size={{
+              xs: 8,
+              lg: 5,
+            }}
+          >
             <Link data-testid="bug" target="_blank" href={bug.url}>
               {bug.linkText}
             </Link>
@@ -99,7 +107,14 @@ const BugInfo = ({ rule }: Props) => {
           <GridLabel xs={4} lg={3} text="Update bug">
             <HelpTooltip text={bugUpdatesHelpText} />
           </GridLabel>
-          <Grid container item xs={8} lg={2} alignItems="center">
+          <Grid
+            container
+            alignItems="center"
+            size={{
+              xs: 8,
+              lg: 2,
+            }}
+          >
             {mutateRule.isLoading && <CircularProgress size="1rem" />}
             <Switch
               data-testid="update-bug-toggle"
@@ -113,11 +128,18 @@ const BugInfo = ({ rule }: Props) => {
         {
           // Only display bug prioity update toggle if bug update was enabled.
           rule.isManagingBug && (
-            <Grid container item xs={12} justifyContent="flex-end">
+            <Grid container justifyContent="flex-end" size={12}>
               <GridLabel xs={4} lg={3} text="Update bug priority">
                 <HelpTooltip text={bugPriorityUpdateHelpText} />
               </GridLabel>
-              <Grid container item xs={8} lg={2} alignItems="center">
+              <Grid
+                container
+                alignItems="center"
+                size={{
+                  xs: 8,
+                  lg: 2,
+                }}
+              >
                 {mutateRule.isLoading && <CircularProgress size="1rem" />}
                 <Switch
                   data-testid="update-bug-priority-toggle"

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 
 import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
 import { ClustersTableIntervalSelection } from './clusters_table_interval_selection/clusters_table_interval_selection';
@@ -20,20 +20,14 @@ import ClustersTableMetricSelection from './clusters_table_metric_selection/clus
 
 const ClustersTableForm = () => {
   return (
-    <Grid
-      container
-      item
-      xs={12}
-      spacing={2}
-      data-testid="clusters_table_filter"
-    >
-      <Grid item xs={6}>
+    <Grid container spacing={2} data-testid="clusters_table_filter" size={12}>
+      <Grid size={6}>
         <ClustersTableFilter />
       </Grid>
-      <Grid item xs={2}>
+      <Grid size={2}>
         <ClustersTableIntervalSelection />
       </Grid>
-      <Grid item xs={4}>
+      <Grid size={4}>
         <ClustersTableMetricSelection />
       </Grid>
     </Grid>

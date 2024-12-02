@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FormControl, Grid, InputLabel } from '@mui/material';
+import { FormControl, Grid2 as Grid, InputLabel } from '@mui/material';
 import { useContext } from 'react';
 
 import { ClusterTableContextData } from '@/clusters/components/clusters_table/context/clusters_table_context';
@@ -35,7 +35,7 @@ const ClustersTableMetricSelection = () => {
   }
 
   return (
-    <Grid item>
+    <Grid>
       <FormControl
         data-testid="metrics-selection"
         sx={{

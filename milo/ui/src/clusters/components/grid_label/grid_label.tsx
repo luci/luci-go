@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 
 interface Props {
   text?: string;
@@ -25,7 +25,13 @@ interface Props {
 
 const GridLabel = ({ text, children, xs = 2, lg = xs, testid }: Props) => {
   return (
-    <Grid item xs={xs} lg={lg} data-testid={testid}>
+    <Grid
+      data-testid={testid}
+      size={{
+        xs: xs,
+        lg: lg,
+      }}
+    >
       <Box
         sx={{
           display: 'inline-block',

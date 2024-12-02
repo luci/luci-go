@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useParams } from 'react-router-dom';
 
@@ -63,10 +63,10 @@ export const RulePage = () => {
         {error && <LoadErrorAlert entityName="rule" error={error} />}
         {isSuccess && rule && (
           <>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <RuleTopPanel project={project} ruleId={id} />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={12}>
               {rule?.isActive ? (
                 <ClusterContextProvider
                   project={project}
