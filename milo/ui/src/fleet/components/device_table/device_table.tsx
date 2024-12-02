@@ -14,7 +14,9 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
+import { GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import {
   getPageSize,
@@ -25,13 +27,11 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
-  ListDevicesRequest
+  ListDevicesRequest,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DataTable } from '../data_table';
 
-import { GridSortModel } from '@mui/x-data-grid';
-import { useState } from 'react';
 import { BASE_DIMENSIONS, getColumns } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -56,7 +56,10 @@ function getRow(device: Device): Record<string, string> {
   if (device.deviceSpec) {
     for (const label of Object.keys(device.deviceSpec.labels)) {
       // TODO(b/378634266): should be discussed how to show multiple values
-      row[label] = device.deviceSpec.labels[label].values.concat().sort((a, b) => a.length < b.length ? -1 : 1)[0].toString();
+      row[label] = device.deviceSpec.labels[label].values
+        .concat()
+        .sort((a, b) => (a.length < b.length ? -1 : 1))[0]
+        .toString();
     }
   }
 
@@ -69,18 +72,22 @@ export function DeviceTable() {
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
-  const [sortModel, setSortModel] = useState<GridSortModel>([])
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const getOrderByFromSortModel = () => {
     if (sortModel.length !== 1) {
       return '';
     }
     const sortItem = sortModel[0];
-    const baseDimension = BASE_DIMENSIONS.filter(dim => dim.id === sortItem.field)[0]
+    const baseDimension = BASE_DIMENSIONS.filter(
+      (dim) => dim.id === sortItem.field,
+    )[0];
 
-    const sortKey = baseDimension ? baseDimension.id : `labels.${sortItem.field}`
+    const sortKey = baseDimension
+      ? baseDimension.id
+      : `labels.${sortItem.field}`;
 
-    return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey
+    return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
   };
 
   const client = useFleetConsoleClient();
@@ -89,7 +96,7 @@ export function DeviceTable() {
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
-        orderBy: getOrderByFromSortModel()
+        orderBy: getOrderByFromSortModel(),
       }),
     ),
   );
@@ -98,14 +105,21 @@ export function DeviceTable() {
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
 
-  const columns = dimensionsQuery.data ? getColumns(Object.keys(dimensionsQuery.data.baseDimensions).concat(Object.keys(dimensionsQuery.data.labels))) : [];
+  const columns = dimensionsQuery.data
+    ? getColumns(
+        Object.keys(dimensionsQuery.data.baseDimensions).concat(
+          Object.keys(dimensionsQuery.data.labels),
+        ),
+      )
+    : [];
 
   return (
     <>
       {devicesQuery.isError || dimensionsQuery.isError ? (
         <Alert severity="error">
           {' '}
-          Something went wrong: {getErrorMessage(devicesQuery.error || dimensionsQuery.error)}
+          Something went wrong:{' '}
+          {getErrorMessage(devicesQuery.error || dimensionsQuery.error)}
         </Alert>
       ) : (
         <DataTable

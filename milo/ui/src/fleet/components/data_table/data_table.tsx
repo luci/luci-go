@@ -103,11 +103,8 @@ export const DataTable = ({
     apiRef.current?.autosizeColumns();
   });
 
-  // On the last page we will have the total number of rows
-  const rowCount =
-    paginationModel.page * paginationModel.pageSize + rows.length;
-  const hasNextPage = nextPageToken !== '';
-  const isLastPage = !isLoading && !hasNextPage;
+  const [rowCount, setRowCount] = React.useState(UNKNOWN_ROW_COUNT);
+  const hasNextPage = isLoading || nextPageToken !== '';
 
   return (
     <DataGrid
@@ -149,7 +146,10 @@ export const DataTable = ({
       disableColumnMenu
       sortModel={sortModel}
       onSortModelChange={onSortModelChange}
-      rowCount={isLastPage ? rowCount : UNKNOWN_ROW_COUNT}
+      rowCount={rowCount}
+      onRowCountChange={(newRowCount) => {
+        setRowCount(hasNextPage ? UNKNOWN_ROW_COUNT : newRowCount);
+      }}
       paginationMode="server"
       pageSizeOptions={pagerCtx.options.pageSizeOptions}
       paginationMeta={{ hasNextPage: hasNextPage }}
