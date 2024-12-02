@@ -42,25 +42,37 @@ type Pool struct {
 	// TODO(vadimsh): Implement task templates.
 }
 
-// newPoolsConfig converts pools.cfg proto it a queryable map.
+type pools struct {
+	pools       map[string]*Pool // a map "pool name => its config"
+	deployments map[string]*configpb.TaskTemplateDeployment
+}
+
+// newPoolsConfig converts pools.cfg proto to a queryable map with shared task
+// template deployments.
 //
 // pools.cfg here already passed the validation when it was first ingested. It
 // is possible the server code itself changed and the existing config is no
 // longer correct in some bad way. An error is returned in that case.
 //
-// On success returns a map "pool name => its config".
-func newPoolsConfig(cfg *configpb.PoolsCfg) (map[string]*Pool, error) {
-	pools := map[string]*Pool{}
+// On success returns *pools with
+// * map "pool name => its config". For each pool config,
+//   - if it has inlined task template deployment, the task templates in the
+//     deployment will be resolved.
+//   - otherwise it'll just keep the task template deployment name.
+//
+// * a map of shared task template deployments containing resolved task templates.
+func newPoolsConfig(cfg *configpb.PoolsCfg) (*pools, error) {
+	poolMap := map[string]*Pool{}
 	for _, pb := range cfg.Pool {
 		cfg, err := newPool(pb)
 		if err != nil {
 			return nil, errors.Annotate(err, "broken pools.cfg entry: %s", pb).Err()
 		}
 		for _, name := range pb.Name {
-			pools[name] = cfg
+			poolMap[name] = cfg
 		}
 	}
-	return pools, nil
+	return &pools{pools: poolMap}, nil
 }
 
 // newPool processes a single configpb.Pool definition.

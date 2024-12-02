@@ -45,10 +45,10 @@ func TestNewPoolsConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		pools, err := newPoolsConfig(goodPoolsCfg)
+		poolsCfg, err := newPoolsConfig(goodPoolsCfg)
 		assert.Loosely(t, err, should.BeNil)
+		pools := poolsCfg.pools
 		assert.Loosely(t, pools, should.HaveLength(3))
-
 		assert.Loosely(t, pools["a"].Realm, should.Equal("test:1"))
 		assert.Loosely(t, pools["b"].Realm, should.Equal("test:2"))
 		assert.Loosely(t, pools["c"].Realm, should.Equal("test:2"))

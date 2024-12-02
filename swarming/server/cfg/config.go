@@ -192,11 +192,12 @@ type Config struct {
 	// Refreshed is the local time when the config was fetched from the datastore.
 	Refreshed time.Time
 
-	settings  *configpb.SettingsCfg
-	traffic   map[string]*configpb.TrafficMigration_Route
-	poolMap   map[string]*Pool // pool name => config
-	poolNames []string         // sorted list of pool names
-	botGroups *botGroups       // can map bot ID to a bot group config
+	settings *configpb.SettingsCfg
+	traffic  map[string]*configpb.TrafficMigration_Route
+	// with a pool name => config map and shared task template deployments
+	poolsCfg  *pools
+	poolNames []string   // sorted list of pool names
+	botGroups *botGroups // can map bot ID to a bot group config
 }
 
 // Settings are settings proto with defaults filled in.
@@ -206,7 +207,8 @@ func (cfg *Config) Settings() *configpb.SettingsCfg {
 
 // Pool returns a config for the given pool or nil if there's no such pool.
 func (cfg *Config) Pool(name string) *Pool {
-	return cfg.poolMap[name]
+	// TODO(b/355012812): add task_template_deployment
+	return cfg.poolsCfg.pools[name]
 }
 
 // Pools returns a sorted list of all known pools.
@@ -629,12 +631,12 @@ func fetchFromDatastore(ctx context.Context) (*Config, error) {
 // buildQueriableConfig transforms config protos into data structures optimized
 // for config queries.
 func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, error) {
-	pools, err := newPoolsConfig(ent.Bundle.Pools)
+	poolsCfg, err := newPoolsConfig(ent.Bundle.Pools)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad pools.cfg").Err()
 	}
-	poolNames := make([]string, 0, len(pools))
-	for name := range pools {
+	poolNames := make([]string, 0, len(poolsCfg.pools))
+	for name := range poolsCfg.pools {
 		poolNames = append(poolNames, name)
 	}
 	sort.Strings(poolNames)
@@ -657,7 +659,7 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 		Refreshed:   clock.Now(ctx),
 		settings:    settings,
 		traffic:     traffic,
-		poolMap:     pools,
+		poolsCfg:    poolsCfg,
 		poolNames:   poolNames,
 		botGroups:   botGroups,
 	}, nil
