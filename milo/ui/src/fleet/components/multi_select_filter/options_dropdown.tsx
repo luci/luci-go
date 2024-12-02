@@ -5,10 +5,11 @@ import {
   PopoverOrigin,
   Button,
   Divider,
-  Typography,
   MenuProps,
 } from '@mui/material';
 import { useState } from 'react';
+
+import { HighlightCharacter } from '../highlight_character';
 
 import { FilterOption, SelectedFilters } from './types';
 import { keyboardUpDownHandler } from './utils';
@@ -21,6 +22,7 @@ export type OptionsDropdownProps = MenuProps & {
   selectedOptions: SelectedFilters;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
   anchorOrigin?: PopoverOrigin | undefined;
+  matches?: Record<string, number[]>;
 };
 
 export function OptionsDropdown({
@@ -35,6 +37,7 @@ export function OptionsDropdown({
     horizontal: 'right',
   },
   onKeyDown,
+  matches,
   ...menuProps
 }: OptionsDropdownProps) {
   const [tempSelectedOptions, setTempSelectedOptions] =
@@ -121,7 +124,12 @@ export function OptionsDropdown({
                 }
                 tabIndex={-1}
               />
-              <Typography variant="body2">{o2.label}</Typography>
+              <HighlightCharacter
+                variant="body2"
+                highlights={matches?.[o2.value]}
+              >
+                {o2.label}
+              </HighlightCharacter>
             </button>
           </MenuItem>
         ))}

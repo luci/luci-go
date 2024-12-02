@@ -21,7 +21,7 @@ describe('multi_select_filter/utils', () => {
       const query = options[1];
 
       const result = fuzzySort(query)(options);
-      expect(result).toEqual([options[1]]);
+      expect(result[0].el).toEqual(options[1]);
     });
 
     it('be empty if there are no matches', () => {
@@ -37,7 +37,7 @@ describe('multi_select_filter/utils', () => {
       const query = 'ab';
 
       const result = fuzzySort(query)(options);
-      expect(result).toContain(options[0]);
+      expect(result.map((r) => r.el)).toContain(options[0]);
     });
 
     it('priorities consecutive matches', () => {
@@ -45,7 +45,7 @@ describe('multi_select_filter/utils', () => {
       const query = 'aa';
 
       const result = fuzzySort(query)(options);
-      expect(result).toEqual(['aaa', 'azzza']);
+      expect(result.map((r) => r.el)).toEqual(['aaa', 'azzza']);
     });
 
     it('works with a getter function', () => {
@@ -53,8 +53,8 @@ describe('multi_select_filter/utils', () => {
       const query = 'a';
       const getter = (n: number) => String.fromCharCode('a'.charCodeAt(0) + n);
 
-      const result = fuzzySort(query)(options, getter);
-      expect(result).toEqual([0]);
+      const result = fuzzySort(query)(options, () => [], getter);
+      expect(result.map((r) => r.el)).toEqual([0]);
     });
 
     it('respects minScore', () => {
@@ -69,8 +69,36 @@ describe('multi_select_filter/utils', () => {
       const options = [['abc', 'def'], ['ghi']];
       const query = 'ab';
 
+      const result = fuzzySort(query)(options, (x) => x, String);
+      expect(result.map((r) => r.el)).toContain(options[0]);
+    });
+
+    it('returns no matches with empty string', () => {
+      const options = ['abcabc'];
+      const query = '';
+
       const result = fuzzySort(query)(options);
-      expect(result).toContain(options[0]);
+      expect(result[0].matches).toEqual([]);
+    });
+
+    it('returns the correct matches', () => {
+      const options = ['abcabc'];
+      const query = 'ab';
+
+      const result = fuzzySort(query)(options);
+      expect(result[0].matches).toEqual([0, 1]);
+    });
+
+    it('returns the correct matches, with nested options', () => {
+      const options = [['abcabc', 'xyzab']];
+      const query = 'ab';
+
+      const result = fuzzySort(query)(options, (x) => x, String);
+      expect(result.map((r) => r.matches)).toEqual([
+        [0, 1], // parent
+        [0, 1], // child 1
+        [3, 4], // child 2
+      ]);
     });
   });
 });

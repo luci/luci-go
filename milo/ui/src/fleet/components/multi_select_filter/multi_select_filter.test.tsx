@@ -248,7 +248,7 @@ describe('<MultiSelectFilter />', () => {
       fireEvent.change(search, { target: { value: searchQuery } });
       expect(search).toHaveValue(searchQuery);
 
-      fireEvent.keyDown(screen.getByText('Option 1'), BACKSPACE_KEY);
+      fireEvent.keyDown(screen.getAllByRole('menuitem')[0], BACKSPACE_KEY);
       expect(search).toHaveValue('');
       expect(search).toHaveFocus();
     });

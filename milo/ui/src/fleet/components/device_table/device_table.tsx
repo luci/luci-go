@@ -117,8 +117,7 @@ export function DeviceTable() {
     <>
       {devicesQuery.isError || dimensionsQuery.isError ? (
         <Alert severity="error">
-          {' '}
-          Something went wrong:{' '}
+          Something went wrong:
           {getErrorMessage(devicesQuery.error || dimensionsQuery.error)}
         </Alert>
       ) : (

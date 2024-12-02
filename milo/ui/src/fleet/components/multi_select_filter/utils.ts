@@ -21,7 +21,7 @@ function isStringArray(x: unknown): x is string[] {
  * characters in the query are present in the target in the same
  * order and priorities consecutive matches
  */
-function fuzzySubstring(query: string, target: string): number {
+function fuzzySubstring(query: string, target: string): [number, number[]] {
   // Convert strings to lowercase for case-insensitive matching
   target = target.toLowerCase();
   query = query.toLowerCase();
@@ -30,6 +30,8 @@ function fuzzySubstring(query: string, target: string): number {
   let queryIndex = 0;
   let score = 0;
   let seqMatchCount = 0;
+
+  const matchesIdx = [];
 
   // Iterate through both strings
   while (targetIndex < target.length && queryIndex < query.length) {
@@ -41,6 +43,8 @@ function fuzzySubstring(query: string, target: string): number {
       score += 1 + seqMatchCount * 5; // Sequential match bonus
       seqMatchCount++;
       queryIndex++;
+
+      matchesIdx.push(targetIndex);
     } else {
       // No match, reset sequential match count
       seqMatchCount = 0;
@@ -51,10 +55,10 @@ function fuzzySubstring(query: string, target: string): number {
 
   // If we didn't reach the end of the query, it's not a match
   if (queryIndex < query.length) {
-    return -1;
+    return [-1, []];
   }
 
-  return score;
+  return [score, matchesIdx];
 }
 
 /**
@@ -78,44 +82,42 @@ export const fuzzySort =
    * @param get a function to get a string from a list item, only required if
    * the input list is not string
    *
-   * @retuns all the item with at least the @param minScore sorted based on
+   * @returns all the matching items as a result object sorted based on
    * @param scoringFunction
    */
-  <T>(list: T[], get?: (x: T) => string | string[]): T[] => {
-    if (searchString.length === 0) {
-      return list;
-    }
-
-    if (
-      !isStringArray(list) &&
-      !list.every((e) => isStringArray(e)) &&
-      get === undefined
-    ) {
+  <ParentElementType, ChildrenElementType>(
+    list: ParentElementType[],
+    getNestedOptions: (
+      el: ParentElementType,
+    ) => ChildrenElementType[] = () => [],
+    getLabel?: (el: ParentElementType | ChildrenElementType) => string,
+  ) => {
+    if (!isStringArray(list) && getLabel === undefined) {
       throw Error(
-        'If the list is not of type strings[] or string[][] you need to provide a getter function',
+        'If the list is not of type strings[] you need to provide a getter function',
       );
     }
-    get ??= (s) => s as string;
+    getLabel ??= String;
 
-    const mapper: Record<string, T[]> = {};
-    for (const el of list) {
-      const getResoult = get(el);
-      if (!Array.isArray(getResoult)) {
-        mapper[getResoult] ??= [];
-        mapper[getResoult].push(el);
-        continue;
-      }
-      for (const s of getResoult) {
-        mapper[s] ??= [];
-        mapper[s].push(el);
-      }
-    }
-
-    return Object.keys(mapper)
-      .map((s) => [s, scoringFunction(searchString, s)] as const)
-      .filter(([_, score]) => score >= minScore)
-      .sort(([_, score1], [__, score2]) => score2 - score1)
-      .flatMap(([el, _]) => mapper[el]);
+    return list
+      .flatMap((el) => [
+        { el: el, parent: undefined, label: getLabel(el) },
+        ...getNestedOptions(el).map((o) => ({
+          el: o,
+          parent: el,
+          label: getLabel(o),
+        })),
+      ])
+      .map((obj) => {
+        const [score, matches] = scoringFunction(searchString, obj.label);
+        return {
+          ...obj,
+          score,
+          matches,
+        };
+      })
+      .filter(({ score }) => score >= minScore)
+      .sort(({ score: score1 }, { score: score2 }) => score2 - score1);
   };
 
 export function hasAnyModifier(e: React.KeyboardEvent<HTMLDivElement>) {

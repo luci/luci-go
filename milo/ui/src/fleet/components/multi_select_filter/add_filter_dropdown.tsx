@@ -14,9 +14,11 @@
 
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import SearchIcon from '@mui/icons-material/Search';
-import { MenuItem, TextField, Menu, Typography } from '@mui/material';
+import { MenuItem, TextField, Menu } from '@mui/material';
 import _ from 'lodash';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+
+import { HighlightCharacter } from '../highlight_character';
 
 import { OptionsDropdown } from './options_dropdown';
 import { FilterOption, SelectedFilters } from './types';
@@ -46,6 +48,21 @@ export function AddFilterDropdown({
     setAnchorELInner(null);
     setAnchorEL(null);
   };
+
+  const filterResults = useMemo(
+    () =>
+      Object.values(
+        _.groupBy(
+          fuzzySort(searchQuery)(
+            filterOptions,
+            (el) => el.options,
+            (el) => el.label,
+          ),
+          (o) => o.parent?.value ?? o.el.value,
+        ),
+      ),
+    [filterOptions, searchQuery],
+  );
 
   return (
     <Menu
@@ -120,66 +137,71 @@ export function AddFilterDropdown({
           }}
         />
       </div>
-      {_.uniqBy(
-        // It's possible to have duplicate results if the searchQuery matches
-        // multiple second level options of the same first level option
-        //
-        // I.E. {Status: [active, inactive]} with searchQuery='active'
-        fuzzySort(searchQuery)(filterOptions, (o) => [
-          o.label,
-          ...o.options.map((o) => o.label),
-        ]),
-        (o) => o.value,
-      ).map((option, idx) => (
-        <MenuItem
-          onClick={(event) => {
-            // The onClick fires also when closing the menu
-            if (open === undefined) {
-              setOpen(idx);
-              setAnchorELInner(event.currentTarget);
-            }
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight') {
-              e.currentTarget.click();
-            }
-          }}
-          key={`item-${option.value}-${idx}`}
-          disableRipple
-          selected={open === idx}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}
-        >
-          <Typography variant="body2">{option.label}</Typography>
-          <ArrowRightIcon />
-          <OptionsDropdown
+      {filterResults.map((searchResult, idx) => {
+        const parent = searchResult[0].parent ?? searchResult[0].el;
+        const parentMatches = searchResult
+          .filter((sr) => sr.parent === undefined)
+          .at(0)?.matches;
+        const childrenMatches = Object.fromEntries(
+          searchResult
+            .filter((sr) => sr.parent !== undefined)
+            .map((sr) => [sr.el.value, sr.matches]),
+        );
+
+        return (
+          <MenuItem
+            onClick={(event) => {
+              // The onClick fires also when closing the menu
+              if (open === undefined) {
+                setOpen(idx);
+                setAnchorELInner(event.currentTarget);
+              }
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft') {
+              if (e.key === 'ArrowRight') {
+                e.currentTarget.click();
+              }
+            }}
+            key={`item-${parent.value}-${idx}`}
+            disableRipple
+            selected={open === idx}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
+          >
+            <HighlightCharacter variant="body2" highlights={parentMatches}>
+              {parent.label}
+            </HighlightCharacter>
+            <ArrowRightIcon />
+            <OptionsDropdown
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') {
+                  setOpen(undefined);
+                  setAnchorELInner(null);
+                }
+              }}
+              onClose={(_, reason) => {
                 setOpen(undefined);
                 setAnchorELInner(null);
-              }
-            }}
-            onClose={(_, reason) => {
-              setOpen(undefined);
-              setAnchorELInner(null);
-              // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
-              // click is inside it
-              if (reason === 'backdropClick') {
-                setAnchorEL(null);
-              }
-            }}
-            setSelectedOptions={setSelectedOptions}
-            selectedOptions={selectedOptions}
-            anchorEl={anchorElInner}
-            open={anchorElInner !== null && open === idx}
-            option={option}
-          />
-        </MenuItem>
-      ))}
+                // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
+                // click is inside it
+                if (reason === 'backdropClick') {
+                  setAnchorEL(null);
+                }
+              }}
+              setSelectedOptions={setSelectedOptions}
+              selectedOptions={selectedOptions}
+              anchorEl={anchorElInner}
+              open={anchorElInner !== null && open === idx}
+              option={parent}
+              matches={childrenMatches}
+            />
+          </MenuItem>
+        );
+      })}
     </Menu>
   );
 }
