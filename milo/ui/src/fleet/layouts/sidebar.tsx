@@ -116,11 +116,3 @@ export const Sidebar = ({ open }: { open: boolean }) => {
     </MuiDrawer>
   );
 };
-
-/*
-
-I like HSL for one off colors, I think the ideal solution will be to use [the colors specified by android T&D desings](https://carbon.googleplex.com/android-tools-and-data/pages/color/implimentation?edit=true) for most things and access them via MUI (I.E. `color.red[500]`)
-
-
-
- */
