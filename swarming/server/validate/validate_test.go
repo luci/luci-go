@@ -19,8 +19,12 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
 
 func TestDimensionKey(t *testing.T) {
@@ -212,4 +216,209 @@ func TestPubSubTopicName(t *testing.T) {
 			assert.That(t, err, should.ErrLike(cs.err))
 		})
 	}
+}
+
+func TestPath(t *testing.T) {
+	t.Parallel()
+	maxLen := 255
+	cases := []struct {
+		name string
+		path string
+		err  any
+	}{
+		{"empty", "", "cannot be empty"},
+		{"too_long", strings.Repeat("a", maxLen+1), "too long"},
+		{"with_double_backslashes", "a\\b", `cannot contain "\\".`},
+		{"with_leading_slash", "/a/b", `cannot start with "/"`},
+		{"not_normalized_dot", "./a/b", "is not normalized"},
+		{"not_normalized_double_dots", "a/../b", "is not normalized"},
+	}
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			err := Path(cs.path, maxLen)
+			assert.That(t, err, should.ErrLike(cs.err))
+		})
+	}
+}
+
+func TestCaches(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("Caches", t, func(t *ftt.Test) {
+		t.Run("too many caches", func(t *ftt.Test) {
+			cache := &apipb.CacheEntry{
+				Name: "name",
+				Path: "path",
+			}
+			var caches []*apipb.CacheEntry
+			for i := 0; i < maxCacheCount+1; i++ {
+				caches = append(caches, cache)
+			}
+			_, err := Caches(caches)
+			assert.That(t, err.AsError(), should.ErrLike(fmt.Sprintf("can have up to %d caches", maxCacheCount)))
+		})
+
+		t.Run("name", func(t *ftt.Test) {
+			t.Run("invalid", func(t *ftt.Test) {
+				cases := []struct {
+					tn   string
+					name string
+					err  any
+				}{
+					{"empty", "", "required"},
+					{"too_long", strings.Repeat("a", maxCacheNameLength+1), "too long"},
+					{"invalid", "INVALID", "should match"},
+				}
+				for _, cs := range cases {
+					t.Run(cs.tn, func(t *ftt.Test) {
+						caches := []*apipb.CacheEntry{
+							{
+								Name: cs.name,
+							},
+						}
+						_, err := Caches(caches)
+						assert.Loosely(t, err.AsError(), should.ErrLike(cs.err))
+					})
+				}
+			})
+			t.Run("duplicates", func(t *ftt.Test) {
+				caches := []*apipb.CacheEntry{
+					{
+						Name: "name",
+						Path: "path",
+					},
+					{
+						Name: "name",
+						Path: "path",
+					},
+				}
+				_, err := Caches(caches)
+				assert.That(t, err.AsError(), should.ErrLike("same cache name cannot be specified twice"))
+			})
+		})
+		t.Run("path", func(t *ftt.Test) {
+			t.Run("duplicates", func(t *ftt.Test) {
+				caches := []*apipb.CacheEntry{
+					{
+						Name: "name1",
+						Path: "a/b",
+					},
+					{
+						Name: "name2",
+						Path: "a/b",
+					},
+				}
+				_, err := Caches(caches)
+				assert.That(t, err.AsError(), should.ErrLike("same cache path cannot be specified twice"))
+			})
+		})
+	})
+}
+
+func TestCIPDPackages(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("CIPDPackages", t, func(t *ftt.Test) {
+		t.Run("too_many", func(t *ftt.Test) {
+			var pkgs []*apipb.CipdPackage
+			for i := 0; i < maxCIPDPackageCount+1; i++ {
+				pkgs = append(pkgs, &apipb.CipdPackage{})
+			}
+			err := CIPDPackages(pkgs, false, stringset.Set{})
+			assert.That(t, err.AsError(), should.ErrLike("can have up to 64 packages"))
+		})
+		t.Run("duplicate", func(t *ftt.Test) {
+			pkgs := []*apipb.CipdPackage{
+				{
+					PackageName: "some/pkg",
+					Version:     "version1",
+					Path:        "a/b",
+				},
+				{
+					PackageName: "some/pkg",
+					Version:     "version2",
+					Path:        "a/b",
+				},
+			}
+			err := CIPDPackages(pkgs, false, stringset.Set{})
+			assert.That(t, err.AsError(), should.ErrLike("specified more than once"))
+		})
+		t.Run("no_path", func(t *ftt.Test) {
+			pkgs := []*apipb.CipdPackage{
+				{
+					PackageName: "some/pkg",
+					Version:     "version",
+				},
+			}
+			err := CIPDPackages(pkgs, false, stringset.Set{})
+			assert.That(t, err.AsError(), should.ErrLike("path: cannot be empty"))
+		})
+		t.Run("cache_path", func(t *ftt.Test) {
+			pkgs := []*apipb.CipdPackage{
+				{
+					PackageName: "some/pkg",
+					Version:     "version1",
+					Path:        "a/b",
+				},
+			}
+			err := CIPDPackages(pkgs, false, stringset.NewFromSlice("a/b"))
+			assert.That(t, err.AsError(), should.ErrLike("mapped to a named cache"))
+		})
+		t.Run("require_pinned_verison", func(t *ftt.Test) {
+			t.Run("fail", func(t *ftt.Test) {
+				pkgs := []*apipb.CipdPackage{
+					{
+						PackageName: "some/pkg",
+						Version:     "version1",
+						Path:        "a/b",
+					},
+				}
+				err := CIPDPackages(pkgs, true, stringset.Set{})
+				assert.That(t, err.AsError(), should.ErrLike("cannot have unpinned packages"))
+			})
+			t.Run("pass_tag", func(t *ftt.Test) {
+				pkgs := []*apipb.CipdPackage{
+					{
+						PackageName: "some/pkg",
+						Version:     "good:tag",
+						Path:        "a/b",
+					},
+				}
+				err := CIPDPackages(pkgs, true, stringset.Set{})
+				assert.That(t, err.AsError(), should.ErrLike(nil))
+			})
+			t.Run("pass_hash", func(t *ftt.Test) {
+				pkgs := []*apipb.CipdPackage{
+					{
+						PackageName: "some/pkg",
+						Version:     "B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUC",
+						Path:        "a/b",
+					},
+				}
+				err := CIPDPackages(pkgs, true, stringset.Set{})
+				assert.That(t, err.AsError(), should.ErrLike(nil))
+			})
+		})
+	})
+}
+
+func TestEnvVar(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		ev   string
+		err  any
+	}{
+		{"empty", "", "required"},
+		{"too_long", strings.Repeat("a", maxEnvVarLength+1), "too long"},
+		{"invalid", "1", "should match"},
+	}
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			err := EnvVar(cs.ev)
+			assert.That(t, err, should.ErrLike(cs.err))
+		})
+	}
+
 }

@@ -18,6 +18,7 @@ package validate
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"regexp"
 	"slices"
 	"strings"
@@ -27,6 +28,9 @@ import (
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 )
 
 var cipdExpander = template.DefaultExpander()
@@ -44,6 +48,17 @@ const (
 	// Min time to keep the bot alive before it is declared dead.
 	minBotPingTolanceSecs = 60
 	maxPubsubTopicLength  = 1024
+
+	maxCacheCount      = 32
+	maxCacheNameLength = 128
+	maxCachePathLength = 256
+
+	maxCIPDPackageCount  = 64
+	MaxPackagePathLength = 256
+
+	maxEnvVarLength   = 64
+	MaxEnvValueLength = 1024
+	MaxEnvVarCount    = 64
 )
 
 var (
@@ -56,7 +71,9 @@ var (
 	// topicNameRE is the full topic name regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
 	topicNameRE = regexp.MustCompile(`^projects/(.*)/topics/(.*)$`)
 	// topicIDRE is the topic id regex derived from https://cloud.google.com/pubsub/docs/admin#resource_names
-	topicIDRE = regexp.MustCompile(`^[A-Za-z]([0-9A-Za-z\._\-~+%]){3,255}$`)
+	topicIDRE   = regexp.MustCompile(`^[A-Za-z]([0-9A-Za-z\._\-~+%]){3,255}$`)
+	cacheNameRe = regexp.MustCompile(`^[a-z0-9_]+$`)
+	envVarRe    = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
 // DimensionKey checks if `key` can be a dimension key.
@@ -99,6 +116,9 @@ func DimensionValue(val string) error {
 // The package name is allowed to be a template e.g. have "${platform}" and
 // other substitutions inside.
 func CipdPackageName(pkg string) error {
+	if pkg == "" {
+		return errors.New("required")
+	}
 	expanded, err := cipdExpander.Expand(pkg)
 	if err != nil {
 		return errors.Annotate(err, "bad package name template %q", pkg).Err()
@@ -111,7 +131,98 @@ func CipdPackageName(pkg string) error {
 
 // CipdPackageVersion checks CIPD package version is correct.
 func CipdPackageVersion(ver string) error {
+	if ver == "" {
+		return errors.New("required")
+	}
 	return common.ValidateInstanceVersion(ver)
+}
+
+type cipdPkg interface {
+	GetPath() string
+	GetVersion() string
+}
+
+// CIPDPackages checks a slice of CIPD packages are correct.
+func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, cachePaths stringset.Set) errors.MultiError {
+	var merr errors.MultiError
+	if len(packages) > maxCIPDPackageCount {
+		merr.MaybeAdd(errors.Reason("can have up to %d packages", maxCIPDPackageCount).Err())
+	}
+
+	type pathName struct {
+		p    string
+		name string
+	}
+	pkgPathNames := make(map[pathName]struct{}, len(packages))
+	for i, pkg := range packages {
+		pkgName, err := packageName(pkg)
+		if err != nil {
+			merr.MaybeAdd(errors.Annotate(err, "name").Err())
+		}
+
+		subMerr := validateCIPDPackage(pkgName, pkg, requirePinnedVer, cachePaths)
+		if subMerr.AsError() != nil {
+			for _, err := range subMerr.Unwrap() {
+				merr.MaybeAdd(errors.Annotate(err, "package %d (%s)", i, pkgName).Err())
+			}
+		}
+
+		pn := pathName{pkg.GetPath(), pkgName}
+		if _, ok := pkgPathNames[pn]; ok {
+			merr.MaybeAdd(errors.Reason("package %q is specified more than once in path %s", pkgName, pkg.GetPath()).Err())
+		} else {
+			pkgPathNames[pn] = struct{}{}
+		}
+	}
+	return merr
+}
+
+func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, cachePaths stringset.Set) errors.MultiError {
+	var merr errors.MultiError
+
+	if err := CipdPackageName(pkgName); err != nil {
+		merr.MaybeAdd(errors.Annotate(err, "name").Err())
+	}
+
+	if err := CipdPackageVersion(pkg.GetVersion()); err != nil {
+		merr.MaybeAdd(errors.Annotate(err, "version").Err())
+	}
+
+	if err := Path(pkg.GetPath(), MaxPackagePathLength); err != nil {
+		merr.MaybeAdd(errors.Annotate(err, "path").Err())
+	}
+
+	if cachePaths.Has(pkg.GetPath()) {
+		merr.MaybeAdd(errors.Reason(
+			"path %q is mapped to a named cache and cannot be a target of CIPD installation",
+			pkg.GetPath()).Err())
+	}
+	if requirePinnedVer {
+		if err := validatePinnedInstanceVersion(pkg.GetVersion()); err != nil {
+			merr.MaybeAdd(errors.New(
+				"an idempotent task cannot have unpinned packages; use tags or instance IDs as package versions"))
+		}
+	}
+	return merr
+}
+
+func packageName(pkg cipdPkg) (string, error) {
+	switch pkg := pkg.(type) {
+	case *apipb.CipdPackage:
+		return pkg.GetPackageName(), nil
+	case *configpb.TaskTemplate_CipdPackage:
+		return pkg.GetPkg(), nil
+	default:
+		return "", errors.Reason("unexpected type %T", pkg).Err()
+	}
+}
+
+func validatePinnedInstanceVersion(v string) error {
+	if common.ValidateInstanceID(v, common.AnyHash) == nil ||
+		common.ValidateInstanceTag(v) == nil {
+		return nil
+	}
+	return errors.Reason("%q is not a pinned instance version", v).Err()
 }
 
 // Tag checks a "<key>:<value>" tag is correct.
@@ -154,6 +265,7 @@ func Priority(p int32) error {
 	return nil
 }
 
+// BotPingTolerance checks a bot_ping_tolerance is correct.
 func BotPingTolerance(bpt int64) error {
 	if bpt < minBotPingTolanceSecs || bpt > maxBotPingTolanceSecs {
 		return errors.Reason("invalid %d, must be between %d and %d", bpt, minBotPingTolanceSecs, maxBotPingTolanceSecs).Err()
@@ -210,4 +322,104 @@ func PubSubTopicName(topic string) (string, string, error) {
 		return "", "", errors.Reason("topic id %q does not match %q", topicID, topicIDRE).Err()
 	}
 	return cloudProj, topicID, nil
+}
+
+// teeErr saves `err` in `keep` and then returns `err`
+func teeErr(err error, keep *error) error {
+	*keep = err
+	return err
+}
+
+// Path validates a path.
+func Path(p string, maxLen int) error {
+	var err error
+	switch {
+	case p == "":
+		return errors.New("cannot be empty")
+	case teeErr(Length(p, maxLen), &err) != nil:
+		return err
+	case strings.Contains(p, "\\"):
+		return errors.New(`cannot contain "\\". On Windows forward-slashes will be replaced with back-slashes.`)
+	case strings.HasPrefix(p, "/"):
+		return errors.New(`cannot start with "/"`)
+	case p != path.Clean(p):
+		return errors.Reason("%q is not normalized. Normalized is %q", p, path.Clean(p)).Err()
+	default:
+		return nil
+	}
+}
+
+// Length checks the value deos not exceed the limit.
+func Length(val string, limit int) error {
+	if len(val) > limit {
+		return errors.Reason("too long %q: %d > %d", val, len(val), limit).Err()
+	}
+	return nil
+}
+
+type cacheEntry interface {
+	GetName() string
+	GetPath() string
+}
+
+// Caches validates a slice of cacheEntry.
+//
+// Also returns a set of cache paths.
+//
+// Can be used to validate
+// * []*apipb.CacheEntry
+// * []*configpb.TaskTemplate_CacheEntry
+func Caches[C cacheEntry](caches []C) (pathSet stringset.Set, merr errors.MultiError) {
+	if len(caches) > maxCacheCount {
+		merr.MaybeAdd(errors.Reason("can have up to %d caches", maxCacheCount).Err())
+	}
+	nameSet := stringset.New(len(caches))
+	pathSet = stringset.New(len(caches))
+	for i, c := range caches {
+		if !nameSet.Add(c.GetName()) {
+			merr.MaybeAdd(errors.New("same cache name cannot be specified twice"))
+		}
+		if !pathSet.Add(c.GetPath()) {
+			merr.MaybeAdd(errors.New("same cache path cannot be specified twice"))
+		}
+		if err := validateCacheName(c.GetName()); err != nil {
+			merr.MaybeAdd(errors.Annotate(err, "cache name %d", i).Err())
+		}
+		if err := Path(c.GetPath(), maxCachePathLength); err != nil {
+			merr.MaybeAdd(errors.Annotate(err, "cache path %d", i).Err())
+		}
+	}
+
+	if merr.AsError() == nil {
+		return pathSet, nil
+	}
+	return nil, merr
+}
+
+func validateCacheName(name string) error {
+	if name == "" {
+		return errors.New("required")
+	}
+	if err := Length(name, maxCacheNameLength); err != nil {
+		return err
+	}
+	if !cacheNameRe.MatchString(name) {
+		return errors.Reason("%q should match %s", name, cacheNameRe).Err()
+	}
+	return nil
+}
+
+// EnvVar validates an envvar name.
+func EnvVar(ev string) error {
+	var err error
+	switch {
+	case ev == "":
+		return errors.New("required")
+	case teeErr(Length(ev, maxEnvVarLength), &err) != nil:
+		return err
+	case !envVarRe.MatchString(ev):
+		return errors.Reason("%q should match %s", ev, envVarRe).Err()
+	default:
+		return nil
+	}
 }

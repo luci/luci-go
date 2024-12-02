@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -27,7 +26,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -61,17 +59,9 @@ const (
 	maxSliceCount           = 8
 	maxTagCount             = 256
 	maxCmdArgs              = 128
-	maxEnvKeyCount          = 64
-	maxEnvKeyLength         = 64
-	maxEnvValueLength       = 1024
 	maxOutputCount          = 4096
 	maxOutputPathLength     = 512
-	maxCacheCount           = 32
-	maxCacheNameLength      = 128
-	maxCachePathLength      = 256
-	maxCIPDPackageCount     = 64
 	maxCIPDServerLength     = 1024
-	maxPackagePathLength    = 256
 	maxDimensionKeyCount    = 32
 	maxDimensionValueCount  = 16
 	orDimSep                = "|"
@@ -81,7 +71,6 @@ const (
 )
 
 var (
-	envKeyRe      = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 	casInstanceRe = regexp.MustCompile(`^projects/[a-z0-9-]+/instances/[a-z0-9-_]+$`)
 	cacheNameRe   = regexp.MustCompile(`^[a-z0-9_]+$`)
 )
@@ -152,7 +141,7 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest) (pool strin
 		return "", errors.New("pubsub_auth_token requires pubsub_topic")
 	case req.GetPubsubTopic() == "" && req.GetPubsubUserdata() != "":
 		return "", errors.New("pubsub_userdata requires pubsub_topic")
-	case teeErr(validateLength(req.GetPubsubUserdata(), maxPubsubUserDataLength), &err) != nil:
+	case teeErr(validate.Length(req.GetPubsubUserdata(), maxPubsubUserDataLength), &err) != nil:
 		return "", errors.Annotate(err, "pubsub_userdata").Err()
 	case teeErr(validateBotPingToleranceSecs(req.GetBotPingToleranceSecs()), &err) != nil:
 		return "", errors.Annotate(err, "bot_ping_tolerance").Err()
@@ -240,13 +229,6 @@ func validateServiceAccount(sa string) error {
 	return validate.ServiceAccount(sa)
 }
 
-func validateLength(val string, limit int) error {
-	if len(val) > limit {
-		return errors.Reason("too long %q: %d > %d", val, len(val), limit).Err()
-	}
-	return nil
-}
-
 func validateRealm(realm string) error {
 	if realm == "" {
 		return nil
@@ -282,7 +264,7 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	case teeErr(validateCommand(props.Command), &err) != nil:
 		return "", errors.Annotate(err, "command").Err()
 	case props.RelativeCwd != "" &&
-		teeErr(validatePath(props.RelativeCwd, maxPackagePathLength), &err) != nil:
+		teeErr(validate.Path(props.RelativeCwd, validate.MaxPackagePathLength), &err) != nil:
 		return "", errors.Annotate(err, "relative_cwd").Err()
 	case teeErr(validateEnv(props.Env), &err) != nil:
 		return "", errors.Annotate(err, "env").Err()
@@ -293,9 +275,9 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	case teeErr(validateOutputs(props.Outputs), &err) != nil:
 		return "", errors.Annotate(err, "outputs").Err()
 	}
-	cachePathSet, err := validateCaches(props.GetCaches())
-	if err != nil {
-		return "", errors.Annotate(err, "caches").Err()
+	cachePathSet, merr := validate.Caches(props.GetCaches())
+	if merr.AsError() != nil {
+		return "", errors.Annotate(merr.AsError(), "caches").Err()
 	}
 
 	if err = validateCipdInput(props.GetCipdInput(), props.GetIdempotent(), cachePathSet); err != nil {
@@ -319,74 +301,42 @@ func validateCommand(cmd []string) error {
 	return nil
 }
 
-func validateEnvKey(key string) error {
-	var err error
-	switch {
-	case key == "":
-		return errors.New("key is required")
-	case teeErr(validateLength(key, maxEnvKeyLength), &err) != nil:
-		return err
-	case !envKeyRe.MatchString(key):
-		return errors.Reason("%q should match %s", key, envKeyRe).Err()
-	default:
-		return nil
-	}
-}
-
 func validateEnv(env []*apipb.StringPair) error {
-	if len(env) > maxEnvKeyCount {
-		return errors.Reason("can have up to %d keys", maxEnvKeyCount).Err()
+	if len(env) > validate.MaxEnvVarCount {
+		return errors.Reason("can have up to %d keys", validate.MaxEnvVarCount).Err()
 	}
 	envKeys := stringset.New(len(env))
 	for i, env := range env {
 		if !envKeys.Add(env.Key) {
 			return errors.New("same key cannot be specified twice")
 		}
-		if err := validateEnvKey(env.Key); err != nil {
+		if err := validate.EnvVar(env.Key); err != nil {
 			return errors.Annotate(err, "key %d", i).Err()
 		}
-		if err := validateLength(env.Value, maxEnvValueLength); err != nil {
+		if err := validate.Length(env.Value, validate.MaxEnvValueLength); err != nil {
 			return errors.Annotate(err, "value %d", i).Err()
 		}
 	}
 	return nil
 }
 
-func validatePath(p string, maxLen int) error {
-	var err error
-	switch {
-	case p == "":
-		return errors.New("cannot be empty")
-	case teeErr(validateLength(p, maxLen), &err) != nil:
-		return err
-	case strings.Contains(p, "\\"):
-		return errors.New(`cannot contain "\\". On Windows forward-slashes will be replaced with back-slashes.`)
-	case strings.HasPrefix(p, "/"):
-		return errors.New(`cannot start with "/"`)
-	case p != path.Clean(p):
-		return errors.Reason("%q is not normalized. Normalized is %q", p, path.Clean(p)).Err()
-	default:
-		return nil
-	}
-}
-
 func validateEnvPrefixes(envPrefixes []*apipb.StringListPair) error {
-	if len(envPrefixes) > maxEnvKeyCount {
-		return errors.Reason("can have up to %d keys", maxEnvKeyCount).Err()
+	if len(envPrefixes) > validate.MaxEnvVarCount {
+		return errors.Reason("can have up to %d keys", validate.MaxEnvVarCount).Err()
 	}
 	epKeys := stringset.New(len(envPrefixes))
 	for i, ep := range envPrefixes {
 		if !epKeys.Add(ep.Key) {
 			return errors.New("same key cannot be specified twice")
 		}
-		if err := validateEnvKey(ep.Key); err != nil {
+		if err := validate.EnvVar(ep.Key); err != nil {
 			return errors.Annotate(err, "key %d", i).Err()
 		}
 		if len(ep.Value) == 0 {
 			return errors.New("value is required")
 		}
 		for j, p := range ep.Value {
-			if err := validatePath(p, maxEnvValueLength); err != nil {
+			if err := validate.Path(p, validate.MaxEnvValueLength); err != nil {
 				return errors.Annotate(err, "value %d-%d", i, j).Err()
 			}
 		}
@@ -428,46 +378,9 @@ func validateOutputs(outputs []string) error {
 		return errors.Reason("can have up to %d outputs", maxOutputPathLength).Err()
 	}
 	for i, output := range outputs {
-		if err := validatePath(output, maxOutputPathLength); err != nil {
+		if err := validate.Path(output, maxOutputPathLength); err != nil {
 			return errors.Annotate(err, "output %d", i).Err()
 		}
-	}
-	return nil
-}
-
-func validateCaches(caches []*apipb.CacheEntry) (stringset.Set, error) {
-	if len(caches) > maxCacheCount {
-		return nil, errors.Reason("can have up to %d caches", maxCacheCount).Err()
-	}
-
-	nameSet := stringset.New(len(caches))
-	pathSet := stringset.New(len(caches))
-	for i, c := range caches {
-		if err := validateCacheName(c.GetName()); err != nil {
-			return nil, errors.Annotate(err, "cache name %d", i).Err()
-		}
-		if !nameSet.Add(c.GetName()) {
-			return nil, errors.New("same cache name cannot be specified twice")
-		}
-		if err := validatePath(c.GetPath(), maxCachePathLength); err != nil {
-			return nil, errors.Annotate(err, "cache path %d", i).Err()
-		}
-		if !pathSet.Add(c.GetPath()) {
-			return nil, errors.New("same cache path cannot be specified twice")
-		}
-	}
-	return pathSet, nil
-}
-
-func validateCacheName(name string) error {
-	if name == "" {
-		return errors.New("required")
-	}
-	if err := validateLength(name, maxCacheNameLength); err != nil {
-		return err
-	}
-	if !cacheNameRe.MatchString(name) {
-		return errors.Reason("%q should match %s", name, cacheNameRe).Err()
 	}
 	return nil
 }
@@ -481,93 +394,38 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, cachePathSet
 		return errors.Annotate(err, "server").Err()
 	case teeErr(validateCIPDClientPackage(cipdInput.ClientPackage), &err) != nil:
 		return errors.Annotate(err, "client_package").Err()
-	case len(cipdInput.Packages) == 0:
-		return errors.New("cannot have an empty package list")
-	case len(cipdInput.Packages) > maxCIPDPackageCount:
-		return errors.Reason("up to %d CIPD packages can be listed for a task", maxCIPDPackageCount).Err()
 	}
-
-	type pathName struct {
-		p    string
-		name string
+	merr := validate.CIPDPackages(cipdInput.Packages, idempotent, cachePathSet)
+	if merr.AsError() == nil {
+		return nil
 	}
-	pkgPathNames := make(map[pathName]struct{}, len(cipdInput.Packages))
-	for i, pkg := range cipdInput.Packages {
-		if err = validateCIPDPackage(pkg, idempotent, cachePathSet); err != nil {
-			return errors.Annotate(err, "package %d", i).Err()
-		}
-
-		pn := pathName{pkg.Path, pkg.PackageName}
-		if _, ok := pkgPathNames[pn]; ok {
-			return errors.Reason("package %q is specified more than once in path %s", pkg.PackageName, pkg.Path).Err()
-		} else {
-			pkgPathNames[pn] = struct{}{}
-		}
-	}
-
-	return nil
+	return errors.Annotate(merr.AsError(), "packages").Err()
 }
 
 func validateCIPDServer(server string) error {
 	if server == "" {
 		return errors.New("required")
 	}
-	if err := validateLength(server, maxCIPDServerLength); err != nil {
+	if err := validate.Length(server, maxCIPDServerLength); err != nil {
 		return err
 	}
 	return validate.SecureURL(server)
 }
 
-func validateCIPDPackageCommon(pkg *apipb.CipdPackage) error {
+func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 	var err error
 	switch {
 	case pkg == nil:
 		return errors.New("required")
-	case pkg.PackageName == "":
-		return errors.New("package_name is required")
+	case pkg.GetPath() != "":
+		return errors.New("path must be unset")
 	case teeErr(validate.CipdPackageName(pkg.PackageName), &err) != nil:
 		return errors.Annotate(err, "package_name").Err()
-	case pkg.Version == "":
-		return errors.New("version is required")
 	case teeErr(validate.CipdPackageVersion(pkg.Version), &err) != nil:
 		return errors.Annotate(err, "version").Err()
 	default:
 		return nil
 	}
-}
-
-func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
-	if pkg.GetPath() != "" {
-		return errors.New("path must be unset")
-	}
-	return validateCIPDPackageCommon(pkg)
-}
-
-func validateCIPDPackage(pkg *apipb.CipdPackage, idempotent bool, cachePathSet stringset.Set) error {
-	var err error
-	switch {
-	case teeErr(validateCIPDPackageCommon(pkg), &err) != nil:
-		return err
-	case teeErr(validatePath(pkg.Path, maxPackagePathLength), &err) != nil:
-		return errors.Annotate(err, "path").Err()
-	case cachePathSet.Has(pkg.Path):
-		return errors.Reason(
-			"path %q is mapped to a named cache and cannot be a target of CIPD installation",
-			pkg.Path).Err()
-	case idempotent && teeErr(validatePinnedInstanceVersion(pkg.Version), &err) != nil:
-		return errors.New(
-			"an idempotent task cannot have unpinned packages; use tags or instance IDs as package versions")
-	default:
-		return nil
-	}
-}
-
-func validatePinnedInstanceVersion(v string) error {
-	if common.ValidateInstanceID(v, common.AnyHash) == nil ||
-		common.ValidateInstanceTag(v) == nil {
-		return nil
-	}
-	return errors.Reason("%q is not a pinned instance version", v).Err()
 }
 
 func validateDimensions(dims []*apipb.StringPair) (string, error) {

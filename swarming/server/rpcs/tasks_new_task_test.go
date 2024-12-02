@@ -38,6 +38,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/validate"
 )
 
 func simpliestValidSlice(pool string) *apipb.TaskSlice {
@@ -501,7 +502,7 @@ func TestValidateNewTask(t *testing.T) {
 							Key:   "key",
 							Value: "value",
 						}
-						for i := 0; i < maxEnvKeyCount+1; i++ {
+						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
 							req.TaskSlices[0].Properties.Env = append(req.TaskSlices[0].Properties.Env, envItem)
 						}
 						_, err := validateNewTask(ctx, req)
@@ -525,44 +526,14 @@ func TestValidateNewTask(t *testing.T) {
 					})
 
 					t.Run("key", func(t *ftt.Test) {
-						t.Run("empty", func(t *ftt.Test) {
-							req := simpliestValidRequest("pool")
-							req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
-								{
-									Value: "value",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("key is required"))
-						})
-
-						t.Run("too_long", func(t *ftt.Test) {
-							t.Run("empty", func(t *ftt.Test) {
-								req := simpliestValidRequest("pool")
-								req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
-									{
-										Key:   strings.Repeat("a", maxEnvKeyLength+1),
-										Value: "value",
-									},
-								}
-								_, err := validateNewTask(ctx, req)
-								assert.Loosely(t, err, should.ErrLike("too long"))
-							})
-						})
-
-						t.Run("invalid", func(t *ftt.Test) {
-							t.Run("empty", func(t *ftt.Test) {
-								req := simpliestValidRequest("pool")
-								req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
-									{
-										Key:   "1",
-										Value: "value",
-									},
-								}
-								_, err := validateNewTask(ctx, req)
-								assert.Loosely(t, err, should.ErrLike("should match"))
-							})
-						})
+						req := simpliestValidRequest("pool")
+						req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
+							{
+								Value: "value",
+							},
+						}
+						_, err := validateNewTask(ctx, req)
+						assert.That(t, err, should.ErrLike("required"))
 					})
 
 					t.Run("value_too_long", func(t *ftt.Test) {
@@ -570,7 +541,7 @@ func TestValidateNewTask(t *testing.T) {
 						req.TaskSlices[0].Properties.Env = []*apipb.StringPair{
 							{
 								Key:   "key",
-								Value: strings.Repeat("a", maxEnvValueLength+1),
+								Value: strings.Repeat("a", validate.MaxEnvValueLength+1),
 							},
 						}
 						_, err := validateNewTask(ctx, req)
@@ -587,7 +558,7 @@ func TestValidateNewTask(t *testing.T) {
 								"value",
 							},
 						}
-						for i := 0; i < maxEnvKeyCount+1; i++ {
+						for i := 0; i < validate.MaxEnvVarCount+1; i++ {
 							req.TaskSlices[0].Properties.EnvPrefixes = append(req.TaskSlices[0].Properties.EnvPrefixes, epItem)
 						}
 						_, err := validateNewTask(ctx, req)
@@ -622,33 +593,17 @@ func TestValidateNewTask(t *testing.T) {
 							assert.That(t, err, should.ErrLike("value is required"))
 						})
 						t.Run("with_invalid_path", func(t *ftt.Test) {
-							cases := []struct {
-								name string
-								path string
-								err  any
-							}{
-								{"empty", "", "cannot be empty"},
-								{"too_long", strings.Repeat("a", maxEnvValueLength+1), "too long"},
-								{"with_double_backslashes", "a\\b", `cannot contain "\\".`},
-								{"with_leading_slash", "/a/b", `cannot start with "/"`},
-								{"not_normalized_dot", "./a/b", "is not normalized"},
-								{"not_normalized_double_dots", "a/../b", "is not normalized"},
+							req := simpliestValidRequest("pool")
+							req.TaskSlices[0].Properties.EnvPrefixes = []*apipb.StringListPair{
+								{
+									Key: "key",
+									Value: []string{
+										"a\\b",
+									},
+								},
 							}
-							for _, cs := range cases {
-								t.Run(cs.name, func(t *ftt.Test) {
-									req := simpliestValidRequest("pool")
-									req.TaskSlices[0].Properties.EnvPrefixes = []*apipb.StringListPair{
-										{
-											Key: "key",
-											Value: []string{
-												cs.path,
-											},
-										},
-									}
-									_, err := validateNewTask(ctx, req)
-									assert.Loosely(t, err, should.ErrLike(cs.err))
-								})
-							}
+							_, err := validateNewTask(ctx, req)
+							assert.Loosely(t, err, should.ErrLike(`cannot contain "\\".`))
 						})
 					})
 				})
@@ -707,85 +662,19 @@ func TestValidateNewTask(t *testing.T) {
 				})
 
 				t.Run("caches", func(t *ftt.Test) {
-					t.Run("too_many", func(t *ftt.Test) {
-						req := simpliestValidRequest("pool")
-						cache := &apipb.CacheEntry{
-							Name: "name",
-							Path: "path",
-						}
-						for i := 0; i < maxCacheCount+1; i++ {
-							req.TaskSlices[0].Properties.Caches = append(req.TaskSlices[0].Properties.Caches, cache)
-						}
-						_, err := validateNewTask(ctx, req)
-						assert.That(t, err, should.ErrLike("can have up to 32 caches"))
-					})
-
-					t.Run("name", func(t *ftt.Test) {
-						t.Run("invalid", func(t *ftt.Test) {
-							cases := []struct {
-								tn   string
-								name string
-								err  any
-							}{
-								{"empty", "", "required"},
-								{"too_long", strings.Repeat("a", maxCacheNameLength+1), "too long"},
-								{"invalid", "INVALID", "should match"},
-							}
-							for _, cs := range cases {
-								t.Run(cs.tn, func(t *ftt.Test) {
-									req := simpliestValidRequest("pool")
-									req.TaskSlices[0].Properties.Caches = []*apipb.CacheEntry{
-										{
-											Name: cs.name,
-										},
-									}
-									_, err := validateNewTask(ctx, req)
-									assert.Loosely(t, err, should.ErrLike(cs.err))
-								})
-							}
-							req := simpliestValidRequest("pool")
-							req.TaskSlices[0].Properties.Caches = []*apipb.CacheEntry{
-								{
-									Path: "path",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("cache name 0: required"))
-						})
-						t.Run("duplicates", func(t *ftt.Test) {
-							req := simpliestValidRequest("pool")
-							req.TaskSlices[0].Properties.Caches = []*apipb.CacheEntry{
-								{
-									Name: "name",
-									Path: "path",
-								},
-								{
-									Name: "name",
-									Path: "path",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("same cache name cannot be specified twice"))
-						})
-					})
-					t.Run("path", func(t *ftt.Test) {
-						// path validation is covered by env_prefixes
-						t.Run("duplicates", func(t *ftt.Test) {
-							req := simpliestValidRequest("pool")
-							req.TaskSlices[0].Properties.Caches = []*apipb.CacheEntry{
-								{
-									Name: "name1",
-									Path: "a/b",
-								},
-								{
-									Name: "name2",
-									Path: "a/b",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("same cache path cannot be specified twice"))
-						})
-					})
+					req := simpliestValidRequest("pool")
+					req.TaskSlices[0].Properties.Caches = []*apipb.CacheEntry{
+						{
+							Name: "name1",
+							Path: "a/b",
+						},
+						{
+							Name: "name2",
+							Path: "a/b",
+						},
+					}
+					_, err := validateNewTask(ctx, req)
+					assert.That(t, err, should.ErrLike("same cache path cannot be specified twice"))
 				})
 
 				t.Run("cipd_input", func(t *ftt.Test) {
@@ -828,7 +717,7 @@ func TestValidateNewTask(t *testing.T) {
 						t.Run("no name", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{}
 							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("package_name is required"))
+							assert.That(t, err, should.ErrLike("required"))
 						})
 						t.Run("invalid name", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{
@@ -842,7 +731,7 @@ func TestValidateNewTask(t *testing.T) {
 								PackageName: "some/pkg",
 							}
 							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("version is required"))
+							assert.That(t, err, should.ErrLike("required"))
 						})
 					})
 					t.Run("packages", func(t *ftt.Test) {
@@ -854,45 +743,6 @@ func TestValidateNewTask(t *testing.T) {
 								Version:     "version",
 							},
 						}
-						t.Run("empty", func(t *ftt.Test) {
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("cannot have an empty package list"))
-						})
-
-						t.Run("too_many", func(t *ftt.Test) {
-							for i := 0; i < maxCIPDPackageCount+1; i++ {
-								req.TaskSlices[0].Properties.CipdInput.Packages = append(
-									req.TaskSlices[0].Properties.CipdInput.Packages, &apipb.CipdPackage{})
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("up to 64 CIPD packages can be listed for a task"))
-						})
-						t.Run("duplicate", func(t *ftt.Test) {
-							req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
-								{
-									PackageName: "some/pkg",
-									Version:     "version1",
-									Path:        "a/b",
-								},
-								{
-									PackageName: "some/pkg",
-									Version:     "version2",
-									Path:        "a/b",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("specified more than once"))
-						})
-						t.Run("no_path", func(t *ftt.Test) {
-							req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
-								{
-									PackageName: "some/pkg",
-									Version:     "version",
-								},
-							}
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("path: cannot be empty"))
-						})
 						t.Run("cache_path", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
 								{
@@ -909,44 +759,6 @@ func TestValidateNewTask(t *testing.T) {
 							}
 							_, err := validateNewTask(ctx, req)
 							assert.That(t, err, should.ErrLike("mapped to a named cache"))
-						})
-						t.Run("idempotent", func(t *ftt.Test) {
-							t.Run("fail", func(t *ftt.Test) {
-								req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
-									{
-										PackageName: "some/pkg",
-										Version:     "version1",
-										Path:        "a/b",
-									},
-								}
-								req.TaskSlices[0].Properties.Idempotent = true
-								_, err := validateNewTask(ctx, req)
-								assert.That(t, err, should.ErrLike("cannot have unpinned packages"))
-							})
-							t.Run("pass_tag", func(t *ftt.Test) {
-								req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
-									{
-										PackageName: "some/pkg",
-										Version:     "good:tag",
-										Path:        "a/b",
-									},
-								}
-								req.TaskSlices[0].Properties.Idempotent = true
-								_, err := validateNewTask(ctx, req)
-								assert.That(t, err, should.ErrLike(nil))
-							})
-							t.Run("pass_hash", func(t *ftt.Test) {
-								req.TaskSlices[0].Properties.CipdInput.Packages = []*apipb.CipdPackage{
-									{
-										PackageName: "some/pkg",
-										Version:     "B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUC",
-										Path:        "a/b",
-									},
-								}
-								req.TaskSlices[0].Properties.Idempotent = true
-								_, err := validateNewTask(ctx, req)
-								assert.That(t, err, should.ErrLike(nil))
-							})
 						})
 					})
 				})
