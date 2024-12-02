@@ -88,6 +88,40 @@ func newPool(pb *configpb.Pool) (*Pool, error) {
 func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 	pools := stringset.New(0)
 
+	// task_template
+	ctx.Enter("task_template")
+	tmpMap := make(map[string]*configpb.TaskTemplate, len(cfg.TaskTemplate))
+	for i, tmp := range cfg.TaskTemplate {
+		ctx.Enter("#%d (%s)", i+1, tmp.Name)
+		if tmp.Name == "" {
+			ctx.Errorf("name is empty")
+		}
+		if _, ok := tmpMap[tmp.Name]; ok {
+			ctx.Errorf("template %q was already declared", tmp.Name)
+		}
+		validateTemplate(ctx, tmp, true)
+		tmpMap[tmp.Name] = tmp
+		ctx.Exit()
+	}
+	ctx.Exit()
+
+	// task_template_deployment
+	ctx.Enter("task_template_deployment")
+	dplMap := make(map[string]*configpb.TaskTemplateDeployment, len(cfg.TaskTemplateDeployment))
+	for i, dpl := range cfg.TaskTemplateDeployment {
+		ctx.Enter("#%d (%s)", i+1, dpl.Name)
+		if dpl.Name == "" {
+			ctx.Errorf("name is empty")
+		}
+		if _, ok := dplMap[dpl.Name]; ok {
+			ctx.Errorf("deployment %q was already declared", dpl.Name)
+		}
+		validateDeployment(ctx, dpl)
+		dplMap[dpl.Name] = dpl
+		ctx.Exit()
+	}
+	ctx.Exit()
+
 	validatePool := func(pb *configpb.Pool) {
 		// Deprecated fields that must not be set.
 		if pb.Schedulers != nil {
@@ -123,7 +157,22 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			}
 		}
 
-		// TODO(vadimsh): Validate task template settings.
+		// task template settings.
+		if pb.GetTaskTemplateDeployment() != "" {
+			if _, ok := dplMap[pb.GetTaskTemplateDeployment()]; !ok {
+				ctx.Errorf("unknown `task_template_deployment`: %q", pb.GetTaskTemplateDeployment())
+			}
+		}
+
+		if pb.GetTaskTemplateDeploymentInline() != nil {
+			ctx.Enter("task_template_deployment_inline")
+			dpl := pb.GetTaskTemplateDeploymentInline()
+			if dpl.Name != "" {
+				ctx.Errorf("name cannot be specified")
+			}
+			validateDeployment(ctx, dpl)
+			ctx.Exit()
+		}
 
 		// Silently skip remaining fields that are used by the Python implementation
 		// but ignored by the Go implementation:
@@ -133,6 +182,7 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		//	SchedulingAlgorithm: RBE doesn't support custom scheduling algorithms.
 	}
 
+	// pool
 	for idx, pool := range cfg.Pool {
 		title := "unnamed"
 		if len(pool.Name) != 0 {
@@ -140,6 +190,80 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		}
 		ctx.Enter("pool #%d (%s)", idx+1, title)
 		validatePool(pool)
+		ctx.Exit()
+	}
+}
+
+func validateTemplate(ctx *validation.Context, tmp *configpb.TaskTemplate, hasName bool) {
+	if !hasName && tmp.Name != "" {
+		ctx.Errorf("name cannot be specified")
+	}
+
+	ctx.Enter("cache")
+	cachesPathSet, merr := validate.Caches(tmp.Cache)
+	for _, err := range merr {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("cipd_package")
+	merr = validate.CIPDPackages(tmp.CipdPackage, false, cachesPathSet)
+	for _, err := range merr {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("env")
+	validateEnv(ctx, tmp.Env)
+	ctx.Exit()
+
+	// TODO(chanli): validate inclusion
+}
+
+func validateEnv(ctx *validation.Context, envs []*configpb.TaskTemplate_Env) {
+	if len(envs) > validate.MaxEnvVarCount {
+		ctx.Errorf("can have up to %d env", validate.MaxEnvVarCount)
+	}
+
+	envKeys := stringset.New(len(envs))
+	for i, env := range envs {
+		ctx.Enter("#%d %s", i+1, env.Var)
+		if env.Var == "" {
+			ctx.Errorf("var is empty")
+		}
+		if !envKeys.Add(env.Var) {
+			ctx.Errorf("env %q was already declared", env.Var)
+		}
+		if env.Value != "" {
+			if err := validate.Length(env.Value, validate.MaxEnvValueLength); err != nil {
+				ctx.Errorf("value: %s", err)
+			}
+		}
+		for _, prefix := range env.Prefix {
+			if err := validate.Path(prefix, validate.MaxEnvValueLength); err != nil {
+				ctx.Errorf("prefix: %s", err)
+			}
+		}
+		ctx.Exit()
+	}
+}
+
+func validateDeployment(ctx *validation.Context, dpl *configpb.TaskTemplateDeployment) {
+	if dpl.CanaryChance < 0 || dpl.CanaryChance > 9999 {
+		ctx.Errorf("canary_chance out of range [0,9999]")
+	}
+	if dpl.CanaryChance > 0 && dpl.Canary == nil {
+		ctx.Errorf("canary_chance specified without a canary")
+	}
+
+	if dpl.Prod != nil {
+		ctx.Enter("prod")
+		validateTemplate(ctx, dpl.Prod, false)
+		ctx.Exit()
+	}
+	if dpl.Canary != nil {
+		ctx.Enter("canary")
+		validateTemplate(ctx, dpl.Canary, false)
 		ctx.Exit()
 	}
 }

@@ -349,7 +349,7 @@ func Path(p string, maxLen int) error {
 	}
 }
 
-// Length checks the value deos not exceed the limit.
+// Length checks the value does not exceed the limit.
 func Length(val string, limit int) error {
 	if len(val) > limit {
 		return errors.Reason("too long %q: %d > %d", val, len(val), limit).Err()
