@@ -15,7 +15,7 @@
 # Experimental setup for push-on-green. See b/367097786.
 
 service: ui
-runtime: go122
+runtime: go123
 
 instance_class: F4_1G
 

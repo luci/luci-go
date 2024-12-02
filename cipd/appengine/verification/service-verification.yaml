@@ -1,5 +1,5 @@
 service: verification
-runtime: go122
+runtime: go123
 
 luci_gae_vars:
   chrome-infra-packages-dev:

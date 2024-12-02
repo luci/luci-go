@@ -1,5 +1,5 @@
 service: backend
-runtime: go122
+runtime: go123
 
 instance_class: F4
 

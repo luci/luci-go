@@ -1,4 +1,4 @@
-runtime: go122
+runtime: go123
 service: backendv2
 app_engine_apis: true
 
