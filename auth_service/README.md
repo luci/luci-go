@@ -108,30 +108,26 @@ to services in a LUCI cluster. Used to establish mutual trust between them.
 
 ### Groups API
 
-This is a REST API to examine and modify group graph. It is used primarily by
-Auth Service's own web frontend (i.e. it is mostly used by humans). It is
-documented [right there](https://chrome-infra-auth.appspot.com/auth/api).
-Alternatively, read the
-[source code](../components/components/auth/ui/rest_api.py). This API is
-appropriate for modifying groups and for ad-hoc checks when debugging
-access errors (and both these tasks can be done through the web UI, so there's
-rarely a need to use this API directly).
+This is a pRPC service to examine and modify the groups graph. It is used
+primarily by Auth Service's own web frontend (i.e. it is mostly used by humans).
+See the [RPC Explorer]. Alternatively, read the
+[Groups service proto definitions] and the corresponding
+[Groups service implementation].
 
 Services that care about availability **must not** use this API for
 authorization checks. It has no performance or availability guarantees. If you
 use this API, and your service goes down because Auth Service is down, it is
 **your fault**.
 
-Instead services should use AuthDB replication (normally through a LUCI client
-library such as [components.auth] and [go.chromium.org/luci/server/auth]) to
-obtain and keep up-to-date the snapshot of all groups, and use it locally
-without hitting Auth Service on every request. See next couple sections for more
-information.
+Instead, services should use AuthDB replication (normally through a LUCI client
+library such as [go.chromium.org/luci/server]) to obtain and keep up-to-date the
+snapshot of all groups, and use it locally without hitting Auth Service on every
+request. See the next couple of sections for more information.
 
-[components.auth]: ../components/components/auth
+[RPC Explorer]: https://defaultv2-dot-chrome-infra-auth.appspot.com/rpcexplorer
+[Groups service proto definitions]: ./api/rpcpb/groups.proto
+[Groups service implementation]: ./impl/servers/groups/server.go
 [go.chromium.org/luci/server]: https://godoc.org/go.chromium.org/luci/server
-[go.chromium.org/luci/server/auth]: https://godoc.org/go.chromium.org/luci/server/auth
-
 
 ### AuthDB replication
 
