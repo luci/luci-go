@@ -135,7 +135,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     const hasValues = (value: string) => {
       for (const item of items) {
-        if (item.value == value) {
+        if (item.value === value) {
           return true;
         }
       }
