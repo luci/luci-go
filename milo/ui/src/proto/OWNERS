@@ -1,0 +1,10 @@
+# Grant all LUCI UI contributors ability to re-generate proto bindings.
+#
+# TODO: check whether the modified bindings matches the output of
+# `npm run gen-proto`.
+
+# Fleet Infra
+file: ../fleet/OWNERS
+
+# AuthDB
+file: ../authdb/OWNERS

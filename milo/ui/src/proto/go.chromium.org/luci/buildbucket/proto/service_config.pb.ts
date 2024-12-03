@@ -68,6 +68,11 @@ export enum CustomMetricBase {
    * Default metric field: status.
    */
   CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT = 9,
+  /**
+   * CUSTOM_METRIC_BASE_AGE - Age of builds for pending(may be extended to other statuses later) status.
+   * Default metric field: status.
+   */
+  CUSTOM_METRIC_BASE_AGE = 10,
 }
 
 export function customMetricBaseFromJSON(object: any): CustomMetricBase {
@@ -102,6 +107,9 @@ export function customMetricBaseFromJSON(object: any): CustomMetricBase {
     case 9:
     case "CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT":
       return CustomMetricBase.CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT;
+    case 10:
+    case "CUSTOM_METRIC_BASE_AGE":
+      return CustomMetricBase.CUSTOM_METRIC_BASE_AGE;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum CustomMetricBase");
   }
@@ -129,6 +137,8 @@ export function customMetricBaseToJSON(object: CustomMetricBase): string {
       return "CUSTOM_METRIC_BASE_COUNT";
     case CustomMetricBase.CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT:
       return "CUSTOM_METRIC_BASE_CONSECUTIVE_FAILURE_COUNT";
+    case CustomMetricBase.CUSTOM_METRIC_BASE_AGE:
+      return "CUSTOM_METRIC_BASE_AGE";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum CustomMetricBase");
   }

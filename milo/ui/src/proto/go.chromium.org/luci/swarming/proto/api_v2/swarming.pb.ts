@@ -1352,6 +1352,7 @@ export interface BotInfo {
   /** Encoded as json since it's an arbitrary dict. */
   readonly state: string;
   readonly deleted: boolean;
+  readonly sessionId: string;
 }
 
 /** Wraps a list of BotInfo. */
@@ -1404,6 +1405,8 @@ export interface BotEventResponse {
   readonly maintenanceMsg: string;
   /** Affected by event_type == 'request_task', 'task_completed', 'task_error'. */
   readonly taskId: string;
+  /** The bot session that reported this event. */
+  readonly sessionId: string;
 }
 
 export interface BotEventsResponse {
@@ -6185,6 +6188,7 @@ function createBaseBotInfo(): BotInfo {
     version: "",
     state: "",
     deleted: false,
+    sessionId: "",
   };
 }
 
@@ -6231,6 +6235,9 @@ export const BotInfo: MessageFns<BotInfo> = {
     }
     if (message.deleted !== false) {
       writer.uint32(112).bool(message.deleted);
+    }
+    if (message.sessionId !== "") {
+      writer.uint32(122).string(message.sessionId);
     }
     return writer;
   },
@@ -6354,6 +6361,14 @@ export const BotInfo: MessageFns<BotInfo> = {
           message.deleted = reader.bool();
           continue;
         }
+        case 15: {
+          if (tag !== 122) {
+            break;
+          }
+
+          message.sessionId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6381,6 +6396,7 @@ export const BotInfo: MessageFns<BotInfo> = {
       version: isSet(object.version) ? globalThis.String(object.version) : "",
       state: isSet(object.state) ? globalThis.String(object.state) : "",
       deleted: isSet(object.deleted) ? globalThis.Boolean(object.deleted) : false,
+      sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
     };
   },
 
@@ -6428,6 +6444,9 @@ export const BotInfo: MessageFns<BotInfo> = {
     if (message.deleted !== false) {
       obj.deleted = message.deleted;
     }
+    if (message.sessionId !== "") {
+      obj.sessionId = message.sessionId;
+    }
     return obj;
   },
 
@@ -6450,6 +6469,7 @@ export const BotInfo: MessageFns<BotInfo> = {
     message.version = object.version ?? "";
     message.state = object.state ?? "";
     message.deleted = object.deleted ?? false;
+    message.sessionId = object.sessionId ?? "";
     return message;
   },
 };
@@ -6793,6 +6813,7 @@ function createBaseBotEventResponse(): BotEventResponse {
     quarantined: false,
     maintenanceMsg: "",
     taskId: "",
+    sessionId: "",
   };
 }
 
@@ -6830,6 +6851,9 @@ export const BotEventResponse: MessageFns<BotEventResponse> = {
     }
     if (message.taskId !== "") {
       writer.uint32(90).string(message.taskId);
+    }
+    if (message.sessionId !== "") {
+      writer.uint32(98).string(message.sessionId);
     }
     return writer;
   },
@@ -6929,6 +6953,14 @@ export const BotEventResponse: MessageFns<BotEventResponse> = {
           message.taskId = reader.string();
           continue;
         }
+        case 12: {
+          if (tag !== 98) {
+            break;
+          }
+
+          message.sessionId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6953,6 +6985,7 @@ export const BotEventResponse: MessageFns<BotEventResponse> = {
       quarantined: isSet(object.quarantined) ? globalThis.Boolean(object.quarantined) : false,
       maintenanceMsg: isSet(object.maintenanceMsg) ? globalThis.String(object.maintenanceMsg) : "",
       taskId: isSet(object.taskId) ? globalThis.String(object.taskId) : "",
+      sessionId: isSet(object.sessionId) ? globalThis.String(object.sessionId) : "",
     };
   },
 
@@ -6991,6 +7024,9 @@ export const BotEventResponse: MessageFns<BotEventResponse> = {
     if (message.taskId !== "") {
       obj.taskId = message.taskId;
     }
+    if (message.sessionId !== "") {
+      obj.sessionId = message.sessionId;
+    }
     return obj;
   },
 
@@ -7010,6 +7046,7 @@ export const BotEventResponse: MessageFns<BotEventResponse> = {
     message.quarantined = object.quarantined ?? false;
     message.maintenanceMsg = object.maintenanceMsg ?? "";
     message.taskId = object.taskId ?? "";
+    message.sessionId = object.sessionId ?? "";
     return message;
   },
 };

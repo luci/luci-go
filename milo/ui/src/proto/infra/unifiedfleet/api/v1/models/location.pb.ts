@@ -105,7 +105,7 @@ export function labToJSON(object: Lab): string {
 
 /**
  * Zone refers to the different network zones under chrome org
- * Next tag: 90
+ * Next tag: 98
  */
 export enum Zone {
   ZONE_UNSPECIFIED = 0,
@@ -293,6 +293,22 @@ export enum Zone {
   ZONE_SFP_72 = 88,
   /** ZONE_SFP_73 - "sfp_73" // Zone for SfP assets for partner // Testhaus ID:73; */
   ZONE_SFP_73 = 89,
+  /** ZONE_SFP_75 - ZONE_SFP_74 - intentionally skipped, botched partner setup */
+  ZONE_SFP_75 = 90,
+  /** ZONE_SFP_76 - "sfp_76" // Zone for SfP assets for partner // Testhaus ID:76; */
+  ZONE_SFP_76 = 91,
+  /** ZONE_SFP_77 - "sfp_77" // Zone for SfP assets for partner // Testhaus ID:77; */
+  ZONE_SFP_77 = 92,
+  /** ZONE_SFP_78 - "sfp_78" // Zone for SfP assets for partner // Testhaus ID:78; */
+  ZONE_SFP_78 = 93,
+  /** ZONE_SFP_79 - "sfp_79" // Zone for SfP assets for partner // Testhaus ID:79; */
+  ZONE_SFP_79 = 94,
+  /** ZONE_SFP_80 - "sfp_80" // Zone for SfP assets for partner // Testhaus ID:80; */
+  ZONE_SFP_80 = 95,
+  /** ZONE_SFP_81 - "sfp_81" // Zone for SfP assets for partner // Testhaus ID:81; */
+  ZONE_SFP_81 = 96,
+  /** ZONE_SFP_82 - "sfp_82" // Zone for SfP assets for partner // Testhaus ID:82; */
+  ZONE_SFP_82 = 97,
 }
 
 export function zoneFromJSON(object: any): Zone {
@@ -564,6 +580,30 @@ export function zoneFromJSON(object: any): Zone {
     case 89:
     case "ZONE_SFP_73":
       return Zone.ZONE_SFP_73;
+    case 90:
+    case "ZONE_SFP_75":
+      return Zone.ZONE_SFP_75;
+    case 91:
+    case "ZONE_SFP_76":
+      return Zone.ZONE_SFP_76;
+    case 92:
+    case "ZONE_SFP_77":
+      return Zone.ZONE_SFP_77;
+    case 93:
+    case "ZONE_SFP_78":
+      return Zone.ZONE_SFP_78;
+    case 94:
+    case "ZONE_SFP_79":
+      return Zone.ZONE_SFP_79;
+    case 95:
+    case "ZONE_SFP_80":
+      return Zone.ZONE_SFP_80;
+    case 96:
+    case "ZONE_SFP_81":
+      return Zone.ZONE_SFP_81;
+    case 97:
+    case "ZONE_SFP_82":
+      return Zone.ZONE_SFP_82;
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }
@@ -749,6 +789,22 @@ export function zoneToJSON(object: Zone): string {
       return "ZONE_SFP_72";
     case Zone.ZONE_SFP_73:
       return "ZONE_SFP_73";
+    case Zone.ZONE_SFP_75:
+      return "ZONE_SFP_75";
+    case Zone.ZONE_SFP_76:
+      return "ZONE_SFP_76";
+    case Zone.ZONE_SFP_77:
+      return "ZONE_SFP_77";
+    case Zone.ZONE_SFP_78:
+      return "ZONE_SFP_78";
+    case Zone.ZONE_SFP_79:
+      return "ZONE_SFP_79";
+    case Zone.ZONE_SFP_80:
+      return "ZONE_SFP_80";
+    case Zone.ZONE_SFP_81:
+      return "ZONE_SFP_81";
+    case Zone.ZONE_SFP_82:
+      return "ZONE_SFP_82";
     default:
       throw new globalThis.Error("Unrecognized enum value " + object + " for enum Zone");
   }

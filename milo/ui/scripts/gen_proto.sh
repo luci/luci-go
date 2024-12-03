@@ -21,8 +21,10 @@ die() {
 cd -- "$(dirname "$0")" || die 'cannot chdir'
 [ -f gen_proto.sh ] || die 'failed to find own directory'
 
-rm -rf ../src/proto
-mkdir ../src/proto
+# Only delete generated bindings. Leave other files (e.g. OWNERS) in place.
+find ../src/proto -name "*.pb.ts" -type f -delete
+find ../src/proto -mindepth 1 -type d -empty -delete
+
 cd ../../../../..
 [ -d ./go.chromium.org ] || die 'no chromium.org directory'
 [ -d ./infra ] || die 'no infra directory'
@@ -59,7 +61,7 @@ protoc \
    #    * When .fromPartial or .create is fed with a non-literal object, we want
    #      the extra properties to be silently discarded. Otherwise, adding a new
    #      field to a proto message will become a breaking change if the proto
-   #      message is used to construct another proto message that is a subtype
+   #      message is used to construct another proto message that is a supertype
    #      of this message.` \
   --ts_proto_opt=useExactTypes=false \
   \
