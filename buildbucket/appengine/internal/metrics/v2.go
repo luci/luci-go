@@ -128,7 +128,7 @@ var (
 		BuilderPresence         metric.Bool
 		ConsecutiveFailureCount metric.Int
 		MaxAgeScheduled         metric.Float
-		Age                     metric.CumulativeDistribution
+		Age                     metric.NonCumulativeDistribution
 	}{
 		BuildCount: metric.NewIntWithOptions(
 			"buildbucket/v2/builds/count",
@@ -201,7 +201,7 @@ var (
 			"Age of the oldest SCHEDULED build",
 			&types.MetricMetadata{Units: types.Seconds},
 		),
-		Age: metric.NewCumulativeDistributionWithOptions(
+		Age: metric.NewNonCumulativeDistributionWithOptions(
 			"buildbucket/v2/builds/age",
 			opt,
 			"Age of pending builds",
