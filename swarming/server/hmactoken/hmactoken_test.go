@@ -15,18 +15,11 @@
 package hmactoken
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"fmt"
 	"testing"
-
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/secrets"
-
-	internalspb "go.chromium.org/luci/swarming/proto/internals"
 )
 
 func TestTagVerify(t *testing.T) {
@@ -47,26 +40,4 @@ func TestTagVerify(t *testing.T) {
 		},
 	})
 	assert.That(t, s2.Verify([]byte("pfx"), []byte("body"), tag), should.BeTrue)
-}
-
-func genPollToken(state *internalspb.PollState, typ internalspb.TaggedMessage_PayloadType, secret []byte) []byte {
-	payload, err := proto.Marshal(state)
-	if err != nil {
-		panic(err)
-	}
-
-	mac := hmac.New(sha256.New, secret)
-	_, _ = fmt.Fprintf(mac, "%d\n", typ)
-	_, _ = mac.Write(payload)
-	digest := mac.Sum(nil)
-
-	blob, err := proto.Marshal(&internalspb.TaggedMessage{
-		PayloadType: typ,
-		Payload:     payload,
-		HmacSha256:  digest,
-	})
-	if err != nil {
-		panic(err)
-	}
-	return blob
 }
