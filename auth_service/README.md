@@ -17,6 +17,8 @@ This is the replacement of the
     - [Groups API](#groups-api)
     - [AuthDB replication](#authdb-replication)
     - [Hooking up a LUCI service to receive AuthDB updates](#hooking-up-a-luci-service-to-receive-authdb-updates)
+      - [Go GAE services](#go-gae-services)
+      - [Go GKE/GCE services](#go-gkegce-services)
 - [External dependencies](#external-dependencies)
 - [Developer guide](#developer-guide)
     - [Running locally](#running-locally)
@@ -150,12 +152,12 @@ It is distributed in a such diverse way for backward compatibility with variety
 of AuthDB client implementations (in historical order):
   * Web hooks are how Python GAE services consume AuthDB via [components.auth]
     client library.
-  * PubSub and `/auth_service/api/v1/authdb/revisions/...` endpoint is how
+  * PubSub and `/auth_service/api/v1/authdb/revisions/...` endpoint is how some
     Go GAE services consume AuthDB via [go.chromium.org/luci/server/auth]
     client.
   * `/auth_service/api/v1/authdb/revisions/...` is also polled by Gerrit `cria/`
     groups plugin.
-  * Google Storage dump is consumed by Go GKE services (that don't have
+  * Google Storage dump is consumed by both Go GAE service and GKE services (that don't have
     non-ephemeral storage to cache AuthDB in). This is also done via
     [go.chromium.org/luci/server/auth] client configured by
     [go.chromium.org/luci/server].
@@ -167,53 +169,64 @@ In all cases the goal is to let Auth Service know the identity of a new service
 and let the new service know the location of Auth Service. How this looks
 depends on where the new service is running and what client library it uses.
 
-Python GAE services should use [components.auth] library. Once the service is
-deployed, perform this one-time setup:
-  * If you are member of `administrators` group, open
-    `https://<auth-service>.appspot.com/auth/services` in a browser, put app ID
-    of the new service in `Add service` section and click `Generate linking
-    URL`.
-  * If you are not a member of `administrators` group, ask an administrator to
-    do it on your behalf and share the resulting link with you.
-  * If you are GAE admin of the new service, follow the link, it will ask for
-    confirmation. Confirm. If it succeeds, you are done.
-  * If you are not a GAE admin, ask the admin to visit the link.
-  * During this process the new service receives an initial snapshot of AuthDB
-    and registers a web hook to be called when AuthDB changes.
+#### Go GAE services
 
-Go GAE services should use [go.chromium.org/luci/server/auth] and hooking them
-to an Auth Service looks different:
-  * Make sure Google Cloud Pub/Sub API is enabled in the cloud project that
-    contains the new service.
-  * Add GAE service account (`<appid>@appspot.gserviceaccount.com`) of the
-    new service to `auth-trusted-services` group (or ask an administrator to do
-    it for you).
-  * As a GAE admin, open `https://<appid>.appspot.com/admin/portal/auth_service`
-    and put `https://<auth-service>.appspot.com` into `Auth Service URL` field.
-  * Click `Save Settings`. If it succeeds, you are done.
-  * During this process the new service receives an initial snapshot of AuthDB,
-    creates a new PubSub subscription, asks Auth Service to grant it access to
-    the AuthDB notification PubSub topic and subscribes to this topic, so it
-    knows when to refetch AuthDB from `/.../authdb/revisions/...` endpoint.
+Go GAE services should use [go.chromium.org/luci/server]:
+  1. Make sure Google Cloud Pub/Sub API is enabled in the cloud project that
+  contains the new service.
+  1. Add GAE service account (`<appid>@appspot.gserviceaccount.com`) of the
+  new service to `auth-trusted-services` group by filing a [go/peepsec-bug](https://goto.google.com/peepsec-bug).
+  1. In the GAE service's config file (`app.yaml` for the `default` service,
+  `<service-name>.yaml` for additional services), pass the `-auth-service-host`
+  flag in the app's entrypoint.
+      * e.g. LUCI Analysis's [app.yaml](../analysis/frontend/app.yaml).
 
-Go GKE/GCE services should use [go.chromium.org/luci/server]. There's no notion
-of "GAE admin" for them, and no dynamic settings. Instead the configuration is
-done through command line flags:
-  * Add the service account of the new service to `auth-trusted-services` group
-    (or ask an administrator to do it for you).
-  * Pass `-auth-service-host <auth-service>.appspot.com` flag when launching the
+How does it work?
+  * The `-auth-service-host` flag is used to derive a Google Storage (GCS) path
+  to look for an AuthDB snapshot.
+  * The GCS storage path can also be provided directly by using the
+  `-auth-db-dump` flag.
+  * When the server starts, it will attempt to fetch the AuthDB from the
+  configured GCS storage path.
+    * If there are permission errors, the server will send a request to Auth
+    Service asking authorization to:
+      * subscribe to PubSub notifications for the latest AuthDB revision; and
+      * read the AuthDB dump in GCS.
+    * After Auth Service grants the requested authorizations, the server will:
+      1. subscribe to the AuthDB PubSub topic (topic name `auth-db-changed`);
+      1. try once more to fetch the AuthDB from the GCS dump.
+    * This normally happens only on the first run.
+  * By subscribing to the AuthDB revision PubSub topic in the initial run, the
+  new service will know when to refetch the AuthDB from GCS.
+
+#### Go GKE/GCE services
+
+Go GKE/GCE services should use [go.chromium.org/luci/server]:
+  1. Add the service account of the new service to `auth-trusted-services` group
+    group by filing a [go/peepsec-bug](https://goto.google.com/peepsec-bug).
+  1. Pass `-auth-service-host <auth-service>.appspot.com` flag when launching the
     server binary.
-  * If it starts and responds to `/healthz` checks, you are done.
-  * Beneath the surface `-auth-service-host` is used to derive a Google Storage
-    path to look for AuthDB snapshots (it can also be provided directly via
-    `-auth-db-dump`). When server starts it tries to fetch AuthDB from there.
-    On permission errors it asks Auth Service to grant it access to the AuthDB
-    dump and tries again. This normally happens only on the first run. On
-    subsequent runs, the new service doesn't send any RPCs to Auth Service
-    **at all** and just periodically polls Google Storage bucket. Note that
-    AuthDB is cached only in memory, but this is fine since we assume it is
-    always possible to fetch it from Google Storage (i.e. Google Storage becomes
-    a hard dependency, which has very high availability).
+  1. If it starts and responds to `/healthz` checks, you are done.
+
+How does it work?
+  * The `-auth-service-host` flag is used to derive a Google Storage (GCS) path
+  to look for an AuthDB snapshot.
+  * The GCS storage path can also be provided directly by using the
+  `-auth-db-dump` flag.
+  * When the server starts, it will attempt to fetch the AuthDB from the
+  configured GCS storage path.
+    * If there are permission errors, the server will send a request to Auth
+    Service asking authorization to:
+      * read the AuthDB dump in GCS.
+    * After Auth Service grants the requested authorization, the server will:
+      * try once more to fetch the AuthDB from the GCS dump.
+    * This normally happens only on the first run.
+  * On subsequent runs, the new service doesn't send any RPCs to Auth Service
+  **at all** and just periodically polls Google Storage bucket.
+  * Note that AuthDB is cached only in memory, but this is fine since we assume
+  it is always possible to fetch it from Google Storage
+    * i.e. Google Storage becomes a hard dependency, which has very high
+    availability.
 
 ## External dependencies
 
