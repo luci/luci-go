@@ -1,10 +1,33 @@
 # Auth Service
 
 Auth Service manages and distributes data and configuration used for
-authorization decisions performed by services in a LUCI cluster. It is part
-of the control plane, and as such it is **not directly involved** in authorizing
-every request to LUCI. Auth Service merely tells other services how to do it,
-and they do it themselves.
+authorization decisions performed by services in a LUCI cluster.
+
+This is the replacement of the
+[GAE v1 version of Auth Service](https://chromium.googlesource.com/infra/luci/luci-py/+/f5769d3/appengine/auth_service).
+
+#### Table of contents
+- [Overview](#overview)
+- [Configuration distributed by Auth Service aka AuthDB](#configuration-distributed-by-auth-service-aka-authdb)
+    - [Groups graph](#groups-graph)
+    - [IP allowlists](#ip-allowlists)
+    - [OAuth client ID allowlist](#oauth-client-id-allowlist)
+    - [Security configuration for internal LUCI RPCs](#security-configuration-for-internal-luci-rpcs)
+- [API surfaces](#api-surfaces)
+    - [Groups API](#groups-api)
+    - [AuthDB replication](#authdb-replication)
+    - [Hooking up a LUCI service to receive AuthDB updates](#hooking-up-a-luci-service-to-receive-authdb-updates)
+- [External dependencies](#external-dependencies)
+- [Developer guide](#developer-guide)
+    - [Running locally](#running-locally)
+    - [Uploading to GAE for adhoc testing](#uploading-to-gae-for-adhoc-testing)
+    - [Production deployment](#production-deployment)
+
+## Overview
+
+It is part of the control plane, and as such it is **not directly involved** in
+authorizing every request to LUCI. Auth Service merely tells other services how
+to do it, and they do it themselves.
 
 There's one Auth Service per LUCI cluster. When a new LUCI service joins the
 cluster it is configured with the location of Auth Service, and Auth Service is
@@ -23,8 +46,6 @@ acknowledge it.
 If Auth Service goes down, everything remains operational, except the
 authorization configuration becomes essentially "frozen" until Auth Service
 comes back online and resumes distributing it.
-
-[TOC]
 
 ## Configuration distributed by Auth Service (aka AuthDB)
 
@@ -79,8 +100,7 @@ allowlist is defined in `oauth.cfg` configuration file.
 
 [OAuth client IDs]: https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/
 
-
-### Security configuration for internal LUCI RPCs.
+### Security configuration for internal LUCI RPCs
 
 These are various bits of configuration (defined partially in `oauth.cfg` and in
 `security.cfg` config files) that are centrally distributed to services in
@@ -144,7 +164,7 @@ of AuthDB client implementations (in historical order):
     [go.chromium.org/luci/server].
 
 
-### Hooking up a LUCI service to receive AuthDB updates {#linking}
+### Hooking up a LUCI service to receive AuthDB updates
 
 In all cases the goal is to let Auth Service know the identity of a new service
 and let the new service know the location of Auth Service. How this looks
@@ -198,12 +218,6 @@ done through command line flags:
     always possible to fetch it from Google Storage (i.e. Google Storage becomes
     a hard dependency, which has very high availability).
 
-
-## Initial setup
-
-...
-
-
 ## External dependencies
 
 Auth Service depends on following services:
@@ -214,16 +228,11 @@ Auth Service depends on following services:
   * Cloud IAM: managing PubSub ACLs to allow authorized clients to subscribe.
   * LUCI Config: receiving own configuration files.
 
-Auth Service
-------------
+---
 
-Auth Service will manages and distribute data and configuration used for authorization decisions performed by services in a LUCI cluster.
+## Developer guide
 
-This is a replacement the [GAE v1 version of Auth Service](https://chromium.googlesource.com/infra/luci/luci-py/+/HEAD/appengine/auth_service).
-
-
-Running locally
----------------
+### Running locally
 
 Targeting the real datastore:
 
@@ -235,9 +244,7 @@ go run main.go -cloud-project chrome-infra-auth-dev
 
 The server will be available at http://localhost:8800.
 
-
-Uploading to GAE for adhoc testing
-----------------------------------
+### Uploading to GAE for adhoc testing
 
 Prefer to test everything locally. If you must deploy to GAE, use:
 
@@ -256,8 +263,7 @@ or `gcloud app services set-traffic` to switch the serving version of
 `backend`. They are deployed from Python code.
 
 
-Production deployment
----------------------
+### Production deployment
 
 Deployment to staging and production are performed by [gae-deploy] builder.
 Deploying directly to production using `gae.py` is strongly ill-advised.
