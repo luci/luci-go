@@ -64,15 +64,8 @@ func TestSessionServer(t *testing.T) {
 			RbeBotSessionId: fakeRBESessionID,
 		}
 
-		fakePollState := &internalspb.PollState{
-			Id:          "fake-poll-token",
-			RbeInstance: fakeRBEInstance,
-			IpAllowlist: "fake-ip-allowlist",
-		}
-
 		fakeRequest := &botsrv.Request{
-			Session:   fakeSession,
-			PollState: fakePollState,
+			Session: fakeSession,
 			Dimensions: []string{
 				"id:" + fakeBotID,
 				"extra1:a",
@@ -172,15 +165,6 @@ func TestSessionServer(t *testing.T) {
 				},
 				RbeBotSessionId: fakeRBESessionID,
 			}))
-
-			// Legacy old session token.
-			oldSession := &internalspb.BotSession{}
-			assert.Loosely(t, srv.hmacSecret.ValidateToken(msg.SessionToken, oldSession), should.BeNil)
-			assert.Loosely(t, oldSession, should.Match(&internalspb.BotSession{
-				RbeBotSessionId: fakeRBESessionID,
-				PollState:       fakePollState,
-				Expiry:          timestamppb.New(now.Add(sessionTokenExpiry).Round(time.Second)),
-			}))
 		})
 
 		t.Run("CreateBotSession propagates RBE error", func(t *ftt.Test) {
@@ -257,15 +241,6 @@ func TestSessionServer(t *testing.T) {
 					RbeInstance: fakeRBEInstance,
 				},
 				RbeBotSessionId: fakeRBESessionID,
-			}))
-
-			// Legacy old session token.
-			oldSession := &internalspb.BotSession{}
-			assert.Loosely(t, srv.hmacSecret.ValidateToken(msg.SessionToken, oldSession), should.BeNil)
-			assert.Loosely(t, oldSession, should.Match(&internalspb.BotSession{
-				RbeBotSessionId: fakeRBESessionID,
-				PollState:       fakePollState,
-				Expiry:          timestamppb.New(now.Add(sessionTokenExpiry).Round(time.Second)),
 			}))
 		})
 

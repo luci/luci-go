@@ -30,7 +30,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
@@ -81,21 +80,6 @@ type CreateBotSessionRequest struct {
 	// Session is a serialized Swarming Bot Session proto.
 	Session []byte `json:"session"`
 
-	// PollToken is a token produced by Python server in `/bot/poll`. Required.
-	//
-	// This token encodes configuration of the bot maintained by the Python
-	// Swarming server.
-	//
-	// TODO: To be removed.
-	PollToken []byte `json:"poll_token"`
-
-	// SessionToken is a session token of a previous session if recreating it.
-	//
-	// Optional. See the corresponding field in UpdateBotSessionRequest.
-	//
-	// TODO: To be removed.
-	SessionToken []byte `json:"session_token,omitempty"`
-
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
 
@@ -103,9 +87,7 @@ type CreateBotSessionRequest struct {
 	WorkerProperties *WorkerProperties `json:"worker_properties,omitempty"`
 }
 
-func (r *CreateBotSessionRequest) ExtractSession() []byte      { return r.Session }
-func (r *CreateBotSessionRequest) ExtractPollToken() []byte    { return r.PollToken }
-func (r *CreateBotSessionRequest) ExtractSessionToken() []byte { return r.SessionToken }
+func (r *CreateBotSessionRequest) ExtractSession() []byte { return r.Session }
 func (r *CreateBotSessionRequest) ExtractDebugRequest() any {
 	return &CreateBotSessionRequest{
 		BotVersion:       r.BotVersion,
@@ -120,17 +102,6 @@ type CreateBotSessionResponse struct {
 	// It is derived from the session in the request, except it has RBE session
 	// info populated now.
 	Session []byte `json:"session"`
-
-	// SessionToken is a freshly produced session token.
-	//
-	// It encodes the RBE bot session ID and bot configuration provided via the
-	// poll token.
-	//
-	// The session token is needed to call `/bot/rbe/session/update`. This call
-	// also will periodically refresh it.
-	//
-	// TODO: To be removed.
-	SessionToken []byte `json:"session_token"`
 
 	// SessionID is an RBE bot session ID as encoded in the token.
 	//
@@ -169,20 +140,9 @@ func (srv *SessionServer) CreateBotSession(ctx context.Context, body *CreateBotS
 		return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
 	}
 
-	// Populate an old-format session token to allow roll backs if something goes
-	// horribly wrong: if we rollback the server to a version that verifies these
-	// old tokens, we need to make sure bots actually have them up-to-date.
-	//
-	// TODO: Stop doing that when the bot no longer reads old tokens.
-	oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSession.Name)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
-	}
-
 	return &CreateBotSessionResponse{
-		Session:      sessionTok,
-		SessionToken: oldSessionToken,
-		SessionID:    rbeSession.Name,
+		Session:   sessionTok,
+		SessionID: rbeSession.Name,
 	}, nil
 }
 
@@ -227,26 +187,6 @@ type UpdateBotSessionRequest struct {
 	// `/bot/rbe/session/create`.
 	Session []byte `json:"session"`
 
-	// SessionToken is a token returned by the previous API call. Required.
-	//
-	// This token is initially returned by `/bot/rbe/session/create` and then
-	// refreshed with every `/bot/rbe/session/update` call.
-	//
-	// TODO: To be removed.
-	SessionToken []byte `json:"session_token"`
-
-	// PollToken is a token produced by Python server in `/bot/poll`.
-	//
-	// It is optional and present only in the outer bot poll loop, when the bot
-	// polls both Python Swarming server (to get new configs) and Swarming RBE
-	// server (to get new tasks).
-	//
-	// Internals of this token will be copied into the session token returned in
-	// the response to this call.
-	//
-	// TODO: To be removed.
-	PollToken []byte `json:"poll_token,omitempty"`
-
 	// BotVersion identifies the bot software. It is reported to RBE as is.
 	BotVersion string `json:"bot_version,omitempty"`
 
@@ -280,9 +220,7 @@ type UpdateBotSessionRequest struct {
 	Lease *Lease `json:"lease,omitempty"`
 }
 
-func (r *UpdateBotSessionRequest) ExtractSession() []byte      { return r.Session }
-func (r *UpdateBotSessionRequest) ExtractPollToken() []byte    { return r.PollToken }
-func (r *UpdateBotSessionRequest) ExtractSessionToken() []byte { return r.SessionToken }
+func (r *UpdateBotSessionRequest) ExtractSession() []byte { return r.Session }
 func (r *UpdateBotSessionRequest) ExtractDebugRequest() any {
 	return &UpdateBotSessionRequest{
 		BotVersion:       r.BotVersion,
@@ -300,17 +238,6 @@ type UpdateBotSessionResponse struct {
 	// It is derived from the session in the request, except it has its expiration
 	// time bumped.
 	Session []byte `json:"session"`
-
-	// SessionToken is a refreshed session token, if available.
-	//
-	// It carries the same RBE bot session ID inside as the incoming token. The
-	// bot must use it in the next `/bot/rbe/session/update` request.
-	//
-	// If the incoming token has expired already, this field will be empty, since
-	// it is not possible to refresh an expired token.
-	//
-	// TODO: To be removed.
-	SessionToken []byte `json:"session_token,omitempty"`
 
 	// The session status as seen by the server, as remoteworkers.BotStatus enum.
 	//
@@ -428,14 +355,9 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
 			}
-			oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSessionID)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
-			}
 			return &UpdateBotSessionResponse{
-				Session:      sessionTok,
-				SessionToken: oldSessionToken,
-				Status:       "OK",
+				Session: sessionTok,
+				Status:  "OK",
 			}, nil
 		}
 		// Return the exact same gRPC error in a reply. This is fine, we trust the
@@ -542,16 +464,11 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not marshal session token: %s", err)
 	}
-	oldSessionToken, err := srv.genOldSessionToken(ctx, r.PollState, rbeSessionID)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not generate session token: %s", err)
-	}
 
 	resp := &UpdateBotSessionResponse{
-		Session:      sessionTok,
-		SessionToken: oldSessionToken,
-		Status:       remoteworkers.BotStatus_name[int32(session.Status)],
-		Lease:        respLease,
+		Session: sessionTok,
+		Status:  remoteworkers.BotStatus_name[int32(session.Status)],
+		Lease:   respLease,
 	}
 	logSession(ctx, "Output", resp.Status, resp.Lease)
 	return resp, nil
@@ -559,39 +476,6 @@ func (srv *SessionServer) UpdateBotSession(ctx context.Context, body *UpdateBotS
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helpers.
-
-// sessionTokenExpiry puts a limit on how seldom an active bot can call Swarming
-// RBE endpoints.
-//
-// Healthy bots will never ever hit this limit, they call an endpoint every few
-// minutes.
-//
-// Note that RBE's BotSession proto also has ExpireTime field, but it appears
-// it is never populated.
-const sessionTokenExpiry = 4 * time.Hour
-
-// genOldSessionToken generates a deprecated session token.
-//
-// TODO: Remove.
-func (srv *SessionServer) genOldSessionToken(ctx context.Context, ps *internalspb.PollState, rbeSessionID string) (tok []byte, err error) {
-	if ps == nil {
-		// The bot is no longer using old session tokens. Don't generate them.
-		return nil, nil
-	}
-	if rbeSessionID == "" {
-		return nil, errors.Reason("RBE session ID is unexpectedly missing").Err()
-	}
-	expiry := clock.Now(ctx).Add(sessionTokenExpiry).Round(time.Second)
-	blob, err := srv.hmacSecret.GenerateToken(&internalspb.BotSession{
-		RbeBotSessionId: rbeSessionID,
-		PollState:       ps,
-		Expiry:          timestamppb.New(expiry),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return blob, nil
-}
 
 // updateSessionToken generates a new session token with bumped expiry.
 func (srv *SessionServer) updateSessionToken(ctx context.Context, s *internalspb.Session, rbeSessionID string) ([]byte, error) {

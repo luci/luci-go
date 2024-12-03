@@ -26,11 +26,8 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -49,17 +46,14 @@ import (
 // RequestBody should be implemented by a JSON-serializable struct representing
 // format of some particular request.
 type RequestBody interface {
-	ExtractSession() []byte      // the token with bot Session proto
-	ExtractPollToken() []byte    // the poll token, if present, TODO: delete
-	ExtractSessionToken() []byte // the RBE session token, if present, TODO: delete
-	ExtractDebugRequest() any    // serialized as JSON and logged on errors
+	ExtractSession() []byte   // the token with bot Session proto
+	ExtractDebugRequest() any // serialized as JSON and logged on errors
 }
 
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
-	Session    *internalspb.Session   // the bot session from the session token
-	Dimensions []string               // bot's "k:v" dimensions as stored in the datastore
-	PollState  *internalspb.PollState // validated poll state, TODO: delete
+	Session    *internalspb.Session // the bot session from the session token
+	Dimensions []string             // bot's "k:v" dimensions as stored in the datastore
 }
 
 // Response is serialized as JSON and sent to the bot.
@@ -312,24 +306,10 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			return
 		}
 
-		// Temporary keep using old tokens in a minimal way (basically just refresh
-		// them) as long as the bot sends them. This is needed to allow rolling back
-		// the server deployment without blowing up all in-flight tasks: if we
-		// rollback the server to a version that verifies these old tokens, we need
-		// to make sure bots actually have them up-to-date.
-		//
-		// TODO: Stop doing that when the bot no longer uses old tokens at all.
-		pollState, err := extractPollState(ctx, RB(body).ExtractPollToken(), RB(body).ExtractSessionToken(), s.hmacSecret)
-		if err != nil {
-			writeErr(status.Errorf(codes.Unauthenticated, "%s", err))
-			return
-		}
-
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
 			Session:    session,
 			Dimensions: knownBot.Dimensions,
-			PollState:  pollState,
 		})
 		if err != nil {
 			writeErr(err)
@@ -359,71 +339,4 @@ func extractDim(dims []string, key string) []string {
 		}
 	}
 	return out
-}
-
-// prettyProto formats a proto message for logs.
-func prettyProto(msg proto.Message) string {
-	blob, err := prototext.MarshalOptions{
-		Multiline: true,
-		Indent:    "  ",
-	}.Marshal(msg)
-	if err != nil {
-		return fmt.Sprintf("<error: %s>", err)
-	}
-	return string(blob)
-}
-
-// extractPollState extracts PollState from either a poll or a session token.
-//
-// This is temporary to allow rollbacks. The current code doesn't use this poll
-// state (other than generated legacy tokens for the rollback purposes).
-//
-// TODO: Delete.
-func extractPollState(ctx context.Context, pollToken, sessionToken []byte, secret *hmactoken.Secret) (*internalspb.PollState, error) {
-	if len(pollToken) == 0 && len(sessionToken) == 0 {
-		logging.Infof(ctx, "Not using deprecated tokens")
-		return nil, nil
-	}
-	logging.Infof(ctx, "Using deprecated tokens")
-
-	var pollTokenState *internalspb.PollState
-	var sessionState *internalspb.BotSession
-
-	if len(pollToken) != 0 {
-		pollTokenState = &internalspb.PollState{}
-		if err := secret.ValidateToken(pollToken, pollTokenState); err != nil {
-			return nil, errors.Annotate(err, "failed to verify poll token").Err()
-		}
-		if exp := clock.Now(ctx).Sub(pollTokenState.Expiry.AsTime()); exp > 0 {
-			logging.Warningf(ctx, "Ignoring poll token (expired %s ago):\n%s", exp, prettyProto(pollTokenState))
-			pollTokenState = nil
-		}
-	}
-
-	if len(sessionToken) != 0 {
-		sessionState = &internalspb.BotSession{}
-		if err := secret.ValidateToken(sessionToken, sessionState); err != nil {
-			return nil, errors.Annotate(err, "failed to verify session token").Err()
-		}
-		if exp := clock.Now(ctx).Sub(sessionState.Expiry.AsTime()); exp > 0 {
-			logging.Warningf(ctx, "Ignoring session token (expired %s ago):\n%s", exp, prettyProto(sessionState))
-			sessionState = nil
-		}
-	}
-
-	if pollTokenState == nil && sessionState == nil {
-		return nil, errors.Reason("both poll and state tokens have expired").Err()
-	}
-
-	// Prefer the state from the poll token. It is fresher. Fallback to the
-	// state stored in the session token if there's no poll token or it has
-	// expired.
-	if pollTokenState != nil {
-		return pollTokenState, nil
-	}
-	if ps := sessionState.GetPollState(); ps != nil {
-		return ps, nil
-	}
-
-	return nil, errors.Reason("no poll state available in the session token").Err()
 }

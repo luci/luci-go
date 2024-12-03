@@ -55,7 +55,5 @@ func NewBotAPIServer(cfg *cfg.Provider, project string) *BotAPIServer {
 // UnimplementedRequest is used as a placeholder in unimplemented handlers.
 type UnimplementedRequest struct{}
 
-func (r *UnimplementedRequest) ExtractSession() []byte      { return nil }
-func (r *UnimplementedRequest) ExtractPollToken() []byte    { return nil }
-func (r *UnimplementedRequest) ExtractSessionToken() []byte { return nil }
-func (r *UnimplementedRequest) ExtractDebugRequest() any    { return nil }
+func (r *UnimplementedRequest) ExtractSession() []byte   { return nil }
+func (r *UnimplementedRequest) ExtractDebugRequest() any { return nil }

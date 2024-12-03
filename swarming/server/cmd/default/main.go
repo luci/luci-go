@@ -47,7 +47,6 @@ import (
 	"go.chromium.org/luci/swarming/server/rbe"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/tasks"
-	"go.chromium.org/luci/swarming/server/testing/integrationmocks"
 
 	// Store auth sessions in the datastore.
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
@@ -79,11 +78,6 @@ func main() {
 		"rbe-conn-pool",
 		1,
 		"RBE client connection pool size.")
-	exposeIntegrationMocks := flag.Bool(
-		"expose-integration-mocks",
-		false,
-		"If set, expose endpoints for running integration tests. Must be used locally only.",
-	)
 	buildbucketServiceAccount := flag.String(
 		"buildbucket-service-account",
 		"",
@@ -200,18 +194,6 @@ func main() {
 		// Old task deletion cron and TQ handlers.
 		tasks.RegisterCleanupHandlers(&cron.Default, &tq.Default)
 
-		// Helpers for running local integration tests. They fake some of Swarming
-		// Python server behavior.
-		if *exposeIntegrationMocks {
-			if srv.Options.Prod {
-				return errors.Reason("-expose-integration-mocks should not be used with -prod").Err()
-			}
-			integrationmocks.RegisterIntegrationMocksServer(srv, integrationmocks.New(
-				srv.Context,
-				tokenSecret,
-			))
-		}
-
 		// A temporary interceptor with very crude but solid ACL check for the
 		// duration of the development. To avoid accidentally leaking stuff due to
 		// bugs in the WIP code.
@@ -245,9 +227,6 @@ func main() {
 			"/buildbucket.v2.TaskBackend/CancelTasks":     rpcacl.All,
 			"/buildbucket.v2.TaskBackend/FetchTasks":      rpcacl.All,
 			"/buildbucket.v2.TaskBackend/ValidateConfigs": rpcacl.All,
-
-			// An API used in local integration tests.
-			"/swarming.integrationmocks.IntegrationMocks/*": devAPIAccessGroup,
 
 			// Leave other gRPC services open, they do they own authorization already.
 			"/discovery.Discovery/*": rpcacl.All,

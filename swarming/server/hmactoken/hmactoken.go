@@ -20,15 +20,9 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"fmt"
 	"sync/atomic"
 
-	"google.golang.org/protobuf/proto"
-
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/secrets"
-
-	internalspb "go.chromium.org/luci/swarming/proto/internals"
 )
 
 // Secret can be used to generate and validate HMAC-tagged tokens.
@@ -41,7 +35,7 @@ type Secret struct {
 func NewRotatingSecret(ctx context.Context, keyName string) (*Secret, error) {
 	s := &Secret{}
 
-	// Load the initial value of the key used to HMAC-tag poll tokens.
+	// Load the initial value of the key used to HMAC-tag tokens.
 	key, err := secrets.StoredSecret(ctx, keyName)
 	if err != nil {
 		return nil, err
@@ -89,75 +83,4 @@ func (s *Secret) Verify(pfx, body, tag []byte) bool {
 		}
 	}
 	return false
-}
-
-// ValidateToken deserializes a TaggedMessage, checks the HMAC and deserializes
-// the payload into `msg`.
-//
-// TODO: To be deleted once poll tokens are gone.
-func (s *Secret) ValidateToken(tok []byte, msg proto.Message) error {
-	// Deserialize the envelope.
-	var envelope internalspb.TaggedMessage
-	if err := proto.Unmarshal(tok, &envelope); err != nil {
-		return errors.Annotate(err, "failed to deserialize TaggedMessage").Err()
-	}
-	if expected := taggedMessagePayload(msg); envelope.PayloadType != expected {
-		return errors.Reason("invalid payload type %v, expecting %v", envelope.PayloadType, expected).Err()
-	}
-
-	// Verify the HMAC. It must be produced using any of the secret versions.
-	// See rbe_pb2.TaggedMessage.
-	cryptoCtx := fmt.Sprintf("%d\n", envelope.PayloadType)
-	if !s.Verify([]byte(cryptoCtx), envelope.Payload, envelope.HmacSha256) {
-		return errors.Reason("bad token HMAC").Err()
-	}
-
-	// The payload can be trusted.
-	if err := proto.Unmarshal(envelope.Payload, msg); err != nil {
-		return errors.Annotate(err, "failed to deserialize token payload").Err()
-	}
-	return nil
-}
-
-// GenerateToken wraps `msg` into a serialized TaggedMessage.
-//
-// The produced token can be validated and deserialized with validateToken.
-//
-// TODO: To be deleted once poll tokens are gone.
-func (s *Secret) GenerateToken(msg proto.Message) ([]byte, error) {
-	payload, err := proto.Marshal(msg)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize the token payload").Err()
-	}
-
-	// The future token, but without HMAC yet.
-	envelope := internalspb.TaggedMessage{
-		PayloadType: taggedMessagePayload(msg),
-		Payload:     payload,
-	}
-
-	// See rbe_pb2.TaggedMessage.
-	cryptoCtx := fmt.Sprintf("%d\n", envelope.PayloadType)
-	envelope.HmacSha256 = s.Tag([]byte(cryptoCtx), envelope.Payload)
-
-	token, err := proto.Marshal(&envelope)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to serialize the token").Err()
-	}
-	return token, nil
-}
-
-// taggedMessagePayload examines the type of msg and returns the corresponding
-// enum variant.
-//
-// Panics if it is a completely unexpected message.
-func taggedMessagePayload(msg proto.Message) internalspb.TaggedMessage_PayloadType {
-	switch msg.(type) {
-	case *internalspb.PollState:
-		return internalspb.TaggedMessage_POLL_STATE
-	case *internalspb.BotSession:
-		return internalspb.TaggedMessage_BOT_SESSION
-	default:
-		panic(fmt.Sprintf("unexpected message type %T", msg))
-	}
 }

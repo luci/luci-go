@@ -27,7 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -51,15 +50,11 @@ import (
 )
 
 type testRequest struct {
-	Session      []byte
-	PollToken    []byte
-	SessionToken []byte
+	Session []byte
 }
 
-func (r *testRequest) ExtractSession() []byte      { return r.Session }
-func (r *testRequest) ExtractPollToken() []byte    { return r.PollToken }
-func (r *testRequest) ExtractSessionToken() []byte { return r.SessionToken }
-func (r *testRequest) ExtractDebugRequest() any    { return r }
+func (r *testRequest) ExtractSession() []byte   { return r.Session }
+func (r *testRequest) ExtractDebugRequest() any { return r }
 
 func TestBotHandler(t *testing.T) {
 	t.Parallel()
@@ -158,31 +153,7 @@ func TestBotHandler(t *testing.T) {
 			return tok
 		}
 
-		makeOldPollState := func(id string) *internalspb.PollState {
-			return &internalspb.PollState{
-				Id:          id,
-				Expiry:      timestamppb.New(now.Add(5 * time.Minute)),
-				RbeInstance: "some-rbe-instance",
-				EnforcedDimensions: []*internalspb.PollState_Dimension{
-					{Key: "id", Values: []string{"bot-id"}},
-				},
-				AuthMethod: &internalspb.PollState_LuciMachineTokenAuth{
-					LuciMachineTokenAuth: &internalspb.PollState_LUCIMachineTokenAuth{
-						MachineFqdn: "bot.fqdn",
-					},
-				},
-			}
-		}
-
-		genOldToken := func(msg proto.Message) []byte {
-			tok, err := srv.hmacSecret.GenerateToken(msg)
-			if err != nil {
-				panic(err)
-			}
-			return tok
-		}
-
-		t.Run("Happy path, no legacy tokens", func(t *ftt.Test) {
+		t.Run("Happy path", func(t *ftt.Test) {
 			session := makeSession("good-bot", "sid", goodBotAuth)
 
 			req := testRequest{
@@ -195,51 +166,6 @@ func TestBotHandler(t *testing.T) {
 			assert.Loosely(t, body, should.Match(&req))
 			assert.Loosely(t, seenReq.Session, should.Match(session))
 			assert.Loosely(t, seenReq.Dimensions, should.Match(goodDims))
-			assert.Loosely(t, seenReq.PollState, should.BeNil)
-		})
-
-		t.Run("Happy path with legacy poll token", func(t *ftt.Test) {
-			session := makeSession("good-bot", "sid", goodBotAuth)
-			pollState := makeOldPollState("ps")
-
-			req := testRequest{
-				Session:   genSessionToken(session),
-				PollToken: genOldToken(pollState),
-			}
-
-			body, seenReq, status, resp := call(req, "some-response", nil)
-			assert.Loosely(t, status, should.Equal(http.StatusOK))
-			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
-			assert.Loosely(t, body, should.Match(&req))
-			assert.Loosely(t, seenReq.Session, should.Match(session))
-			assert.Loosely(t, seenReq.Dimensions, should.Match(goodDims))
-			assert.Loosely(t, seenReq.PollState, should.Match(pollState))
-		})
-
-		t.Run("Happy path with legacy session token", func(t *ftt.Test) {
-			session := makeSession("good-bot", "sid", goodBotAuth)
-
-			expiredPollState := makeOldPollState("expired-ps")
-			expiredPollState.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
-
-			validPollState := makeOldPollState("valid-ps")
-
-			req := testRequest{
-				Session:   genSessionToken(session),
-				PollToken: genOldToken(expiredPollState),
-				SessionToken: genOldToken(&internalspb.BotSession{
-					PollState: validPollState,
-					Expiry:    timestamppb.New(now.Add(5 * time.Minute)),
-				}),
-			}
-
-			body, seenReq, status, resp := call(req, "some-response", nil)
-			assert.Loosely(t, status, should.Equal(http.StatusOK))
-			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
-			assert.Loosely(t, body, should.Match(&req))
-			assert.Loosely(t, seenReq.Session, should.Match(session))
-			assert.Loosely(t, seenReq.Dimensions, should.Match(goodDims))
-			assert.Loosely(t, seenReq.PollState, should.Match(validPollState))
 		})
 
 		t.Run("Bad Content-Type", func(t *ftt.Test) {
@@ -338,27 +264,6 @@ func TestBotHandler(t *testing.T) {
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, resp, should.ContainSubstring("wrong stored \"id\" dimension"))
-		})
-
-		t.Run("Bad legacy tokens", func(t *ftt.Test) {
-			session := makeSession("good-bot", "sid", goodBotAuth)
-
-			pollState := makeOldPollState("ps")
-			pollState.Expiry = timestamppb.New(now.Add(-5 * time.Minute))
-
-			req := testRequest{
-				Session:   genSessionToken(session),
-				PollToken: genOldToken(pollState),
-				SessionToken: genOldToken(&internalspb.BotSession{
-					PollState: pollState,
-					Expiry:    timestamppb.New(now.Add(-5 * time.Minute)),
-				}),
-			}
-
-			_, seenReq, status, resp := call(req, "some-response", nil)
-			assert.Loosely(t, seenReq, should.BeNil)
-			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
-			assert.Loosely(t, resp, should.ContainSubstring("both poll and state tokens have expired"))
 		})
 	})
 }
