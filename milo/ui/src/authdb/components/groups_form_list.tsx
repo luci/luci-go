@@ -96,15 +96,15 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     switch (name) {
       case 'Members':
         placeHolderText =
-          'Add members, one per line (e.g., person@example.com, serviceAccount@project.com)';
+          'Add members, one per line (e.g. person@example.com, serviceAccount@project.com)';
         break;
       case 'Globs':
         placeHolderText =
-          'Add globs, one per line (e.g., *@google.com, project:project-prefix-*)';
+          'Add globs, one per line (e.g. *@google.com, project:project-prefix-*)';
         break;
       case 'Subgroups':
         placeHolderText =
-          'Add subgroups, one per line (e.g., administrators, mdb/chrome-troopers, google/committers@chromium.org)';
+          'Add subgroups, one per line (e.g. administrators, mdb/chrome-troopers, google/committers@chromium.org)';
         break;
       default:
         placeHolderText = 'Add new members, one per line';
