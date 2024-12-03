@@ -43,7 +43,12 @@ func TestValidation(t *testing.T) {
 
 		c.SetFile("file.cfg")
 		c.Enter("ctx %d", 123)
+		assert.That(t, c.HasPendingErrors(), should.BeFalse)
+
 		c.Errorf("blah %s", "zzz")
+		assert.That(t, c.HasPendingErrors(), should.BeTrue)
+		assert.That(t, c.HasPendingWarnings(), should.BeFalse)
+
 		err := c.Finalize()
 		assert.Loosely(t, err, should.HaveType[*Error])
 		assert.Loosely(t, err.Error(), should.Equal(`in "file.cfg" (ctx 123): blah zzz`))
@@ -78,7 +83,12 @@ func TestValidation(t *testing.T) {
 
 	ftt.Run("One simple warning", t, func(t *ftt.Test) {
 		c := Context{Context: context.Background()}
+		assert.That(t, c.HasPendingWarnings(), should.BeFalse)
+
 		c.Warningf("option %q is a noop, please remove", "xyz: true")
+		assert.That(t, c.HasPendingWarnings(), should.BeTrue)
+		assert.That(t, c.HasPendingErrors(), should.BeFalse)
+
 		err := c.Finalize()
 		assert.Loosely(t, err, should.NotBeNil)
 		singleErr := err.(*Error).Errors[0]

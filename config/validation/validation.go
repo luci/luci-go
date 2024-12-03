@@ -173,6 +173,11 @@ func (v *Context) Error(err error) {
 	v.record(Blocking, err)
 }
 
+// HasPendingErrors returns true if there's any pending validation errors.
+func (v *Context) HasPendingErrors() bool {
+	return v.hasErrors(Blocking)
+}
+
 // Warningf records the given format string and args as a validation warning.
 func (v *Context) Warningf(format string, args ...any) {
 	v.record(Warning, errors.Reason(format, args...).Err())
@@ -181,6 +186,11 @@ func (v *Context) Warningf(format string, args ...any) {
 // Warning records the given error as a validation warning.
 func (v *Context) Warning(err error) {
 	v.record(Warning, err)
+}
+
+// HasPendingWarnings returns true if there's any pending validation warnings.
+func (v *Context) HasPendingWarnings() bool {
+	return v.hasErrors(Warning)
 }
 
 func (v *Context) record(severity Severity, err error) {
@@ -196,6 +206,15 @@ func (v *Context) record(severity Severity, err error) {
 	// Make the file and the logical path also usable through error inspection.
 	v.errors = append(v.errors, errors.Annotate(err, "%s", ctx).Tag(
 		fileTag.With(v.file), elementTag.With(v.element), SeverityTag.With(severity)).Err())
+}
+
+func (v *Context) hasErrors(severity Severity) bool {
+	for _, err := range v.errors {
+		if sev, ok := SeverityTag.In(err); ok && sev == severity {
+			return true
+		}
+	}
+	return false
 }
 
 // SetFile records that what follows is errors for this particular file.
