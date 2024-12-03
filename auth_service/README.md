@@ -85,26 +85,24 @@ no other prefix is provided. For example, `*@example.com` in a UI actually means
 
 ### IP allowlists
 
-An IP allowlist as a named set of IPv4 and IPv6 addresses. They are primarily
+An IP allowlist is a named set of IPv4 and IPv6 addresses. They are primarily
 used in Swarming when authorizing RPCs from bots. IP allowlists are defined in
-`ip_allowlist.cfg` configuration file.
-
+the `ip_allowlist.cfg` service configuration file.
 
 ### OAuth client ID allowlist
 
 This is a list of Google [OAuth client IDs] recognized by the LUCI cluster. It
-lists various OAuth clients (standalone binaries, web apps, AppScripts, etc.)
-that are allowed to send end-user OAuth access tokens to LUCI. OAuth client ID
-allowlist is defined in `oauth.cfg` configuration file.
+lists various OAuth clients (standalone binaries, web apps, AppScripts, etc)
+that are allowed to send end-user OAuth access tokens to LUCI. The OAuth client
+ID allowlist is defined in the `oauth.cfg` service configuration file.
 
 [OAuth client IDs]: https://www.oauth.com/oauth2-servers/client-registration/client-id-secret/
 
 ### Security configuration for internal LUCI RPCs
 
-These are various bits of configuration (defined partially in `oauth.cfg` and in
-`security.cfg` config files) that are centrally distributed to services in
-a LUCI cluster. Used to establish mutual trust between them.
-
+These are various bits of configuration (defined partially in the `oauth.cfg`
+and in the `security.cfg` service config files) that are centrally distributed
+to services in a LUCI cluster. Used to establish mutual trust between them.
 
 ## API surfaces
 
