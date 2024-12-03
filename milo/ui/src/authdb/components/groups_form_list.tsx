@@ -439,3 +439,4 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
     );
   },
 );
+GroupsFormList.displayName = 'GroupsFormList';
