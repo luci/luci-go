@@ -53,7 +53,7 @@ This section describes what exactly is "data and configuration used for
 authorization decisions".
 
 See AuthDB message in
-[replication.proto](../components/components/auth/proto/replication.proto) for
+[replication.proto](../server/auth/service/protocol/components/auth/proto/replication.proto) for
 all details.
 
 ### Groups graph
