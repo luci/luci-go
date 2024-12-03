@@ -1,12 +1,16 @@
 # Push-on-Green
 
+Self link: [go/luci-ui-push-on-green](http://go/luci-ui-push-on-green)
+
  * Design Doc: [go/luci-ui-push-on-green-mvp-dd](http://go/luci-ui-push-on-green-mvp-dd).
  * [luci-ui-promoter recipe](https://chromium.googlesource.com/infra/infra/+/main/recipes/recipes/luci_ui_promoter.py).
  * [luci-ui-promoter configuration](https://chrome-internal.googlesource.com/infra/infra_internal/+/main/infra/config/subprojects/luci_ui.star).
 
 ## Basic info
  * Push-on-green only run [from Monday to Thursday (UTC)](https://chrome-internal.googlesource.com/infra/infra_internal/+/main/infra/config/subprojects/luci_ui.star).
- * On average, it takes `TODO: measure latency` for a landed CL to be released to prod.
+ * On average, the latency between landing a feature CL and landing the
+   automatically created release CL is ~10 mins. This will increase as more and
+   more integration tests are added.
 
 ## Common tasks
 ### Pause push-on-green
