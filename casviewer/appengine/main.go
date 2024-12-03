@@ -28,11 +28,10 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	cc := casviewer.NewClientCache(ctx)
-	defer cc.Clear()
-
 	server.Main(nil, nil, func(srv *server.Server) error {
+		cc := casviewer.NewClientCache(srv.Context)
+		srv.RegisterCleanup(func(context.Context) { cc.Clear() })
+
 		authMW, err := iapAuthMW()
 		if err != nil {
 			return err

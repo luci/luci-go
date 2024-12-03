@@ -22,7 +22,6 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -73,14 +72,11 @@ func TestClient(t *testing.T) {
 	})
 }
 
-// newContext creats a fake context.
+// newContext creates a fake context.
 func newContext() *router.Context {
 	cc := NewClientCache(context.Background())
-
-	ctx := context.Background()
-	ctx = authtest.MockAuthConfig(ctx)
 	c := &router.Context{
-		Request: (&http.Request{}).WithContext(ctx),
+		Request: &http.Request{},
 	}
 	withClientCacheMW(cc)(c, func(_ *router.Context) {})
 	return c

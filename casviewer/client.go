@@ -42,6 +42,9 @@ type ClientCache struct {
 }
 
 // NewClientCache initializes ClientCache.
+//
+// The given context will be used to create gRPC clients and their per-RPC
+// credentials.
 func NewClientCache(ctx context.Context) *ClientCache {
 	return &ClientCache{
 		clients: make(map[string]*client.Client),
@@ -69,7 +72,7 @@ func (cc *ClientCache) Get(instance string) (*client.Client, error) {
 		return cl, nil
 	}
 
-	cl, err := NewClient(cc.ctx, instance)
+	cl, err := newClient(cc.ctx, instance)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +92,8 @@ func (cc *ClientCache) Clear() {
 	}
 }
 
-// withClientCacheMW creates a middleware that injects the ClientCache to context.
+// withClientCacheMW creates a middleware that injects the ClientCache into
+// the context.
 func withClientCacheMW(cc *ClientCache) router.Middleware {
 	return func(c *router.Context, next router.Handler) {
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), ccKey, cc))
@@ -98,8 +102,8 @@ func withClientCacheMW(cc *ClientCache) router.Middleware {
 }
 
 // GetClient returns a Client by loading it from cache or creating a new one.
-func GetClient(c context.Context, instance string) (*client.Client, error) {
-	cc, err := clientCache(c)
+func GetClient(ctx context.Context, instance string) (*client.Client, error) {
+	cc, err := clientCache(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +119,9 @@ func clientCache(c context.Context) (*ClientCache, error) {
 	return cc, nil
 }
 
-// NewClient connects to the instance of remote execution service, and returns a client.
-func NewClient(ctx context.Context, instance string) (*client.Client, error) {
+// newClient connects to the instance of remote execution service, and returns
+// a client.
+func newClient(ctx context.Context, instance string) (*client.Client, error) {
 	creds, err := auth.GetPerRPCCredentials(ctx, auth.AsSelf, auth.WithScopes(auth.CloudOAuthScopes...))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get credentials").Err()
