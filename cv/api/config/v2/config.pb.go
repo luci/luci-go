@@ -2433,7 +2433,10 @@ type Verifiers_Tryjob_Builder_SkipFooter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The footer key. Need to match exactly. Required.
+	// The footer key. Required.
+	//
+	// The provided footer key MUST be normalized (dash-case with first
+	// letter of each segment being uppercase. e.g. Bypass-Spell-Checker).
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	// The regexp pattern for the footer value. If unset, `.*` will be used
 	// which implies any value would skip the builder.

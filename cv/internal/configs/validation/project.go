@@ -29,6 +29,7 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/git/footer"
 	luciconfig "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
@@ -581,6 +582,20 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			if b.IncludableOnly {
 				vd.ctx.Errorf("includable_only is not combinable with mode_allowlist")
 			}
+		}
+
+		for i, skipFooter := range b.GetSkipFooters() {
+			vd.ctx.Enter("skip_footers #%d", i+1)
+			switch footerKey := skipFooter.GetKey(); {
+			case footerKey == "":
+				vd.ctx.Errorf("footer key is required")
+			case footerKey != footer.NormalizeKey(footerKey):
+				vd.ctx.Errorf("footer key is not normalized")
+			}
+			if valueRegexp := skipFooter.GetValueRegexp(); valueRegexp != "" {
+				validateRegexp(vd.ctx, "value_regexp", []string{valueRegexp})
+			}
+			vd.ctx.Exit()
 		}
 	})
 }

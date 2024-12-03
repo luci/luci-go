@@ -1253,8 +1253,44 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				should.ErrLikeString(
 					"includable_only is not combinable with mode_allowlist"))
-
 			assert.NoErr(t, validate(`builders {name: "one/is/enough" includable_only: true}`))
+		})
+
+		t.Run("skip footers", func(t *ftt.Test) {
+			assert.NoErr(t, validate(`
+			builders {
+				name: "a/b/c"
+				skip_footers: {
+					key: "Bypass-Builder"
+					value_regexp: ".*"
+				}
+			}`))
+			assert.That(t, validate(`
+				builders {
+					name: "a/b/c"
+					skip_footers: {
+						value_regexp: ".*"
+					}
+				}`),
+				should.ErrLikeString("footer key is required"))
+			assert.That(t, validate(`
+				builders {
+					name: "a/b/c"
+					skip_footers: {
+						key: "ALL_CAPS_KEY"
+						value_regexp: ".*"
+					}
+				}`),
+				should.ErrLikeString("footer key is not normalized"))
+			assert.That(t, validate(`
+				builders {
+					name: "a/b/c"
+					skip_footers: {
+						key: "Bypass-Builder"
+						value_regexp: "*is-bad-regexp"
+					}
+				}`),
+				should.ErrLikeString("error parsing regexp"))
 		})
 	})
 }
