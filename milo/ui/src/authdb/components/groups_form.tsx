@@ -201,6 +201,8 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
 
   const submitForm = (updateMask: string[]) => {
     setIsUpdating(true);
+    setErrorMessage('');
+    setSuccessEditedGroup(false);
     const editedMembers = addPrefixToItems(
       'user',
       membersRef.current?.getItems()!,
