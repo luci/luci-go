@@ -493,10 +493,14 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
                   />
                   <div>
                     {successEditedGroup && (
-                      <Alert severity="success">Group updated</Alert>
+                      <Alert severity="success" sx={{ mt: 1.5 }}>
+                        Group updated
+                      </Alert>
                     )}
                     {errorMessage && (
-                      <Alert severity="error">{errorMessage}</Alert>
+                      <Alert severity="error" sx={{ mt: 1.5 }}>
+                        {errorMessage}
+                      </Alert>
                     )}
                   </div>
                   {isUpdating && <CircularProgress></CircularProgress>}
