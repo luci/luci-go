@@ -78,17 +78,20 @@ func (impl *Impl) onCompletedPostAction(ctx context.Context, rs *state.RunState,
 // already ended Runs and their ongoing PostActions, either.
 func enqueueExecutePostActionTask(ctx context.Context, rs *state.RunState, cg *prjcfg.ConfigGroup) {
 	// enqueue internal post actions.
-	rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-		Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
-		Work: &run.OngoingLongOps_Op_ExecutePostAction{
-			ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
-				Name: postaction.CreditRunQuotaPostActionName,
-				Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
-					CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+	// Do not credit the run quota for on upload runs (NewPatchsetRun).
+	if rs.Mode != run.NewPatchsetRun {
+		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostActionExecutionDuration)),
+			Work: &run.OngoingLongOps_Op_ExecutePostAction{
+				ExecutePostAction: &run.OngoingLongOps_Op_ExecutePostActionPayload{
+					Name: postaction.CreditRunQuotaPostActionName,
+					Kind: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota_{
+						CreditRunQuota: &run.OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuota{},
+					},
 				},
 			},
-		},
-	})
+		})
+	}
 	// enqueue actions defined in the configuration.
 	for _, pacfg := range cg.Content.GetPostActions() {
 		if postaction.IsTriggeringConditionMet(pacfg, &rs.Run) {

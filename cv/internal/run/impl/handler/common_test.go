@@ -237,6 +237,108 @@ func TestEndRun(t *testing.T) {
 			}))
 		})
 	})
+
+	ftt.Run("EndRun when mode is NewPatchsetRun", t, func(t *ftt.Test) {
+		ct := cvtesting.Test{}
+		ctx := ct.SetUp(t)
+
+		const (
+			clid     = 1
+			lProject = "infra"
+		)
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{
+			ConfigGroups: []*cfgpb.ConfigGroup{
+				{
+					Name: "main",
+					PostActions: []*cfgpb.ConfigGroup_PostAction{
+						{
+							Name: "run-verification-label",
+							Conditions: []*cfgpb.ConfigGroup_PostAction_TriggeringCondition{
+								{
+									Mode:     string(run.DryRun),
+									Statuses: []apipb.Run_Status{apipb.Run_FAILED},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+		cgs, err := prjcfgtest.MustExist(ctx, lProject).GetConfigGroups(ctx)
+		assert.NoErr(t, err)
+		cg := cgs[0]
+
+		// mock a CL with two onoging Runs.
+		rids := common.RunIDs{
+			common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("deadbeef")),
+			common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("cafecafe")),
+		}
+		sort.Sort(rids)
+		cl := changelist.CL{
+			ID:             clid,
+			EVersion:       3,
+			IncompleteRuns: rids,
+			UpdateTime:     ct.Clock.Now().UTC(),
+		}
+		assert.Loosely(t, datastore.Put(ctx, &cl), should.BeNil)
+
+		// mock some child runs of rids[0]
+		childRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("child"))
+		childRun := run.Run{
+			ID:      childRunID,
+			DepRuns: common.RunIDs{rids[0]},
+		}
+		finChildRunID := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("finchild"))
+		finChildRun := run.Run{
+			ID:      finChildRunID,
+			DepRuns: common.RunIDs{rids[0]},
+			Status:  run.Status_FAILED,
+		}
+		assert.Loosely(t, datastore.Put(ctx, &childRun, &finChildRun), should.BeNil)
+
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            rids[0],
+				Status:        run.Status_RUNNING,
+				ConfigGroupID: cg.ID,
+				CreateTime:    ct.Clock.Now().Add(-2 * time.Minute),
+				StartTime:     ct.Clock.Now().Add(-1 * time.Minute),
+				Mode:          run.NewPatchsetRun,
+				CLs:           common.CLIDs{1},
+				OngoingLongOps: &run.OngoingLongOps{
+					Ops: map[string]*run.OngoingLongOps_Op{
+						"11-22": {
+							CancelRequested: false,
+							Work:            &run.OngoingLongOps_Op_PostStartMessage{PostStartMessage: true},
+						},
+					},
+				},
+			},
+		}
+
+		impl, _ := makeImpl(&ct)
+		se := impl.endRun(ctx, rs, run.Status_FAILED, cg, []*run.Run{&childRun, &finChildRun})
+		assert.Loosely(t, rs.Status, should.Equal(run.Status_FAILED))
+		assert.Loosely(t, rs.EndTime, should.Match(ct.Clock.Now()))
+		assert.Loosely(t, datastore.RunInTransaction(ctx, se, nil), should.BeNil)
+
+		t.Run("Does not credit quota for on upload runs (NewPatchsetRun)", func(t *ftt.Test) {
+			postActions := make([]*run.OngoingLongOps_Op_ExecutePostActionPayload, 0, len(rs.OngoingLongOps.GetOps()))
+			for _, op := range rs.OngoingLongOps.GetOps() {
+				if act := op.GetExecutePostAction(); act != nil {
+					d := timestamppb.New(ct.Clock.Now().UTC().Add(maxPostActionExecutionDuration))
+					assert.Loosely(t, op.GetDeadline(), should.Resemble(d))
+					assert.Loosely(t, op.GetCancelRequested(), should.BeFalse)
+					postActions = append(postActions, act)
+				}
+			}
+			sort.Slice(postActions, func(i, j int) bool {
+				return strings.Compare(postActions[i].GetName(), postActions[j].GetName()) < 0
+			})
+
+			assert.Loosely(t, postActions, should.Resemble([]*run.OngoingLongOps_Op_ExecutePostActionPayload{}))
+		})
+	})
 }
 
 func TestCheckRunCreate(t *testing.T) {

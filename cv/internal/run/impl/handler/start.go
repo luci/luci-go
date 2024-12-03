@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/quota"
 	"go.chromium.org/luci/server/quota/quotapb"
 
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
@@ -130,56 +131,24 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		return &Result{State: rs}, nil
 	}
 
-	// Run quota should be debited from the creator before the run is started.
-	// When run quota isn't available, the run is left in the pending state.
-	pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
-	switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
-	case err == nil && quotaOp != nil:
-		rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
-	case errors.Unwrap(err) == quota.ErrQuotaApply && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
-		// run quota isn't currently available for the user; leave the run in pending.
-		logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
-
-		// Post pending message to all gerrit CLs for this run if not posted already.
-		if !rs.QuotaExhaustionMsgLongOpRequested {
-			rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
-
-			if userLimit.GetRun().GetReachLimitMsg() != "" {
-				pendingMsg = fmt.Sprintf("%s\n\n%s", pendingMsg, userLimit.GetRun().GetReachLimitMsg())
-			}
-
-			rs.EnqueueLongOp(&run.OngoingLongOps_Op{
-				Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
-				Work: &run.OngoingLongOps_Op_PostGerritMessage_{
-					PostGerritMessage: &run.OngoingLongOps_Op_PostGerritMessage{
-						Message: pendingMsg,
-					},
-				},
-			})
-
-			switch host, _, err := runCLs[0].ExternalID.ParseGobID(); {
-			case err != nil:
-				logging.Errorf(ctx, "ParseGobID failed; skipping RunQuotaRejection metric %v", err)
-			default:
-				hostID := strings.TrimSuffix(host, "-review.googlesource.com")
-				gerritAccountID := fmt.Sprintf("%s/%d", hostID, runCLs[0].Trigger.GerritAccountId)
-				metrics.Public.RunQuotaRejection.Add(
-					ctx,
-					1,
-					rs.Run.ID.LUCIProject(),
-					rs.Run.ConfigGroupID.Name(),
-					gerritAccountID,
-				)
-			}
+	// Run quota should not be debited for on upload runs (NewPatchsetRun).
+	if rs.Mode != run.NewPatchsetRun {
+		// Run quota should be debited from the creator before the run is started.
+		// When run quota isn't available, the run is left in the pending state.
+		pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
+		switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
+		case err == nil && quotaOp != nil:
+			rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
+		case errors.Is(err, quota.ErrQuotaApply) && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
+			// run quota isn't currently available for the user; leave the run in pending.
+			logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
+			return postPendingCommentOnCLs(ctx, rs, pendingMsg, userLimit, runCLs)
+		case errors.Is(err, quota.ErrQuotaApply):
+			return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
+		case err != nil:
+			return nil, errors.Annotate(err, "QM.DebitRunQuota").Tag(transient.Tag).Err()
 		}
-
-		return &Result{State: rs, PreserveEvents: true}, nil
-	case errors.Unwrap(err) == quota.ErrQuotaApply:
-		return nil, errors.Annotate(err, "QM.DebitRunQuota: unexpected quotaOp Status %s", quotaOp.GetStatus()).Tag(transient.Tag).Err()
-	case err != nil:
-		return nil, errors.Annotate(err, "QM.DebitRunQuota").Tag(transient.Tag).Err()
 	}
-
 	switch result, err := requirement.Compute(ctx, requirement.Input{
 		GFactory:    impl.GFactory,
 		ConfigGroup: cg.Content,
@@ -263,6 +232,43 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		State:        rs,
 		SideEffectFn: se,
 	}, nil
+}
+
+func postPendingCommentOnCLs(ctx context.Context, rs *state.RunState, pendingMsg string, userLimit *cfgpb.UserLimit, runCLs []*run.RunCL) (*Result, error) {
+	// Post pending message to all gerrit CLs for this run if not posted already.
+	if !rs.QuotaExhaustionMsgLongOpRequested {
+		rs.QuotaExhaustionMsgLongOpRequested = true // Only enqueue once.
+
+		if userLimit.GetRun().GetReachLimitMsg() != "" {
+			pendingMsg = fmt.Sprintf("%s\n\n%s", pendingMsg, userLimit.GetRun().GetReachLimitMsg())
+		}
+
+		rs.EnqueueLongOp(&run.OngoingLongOps_Op{
+			Deadline: timestamppb.New(clock.Now(ctx).UTC().Add(maxPostMessageDuration)),
+			Work: &run.OngoingLongOps_Op_PostGerritMessage_{
+				PostGerritMessage: &run.OngoingLongOps_Op_PostGerritMessage{
+					Message: pendingMsg,
+				},
+			},
+		})
+
+		switch host, _, err := runCLs[0].ExternalID.ParseGobID(); {
+		case err != nil:
+			logging.Errorf(ctx, "ParseGobID failed; skipping RunQuotaRejection metric %v", err)
+		default:
+			hostID := strings.TrimSuffix(host, "-review.googlesource.com")
+			gerritAccountID := fmt.Sprintf("%s/%d", hostID, runCLs[0].Trigger.GerritAccountId)
+			metrics.Public.RunQuotaRejection.Add(
+				ctx,
+				1,
+				rs.Run.ID.LUCIProject(),
+				rs.Run.ConfigGroupID.Name(),
+				gerritAccountID,
+			)
+		}
+	}
+
+	return &Result{State: rs, PreserveEvents: true}, nil
 }
 
 func (impl *Impl) onCompletedPostStartMessage(ctx context.Context, rs *state.RunState, op *run.OngoingLongOps_Op, result *eventpb.LongOpCompleted) (*Result, error) {

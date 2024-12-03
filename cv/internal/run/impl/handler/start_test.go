@@ -432,6 +432,110 @@ func TestStart(t *testing.T) {
 			})
 		}
 	})
+
+	ftt.Run("Starts when Run is PENDING and mode is NewPatchsetRun", t, func(t *ftt.Test) {
+		ct := cvtesting.Test{}
+		ctx := ct.SetUp(t)
+
+		const (
+			lProject           = "chromium"
+			configGroupName    = "combinable"
+			gerritHost         = "chromium-review.googlesource.com"
+			committers         = "committer-group"
+			dryRunners         = "dry-runner-group"
+			stabilizationDelay = time.Minute
+			startLatency       = 2 * time.Minute
+		)
+
+		builder := &bbpb.BuilderID{
+			Project: lProject,
+			Bucket:  "try",
+			Builder: "cool_tester",
+		}
+		prjcfgtest.Create(ctx, lProject, &cfgpb.Config{ConfigGroups: []*cfgpb.ConfigGroup{{
+			Name: configGroupName,
+			CombineCls: &cfgpb.CombineCLs{
+				StabilizationDelay: durationpb.New(stabilizationDelay),
+			},
+			Verifiers: &cfgpb.Verifiers{
+				GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
+					CommitterList:    []string{committers},
+					DryRunAccessList: []string{dryRunners},
+				},
+				Tryjob: &cfgpb.Verifiers_Tryjob{
+					Builders: []*cfgpb.Verifiers_Tryjob_Builder{
+						{
+							Name: bbutil.FormatBuilderID(builder),
+						},
+					},
+				},
+			},
+		}}})
+
+		makeIdentity := func(email string) identity.Identity {
+			id, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, email))
+			assert.NoErr(t, err)
+			return id
+		}
+
+		const tEmail = "t@example.org"
+		rs := &state.RunState{
+			Run: run.Run{
+				ID:            lProject + "/1111111111111-deadbeef",
+				Status:        run.Status_PENDING,
+				CreateTime:    clock.Now(ctx).UTC().Add(-startLatency),
+				ConfigGroupID: prjcfgtest.MustExist(ctx, lProject).ConfigGroupIDs[0],
+				Mode:          run.NewPatchsetRun,
+				CreatedBy:     makeIdentity(tEmail),
+				BilledTo:      makeIdentity(tEmail),
+			},
+		}
+		h, deps := makeTestHandler(&ct)
+
+		const (
+			owner     = "user-1"
+			triggerer = owner
+		)
+		ct.AddMember(owner, dryRunners)
+		ct.AddMember(owner, committers)
+		ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{
+			{Email: fmt.Sprintf("%s@example.com", owner)},
+		})
+
+		t.Run("Does not apply quota to on upload runs (NewPatchsetRun)", func(t *ftt.Test) {
+			deps.qm.runQuotaOp = &quotapb.OpResult{
+				Status:          quotapb.OpResult_SUCCESS,
+				NewBalance:      5,
+				PreviousBalance: 4,
+			}
+
+			res, err := h.Start(ctx, rs)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			assert.Loosely(t, deps.qm.debitRunQuotaCalls, should.Equal(0))
+
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+			assert.Loosely(t, res.State.StartTime, should.Match(ct.Clock.Now().UTC()))
+			assert.Loosely(t, res.State.Tryjobs, should.Resemble(&run.Tryjobs{
+				Requirement:           &tryjob.Requirement{},
+				RequirementVersion:    1,
+				RequirementComputedAt: timestamppb.New(ct.Clock.Now().UTC()),
+			}))
+			assert.Loosely(t, res.State.LogEntries, should.HaveLength(1))
+			assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.Equal(""))
+
+			assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
+			assert.Loosely(t, res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]].GetExecuteTryjobs(), should.NotBeNil)
+
+			assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+			assert.Loosely(t, datastore.RunInTransaction(ctx, res.SideEffectFn, nil), should.BeNil)
+			assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.RunStarted, lProject, configGroupName, string(run.NewPatchsetRun)), should.Equal(1))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyS, lProject).Sum(),
+				should.AlmostEqual(startLatency.Seconds()))
+			assert.Loosely(t, ct.TSMonSentDistr(ctx, metricPickupLatencyAdjustedS, lProject).Sum(),
+				should.AlmostEqual((startLatency - stabilizationDelay).Seconds()))
+		})
+	})
 }
 
 func TestOnCompletedPostStartMessage(t *testing.T) {
