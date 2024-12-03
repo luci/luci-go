@@ -135,11 +135,15 @@ All authorization configuration internally is stored in a single Cloud Datastore
 entity group. This entity group has a revision number associated with it, which
 is incremented with every transactional change (e.g. when groups are updated).
 
-For every revision Auth Service creates a consistent snapshot of AuthDB at this
-particular revision, signs it, uploads it to a preconfigured Google Storage
-bucket, starts serving it over `/auth_service/api/v1/authdb/revisions/...`
-endpoint, sends a PubSub notification to a preconfigured PubSub topic, and
-finally uploads the snapshot (via POST HTTP request) to all registered web hooks
+For every revision, Auth Service:
+1. creates a consistent snapshot of AuthDB at this particular
+revision
+1. updates its internal latest AuthDB snapshot so it can be served over
+`/auth_service/api/v1/authdb/revisions/<revId>` and the RPC method
+`auth.service.AuthDB/GetSnapshot`.
+1. signs the AuthDB and uploads it to a preconfigured Google Storage bucket
+1. sends a PubSub notification to a preconfigured PubSub topic; and finally
+1. uploads the snapshot (via POST HTTP request) to all registered web hooks
 until all of them acknowledge it.
 
 It is distributed in a such diverse way for backward compatibility with variety
