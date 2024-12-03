@@ -37,6 +37,6 @@
     visibility: visible;
 }
 
-.subgroup-link:hover {
-    cursor: pointer;
+.subgroup-button {
+    text-transform: none !important;
 }

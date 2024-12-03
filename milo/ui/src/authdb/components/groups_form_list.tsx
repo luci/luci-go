@@ -325,14 +325,14 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                           }}
                         />
                         {name === 'Subgroups' ? (
-                          <a
+                          <Button
                             onClick={() => navigateToGroup(item.value)}
-                            className="subgroup-link"
+                            className="subgroup-button"
                           >
                             <Typography variant="body2">
                               {item.value}
                             </Typography>
-                          </a>
+                          </Button>
                         ) : (
                           <Typography variant="body2">{item.value}</Typography>
                         )}
