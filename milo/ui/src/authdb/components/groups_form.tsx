@@ -11,7 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import DoneIcon from '@mui/icons-material/Done';
+import EditIcon from '@mui/icons-material/Edit';
+import { FormControl } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
@@ -21,8 +23,6 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
-import DoneIcon from '@mui/icons-material/Done';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -30,16 +30,24 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { FormControl } from '@mui/material';
-import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect } from 'react';
-import { GroupsFormList, FormListElement } from '@/authdb/components/groups_form_list';
-import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
-import { AuthGroup, UpdateGroupRequest, DeleteGroupRequest } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-import { addPrefixToItems, nameRe } from '@/authdb/common/helpers';
 import { useNavigate } from 'react-router-dom';
+
+import { addPrefixToItems, nameRe } from '@/authdb/common/helpers';
+import {
+  GroupsFormList,
+  FormListElement,
+} from '@/authdb/components/groups_form_list';
+import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
+import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import {
+  AuthGroup,
+  UpdateGroupRequest,
+  DeleteGroupRequest,
+} from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 const theme = createTheme({
   typography: {
@@ -53,7 +61,7 @@ const theme = createTheme({
     subtitle1: {
       color: 'red',
       fontStyle: 'italic',
-    }
+    },
   },
   components: {
     MuiTableCell: {
@@ -62,8 +70,8 @@ const theme = createTheme({
           borderBottom: 'none',
           paddingLeft: '0',
           paddingBottom: '0',
-        }
-      }
+        },
+      },
     },
   },
 });
@@ -78,7 +86,7 @@ function stripPrefix(prefix: string, str: string) {
   } else {
     return str;
   }
-};
+}
 
 // True if group name starts with '<something>/' prefix, where
 // <something> is a non-empty string.
@@ -102,12 +110,13 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   const [showDescriptionEdit, setShowDescriptionEdit] = useState<boolean>();
   const [isExternal, setIsExternal] = useState<boolean>();
   const [successEditedGroup, setSuccessEditedGroup] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>();
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>();
   const [savedDescription, setSavedDescription] = useState<string>('');
   const [savedOwners, setSavedOwners] = useState<string>('');
-  const [descriptionErrorMessage, setDescriptionErrorMessage] = useState<string>('');
+  const [descriptionErrorMessage, setDescriptionErrorMessage] =
+    useState<string>('');
   const [ownersErrorMessage, setOwnersErrorMessage] = useState<string>('');
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
@@ -121,19 +130,21 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     error,
     refetch,
   } = useQuery({
-    ...client.GetGroup.query({ "name": name }),
+    ...client.GetGroup.query({ name: name }),
     onSuccess: (response) => {
       setIsExternal(isExternalGroupName(response?.name!));
     },
     refetchOnWindowFocus: false,
-  })
+  });
 
   const updateMutation = useMutation({
     mutationFn: (request: UpdateGroupRequest) => {
       return client.UpdateGroup(request);
     },
     onSuccess: (response) => {
-      const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
+      const members: string[] =
+        response?.members?.map((member) => stripPrefix('user', member)) ||
+        ([] as string[]);
       membersRef.current?.changeItems(members);
       globsRef.current?.changeItems(response?.globs as string[]);
       subgroupsRef.current?.changeItems(response?.nested as string[]);
@@ -151,13 +162,13 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
         setIsUpdating(false);
         setSuccessEditedGroup(true);
         refetchList();
-      })
+      });
     },
     onError: () => {
       setErrorMessage('Error editing group');
       setIsUpdating(false);
     },
-  })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (request: DeleteGroupRequest) => {
@@ -169,8 +180,8 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     },
     onError: () => {
       setErrorMessage('Error deleting group');
-    }
-  })
+    },
+  });
 
   const changeDescriptionMode = () => {
     if (descriptionMode) {
@@ -178,7 +189,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     } else {
       setDescriptionMode(!descriptionMode);
     }
-  }
+  };
 
   const changeOwnersMode = () => {
     if (ownersMode) {
@@ -186,24 +197,27 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     } else {
       setOwnersMode(!ownersMode);
     }
-  }
+  };
 
   const submitForm = (updateMask: string[]) => {
     setIsUpdating(true);
-    const editedMembers = addPrefixToItems('user', membersRef.current?.getItems()!);
+    const editedMembers = addPrefixToItems(
+      'user',
+      membersRef.current?.getItems()!,
+    );
     const editedSubgroups = subgroupsRef.current?.getItems();
     const editedGlobs = addPrefixToItems('user', globsRef.current?.getItems()!);
     const editedGroup = AuthGroup.fromPartial({
-      "name": name,
-      "description": description || "",
-      "owners": owners || "",
-      "etag": etag || "",
-      "nested": editedSubgroups || [],
-      "members": editedMembers,
-      "globs": editedGlobs,
+      name: name,
+      description: description || '',
+      owners: owners || '',
+      etag: etag || '',
+      nested: editedSubgroups || [],
+      members: editedMembers,
+      globs: editedGlobs,
     });
-    updateMutation.mutate({ 'group': editedGroup, updateMask: updateMask });
-  }
+    updateMutation.mutate({ group: editedGroup, updateMask: updateMask });
+  };
 
   const checkFieldSubmit = (keyPressed: string, field: string) => {
     if (keyPressed != 'Enter') {
@@ -219,7 +233,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     }
     setDescriptionErrorMessage(message);
     return message === '';
-  }
+  };
 
   const validateOwners = () => {
     let message = '';
@@ -228,7 +242,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     }
     setOwnersErrorMessage(message);
     return message === '';
-  }
+  };
 
   useEffect(() => {
     validateDescription();
@@ -247,8 +261,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
       if (description === savedDescription) {
         return;
       }
-    }
-    else if (field === 'owners') {
+    } else if (field === 'owners') {
       if (!validateOwners()) {
         return;
       }
@@ -258,16 +271,16 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
       }
     }
     submitForm([field]);
-  }
+  };
 
   const deleteGroup = () => {
     setOpenDeleteDialog(false);
-    deleteMutation.mutate({ 'name': name, 'etag': etag || '' });
-  }
+    deleteMutation.mutate({ name: name, etag: etag || '' });
+  };
 
   const handleDeleteDialogClose = () => {
     setOpenDeleteDialog(false);
-  }
+  };
 
   if (isLoading) {
     return (
@@ -302,7 +315,9 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     setEtag(response?.etag);
   }
 
-  const members: string[] = (response?.members)?.map((member => stripPrefix('user', member))) || [] as string[];
+  const members: string[] =
+    response?.members?.map((member) => stripPrefix('user', member)) ||
+    ([] as string[]);
   const subgroups: string[] = (response?.nested || []) as string[];
   const globs: string[] = (response?.globs || []) as string[];
   const callerCanModify: boolean = response?.callerCanModify || false;
@@ -314,112 +329,179 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
       <ThemeProvider theme={theme}>
         <FormControl data-testid="groups-form" style={{ width: '100%' }}>
           <Typography variant="h5">{name}</Typography>
-          {!isExternal &&
-            <TableContainer sx={{ p: 0, width: '100%' }} >
-              <Table onMouseEnter={() => setShowDescriptionEdit(true)} onMouseLeave={() => setShowDescriptionEdit(false)} data-testid='description-table'>
+          {!isExternal && (
+            <TableContainer sx={{ p: 0, width: '100%' }}>
+              <Table
+                onMouseEnter={() => setShowDescriptionEdit(true)}
+                onMouseLeave={() => setShowDescriptionEdit(false)}
+                data-testid="description-table"
+              >
                 <TableBody>
                   <TableRow>
-                    <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                    <TableCell
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        minHeight: '45px',
+                      }}
+                    >
                       <Typography variant="h6">Description</Typography>
-                      {(showDescriptionEdit || descriptionMode) && callerCanModify &&
-                        <IconButton color='primary' onClick={changeDescriptionMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-description-icon'>
-                          {descriptionMode
-                            ? <DoneIcon />
-                            : <EditIcon />
-                          }
-                        </IconButton>
-                      }
+                      {(showDescriptionEdit || descriptionMode) &&
+                        callerCanModify && (
+                          <IconButton
+                            color="primary"
+                            onClick={changeDescriptionMode}
+                            sx={{ p: 0, ml: 1.5 }}
+                            data-testid="edit-description-icon"
+                          >
+                            {descriptionMode ? <DoneIcon /> : <EditIcon />}
+                          </IconButton>
+                        )}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
-                      {descriptionMode
-                        ? <TextField
+                    <TableCell
+                      align="left"
+                      style={{ width: '95%' }}
+                      sx={{ pt: 0 }}
+                    >
+                      {descriptionMode ? (
+                        <TextField
                           value={description}
                           style={{ width: '100%', whiteSpace: 'pre-wrap' }}
                           onChange={(e) => setDescription(e.target.value)}
-                          onKeyDown={(e) => checkFieldSubmit(e.key, 'description')}
-                          id='descriptionTextfield'
-                          data-testid='description-textfield'
-                          error={descriptionErrorMessage !== ""}
+                          onKeyDown={(e) =>
+                            checkFieldSubmit(e.key, 'description')
+                          }
+                          id="descriptionTextfield"
+                          data-testid="description-textfield"
+                          error={descriptionErrorMessage !== ''}
                           helperText={descriptionErrorMessage}
                           onBlur={validateDescription}
-                        >
-                        </TextField>
-                        : <Typography variant="body2" style={{ width: '100%' }}> {description} </Typography>
-                      }
+                        ></TextField>
+                      ) : (
+                        <Typography variant="body2" style={{ width: '100%' }}>
+                          {' '}
+                          {description}{' '}
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
-              <Table onMouseEnter={() => setShowOwnersEdit(true)} onMouseLeave={() => setShowOwnersEdit(false)} data-testid='owners-table'>
+              <Table
+                onMouseEnter={() => setShowOwnersEdit(true)}
+                onMouseLeave={() => setShowOwnersEdit(false)}
+                data-testid="owners-table"
+              >
                 <TableBody>
-                  <TableRow >
-                    <TableCell style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', minHeight: '45px' }}>
+                  <TableRow>
+                    <TableCell
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        minHeight: '45px',
+                      }}
+                    >
                       <Typography variant="h6">Owners</Typography>
-                      {(showOwnersEdit || ownersMode) && callerCanModify &&
-                        <IconButton color='primary' onClick={changeOwnersMode} sx={{ p: 0, ml: 1.5 }} data-testid='edit-owners-icon'>
-                          {ownersMode
-                            ? <DoneIcon />
-                            : <EditIcon />
-                          }
+                      {(showOwnersEdit || ownersMode) && callerCanModify && (
+                        <IconButton
+                          color="primary"
+                          onClick={changeOwnersMode}
+                          sx={{ p: 0, ml: 1.5 }}
+                          data-testid="edit-owners-icon"
+                        >
+                          {ownersMode ? <DoneIcon /> : <EditIcon />}
                         </IconButton>
-                      }
+                      )}
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell align='left' style={{ width: '95%' }} sx={{ pt: 0 }}>
-                      {ownersMode
-                        ? <TextField value={owners}
+                    <TableCell
+                      align="left"
+                      style={{ width: '95%' }}
+                      sx={{ pt: 0 }}
+                    >
+                      {ownersMode ? (
+                        <TextField
+                          value={owners}
                           style={{ width: '100%' }}
                           onChange={(e) => setOwners(e.target.value)}
                           onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
-                          id='ownersTextfield'
-                          data-testid='owners-textfield'
-                          error={ownersErrorMessage !== ""}
+                          id="ownersTextfield"
+                          data-testid="owners-textfield"
+                          error={ownersErrorMessage !== ''}
                           helperText={ownersErrorMessage}
                           onBlur={validateOwners}
-                          placeholder='administrators'
-                        >
-                        </TextField>
-                        : <Typography variant="body2" style={{ width: '100%' }}> {owners} </Typography>
-                      }
+                          placeholder="administrators"
+                        ></TextField>
+                      ) : (
+                        <Typography variant="body2" style={{ width: '100%' }}>
+                          {' '}
+                          {owners}{' '}
+                        </Typography>
+                      )}
                     </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
-            </TableContainer>}
-          {isExternal
-            ?
+            </TableContainer>
+          )}
+          {isExternal ? (
             <>
-              {callerCanViewMembers
-                ? <GroupsFormListReadonly name='Members' initialItems={members} />
-                : <Typography variant="h6" sx={{ p: 1.5 }}> {numRedacted} members redacted</Typography>
-              }
+              {callerCanViewMembers ? (
+                <GroupsFormListReadonly name="Members" initialItems={members} />
+              ) : (
+                <Typography variant="h6" sx={{ p: 1.5 }}>
+                  {' '}
+                  {numRedacted} members redacted
+                </Typography>
+              )}
             </>
-            :
+          ) : (
             <>
-              {callerCanModify ?
+              {callerCanModify ? (
                 <>
-                  {callerCanViewMembers
-                    ? <GroupsFormList name='Members' initialValues={members} ref={membersRef} submitValues={() => submitField('members')} />
-                    : <Typography variant="h6" sx={{ p: '16px' }}> {numRedacted} members redacted</Typography>
-                  }
-                  <GroupsFormList name='Globs' initialValues={globs} ref={globsRef} submitValues={() => submitField('globs')} />
-                  <GroupsFormList name='Subgroups' initialValues={subgroups} ref={subgroupsRef} submitValues={() => submitField('nested')} />
+                  {callerCanViewMembers ? (
+                    <GroupsFormList
+                      name="Members"
+                      initialValues={members}
+                      ref={membersRef}
+                      submitValues={() => submitField('members')}
+                    />
+                  ) : (
+                    <Typography variant="h6" sx={{ p: '16px' }}>
+                      {' '}
+                      {numRedacted} members redacted
+                    </Typography>
+                  )}
+                  <GroupsFormList
+                    name="Globs"
+                    initialValues={globs}
+                    ref={globsRef}
+                    submitValues={() => submitField('globs')}
+                  />
+                  <GroupsFormList
+                    name="Subgroups"
+                    initialValues={subgroups}
+                    ref={subgroupsRef}
+                    submitValues={() => submitField('nested')}
+                  />
                   <div>
-                    {successEditedGroup &&
+                    {successEditedGroup && (
                       <Alert severity="success">Group updated</Alert>
-                    }
-                    {errorMessage &&
+                    )}
+                    {errorMessage && (
                       <Alert severity="error">{errorMessage}</Alert>
-                    }
+                    )}
                   </div>
-                  {isUpdating &&
-                    <CircularProgress></CircularProgress>
-                  }
-                  {name !== 'administrators' &&
-                    <div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
+                  {isUpdating && <CircularProgress></CircularProgress>}
+                  {name !== 'administrators' && (
+                    <div
+                      style={{ display: 'flex', flexDirection: 'row-reverse' }}
+                    >
                       <Button
                         variant="contained"
                         color="error"
@@ -427,26 +509,42 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
                         style={{ width: '170px' }}
                         sx={{ mt: 1.5, ml: 1.5 }}
                         onClick={() => setOpenDeleteDialog(true)}
-                        data-testid='delete-button'
+                        data-testid="delete-button"
                       >
                         Delete Group
                       </Button>
                     </div>
-                  }
+                  )}
                 </>
-                :
+              ) : (
                 <>
-                  {callerCanViewMembers
-                    ? <GroupsFormListReadonly name='Members' initialItems={members} />
-                    : <Typography variant="h6" sx={{ p: '16px' }}> {numRedacted} members redacted</Typography>
-                  }
-                  <GroupsFormListReadonly name='Globs' initialItems={globs} />
-                  <GroupsFormListReadonly name='Subgroups' initialItems={subgroups} />
-                  <Typography variant="caption" sx={{ p: '16px' }} style={{ fontStyle: 'italic' }}>You do not have sufficient permissions to modify this group.</Typography>
+                  {callerCanViewMembers ? (
+                    <GroupsFormListReadonly
+                      name="Members"
+                      initialItems={members}
+                    />
+                  ) : (
+                    <Typography variant="h6" sx={{ p: '16px' }}>
+                      {' '}
+                      {numRedacted} members redacted
+                    </Typography>
+                  )}
+                  <GroupsFormListReadonly name="Globs" initialItems={globs} />
+                  <GroupsFormListReadonly
+                    name="Subgroups"
+                    initialItems={subgroups}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{ p: '16px' }}
+                    style={{ fontStyle: 'italic' }}
+                  >
+                    You do not have sufficient permissions to modify this group.
+                  </Typography>
                 </>
-              }
+              )}
             </>
-          }
+          )}
         </FormControl>
         <Dialog
           open={openDeleteDialog || false}
@@ -457,8 +555,22 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
             {`Are you sure you want to delete this group: ${name}?`}
           </DialogTitle>
           <DialogActions>
-            <Button onClick={handleDeleteDialogClose} disableElevation variant="outlined">Cancel</Button>
-            <Button onClick={deleteGroup} disableElevation variant="contained" color="error" data-testid='delete-confirm-button'>Delete</Button>
+            <Button
+              onClick={handleDeleteDialogClose}
+              disableElevation
+              variant="outlined"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={deleteGroup}
+              disableElevation
+              variant="contained"
+              color="error"
+              data-testid="delete-confirm-button"
+            >
+              Delete
+            </Button>
           </DialogActions>
         </Dialog>
       </ThemeProvider>
