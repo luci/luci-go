@@ -72,17 +72,16 @@ of authentication stage. It looks like `<type>:<id>` and can represent:
   * `user:<email>` - Google Accounts (end users and service accounts).
   * `anonymous:anonymous` - callers that didn't provide any credentials.
   * `project:<project>` - a LUCI service acting in a context of some LUCI
-    project when calling some other LUCI service. **Work in progress**.
+    project when calling some other LUCI service.
   * `bot:<hostname>` - used only by Swarming, individual bots pulling tasks.
-  * `bot:whitelisted-ip` - callers authenticated exclusively through an IP
-    allowlist. **Deprecated**.
-  * `service:<app-id>` - GAE application authenticated via
-    `X-Appengine-Inbound-Appid` header. **Deprecated**.
+  * **[Deprecated]** `bot:whitelisted-ip` - callers authenticated exclusively
+    through an IP allowlist.
+  * **[Deprecated]** `service:<app-id>` - GAE application authenticated via
+    `X-Appengine-Inbound-Appid` header.
 
-Note that various UIs and configs may omit `user:` prefix, it is implied if no
-other prefix is provided. For example, `*@example.com` in UI actually means
+Note that various UIs and configs may omit the `user:` prefix; it is implied if
+no other prefix is provided. For example, `*@example.com` in a UI actually means
 `user:*@example.com`.
-
 
 ### IP allowlists
 
