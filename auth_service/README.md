@@ -18,6 +18,7 @@ This is the replacement of the
     - [AuthDB replication](#authdb-replication)
     - [Hooking up a LUCI service to receive AuthDB updates](#hooking-up-a-luci-service-to-receive-authdb-updates)
       - [Go GAE/GKE/GCE services](#go-gaegkegce-services)
+      - [GAE services using first-gen runtime](#deprecated-services-using-gae-first-gen-runtime)
 - [External dependencies](#external-dependencies)
 - [Developer guide](#developer-guide)
     - [Running locally](#running-locally)
@@ -188,8 +189,13 @@ How does it work?
   `-auth-db-dump` flag.
   * When the server starts, it will attempt to fetch the AuthDB from the
   configured GCS storage path.
-    * If there are permission errors, the server will send a request to Auth
-    Service asking authorization to read the AuthDB dump in GCS.
+    * If there are permission errors, the server will send a POST request to
+    Auth Service's `/auth_service/api/v1/authdb/subscription/authorization`
+    endpoint. This asks Auth Service to grant the service account authorization
+    to:
+      * subscribe to PubSub notifications for the latest AuthDB revision (note
+      this authorization is not actually used by most GAE/GKE/GCE services); and
+      * read the AuthDB dump in GCS.
     * After Auth Service grants the requested authorization, the server will:
       * try once more to fetch the AuthDB from the GCS dump.
     * This normally happens only on the first run.
@@ -199,6 +205,45 @@ How does it work?
   it is always possible to fetch it from Google Storage
     * i.e. Google Storage becomes a hard dependency, which has very high
     availability.
+
+#### **[Deprecated]** Services using GAE first-gen runtime
+
+New services should not use this method of receiving AuthDB updates. The method
+is described below primarily for Auth Service developers' understanding.
+
+How does it work?
+* The service account must be in the `auth-trusted-services` group.
+  * This allows the service to call the legacy REST API to get the entire
+  AuthDB, `/auth_service/api/v1/revisions/<revId|latest>`.
+  * Auth Service will deny access to callers not in either of the
+  `auth-trusted-services` or `administrators` groups.
+* The service has a configuration setting for which Auth Service URL to use,
+e.g. `https://chrome-infra-auth.appspot.com`.
+* When the server starts, it will:
+  1. Fetch the revision of the latest AuthDB using the legacy REST API.
+      * GET request to
+      `<auth_service_url>/auth_service/api/v1/revisions/latest?skip_body=1`
+  1. Fetch the entire AuthDB at that revision using the legacy REST API.
+      * GET request to
+      `<auth_service_url>/auth_service/api/v1/revisions/<revId>`
+      * This revision of the AuthDB is then stored in the service's local
+      datastore.
+  1. Set up PubSub notifications.
+      1. Check if the service has already subscribed to AuthDB changes.
+          * Exit early if so.
+      1. If not subscribed, the server will send a POST request to
+      Auth Service's `/auth_service/api/v1/authdb/subscription/authorization`
+      endpoint. This asks Auth Service to grant the service account
+      authorization to:
+          * subscribe to PubSub notifications for the latest AuthDB revision;
+          and
+          * read the AuthDB dump in GCS (note: this is not used).
+      1. Once the authorization is granted, the service is now eligible to
+      subscribe to the AuthDB revision PubSub topic and creates the
+      subscription.
+* By subscribing to the AuthDB revision PubSub topic in the initial run, the
+service will know when to refetch the AuthDB from the legacy REST API, and will
+update its local datastore with the new AuthDB.
 
 ## External dependencies
 
