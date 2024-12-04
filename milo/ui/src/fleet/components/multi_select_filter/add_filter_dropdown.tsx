@@ -40,6 +40,7 @@ export function AddFilterDropdown({
   const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState<number>();
   const searchInput = useRef<HTMLInputElement>(null);
+  const menuListRef = useRef<HTMLUListElement>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -74,6 +75,7 @@ export function AddFilterDropdown({
         sx: {
           maxHeight: 300,
         },
+        ref: menuListRef,
       }}
       onKeyDown={(e) => {
         keyboardUpDownHandler(e);
@@ -183,12 +185,20 @@ export function AddFilterDropdown({
                   setAnchorELInner(null);
                 }
               }}
-              onClose={(_, reason) => {
+              onClose={(rawE, reason) => {
                 setOpen(undefined);
                 setAnchorELInner(null);
-                // TODO(pietroscutta) it would be cool if the outer menu didnt close if the
-                // click is inside it
-                if (reason === 'backdropClick') {
+
+                const e = rawE as MouseEvent;
+                const menuRect = menuListRef.current?.getBoundingClientRect();
+
+                const isInsideMenu =
+                  menuRect &&
+                  e.pageX > menuRect.left &&
+                  e.pageX < menuRect.right &&
+                  e.pageY > menuRect.top &&
+                  e.pageY < menuRect.bottom;
+                if (reason === 'backdropClick' && !isInsideMenu) {
                   setAnchorEL(null);
                 }
               }}
