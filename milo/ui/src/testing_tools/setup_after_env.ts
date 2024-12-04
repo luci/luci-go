@@ -91,6 +91,9 @@ serverInjectedVars.SETTINGS = Object.freeze({
   luciSourceIndex: {
     host: assertNonNullable(process.env['VITE_LUCI_SOURCE_INDEX_HOST']),
   },
+  fleetConsole: {
+    host: assertNonNullable(process.env['VITE_FLEET_CONSOLE_HOST']),
+  },
 });
 
 // `jest.mock` calls are automatically moved to the beginning of a test file by

@@ -146,4 +146,10 @@ message Settings {
     string host = 1;
   }
   LUCISourceIndex luci_source_index = 15;
+
+  message FleetConsole {
+    // host is the hostname of the FleetConsole instance we're pointing to (eg. fleet-console-dev-xxx.run.app).
+    string host = 1;
+  }
+  FleetConsole fleet_console = 16;
 }

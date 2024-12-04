@@ -76,6 +76,9 @@ declare const SETTINGS: {
   readonly luciSourceIndex: {
     readonly host: string;
   };
+  readonly fleetConsole: {
+    readonly host: string;
+  };
 };
 
 /**

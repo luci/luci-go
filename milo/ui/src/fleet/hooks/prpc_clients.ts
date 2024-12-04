@@ -17,8 +17,7 @@ import { FleetConsoleClientImpl } from '@/proto/infra/fleetconsole/api/fleetcons
 
 export function useFleetConsoleClient() {
   return usePrpcServiceClient({
-    host: 'localhost:8800', // TODO(vaghinak): should be changed to get the host from the SETTINGS
-    insecure: true, // TODO(vaghinak): remove this line when auth works
+    host: SETTINGS.fleetConsole.host,
     ClientImpl: FleetConsoleClientImpl,
   });
 }

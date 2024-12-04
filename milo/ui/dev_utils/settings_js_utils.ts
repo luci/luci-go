@@ -86,6 +86,9 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     luciSourceIndex: {
       host: assertNonNullable(env['VITE_LUCI_SOURCE_INDEX_HOST']),
     },
+    fleetConsole: {
+      host: assertNonNullable(env['VITE_FLEET_CONSOLE_HOST']),
+    },
   };
 
   const localDevSettingsJs = `self.SETTINGS = Object.freeze(${JSON.stringify(

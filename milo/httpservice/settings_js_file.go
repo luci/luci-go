@@ -61,6 +61,7 @@ func (s *HTTPService) settingsJSHandler(c *router.Context) error {
 			Host: miloAPIHost,
 		},
 		LuciSourceIndex: settings.LuciSourceIndex,
+		FleetConsole:    settings.FleetConsole,
 	}
 
 	header := c.Writer.Header()
