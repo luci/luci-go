@@ -514,6 +514,71 @@ func TestTaskSlice(t *testing.T) {
 	})
 }
 
+func TestTaskProperties(t *testing.T) {
+	t.Parallel()
+	ftt.Run("IsTerminate", t, func(t *ftt.Test) {
+		t.Run("no", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				p := TaskProperties{}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("with_timeout", func(t *ftt.Test) {
+				p := TaskProperties{
+					ExecutionTimeoutSecs: 123,
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("with_command", func(t *ftt.Test) {
+				p := TaskProperties{
+					Command: []string{"cmd"},
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("with_caches", func(t *ftt.Test) {
+				p := TaskProperties{
+					Caches: []CacheEntry{
+						{
+							Name: "name",
+							Path: "path",
+						},
+					},
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("with_cipd_input", func(t *ftt.Test) {
+				p := TaskProperties{
+					CIPDInput: CIPDInput{
+						Server: "server",
+					},
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("has_secret_bytess", func(t *ftt.Test) {
+				p := TaskProperties{
+					HasSecretBytes: true,
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+			t.Run("with_non_id_dimension", func(t *ftt.Test) {
+				p := TaskProperties{
+					Dimensions: TaskDimensions{
+						"pool": {"pool"},
+					},
+				}
+				assert.Loosely(t, p.IsTerminate(), should.BeFalse)
+			})
+		})
+		t.Run("yes", func(t *ftt.Test) {
+			p := TaskProperties{
+				Dimensions: TaskDimensions{
+					"id": {"id"},
+				},
+			}
+			assert.Loosely(t, p.IsTerminate(), should.BeTrue)
+		})
+	})
+}
+
 func TestTaskDimensions(t *testing.T) {
 	t.Parallel()
 	ftt.Run("Hash", t, func(t *ftt.Test) {

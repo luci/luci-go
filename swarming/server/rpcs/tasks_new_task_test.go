@@ -979,6 +979,80 @@ func TestToTaskRequestEntities(t *testing.T) {
 			})
 		})
 
+		taskRequest := func(id string) *model.TaskRequest {
+			key, err := model.TaskIDToRequestKey(ctx, id)
+			assert.That(t, err, should.ErrLike(nil))
+			return &model.TaskRequest{
+				Key:        key,
+				User:       "parent_user",
+				RootTaskID: "root_id",
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"pool": {"pool"},
+							},
+						},
+					},
+				},
+			}
+		}
+
+		taskResult := func(id string, state apipb.TaskState) *model.TaskResultSummary {
+			key, _ := model.TaskIDToRequestKey(ctx, id)
+			return &model.TaskResultSummary{
+				Key: model.TaskResultSummaryKey(ctx, key),
+				TaskResultCommon: model.TaskResultCommon{
+					State: state,
+				},
+			}
+		}
+		t.Run("parent_failures", func(t *ftt.Test) {
+			t.Run("parent_not_found", func(t *ftt.Test) {
+				req := simpliestValidRequest("pool")
+				req.ParentTaskId = "60b2ed0a43056111"
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
+				assert.That(t, err, should.ErrLike(`parent task "60b2ed0a43056111" not found`))
+			})
+			t.Run("terminate_task", func(t *ftt.Test) {
+				req := simpliestValidRequest("pool")
+				req.ParentTaskId = "60b2ed0a43067111"
+				key, err := model.TaskIDToRequestKey(ctx, req.ParentTaskId)
+				assert.That(t, err, should.ErrLike(nil))
+				pTR := &model.TaskRequest{
+					Key: key,
+					TaskSlices: []model.TaskSlice{
+						{
+							Properties: model.TaskProperties{
+								Dimensions: model.TaskDimensions{
+									"id": {"id"},
+								},
+							},
+						},
+					},
+				}
+				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_RUNNING)
+				assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+
+				_, err = toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike("termination task cannot be a parent"))
+			})
+			t.Run("parent_has_ended", func(t *ftt.Test) {
+				req := simpliestValidRequest("pool")
+				req.ParentTaskId = "60b2ed0a43078111"
+				pTR := taskRequest(req.ParentTaskId)
+				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_COMPLETED)
+				assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+				assert.That(t, err, should.ErrLike(`parent task "60b2ed0a43078111" has ended`))
+			})
+
+		})
+
 		t.Run("apply_default_values", func(t *ftt.Test) {
 			req := simpliestValidRequest("pool")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
@@ -989,6 +1063,12 @@ func TestToTaskRequestEntities(t *testing.T) {
 		t.Run("from_full_request", func(t *ftt.Test) {
 			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
 			ctx, _ = testclock.UseTime(ctx, now)
+
+			pID := "60b2ed0a43023111"
+			pTR := taskRequest(pID)
+			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
+			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+
 			req := fullRequest()
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike(nil))
@@ -1049,7 +1129,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 				Created:       now,
 				ParentTaskID:  datastore.NewIndexedNullable("60b2ed0a43023111"),
 				Authenticated: DefaultFakeCaller,
-				User:          "user",
+				User:          "parent_user",
 				ManualTags: []string{
 					"k1:v1",
 					"k2:v2",
@@ -1076,6 +1156,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 				},
 			}
 			assert.That(t, ents.request.ToProto(), should.Match(expectedTR.ToProto()))
+			assert.That(t, ents.request.RootTaskID, should.Equal(pTR.RootTaskID))
 		})
 	})
 }

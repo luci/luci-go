@@ -448,6 +448,25 @@ func (p *TaskProperties) ToProto() *apipb.TaskProperties {
 	return taskProperties
 }
 
+// IsTerminate checks if the request is for a termination task.
+//
+// Properties of a termination task should only have an id dimension.
+func (p *TaskProperties) IsTerminate() bool {
+	terminateLikeProps := TaskProperties{
+		Dimensions: p.Dimensions,
+	}
+	if !reflect.DeepEqual(*p, terminateLikeProps) {
+		return false
+	}
+
+	if len(p.Dimensions) > 1 {
+		return false
+	}
+
+	_, ok := p.Dimensions["id"]
+	return ok
+}
+
 // CacheEntry describes a named cache that should be present on the bot.
 type CacheEntry struct {
 	// Name is a logical cache name.

@@ -546,10 +546,8 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 	now := clock.Now(ctx).UTC()
 
 	tr := &model.TaskRequest{
-		Created: now,
-		Name:    req.Name,
-		// TODO(chanli): check parent task then update this request using parent
-		// data.
+		Created:              now,
+		Name:                 req.Name,
 		ParentTaskID:         datastore.NewIndexedNullable(req.ParentTaskId),
 		Authenticated:        chk.Caller(),
 		User:                 req.User,
@@ -566,6 +564,10 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 	}
 	res := &trEntities{
 		request: tr,
+	}
+
+	if err := checkParent(ctx, tr); err != nil {
+		return nil, err
 	}
 
 	// Priority
@@ -615,6 +617,62 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 	// TODO(chanli): apply pool config.
 
 	return res, nil
+}
+
+// checkParent checks the parent of tr.
+//
+// If the parent is valid, updates tr in place:
+// * RootTaskID: parent.RootTaskID or tr.ParentTaskID
+// * User: overridden by parent.User
+//
+// If there is an issue, returns a grpc error.
+func checkParent(ctx context.Context, tr *model.TaskRequest) error {
+	pID := tr.ParentTaskID.Get()
+	if pID == "" {
+		return nil
+	}
+
+	// Check parent
+	// TODO(b/380455408): currently Swarming accepts any valid active and
+	// non termination task id as the parent task id. We should add stricker
+	// check to ensure the correct parent is being used.
+	key, err := model.TaskIDToRequestKey(ctx, pID)
+	if err != nil {
+		// pID has been validated by validateParentTaskID(), this should never
+		// happen.
+		panic("parent_task_id is invalid")
+	}
+	pRequest := &model.TaskRequest{Key: key}
+	pResult := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, key)}
+	switch err = datastore.Get(ctx, pRequest, pResult); {
+	case errors.Contains(err, datastore.ErrNoSuchEntity):
+		return status.Errorf(
+			codes.NotFound,
+			"parent task %q not found", pID)
+	case err != nil:
+		logging.Errorf(ctx, "Error fetching entities for task %s: %s", pID, err)
+		return status.Errorf(codes.Internal, "datastore error fetching the parent task")
+	}
+
+	if pRequest.TaskSlices[0].Properties.IsTerminate() {
+		return status.Error(
+			codes.InvalidArgument,
+			"termination task cannot be a parent")
+	}
+
+	if !pResult.IsActive() {
+		return status.Errorf(
+			codes.FailedPrecondition,
+			"parent task %q has ended", pID)
+	}
+
+	// Update tr with parent
+	tr.RootTaskID = pRequest.RootTaskID
+	if tr.RootTaskID == "" {
+		tr.RootTaskID = pID
+	}
+	tr.User = pRequest.User
+	return nil
 }
 
 func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
