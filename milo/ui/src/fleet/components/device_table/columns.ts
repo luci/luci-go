@@ -26,6 +26,13 @@ interface Dimension {
   getValue: (device: Device) => string;
 }
 
+export const DEFAULT_COLUMNS: string[] = [
+  'id',
+  'dut_id',
+  'state',
+  'board-name',
+];
+
 export const BASE_DIMENSIONS: Dimension[] = [
   {
     id: 'id',

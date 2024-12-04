@@ -17,6 +17,7 @@ import {
   DataGrid,
   gridClasses,
   GridColDef,
+  GridColumnVisibilityModel,
   GridPaginationModel,
   GridSlots,
   GridSortModel,
@@ -36,6 +37,8 @@ import {
 } from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+import { visibleColumnsUpdater, getVisibleColumns } from './search_param_utils';
+
 const UNKNOWN_ROW_COUNT = -1;
 
 // This is done for proper typing
@@ -54,6 +57,7 @@ function CustomToolbar({ setColumnsButtonEl }: CustomToolbarProps) {
 }
 
 interface DataTableProps {
+  defaultColumnVisibilityModel: GridColumnVisibilityModel;
   columns: GridColDef[];
   rows: {
     [key: string]: string;
@@ -66,6 +70,7 @@ interface DataTableProps {
 }
 
 export const DataTable = ({
+  defaultColumnVisibilityModel,
   columns,
   rows,
   nextPageToken,
@@ -95,6 +100,17 @@ export const DataTable = ({
     } else if (isNextPage) {
       setSearchParams(nextPageTokenUpdater(pagerCtx, nextPageToken));
     }
+  };
+
+  const onColumnVisibilityModelChange = (
+    newColumnVisibilityModel: GridColumnVisibilityModel,
+  ) => {
+    setSearchParams(
+      visibleColumnsUpdater(
+        newColumnVisibilityModel,
+        defaultColumnVisibilityModel,
+      ),
+    );
   };
 
   // This is a way to autosize columns to fit its content,
@@ -155,6 +171,12 @@ export const DataTable = ({
       paginationMeta={{ hasNextPage: hasNextPage }}
       paginationModel={paginationModel}
       onPaginationModelChange={onPaginationModelChange}
+      columnVisibilityModel={getVisibleColumns(
+        searchParams,
+        defaultColumnVisibilityModel,
+        columns,
+      )}
+      onColumnVisibilityModelChange={onColumnVisibilityModelChange}
       loading={isLoading}
       rows={rows}
       columns={columns}

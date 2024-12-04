@@ -12,8 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef, GridSortModel } from '@mui/x-data-grid';
-import { screen, render, fireEvent, act } from '@testing-library/react';
+import {
+  GridColDef,
+  GridColumnVisibilityModel,
+  GridSortModel,
+} from '@mui/x-data-grid';
+import {
+  screen,
+  render,
+  cleanup,
+  act,
+  fireEvent,
+} from '@testing-library/react';
 import { useState } from 'react';
 
 import {
@@ -38,6 +48,8 @@ const COLUMNS: GridColDef[] = Object.entries({
   minWidth: 70,
   maxWidth: 700,
 }));
+
+const DEFAULT_COLUMNS: string[] = ['id', 'first_name'];
 
 const MOCK_ROWS: { [key: string]: string }[] = [
   { id: '1', first_name: 'Alice', last_name: 'Smith' },
@@ -77,6 +89,13 @@ function TestComponent() {
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
     <DataTable
+      defaultColumnVisibilityModel={COLUMNS.reduce(
+        (visibilityModel, column) => ({
+          ...visibilityModel,
+          [column.field]: DEFAULT_COLUMNS.includes(column.field),
+        }),
+        {} as GridColumnVisibilityModel,
+      )}
       columns={COLUMNS}
       rows={currentRows}
       nextPageToken={nextPageToken}
@@ -87,6 +106,13 @@ function TestComponent() {
     />
   );
 }
+
+const getTableVisibleColumns = () => {
+  return screen
+    .getAllByRole('columnheader')
+    .map((element) => element.getAttribute('data-field'))
+    .filter((column) => column !== null);
+};
 
 const getNthRow = (index: number) => {
   return screen
@@ -122,12 +148,53 @@ const changePageSize = async (size: number) => {
 };
 
 describe('<DataTable />', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    cleanup();
+  });
+
+  it('should start with default columns when no specified columns in the url', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(getTableVisibleColumns()).toEqual(
+      expect.arrayContaining(DEFAULT_COLUMNS),
+    );
+  });
+
+  it('should start with columns specified in the url', async () => {
+    render(
+      <FakeContextProvider
+        routerOptions={{ initialEntries: ['?c=id&c=last_name'] }}
+      >
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(getTableVisibleColumns()).toEqual(
+      expect.arrayContaining(['id', 'last_name']),
+    );
+  });
+
   it('should reflect page size change properly', async () => {
     render(
       <FakeContextProvider>
         <TestComponent />
       </FakeContextProvider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
     expect(getNthRow(4)).toBeInTheDocument();
@@ -152,6 +219,8 @@ describe('<DataTable />', () => {
         <TestComponent />
       </FakeContextProvider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
     expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();
@@ -191,6 +260,8 @@ describe('<DataTable />', () => {
         <TestComponent />
       </FakeContextProvider>,
     );
+
+    await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
     expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();

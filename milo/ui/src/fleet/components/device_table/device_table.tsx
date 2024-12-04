@@ -14,7 +14,7 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
-import { GridSortModel } from '@mui/x-data-grid';
+import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -32,7 +32,7 @@ import {
 
 import { DataTable } from '../data_table';
 
-import { BASE_DIMENSIONS, getColumns } from './columns';
+import { BASE_DIMENSIONS, getColumns, DEFAULT_COLUMNS } from './columns';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -129,6 +129,13 @@ export function DeviceTable() {
           sortModel={sortModel}
           onSortModelChange={setSortModel}
           rows={devices.map(getRow)}
+          defaultColumnVisibilityModel={columns.reduce(
+            (visibilityModel, column) => ({
+              ...visibilityModel,
+              [column.field]: DEFAULT_COLUMNS.includes(column.field),
+            }),
+            {} as GridColumnVisibilityModel,
+          )}
         />
       )}
     </>
