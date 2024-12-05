@@ -25,6 +25,6 @@ describe('visit index page', () => {
     cy.visit('/');
     cy.contains('chromium').click();
 
-    cy.contains('chromium.dev');
+    cy.contains('Chromium Main Console');
   });
 });
