@@ -17,6 +17,7 @@ package tasks
 import (
 	"context"
 	"math"
+	"slices"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -57,11 +58,9 @@ func PopPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) e
 			return err
 		}
 
-		// buildID is specified, try to remove it from triggered_builds.
+		// buildID is specified, try to remove it from builder queues.
 		if bID != 0 {
-			if !removeBuildFromTriggered(bldrQ, bID) {
-				logging.Infof(ctx, "build: %d was not tracked for this builder: %s; build not found in triggered_builds", bID, bldrQID)
-			}
+			removeBuildFromBuilderQueues(ctx, bldrQ, bldrQID, bID)
 		}
 		if err := popAndTriggerBuilds(ctx, bldrQ, mcb); err != nil {
 			return err
@@ -84,20 +83,35 @@ func PopPendingBuildTask(ctx context.Context, bID int64, bldrID *pb.BuilderID) e
 	return nil
 }
 
-// removeBuildFromTriggered removes the buildID from the triggered_builds set.
-// Return false if the buildID was not found.
-func removeBuildFromTriggered(bldrQ *model.BuilderQueue, bID int64) bool {
+// removeBuildFromBuilderQueues removes the buildID from the queues.
+func removeBuildFromBuilderQueues(ctx context.Context, bldrQ *model.BuilderQueue, bldrQID string, bID int64) {
 	found := false
+	// First try to remove the build from the triggered_builds queue.
 	for i, b := range bldrQ.TriggeredBuilds {
 		if b == bID {
 			found = true
-			// Remove the buildID without preserving order.
-			bldrQ.TriggeredBuilds[i] = bldrQ.TriggeredBuilds[len(bldrQ.TriggeredBuilds)-1]
-			bldrQ.TriggeredBuilds = bldrQ.TriggeredBuilds[:len(bldrQ.TriggeredBuilds)-1]
+			bldrQ.TriggeredBuilds = slices.Delete(bldrQ.TriggeredBuilds, i, i+1)
 			break
 		}
 	}
-	return found
+	if found {
+		return
+	}
+
+	// The build could be a cancelled pending build, check pending_builds.
+	for i, b := range bldrQ.PendingBuilds {
+		if b == bID {
+			found = true
+			bldrQ.PendingBuilds = slices.Delete(bldrQ.PendingBuilds, i, i+1)
+			break
+		}
+	}
+	if !found {
+		logging.Infof(
+			ctx, "build %d was not tracked for builder %s; "+
+				"build not found in triggered_builds %q or pending_builds %q",
+			bID, bldrQID, bldrQ.TriggeredBuilds, bldrQ.PendingBuilds)
+	}
 }
 
 // popAndTriggerBuilds pops pending builds from the pending_builds queue and sends them to task backend.

@@ -189,7 +189,7 @@ func TestPopPendingBuildTask(t *testing.T) {
 				assert.Loosely(t, bq, should.Resemble(&model.BuilderQueue{
 					ID: "project/bucket/builder",
 					TriggeredBuilds: []int64{
-						3, 2,
+						2, 3,
 					},
 					PendingBuilds: []int64{
 						4,
@@ -277,6 +277,48 @@ func TestPopPendingBuildTask(t *testing.T) {
 					},
 					PendingBuilds: []int64{
 						4,
+					},
+				}))
+			})
+
+			t.Run("build was tracked in pending queue", func(t *ftt.Test) {
+				bldr := &model.Builder{
+					ID:     "builder",
+					Parent: model.BucketKey(ctx, "project", "bucket"),
+					Config: &pb.BuilderConfig{
+						MaxConcurrentBuilds: 2,
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, bldr), should.BeNil)
+				bq := &model.BuilderQueue{
+					ID: "project/bucket/builder",
+					TriggeredBuilds: []int64{
+						1, 2,
+					},
+					PendingBuilds: []int64{
+						3, 4, 5,
+					},
+				}
+				assert.Loosely(t, datastore.Put(ctx, bldr, bq), should.BeNil)
+				err := PopPendingBuildTask(ctx, 4, &pb.BuilderID{
+					Project: "project",
+					Bucket:  "bucket",
+					Builder: "builder",
+				})
+				assert.Loosely(t, err, should.BeNil)
+				// no new backend task is created
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
+				bq = &model.BuilderQueue{
+					ID: "project/bucket/builder",
+				}
+				assert.Loosely(t, datastore.Get(ctx, bq), should.BeNil)
+				assert.Loosely(t, bq, should.Resemble(&model.BuilderQueue{
+					ID: "project/bucket/builder",
+					TriggeredBuilds: []int64{
+						1, 2,
+					},
+					PendingBuilds: []int64{
+						3, 5,
 					},
 				}))
 			})

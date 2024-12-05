@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
 const (
@@ -322,6 +323,11 @@ func CreateBackendTask(ctx context.Context, buildID int64, requestID string, deq
 		return errors.Annotate(err, "failed to get build %d", buildID).Err()
 	}
 	bld := entities[0].(*model.Build)
+	if protoutil.IsEnded(bld.Status) {
+		logging.Infof(ctx, "Build %d is already ended", buildID)
+		return nil
+	}
+
 	infra := entities[1].(*model.BuildInfra)
 	target := infra.Proto.GetBackend().GetTask().GetId().GetTarget()
 	if target == "" {
