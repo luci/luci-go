@@ -33,6 +33,17 @@ All paths are relative to the luci/milo directory.
    `ui/.env.development`. This file is gitignored. Useful for pointing requests
     to a custom host.
 
+### <mark>Important:</mark>
+Due to [push-on-green](http://go/luci-ui-push-on-green), you should land the
+code changes above and the config changes in the following section, push them
+to prod, **before** you use the newly added host anywhere in the codebase.
+
+The integration tests on the push-on-green builder are run against the
+production services. It's **highly recommended** to add at least one simple
+integration test for each of your page so that our push-on-green pipeline will
+not push the code to production when the required upstream changes have not been
+pushed to production.
+
 ## Service configuration
 
 You will also need to modify the LUCI UI service configuration in a separate CL
