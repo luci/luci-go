@@ -189,7 +189,11 @@ func updateProjectNotifiers(ctx context.Context, parentKey *datastore.Key, notif
 		for _, cfgNotifier := range notifiers {
 			for _, cfgBuilder := range cfgNotifier.Builders {
 				builder := builders[builderIndex]
-				builder.Repository = cfgBuilder.Repository
+				if builder.Repository != cfgBuilder.Repository {
+					// Reset the revision if repository is changed.
+					builder.Revision = ""
+					builder.Repository = cfgBuilder.Repository
+				}
 				builder.Notifications = &notifypb.Notifications{
 					Notifications: cfgNotifier.Notifications,
 				}
