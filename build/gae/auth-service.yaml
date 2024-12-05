@@ -4,6 +4,14 @@ extends: ../gae.yaml
 inputsdir: ../../auth_service
 
 build:
+  - copy: ${inputsdir}/services/cron.yaml
+    dest: ${contextdir}/services/cron.yaml
+  - copy: ${inputsdir}/services/dispatch.yaml
+    dest: ${contextdir}/services/dispatch.yaml
+  - copy: ${inputsdir}/services/index.yaml
+    dest: ${contextdir}/services/index.yaml
+  - copy: ${inputsdir}/services/queue.yaml
+    dest: ${contextdir}/services/queue.yaml
   - go_gae_bundle: ${inputsdir}/services/frontend/service-defaultv2.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/services/frontend
