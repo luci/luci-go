@@ -44,6 +44,11 @@ var (
 func init() {
 	defaults := chromeinfra.DefaultAuthOptions()
 	defaults.Scopes = []string{gitiles.OAuthScope, auth.OAuthScopeEmail}
+	// NOTE: This OAuth client is used exclusively for Git/Gerrit authentication with this helper.
+	// Do NOT try to use this client for any other purpose.
+	// If you do, expect us to proactively break your use case.
+	defaults.ClientID = "608762726021-1poh723jeu7uvajkconslrpf7146rqre.apps.googleusercontent.com"
+	defaults.ClientSecret = "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"
 	flags.Register(flag.CommandLine, defaults)
 	flag.DurationVar(
 		&lifetime, "lifetime", time.Minute,
