@@ -12,9 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ReactNode, useCallback, useState } from 'react';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 
-import { FeatureFlagConfig, FeatureFlagStatus, FlagsCtx } from './context';
+import {
+  ActiveFlag,
+  FeatureFlag,
+  FeatureFlagStatus,
+  FlagObserver,
+  FlagsGetterCtx,
+  FlagsSetterCtx,
+} from './context';
 
 interface Props {
   children: ReactNode;
@@ -22,38 +29,82 @@ interface Props {
 
 export function FeatureFlagsProvider({ children }: Props) {
   const [availableFlags, setAvailableFlags] = useState<
-    Map<string, FeatureFlagStatus>
+    Map<FeatureFlag, ActiveFlag>
   >(new Map());
   const addFlagToAvailableFlags = useCallback((status: FeatureFlagStatus) => {
     setAvailableFlags((prevFlags) => {
       const newFlags = new Map(prevFlags);
-      newFlags.set(`${status.config.namespace}:${status.config.name}`, status);
+      const activeFlag = newFlags.get(status.flag);
+      if (activeFlag) {
+        const flagObservers = new Set(activeFlag.observers);
+        flagObservers.add(status.setOverrideStatus);
+        newFlags.set(status.flag, {
+          status: activeFlag.status,
+          observers: flagObservers,
+        });
+      } else {
+        const flagObservers = new Set<FlagObserver>();
+        flagObservers.add(status.setOverrideStatus);
+        newFlags.set(status.flag, {
+          status,
+          observers: flagObservers,
+        });
+      }
       return newFlags;
     });
   }, []);
 
   const removeFlagFromAvailableFlags = useCallback(
-    (config: FeatureFlagConfig) => {
+    (flag: FeatureFlag, observer: FlagObserver) => {
       // We can use === here and it would suffice and the configs would be exactly the same objects,
       // but this just ensures that we defend against shallow comparisons.
       setAvailableFlags((prevFlags) => {
+        if (!prevFlags.get(flag)) {
+          return prevFlags;
+        }
         const newFlags = new Map(prevFlags);
-        newFlags.delete(`${config.namespace}:${config.name}`);
+        const activeFlag = newFlags.get(flag);
+        if (activeFlag) {
+          if (activeFlag.observers.size <= 1) {
+            newFlags.delete(flag);
+          } else {
+            const flagObservers = new Set(activeFlag.observers);
+            if (flagObservers.has(observer)) {
+              flagObservers.delete(observer);
+            }
+            newFlags.set(flag, {
+              status: activeFlag!.status,
+              observers: flagObservers,
+            });
+          }
+        }
         return newFlags;
       });
     },
     [],
   );
-
+  const getFlagStatus = useCallback(
+    (flag: FeatureFlag) => {
+      return availableFlags.get(flag);
+    },
+    [availableFlags],
+  );
+  const setterCtxValue = useMemo(() => {
+    return {
+      addFlagToAvailableFlags,
+      removeFlagFromAvailableFlags,
+    };
+  }, [addFlagToAvailableFlags, removeFlagFromAvailableFlags]);
   return (
-    <FlagsCtx.Provider
-      value={{
-        availableFlags,
-        addFlagToAvailableFlags,
-        removeFlagFromAvailableFlags,
-      }}
-    >
-      {children}
-    </FlagsCtx.Provider>
+    <FlagsSetterCtx.Provider value={setterCtxValue}>
+      <FlagsGetterCtx.Provider
+        value={{
+          availableFlags,
+          getFlagStatus,
+        }}
+      >
+        {children}
+      </FlagsGetterCtx.Provider>
+    </FlagsSetterCtx.Provider>
   );
 }

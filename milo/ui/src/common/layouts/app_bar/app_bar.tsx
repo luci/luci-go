@@ -21,6 +21,7 @@ import { LoginStatus } from '@/common/components/user';
 
 import { AppDetails } from './app_details';
 import { AppMenu } from './app_menu';
+import { AvailableFlags } from './available_flags';
 import { FeedbackButton } from './feedback';
 
 const ItemGroup = styled(Box)`
@@ -56,6 +57,7 @@ export const AppBar = ({ open, handleSidebarChanged }: Props) => {
         </ItemGroup>
         <Box sx={{ flexGrow: 1 }}></Box>
         <ItemGroup sx={{ right: 'calc(var(--accumulated-right) + 30px)' }}>
+          <AvailableFlags />
           <FeedbackButton />
           <AppMenu />
           <LoginStatus

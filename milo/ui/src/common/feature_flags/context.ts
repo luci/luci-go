@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { createContext, useContext, useEffect, useMemo } from 'react';
+import {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  useContext,
+  useEffect,
+  useMemo,
+} from 'react';
 import { useLocalStorage } from 'react-use';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -58,21 +65,77 @@ export interface FeatureFlagConfig {
   readonly trackingBug: string;
 }
 
+// DO NOT export this symbol as it is used to seal
+// the FeatureFlag interface creation to the `createFeatureFlag` function.
+const ConfigSymbol = Symbol('flags_config');
+
+export interface FeatureFlag {
+  readonly config: FeatureFlagConfig;
+  readonly [ConfigSymbol]: boolean;
+}
+
+/**
+ * Creates a feature flag holder to be used with `useFeatureFlag` hook.
+ *
+ * You should call this function a single time for any particular flag,
+ * then reuse the instance.
+ *
+ * Calling this function multiple times with the same namespace and name
+ * will cause unexpected results and different parts of the code will
+ * calculate different status for the flag.
+ */
+export function createFeatureFlag(config: FeatureFlagConfig): FeatureFlag {
+  return {
+    config,
+    [ConfigSymbol]: true,
+  };
+}
+
+/**
+ * An observer to the flag changes.
+ * This is the setter for the flag in localStorage returned by useLocalStorage.
+ */
+export type FlagObserver = Dispatch<SetStateAction<string | undefined>>;
+
+/**
+ * Wrapper of the feature flag details and it's current status.
+ */
 export interface FeatureFlagStatus {
-  config: FeatureFlagConfig;
+  flag: FeatureFlag;
   activeStatus: boolean;
+  setOverrideStatus: FlagObserver;
 }
 
-interface FeatureFlagsContext {
-  availableFlags: Map<string, FeatureFlagStatus>;
-  addFlagToAvailableFlags: (flagStatus: FeatureFlagStatus) => void;
-  removeFlagFromAvailableFlags: (config: FeatureFlagConfig) => void;
+/**
+ * An active flag is a flag available in a page.
+ */
+export interface ActiveFlag {
+  status: FeatureFlagStatus;
+  observers: Set<FlagObserver>;
 }
 
-export const FlagsCtx = createContext<FeatureFlagsContext | null>(null);
+interface FeatureFlagsSetterContext {
+  readonly addFlagToAvailableFlags: (flagStatus: FeatureFlagStatus) => void;
+  readonly removeFlagFromAvailableFlags: (
+    flag: FeatureFlag,
+    observer: FlagObserver,
+  ) => void;
+}
+
+interface FeatureFlagsGetterContext {
+  readonly availableFlags: Map<FeatureFlag, ActiveFlag>;
+  readonly getFlagStatus: (flag: FeatureFlag) => ActiveFlag | undefined;
+}
+
+export const FlagsSetterCtx = createContext<FeatureFlagsSetterContext | null>(
+  null,
+);
+export const FlagsGetterCtx = createContext<FeatureFlagsGetterContext | null>(
+  null,
+);
 
 export function useAvailableFlags() {
-  const ctx = useContext(FlagsCtx);
+  const ctx = useContext(FlagsGetterCtx);
   if (!ctx) {
     throw new Error(
       'useAvailableFlags can only be used in a FeatureFlagsProvider',
@@ -81,8 +144,18 @@ export function useAvailableFlags() {
   return ctx.availableFlags;
 }
 
+export function useGetFlagStatus() {
+  const ctx = useContext(FlagsGetterCtx);
+  if (!ctx) {
+    throw new Error(
+      'useGetFlagStatus can only be used in a FeatureFlagsProvider',
+    );
+  }
+  return ctx.getFlagStatus;
+}
+
 export function useAddFlagToAvailableFlags() {
-  const ctx = useContext(FlagsCtx);
+  const ctx = useContext(FlagsSetterCtx);
   if (!ctx) {
     throw new Error(
       'useAddFlagToAvailableFlags can only be used in a FeatureFlagsProvider',
@@ -92,7 +165,7 @@ export function useAddFlagToAvailableFlags() {
 }
 
 export function useRemoveFlagFromAvailableFlags() {
-  const ctx = useContext(FlagsCtx);
+  const ctx = useContext(FlagsSetterCtx);
   if (!ctx) {
     throw new Error(
       'useRemoveFlagFromAvailableFlags can only be used in a FeatureFlagsProvider',
@@ -103,30 +176,29 @@ export function useRemoveFlagFromAvailableFlags() {
 
 /**
  * Accepts a feature flag config and returns a boolean of whether the flag is on or off.
+ *
+ * Important: Using the same namespace and key with different data will cause the first
+ * usage of the hook to take precedence over all other declarations.
+ *
+ * To avoid any unexpected behaviour, please declare the flag config in a common file
+ * and reuse the same instance and values.
+ *
+ * Using this flag in a large list of items can cause performance problems
+ * if each item resolves the flag separately.
+ * A better use would be to fetch the flag value in a parent
+ * component then pass it down to all children in the list.
  */
-export function useFeatureFlag(featureFlagConfig: FeatureFlagConfig): boolean {
+export function useFeatureFlag(featureFlag: FeatureFlag): boolean {
+  const featureFlagConfig = featureFlag.config;
   const { identity } = useAuthState();
   const addFlagToAvailableFlags = useAddFlagToAvailableFlags();
   const removeFlagFromAvailableFlags = useRemoveFlagFromAvailableFlags();
-  const stableFeatureFlagsConfig: FeatureFlagConfig = useMemo(() => {
-    return {
-      namespace: featureFlagConfig.namespace,
-      name: featureFlagConfig.name,
-      description: featureFlagConfig.description,
-      percentage: featureFlagConfig.percentage,
-      trackingBug: featureFlagConfig.trackingBug,
-    };
-  }, [
-    featureFlagConfig.description,
-    featureFlagConfig.namespace,
-    featureFlagConfig.name,
-    featureFlagConfig.percentage,
-    featureFlagConfig.trackingBug,
-  ]);
 
   // Check the local storage to see if the user has overriden the feature flag value.
-  const [overrideValue] = useLocalStorage(
-    `featureFlag:${stableFeatureFlagsConfig.namespace}:${stableFeatureFlagsConfig.name}`,
+  const [overrideValue, flagObserver] = useLocalStorage(
+    `featureFlag:${featureFlagConfig.namespace}:${featureFlagConfig.name}`,
+    '',
+    { raw: true },
   );
   const flagStatus = useMemo(() => {
     if (overrideValue) {
@@ -138,45 +210,46 @@ export function useFeatureFlag(featureFlagConfig: FeatureFlagConfig): boolean {
       }
     }
     const flagHash = hashStringToNum(
-      `${stableFeatureFlagsConfig.namespace}:${stableFeatureFlagsConfig.name}:${identity}`,
+      `${featureFlagConfig.namespace}:${featureFlagConfig.name}:${identity}`,
     );
     // We are using Math.abs as the values returned by hashStringToNum can be negative.
     // We max out at 80% as more than that should be considered fully rolled out and
     // the flag should be removed.
     const userActivationThreshold = Math.abs(flagHash % 100) + 1;
 
-    if (stableFeatureFlagsConfig.percentage) {
+    if (featureFlagConfig.percentage >= 80) {
       logging.warn(
-        `Flag ${stableFeatureFlagsConfig.namespace}:${stableFeatureFlagsConfig.name} ` +
-          `is rolled out to ${stableFeatureFlagsConfig.percentage}, any percentage over 80 ` +
-          `will be capped at 80, if you need to rollout to more than 80% of usrs, then ` +
+        `Flag ${featureFlagConfig.namespace}:${featureFlagConfig.name} ` +
+          `is rolled out to ${featureFlagConfig.percentage}, any percentage over 80 ` +
+          `will be capped at 80, if you need to rollout to more than 80% of users, then ` +
           `consider removing the flag as most users will now have it active ` +
           `and you should have a good signal.`,
       );
     }
     return (
-      Math.min(userActivationThreshold, 80) <=
-      stableFeatureFlagsConfig.percentage
+      Math.min(userActivationThreshold, 80) <= featureFlagConfig.percentage
     );
   }, [
-    identity,
-    stableFeatureFlagsConfig.namespace,
-    stableFeatureFlagsConfig.name,
-    stableFeatureFlagsConfig.percentage,
     overrideValue,
+    featureFlagConfig.namespace,
+    featureFlagConfig.name,
+    featureFlagConfig.percentage,
+    identity,
   ]);
 
   useEffect(() => {
     addFlagToAvailableFlags({
-      config: stableFeatureFlagsConfig,
+      flag: featureFlag,
       activeStatus: flagStatus,
+      setOverrideStatus: flagObserver,
     });
-    return () => removeFlagFromAvailableFlags(stableFeatureFlagsConfig);
+    return () => removeFlagFromAvailableFlags(featureFlag, flagObserver);
   }, [
     addFlagToAvailableFlags,
-    stableFeatureFlagsConfig,
     flagStatus,
     removeFlagFromAvailableFlags,
+    flagObserver,
+    featureFlag,
   ]);
 
   // we always return false if the user is not logged in.
