@@ -46,3 +46,6 @@ queue:
 - name: pop-pending-builds
   target: default
   rate: 500/s
+- name: batch-create-backend-tasks
+  target: default
+  rate: 500/s

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
@@ -36,6 +37,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	cipdpb "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -779,6 +781,33 @@ func TestCreateBackendTask(t *testing.T) {
 				assert.Loosely(c, tasks[0].Payload.(*taskdefs.CheckBuildLiveness).GetHeartbeatTimeout(), should.BeZero)
 				assert.Loosely(c, tasks[0].ETA, should.Match(now.Add(1*time.Minute)))
 			})
+		})
+	})
+}
+
+func TestBatchCreateBackendBuildTasks(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("BatchCreateBackendBuildTasks", t, func(c *ftt.Test) {
+		newTask := func(ctx context.Context, bIDs []int64) *taskdefs.BatchCreateBackendBuildTasks {
+			ret := &taskdefs.BatchCreateBackendBuildTasks{
+				DequeueTime: timestamppb.New(clock.Now(ctx)),
+			}
+			for _, bID := range bIDs {
+				ret.Requests = append(ret.Requests, &taskdefs.BatchCreateBackendBuildTasks_Request{
+					BuildId:   bID,
+					RequestId: uuid.New().String(),
+				})
+			}
+			return ret
+		}
+
+		t.Run("ok", func(t *testing.T) {
+			ctx := memory.Use(context.Background())
+			ctx, sch := tq.TestingContext(ctx, nil)
+			task := newTask(ctx, []int64{1, 2, 3})
+			assert.That(t, BatchCreateBackendBuildTasks(ctx, task), should.ErrLike(nil))
+			assert.That(t, len(sch.Tasks()), should.Equal(3))
 		})
 	})
 }

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
 	codepb "google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -47,6 +48,7 @@ import (
 	"go.chromium.org/luci/buildbucket/appengine/internal/clients"
 	"go.chromium.org/luci/buildbucket/appengine/internal/config"
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
@@ -63,6 +65,9 @@ const (
 	runTaskGiveUpTimeoutDefault = 10 * 60 * time.Second
 
 	cipdCacheTTL = 10 * time.Minute
+
+	maxBatchTaskCreationRetries = 10
+	maxFailBuildRetries         = 50
 )
 
 type cipdPackageDetails struct {
@@ -501,4 +506,70 @@ func shouldCheckLiveness(ctx context.Context, bld *model.Build, backendCfg *pb.B
 		return true, bldr.Config.GetHeartbeatTimeoutSecs(), nil
 	}
 	return false, 0, nil
+}
+
+// BatchCreateBackendBuildTasks enqueues CreateBackendBuildTask tasks for a batch
+// of builds.
+func BatchCreateBackendBuildTasks(ctx context.Context, batchTask *taskdefs.BatchCreateBackendBuildTasks) error {
+	runInParallel := func(fn func(context.Context, *taskdefs.BatchCreateBackendBuildTasks_Request) error) errors.MultiError {
+		merr := make(errors.MultiError, len(batchTask.Requests))
+		eg, _ := errgroup.WithContext(ctx)
+		eg.SetLimit(64)
+		for i, req := range batchTask.Requests {
+			i := i
+			req := req
+			eg.Go(func() error {
+				merr[i] = fn(ctx, req)
+				return nil
+			})
+		}
+		_ = eg.Wait()
+		return merr
+	}
+
+	retry := func(merr errors.MultiError, errMsg string) error {
+		toRetry := make([]*taskdefs.BatchCreateBackendBuildTasks_Request, 0, len(batchTask.Requests))
+		for i, err := range merr {
+			if err != nil {
+				toRetry = append(toRetry, batchTask.Requests[i])
+			}
+		}
+
+		if len(toRetry) == 0 {
+			if errMsg == "" {
+				return nil
+			}
+			return tq.Fatal.Apply(errors.New(errMsg))
+		}
+
+		if batchTask.Retries >= maxFailBuildRetries {
+			return tq.Fatal.Apply(errors.Reason("has retried %d times, giving up entirely", batchTask.Retries).Err())
+		}
+
+		return createBatchCreateBackendBuildTasks(
+			ctx, &taskdefs.BatchCreateBackendBuildTasks{
+				Requests:               toRetry,
+				Retries:                batchTask.Retries + 1,
+				DequeueTime:            batchTask.DequeueTime,
+				DeduplicationKeyPrefix: batchTask.DeduplicationKeyPrefix,
+			}, fmt.Sprintf("%s:%d", batchTask.DeduplicationKeyPrefix, batchTask.Retries+1))
+	}
+
+	if batchTask.Retries > maxBatchTaskCreationRetries {
+		merr := runInParallel(func(ctx context.Context, req *taskdefs.BatchCreateBackendBuildTasks_Request) error {
+			return failBuild(ctx, req.BuildId, "Backend task creation failure.")
+		})
+
+		return retry(merr, fmt.Sprintf("has retried %d times, giving up creating backend tasks", batchTask.Retries))
+	}
+
+	merr := runInParallel(func(ctx context.Context, req *taskdefs.BatchCreateBackendBuildTasks_Request) error {
+		return createBackendBuildTaskWithDedupKey(ctx, &taskdefs.CreateBackendBuildTask{
+			BuildId:     req.BuildId,
+			RequestId:   req.RequestId,
+			DequeueTime: batchTask.DequeueTime,
+		}, fmt.Sprintf("%s:%d", batchTask.DeduplicationKeyPrefix, req.BuildId))
+	})
+
+	return retry(merr, "")
 }

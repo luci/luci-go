@@ -141,7 +141,7 @@ func init() {
 
 	tq.RegisterTaskClass(tq.TaskClass{
 		ID:        "create-backend-task-go",
-		Kind:      tq.Transactional,
+		Kind:      tq.FollowsContext,
 		Prototype: (*taskdefs.CreateBackendBuildTask)(nil),
 		Queue:     "create-backend-task-go",
 		Handler: func(ctx context.Context, payload proto.Message) error {
@@ -215,6 +215,17 @@ func init() {
 			return PopPendingBuildTask(ctx, t.BuildId, t.BuilderId)
 		},
 	})
+
+	tq.RegisterTaskClass(tq.TaskClass{
+		ID:        "batch-create-backend-tasks",
+		Kind:      tq.FollowsContext,
+		Prototype: (*taskdefs.BatchCreateBackendBuildTasks)(nil),
+		Queue:     "batch-create-backend-tasks",
+		Handler: func(ctx context.Context, payload proto.Message) error {
+			t := payload.(*taskdefs.BatchCreateBackendBuildTasks)
+			return BatchCreateBackendBuildTasks(ctx, t)
+		},
+	})
 }
 
 // CancelBackendTask enqueues a task queue task to cancel the given Backend
@@ -262,12 +273,18 @@ func CreateSwarmingBuildTask(ctx context.Context, task *taskdefs.CreateSwarmingB
 // CreateBackendBuildTask enqueues a Cloud Tasks task to create a backend task
 // from the given build.
 func CreateBackendBuildTask(ctx context.Context, task *taskdefs.CreateBackendBuildTask) error {
+	return createBackendBuildTaskWithDedupKey(ctx, task, "")
+}
+
+func createBackendBuildTaskWithDedupKey(ctx context.Context, task *taskdefs.CreateBackendBuildTask, dedupKey string) error {
 	if task.GetBuildId() == 0 {
 		return errors.Reason("build_id is required").Err()
 	}
+
 	return tq.AddTask(ctx, &tq.Task{
-		Title:   fmt.Sprintf("create-backend-task-%d", task.BuildId),
-		Payload: task,
+		Title:            fmt.Sprintf("create-backend-task-%d", task.BuildId),
+		Payload:          task,
+		DeduplicationKey: dedupKey,
 	})
 }
 
@@ -362,5 +379,19 @@ func CreatePopPendingBuildTask(ctx context.Context, task *taskdefs.PopPendingBui
 	return tq.AddTask(ctx, &tq.Task{
 		Title:   fmt.Sprintf("pop-pending-build-%d", task.BuildId),
 		Payload: task,
+	})
+}
+
+// createBatchCreateBackendBuildTasks enqueues a BatchCreateBackendBuildTasks task.
+func createBatchCreateBackendBuildTasks(ctx context.Context, task *taskdefs.BatchCreateBackendBuildTasks, dedupKey string) error {
+	for _, req := range task.GetRequests() {
+		if req.BuildId == 0 {
+			return errors.Reason("build_id is required").Err()
+		}
+	}
+
+	return tq.AddTask(ctx, &tq.Task{
+		Payload:          task,
+		DeduplicationKey: dedupKey,
 	})
 }

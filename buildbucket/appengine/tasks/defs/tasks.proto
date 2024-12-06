@@ -149,3 +149,27 @@ message PopPendingBuildTask {
   // ID of the builder to trigger pending builds.
   buildbucket.v2.BuilderID builder_id = 2;
 }
+
+// A task to create backend tasks in a batch.
+message BatchCreateBackendBuildTasks {
+  message Request {
+    int64 build_id = 1;
+
+    // The request ID to be sent to TaskBackend RunTask for idempotency.
+    string request_id = 2;
+  }
+
+  repeated Request requests = 1;
+
+  int32 retries = 2;
+
+  // Timestamp of when the tasks were sent to TaskBackend.
+  // This is useful to find out when the task creation should expire.
+  // Only used for builder with the max_concurrent_builds feature enabled.
+  google.protobuf.Timestamp dequeue_time = 3;
+
+  // Prefix of the deduplication_keys when
+  // * enqueueing CreateBackendBuildTasks non-transactionally.
+  // * enqueueing a retry of BatchCreateBackendBuildTasks non-transactionally.
+  string deduplication_key_prefix = 4;
+}
