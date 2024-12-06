@@ -31,6 +31,8 @@ import {
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DataTable } from '../data_table';
+import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
+import { SelectedFilters } from '../multi_select_filter/types';
 
 import { BASE_DIMENSIONS, getColumns, DEFAULT_COLUMNS } from './columns';
 
@@ -58,7 +60,7 @@ function getRow(device: Device): Record<string, string> {
       // TODO(b/378634266): should be discussed how to show multiple values
       row[label] = device.deviceSpec.labels[label].values
         .concat()
-        .sort((a, b) => (a.length < b.length ? -1 : 1))[0]
+        .sort((a, b) => (a.length < b.length ? 1 : -1))[0]
         .toString();
     }
   }
@@ -66,7 +68,11 @@ function getRow(device: Device): Record<string, string> {
   return row;
 }
 
-export function DeviceTable() {
+interface DeviceTableProps {
+  filter: SelectedFilters;
+}
+
+export function DeviceTable({ filter }: DeviceTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
@@ -97,6 +103,7 @@ export function DeviceTable() {
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
         orderBy: getOrderByFromSortModel(),
+        filter: stringifyFilters(filter),
       }),
     ),
   );

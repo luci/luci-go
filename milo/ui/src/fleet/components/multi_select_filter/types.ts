@@ -15,11 +15,10 @@
 export type FilterOption = {
   label: string;
   value: string;
-  nameSpace: string;
   options: {
     label: string;
     value: string;
   }[];
 };
 
-export type SelectedFilters = Record<string, Record<string, string[]>>;
+export type SelectedFilters = Record<string, string[]>;

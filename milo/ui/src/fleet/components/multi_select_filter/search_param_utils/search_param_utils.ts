@@ -18,7 +18,7 @@ const FILTERS_PARAM_KEY = 'filters';
 
 /** The input is expected to follow AIP - 160.
  * For now it's limited to inputs following the format:
- *   "nameSpace.key1 = (value1 AND value2) nameSpace2.key = value".
+ *   "key1 = (value1 AND value2) key = value".
  * Nested parentheses are not supported.
  * E.g.: "fleet_labels.pool = (default AND test)"
  * TODO: Consider moving this to a shared location
@@ -30,11 +30,7 @@ export const parseFilters = (
   const firstEqIdx = str.indexOf('=');
   if (firstEqIdx === -1) return filters;
 
-  const lhs = str.substring(0, firstEqIdx).trim();
-  const [nameSpace, key] = lhs.split('.');
-  if (nameSpace === undefined || key === undefined) {
-    throw Error('Values are expected to have the form nameSpace.key');
-  }
+  const key = str.substring(0, firstEqIdx).trim();
 
   const rest = str.substring(firstEqIdx + 1).trim();
 
@@ -60,31 +56,24 @@ export const parseFilters = (
 
   return parseFilters(rest.substring(rhsEndIdx + 1), {
     ...filters,
-    [nameSpace]: {
-      ...filters[nameSpace],
-      [key]: [...(filters[nameSpace]?.[key] ?? []), ...values],
-    },
+    [key]: [...(filters[key] ?? []), ...values],
   });
 };
 
 /**
  * The output is expected to follow AIP - 160.
  * For now it's limited to outputs following the format:
- *   "nameSpace.key1 = (value1 AND value2) nameSpace2.key = value".
+ *   "key1 = (value1 AND value2) key = value".
  * E.g.: "fleet_labels.pool = (default AND test)"
  * TODO: Consider moving this to a shared location
  */
 export const stringifyFilters = (filters: SelectedFilters): string =>
   Object.entries(filters)
-    .map(([nameSpace, entries]) =>
-      Object.entries(entries ?? {})
-        .filter(([_key, values]) => values && values[0])
-        .map(([key, values]) =>
-          values.length > 1
-            ? `${nameSpace}.${key} = (${values.join(' AND ')})`
-            : `${nameSpace}.${key} = ${values[0]}`,
-        )
-        .join(' '),
+    .filter(([_key, values]) => values && values[0])
+    .map(([key, values]) =>
+      values.length > 1
+        ? `${key} = (${values.join(' AND ')})`
+        : `${key} = ${values[0]}`,
     )
     .join(' ');
 

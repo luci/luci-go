@@ -45,7 +45,7 @@ export function OptionsDropdown({
 
   const flipOption = (o2Value: string) => {
     const currentValues =
-      tempSelectedOptions[option.nameSpace]?.[option.value] ?? [];
+      tempSelectedOptions[option.value] ?? [];
 
     const newValues = currentValues.includes(o2Value)
       ? currentValues.filter((v) => v !== o2Value)
@@ -53,10 +53,7 @@ export function OptionsDropdown({
 
     setTempSelectedOptions({
       ...(tempSelectedOptions ?? {}),
-      [option.nameSpace]: {
-        ...tempSelectedOptions[option.nameSpace],
-        [option.value]: newValues,
-      },
+      [option.value]: newValues,
     });
   };
 
@@ -118,7 +115,7 @@ export function OptionsDropdown({
             >
               <Checkbox
                 checked={
-                  !!tempSelectedOptions[option.nameSpace]?.[
+                  !!tempSelectedOptions[
                     option.value
                   ]?.includes(o2.value)
                 }

@@ -42,11 +42,9 @@ export function SelectedChip({
                 textOverflow: 'ellipsis',
               }}
             >
-              {`${selectedOptions[option.nameSpace][option.value].length} | [ ${option.label} ]: ${option?.options
+              {`${selectedOptions[option.value].length} | [ ${option.label} ]: ${option?.options
                 ?.filter((o2) =>
-                  selectedOptions[option.nameSpace][option.value]?.includes(
-                    o2.value,
-                  ),
+                  selectedOptions[option.value]?.includes(o2.value),
                 )
                 ?.map((o2) => o2.label)
                 .join(', ')}`}
@@ -61,10 +59,7 @@ export function SelectedChip({
         onDelete={(_) =>
           setSelectedOptions((currentFilters: SelectedFilters) => ({
             ...currentFilters,
-            [option.nameSpace]: {
-              ...currentFilters[option.nameSpace],
-              [option.value]: [],
-            },
+            [option.value]: [],
           }))
         }
       />

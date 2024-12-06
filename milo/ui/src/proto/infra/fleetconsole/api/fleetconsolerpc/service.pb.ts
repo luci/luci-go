@@ -140,6 +140,8 @@ export interface ListDevicesRequest {
    */
   readonly pageToken: string;
   readonly orderBy: string;
+  /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
+  readonly filter: string;
 }
 
 export interface ListDevicesResponse {
@@ -574,7 +576,7 @@ export const DeviceAddress: MessageFns<DeviceAddress> = {
 };
 
 function createBaseListDevicesRequest(): ListDevicesRequest {
-  return { pageSize: 0, pageToken: "", orderBy: "" };
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
 }
 
 export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
@@ -587,6 +589,9 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     }
     if (message.orderBy !== "") {
       writer.uint32(26).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
     }
     return writer;
   },
@@ -622,6 +627,14 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
           message.orderBy = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -636,6 +649,7 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
       orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
     };
   },
 
@@ -650,6 +664,9 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     if (message.orderBy !== "") {
       obj.orderBy = message.orderBy;
     }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
     return obj;
   },
 
@@ -661,6 +678,7 @@ export const ListDevicesRequest: MessageFns<ListDevicesRequest> = {
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
     message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
     return message;
   },
 };

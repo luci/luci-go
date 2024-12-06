@@ -46,9 +46,7 @@ export const MultiSelectFilter = ({
       {filterOptions.map(
         (option, idx) =>
           option.options?.some((o2) =>
-            selectedOptions[option.nameSpace]?.[option.value]?.includes(
-              o2.value,
-            ),
+            selectedOptions[option.value]?.includes(o2.value),
           ) && (
             <SelectedChip
               option={option}

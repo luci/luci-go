@@ -22,85 +22,51 @@ const sharedTestCases: [SelectedFilters, string][] = [
   [{}, ''],
   [
     {
-      nameSpace: {
-        key: ['value'],
-      },
+      key: ['value'],
     },
-    'nameSpace.key = value',
+    'key = value',
   ],
   [
     {
-      nameSpace: {
-        key1: ['value1'],
-        key2: ['value2'],
-      },
+      key1: ['value1'],
+      key2: ['value2'],
     },
-    'nameSpace.key1 = value1 nameSpace.key2 = value2',
+    'key1 = value1 key2 = value2',
   ],
   [
     {
-      nameSpace1: {
-        key1: ['value1'],
-        key2: ['value2'],
-      },
-      nameSpace2: {
-        key1: ['value1'],
-        key2: ['value2'],
-      },
+      'labels.key1': ['value1'],
+      key2: ['value2'],
     },
-    'nameSpace1.key1 = value1 nameSpace1.key2 = value2 nameSpace2.key1 = value1 nameSpace2.key2 = value2',
+    'labels.key1 = value1 key2 = value2',
   ],
   [
     {
-      nameSpace: {
-        key1: ['value1', 'value2'],
-        key2: ['value1', 'value2'],
-      },
+      key1: ['value1', 'value2'],
+      key2: ['value1', 'value2'],
     },
-    'nameSpace.key1 = (value1 AND value2) nameSpace.key2 = (value1 AND value2)',
+    'key1 = (value1 AND value2) key2 = (value1 AND value2)',
   ],
   [
     {
-      nameSpace: {
-        key1: ['value1', 'value2'],
-      },
+      key1: ['value1', 'value2'],
+      key2: ['value'],
     },
-    'nameSpace.key1 = (value1 AND value2)',
-  ],
-  [
-    {
-      nameSpace: {
-        key1: ['value1', 'value2'],
-      },
-      nameSpace2: {
-        key: ['value'],
-      },
-    },
-    'nameSpace.key1 = (value1 AND value2) nameSpace2.key = value',
+    'key1 = (value1 AND value2) key2 = value',
   ],
 ];
 
 const justStringifyCases: [SelectedFilters, string][] = [
   [
     {
-      nameSpace: {
-        key: ['value1'],
-        emptyKey: [],
-      },
+      key: ['value1'],
+      emptyKey: [],
     },
-    'nameSpace.key = value1',
+    'key = value1',
   ],
   [
     {
-      nameSpace: {
-        emptyKey: [],
-      },
-    },
-    '',
-  ],
-  [
-    {
-      unusedNameSpace: {},
+      emptyKey: [],
     },
     '',
   ],
@@ -109,19 +75,15 @@ const justStringifyCases: [SelectedFilters, string][] = [
 const justParseCases: [SelectedFilters, string][] = [
   [
     {
-      nameSpace: {
-        key1: ['value1', 'value2'],
-      },
+      key1: ['value1', 'value2'],
     },
-    'nameSpace.key1= ( value1 AND value2)',
+    'key1= ( value1 AND value2)',
   ],
   [
     {
-      nameSpace: {
-        key: ['value1'],
-      },
+      'labels.key': ['value1'],
     },
-    'nameSpace.key=value1',
+    'labels.key=value1',
   ],
 ];
 
@@ -136,24 +98,13 @@ describe('multi_select_search_param_utils', () => {
   });
 
   describe('parseFilters', () => {
-    it.each(sharedTestCases.concat(justParseCases).map(([a, b]) => [b, a]))(
+    it.each(sharedTestCases.concat(justParseCases))(
       'parseFilters(%s)',
-      (input, expectedOutput) => {
+      (expectedOutput, input) => {
         const realOutput = parseFilters(input);
 
         try {
-          expect(new Set(Object.keys(realOutput))).toEqual(
-            new Set(Object.keys(expectedOutput)),
-          );
-          for (const nameSpace of Object.keys(expectedOutput)) {
-            for (const key of Object.keys(expectedOutput[nameSpace])) {
-              const realValues = realOutput[nameSpace]?.[key];
-              const expectedValues = expectedOutput[nameSpace]?.[key];
-
-              expect(realValues).not.toBeUndefined();
-              expect(new Set(realValues)).toEqual(new Set(expectedValues));
-            }
-          }
+          expect(realOutput).toEqual(expectedOutput);
         } catch {
           throw Error(
             `Expected:\t ${prettyFormat(expectedOutput)},\ngot:\t ${prettyFormat(realOutput)}`,
@@ -165,18 +116,13 @@ describe('multi_select_search_param_utils', () => {
 
   describe('parseFilters wrong examples', () => {
     it('throws on a missing close parenthesis', () => {
-      expect(() => parseFilters('nameSpace.key = ( value')).toThrow(
+      expect(() => parseFilters('labels.key = ( value')).toThrow(
         'Missing closing parenthesis',
       );
     });
     it('throws on a hanging OR', () => {
-      expect(() => parseFilters('nameSpace.key = ( value AND )')).toThrow(
+      expect(() => parseFilters('labels.key = ( value AND )')).toThrow(
         'Found a hanging ANDs',
-      );
-    });
-    it('thows if the namespace is missing', () => {
-      expect(() => parseFilters('key = value')).toThrow(
-        'Values are expected to have the form nameSpace.key',
       );
     });
   });
