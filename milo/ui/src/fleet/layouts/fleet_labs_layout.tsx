@@ -16,12 +16,14 @@ import { Outlet } from 'react-router-dom';
 
 import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 
+import { colors } from '../theme/colors';
+
 export function Component() {
   return (
     <>
       <LabsWarningAlert
         sx={{
-          backgroundColor: 'hsl(198, 86%, 95%)',
+          backgroundColor: colors.cyan[50],
           position: 'sticky',
           left: 0,
           width: '100%',

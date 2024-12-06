@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Chip } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { Chip, colors } from '@mui/material';
 import { useState } from 'react';
 
 import { AddFilterDropdown } from './add_filter_dropdown';
@@ -33,7 +34,9 @@ export function AddFilterButton({
     <>
       <Chip
         onClick={(event) => setAnchorEL(event.currentTarget)}
-        label="+ add filter"
+        label="Add filter"
+        variant="outlined"
+        icon={<AddIcon sx={{ color: colors.blue[600], width: 18 }} />}
       ></Chip>
       <AddFilterDropdown
         filterOptions={filterOptions}

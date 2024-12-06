@@ -55,7 +55,7 @@ export function SelectedChip({
         sx={{
           maxWidth: 300,
         }}
-        color="primary"
+        variant="filter"
         onDelete={(_) =>
           setSelectedOptions((currentFilters: SelectedFilters) => ({
             ...currentFilters,

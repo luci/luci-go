@@ -107,7 +107,7 @@ describe('<MultiSelectFilter />', () => {
   it('should be able to select options', async () => {
     render(<TestComponent />);
 
-    click(['+ add filter', 'Option 1', 'The first option', 'Confirm']);
+    click(['Add filter', 'Option 1', 'The first option', 'Apply']);
     expect(
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).toBeInTheDocument();
@@ -116,11 +116,7 @@ describe('<MultiSelectFilter />', () => {
     } as SelectedFilters);
     await act(() => jest.runAllTimersAsync());
 
-    click([
-      '1 | [ Option 1 ]: The first option',
-      'The second option',
-      'Confirm',
-    ]);
+    click(['1 | [ Option 1 ]: The first option', 'The second option', 'Apply']);
     expect(
       screen.queryByText(
         '2 | [ Option 1 ]: The first option, The second option',
@@ -131,7 +127,7 @@ describe('<MultiSelectFilter />', () => {
     });
     await act(() => jest.runAllTimersAsync());
 
-    click(['+ add filter', 'Option 2', 'The second option', 'Confirm']);
+    click(['Add filter', 'Option 2', 'The second option', 'Apply']);
     expect(
       screen.queryByText(
         '2 | [ Option 1 ]: The first option, The second option',
@@ -149,7 +145,7 @@ describe('<MultiSelectFilter />', () => {
   it('should cancel the selection when clicking on cancel', () => {
     render(<TestComponent />);
 
-    click(['+ add filter', 'Option 1', 'The first option', 'Cancel']);
+    click(['Add filter', 'Option 1', 'The first option', 'Cancel']);
     expect(
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).not.toBeInTheDocument();
@@ -164,7 +160,7 @@ describe('<MultiSelectFilter />', () => {
   it('should remove a filter when clicking on the x', () => {
     render(<TestComponent />);
 
-    click(['+ add filter', 'Option 1', 'The first option', 'Confirm']);
+    click(['Add filter', 'Option 1', 'The first option', 'Apply']);
     expect(
       screen.queryByText('1 | [ Option 1 ]: The first option'),
     ).toBeInTheDocument();
@@ -185,7 +181,7 @@ describe('<MultiSelectFilter />', () => {
     it('should be able to select options with keyboard', async () => {
       render(<TestComponent />);
 
-      screen.getByText('+ add filter').parentElement!.focus();
+      screen.getByText('Add filter').parentElement!.focus();
       keyDown(ENTER_KEY);
       expect(document.activeElement).toContainHTML('search');
 
@@ -226,7 +222,7 @@ describe('<MultiSelectFilter />', () => {
 
     it('should clear the search on backspace', () => {
       render(<TestComponent />);
-      act(() => screen.getByText('+ add filter').click());
+      act(() => screen.getByText('Add filter').click());
 
       const search = screen.getByPlaceholderText('search');
 
@@ -241,7 +237,7 @@ describe('<MultiSelectFilter />', () => {
 
     it('should focus on search when typing', () => {
       render(<TestComponent />);
-      act(() => screen.getByText('+ add filter').click());
+      act(() => screen.getByText('Add filter').click());
 
       const search = screen.getByPlaceholderText('search');
 
@@ -252,7 +248,7 @@ describe('<MultiSelectFilter />', () => {
 
     it('should go up and down with ctrl+j/k', () => {
       render(<TestComponent />);
-      act(() => screen.getByText('+ add filter').click());
+      act(() => screen.getByText('Add filter').click());
 
       screen.getByText('Option 1').focus();
 

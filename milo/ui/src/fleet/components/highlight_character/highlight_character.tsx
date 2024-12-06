@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { colors, Typography, TypographyProps } from '@mui/material';
+import { Typography, TypographyProps } from '@mui/material';
+
+import { colors } from '@/fleet/theme/colors';
 
 export const HighlightCharacter = ({
   children,

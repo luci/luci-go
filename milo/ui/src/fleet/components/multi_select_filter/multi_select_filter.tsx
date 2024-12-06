@@ -26,23 +26,7 @@ export const MultiSelectFilter = ({
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
 }) => {
   return (
-    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-      {/*
-
-        Object.keys(selectedOptions).filter((nameSpace) =>
-        Object.values(selectedOptions[nameSpace]).some((x) => x.length !== 0)
-      ).map(nameSpace => Object.entries(selectedOptions[nameSpace]).map([optionKey, optionValue]) => (
-      <SelectedChip
-        option={option}
-        key={`selected-chip-${idx}`}
-        filterOptions={filterOptions}
-        selectedOptions={selectedOptions}
-        setSelectedOptions={setSelectedOptions}
-      />
-
-      ))
-      */}
-
+    <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: 8 }}>
       {filterOptions.map(
         (option, idx) =>
           option.options?.some((o2) =>

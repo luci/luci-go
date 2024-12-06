@@ -44,9 +44,12 @@ export function AddFilterDropdown({
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const closeMenu = () => {
+  const closeInnerMenu = () => {
     setOpen(undefined);
     setAnchorELInner(null);
+  };
+  const closeMenu = () => {
+    closeInnerMenu();
     setAnchorEL(null);
   };
 
@@ -85,9 +88,11 @@ export function AddFilterDropdown({
           case 'Backspace':
             setSearchQuery('');
             searchInput.current?.focus();
+            closeInnerMenu();
         }
         // if the key is a single alphanumeric character without modifier
         if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
+          closeInnerMenu();
           searchInput.current?.focus();
           setSearchQuery((old) => old + e.key);
           e.preventDefault(); // Avoid race condition to type twice in the input
@@ -120,21 +125,19 @@ export function AddFilterDropdown({
           // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Escape' || (e.key === 'j' && e.ctrlKey)) {
-              e.currentTarget.parentElement?.focus();
-              e.stopPropagation();
-            }
+            e.stopPropagation();
             if (
-              e.key === 'Backspace' ||
-              e.key === 'Delete' ||
-              e.key === 'Cancel'
+              e.key === 'Escape' ||
+              e.key === 'ArrowDown' ||
+              (e.key === 'j' && e.ctrlKey)
             ) {
-              e.stopPropagation();
+              e.currentTarget.parentElement?.focus();
+              e.preventDefault();
             }
           }}
           slotProps={{
             input: {
-              startAdornment: <SearchIcon />,
+              startAdornment: <SearchIcon sx={{ marginRight: '10px' }} />,
             },
           }}
         />
@@ -172,6 +175,7 @@ export function AddFilterDropdown({
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
+              minHeight: 'auto',
             }}
           >
             <HighlightCharacter variant="body2" highlights={parentMatches}>
@@ -181,13 +185,11 @@ export function AddFilterDropdown({
             <OptionsDropdown
               onKeyDown={(e) => {
                 if (e.key === 'ArrowLeft') {
-                  setOpen(undefined);
-                  setAnchorELInner(null);
+                  closeInnerMenu();
                 }
               }}
               onClose={(rawE, reason) => {
-                setOpen(undefined);
-                setAnchorELInner(null);
+                closeInnerMenu();
 
                 const e = rawE as MouseEvent;
                 const menuRect = menuListRef.current?.getBoundingClientRect();
@@ -208,6 +210,13 @@ export function AddFilterDropdown({
               open={anchorElInner !== null && open === idx}
               option={parent}
               matches={childrenMatches}
+              transformOrigin={{
+                vertical: 'center',
+                horizontal: 'left',
+              }}
+              sx={{
+                transform: 'translate(0, 25px)',
+              }}
             />
           </MenuItem>
         );

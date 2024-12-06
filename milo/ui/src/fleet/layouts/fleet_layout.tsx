@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ThemeProvider } from '@mui/material';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
+
+import { theme } from '../theme/theme';
 
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -28,26 +31,28 @@ export const FleetLayout = () => {
   );
 
   return (
-    <div
-      css={{
-        minHeight: '100vh',
-        minWidth: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <Sidebar open={sidebarOpen} />
-      <Outlet />
-
+    <ThemeProvider theme={theme}>
       <div
         css={{
-          marginTop: 'auto',
+          minHeight: '100vh',
+          minWidth: '100%',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <PrivacyFooter />
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <Sidebar open={sidebarOpen} />
+        <Outlet />
+
+        <div
+          css={{
+            marginTop: 'auto',
+          }}
+        >
+          <PrivacyFooter />
+        </div>
+        <CookieConsentBar />
       </div>
-      <CookieConsentBar />
-    </div>
+    </ThemeProvider>
   );
 };

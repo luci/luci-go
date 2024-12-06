@@ -44,8 +44,7 @@ export function OptionsDropdown({
     useState(selectedOptions);
 
   const flipOption = (o2Value: string) => {
-    const currentValues =
-      tempSelectedOptions[option.value] ?? [];
+    const currentValues = tempSelectedOptions[option.value] ?? [];
 
     const newValues = currentValues.includes(o2Value)
       ? currentValues.filter((v) => v !== o2Value)
@@ -81,6 +80,11 @@ export function OptionsDropdown({
 
         if (onKeyDown) onKeyDown(e);
       }}
+      MenuListProps={{
+        sx: {
+          padding: '8px 0',
+        },
+      }}
       {...menuProps}
     >
       <div
@@ -99,48 +103,58 @@ export function OptionsDropdown({
                 const parsedE =
                   e as unknown as React.KeyboardEvent<HTMLLIElement>;
                 if (parsedE.key === ' ') return;
+                if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
               }
               flipOption(o2.value);
             }}
             onKeyDown={keyboardUpDownHandler}
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus={idx === 0}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '6px 12px',
+              minHeight: 'auto',
+            }}
           >
-            <button
-              css={{
-                all: 'initial',
-                display: 'flex',
-                alignItems: 'center',
+            <Checkbox
+              sx={{
+                padding: 0,
+                marginRight: '13px',
               }}
+              size="small"
+              checked={!!tempSelectedOptions[option.value]?.includes(o2.value)}
+              tabIndex={-1}
+            />
+            <HighlightCharacter
+              variant="body2"
+              highlights={matches?.[o2.value]}
             >
-              <Checkbox
-                checked={
-                  !!tempSelectedOptions[
-                    option.value
-                  ]?.includes(o2.value)
-                }
-                tabIndex={-1}
-              />
-              <HighlightCharacter
-                variant="body2"
-                highlights={matches?.[o2.value]}
-              >
-                {o2.label}
-              </HighlightCharacter>
-            </button>
+              {o2.label}
+            </HighlightCharacter>
           </MenuItem>
         ))}
       </div>
-      <Divider />
+      <Divider
+        component="li"
+        sx={{
+          paddingTop: '6px',
+        }}
+      />
       <div
         css={{
           display: 'flex',
-          gap: 10,
-          padding: 10,
-          paddingLeft: 60,
+          gap: 12,
+          padding: '6px 15px 0 30px',
         }}
       >
-        <Button disableElevation onClick={resetTempOptions}>
+        <Button
+          disableElevation
+          onClick={(e) => {
+            if (onClose) onClose(e, 'escapeKeyDown');
+            resetTempOptions();
+          }}
+        >
           Cancel
         </Button>
         <Button
@@ -148,7 +162,7 @@ export function OptionsDropdown({
           variant="contained"
           onClick={confirmTempOptions}
         >
-          Confirm
+          Apply
         </Button>
       </div>
     </Menu>

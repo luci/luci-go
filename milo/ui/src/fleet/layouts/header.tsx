@@ -19,7 +19,6 @@ import {
   Avatar,
   Box,
   Button,
-  colors,
   IconButton,
   Tooltip,
   Typography,
@@ -31,6 +30,7 @@ import { useAuthState } from '@/common/components/auth_state_provider';
 import { getLoginUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
+import { colors } from '@/fleet/theme/colors';
 
 export const Header = ({
   sidebarOpen,
@@ -48,7 +48,7 @@ export const Header = ({
         flexDirection: 'row',
         gap: 10,
         alignItems: 'center',
-        backgroundColor: 'white',
+        backgroundColor: colors.white,
         borderBottom: `solid ${colors.grey[100]} 2px`,
         padding: '0 20px',
         zIndex: 1200,
