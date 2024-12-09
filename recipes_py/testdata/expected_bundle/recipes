@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+export PYTHONPATH=${BASH_SOURCE[0]%/*}/recipe_engine
+exec vpython3 -u ${BASH_SOURCE[0]%/*}/recipe_engine/recipe_engine/main.py \
+ --package ${BASH_SOURCE[0]%/*}/example_repo/infra/config/recipes.cfg \
+ --proto-override ${BASH_SOURCE[0]%/*}/_pb3 \
+ -O dep_repo=${BASH_SOURCE[0]%/*}/dep_repo \
+ "$@"
