@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
+	taskdefs "go.chromium.org/luci/buildbucket/appengine/tasks/defs"
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
@@ -67,7 +68,7 @@ func TestPopPendingBuildTask(t *testing.T) {
 				Builder: "builder",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			// create-backend-task-go
+			// batch-create-backend-tasks
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 			bq := &model.BuilderQueue{
 				ID: "project/bucket/builder",
@@ -103,8 +104,8 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				// create-backend-task-go
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
+				// batch-create-backend-tasks
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 				bq = &model.BuilderQueue{
 					ID: "project/bucket/builder",
 				}
@@ -145,8 +146,9 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				// create-backend-task-go
-				assert.Loosely(t, sch.Tasks(), should.HaveLength(2))
+				// batch-create-backend-tasks
+				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.BatchCreateBackendBuildTasks), should.NotBeNil)
 				bq = &model.BuilderQueue{
 					ID: "project/bucket/builder",
 				}
@@ -180,7 +182,7 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				// create-backend-task-go
+				// create-backend-task
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 				bq = &model.BuilderQueue{
 					ID: "project/bucket/builder",
@@ -222,7 +224,6 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				// create-backend-task-go
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(0))
 				bq = &model.BuilderQueue{
 					ID: "project/bucket/builder",
@@ -264,8 +265,9 @@ func TestPopPendingBuildTask(t *testing.T) {
 					Builder: "builder",
 				})
 				assert.Loosely(t, err, should.BeNil)
-				// create-backend-task-go
+				// create-backend-task
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sch.Tasks()[0].Payload.(*taskdefs.CreateBackendBuildTask), should.NotBeNil)
 				bq = &model.BuilderQueue{
 					ID: "project/bucket/builder",
 				}

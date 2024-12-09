@@ -16,6 +16,7 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"slices"
 
@@ -23,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -122,22 +124,47 @@ func popAndTriggerBuilds(ctx context.Context, bldrQ *model.BuilderQueue, mcb uin
 		mcb = math.MaxUint32
 	}
 
-	// Pop as many pending builds as allowed by max_concurrent_builds.
-	if len(bldrQ.PendingBuilds) > 0 && len(bldrQ.TriggeredBuilds) < int(mcb) {
-		toPop := int(math.Min(float64(int(mcb)-len(bldrQ.TriggeredBuilds)), float64(len(bldrQ.PendingBuilds))))
-		for _, pb := range bldrQ.PendingBuilds[:toPop] {
-			err := CreateBackendBuildTask(ctx, &taskdefs.CreateBackendBuildTask{
-				BuildId:     pb,
-				RequestId:   uuid.New().String(),
-				DequeueTime: timestamppb.New(clock.Now(ctx)),
-			})
-			if err != nil {
-				return err
-			}
-			bldrQ.TriggeredBuilds = append(bldrQ.TriggeredBuilds, pb)
-		}
-		bldrQ.PendingBuilds = bldrQ.PendingBuilds[toPop:]
+	if len(bldrQ.PendingBuilds) == 0 || len(bldrQ.TriggeredBuilds) >= int(mcb) {
+		return nil
 	}
 
-	return nil
+	// Pop as many pending builds as allowed by max_concurrent_builds.
+	toPop := min(int(mcb)-len(bldrQ.TriggeredBuilds), len(bldrQ.PendingBuilds))
+	if toPop == 0 {
+		return nil
+	}
+
+	now := clock.Now(ctx)
+	nowpb := timestamppb.New(now)
+
+	if toPop == 1 {
+		err := CreateBackendBuildTask(
+			ctx, &taskdefs.CreateBackendBuildTask{
+				BuildId:     bldrQ.PendingBuilds[0],
+				RequestId:   uuid.New().String(),
+				DequeueTime: nowpb,
+			})
+		if err != nil {
+			return err
+		}
+		bldrQ.TriggeredBuilds = append(bldrQ.TriggeredBuilds, bldrQ.PendingBuilds[0])
+		bldrQ.PendingBuilds = bldrQ.PendingBuilds[1:]
+		return nil
+	}
+
+	batchCreateTask := &taskdefs.BatchCreateBackendBuildTasks{
+		DequeueTime:            nowpb,
+		DeduplicationKeyPrefix: fmt.Sprintf("%d_%d", now.UnixNano(), mathrand.Int63(ctx)),
+	}
+	for _, pb := range bldrQ.PendingBuilds[:toPop] {
+		batchCreateTask.Requests = append(batchCreateTask.Requests,
+			&taskdefs.BatchCreateBackendBuildTasks_Request{
+				BuildId:   pb,
+				RequestId: uuid.New().String(),
+			})
+		bldrQ.TriggeredBuilds = append(bldrQ.TriggeredBuilds, pb)
+	}
+	bldrQ.PendingBuilds = bldrQ.PendingBuilds[toPop:]
+
+	return createBatchCreateBackendBuildTasks(ctx, batchCreateTask, "")
 }
