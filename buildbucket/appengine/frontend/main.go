@@ -216,6 +216,8 @@ func main() {
 		cron.RegisterHandler("update_config", config.UpdateSettingsCfg)
 		cron.RegisterHandler("update_project_config", config.UpdateProjectCfg)
 		cron.RegisterHandler("remove_inactive_builder_stats", buildercron.RemoveInactiveBuilderStats)
+		cron.RegisterHandler("scan_builder_queues", buildcron.ScanBuilderQueues)
+
 		redirect.InstallHandlers(srv.Routes, router.NewMiddlewareChain(auth.Authenticate(srv.CookieAuth)))
 
 		// PubSub push handler processing messages

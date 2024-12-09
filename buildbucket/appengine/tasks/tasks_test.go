@@ -284,7 +284,7 @@ func TestTasks(t *testing.T) {
 			t.Run("invalid", func(t *ftt.Test) {
 				assert.Loosely(t, CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
 					BuildId: 123,
-				}), should.ErrLike("builder_id is required"))
+				}, ""), should.ErrLike("builder_id is required"))
 				assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 			})
 
@@ -292,7 +292,7 @@ func TestTasks(t *testing.T) {
 				assert.Loosely(t, CreatePopPendingBuildTask(ctx, &taskdef.PopPendingBuildTask{
 					BuildId:   123,
 					BuilderId: &pb.BuilderID{Builder: "builder", Bucket: "bucket", Project: "project"},
-				}), should.BeNil)
+				}, ""), should.BeNil)
 				assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 			})
 		})

@@ -69,7 +69,7 @@ func sendOnBuildCompletion(ctx context.Context, bld *model.Build, inf *model.Bui
 				return errors.Annotate(CreatePopPendingBuildTask(ctx, &taskdefs.PopPendingBuildTask{
 					BuildId:   bld.ID,
 					BuilderId: bld.Proto.Builder,
-				}), "failed to enqueue pop pending build task: %d", bld.ID).Err()
+				}, ""), "failed to enqueue pop pending build task: %d", bld.ID).Err()
 			}
 			return nil
 		}

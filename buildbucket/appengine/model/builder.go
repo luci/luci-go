@@ -35,6 +35,9 @@ const BuilderKind = "Bucket.Builder"
 // BuilderStatKind is the kind of the BuilderStat entity.
 const BuilderStatKind = "Builder"
 
+// BuilderQueueKind is the kind of the BuilderQueue entity.
+const BuilderQueueKind = "BuilderQueue"
+
 // BuilderExpirationDuration is the maximum duration a builder can go without
 // having a build scheduled before its BuilderStat may be deleted.
 const BuilderExpirationDuration = 4 * 7 * 24 * time.Hour // 4 weeks

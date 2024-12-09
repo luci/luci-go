@@ -42,3 +42,9 @@ cron:
   target: default
   url: /internal/cron/sync_backend_tasks
   schedule: every 1 minutes
+
+### scan builder queues to find ended builds and pop them to unstuck the queues
+- description: scan builder queues to find ended builds and pop them
+  target: default
+  url: /internal/cron/scan_builder_queues
+  schedule: every 1 minutes
