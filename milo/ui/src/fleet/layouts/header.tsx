@@ -14,20 +14,23 @@
 
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import {
   Avatar,
-  Box,
   Button,
   IconButton,
+  Menu,
+  MenuItem,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { getLoginUrl } from '@/common/tools/url_utils';
+import { getLoginUrl, getLogoutUrl } from '@/common/tools/url_utils';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { colors } from '@/fleet/theme/colors';
@@ -45,11 +48,9 @@ export const Header = ({
     <header
       css={{
         display: 'flex',
-        flexDirection: 'row',
-        gap: 10,
-        alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: colors.white,
-        borderBottom: `solid ${colors.grey[100]} 2px`,
+        borderBottom: `solid ${colors.grey[300]} 1px`,
         padding: '0 20px',
         zIndex: 1200,
         boxSizing: 'border-box',
@@ -57,67 +58,124 @@ export const Header = ({
         top: 0,
         left: 0,
         width: '100%',
+        height: 64,
       }}
     >
-      <IconButton
-        size="large"
-        edge="start"
-        color="inherit"
-        aria-label="menu"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        sx={{
-          color: colors.grey[600],
+      <div
+        css={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 13,
         }}
       >
-        <MenuIcon />
-      </IconButton>
-      <Link
-        to="/ui/fleet/labs/devices"
-        css={{ display: 'flex', alignItems: 'center' }}
-      >
-        <img
-          alt="logo"
-          id="luci-icon"
-          src={fleetConsoleMascot}
-          css={{
-            width: 35,
-            padding: 5,
+        <IconButton
+          size="large"
+          aria-label="menu"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          sx={{
+            color: colors.grey[700],
+            padding: 0,
           }}
-        />
-      </Link>
-
-      <Typography sx={{ color: colors.grey[600] }} variant="subtitle1">
-        Fleet Console
-      </Typography>
-
-      <Box sx={{ flexGrow: 1 }} />
-
-      <Tooltip title="Fleet Console, work in progress">
-        <HelpOutlineOutlinedIcon sx={{ color: colors.grey[600] }} />
-      </Tooltip>
-      <IconButton
-        onClick={() => window.open(genFeedbackUrl({ bugComponent: '1664178' }))}
-      >
-        <BugReportOutlinedIcon sx={{ color: colors.grey[600] }} />
-      </IconButton>
-      {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
-        <Button
-          variant="text"
-          sx={{ color: colors.grey[600] }}
-          href={getLoginUrl(
-            location.pathname + location.search + location.hash,
-          )}
         >
-          Login
-        </Button>
-      ) : (
-        <Avatar
-          aria-label="avatar"
-          sx={{ width: 30, height: 30 }}
-          alt={authState.email}
-          src={authState.picture}
-        />
-      )}
+          <MenuIcon />
+        </IconButton>
+        <Link
+          to="/ui/fleet/labs/devices"
+          css={{ display: 'flex', alignItems: 'center' }}
+        >
+          <img
+            alt="logo"
+            id="luci-icon"
+            src={fleetConsoleMascot}
+            css={{
+              width: 55,
+              padding: 5,
+            }}
+          />
+        </Link>
+        <Typography variant="h5" sx={{ color: colors.grey[700] }}>
+          Fleet Console
+        </Typography>
+      </div>
+
+      <div
+        css={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 13,
+        }}
+      >
+        <Tooltip title="Fleet Console, work in progress">
+          <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
+        </Tooltip>
+        <IconButton
+          onClick={() =>
+            window.open(genFeedbackUrl({ bugComponent: '1664178' }))
+          }
+        >
+          <BugReportOutlinedIcon sx={{ color: colors.grey[700] }} />
+        </IconButton>
+        {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
+          <Button
+            variant="text"
+            sx={{ color: colors.grey[700], padding: 0, marign: 0 }}
+            href={getLoginUrl(
+              location.pathname + location.search + location.hash,
+            )}
+          >
+            Login
+          </Button>
+        ) : (
+          <LoggedInAvatar email={authState.email} picture={authState.picture} />
+        )}
+      </div>
     </header>
   );
 };
+
+function LoggedInAvatar({
+  email,
+  picture,
+}: {
+  email?: string;
+  picture?: string;
+}) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <Avatar
+        sx={{
+          cursor: 'pointer',
+          width: 32,
+          height: 32,
+        }}
+        alt={email}
+        src={picture}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        aria-label="avatar"
+      />
+      <Menu
+        anchorEl={anchorEl}
+        open={!!anchorEl}
+        onClose={() => setAnchorEl(null)}
+        MenuListProps={{
+          sx: { padding: 0 },
+        }}
+      >
+        <MenuItem
+          sx={{ padding: '0 20px 0 15px ', height: 48 }}
+          onClick={() =>
+            navigate(
+              getLogoutUrl(location.pathname + location.search + location.hash),
+            )
+          }
+        >
+          <LogoutIcon sx={{ marginRight: '10px' }} />
+          <Typography>Logout</Typography>
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}

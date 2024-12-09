@@ -13,18 +13,15 @@
 // limitations under the License.
 
 import DevicesIcon from '@mui/icons-material/Devices';
-import LaunchIcon from '@mui/icons-material/Launch';
-import MuiDrawer from '@mui/material/Drawer';
+import { Drawer, Typography } from '@mui/material';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import ListSubheader from '@mui/material/ListSubheader';
 import Toolbar from '@mui/material/Toolbar';
 import { Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+
+import { colors } from '../theme/colors';
 type SidebarSection = {
   title: string;
   pages: {
@@ -51,10 +48,10 @@ const sidebarSections: SidebarSection[] = [
 export const Sidebar = ({ open }: { open: boolean }) => {
   const location = useLocation();
   return (
-    <MuiDrawer
+    <Drawer
       sx={{
         '& .MuiDrawer-paper': {
-          width: 250,
+          width: 213,
           boxSizing: 'border-box',
         },
       }}
@@ -62,57 +59,45 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       anchor="left"
       open={open}
       role="complementary"
+      PaperProps={{
+        elevation: 2,
+      }}
     >
-      <Toolbar variant="dense" />
-      <List sx={{ mb: '40px', pt: 0 }}>
+      <Toolbar
+        variant="dense"
+        sx={{
+          height: 64,
+        }}
+      />
+      <List sx={{ mb: '40px', pt: 0, margin: '20px 0' }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
-            <ListSubheader>{sidebarSection.title}</ListSubheader>
             {sidebarSection.pages.map((sidebarPage, idx) => (
-              <ListItem
-                dense
+              <ListItemButton
                 key={sidebarPage.url + idx + sidebarSection.title}
-                disablePadding
-                sx={{ display: 'block' }}
+                sx={{
+                  px: 2.5,
+                  borderRadius: '40px 999em 999em 40px',
+                  // margin: '5px 0',
+                  '&.Mui-selected': {
+                    color: colors.blue[700],
+                    backgroundColor: colors.blue[50],
+                    ':hover': {
+                      backgroundColor: colors.blue[100],
+                    },
+                  },
+                }}
+                selected={sidebarPage.url === location.pathname}
+                component={sidebarPage.external ? MaterialLink : Link}
+                to={sidebarPage.url}
+                target={sidebarPage.external ? '_blank' : ''}
               >
-                <ListItemButton
-                  sx={{
-                    justifyContent: 'center',
-                    px: 2.5,
-                  }}
-                  selected={sidebarPage.url === location.pathname}
-                  component={sidebarPage.external ? MaterialLink : Link}
-                  to={sidebarPage.url}
-                  target={sidebarPage.external ? '_blank' : ''}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 0,
-                      mr: 1,
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {sidebarPage.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={sidebarPage.label} />
-
-                  {sidebarPage.external && (
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 0,
-                        mr: 1,
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <LaunchIcon color="inherit" />
-                    </ListItemIcon>
-                  )}
-                </ListItemButton>
-              </ListItem>
+                <Typography>{sidebarPage.label}</Typography>
+              </ListItemButton>
             ))}
           </Fragment>
         ))}
       </List>
-    </MuiDrawer>
+    </Drawer>
   );
 };

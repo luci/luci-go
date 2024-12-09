@@ -106,8 +106,11 @@ export const theme = createTheme(baseTheme, {
             },
             '.MuiChip-deleteIcon': {
               color: colors.blue[600],
+              borderRadius: '50%',
               ':hover, :focus': {
                 color: colors.blue[600],
+                backgroundColor: colors.blue[200],
+                transition: '0.3s',
               },
             },
           },
