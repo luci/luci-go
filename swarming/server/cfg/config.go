@@ -244,6 +244,67 @@ func (cfg *Config) BotGroup(botID string) *BotGroup {
 	return cfg.botGroups.defaultGroup
 }
 
+// RBEConfig returns RBE-related configuration that applies to the given bot.
+//
+// It checks per-pool RBE configs for all pools the bot belongs to and "merges"
+// them into the final config.
+func (cfg *Config) RBEConfig(botID string) RBEConfig {
+	// For each known pool (usually just one) calculate the mode and the RBE
+	// instance the bot should be using there.
+	pools := cfg.BotGroup(botID).Pools()
+	perPool := make([]RBEConfig, 0, len(pools))
+	for _, pool := range pools {
+		if poolCfg := cfg.Pool(pool); poolCfg != nil {
+			perPool = append(perPool, poolCfg.rbeConfig(botID))
+		}
+	}
+
+	// If the bot is only in unknown pools, assume it is a Swarming bot (since we
+	// don't know an RBE instance name to use for it). Such bot will not be able
+	// to poll for tasks anyway.
+	if len(perPool) == 0 {
+		return RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}
+	}
+
+	// If all pools agree on a single mode, use it whatever it is. Otherwise use
+	// HYBRID, since it is compatible with all modes.
+	var mode configpb.Pool_RBEMigration_BotModeAllocation_BotMode
+	for i, poolCfg := range perPool {
+		if i == 0 {
+			mode = poolCfg.Mode
+		} else if poolCfg.Mode != mode {
+			mode = configpb.Pool_RBEMigration_BotModeAllocation_HYBRID
+			break
+		}
+	}
+
+	// Pure Swarming bots have no RBE instance.
+	if mode == configpb.Pool_RBEMigration_BotModeAllocation_SWARMING {
+		return RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}
+	}
+
+	// RBE pools must be configured to agree on what RBE instance to use. Pick
+	// the first set instance.
+	instance := ""
+	for _, poolCfg := range perPool {
+		if poolCfg.Instance != "" {
+			instance = poolCfg.Instance
+			break
+		}
+	}
+	if instance == "" {
+		panic("no RBE instance set in RBEMigration")
+	}
+	return RBEConfig{
+		Mode:     mode,
+		Instance: instance,
+	}
+}
+
 // RouteToGoPercent returns how much traffic to this route should be handled by
 // the Go server (vs Python server).
 //

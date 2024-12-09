@@ -15,6 +15,7 @@
 package cfg
 
 import (
+	"crypto/sha256"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -39,7 +40,56 @@ type Pool struct {
 	// the caller when they are created.
 	DefaultTaskRealm string
 
+	rbeInstance            string // the RBE instance for tasks in this pool
+	rbeBotsSwarmingPercent int    // percent of bots using Swarming scheduler
+	rbeBotsHybridPercent   int    // percent of bots using both schedulers
+	rbeBotsRBEPercent      int    // percent of bots using RBE scheduler
+
 	// TODO(vadimsh): Implement task templates.
+}
+
+// RBEConfig are RBE-related parameters applied to a bot in a pool.
+type RBEConfig struct {
+	// Mode defines how the bot should be interacting with the RBE.
+	Mode configpb.Pool_RBEMigration_BotModeAllocation_BotMode
+	// Instance is a full RBE instance name to poll tasks from, if any.
+	Instance string
+}
+
+// rbeConfig returns RBE-related configuration for a bot in this pool.
+func (cfg *Pool) rbeConfig(botID string) RBEConfig {
+	if cfg.rbeInstance == "" {
+		return RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}
+	}
+
+	// Get a quasi random integer in range [0; 100) by hashing the bot ID.
+	// Do exactly what the Python code is doing to avoid bots flapping between
+	// modes when migrating Python => Go.
+	sum := sha256.Sum256([]byte(botID))
+	num := float32(sum[0]) + float32(sum[1])*256.0
+	rnd := int(num * 99.9 / (256.0 + 256.0*256.0))
+
+	// Pick the mode depending on what subrange the bot falls into in
+	// [---SWARMING---|---HYBRID---|---RBE---].
+	switch {
+	case rnd < cfg.rbeBotsSwarmingPercent:
+		return RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+			Instance: "", // no RBE instance in Swarming mode
+		}
+	case rnd < cfg.rbeBotsSwarmingPercent+cfg.rbeBotsHybridPercent:
+		return RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+			Instance: cfg.rbeInstance,
+		}
+	default:
+		return RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+			Instance: cfg.rbeInstance,
+		}
+	}
 }
 
 type pools struct {
@@ -77,11 +127,31 @@ func newPoolsConfig(cfg *configpb.PoolsCfg) (*pools, error) {
 
 // newPool processes a single configpb.Pool definition.
 func newPool(pb *configpb.Pool) (*Pool, error) {
-	// TODO(vadimsh): Process TaskDeploymentScheme.
-	return &Pool{
+	poolCfg := &Pool{
 		Realm:            pb.Realm,
 		DefaultTaskRealm: pb.DefaultTaskRealm,
-	}, nil
+	}
+
+	if rbeCfg := pb.RbeMigration; rbeCfg != nil {
+		// The config should have been validated already. Recheck only assumptions
+		// needed for correctness of rbeConfig(...).
+		allocs := map[configpb.Pool_RBEMigration_BotModeAllocation_BotMode]int{}
+		for _, alloc := range rbeCfg.BotModeAllocation {
+			allocs[alloc.Mode] = int(alloc.Percent)
+			if alloc.Percent < 0 {
+				return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+			}
+		}
+		poolCfg.rbeInstance = rbeCfg.RbeInstance
+		poolCfg.rbeBotsSwarmingPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_SWARMING]
+		poolCfg.rbeBotsHybridPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_HYBRID]
+		poolCfg.rbeBotsRBEPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_RBE]
+		if poolCfg.rbeBotsSwarmingPercent+poolCfg.rbeBotsHybridPercent+poolCfg.rbeBotsRBEPercent != 100 {
+			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+		}
+	}
+
+	return poolCfg, nil
 }
 
 // validatePoolsCfg validates pools.cfg, writing errors into `ctx`.
@@ -174,12 +244,17 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			ctx.Exit()
 		}
 
+		if pb.RbeMigration != nil {
+			ctx.Enter("rbe_migration")
+			validateRBEMigration(ctx, pb.RbeMigration)
+			ctx.Exit()
+		}
+
 		// Silently skip remaining fields that are used by the Python implementation
 		// but ignored by the Go implementation:
 		//	ExternalSchedulers: external schedulers not supported in Go.
 		//	EnforcedRealmPermissions: realm permissions are always enforced.
-		//	RbeMigration: RBE is the only supported scheduler.
-		//	SchedulingAlgorithm: RBE doesn't support custom scheduling algorithms.
+		//	SchedulingAlgorithm: only FIFO is supported.
 	}
 
 	// pool
@@ -265,5 +340,46 @@ func validateDeployment(ctx *validation.Context, dpl *configpb.TaskTemplateDeplo
 		ctx.Enter("canary")
 		validateTemplate(ctx, dpl.Canary, false)
 		ctx.Exit()
+	}
+}
+
+func validateRBEMigration(ctx *validation.Context, pb *configpb.Pool_RBEMigration) {
+	if pb.RbeInstance == "" {
+		ctx.Errorf("rbe_instance is required")
+	}
+	if pb.RbeModePercent < 0 || pb.RbeModePercent > 100 {
+		ctx.Errorf("rbe_mode_percent should be in [0; 100]")
+	}
+
+	allocs := map[configpb.Pool_RBEMigration_BotModeAllocation_BotMode]int{}
+	broken := false
+	for i, alloc := range pb.BotModeAllocation {
+		ctx.Enter("bot_mode_allocation #%d", i)
+		if alloc.Mode == configpb.Pool_RBEMigration_BotModeAllocation_UNKNOWN {
+			ctx.Errorf("mode is required")
+			broken = true
+		} else if _, haveIt := allocs[alloc.Mode]; haveIt {
+			ctx.Errorf("allocation for mode %s was already defined", alloc.Mode)
+			broken = true
+		} else {
+			allocs[alloc.Mode] = int(alloc.Percent)
+			if alloc.Percent < 0 || alloc.Percent > 100 {
+				ctx.Errorf("percent should be in [0; 100]")
+				broken = true
+			}
+		}
+		ctx.Exit()
+	}
+
+	if broken {
+		return
+	}
+
+	total := 0
+	for _, percent := range allocs {
+		total += percent
+	}
+	if total != 100 {
+		ctx.Errorf("bot_mode_allocation percents should sum up to 100")
 	}
 }

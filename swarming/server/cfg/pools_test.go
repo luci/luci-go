@@ -92,6 +92,15 @@ var goodPoolsCfg = &configpb.PoolsCfg{
 					CanaryChance: 100,
 				},
 			},
+			RbeMigration: &configpb.Pool_RBEMigration{
+				RbeInstance:    "some-instance",
+				RbeModePercent: 66,
+				BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 5},
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 10},
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 85},
+				},
+			},
 		},
 	},
 }
@@ -233,9 +242,92 @@ func TestPoolsValidation(t *testing.T) {
 					}),
 					err: "(pool #1 (a) / task_template_deployment_inline): name cannot be specified",
 				},
+				// rbe_migration
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration): rbe_instance is required",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance:    "some-instance",
+							RbeModePercent: 101,
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration): rbe_mode_percent should be in [0; 100]",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_UNKNOWN, Percent: 100},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration / bot_mode_allocation #0): mode is required",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 20},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 80},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 10},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration / bot_mode_allocation #2): allocation for mode SWARMING was already defined",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 101},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration / bot_mode_allocation #0): percent should be in [0; 100]",
+				},
+				{
+					cfg: onePool(&configpb.Pool{
+						Name:  []string{"a"},
+						Realm: "test:1",
+						RbeMigration: &configpb.Pool_RBEMigration{
+							RbeInstance: "some-instance",
+							BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 20},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 80},
+								{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 10},
+							},
+						},
+					}),
+					err: "(pool #1 (a) / rbe_migration): bot_mode_allocation percents should sum up to 100",
+				},
 			}
 			for _, cs := range testCases {
-				assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "pools.cfg" ` + cs.err}))
+				assert.Loosely(t, call(cs.cfg), should.Match([]string{`in "pools.cfg" ` + cs.err}))
 			}
 		})
 
@@ -447,9 +539,61 @@ func TestPoolsValidation(t *testing.T) {
 					for i := range tc.err {
 						tc.err[i] = `in "pools.cfg" ` + tc.err[i]
 					}
-					assert.Loosely(t, call(tc.cfg), should.Resemble(tc.err))
+					assert.Loosely(t, call(tc.cfg), should.Match(tc.err))
 				})
 			}
 		})
+	})
+}
+
+func TestPoolRBEConfig(t *testing.T) {
+	t.Parallel()
+
+	call := func(botID string, cfg *configpb.Pool_RBEMigration) RBEConfig {
+		pool, err := newPool(&configpb.Pool{
+			Name:         []string{"pool"},
+			RbeMigration: cfg,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return pool.rbeConfig(botID)
+	}
+
+	t.Run("edge cases", func(t *testing.T) {
+		assert.That(t, call("bot", nil), should.Equal(RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}))
+
+		allRBE := call("bot", &configpb.Pool_RBEMigration{
+			RbeInstance: "some-instance",
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 100},
+			},
+		})
+		assert.That(t, allRBE, should.Equal(RBEConfig{
+			Instance: "some-instance",
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+		}))
+	})
+
+	t.Run("distribution", func(t *testing.T) {
+		perMode := map[configpb.Pool_RBEMigration_BotModeAllocation_BotMode]int{}
+		for i := range 1000 {
+			cfg := call(fmt.Sprintf("bot-%d", i), &configpb.Pool_RBEMigration{
+				RbeInstance: "some-instance",
+				BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING, Percent: 20},
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 10},
+					{Mode: configpb.Pool_RBEMigration_BotModeAllocation_RBE, Percent: 70},
+				},
+			})
+			perMode[cfg.Mode] += 1
+		}
+		assert.That(t, perMode, should.Match(map[configpb.Pool_RBEMigration_BotModeAllocation_BotMode]int{
+			configpb.Pool_RBEMigration_BotModeAllocation_SWARMING: 216,
+			configpb.Pool_RBEMigration_BotModeAllocation_HYBRID:   108,
+			configpb.Pool_RBEMigration_BotModeAllocation_RBE:      676,
+		}))
 	})
 }

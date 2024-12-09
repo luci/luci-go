@@ -380,6 +380,96 @@ func TestBuildQueriableConfig(t *testing.T) {
 	})
 }
 
+func TestBotRBEConfig(t *testing.T) {
+	t.Parallel()
+
+	build := func(dims []string, pools []*configpb.Pool) *Config {
+		cfg, err := buildQueriableConfig(context.Background(), &configBundle{
+			Bundle: &internalcfgpb.ConfigBundle{
+				Settings: withDefaultSettings(&configpb.SettingsCfg{}),
+				Bots: &configpb.BotsCfg{
+					BotGroup: []*configpb.BotGroup{
+						{
+							BotId:      []string{"bot"},
+							Dimensions: dims,
+						},
+					},
+				},
+				Pools: &configpb.PoolsCfg{
+					Pool: pools,
+				},
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+		return cfg
+	}
+
+	ftt.Run("Unknown pools", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:unknown", "pool:another-unknown"}, nil)
+		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}))
+	})
+
+	ftt.Run("Pure RBE mode", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:a", "pool:b"}, []*configpb.Pool{
+			{
+				Name: []string{"a", "b"},
+				RbeMigration: &configpb.Pool_RBEMigration{
+					RbeInstance: "some-instance",
+					BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+						{
+							Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+							Percent: 100,
+						},
+					},
+				},
+			},
+		})
+		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+			Instance: "some-instance",
+		}))
+	})
+
+	ftt.Run("Pure Swarming mode", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:a", "pool:b"}, []*configpb.Pool{
+			{
+				Name: []string{"a", "b"},
+			},
+		})
+		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
+		}))
+	})
+
+	ftt.Run("Hybrid RBE mode", t, func(t *ftt.Test) {
+		cfg := build([]string{"pool:a", "pool:b"}, []*configpb.Pool{
+			{
+				Name: []string{"a"},
+			},
+			{
+				Name: []string{"b"},
+				RbeMigration: &configpb.Pool_RBEMigration{
+					RbeInstance: "some-instance",
+					BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+						{
+							Mode:    configpb.Pool_RBEMigration_BotModeAllocation_RBE,
+							Percent: 100,
+						},
+					},
+				},
+			},
+		})
+		assert.That(t, cfg.RBEConfig("bot"), should.Equal(RBEConfig{
+			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
+			Instance: "some-instance",
+		}))
+	})
+}
+
 func testCtx() context.Context {
 	ctx := context.Background()
 	ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
