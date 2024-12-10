@@ -16,7 +16,10 @@ package cfg
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"strings"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -160,20 +163,50 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 
 	// task_template
 	ctx.Enter("task_template")
-	tmpMap := make(map[string]*configpb.TaskTemplate, len(cfg.TaskTemplate))
 	for i, tmp := range cfg.TaskTemplate {
 		ctx.Enter("#%d (%s)", i+1, tmp.Name)
 		if tmp.Name == "" {
 			ctx.Errorf("name is empty")
 		}
-		if _, ok := tmpMap[tmp.Name]; ok {
-			ctx.Errorf("template %q was already declared", tmp.Name)
-		}
 		validateTemplate(ctx, tmp, true)
-		tmpMap[tmp.Name] = tmp
 		ctx.Exit()
 	}
-	ctx.Exit()
+
+	// reslove the templates with their inclusions.
+	ctx.Enter("resolve inclusion")
+
+	// Should only flatten the templates if they pass the preliminary validation.
+	shouldFlatten := !ctx.HasPendingErrors()
+
+	var graph *inclusionGraph
+	var merr errors.MultiError
+	if shouldFlatten {
+		graph, merr = newInclusionGraph(cfg.TaskTemplate)
+		if len(merr) > 0 {
+			for _, err := range merr {
+				ctx.Error(err)
+			}
+			shouldFlatten = false
+		} else {
+			if err := graph.flattenTaskTemplates(); err != nil {
+				ctx.Error(err)
+				shouldFlatten = false
+			}
+		}
+	}
+
+	if shouldFlatten {
+		// The templates are flattened.
+		// Validate them again to check if any conflicts are brought in
+		// by the included templates.
+		for i, tmp := range cfg.TaskTemplate {
+			ctx.Enter("#%d (%s)", i+1, tmp.Name)
+			validateTemplate(ctx, graph.flattened[tmp.Name].tmp, true)
+			ctx.Exit()
+		}
+	}
+	ctx.Exit() // exit "resolve inclusion"
+	ctx.Exit() // exit task_template
 
 	// task_template_deployment
 	ctx.Enter("task_template_deployment")
@@ -186,7 +219,7 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		if _, ok := dplMap[dpl.Name]; ok {
 			ctx.Errorf("deployment %q was already declared", dpl.Name)
 		}
-		validateDeployment(ctx, dpl)
+		validateDeployment(ctx, dpl, graph, shouldFlatten)
 		dplMap[dpl.Name] = dpl
 		ctx.Exit()
 	}
@@ -240,7 +273,7 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 			if dpl.Name != "" {
 				ctx.Errorf("name cannot be specified")
 			}
-			validateDeployment(ctx, dpl)
+			validateDeployment(ctx, dpl, graph, shouldFlatten)
 			ctx.Exit()
 		}
 
@@ -265,80 +298,6 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		}
 		ctx.Enter("pool #%d (%s)", idx+1, title)
 		validatePool(pool)
-		ctx.Exit()
-	}
-}
-
-func validateTemplate(ctx *validation.Context, tmp *configpb.TaskTemplate, hasName bool) {
-	if !hasName && tmp.Name != "" {
-		ctx.Errorf("name cannot be specified")
-	}
-
-	ctx.Enter("cache")
-	cachesPathSet, merr := validate.Caches(tmp.Cache)
-	for _, err := range merr {
-		ctx.Error(err)
-	}
-	ctx.Exit()
-
-	ctx.Enter("cipd_package")
-	merr = validate.CIPDPackages(tmp.CipdPackage, false, cachesPathSet)
-	for _, err := range merr {
-		ctx.Error(err)
-	}
-	ctx.Exit()
-
-	ctx.Enter("env")
-	validateEnv(ctx, tmp.Env)
-	ctx.Exit()
-
-	// TODO(chanli): validate inclusion
-}
-
-func validateEnv(ctx *validation.Context, envs []*configpb.TaskTemplate_Env) {
-	if len(envs) > validate.MaxEnvVarCount {
-		ctx.Errorf("can have up to %d env", validate.MaxEnvVarCount)
-	}
-
-	envKeys := stringset.New(len(envs))
-	for i, env := range envs {
-		ctx.Enter("#%d %s", i+1, env.Var)
-		if env.Var == "" {
-			ctx.Errorf("var is empty")
-		}
-		if !envKeys.Add(env.Var) {
-			ctx.Errorf("env %q was already declared", env.Var)
-		}
-		if env.Value != "" {
-			if err := validate.Length(env.Value, validate.MaxEnvValueLength); err != nil {
-				ctx.Errorf("value: %s", err)
-			}
-		}
-		for _, prefix := range env.Prefix {
-			if err := validate.Path(prefix, validate.MaxEnvValueLength); err != nil {
-				ctx.Errorf("prefix: %s", err)
-			}
-		}
-		ctx.Exit()
-	}
-}
-
-func validateDeployment(ctx *validation.Context, dpl *configpb.TaskTemplateDeployment) {
-	if dpl.CanaryChance < 0 || dpl.CanaryChance > 9999 {
-		ctx.Errorf("canary_chance out of range [0,9999]")
-	}
-	if dpl.CanaryChance > 0 && dpl.Canary == nil {
-		ctx.Errorf("canary_chance specified without a canary")
-	}
-
-	if dpl.Prod != nil {
-		ctx.Enter("prod")
-		validateTemplate(ctx, dpl.Prod, false)
-		ctx.Exit()
-	}
-	if dpl.Canary != nil {
-		ctx.Enter("canary")
-		validateTemplate(ctx, dpl.Canary, false)
 		ctx.Exit()
 	}
 }
@@ -382,4 +341,347 @@ func validateRBEMigration(ctx *validation.Context, pb *configpb.Pool_RBEMigratio
 	if total != 100 {
 		ctx.Errorf("bot_mode_allocation percents should sum up to 100")
 	}
+}
+
+func validateTemplate(ctx *validation.Context, tmp *configpb.TaskTemplate, hasName bool) {
+	if !hasName && tmp.Name != "" {
+		ctx.Errorf("name cannot be specified")
+	}
+
+	ctx.Enter("cache")
+	cachesPathSet, merr := validate.Caches(tmp.Cache)
+	for _, err := range merr {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("cipd_package")
+	merr = validate.CIPDPackages(tmp.CipdPackage, false, cachesPathSet)
+	for _, err := range merr {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("env")
+	validateEnv(ctx, tmp.Env)
+	ctx.Exit()
+}
+
+func validateEnv(ctx *validation.Context, envs []*configpb.TaskTemplate_Env) {
+	if len(envs) > validate.MaxEnvVarCount {
+		ctx.Errorf("can have up to %d env", validate.MaxEnvVarCount)
+	}
+
+	envKeys := stringset.New(len(envs))
+	for i, env := range envs {
+		ctx.Enter("#%d %s", i+1, env.Var)
+		if env.Var == "" {
+			ctx.Errorf("var is empty")
+		}
+		if !envKeys.Add(env.Var) {
+			ctx.Errorf("env %q was already declared", env.Var)
+		}
+		if env.Value != "" {
+			if err := validate.Length(env.Value, validate.MaxEnvValueLength); err != nil {
+				ctx.Errorf("value: %s", err)
+			}
+		}
+		for _, prefix := range env.Prefix {
+			if err := validate.Path(prefix, validate.MaxEnvValueLength); err != nil {
+				ctx.Errorf("prefix: %s", err)
+			}
+		}
+		ctx.Exit()
+	}
+}
+
+type templateResolvement struct {
+	tmp      *configpb.TaskTemplate
+	resolved bool
+}
+type inclusionGraph struct {
+	// A map of flattened templates. For each template:
+	// * Include contains the full transitively included templates, including self
+	// * Other fields have been fully resloved by applying the fields depth-first
+	//  then upwards.
+	flattened map[string]*templateResolvement
+
+	// A map of the original task templates from pools config, to help calculate
+	// the transitively inclusions and flatten the templates.
+	original map[string]*configpb.TaskTemplate
+}
+
+// newInclusionGraph builds the graph, checking there are no duplicate
+// nodes and no dangling edges.
+func newInclusionGraph(tmps []*configpb.TaskTemplate) (*inclusionGraph, errors.MultiError) {
+	graph := &inclusionGraph{
+		flattened: make(map[string]*templateResolvement, len(tmps)),
+		original:  make(map[string]*configpb.TaskTemplate, len(tmps)),
+	}
+
+	var merr errors.MultiError
+	for i, tmp := range tmps {
+		if tmp.Name == "" {
+			merr.MaybeAdd(errors.Reason("template %d: name is empty", i).Err())
+			continue
+		}
+		if _, ok := graph.original[tmp.Name]; ok {
+			merr.MaybeAdd(errors.Reason("template %q was already declared", tmp.Name).Err())
+			continue
+		}
+		graph.original[tmp.Name] = tmp
+	}
+
+	if len(merr) != 0 {
+		return nil, merr
+	}
+
+	for _, tmp := range tmps {
+		_, err := graph.includes(tmp.Name, stringset.New(len(tmps)))
+		if err != nil {
+			merr.MaybeAdd(err)
+			return nil, merr
+		}
+	}
+
+	return graph, nil
+}
+
+// includes returns all task templates transitively included by
+// `root` in order of their inclusion "deepness". The returned list
+// always starts with `root` itself.
+//
+// Also add a node for root in g.flattened to keep the inclusion list if there
+// is not one yet.
+//
+// Returns an error if this part of the graph has a cycle or `root`
+// is an unknown node.
+func (g *inclusionGraph) includes(root string, visited stringset.Set) ([]string, error) {
+	if node, ok := g.flattened[root]; ok {
+		return node.tmp.Include, nil
+	}
+
+	if !visited.Add(root) {
+		return nil, errors.Reason("encounter inclusion cycle for template %q", root).Err()
+	}
+
+	unflattened, ok := g.original[root]
+	if !ok {
+		return nil, errors.Reason("unknown template %q", root).Err()
+	}
+
+	allIncs := []string{root}
+	incSet := stringset.NewFromSlice(allIncs...)
+	for _, sub := range unflattened.Include {
+		if sub == root {
+			return nil, errors.Reason("template %q includes self", root).Err()
+		}
+
+		subIncludes, err := g.includes(sub, visited)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, subInc := range subIncludes {
+			if !incSet.Add(subInc) {
+				return nil, errors.Reason("template %q already includes %q", root, subInc).Err()
+			}
+			allIncs = append(allIncs, subInc)
+		}
+
+	}
+
+	g.flattened[root] = &templateResolvement{
+		tmp: &configpb.TaskTemplate{Include: allIncs},
+	}
+
+	return allIncs, nil
+}
+
+func (g *inclusionGraph) flattenTaskTemplates() error {
+	for name := range g.original {
+		_, err := g.flattenTaskTemplate(name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// flattenTaskTemplate returns a flattened TaskTemplate for root.
+//
+// If g.flattened[root] has not resolved, this function will also update
+// g.flattened[root] and resolve it.
+func (g *inclusionGraph) flattenTaskTemplate(root string) (*templateResolvement, error) {
+	tmp, ok := g.flattened[root]
+	if !ok {
+		return nil, errors.Reason("unknown template %q", root).Err()
+	}
+
+	// Directly reture the already resolved template.
+	if tmp.resolved {
+		return tmp, nil
+	}
+
+	// Root needs to resolve, do it now.
+	includes := tmp.tmp.Include
+	originalTmp := g.original[root]
+	if originalTmp == nil {
+		panic(fmt.Sprintf("unknown template %q", root))
+	}
+
+	if len(includes) == 0 {
+		panic(fmt.Sprintf("template %q should at least have itself in transitive inclusions", root))
+	}
+
+	if includes[0] != root {
+		panic(fmt.Sprintf("templates %q includes %q without self", root, includes))
+	}
+
+	// Flatten.
+	flattened := proto.Clone(originalTmp).(*configpb.TaskTemplate)
+	for i := 1; i < len(includes); i++ {
+		inc := includes[i]
+
+		sub, err := g.flattenTaskTemplate(inc)
+		if err != nil {
+			return nil, err
+		}
+
+		flattened, err = mergeTaskTemplate(flattened, sub.tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	tmp.tmp = flattened
+	tmp.tmp.Include = includes
+	tmp.resolved = true
+	return tmp, nil
+}
+
+// mergeTaskTemplate returns a TaskTemplate with contents merged from base and sub.
+func mergeTaskTemplate(base, sub *configpb.TaskTemplate) (*configpb.TaskTemplate, error) {
+	// When merge, applies sub fields firstly, then apply the ones from base.
+	// So effectively the newTmp should have all fields from base, plus the ones
+	// that are only from sub.
+	newTmp := proto.Clone(base).(*configpb.TaskTemplate)
+
+	// cache
+	baseCacheMap := make(map[string]*configpb.TaskTemplate_CacheEntry, len(newTmp.Cache))
+	for _, c := range newTmp.Cache {
+		baseCacheMap[c.Name] = c
+	}
+	for _, sc := range sub.Cache {
+		if _, ok := baseCacheMap[sc.Name]; !ok {
+			newTmp.Cache = append(newTmp.Cache, sc)
+		}
+	}
+
+	// cipd_package
+	type pkgKey struct {
+		pkg  string
+		path string
+	}
+	pk := func(p *configpb.TaskTemplate_CipdPackage) pkgKey {
+		return pkgKey{
+			pkg:  p.Pkg,
+			path: p.Path,
+		}
+	}
+	basePkgMap := make(map[pkgKey]*configpb.TaskTemplate_CipdPackage, len(newTmp.CipdPackage))
+	for _, p := range newTmp.CipdPackage {
+		basePkgMap[pk(p)] = p
+	}
+	for _, sp := range sub.CipdPackage {
+		if _, ok := basePkgMap[pk(sp)]; !ok {
+			newTmp.CipdPackage = append(newTmp.CipdPackage, sp)
+		}
+	}
+
+	// env
+	baseEnvMap := make(map[string]*configpb.TaskTemplate_Env, len(newTmp.Env))
+	for _, e := range newTmp.Env {
+		baseEnvMap[e.Var] = e
+	}
+	for _, e := range sub.Env {
+		if be, ok := baseEnvMap[e.Var]; ok {
+			// append prefix from base, instead of overriding.
+			be.Prefix = append(be.Prefix, e.Prefix...)
+		} else {
+			newTmp.Env = append(newTmp.Env, e)
+		}
+	}
+	return newTmp, nil
+}
+
+func validateDeployment(ctx *validation.Context, dpl *configpb.TaskTemplateDeployment, graph *inclusionGraph, shouldFlatten bool) {
+	if dpl.CanaryChance < 0 || dpl.CanaryChance > 9999 {
+		ctx.Errorf("canary_chance out of range [0,9999]")
+	}
+	if dpl.CanaryChance > 0 && dpl.Canary == nil {
+		ctx.Errorf("canary_chance specified without a canary")
+	}
+
+	// validate the templates in deployment, flatten them before validation if
+	// needed.
+	flattenAndValidate := func(tmp *configpb.TaskTemplate) {
+		if !shouldFlatten {
+			validateTemplate(ctx, tmp, false)
+			return
+		}
+
+		newTmp, err := flattenInlinedTaskTemplate(tmp, graph)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		validateTemplate(ctx, newTmp, false)
+	}
+
+	if dpl.Prod != nil {
+		ctx.Enter("prod")
+		flattenAndValidate(dpl.Prod)
+		ctx.Exit()
+	}
+
+	if dpl.Canary != nil {
+		ctx.Enter("canary")
+		flattenAndValidate(dpl.Canary)
+		ctx.Exit()
+	}
+}
+
+// flattenInlinedTaskTemplate returns a flattened template that is inlined in a deployment.
+func flattenInlinedTaskTemplate(tmp *configpb.TaskTemplate, graph *inclusionGraph) (*configpb.TaskTemplate, error) {
+	if len(tmp.Include) == 0 {
+		return tmp, nil
+	}
+
+	// Check the inclusions to detect unknowns or inclusion diamonds.
+	incSet := stringset.New(len(tmp.Include))
+	for _, inc := range tmp.Include {
+		sub, ok := graph.flattened[inc]
+		if !ok {
+			return nil, errors.Reason("includes unknown template %q", inc).Err()
+		}
+		for _, subInc := range sub.tmp.Include {
+			if !incSet.Add(subInc) {
+				return nil, errors.Reason("template already includes %q", subInc).Err()
+			}
+		}
+
+	}
+
+	// But only need to merge first level already flattened templates included
+	// in tmp.Include.
+	newTmp := proto.Clone(tmp).(*configpb.TaskTemplate)
+	var err error
+	for _, inc := range tmp.Include {
+		sub := graph.flattened[inc]
+		newTmp, err = mergeTaskTemplate(newTmp, sub.tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newTmp, nil
 }
