@@ -35,17 +35,18 @@ export function RevisionRange({
 
   if (precedingCommit) {
     const repoUrl = getGitilesRepoURL(blamelistPin);
-    const revisionRange =
-      precedingCommit.id.substring(0, 8) + '..' + blamelistPin.id!.slice(0, 8);
     return (
       <>
         This build included {commitCount} new revisions from{' '}
         <Link
-          href={`${repoUrl}/+log/${revisionRange}`}
+          // Use the full commit hash in the URL to avoid invalid URL caused by
+          // commit hash collision.
+          href={`${repoUrl}/+log/${precedingCommit.id}..${blamelistPin.id}`}
           target="_blank"
           rel="noreferrer"
         >
-          {revisionRange}
+          {/* Use short commit hash in label to make it more compact. */}
+          {precedingCommit.id.substring(0, 8)}..{blamelistPin.id.slice(0, 8)}
         </Link>
       </>
     );
