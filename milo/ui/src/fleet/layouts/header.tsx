@@ -16,17 +16,8 @@ import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import {
-  Avatar,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Avatar, Button, IconButton, Tooltip, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
@@ -140,42 +131,41 @@ function LoggedInAvatar({
   email?: string;
   picture?: string;
 }) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const navigate = useNavigate();
-
   return (
     <>
       <Avatar
+        className="avatar"
         sx={{
-          cursor: 'pointer',
           width: 32,
           height: 32,
         }}
         alt={email}
         src={picture}
-        onClick={(e) => setAnchorEl(e.currentTarget)}
         aria-label="avatar"
       />
-      <Menu
-        anchorEl={anchorEl}
-        open={!!anchorEl}
-        onClose={() => setAnchorEl(null)}
-        MenuListProps={{
-          sx: { padding: 0 },
-        }}
-      >
-        <MenuItem
-          sx={{ padding: '0 20px 0 15px ', height: 48 }}
-          onClick={() =>
-            navigate(
-              getLogoutUrl(location.pathname + location.search + location.hash),
-            )
-          }
+      <Tooltip title="Logout">
+        <IconButton
+          className="logout"
+          aria-label="Logout button"
+          color="inherit"
+          href={getLogoutUrl(
+            location.pathname + location.search + location.hash,
+          )}
+          sx={{
+            color: colors.grey[700],
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
-          <LogoutIcon sx={{ marginRight: '10px' }} />
-          <Typography>Logout</Typography>
-        </MenuItem>
-      </Menu>
+          <LogoutIcon
+            sx={{
+              width: 20,
+              height: 20,
+            }}
+          />
+        </IconButton>
+      </Tooltip>
     </>
   );
 }
