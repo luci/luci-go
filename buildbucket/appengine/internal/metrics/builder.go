@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/buildbucket/appengine/model"
@@ -210,6 +211,7 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 // reportBuildCount computes and reports # of builds with SCHEDULED and STARTED.
 func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
 	var nScheduled, nStarted int64
+	agesScheduled := distribution.New(V2.Age.Bucketer())
 	// TODO(b/357664566): Make builder a dedicated field in Build model and use
 	// it instead of tags in the query.
 	q := datastore.NewQuery(model.BuildKind).
@@ -217,10 +219,24 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 		Eq("experimental", false).
 		Eq("tags", "builder:"+builder)
 	eg, eCtx := errgroup.WithContext(ctx)
+
 	eg.Go(func() (err error) {
-		nScheduled, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_SCHEDULED))
+		now := clock.Now(ctx)
+		err = datastore.RunBatch(
+			eCtx, 64, q.Eq("status_v2", pb.Status_SCHEDULED),
+			func(build *model.Build) error {
+				// Process scheduled time of pending builds
+				// and add to V2.Age metric
+				age := now.Sub(build.Proto.CreateTime.AsTime()).Seconds()
+				agesScheduled.Add(age)
+
+				nScheduled++
+				return nil
+			},
+		)
 		return
 	})
+
 	eg.Go(func() (err error) {
 		nStarted, err = datastore.Count(eCtx, q.Eq("status_v2", pb.Status_STARTED))
 		return
@@ -254,6 +270,7 @@ func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builde
 	V1.BuildCount.Set(ctx, nStarted, legacyBucket, builder, pb.Status_name[int32(pb.Status_STARTED)])
 	V2.BuildCount.Set(ctx, nScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
 	V2.BuildCount.Set(ctx, nStarted, pb.Status_name[int32(pb.Status_STARTED)])
+	V2.Age.Set(ctx, agesScheduled, pb.Status_name[int32(pb.Status_SCHEDULED)])
 
 	reportCustomBuilderCounts(ctx, cms, base, cmNames, statuses, cmCounts)
 	return nil

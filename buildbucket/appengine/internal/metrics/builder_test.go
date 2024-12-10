@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/common/tsmon"
+	"go.chromium.org/luci/common/tsmon/distribution"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -260,6 +262,94 @@ func TestReportBuilderMetrics(t *testing.T) {
 					// V2 doesn't care. It always reports the bucket name as it is.
 					assert.Loosely(t, store.Get(target("b1"), V2.MaxAgeScheduled, nil), should.NotBeNilInterface)
 				})
+			})
+		})
+
+		t.Run("report BuildCount", func(t *ftt.Test) {
+			t.Run("successful case with pending builds", func(t *ftt.Test) {
+				assert.Loosely(t, createBuilder("b1"), should.BeNil)
+
+				ts := clock.Now()
+				builds := []*model.Build{}
+
+				// Generate pendingTime distribution
+				// The calcuations can be found below
+				for i := 0; i < 6; i++ {
+					pendingTime := -(math.Pow(2, float64(i)))
+
+					B := func(status pb.Status, changedAt time.Time) *model.Build {
+						return &model.Build{
+							Proto: &pb.Build{
+								Builder: &pb.BuilderID{
+									Project: prj,
+									Bucket:  bkt,
+									Builder: "b1",
+								}, Status: status,
+								UpdateTime: timestamppb.New(changedAt),
+								CreateTime: timestamppb.New(ts.Add(time.Duration(pendingTime) * time.Minute)),
+							},
+							Tags: []string{"builder:b1"},
+						}
+					}
+
+					builds = append(builds, B(pb.Status_SCHEDULED, ts.Add(-2*time.Minute)))
+					builds = append(builds, B(pb.Status_STARTED, ts.Add(-1*time.Minute)))
+				}
+
+				count := func(s string) any {
+					return store.Get(target("b1"), V2.BuildCount, []any{s})
+				}
+
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+				assert.Loosely(t, count("SCHEDULED"), should.Equal(6))
+				assert.Loosely(t, count("STARTED"), should.Equal(6))
+				// The pending times inserted by this test case would be
+				// {1, 2, 4, 8, 16, 32} * 60 = {60, 120, 240, 320, 960, 1920}
+				// Sum = 3780, Count = 6
+				age := store.Get(target("b1"), V2.Age, []any{"SCHEDULED"})
+				assert.Loosely(t, age.(*distribution.Distribution).Sum(), should.Equal(3780.00))
+				assert.Loosely(t, age.(*distribution.Distribution).Count(), should.Equal(6))
+			})
+			t.Run("no builds in pending", func(t *ftt.Test) {
+				assert.Loosely(t, createBuilder("b1"), should.BeNil)
+
+				ts := clock.Now()
+				builds := []*model.Build{}
+
+				// Generate pendingTime distribution
+				// The calcuations can be found below
+				for i := 0; i < 6; i++ {
+					pendingTime := -(math.Pow(2, float64(i)))
+
+					B := func(status pb.Status, changedAt time.Time) *model.Build {
+						return &model.Build{
+							Proto: &pb.Build{
+								Builder: &pb.BuilderID{
+									Project: prj,
+									Bucket:  bkt,
+									Builder: "b1",
+								}, Status: status,
+								UpdateTime: timestamppb.New(changedAt),
+								CreateTime: timestamppb.New(ts.Add(time.Duration(pendingTime) * time.Minute)),
+							},
+							Tags: []string{"builder:b1"},
+						}
+					}
+
+					builds = append(builds, B(pb.Status_STARTED, ts.Add(-2*time.Minute)))
+				}
+				count := func(s string) any {
+					return store.Get(target("b1"), V2.BuildCount, []any{s})
+				}
+
+				assert.Loosely(t, datastore.Put(ctx, builds), should.BeNil)
+				assert.Loosely(t, ReportBuilderMetrics(ctx), should.BeNil)
+				assert.Loosely(t, count("SCHEDULED"), should.Equal(0))
+				assert.Loosely(t, count("STARTED"), should.Equal(6))
+				age := store.Get(target("b1"), V2.Age, []any{"SCHEDULED"})
+				assert.Loosely(t, age.(*distribution.Distribution).Sum(), should.Equal(0.0))
+				assert.Loosely(t, age.(*distribution.Distribution).Count(), should.Equal(0))
 			})
 		})
 
