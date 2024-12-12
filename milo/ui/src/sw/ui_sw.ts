@@ -18,14 +18,12 @@ import 'virtual:ui_version.js';
 import 'virtual:settings.js';
 import 'virtual:override-milo-host';
 
-import {
-  cleanupOutdatedCaches,
-  createHandlerBoundToURL,
-  precacheAndRoute,
-} from 'workbox-precaching';
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
 import { Prefetcher } from '@/common/service_workers/prefetch';
+
+import { createHandlerBoundToURL } from './stale_while_revalidate';
 
 // Tell TSC that this is a ServiceWorker script.
 declare const self: ServiceWorkerGlobalScope;
@@ -98,13 +96,33 @@ self.addEventListener('fetch', async (e) => {
   });
 
   cleanupOutdatedCaches();
-  precacheAndRoute(self.__WB_MANIFEST);
+  precacheAndRoute(self.__WB_MANIFEST, {
+    // Let NavigationRoute handler handles /ui/ route so our
+    // stale-while-revalidating logic works.
+    //
+    // Use type casting because the type declaration is invalid. `null` should
+    // be accepted as a valid value here.
+    // See https://developer.chrome.com/docs/workbox/modules/workbox-precaching#directory_index
+    directoryIndex: null as unknown as undefined,
+  });
+
   registerRoute(
-    new NavigationRoute(createHandlerBoundToURL('/ui/index.html'), {
-      // Only handle defined routes so when the user visits a newly added route,
-      // the service worker won't serve an old cache, causing the user to see a
-      // 404 page until the new version is activated.
-      allowlist: [new RegExp(DEFINED_ROUTES_REGEXP, 'i')],
-    }),
+    new NavigationRoute(
+      createHandlerBoundToURL('/ui/index.html', {
+        // Do not serve cache if the service worker is more than one week old.
+        // This ensures that any version we deployed to prod will be purged
+        // after one week. Without this, any version can be cached effectively
+        // indefinitely because purging that version requires each user to visit
+        // LUCI UI (on each hosted domain) at least once, and the first visit
+        // since the last update still uses the old version.
+        staleWhileRevalidate: 7 * 24 * 60 * 60 * 1000,
+      }),
+      {
+        // Only handle defined routes so when the user visits a newly added
+        // route, the service worker won't serve an old cache, causing the user
+        // to see a 404 page until the new version is activated.
+        allowlist: [new RegExp(DEFINED_ROUTES_REGEXP, 'i')],
+      },
+    ),
   );
 }

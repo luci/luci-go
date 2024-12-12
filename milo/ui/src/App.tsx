@@ -48,8 +48,8 @@ import { routes } from '@/core/routes';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
-import { parseReleaseNotes } from './core/components/release_notes/common';
 import { FeatureFlagsProvider } from './common/feature_flags/provider';
+import { parseReleaseNotes } from './core/components/release_notes/common';
 import { useIsDevEnv } from './generic_libs/hooks/is_dev_env';
 import { SingletonStoreProvider } from './generic_libs/hooks/singleton';
 
