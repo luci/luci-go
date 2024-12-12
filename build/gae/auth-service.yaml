@@ -15,6 +15,9 @@ build:
   - go_gae_bundle: ${inputsdir}/services/frontend/service-defaultv2.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/services/frontend
+  - go_gae_bundle: ${inputsdir}/services/frontend/app.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/services/default
   - go_gae_bundle: ${inputsdir}/services/backend/service-backendv2.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/services/backend
