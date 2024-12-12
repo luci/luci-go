@@ -66,6 +66,7 @@ luci_gae_vars:
     BUGANIZER_SELF_EMAIL: email@google.com
     SERVICE_ACCOUNT: luci-analysis-dev-service@luci-analysis-dev.iam.gserviceaccount.com
     PROFILING_PROBABILITY: "0.25"
+    UI_BASE_URL: "luci-milo-dev.appspot.com/ui/tests"
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
 handlers:
@@ -114,3 +115,4 @@ entrypoint: >
   -buganizer-self-email=${BUGANIZER_SELF_EMAIL}
   -buganizer-test-mode=${BUGANIZER_TEST_MODE}
   -profiling-probability=${PROFILING_PROBABILITY}
+  -ui-base-url=${UI_BASE_URL}
