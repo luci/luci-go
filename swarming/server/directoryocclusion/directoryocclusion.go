@@ -21,8 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	// "golang.org/x/exp/maps"
-
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 )

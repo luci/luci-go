@@ -19,12 +19,12 @@ import (
 	"strings"
 	"testing"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/directoryocclusion"
 )
 
 func TestDimensionKey(t *testing.T) {
@@ -254,7 +254,7 @@ func TestCaches(t *testing.T) {
 			for i := 0; i < maxCacheCount+1; i++ {
 				caches = append(caches, cache)
 			}
-			_, err := Caches(caches)
+			_, err := Caches(caches, "task_cache")
 			assert.That(t, err.AsError(), should.ErrLike(fmt.Sprintf("can have up to %d caches", maxCacheCount)))
 		})
 
@@ -274,9 +274,10 @@ func TestCaches(t *testing.T) {
 						caches := []*apipb.CacheEntry{
 							{
 								Name: cs.name,
+								Path: "path",
 							},
 						}
-						_, err := Caches(caches)
+						_, err := Caches(caches, "task_cache")
 						assert.Loosely(t, err.AsError(), should.ErrLike(cs.err))
 					})
 				}
@@ -292,7 +293,7 @@ func TestCaches(t *testing.T) {
 						Path: "path",
 					},
 				}
-				_, err := Caches(caches)
+				_, err := Caches(caches, "task_cache")
 				assert.That(t, err.AsError(), should.ErrLike("same cache name cannot be specified twice"))
 			})
 		})
@@ -308,8 +309,8 @@ func TestCaches(t *testing.T) {
 						Path: "a/b",
 					},
 				}
-				_, err := Caches(caches)
-				assert.That(t, err.AsError(), should.ErrLike("same cache path cannot be specified twice"))
+				_, err := Caches(caches, "task_cache")
+				assert.That(t, err.AsError(), should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name1[] and task_cache:name2[]`))
 			})
 		})
 	})
@@ -324,7 +325,7 @@ func TestCIPDPackages(t *testing.T) {
 			for i := 0; i < maxCIPDPackageCount+1; i++ {
 				pkgs = append(pkgs, &apipb.CipdPackage{})
 			}
-			err := CIPDPackages(pkgs, false, stringset.Set{})
+			err := CIPDPackages(pkgs, false, directoryocclusion.NewChecker(""), "task_cipd_packages")
 			assert.That(t, err.AsError(), should.ErrLike("can have up to 64 packages"))
 		})
 		t.Run("duplicate", func(t *ftt.Test) {
@@ -340,7 +341,7 @@ func TestCIPDPackages(t *testing.T) {
 					Path:        "a/b",
 				},
 			}
-			err := CIPDPackages(pkgs, false, stringset.Set{})
+			err := CIPDPackages(pkgs, false, directoryocclusion.NewChecker(""), "task_cipd_packages")
 			assert.That(t, err.AsError(), should.ErrLike("specified more than once"))
 		})
 		t.Run("no_path", func(t *ftt.Test) {
@@ -350,7 +351,7 @@ func TestCIPDPackages(t *testing.T) {
 					Version:     "version",
 				},
 			}
-			err := CIPDPackages(pkgs, false, stringset.Set{})
+			err := CIPDPackages(pkgs, false, directoryocclusion.NewChecker(""), "task_cipd_packages")
 			assert.That(t, err.AsError(), should.ErrLike("path: cannot be empty"))
 		})
 		t.Run("cache_path", func(t *ftt.Test) {
@@ -361,8 +362,10 @@ func TestCIPDPackages(t *testing.T) {
 					Path:        "a/b",
 				},
 			}
-			err := CIPDPackages(pkgs, false, stringset.NewFromSlice("a/b"))
-			assert.That(t, err.AsError(), should.ErrLike("mapped to a named cache"))
+			doc := directoryocclusion.NewChecker("")
+			doc.Add("a/b", "task_cache:name1", "")
+			err := CIPDPackages(pkgs, false, doc, "task_cipd_packages")
+			assert.That(t, err.AsError(), should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name1[] and task_cipd_packages[some/pkg:version1]`))
 		})
 		t.Run("require_pinned_verison", func(t *ftt.Test) {
 			t.Run("fail", func(t *ftt.Test) {
@@ -373,7 +376,7 @@ func TestCIPDPackages(t *testing.T) {
 						Path:        "a/b",
 					},
 				}
-				err := CIPDPackages(pkgs, true, stringset.Set{})
+				err := CIPDPackages(pkgs, true, directoryocclusion.NewChecker(""), "task_cipd_packages")
 				assert.That(t, err.AsError(), should.ErrLike("cannot have unpinned packages"))
 			})
 			t.Run("pass_tag", func(t *ftt.Test) {
@@ -384,7 +387,7 @@ func TestCIPDPackages(t *testing.T) {
 						Path:        "a/b",
 					},
 				}
-				err := CIPDPackages(pkgs, true, stringset.Set{})
+				err := CIPDPackages(pkgs, true, directoryocclusion.NewChecker(""), "task_cipd_packages")
 				assert.That(t, err.AsError(), should.ErrLike(nil))
 			})
 			t.Run("pass_hash", func(t *ftt.Test) {
@@ -395,7 +398,7 @@ func TestCIPDPackages(t *testing.T) {
 						Path:        "a/b",
 					},
 				}
-				err := CIPDPackages(pkgs, true, stringset.Set{})
+				err := CIPDPackages(pkgs, true, directoryocclusion.NewChecker(""), "task_cipd_packages")
 				assert.That(t, err.AsError(), should.ErrLike(nil))
 			})
 		})

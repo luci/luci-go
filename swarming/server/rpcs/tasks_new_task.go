@@ -35,6 +35,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/directoryocclusion"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
 )
@@ -275,12 +276,12 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	case teeErr(validateOutputs(props.Outputs), &err) != nil:
 		return "", errors.Annotate(err, "outputs").Err()
 	}
-	cachePathSet, merr := validate.Caches(props.GetCaches())
+	doc, merr := validate.Caches(props.GetCaches(), "task_cache")
 	if merr.AsError() != nil {
 		return "", errors.Annotate(merr.AsError(), "caches").Err()
 	}
 
-	if err = validateCipdInput(props.GetCipdInput(), props.GetIdempotent(), cachePathSet); err != nil {
+	if err = validateCipdInput(props.GetCipdInput(), props.GetIdempotent(), doc); err != nil {
 		return "", errors.Annotate(err, "cipd_input").Err()
 	}
 
@@ -385,7 +386,7 @@ func validateOutputs(outputs []string) error {
 	return nil
 }
 
-func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, cachePathSet stringset.Set) error {
+func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, doc *directoryocclusion.Checker) error {
 	var err error
 	switch {
 	case cipdInput == nil:
@@ -395,7 +396,7 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, cachePathSet
 	case teeErr(validateCIPDClientPackage(cipdInput.ClientPackage), &err) != nil:
 		return errors.Annotate(err, "client_package").Err()
 	}
-	merr := validate.CIPDPackages(cipdInput.Packages, idempotent, cachePathSet)
+	merr := validate.CIPDPackages(cipdInput.Packages, idempotent, doc, "task_cipd_package")
 	if merr.AsError() == nil {
 		return nil
 	}

@@ -349,14 +349,14 @@ func validateTemplate(ctx *validation.Context, tmp *configpb.TaskTemplate, hasNa
 	}
 
 	ctx.Enter("cache")
-	cachesPathSet, merr := validate.Caches(tmp.Cache)
+	doc, merr := validate.Caches(tmp.Cache, "task_template_cache")
 	for _, err := range merr {
 		ctx.Error(err)
 	}
 	ctx.Exit()
 
 	ctx.Enter("cipd_package")
-	merr = validate.CIPDPackages(tmp.CipdPackage, false, cachesPathSet)
+	merr = validate.CIPDPackages(tmp.CipdPackage, false, doc, "task_template_cipd_package")
 	for _, err := range merr {
 		ctx.Error(err)
 	}

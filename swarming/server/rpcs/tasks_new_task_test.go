@@ -674,7 +674,7 @@ func TestValidateNewTask(t *testing.T) {
 						},
 					}
 					_, err := validateNewTask(ctx, req)
-					assert.That(t, err, should.ErrLike("same cache path cannot be specified twice"))
+					assert.That(t, err, should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name1[] and task_cache:name2[]`))
 				})
 
 				t.Run("cipd_input", func(t *ftt.Test) {
@@ -758,7 +758,7 @@ func TestValidateNewTask(t *testing.T) {
 								},
 							}
 							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("mapped to a named cache"))
+							assert.That(t, err, should.ErrLike(`"a/b": directory has conflicting owners: task_cache:name[] and task_cipd_package[some/pkg:version1]`))
 						})
 					})
 				})

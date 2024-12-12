@@ -31,6 +31,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/directoryocclusion"
 )
 
 var cipdExpander = template.DefaultExpander()
@@ -143,7 +144,7 @@ type cipdPkg interface {
 }
 
 // CIPDPackages checks a slice of CIPD packages are correct.
-func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, cachePaths stringset.Set) errors.MultiError {
+func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directoryocclusion.Checker, pkgSource string) errors.MultiError {
 	var merr errors.MultiError
 	if len(packages) > maxCIPDPackageCount {
 		merr.MaybeAdd(errors.Reason("can have up to %d packages", maxCIPDPackageCount).Err())
@@ -160,7 +161,7 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, cachePaths str
 			merr.MaybeAdd(errors.Annotate(err, "name").Err())
 		}
 
-		subMerr := validateCIPDPackage(pkgName, pkg, requirePinnedVer, cachePaths)
+		subMerr := validateCIPDPackage(pkgName, pkg, requirePinnedVer, doc, pkgSource)
 		if subMerr.AsError() != nil {
 			for _, err := range subMerr.Unwrap() {
 				merr.MaybeAdd(errors.Annotate(err, "package %d (%s)", i, pkgName).Err())
@@ -174,10 +175,16 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, cachePaths str
 			pkgPathNames[pn] = struct{}{}
 		}
 	}
+
+	docErrs := doc.Conflicts()
+	for _, err := range docErrs {
+		merr.MaybeAdd(err)
+	}
+
 	return merr
 }
 
-func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, cachePaths stringset.Set) errors.MultiError {
+func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, doc *directoryocclusion.Checker, pkgSource string) errors.MultiError {
 	var merr errors.MultiError
 
 	if err := CipdPackageName(pkgName); err != nil {
@@ -192,11 +199,11 @@ func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, cac
 		merr.MaybeAdd(errors.Annotate(err, "path").Err())
 	}
 
-	if cachePaths.Has(pkg.GetPath()) {
-		merr.MaybeAdd(errors.Reason(
-			"path %q is mapped to a named cache and cannot be a target of CIPD installation",
-			pkg.GetPath()).Err())
-	}
+	// All cipd packages are considered compatible in terms of paths: it's
+	// totally legit to install many packages in the same directory.
+	// Thus we set the owner for all cipd packages to pkgSource.
+	doc.Add(pkg.GetPath(), pkgSource, fmt.Sprintf("%s:%s", pkgName, pkg.GetVersion()))
+
 	if requirePinnedVer {
 		if err := validatePinnedInstanceVersion(pkg.GetVersion()); err != nil {
 			merr.MaybeAdd(errors.New(
@@ -364,36 +371,39 @@ type cacheEntry interface {
 
 // Caches validates a slice of cacheEntry.
 //
-// Also returns a set of cache paths.
+// Also returns a directoryoccusion.Checker with all of the cache pathes.
 //
 // Can be used to validate
 // * []*apipb.CacheEntry
 // * []*configpb.TaskTemplate_CacheEntry
-func Caches[C cacheEntry](caches []C) (pathSet stringset.Set, merr errors.MultiError) {
+func Caches[C cacheEntry](caches []C, cacheSource string) (*directoryocclusion.Checker, errors.MultiError) {
+	var merr errors.MultiError
 	if len(caches) > maxCacheCount {
 		merr.MaybeAdd(errors.Reason("can have up to %d caches", maxCacheCount).Err())
 	}
+
+	doc := directoryocclusion.NewChecker("")
 	nameSet := stringset.New(len(caches))
-	pathSet = stringset.New(len(caches))
 	for i, c := range caches {
 		if !nameSet.Add(c.GetName()) {
 			merr.MaybeAdd(errors.New("same cache name cannot be specified twice"))
 		}
-		if !pathSet.Add(c.GetPath()) {
-			merr.MaybeAdd(errors.New("same cache path cannot be specified twice"))
+		if err := Path(c.GetPath(), maxCachePathLength); err != nil {
+			merr.MaybeAdd(errors.Annotate(err, "cache path %d", i).Err())
+			continue
 		}
+		// Caches are all unique; they can't overlap.
+		doc.Add(c.GetPath(), fmt.Sprintf("%s:%s", cacheSource, c.GetName()), "")
 		if err := validateCacheName(c.GetName()); err != nil {
 			merr.MaybeAdd(errors.Annotate(err, "cache name %d", i).Err())
 		}
-		if err := Path(c.GetPath(), maxCachePathLength); err != nil {
-			merr.MaybeAdd(errors.Annotate(err, "cache path %d", i).Err())
-		}
+	}
+	docErrs := doc.Conflicts()
+	for _, err := range docErrs {
+		merr.MaybeAdd(err)
 	}
 
-	if merr.AsError() == nil {
-		return pathSet, nil
-	}
-	return nil, merr
+	return doc, merr
 }
 
 func validateCacheName(name string) error {

@@ -406,8 +406,9 @@ func TestPoolsValidation(t *testing.T) {
 							},
 						},
 					},
-					err: []string{(`(task_template / #1 (a) / cipd_package): package 0 (a): path` +
-						` "a/b" is mapped to a named cache and cannot be a target of CIPD installation`)},
+					err: []string{(`(task_template / #1 (a) / cipd_package):` +
+						` "a/b": directory has conflicting owners: task_template_cache:a[]` +
+						` and task_template_cipd_package[a:latest]`)},
 				},
 				{
 					name: "template_env_var_empty",
@@ -599,7 +600,10 @@ func TestPoolsValidation(t *testing.T) {
 							},
 						},
 					},
-					err: []string{`(task_template / resolve inclusion / #1 (a) / cipd_package): package 0 (a): path "a/b" is mapped to a named cache and cannot be a target of CIPD installation`},
+					err: []string{
+						`(task_template / resolve inclusion / #1 (a) / ` +
+							`cipd_package): "a/b": directory has conflicting owners:` +
+							` task_template_cache:a[] and task_template_cipd_package[a:latest]`},
 				},
 				// task_template_deployment
 				{
