@@ -44,5 +44,3 @@ dispatch:
     service: defaultv2
   - url: "*/auth/lookup"
     service: defaultv2
-  - url: "*/auth/services"
-    service: defaultv2
