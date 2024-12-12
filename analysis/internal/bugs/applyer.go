@@ -405,7 +405,7 @@ func (p PolicyApplyer) problemsDescription(activatedPolicyIDs map[PolicyID]struc
 }
 
 // NewIssueDescription returns the issue description for a new bug.
-// uiBaseURL is the URL of the UI base, without trailing slash, e.g. "https://luci-milo.appspot.com".
+// uiBaseURL is the URL of the UI base, without trailing slash, e.g. "https://luci-analysis.appspot.com".
 func (p PolicyApplyer) NewIssueDescription(description *clustering.ClusterDescription, activatedPolicyIDs map[PolicyID]struct{}, uiBaseURL, ruleURL string) string {
 	var problemDescription strings.Builder
 	problemDescription.WriteString(p.problemsDescription(activatedPolicyIDs))

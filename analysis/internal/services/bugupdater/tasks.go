@@ -53,7 +53,7 @@ var bugUpdater = tq.RegisterTaskClass(tq.TaskClass{
 
 // RegisterTaskHandler registers the handler for bug update tasks.
 // uiBaseURL is the base URL for the UI, without trailing slash, e.g.
-// "https://luci-milo.appspot.com".
+// "https://luci-analysis.appspot.com".
 func RegisterTaskHandler(srv *server.Server, uiBaseURL string) error {
 	h := &Handler{
 		GCPProject: srv.Options.CloudProject,
@@ -104,7 +104,7 @@ type Handler struct {
 	// GCPProject is the GCP Cloud Project Name, e.g. luci-analysis.
 	GCPProject string
 	// UIBaseURL is the base URL for the UI, without trailing slash, e.g.
-	// "https://luci-milo.appspot.com".
+	// "https://luci-analysis.appspot.com".
 	UIBaseURL string
 	// Whether bug updates should be simulated. Only used in local
 	// development when UpdateBug(...) is called directly from the
