@@ -60,7 +60,8 @@ function getRow(device: Device): Record<string, string> {
       // TODO(b/378634266): should be discussed how to show multiple values
       row[label] = device.deviceSpec.labels[label].values
         .concat()
-        .sort((a, b) => (a.length < b.length ? 1 : -1))[0]
+        .sort((a, b) => (a.length < b.length ? 1 : -1))
+        .join(', ')
         .toString();
     }
   }

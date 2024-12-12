@@ -20,6 +20,8 @@ import {
   DeviceType,
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+import { Cell } from './Cell';
+
 interface Dimension {
   id: string; // unique id used for sorting and filtering
   displayName: string;
@@ -83,6 +85,7 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
     editable: false,
     minWidth: 70,
     maxWidth: 700,
+    renderCell: (props) => <Cell {...props} />,
   }));
 
   return columns;
