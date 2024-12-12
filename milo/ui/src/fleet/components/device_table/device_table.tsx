@@ -16,7 +16,7 @@ import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
 import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   getPageSize,
@@ -98,8 +98,8 @@ export function DeviceTable({ filter }: DeviceTableProps) {
   };
 
   const client = useFleetConsoleClient();
-  const devicesQuery = useQuery(
-    client.ListDevices.query(
+  const devicesQuery = useQuery({
+    ...client.ListDevices.query(
       ListDevicesRequest.fromPartial({
         pageSize: getPageSize(pagerCtx, searchParams),
         pageToken: getPageToken(pagerCtx, searchParams),
@@ -107,19 +107,23 @@ export function DeviceTable({ filter }: DeviceTableProps) {
         filter: stringifyFilters(filter),
       }),
     ),
-  );
-
+    keepPreviousData: true, // avoid loading while switching page
+  });
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
 
-  const columns = dimensionsQuery.data
-    ? getColumns(
-        Object.keys(dimensionsQuery.data.baseDimensions).concat(
-          Object.keys(dimensionsQuery.data.labels),
-        ),
-      )
-    : [];
+  const columns = useMemo(
+    () =>
+      dimensionsQuery.data
+        ? getColumns(
+            Object.keys(dimensionsQuery.data.baseDimensions).concat(
+              Object.keys(dimensionsQuery.data.labels),
+            ),
+          )
+        : [],
+    [dimensionsQuery.data],
+  );
 
   return (
     <>

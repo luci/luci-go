@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CircularProgress } from '@mui/material';
 import Box from '@mui/material/Box';
 import {
   DataGrid,
+  GridAutosizeOptions,
   gridClasses,
   GridColDef,
   GridColumnVisibilityModel,
@@ -25,6 +27,7 @@ import {
   GridToolbarContainer,
   useGridApiRef,
 } from '@mui/x-data-grid';
+import _ from 'lodash';
 import * as React from 'react';
 
 import {
@@ -40,6 +43,12 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 import { visibleColumnsUpdater, getVisibleColumns } from './search_param_utils';
 
 const UNKNOWN_ROW_COUNT = -1;
+
+const autosizeOptions: GridAutosizeOptions = {
+  expand: true,
+  includeHeaders: true,
+  includeOutliers: true,
+};
 
 // This is done for proper typing
 // For more info refer to: https://mui.com/x/common-concepts/custom-components/#using-module-augmentation
@@ -80,6 +89,7 @@ export const DataTable = ({
   onSortModelChange,
 }: DataTableProps) => {
   const apiRef = useGridApiRef();
+
   const [columnsButtonEl, setColumnsButtonEl] =
     React.useState<HTMLButtonElement | null>(null);
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -111,20 +121,41 @@ export const DataTable = ({
         defaultColumnVisibilityModel,
       ),
     );
+    apiRef.current.autosizeColumns(autosizeOptions);
   };
-
-  // This is a way to autosize columns to fit its content,
-  // TODO(vaghinak): call autosizeColumns when data is fetched from backend
-  React.useEffect(() => {
-    apiRef.current?.autosizeColumns();
-  });
 
   const [rowCount, setRowCount] = React.useState(UNKNOWN_ROW_COUNT);
   const hasNextPage = isLoading || nextPageToken !== '';
 
+  React.useEffect(() => {
+    const autosize = _.debounce(() => {
+      apiRef.current.autosizeColumns(autosizeOptions);
+    }, 300);
+
+    window.addEventListener('resize', autosize);
+    return () => window.removeEventListener('resize', autosize);
+  }, [apiRef]);
+
+  // We avoid rendering the DataGrid while loading so that when autosizeOnMount
+  // is fired it already has the correct columns loaded.
+  if (isLoading) {
+    return (
+      <div
+        css={{
+          width: '100%',
+          padding: '0 50%',
+        }}
+      >
+        <CircularProgress />
+      </div>
+    );
+  }
+
   return (
     <DataGrid
       apiRef={apiRef}
+      autosizeOnMount
+      autosizeOptions={autosizeOptions}
       sx={{
         [`& .${gridClasses.columnHeader}`]: {
           backgroundColor: '#f2f3f4',
@@ -177,7 +208,6 @@ export const DataTable = ({
         columns,
       )}
       onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-      loading={isLoading}
       rows={rows}
       columns={columns}
     />
