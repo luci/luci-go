@@ -1,28 +1,19 @@
 queue:
-- name: replication
-  max_concurrent_requests: 1
-  rate: 10/m
-
-- name: process-auth-db-change
-  max_concurrent_requests: 1
-  rate: 100/s
-
-### Auth Service v2 queues
 
 - name: auth-db-replication
   max_concurrent_requests: 1
   rate: 10/m
-  target: backendv2
+  target: backend
   retry_parameters:
     task_age_limit: 1d
 
 - name: changelog-generation
   max_concurrent_requests: 1
   rate: 100/s
-  target: backendv2
+  target: backend
   retry_parameters:
     task_age_limit: 1d
 
 - name: tq-sweep
   rate: 500/s
-  target: backendv2
+  target: backend

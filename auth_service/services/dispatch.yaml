@@ -1,11 +1,4 @@
 dispatch:
-  # Add override of routing rules so that TQ tasks enqueued to the
-  # auth-db-replication and changelog-generation queues by either the
-  # Python or Go version of Auth Service are served by the Go version.
-  - url: "*/internal/tasks/t/auth-db-replication/*"
-    service: backendv2
-  - url: "*/internal/tasks/t/changelog-generation/*"
-    service: backendv2
   # Serve legacy endpoint to get a single AuthGroup using Go.
   - url: "*/auth/api/v1/groups/*"
     service: defaultv2

@@ -1,26 +1,26 @@
 cron:
 
 - description: Sweep transactionally created TQ tasks which would otherwise be forgotten in Auth Service v2.
-  target: backendv2
+  target: backend
   url: /internal/tasks/c/sweep
   schedule: every 1 minutes
 
 - description: Fetch and apply latest service configs from luci-config.
-  target: backendv2
+  target: backend
   url: /internal/cron/update-config
   schedule: every 1 minutes
 
 - description: Fetch and apply latest permissions and realms configs from luci-config.
-  target: backendv2
+  target: backend
   url: /internal/cron/update-realms
   schedule: every 1 minutes
 
 - description: Revoke all stale authorization for PubSub and Google Storage access.
-  target: backendv2
+  target: backend
   url: /internal/cron/revoke-stale-authorization
   schedule: every 30 minutes
 
 - description: Refresh replicated AuthDB if it is more than 24h old.
-  target: backendv2
+  target: backend
   url: /internal/cron/refresh-replicated-authdb
   schedule: every 1 hours
