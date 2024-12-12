@@ -60,7 +60,7 @@ type RequestGenerator struct {
 	// The LUCI project for which we are generating bug updates. This
 	// is distinct from the Buganizer project.
 	project string
-	// The UI Base URL, e.g. "https://luci-analysis.appspot.com"
+	// The UI Base URL, e.g. "https://luci-milo.appspot.com"
 	uiBaseURL string
 	// The email address the service uses to authenticate to Buganizer.
 	selfEmail string
