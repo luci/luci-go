@@ -12,12 +12,9 @@ build:
     dest: ${contextdir}/services/index.yaml
   - copy: ${inputsdir}/services/queue.yaml
     dest: ${contextdir}/services/queue.yaml
-  - go_gae_bundle: ${inputsdir}/services/frontend/service-defaultv2.yaml
-    go_gae_bundle_as_module: True
-    dest: ${contextdir}/services/frontend
   - go_gae_bundle: ${inputsdir}/services/frontend/app.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/services/default
-  - go_gae_bundle: ${inputsdir}/services/backend/service-backendv2.yaml
+  - go_gae_bundle: ${inputsdir}/services/backend/service-backend.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/services/backend
