@@ -15,85 +15,44 @@
 package main
 
 import (
-	"context"
+	"errors"
+	"fmt"
 	"net/http"
-	"os"
+	"strings"
 
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server"
-	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-	"go.chromium.org/luci/server/templates"
 
-	"go.chromium.org/luci/analysis/frontend/handlers"
-	"go.chromium.org/luci/analysis/internal/config"
-	"go.chromium.org/luci/analysis/internal/hosts"
+	"go.chromium.org/luci/analysis/internal/ui"
 	analysisserver "go.chromium.org/luci/analysis/server"
 
 	_ "go.chromium.org/luci/server/encryptedcookies/session/datastore"
 )
 
-// prepareTemplates configures templates.Bundle used by all UI handlers.
-func prepareTemplates(opts *server.Options) *templates.Bundle {
-	return &templates.Bundle{
-		Loader: templates.FileSystemLoader(os.DirFS("templates")),
-		// Controls whether templates are cached.
-		DebugMode: func(context.Context) bool { return !opts.Prod },
-		DefaultArgs: func(ctx context.Context, e *templates.Extra) (templates.Args, error) {
-			// Login and Logout URLs take a ?r query parameter to specify
-			// the redirection target after login/logout completes.
-			logoutURL, err := auth.LogoutURL(ctx, "/")
-			if err != nil {
-				return nil, err
-			}
-			loginURL, err := auth.LoginURL(ctx, "/")
-			if err != nil {
-				return nil, err
-			}
-
-			config, err := config.Get(ctx)
-			if err != nil {
-				return nil, err
-			}
-			hostname, err := hosts.APIHost(ctx)
-			if err != nil {
-				return nil, errors.Annotate(err, "lookup LUCI Analysis hostname").Err()
-			}
-
-			return templates.Args{
-				"LuciAnalysisHostname":              hostname,
-				"MonorailHostname":                  config.MonorailHostname,
-				"IsAnonymous":                       auth.CurrentUser(ctx).Identity.Kind() == identity.Anonymous,
-				"UserName":                          auth.CurrentUser(ctx).Name,
-				"UserEmail":                         auth.CurrentUser(ctx).Email,
-				"UserAvatar":                        auth.CurrentUser(ctx).Picture,
-				"LogoutURL":                         logoutURL,
-				"LoginURL":                          loginURL,
-				"IsPolicyBasedBugManagementEnabled": config.BugManagement.GetPolicyBasedManagementEnabled(),
-			}, nil
-		},
-	}
-}
-
-func pageBase(srv *server.Server) router.MiddlewareChain {
-	return router.NewMiddlewareChain(
-		auth.Authenticate(srv.CookieAuth),
-		templates.WithTemplates(prepareTemplates(&srv.Options)),
-	)
-}
-
 // Entrypoint for the default service.
 func main() {
 	analysisserver.Main(func(srv *server.Server) error {
-		// Only the frontend service serves frontend UI. This is because
-		// the frontend relies upon other assets (javascript, files) and
-		// it is annoying to deploy them with every backend service.
-		mw := pageBase(srv)
-		handlers.RegisterRoutes(srv.Routes, mw)
-		srv.Routes.Static("/static/", mw, http.Dir("./ui/dist"))
-		// Anything that is not found, serve app html and let the client side router handle it.
-		srv.Routes.NotFound(mw, handlers.IndexPage)
+		uiBaseURL, ok := srv.Context.Value(&ui.UIBaseURLKey).(string)
+
+		if !ok {
+			return errors.New("UI base URL is not configured in context")
+		}
+
+		srv.Routes.GET("/", nil, func(ctx *router.Context) {
+			url := fmt.Sprintf("https://%s", uiBaseURL)
+			// Remove the `tests/` suffix to redirect to LUCI UI base.
+			// This is because LUCI Analysis has a project selection page
+			// while the migrated version does not as the project
+			// selection happens at the base URL of LUCI UI, and hence users should
+			// be redirected to the base URL to select a project.
+			url = strings.TrimSuffix(url, "tests/")
+			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
+		})
+
+		srv.Routes.NotFound(nil, func(ctx *router.Context) {
+			url := fmt.Sprintf("https://%s%s", uiBaseURL, ctx.Request.URL.Path)
+			http.Redirect(ctx.Writer, ctx.Request, url, http.StatusFound)
+		})
 
 		return nil
 	})
