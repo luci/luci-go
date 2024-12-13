@@ -61,7 +61,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testresults"
 	"go.chromium.org/luci/analysis/internal/testverdicts"
-	"go.chromium.org/luci/analysis/internal/ui"
 	"go.chromium.org/luci/analysis/internal/views"
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/analysis/rpc"
@@ -75,7 +74,6 @@ import (
 func Main(init func(srv *luciserver.Server) error) {
 	// Use the same modules for all LUCI Analysis services.
 	modules := []module.Module{
-		ui.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(), // Required for auth sessions.
@@ -137,13 +135,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterClustersServer(srv, rpc.NewClustersServer(ac))
 	analysispb.RegisterMetricsServer(srv, rpc.NewMetricsServer())
 	analysispb.RegisterProjectsServer(srv, rpc.NewProjectsServer())
-
-	basePath, ok := srv.Context.Value(ui.UIBaseURLKey).(string)
-	if !ok {
-		return errors.New("UI base URL is not configured in context")
-	}
-	analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL(basePath), bc, selfEmail))
-
+	analysispb.RegisterRulesServer(srv, rpc.NewRulesServer(uiBaseURL(srv), bc, selfEmail))
 	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 	analysispb.RegisterTestHistoryServer(srv, rpc.NewTestHistoryServer())
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
@@ -154,8 +146,7 @@ func RegisterPRPCHandlers(srv *luciserver.Server) error {
 
 // RegisterCrons registers cron handlers.
 func RegisterCrons(srv *luciserver.Server) {
-	basePath := srv.Context.Value(ui.UIBaseURLKey).(string)
-	updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL(basePath), srv.Options.Prod)
+	updateAnalysisAndBugsHandler := bugscron.NewHandler(srv.Options.CloudProject, uiBaseURL(srv), srv.Options.Prod)
 	cron.RegisterHandler("update-analysis-and-bugs", updateAnalysisAndBugsHandler.CronHandler)
 	attributeFilteredTestRunsHandler := failureattributes.NewFilteredRunsAttributionHandler(srv.Options.CloudProject)
 	cron.RegisterHandler("attribute-filtered-test-runs", attributeFilteredTestRunsHandler.CronHandler)
@@ -202,15 +193,9 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	if err := verdictingester.RegisterTaskHandler(srv); err != nil {
 		return errors.Annotate(err, "register verdict ingester").Err()
 	}
-
-	basePath, ok := srv.Context.Value(ui.UIBaseURLKey).(string)
-	if !ok {
-		return errors.New("UI base URL is not configured in context")
-	}
-	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(basePath)); err != nil {
+	if err := bugupdater.RegisterTaskHandler(srv, uiBaseURL(srv)); err != nil {
 		return errors.Annotate(err, "register bug updater").Err()
 	}
-
 	if err := changepointgrouper.RegisterTaskHandler(srv); err != nil {
 		return errors.Annotate(err, "register changepoint grouper").Err()
 	}
@@ -218,6 +203,6 @@ func RegisterTaskQueueHandlers(srv *luciserver.Server) error {
 	return nil
 }
 
-func uiBaseURL(basePath string) string {
-	return fmt.Sprintf("https://%s", basePath)
+func uiBaseURL(srv *luciserver.Server) string {
+	return fmt.Sprintf("https://%s.appspot.com", srv.Options.CloudProject)
 }
