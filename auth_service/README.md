@@ -112,7 +112,7 @@ to services in a LUCI cluster. Used to establish mutual trust between them.
 
 This is a pRPC service to examine and modify the groups graph. It is used
 primarily by Auth Service's own web frontend (i.e. it is mostly used by humans).
-See the [RPC Explorer]. Alternatively, read the
+See the [RPC Explorer (for chrome-infra-auth-dev)]. Alternatively, read the
 [Groups service proto definitions] and the corresponding
 [Groups service implementation].
 
@@ -126,7 +126,7 @@ library such as [go.chromium.org/luci/server]) to obtain and keep up-to-date the
 snapshot of all groups, and use it locally without hitting Auth Service on every
 request. See the next couple of sections for more information.
 
-[RPC Explorer]: https://defaultv2-dot-chrome-infra-auth.appspot.com/rpcexplorer
+[RPC Explorer (for chrome-infra-auth-dev)]: https://chrome-infra-auth-dev.appspot.com/rpcexplorer
 [Groups service proto definitions]: ./api/rpcpb/groups.proto
 [Groups service implementation]: ./impl/servers/groups/server.go
 [go.chromium.org/luci/server]: https://godoc.org/go.chromium.org/luci/server
