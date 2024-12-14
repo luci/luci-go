@@ -113,9 +113,8 @@ func TestNewPoolsConfig(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		poolsCfg, err := newPoolsConfig(goodPoolsCfg)
+		pools, err := newPoolsConfig(goodPoolsCfg)
 		assert.Loosely(t, err, should.BeNil)
-		pools := poolsCfg.pools
 		assert.Loosely(t, pools, should.HaveLength(3))
 		assert.Loosely(t, pools["a"].Realm, should.Equal("test:1"))
 		assert.Loosely(t, pools["b"].Realm, should.Equal("test:2"))
@@ -124,6 +123,21 @@ func TestNewPoolsConfig(t *testing.T) {
 		assert.Loosely(t, pools["a"].DefaultTaskRealm, should.Equal("test:default"))
 		assert.Loosely(t, pools["b"].DefaultTaskRealm, should.BeEmpty)
 		assert.Loosely(t, pools["c"].DefaultTaskRealm, should.BeEmpty)
+
+		expectedInline := &configpb.TaskTemplateDeployment{
+			Prod:         goodTaskTemplate,
+			Canary:       goodTaskTemplate,
+			CanaryChance: 100,
+		}
+		assert.Loosely(t, pools["b"].Deployment, should.Match(expectedInline))
+
+		expectedShared := &configpb.TaskTemplateDeployment{
+			Name:         "d1",
+			Prod:         goodTaskTemplate,
+			Canary:       goodTaskTemplate,
+			CanaryChance: 1000,
+		}
+		assert.Loosely(t, pools["a"].Deployment, should.Match(expectedShared))
 	})
 }
 
@@ -241,6 +255,7 @@ func TestPoolsValidation(t *testing.T) {
 						TaskDeploymentScheme: &configpb.Pool_TaskTemplateDeploymentInline{
 							TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
 								Name: "b",
+								Prod: &configpb.TaskTemplate{},
 							},
 						},
 					}),
@@ -610,7 +625,9 @@ func TestPoolsValidation(t *testing.T) {
 					name: "deployment_no_name",
 					cfg: &configpb.PoolsCfg{
 						TaskTemplateDeployment: []*configpb.TaskTemplateDeployment{
-							{},
+							{
+								Prod: &configpb.TaskTemplate{},
+							},
 						},
 					},
 					err: []string{"(task_template_deployment / #1 ()): name is empty"},
@@ -621,13 +638,26 @@ func TestPoolsValidation(t *testing.T) {
 						TaskTemplateDeployment: []*configpb.TaskTemplateDeployment{
 							{
 								Name: "a",
+								Prod: &configpb.TaskTemplate{},
 							},
+							{
+								Name: "a",
+								Prod: &configpb.TaskTemplate{},
+							},
+						},
+					},
+					err: []string{`(task_template_deployment / #2 (a)): deployment "a" was already declared`},
+				},
+				{
+					name: "deployment_no_prod",
+					cfg: &configpb.PoolsCfg{
+						TaskTemplateDeployment: []*configpb.TaskTemplateDeployment{
 							{
 								Name: "a",
 							},
 						},
 					},
-					err: []string{`(task_template_deployment / #2 (a)): deployment "a" was already declared`},
+					err: []string{"(task_template_deployment / #1 (a) / prod): required"},
 				},
 				{
 					name: "deployment_canary_chance_without_canary",
@@ -636,6 +666,7 @@ func TestPoolsValidation(t *testing.T) {
 							{
 								Name:         "a",
 								CanaryChance: 1000,
+								Prod:         &configpb.TaskTemplate{},
 							},
 						},
 					},
@@ -648,6 +679,7 @@ func TestPoolsValidation(t *testing.T) {
 							{
 								Name:         "a",
 								CanaryChance: 10000,
+								Prod:         &configpb.TaskTemplate{},
 								Canary:       &configpb.TaskTemplate{},
 							},
 						},
@@ -733,7 +765,7 @@ func TestPoolRBEConfig(t *testing.T) {
 		pool, err := newPool(&configpb.Pool{
 			Name:         []string{"pool"},
 			RbeMigration: cfg,
-		})
+		}, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

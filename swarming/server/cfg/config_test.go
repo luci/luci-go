@@ -327,10 +327,118 @@ func TestBuildQueriableConfig(t *testing.T) {
 					{
 						Name:  []string{"a"},
 						Realm: "realm:a",
+						TaskDeploymentScheme: &configpb.Pool_TaskTemplateDeployment{
+							TaskTemplateDeployment: "d1",
+						},
 					},
 					{
 						Name:  []string{"b"},
 						Realm: "realm:b",
+						TaskDeploymentScheme: &configpb.Pool_TaskTemplateDeploymentInline{
+							TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+								Prod: &configpb.TaskTemplate{
+									Include: []string{"t1", "t3"},
+									Cache: []*configpb.TaskTemplate_CacheEntry{
+										{
+											Name: "di",
+											Path: "a/b/di",
+										},
+										{
+											Name: "di_override",
+											Path: "a/b/di_override",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				TaskTemplate: []*configpb.TaskTemplate{
+					{
+						Name: "t1",
+						Include: []string{
+							"t2",
+						},
+						Cache: []*configpb.TaskTemplate_CacheEntry{
+							{
+								Name: "di_override",
+								Path: "a/b/t1",
+							},
+						},
+						CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+							{
+								Pkg:     "p_shared",
+								Version: "latest",
+								Path:    "c/d/t1",
+							},
+						},
+						Env: []*configpb.TaskTemplate_Env{
+							{
+								Var:   "ev1",
+								Value: "ev1",
+								Prefix: []string{
+									"e/f",
+								},
+								Soft: true,
+							},
+							{
+								Var:   "ev2",
+								Value: "evt1",
+								Soft:  true,
+							},
+						},
+					},
+					{
+						Name: "t2",
+						Cache: []*configpb.TaskTemplate_CacheEntry{
+							{
+								Name: "di_override",
+								Path: "a/b/t2/1",
+							},
+							{
+								Name: "t2_only",
+								Path: "a/b/t2/2",
+							},
+						},
+						Env: []*configpb.TaskTemplate_Env{
+							{
+								Var:   "ev1",
+								Value: "ev1",
+								Prefix: []string{
+									"e/f/2",
+								},
+								Soft: true,
+							},
+							{
+								Var:   "ev2",
+								Value: "evt2",
+								Soft:  true,
+							},
+						},
+					},
+					{
+						Name: "t3",
+						CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+							{
+								Pkg:     "p_shared",
+								Version: "latest",
+								Path:    "c/d/t3",
+							},
+						},
+						Env: []*configpb.TaskTemplate_Env{
+							{
+								Var:   "ev3",
+								Value: "ev3",
+							},
+						},
+					},
+				},
+				TaskTemplateDeployment: []*configpb.TaskTemplateDeployment{
+					{
+						Name: "d1",
+						Prod: &configpb.TaskTemplate{
+							Include: []string{"t1"},
+						},
 					},
 				},
 			},
@@ -362,9 +470,103 @@ func TestBuildQueriableConfig(t *testing.T) {
 
 		// Pools.cfg processed correctly.
 		assert.That(t, cfg.Pools(), should.Match([]string{"a", "b"}))
-		assert.That(t, cfg.Pool("a").Realm, should.Equal("realm:a"))
-		assert.That(t, cfg.Pool("b").Realm, should.Equal("realm:b"))
+		poolA := cfg.Pool("a")
+		poolB := cfg.Pool("b")
+		assert.That(t, poolA.Realm, should.Equal("realm:a"))
+		assert.That(t, poolB.Realm, should.Equal("realm:b"))
 		assert.Loosely(t, cfg.Pool("unknown"), should.BeNil)
+
+		expectedDeploymentA := &configpb.TaskTemplateDeployment{
+			Name: "d1",
+			Prod: &configpb.TaskTemplate{
+				Cache: []*configpb.TaskTemplate_CacheEntry{
+					{
+						Name: "di_override",
+						Path: "a/b/t1",
+					},
+					{
+						Name: "t2_only",
+						Path: "a/b/t2/2",
+					},
+				},
+				CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+					{
+						Pkg:     "p_shared",
+						Version: "latest",
+						Path:    "c/d/t1",
+					},
+				},
+				Env: []*configpb.TaskTemplate_Env{
+					{
+						Var:   "ev1",
+						Value: "ev1",
+						Prefix: []string{
+							"e/f",
+							"e/f/2",
+						},
+						Soft: true,
+					},
+					{
+						Var:   "ev2",
+						Value: "evt1",
+						Soft:  true,
+					},
+				},
+			},
+		}
+		assert.Loosely(t, poolA.Deployment, should.Match(expectedDeploymentA))
+
+		expectedDeploymentB := &configpb.TaskTemplateDeployment{
+			Prod: &configpb.TaskTemplate{
+				Cache: []*configpb.TaskTemplate_CacheEntry{
+					{
+						Name: "di",
+						Path: "a/b/di",
+					},
+					{
+						Name: "di_override",
+						Path: "a/b/di_override",
+					},
+					{
+						Name: "t2_only",
+						Path: "a/b/t2/2",
+					},
+				},
+				CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+					{
+						Pkg:     "p_shared",
+						Version: "latest",
+						Path:    "c/d/t1",
+					},
+					{
+						Pkg:     "p_shared",
+						Version: "latest",
+						Path:    "c/d/t3",
+					},
+				},
+				Env: []*configpb.TaskTemplate_Env{
+					{
+						Var:   "ev1",
+						Value: "ev1",
+						Prefix: []string{
+							"e/f",
+							"e/f/2",
+						},
+						Soft: true,
+					},
+					{
+						Var:   "ev2",
+						Value: "evt1",
+						Soft:  true,
+					},
+					{
+						Var:   "ev3",
+						Value: "ev3",
+					},
+				},
+			},
+		}
+		assert.Loosely(t, poolB.Deployment, should.Match(expectedDeploymentB))
 
 		// Bots.cfg processed correctly.
 		botPool := func(botID string) string {

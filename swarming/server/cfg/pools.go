@@ -43,12 +43,13 @@ type Pool struct {
 	// the caller when they are created.
 	DefaultTaskRealm string
 
+	// Deployment contains the resolved task templates.
+	Deployment *configpb.TaskTemplateDeployment
+
 	rbeInstance            string // the RBE instance for tasks in this pool
 	rbeBotsSwarmingPercent int    // percent of bots using Swarming scheduler
 	rbeBotsHybridPercent   int    // percent of bots using both schedulers
 	rbeBotsRBEPercent      int    // percent of bots using RBE scheduler
-
-	// TODO(vadimsh): Implement task templates.
 }
 
 // RBEConfig are RBE-related parameters applied to a bot in a pool.
@@ -95,29 +96,32 @@ func (cfg *Pool) rbeConfig(botID string) RBEConfig {
 	}
 }
 
-type pools struct {
-	pools       map[string]*Pool // a map "pool name => its config"
-	deployments map[string]*configpb.TaskTemplateDeployment
-}
-
-// newPoolsConfig converts pools.cfg proto to a queryable map with shared task
-// template deployments.
+// newPoolsConfig converts pools.cfg proto to a queryable map.
 //
 // pools.cfg here already passed the validation when it was first ingested. It
 // is possible the server code itself changed and the existing config is no
 // longer correct in some bad way. An error is returned in that case.
-//
-// On success returns *pools with
-// * map "pool name => its config". For each pool config,
-//   - if it has inlined task template deployment, the task templates in the
-//     deployment will be resolved.
-//   - otherwise it'll just keep the task template deployment name.
-//
-// * a map of shared task template deployments containing resolved task templates.
-func newPoolsConfig(cfg *configpb.PoolsCfg) (*pools, error) {
+func newPoolsConfig(cfg *configpb.PoolsCfg) (map[string]*Pool, error) {
+	graph, merr := newInclusionGraph(cfg.TaskTemplate)
+	if len(merr) > 0 {
+		return nil, merr.AsError()
+	}
+	if err := graph.flattenTaskTemplates(); err != nil {
+		return nil, err
+	}
+
+	dplMap := make(map[string]*configpb.TaskTemplateDeployment, len(cfg.TaskTemplateDeployment))
+	for _, dpl := range cfg.TaskTemplateDeployment {
+		resolved, err := resolveDeployment(dpl, graph)
+		if err != nil {
+			return nil, err
+		}
+		dplMap[dpl.Name] = resolved
+	}
+
 	poolMap := map[string]*Pool{}
 	for _, pb := range cfg.Pool {
-		cfg, err := newPool(pb)
+		cfg, err := newPool(pb, dplMap, graph)
 		if err != nil {
 			return nil, errors.Annotate(err, "broken pools.cfg entry: %s", pb).Err()
 		}
@@ -125,11 +129,11 @@ func newPoolsConfig(cfg *configpb.PoolsCfg) (*pools, error) {
 			poolMap[name] = cfg
 		}
 	}
-	return &pools{pools: poolMap}, nil
+	return poolMap, nil
 }
 
 // newPool processes a single configpb.Pool definition.
-func newPool(pb *configpb.Pool) (*Pool, error) {
+func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployment, graph *inclusionGraph) (*Pool, error) {
 	poolCfg := &Pool{
 		Realm:            pb.Realm,
 		DefaultTaskRealm: pb.DefaultTaskRealm,
@@ -154,6 +158,22 @@ func newPool(pb *configpb.Pool) (*Pool, error) {
 		}
 	}
 
+	if pb.GetTaskTemplateDeployment() != "" {
+		namedDpl, ok := dplMap[pb.GetTaskTemplateDeployment()]
+		if !ok {
+			return nil, errors.Reason("unknown `task_template_deployment`: %q", pb.GetTaskTemplateDeployment()).Err()
+		}
+		poolCfg.Deployment = namedDpl
+		return poolCfg, nil
+	}
+
+	if pb.GetTaskTemplateDeploymentInline() != nil {
+		resolved, err := resolveDeployment(pb.GetTaskTemplateDeploymentInline(), graph)
+		if err != nil {
+			return nil, err
+		}
+		poolCfg.Deployment = resolved
+	}
 	return poolCfg, nil
 }
 
@@ -638,11 +658,13 @@ func validateDeployment(ctx *validation.Context, dpl *configpb.TaskTemplateDeplo
 		validateTemplate(ctx, newTmp, false)
 	}
 
-	if dpl.Prod != nil {
-		ctx.Enter("prod")
+	ctx.Enter("prod")
+	if dpl.Prod == nil {
+		ctx.Errorf("required")
+	} else {
 		flattenAndValidate(dpl.Prod)
-		ctx.Exit()
 	}
+	ctx.Exit()
 
 	if dpl.Canary != nil {
 		ctx.Enter("canary")
@@ -669,7 +691,6 @@ func flattenInlinedTaskTemplate(tmp *configpb.TaskTemplate, graph *inclusionGrap
 				return nil, errors.Reason("template already includes %q", subInc).Err()
 			}
 		}
-
 	}
 
 	// But only need to merge first level already flattened templates included
@@ -683,5 +704,25 @@ func flattenInlinedTaskTemplate(tmp *configpb.TaskTemplate, graph *inclusionGrap
 			return nil, err
 		}
 	}
+
+	// No need to keep includes in inlined template
+	newTmp.Include = nil
 	return newTmp, nil
+}
+
+func resolveDeployment(dpl *configpb.TaskTemplateDeployment, graph *inclusionGraph) (*configpb.TaskTemplateDeployment, error) {
+	var err error
+	resolved := proto.Clone(dpl).(*configpb.TaskTemplateDeployment)
+	if resolved.Prod != nil {
+		if resolved.Prod, err = flattenInlinedTaskTemplate(resolved.Prod, graph); err != nil {
+			return nil, err
+		}
+	}
+
+	if resolved.Canary != nil {
+		if resolved.Canary, err = flattenInlinedTaskTemplate(resolved.Canary, graph); err != nil {
+			return nil, err
+		}
+	}
+	return resolved, nil
 }
