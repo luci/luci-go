@@ -45,6 +45,7 @@ var goodBotsCfg = &configpb.BotsCfg{
 			},
 			BotConfigScript:      "script.py",
 			SystemServiceAccount: "system@accounts.example.com",
+			LogsCloudProject:     "logs-project",
 		},
 		{
 			BotId:       []string{"bot-1", "vm{0..2}-m5"},
@@ -84,28 +85,31 @@ func TestNewBotGroups(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		bg, err := newBotGroups(goodBotsCfg)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, bg.trustedDimensions, should.Resemble([]string{"a", "b", "pool"}))
+		bg, err := newBotGroups(goodBotsCfg, map[string]string{
+			"script.py": "some-script",
+		})
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, bg.trustedDimensions, should.Match([]string{"a", "b", "pool"}))
 
 		group0 := bg.directMatches["bot-0"]
-		assert.Loosely(t, group0, should.NotBeNil)
-		assert.Loosely(t, group0.Dimensions, should.Resemble(map[string][]string{
+		assert.That(t, group0.Dimensions, should.Match(map[string][]string{
 			"pool": {"a"},
 			"dim":  {"1", "2"},
 		}))
+		assert.That(t, group0.BotConfigScriptName, should.Equal("script.py"))
+		assert.That(t, group0.BotConfigScriptBody, should.Equal("some-script"))
+		assert.That(t, group0.BotConfigScriptSHA256, should.Equal("8edd90a7de22b7ad9af01fa01e3eca0da6e0a112359f6405a8a42b72df067565"))
+		assert.That(t, group0.LogsCloudProject, should.Equal("logs-project"))
 
 		group1 := bg.directMatches["bot-1"]
-		assert.Loosely(t, group1, should.NotBeNil)
-		assert.Loosely(t, group1.Dimensions, should.Resemble(map[string][]string{
+		assert.That(t, group1.Dimensions, should.Match(map[string][]string{
 			"pool": {"b"},
 		}))
 
 		group2 := bg.directMatches["bot-2"]
-		assert.Loosely(t, group2, should.NotBeNil)
 		assert.That(t, group2.SystemServiceAccount, should.Equal("bot"))
 
-		assert.Loosely(t, bg.directMatches, should.Resemble(map[string]*BotGroup{
+		assert.That(t, bg.directMatches, should.Match(map[string]*BotGroup{
 			"bot-0":         group0,
 			"vm0-m4":        group0,
 			"vm1-m4":        group0,
@@ -123,12 +127,12 @@ func TestNewBotGroups(t *testing.T) {
 			prefixes[pfx] = val.(*BotGroup)
 			return false
 		})
-		assert.Loosely(t, prefixes, should.Resemble(map[string]*BotGroup{
+		assert.That(t, prefixes, should.Match(map[string]*BotGroup{
 			"gce-vms-0-": group0,
 			"gce-vms-1-": group1,
 		}))
 
-		assert.Loosely(t, bg.defaultGroup.Dimensions, should.Resemble(map[string][]string{
+		assert.That(t, bg.defaultGroup.Dimensions, should.Match(map[string][]string{
 			"pool":  {"unassigned"},
 			"extra": {"1"},
 		}))
@@ -139,10 +143,10 @@ func TestHostBotID(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
-		assert.Loosely(t, HostBotID("abc"), should.Equal("abc"))
-		assert.Loosely(t, HostBotID("abc-def"), should.Equal("abc-def"))
-		assert.Loosely(t, HostBotID("abc--def"), should.Equal("abc"))
-		assert.Loosely(t, HostBotID("abc--def--xyz"), should.Equal("abc"))
+		assert.That(t, HostBotID("abc"), should.Equal("abc"))
+		assert.That(t, HostBotID("abc-def"), should.Equal("abc-def"))
+		assert.That(t, HostBotID("abc--def"), should.Equal("abc"))
+		assert.That(t, HostBotID("abc--def--xyz"), should.Equal("abc"))
 	})
 }
 
@@ -367,7 +371,7 @@ func TestValidateBotsCfg(t *testing.T) {
 			},
 		}
 		for _, cs := range testCases {
-			assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "bots.cfg" ` + cs.err}))
+			assert.That(t, call(cs.cfg), should.Match([]string{`in "bots.cfg" ` + cs.err}))
 		}
 	})
 }

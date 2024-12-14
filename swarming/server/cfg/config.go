@@ -702,7 +702,7 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 	}
 	sort.Strings(poolNames)
 
-	botGroups, err := newBotGroups(ent.Bundle.Bots)
+	botGroups, err := newBotGroups(ent.Bundle.Bots, ent.Bundle.Scripts)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad bots.cfg").Err()
 	}

@@ -15,6 +15,8 @@
 package cfg
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"strings"
 
 	"github.com/armon/go-radix"
@@ -54,10 +56,27 @@ type BotGroup struct {
 	// Either an empty string, a literal string "bot" or a service account email.
 	SystemServiceAccount string
 
-	// BotConfigScript is an optional name of a custom hooks script.
+	// BotConfigScriptName is an optional name of a custom hooks script.
 	//
-	// Its existence is validated when ingesting the config.
-	BotConfigScript string
+	// Its existence is validated when ingesting the config. If empty, the bot is
+	// using only the default bot_config.py (embedded into the bot archive).
+	BotConfigScriptName string
+
+	// BotConfigScriptBody is the body of the custom hooks script.
+	//
+	// It is an empty string if the bot is not using custom hooks script.
+	BotConfigScriptBody string
+
+	// BotConfigScriptSHA256 is a SHA256 hex digest of the custom hooks script.
+	//
+	// It is an empty string if the bot is not using custom hooks script.
+	BotConfigScriptSHA256 string
+
+	// LogsCloudProject is a Cloud Project name where the bot uploads its logs.
+	//
+	// This eventually shows up as part of bot info in the UI. Swarming itself
+	// doesn't access this project.
+	LogsCloudProject string
 }
 
 // Pools returns pools assigned to the bot or ["unassigned"] if not set.
@@ -95,12 +114,17 @@ type botGroups struct {
 	defaultGroup      *BotGroup            // the fallback, always non-nil
 }
 
+type configHooksScript struct {
+	body   string
+	sha256 string
+}
+
 // newBotGroups converts bots.cfg into a queryable representation.
 //
 // bots.cfg here already passed the validation when it was first ingested. It
 // is possible the server code itself changed and the existing config is no
 // longer correct in some bad way. An error is returned in that case.
-func newBotGroups(cfg *configpb.BotsCfg) (*botGroups, error) {
+func newBotGroups(cfg *configpb.BotsCfg, scripts map[string]string) (*botGroups, error) {
 	bg := &botGroups{
 		trustedDimensions: stringset.NewFromSlice(cfg.TrustedDimensions...).ToSortedSlice(),
 		directMatches:     map[string]*BotGroup{},
@@ -113,8 +137,16 @@ func newBotGroups(cfg *configpb.BotsCfg) (*botGroups, error) {
 		},
 	}
 
+	scriptsBundle := make(map[string]configHooksScript, len(scripts))
+	for name, body := range scripts {
+		scriptsBundle[name] = configHooksScript{
+			body:   body,
+			sha256: sha256hex(body),
+		}
+	}
+
 	for _, gr := range cfg.BotGroup {
-		group, err := newBotGroup(gr)
+		group, err := newBotGroup(gr, scriptsBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +172,7 @@ func newBotGroups(cfg *configpb.BotsCfg) (*botGroups, error) {
 }
 
 // newBotGroup constructs BotGroup from its validated proto representation.
-func newBotGroup(gr *configpb.BotGroup) (*BotGroup, error) {
+func newBotGroup(gr *configpb.BotGroup, scripts map[string]configHooksScript) (*BotGroup, error) {
 	dims := map[string][]string{}
 	for _, dim := range gr.Dimensions {
 		key, val, ok := strings.Cut(dim, ":")
@@ -153,12 +185,37 @@ func newBotGroup(gr *configpb.BotGroup) (*BotGroup, error) {
 		dims[key] = stringset.NewFromSlice(val...).ToSortedSlice()
 	}
 
+	// The script body must be present in properly validated configs. But if for
+	// whatever reason it is missing, consistently disable it for the group (by
+	// unsetting BotConfigScriptName).
+	scriptName := gr.BotConfigScript
+	scriptBody := ""
+	scriptSHA256 := ""
+	if scriptName != "" {
+		if script, ok := scripts[scriptName]; ok {
+			scriptBody = script.body
+			scriptSHA256 = script.sha256
+		} else {
+			scriptName = ""
+		}
+	}
+
 	return &BotGroup{
-		Dimensions:           dims,
-		Auth:                 gr.Auth,
-		SystemServiceAccount: gr.SystemServiceAccount,
-		BotConfigScript:      gr.BotConfigScript,
+		Dimensions:            dims,
+		Auth:                  gr.Auth,
+		SystemServiceAccount:  gr.SystemServiceAccount,
+		BotConfigScriptName:   scriptName,
+		BotConfigScriptBody:   scriptBody,
+		BotConfigScriptSHA256: scriptSHA256,
+		LogsCloudProject:      gr.LogsCloudProject,
 	}, nil
+}
+
+// sha256hex returns SHA256 digest of `b` as a hex string.
+func sha256hex(b string) string {
+	h := sha256.New()
+	_, _ = h.Write([]byte(b))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // validateBotsCfg validates bots.cfg, writing errors into `ctx`.
