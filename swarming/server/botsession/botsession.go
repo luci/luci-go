@@ -17,7 +17,9 @@ package botsession
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/otel/trace"
@@ -29,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/hmactoken"
 )
 
@@ -81,6 +84,98 @@ func Unmarshal(tok []byte, secret *hmactoken.Secret) (*internalspb.Session, erro
 		return nil, errors.Annotate(err, "unmarshaling Session").Err()
 	}
 	return s, nil
+}
+
+// SessionParameters encapsulates arguments of Create function.
+type SessionParameters struct {
+	// SessionID is the new session's ID as reported by the bot.
+	SessionID string
+	// BotID is the bot ID as reported by the bot.
+	BotID string
+	// BotGroup is the matching bot group config as looked up from bots.cfg.
+	BotGroup *cfg.BotGroup
+	// RBEConfig is the matching bot RBE config as looked up from pools.cfg.
+	RBEConfig cfg.RBEConfig
+	// ServerConfig is the config instance used to look up BotGroup and RBEConfig.
+	ServerConfig *cfg.Config
+	// DebugInfo to put into the session proto.
+	DebugInfo *internalspb.DebugInfo
+	// Now is the current time to use to calculate the expiration timestamp.
+	Now time.Time
+}
+
+// Create initializes a new Session proto for an authorized connecting bot.
+//
+// Assumes all parameters have been validated already.
+func Create(params SessionParameters) *internalspb.Session {
+	return &internalspb.Session{
+		BotId:     params.BotID,
+		SessionId: params.SessionID,
+		Expiry:    timestamppb.New(params.Now.Add(Expiry)),
+		DebugInfo: params.DebugInfo,
+		BotConfig: &internalspb.BotConfig{
+			// Use default expiry here as well in a new session. It will be updated
+			// to a larger value before we launch a task to make sure the captured
+			// config can survive as long as the task (but not much longer). This will
+			// be needed to allow the task to complete even if the bot is removed from
+			// the config.
+			Expiry:               timestamppb.New(params.Now.Add(Expiry)),
+			DebugInfo:            params.DebugInfo,
+			BotAuth:              params.BotGroup.Auth,
+			SystemServiceAccount: params.BotGroup.SystemServiceAccount,
+			LogsCloudProject:     params.BotGroup.LogsCloudProject,
+			RbeInstance:          params.RBEConfig.Instance,
+		},
+		HandshakeConfigHash: handshakeConfigHash(params.BotGroup),
+		RbeBotSessionId:     "", // will be populate later when the bot opens RBE session
+		LastSeenConfig:      timestamppb.New(params.ServerConfig.VersionInfo.Fetched),
+	}
+}
+
+// handshakeConfigHash is a hash of bot config parameters that affect the
+// bot session.
+//
+// The hash of these parameters is capture in /handshake handler and put into
+// the session token. If a /poll handler notices the current hash doesn't match
+// the hash in the session, it will ask the bot to restart to pick up new
+// parameters.
+//
+// This function is tightly coupled to what /handshake returns to the bot and
+// to how bot uses these values.
+func handshakeConfigHash(cfg *cfg.BotGroup) []byte {
+	var lines []string
+
+	// Need to restart the bot whenever the injected hooks script changes.
+	if cfg.BotConfigScriptSHA256 != "" {
+		lines = append(lines, fmt.Sprintf("config_script_sha256:%s", cfg.BotConfigScriptSHA256))
+	}
+
+	// Hooks script name (e.g. `android.py`) is exposed as a `bot_config`
+	// dimension that hooks (in particular the default bot_config.py) can
+	// theoretically react to. Need to restart the bot if the hooks script name
+	// changes. This is rare.
+	if cfg.BotConfigScriptName != "" {
+		lines = append(lines, fmt.Sprintf("config_script_name:%s", cfg.BotConfigScriptName))
+	}
+
+	// Need to restart the bot whenever its server-assigned dimensions change,
+	// since bot hooks can examine them (in particular in startup hooks).
+	for key, vals := range cfg.Dimensions {
+		for _, val := range vals {
+			lines = append(lines, fmt.Sprintf("dimension:%s:%s", key, val))
+		}
+	}
+
+	// Hash all that data in a deterministic way.
+	slices.Sort(lines)
+	h := sha256.New()
+	for i, l := range lines {
+		if i != 0 {
+			_, _ = h.Write([]byte{'\n'})
+		}
+		_, _ = h.Write([]byte(l))
+	}
+	return h.Sum(nil)
 }
 
 // FormatForDebug formats the session proto for the debug log.
