@@ -17,6 +17,8 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
 
 // Information about why a test failed. This information may be displayed
 // to developers in result viewing UIs and will also be used to cluster

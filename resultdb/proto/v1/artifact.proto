@@ -21,6 +21,8 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/test_result.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
 
 // A file produced during a build/test, typically a test artifact.
 // The parent resource is either a TestResult or an Invocation.

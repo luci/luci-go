@@ -21,6 +21,8 @@ import "google/api/field_behavior.proto";
 import "go.chromium.org/luci/resultdb/proto/v1/common.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
 
 // Information about a test metadata.
 message TestMetadataDetail {

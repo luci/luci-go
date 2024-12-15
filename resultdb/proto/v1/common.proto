@@ -19,6 +19,8 @@ package luci.resultdb.v1;
 import "google/protobuf/timestamp.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
 
 // A key-value map describing one variant of a test case.
 //
