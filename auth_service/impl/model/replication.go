@@ -63,7 +63,7 @@ func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, d
 		// Either dryRun is enabled, or error is non-transient;
 		// do not retry.
 		logging.Errorf(ctx, "error replicating AuthDB: %s", err)
-		return nil
+		return tq.Fatal.Apply(err)
 	}
 	return nil
 }

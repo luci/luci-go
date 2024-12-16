@@ -400,7 +400,7 @@ func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTas
 		// Either dryRun is enabled, or error is non-transient;
 		// do not retry.
 		logging.Errorf(ctx, "error generating changes: %v", err)
-		return nil
+		return tq.Fatal.Apply(err)
 	}
 
 	return nil
