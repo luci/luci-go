@@ -89,6 +89,18 @@ export interface PagerState {
    * URL.
    */
   readonly pageTokens: string[];
+  /**
+   * Hold the previous page sizes.
+   *
+   * As we keep previous tokens and the state when page size changes,
+   * this array is necessary to preserve accurate row counts when page sizes
+   * change and the user navigates between pages. It enables the display of
+   * the current row range (e.g., "15-25 of 40") by accounting for variations
+   * in page size across different pages.
+   *
+   * `pageRowCounts[i]` represents the number of rows on page `i`.
+   */
+  readonly prevPageSizes: number[];
 }
 
 // DO NOT EXPORT.
@@ -112,20 +124,22 @@ export interface PagerContext {
 export function usePagerContext(options: PagerOptions): PagerContext {
   const [searchParams] = useSyncedSearchParams();
 
-  // This state does not actually affect rendering. It's used as an immutable
-  // ref. We use `useState` instead of `useRef` here so we don't accidentally
-  // assign value to `.current`.
+  // These states do not actually affect rendering. There are used as an
+  // immutable ref. We use `useState` instead of `useRef` here so we don't
+  // accidentally assign value to `.current`.
   //
-  // Mutation to the array is allowed.
-  // Mutation to the reference to the array is not allowed.
+  // Mutation to the arrays are allowed.
+  // Mutation to the reference to the arrays is not allowed.
   //
-  // This ensures we always have a stable reference to the pageTokens array
-  // while having the ability to update it without triggering a rerender.
+  // This ensures we always have a stable reference to this arrays
+  // while having the ability to update them without triggering a rerender.
   const [pageTokens] = useState(['']);
+  const [prevPageSizes] = useState<number[]>([]);
 
   const pagerCtx = {
     [stateSymbol]: {
       pageTokens,
+      prevPageSizes,
     },
     options: {
       ...options,
@@ -147,9 +161,11 @@ export function usePagerContext(options: PagerOptions): PagerContext {
     // If the new page token is not found, assume it's a new page.
     // Record it in the page token array.
     pageTokens.push(pageToken);
+    prevPageSizes.push(getPageSize(pagerCtx, searchParams));
   } else {
     // If the new page token is found, discard all the page tokens after it.
     pageTokens.splice(pageTokenIndex + 1);
+    prevPageSizes.splice(pageTokenIndex);
   }
 
   return pagerCtx;
@@ -204,6 +220,17 @@ export function pageTokenUpdater(pagerCtx: PagerContext, newPageToken: string) {
 
 export function getCurrentPageIndex(pagerCtx: PagerContext) {
   return pagerCtx[stateSymbol].pageTokens.length - 1;
+}
+
+/**
+ * Returns the full number of rows that we should have seen up until the
+ * current page. This is not necessarily the number of rows we saw because
+ * the API may return fewer results than the number requested (including
+ * zero results), even if not at the end of the collection.
+ * See https://google.aip.dev/158 for details.
+ */
+export function getPrevFullRowCount(pagerCtx: PagerContext) {
+  return pagerCtx[stateSymbol].prevPageSizes.reduce((a, b) => a + b, 0);
 }
 
 /**

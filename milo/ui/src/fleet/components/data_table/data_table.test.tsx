@@ -27,9 +27,9 @@ import {
 import { useState } from 'react';
 
 import {
-  getCurrentPageIndex,
   getPageSize,
   getPageToken,
+  getPrevFullRowCount,
   usePagerContext,
 } from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -78,13 +78,12 @@ function TestComponent() {
   const [searchParams] = useSyncedSearchParams();
   const pageToken = getPageToken(pagerCtx, searchParams);
   const pageSize = getPageSize(pagerCtx, searchParams);
-  const currentPageIndex = getCurrentPageIndex(pagerCtx);
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   // Consider pageToken is simply page's first element index in MOCK_ROWS
   const currentIndex = Number(pageToken);
   const currentRows = MOCK_ROWS.slice(currentIndex, currentIndex + pageSize);
-  const currentRowCount = pageSize * currentPageIndex + currentRows.length;
+  const currentRowCount = getPrevFullRowCount(pagerCtx) + currentRows.length;
   const nextPageToken =
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
@@ -120,6 +119,12 @@ const getNthRow = (index: number) => {
     .find((row) => row.getAttribute('data-rowindex') === String(index));
 };
 
+const getPageRowCount = () => {
+  return screen
+    .getAllByRole('row')
+    .filter((row) => row.hasAttribute('data-rowindex')).length;
+};
+
 const getNextPageButton = () => {
   return screen.getByLabelText('Go to next page');
 };
@@ -141,10 +146,10 @@ const changePageSize = async (size: number) => {
     fireEvent.mouseDown(screen.getByLabelText('Rows per page:')),
   );
 
-  const new_size_option = screen
+  const newSizeOption = screen
     .getAllByRole('option')
     .find((option) => option.getAttribute('data-value') === String(size))!;
-  await act(async () => fireEvent.click(new_size_option));
+  await act(async () => fireEvent.click(newSizeOption));
 };
 
 describe('<DataTable />', () => {
@@ -197,18 +202,16 @@ describe('<DataTable />', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
-    expect(getNthRow(4)).toBeInTheDocument();
-    expect(getNthRow(5)).toBeUndefined();
-    expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('1-5 of more than 5')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeDisabled();
 
     await changePageSize(10);
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
-    expect(getNthRow(9)).toBeInTheDocument();
-    expect(getNthRow(10)).toBeUndefined();
-    expect(screen.getByText('1–10 of more than 10')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(10);
+    expect(screen.getByText('1-10 of more than 10')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeDisabled();
   });
@@ -223,38 +226,38 @@ describe('<DataTable />', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
-    expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('1-5 of more than 5')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeDisabled();
 
     await goToNextPage();
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '6');
-    expect(screen.getByText('6–10 of more than 10')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('6-10 of more than 10')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeEnabled();
 
-    // Last page.
+    // Last page
     await goToNextPage();
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '11');
-    expect(screen.getByText('11–13 of 13')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(3);
+    expect(screen.getByText('11-13 of 13')).toBeInTheDocument();
     expect(getNextPageButton()).toBeDisabled();
     expect(getPrevPageButton()).toBeEnabled();
 
     await goToPrevPage();
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '6');
-    expect(screen.getByText('6–10 of 13')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('6-10 of more than 10')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeEnabled();
   });
 
-  // TODO(vaghinak): There is an issue with changing the page size in the middle pages.
-  // Based on aip-158 if user changes the page size we should stay on the same page,
-  // but it turns out mui x DataGrid goes to the first page when total data count is
-  // not known. Should remove `skip` when it is fixed.
-  it.skip('should preserve the page when changing page size in the middle pages', async () => {
+  it('should preserve the current pagination state and honor new page size for the subsequent pages if the page size changes', async () => {
     render(
       <FakeContextProvider>
         <TestComponent />
@@ -264,29 +267,42 @@ describe('<DataTable />', () => {
     await act(() => jest.runAllTimersAsync());
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '1');
-    expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('1-5 of more than 5')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeDisabled();
 
     await goToNextPage();
 
     expect(getNthRow(0)).toHaveAttribute('data-id', '6');
-    expect(screen.getByText('6–10 of more than 10')).toBeInTheDocument();
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('6-10 of more than 10')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
+    expect(getPrevPageButton()).toBeEnabled();
+
+    // Last page
+    await goToNextPage();
+
+    expect(getNthRow(0)).toHaveAttribute('data-id', '11');
+    expect(getPageRowCount()).toBe(3);
+    expect(screen.getByText('11-13 of 13')).toBeInTheDocument();
+    expect(getNextPageButton()).toBeDisabled();
     expect(getPrevPageButton()).toBeEnabled();
 
     await changePageSize(3);
 
-    expect(getNthRow(0)).toHaveAttribute('data-id', '6');
-    expect(screen.getByText('6–8 of more than 8')).toBeInTheDocument();
-    expect(getNextPageButton()).toBeEnabled();
+    expect(getNthRow(0)).toHaveAttribute('data-id', '11');
+    expect(getPageRowCount()).toBe(3);
+    expect(screen.getByText('11-13 of 13')).toBeInTheDocument();
+    expect(getNextPageButton()).toBeDisabled();
     expect(getPrevPageButton()).toBeEnabled();
 
     await goToPrevPage();
 
-    expect(getNthRow(0)).toHaveAttribute('data-id', '1');
-    expect(screen.getByText('1–5 of more than 5')).toBeInTheDocument();
+    expect(getNthRow(0)).toHaveAttribute('data-id', '6');
+    expect(getPageRowCount()).toBe(3);
+    expect(screen.getByText('6-8 of more than 8')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
-    expect(getPrevPageButton()).toBeDisabled();
+    expect(getPrevPageButton()).toBeEnabled();
   });
 });

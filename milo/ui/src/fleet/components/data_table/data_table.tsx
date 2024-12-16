@@ -13,18 +13,13 @@
 // limitations under the License.
 
 import { CircularProgress } from '@mui/material';
-import Box from '@mui/material/Box';
 import {
   DataGrid,
   GridAutosizeOptions,
   gridClasses,
   GridColDef,
   GridColumnVisibilityModel,
-  GridPaginationModel,
-  GridSlots,
   GridSortModel,
-  GridToolbarColumnsButton,
-  GridToolbarContainer,
   useGridApiRef,
 } from '@mui/x-data-grid';
 import _ from 'lodash';
@@ -33,14 +28,14 @@ import * as React from 'react';
 import {
   getCurrentPageIndex,
   getPageSize,
-  nextPageTokenUpdater,
   PagerContext,
-  pageSizeUpdater,
-  prevPageTokenUpdater,
 } from '@/common/components/params_pager';
+import { colors } from '@/fleet/theme/colors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+import { Pagination } from './pagination';
 import { visibleColumnsUpdater, getVisibleColumns } from './search_param_utils';
+import { Toolbar } from './toolbar';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -49,21 +44,6 @@ const autosizeOptions: GridAutosizeOptions = {
   includeHeaders: true,
   includeOutliers: true,
 };
-
-// This is done for proper typing
-// For more info refer to: https://mui.com/x/common-concepts/custom-components/#using-module-augmentation
-interface CustomToolbarProps {
-  setColumnsButtonEl: (element: HTMLButtonElement | null) => void;
-}
-
-function CustomToolbar({ setColumnsButtonEl }: CustomToolbarProps) {
-  return (
-    <GridToolbarContainer>
-      <Box sx={{ flexGrow: 1 }} />
-      <GridToolbarColumnsButton ref={setColumnsButtonEl} />
-    </GridToolbarContainer>
-  );
-}
 
 interface DataTableProps {
   defaultColumnVisibilityModel: GridColumnVisibilityModel;
@@ -94,24 +74,6 @@ export const DataTable = ({
     React.useState<HTMLButtonElement | null>(null);
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const paginationModel = {
-    page: getCurrentPageIndex(pagerCtx),
-    pageSize: getPageSize(pagerCtx, searchParams),
-  };
-
-  const onPaginationModelChange = (newPaginationModel: GridPaginationModel) => {
-    const isPrevPage = newPaginationModel.page < paginationModel.page;
-    const isNextPage = newPaginationModel.page > paginationModel.page;
-
-    setSearchParams(pageSizeUpdater(pagerCtx, newPaginationModel.pageSize));
-
-    if (isPrevPage) {
-      setSearchParams(prevPageTokenUpdater(pagerCtx));
-    } else if (isNextPage) {
-      setSearchParams(nextPageTokenUpdater(pagerCtx, nextPageToken));
-    }
-  };
-
   const onColumnVisibilityModelChange = (
     newColumnVisibilityModel: GridColumnVisibilityModel,
   ) => {
@@ -123,9 +85,6 @@ export const DataTable = ({
     );
     apiRef.current.autosizeColumns(autosizeOptions);
   };
-
-  const [rowCount, setRowCount] = React.useState(UNKNOWN_ROW_COUNT);
-  const hasNextPage = isLoading || nextPageToken !== '';
 
   React.useEffect(() => {
     const autosize = _.debounce(() => {
@@ -158,15 +117,15 @@ export const DataTable = ({
       autosizeOptions={autosizeOptions}
       sx={{
         [`& .${gridClasses.columnHeader}`]: {
-          backgroundColor: '#f2f3f4',
+          backgroundColor: colors.grey[100],
           height: 'unset !important',
           minHeight: 56,
         },
         [`& .${gridClasses.columnSeparator}`]: {
-          color: '#f2f3f4',
+          color: colors.grey[100],
         },
         [`& .${gridClasses.filler}`]: {
-          background: '#f2f3f4',
+          background: colors.grey[100],
         },
         [`& .${gridClasses.cell}`]: {
           py: 2,
@@ -176,7 +135,8 @@ export const DataTable = ({
         },
       }}
       slots={{
-        toolbar: CustomToolbar as GridSlots['toolbar'],
+        toolbar: Toolbar,
+        pagination: Pagination,
       }}
       slotProps={{
         panel: {
@@ -187,21 +147,23 @@ export const DataTable = ({
           disableShowHideToggle: true,
         },
         toolbar: { setColumnsButtonEl },
+        pagination: {
+          pagerCtx: pagerCtx,
+          nextPageToken: nextPageToken,
+        },
       }}
       getRowHeight={() => 'auto'}
       disableRowSelectionOnClick
       disableColumnMenu
       sortModel={sortModel}
       onSortModelChange={onSortModelChange}
-      rowCount={rowCount}
-      onRowCountChange={(newRowCount) => {
-        setRowCount(hasNextPage ? UNKNOWN_ROW_COUNT : newRowCount);
-      }}
+      rowCount={UNKNOWN_ROW_COUNT}
       paginationMode="server"
       pageSizeOptions={pagerCtx.options.pageSizeOptions}
-      paginationMeta={{ hasNextPage: hasNextPage }}
-      paginationModel={paginationModel}
-      onPaginationModelChange={onPaginationModelChange}
+      paginationModel={{
+        page: getCurrentPageIndex(pagerCtx),
+        pageSize: getPageSize(pagerCtx, searchParams),
+      }}
       columnVisibilityModel={getVisibleColumns(
         searchParams,
         defaultColumnVisibilityModel,
