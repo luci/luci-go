@@ -24,6 +24,13 @@ import {
   useSoMAlertsClient,
 } from '@/monitoringv2/hooks/prpc_clients';
 import {
+  BuilderAlert,
+  OneBuildHistory,
+  OneTestHistory,
+  StepAlert,
+  TestAlert,
+} from '@/monitoringv2/util/alerts';
+import {
   AlertExtensionJson,
   AlertJson,
   Bug,
@@ -32,7 +39,6 @@ import {
   TreeJson,
 } from '@/monitoringv2/util/server_json';
 import { Build } from '@/proto/go.chromium.org/luci/buildbucket/proto/build.pb';
-import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { SearchBuildsRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 import { Status } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 import { BatchGetAlertsRequest } from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
@@ -96,54 +102,6 @@ interface BuildAndTestVariants {
   testVariants: TestVariant[];
 }
 
-export type GenericAlert = BuilderAlert | StepAlert | TestAlert;
-export type AlertKind = 'builder' | 'step' | 'test';
-
-export interface BuilderAlert {
-  kind: 'builder';
-  key: string;
-  builderID: BuilderID;
-  history: OneBuildHistory[];
-  consecutiveFailures: number;
-  consecutivePasses: number;
-}
-
-export interface StepAlert {
-  kind: 'step';
-  key: string;
-  builderID: BuilderID;
-  stepName: string;
-  history: OneBuildHistory[];
-  consecutiveFailures: number;
-  consecutivePasses: number;
-}
-
-export interface TestAlert {
-  kind: 'test';
-  key: string;
-  builderID: BuilderID;
-  stepName: string;
-  testName: string;
-  testId: string;
-  variantHash: string;
-  history: OneTestHistory[];
-  consecutiveFailures: number;
-  consecutivePasses: number;
-}
-
-export interface OneBuildHistory {
-  buildId: string;
-  status: Status | undefined;
-  startTime?: string;
-  summaryMarkdown?: string;
-}
-
-export interface OneTestHistory {
-  buildId: string;
-  status: TestVariantStatus | undefined;
-  startTime?: string;
-  failureReason: string | undefined;
-}
 export const MonitoringCtx = createContext<MonitoringContext | null>(null);
 
 interface Props {
@@ -252,7 +210,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       });
       return {
         ...bbClient.SearchBuilds.query(req),
-        staleTime: Infinity, // This is immutable data, no need to ever refetch.
+        staleTime: 60000,
         enabled: !!(treeName && tree && alertsQuery.data),
       };
     }),
@@ -330,6 +288,7 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
       : failingTestsQueries.find((q) => q.isLoading)
         ? `Loading failing tests (${failingTestsQueries.filter((q) => q.isLoading).length}/${failingTestsQueries.length})...`
         : undefined;
+
   return (
     <MonitoringCtx.Provider
       value={{
@@ -468,7 +427,7 @@ const createTestAlertsForBuilder = (history: BuildAndTestVariants[]) => {
         ?.value?.replace(' (retry shards)', '') || 'Tests';
     const alert: TestAlert = {
       kind: 'test',
-      key: `${builderPath(history[0].build.builder!)}/${stepName}/${failingTest.testId}/${failingTest.variantHash}`,
+      key: `${builderPath(history[0].build.builder!)}/${stepName}/${failingTest.variantHash}/${failingTest.testId}`,
       builderID: history[0].build.builder!,
       stepName,
       testId: failingTest.testId,

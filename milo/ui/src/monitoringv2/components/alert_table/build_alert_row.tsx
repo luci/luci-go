@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportIcon from '@mui/icons-material/BugReport';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
-import { IconButton, TableCell, TableRow, Tooltip } from '@mui/material';
+import { Checkbox, IconButton, TableCell, TableRow } from '@mui/material';
 import { Link } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
-import { useNotifyAlertsClient } from '@/monitoringv2/hooks/prpc_clients';
-import { GenericAlert } from '@/monitoringv2/pages/monitoring_page/context/context';
-import { TreeJson, Bug } from '@/monitoringv2/util/server_json';
-import {
-  BatchUpdateAlertsRequest,
-  UpdateAlertRequest,
-} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
+import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 
-import { StructuredAlert } from '../alerts/alert_tabs';
 import { BuilderHistorySparkline } from '../builder_history_sparkline';
 
-import { BugMenu } from './bug_menu';
 import { PrefillFilterIcon } from './prefill_filter_icon';
 
 interface BuildAlertRowProps {
@@ -42,8 +29,8 @@ interface BuildAlertRowProps {
   expanded: boolean;
   indent: number;
   onExpand: () => void;
-  tree: TreeJson;
-  bugs: Bug[];
+  selected: boolean;
+  toggleSelected: () => void;
 }
 
 // An expandable row in the AlertTable containing a summary of a single alert.
@@ -53,43 +40,12 @@ export const BuildAlertRow = ({
   expanded,
   onExpand,
   indent,
-  tree,
-  bugs,
+  selected,
+  toggleSelected,
 }: BuildAlertRowProps) => {
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-
-  const queryClient = useQueryClient();
-  const client = useNotifyAlertsClient();
-  const silenceMutation = useMutation({
-    mutationFn: (alertToSilence: GenericAlert | null) => {
-      // eslint-disable-next-line new-cap
-      return client.BatchUpdateAlerts(
-        BatchUpdateAlertsRequest.fromPartial({
-          requests: [
-            UpdateAlertRequest.fromPartial({
-              alert: {
-                name: `alerts/${encodeURIComponent(buildAlert.key)}`,
-                // FIXME!
-                bug: '0', // alert.bug || '0',
-                silenceUntil: alertToSilence
-                  ? buildAlert.history[0].buildId
-                  : '0',
-              },
-            }),
-          ],
-        }),
-      );
-    },
-    onSuccess: () => queryClient.invalidateQueries(),
-  });
   const buildAlert = alert.alert;
   // FIXME!
   const silenced = false;
-  // buildIdFromUrl(builder.latest_failure_url) === alert.silenceUntil;
-  // const numTestFailures = alert.extension?.reason?.num_failing_tests || 0;
-  // const firstTestFailureName = shortTestName(
-  //   alert.extension?.reason?.tests?.[0].test_name,
-  // );
   const id = buildAlert.builderID;
   const consecutiveFailures = buildAlert.consecutiveFailures;
   const firstFailureId = buildAlert.history[consecutiveFailures - 1]?.buildId;
@@ -102,9 +58,7 @@ export const BuildAlertRow = ({
   return (
     <TableRow
       hover
-      onClick={() => onExpand()}
       sx={{
-        cursor: 'pointer',
         opacity:
           silenced ||
           consecutiveFailures === 0 ||
@@ -114,7 +68,21 @@ export const BuildAlertRow = ({
             : '1',
       }}
     >
-      <TableCell>
+      <TableCell width="32px" padding="none">
+        {parentAlert === undefined ? (
+          <Checkbox checked={selected} onChange={toggleSelected} />
+        ) : null}
+        {selected}
+      </TableCell>
+      <TableCell
+        width="32px"
+        padding="none"
+        onClick={() => onExpand()}
+        sx={{
+          cursor: 'pointer',
+        }}
+        title={expanded ? 'Collapse' : 'Expand'}
+      >
         {alert.children.length > 0 && (
           <IconButton sx={{ marginLeft: `${indent * 20}px` }}>
             {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
@@ -151,14 +119,14 @@ export const BuildAlertRow = ({
           )}
         </span>
       </TableCell>
-      <TableCell>
+      <TableCell width="180px">
         <BuilderHistorySparkline
           builderId={id}
           history={buildAlert.history}
           numHighlighted={consecutiveFailures}
         />
       </TableCell>
-      <TableCell>
+      <TableCell width="120px">
         {consecutiveFailures > 0 && (
           <Link
             href={`/b/${firstFailureId}`}
@@ -171,7 +139,7 @@ export const BuildAlertRow = ({
           </Link>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell width="80px">
         {firstFailureId && (
           <Link
             href={`/b/${firstFailureId}/blamelist`}
@@ -193,38 +161,6 @@ export const BuildAlertRow = ({
             Blamelist
           </Link>
         )}
-      </TableCell>
-      <TableCell>
-        <div css={{ display: 'flex' }}>
-          <Tooltip title="Link bug">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuAnchorEl(e.currentTarget);
-              }}
-            >
-              <BugReportIcon />
-            </IconButton>
-          </Tooltip>
-          <BugMenu
-            anchorEl={menuAnchorEl}
-            onClose={() => setMenuAnchorEl(null)}
-            alerts={[buildAlert.key]}
-            tree={tree}
-            bugs={bugs}
-          />
-
-          <Tooltip title="Silence alert until next build completes">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                silenceMutation.mutate(silenced ? null : buildAlert);
-              }}
-            >
-              {silenced ? <NotificationsIcon /> : <NotificationsPausedIcon />}
-            </IconButton>
-          </Tooltip>
-        </div>
       </TableCell>
     </TableRow>
   );

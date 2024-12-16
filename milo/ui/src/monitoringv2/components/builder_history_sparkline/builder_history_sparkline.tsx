@@ -22,7 +22,7 @@ import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { renderMarkdown } from '@/common/tools/markdown/utils';
-import { OneBuildHistory } from '@/monitoringv2/pages/monitoring_page/context/context';
+import { OneBuildHistory } from '@/monitoringv2/util/alerts';
 import { BuilderID } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_common.pb';
 import { statusToJSON } from '@/proto/go.chromium.org/luci/buildbucket/proto/common.pb';
 

@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import BugReportIcon from '@mui/icons-material/BugReport';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import NotificationsPausedIcon from '@mui/icons-material/NotificationsPaused';
-import { IconButton, TableCell, TableRow, Tooltip } from '@mui/material';
+import { Checkbox, IconButton, TableCell, TableRow } from '@mui/material';
 import { Link } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 
-import { useNotifyAlertsClient } from '@/monitoringv2/hooks/prpc_clients';
-import { GenericAlert } from '@/monitoringv2/pages/monitoring_page/context/context';
-import { TreeJson, Bug } from '@/monitoringv2/util/server_json';
-import {
-  BatchUpdateAlertsRequest,
-  UpdateAlertRequest,
-} from '@/proto/go.chromium.org/luci/luci_notify/api/service/v1/alerts.pb';
+import { GenericAlert, StructuredAlert } from '@/monitoringv2/util/alerts';
 
-import { StructuredAlert } from '../alerts/alert_tabs';
 import { TestHistorySparkline } from '../test_history_sparkline';
 
-import { BugMenu } from './bug_menu';
 import { PrefillFilterIcon } from './prefill_filter_icon';
 
 interface AlertTestRowProps {
@@ -42,53 +29,23 @@ interface AlertTestRowProps {
   expanded: boolean;
   indent: number;
   onExpand: () => void;
-  tree: TreeJson;
-  bugs: Bug[];
+  selected: boolean;
+  toggleSelected: () => void;
 }
 
 /** An expandable row in the AlertTable containing a summary of a single alert. */
 export const TestAlertRow = ({
   parentAlert,
   alert,
-  tree,
   onExpand,
   expanded,
   indent,
-  bugs,
+  selected,
+  toggleSelected,
 }: AlertTestRowProps) => {
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-
-  const queryClient = useQueryClient();
-  const client = useNotifyAlertsClient();
-  const silenceMutation = useMutation({
-    mutationFn: (alertToSilence: GenericAlert | null) => {
-      return client.BatchUpdateAlerts(
-        BatchUpdateAlertsRequest.fromPartial({
-          requests: [
-            UpdateAlertRequest.fromPartial({
-              alert: {
-                name: `alerts/${encodeURIComponent(testAlert.key)}`,
-                // FIXME!
-                bug: '0', // alert.bug || '0',
-                silenceUntil: alertToSilence
-                  ? testAlert.history[0].buildId
-                  : '0',
-              },
-            }),
-          ],
-        }),
-      );
-    },
-    onSuccess: () => queryClient.invalidateQueries(),
-  });
   const testAlert = alert.alert;
   // FIXME!
   const silenced = false;
-  // buildIdFromUrl(builder.latest_failure_url) === alert.silenceUntil;
-  // const numTestFailures = alert.extension?.reason?.num_failing_tests || 0;
-  // const firstTestFailureName = shortTestName(
-  //   alert.extension?.reason?.tests?.[0].test_name,
-  // );
   const consecutiveFailures = testAlert.consecutiveFailures;
   const firstFailureId = testAlert.history[consecutiveFailures - 1]?.buildId;
 
@@ -101,7 +58,6 @@ export const TestAlertRow = ({
   return (
     <TableRow
       hover
-      onClick={() => onExpand()}
       sx={{
         cursor: 'pointer',
         opacity:
@@ -113,7 +69,17 @@ export const TestAlertRow = ({
             : '1',
       }}
     >
-      <TableCell>
+      <TableCell width="32px" padding="none">
+        {parentAlert === undefined ? (
+          <Checkbox checked={selected} onChange={toggleSelected} />
+        ) : null}
+      </TableCell>
+      <TableCell
+        width="32px"
+        padding="none"
+        onClick={() => onExpand()}
+        title={expanded ? 'Collapse' : 'Expand'}
+      >
         {alert.children.length > 0 && (
           <IconButton sx={{ marginLeft: `${indent * 20}px` }}>
             {expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
@@ -134,7 +100,7 @@ export const TestAlertRow = ({
         {testAlert.testName}
         <PrefillFilterIcon filter={testAlert.testName} />
       </TableCell>
-      <TableCell>
+      <TableCell width="180px">
         <TestHistorySparkline
           project={testAlert.builderID.project}
           testId={testAlert.testId}
@@ -143,7 +109,7 @@ export const TestAlertRow = ({
           numHighlighted={consecutiveFailures}
         />
       </TableCell>
-      <TableCell>
+      <TableCell width="120px">
         {consecutiveFailures > 0 && (
           <Link
             href={`/b/${firstFailureId}`}
@@ -156,7 +122,7 @@ export const TestAlertRow = ({
           </Link>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell width="80px">
         {firstFailureId && (
           <Link
             href={`/b/${firstFailureId}/blamelist`}
@@ -178,38 +144,6 @@ export const TestAlertRow = ({
             Blamelist
           </Link>
         )}
-      </TableCell>
-      <TableCell>
-        <div css={{ display: 'flex' }}>
-          <Tooltip title="Link bug">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuAnchorEl(e.currentTarget);
-              }}
-            >
-              <BugReportIcon />
-            </IconButton>
-          </Tooltip>
-          <BugMenu
-            anchorEl={menuAnchorEl}
-            onClose={() => setMenuAnchorEl(null)}
-            alerts={[testAlert.key]}
-            tree={tree}
-            bugs={bugs}
-          />
-
-          <Tooltip title="Silence alert until next build completes">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                silenceMutation.mutate(silenced ? null : testAlert);
-              }}
-            >
-              {silenced ? <NotificationsIcon /> : <NotificationsPausedIcon />}
-            </IconButton>
-          </Tooltip>
-        </div>
       </TableCell>
     </TableRow>
   );

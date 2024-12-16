@@ -17,7 +17,7 @@ import { DateTime } from 'luxon';
 
 import { HtmlTooltip } from '@/common/components/html_tooltip';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
-import { OneTestHistory } from '@/monitoringv2/pages/monitoring_page/context/context';
+import { OneTestHistory } from '@/monitoringv2/util/alerts';
 import { TestVerdictStatus } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_verdict.pb';
 import { testVariantStatusToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/test_variant.pb';
 

@@ -36,6 +36,34 @@ export function getLongestCommonPrefix(strings: readonly string[]): string {
 }
 
 /**
+ * Get the longest common substring in a list of strings. This is not
+ * optimized to handle large datasets.
+ */
+export const getLongestCommonSubstring = (
+  strings: readonly string[],
+): string => {
+  if (!strings.length) {
+    return '';
+  }
+  if (strings.length === 1) {
+    return strings[0];
+  }
+  const shortest = strings.reduce((a, b) => (a.length <= b.length ? a : b));
+  let longest = '';
+  for (let i = 0; i < shortest.length; i++) {
+    for (let j = i + 1; j <= shortest.length; j++) {
+      const sub = shortest.substring(i, j);
+      if (strings.every((str) => str.includes(sub))) {
+        if (sub.length > longest.length) {
+          longest = sub;
+        }
+      }
+    }
+  }
+  return longest;
+};
+
+/**
  * Format number with a cap. If the number is greater than `cap`, display
  * `${cap}+` instead. This is useful when displaying a large number in limited
  * space.

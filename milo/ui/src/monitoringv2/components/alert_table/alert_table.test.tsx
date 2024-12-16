@@ -15,47 +15,60 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { act } from 'react';
 
-import { configuredTrees } from '@/monitoringv2/util/config';
+import { buildStructuredAlerts } from '@/monitoringv2/util/alerts';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { testAlerts, testAlerts2 } from '../testing_tools/test_utils';
+import {
+  BuilderAlertBuilder,
+  StepAlertBuilder,
+} from '../testing_tools/test_utils';
 
 import { AlertTable } from './alert_table';
 
 describe('<AlertTable />', () => {
   it('displays an alert', async () => {
+    const b = new BuilderAlertBuilder().withBuilder('linux-rel').build();
+    const alerts = buildStructuredAlerts([b], [b]);
+
     render(
       <FakeContextProvider>
-        <AlertTable tree={configuredTrees[0]} alerts={testAlerts} bugs={[]} />
+        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
       </FakeContextProvider>,
     );
+
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
   });
 
   it('expands an alert on click', async () => {
+    const b = new BuilderAlertBuilder().withBuilder('linux-rel').build();
+    const s = new StepAlertBuilder().withBuilder('linux-rel').build();
+    const alerts = buildStructuredAlerts([b], [b, s]);
+
     render(
       <FakeContextProvider>
-        <AlertTable tree={configuredTrees[0]} alerts={testAlerts} bugs={[]} />
+        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
     expect(screen.queryByText('Step:')).toBeNull();
-    await act(() => fireEvent.click(screen.getByText('linux-rel')));
+    await act(() => fireEvent.click(screen.getByTitle('Expand')));
+
     expect(screen.getByText('Step:')).toBeInTheDocument();
   });
 
   it('sorts alerts on header click', async () => {
+    const b1 = new BuilderAlertBuilder().withBuilder('linux-rel').build();
+    const b2 = new BuilderAlertBuilder().withBuilder('win-rel').build();
+    const alerts = buildStructuredAlerts([b1, b2], [b1, b2]);
+
     render(
       <FakeContextProvider>
-        <AlertTable
-          tree={configuredTrees[0]}
-          alerts={[...testAlerts, ...testAlerts2]}
-          bugs={[]}
-        />
+        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
     expect(screen.getByText('win-rel')).toBeInTheDocument();
+
     // Sort asc
     await act(() => fireEvent.click(screen.getByText('Failure')));
     let linux = screen.getByText('linux-rel');
@@ -63,6 +76,7 @@ describe('<AlertTable />', () => {
     expect(linux.compareDocumentPosition(win)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+
     // Sort desc
     await act(() => fireEvent.click(screen.getByText('Failure')));
     linux = screen.getByText('linux-rel');

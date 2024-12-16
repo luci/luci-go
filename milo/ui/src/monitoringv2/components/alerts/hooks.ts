@@ -19,7 +19,7 @@ import {
 
 const ALERT_FILTER_PARAM = 'q';
 const SELECTED_TAB_PARAM = 'alerts_tab';
-export const DEFAULT_ALERT_TAB = 'untriaged';
+export const DEFAULT_ALERT_TAB = 'ungrouped';
 
 export function useFilterQuery(defaultValue?: string) {
   const [searchParams, setURLSearchParams] = useSyncedSearchParams();
@@ -36,10 +36,10 @@ export function useFilterQuery(defaultValue?: string) {
   ] as [string, (val: string) => void];
 }
 
-export function useSelectedTab() {
+export function useSelectedTab(defaultValue?: string) {
   const [searchParams, setURLSearchParams] = useSyncedSearchParams();
   return [
-    searchParams.get(SELECTED_TAB_PARAM),
+    searchParams.get(SELECTED_TAB_PARAM) || defaultValue,
     (value: string) => {
       setURLSearchParams(searchParamUpdater(SELECTED_TAB_PARAM, value));
     },

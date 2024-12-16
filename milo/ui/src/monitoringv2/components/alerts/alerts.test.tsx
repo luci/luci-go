@@ -53,63 +53,11 @@ describe('<Alerts />', () => {
       </FakeContextProvider>,
     );
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
-    expect(screen.getByText('Consistent Failures')).toBeInTheDocument();
-    expect(screen.getByText('New Failures')).toBeInTheDocument();
+    expect(screen.getByText('Ungrouped')).toBeInTheDocument();
+    expect(screen.getByText('All')).toBeInTheDocument();
   });
 
-  it('displays no bugs mesage', async () => {
-    render(
-      <FakeContextProvider
-        routerOptions={{
-          initialEntries: ['/?alerts_tab=bugs'],
-        }}
-      >
-        <MonitoringCtxForTest.Provider
-          value={{
-            alerts: [],
-            bugs: [],
-            tree: configuredTrees[0],
-            builderAlerts: [],
-            stepAlerts: [],
-            testAlerts: [],
-          }}
-        >
-          <Alerts />
-        </MonitoringCtxForTest.Provider>
-      </FakeContextProvider>,
-    );
-    expect(
-      screen.getByText('There are currently no alerts associated with bugs', {
-        exact: false,
-      }),
-    ).toBeInTheDocument();
-  });
-
-  it('displays a group for a bug in the hotlist when there are no alerts', async () => {
-    render(
-      <FakeContextProvider
-        routerOptions={{
-          initialEntries: ['/?alerts_tab=bugs'],
-        }}
-      >
-        <MonitoringCtxForTest.Provider
-          value={{
-            alerts: [],
-            bugs: [hotlistBug],
-            tree: configuredTrees[0],
-            builderAlerts: [],
-            stepAlerts: [],
-            testAlerts: [],
-          }}
-        >
-          <Alerts />
-        </MonitoringCtxForTest.Provider>
-      </FakeContextProvider>,
-    );
-    expect(screen.getByText('Hotlist Bug')).toBeInTheDocument();
-  });
-
-  it('sets filter when icon clicked', async () => {
+  it('sets filter when provided in URL', async () => {
     render(
       <FakeContextProvider
         routerOptions={{
