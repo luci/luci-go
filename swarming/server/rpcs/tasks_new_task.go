@@ -586,11 +586,27 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 		tr.BotPingToleranceSecs = defaultBotPingToleranceSecs
 	}
 
+	// auto generated tags
+	user := tr.User
+	if user == "" {
+		user = "none"
+	}
+	autoTags := []string{
+		fmt.Sprintf("priority:%d", tr.Priority),
+		fmt.Sprintf("realm:%s", tr.Realm),
+		fmt.Sprintf("service_account:%s", tr.ServiceAccount),
+		fmt.Sprintf("user:%s", user),
+		fmt.Sprintf("authenticated:%s", tr.Authenticated),
+	}
+	if req.ParentTaskId != "" {
+		autoTags = append(autoTags, fmt.Sprintf("parent_task_id:%s", req.ParentTaskId))
+	}
+
 	// TaskSlices
 	var totalExpirationSecs int32
 	for _, s := range req.GetTaskSlices() {
 		totalExpirationSecs += s.ExpirationSecs
-		props := toTaskProperties(s.Properties)
+		props, propsTags := toTaskProperties(s.Properties)
 		ts := model.TaskSlice{
 			Properties:     props,
 			ExpirationSecs: int64(s.ExpirationSecs),
@@ -602,14 +618,17 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 				SecretBytes: s.Properties.SecretBytes,
 			}
 		}
+		autoTags = append(autoTags, propsTags...)
 	}
 	tr.Expiration = now.Add(time.Duration(totalExpirationSecs) * time.Second)
 
-	tr.Tags = req.Tags
+	// add auto generated tags.
+	tr.Tags = append(req.Tags, autoTags...)
 
 	// apply task template.
 	template, additionalTags := selectTaskTemplate(ctx, state, pool, req.PoolTaskTemplate)
 	tr.Tags = append(tr.Tags, additionalTags...)
+	tr.Tags = stringset.NewFromSlice(tr.Tags...).ToSlice()
 
 	for i := range tr.TaskSlices {
 		if err := applyTemplate(&tr.TaskSlices[i].Properties, template); err != nil {
@@ -619,7 +638,6 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 		}
 	}
 
-	// TODO(chanli): add auto generated tags.
 	// TODO(chanli): apply server defaults.
 	// TODO(chanli): apply rbe_migration.
 	sort.Strings(tr.Tags)
@@ -682,7 +700,7 @@ func checkParent(ctx context.Context, tr *model.TaskRequest) error {
 	return nil
 }
 
-func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
+func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) {
 	props := model.TaskProperties{
 		Idempotent:           p.Idempotent,
 		ExecutionTimeoutSecs: int64(p.ExecutionTimeoutSecs),
@@ -709,10 +727,14 @@ func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
 	}
 
 	// Dimensions
+	var tags []string
 	if len(p.Dimensions) > 0 {
 		props.Dimensions = make(model.TaskDimensions, len(p.Dimensions))
 		for _, d := range p.Dimensions {
 			props.Dimensions[d.Key] = append(props.Dimensions[d.Key], d.Value)
+			for _, v := range strings.Split(d.Value, orDimSep) {
+				tags = append(tags, fmt.Sprintf("%s:%s", d.Key, v))
+			}
 		}
 	}
 
@@ -754,7 +776,7 @@ func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
 			}
 		}
 	}
-	return props
+	return props, tags
 }
 
 func selectTaskTemplate(ctx context.Context, state *RequestState, pool string, poolTaskTemplate apipb.NewTaskRequest_PoolTaskTemplateField) (*configpb.TaskTemplate, []string) {

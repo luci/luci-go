@@ -1243,10 +1243,16 @@ func TestToTaskRequestEntities(t *testing.T) {
 
 				expectedTags := func(template string) []string {
 					return []string{
+						"authenticated:user:test@example.com",
 						"k1:v1",
 						"k2:v2",
+						"pool:pool",
+						"priority:30",
+						"realm:project:realm",
+						"service_account:bot",
 						fmt.Sprintf("swarming.pool.task_template:%s", template),
 						fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+						"user:user",
 					}
 				}
 
@@ -1403,12 +1409,22 @@ func TestToTaskRequestEntities(t *testing.T) {
 			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
 
 			req := fullRequest()
+			req.TaskSlices[0].Properties.Dimensions = append(req.TaskSlices[0].Properties.Dimensions, &apipb.StringPair{
+				Key:   "multiple_value",
+				Value: "a|b|c",
+			})
 
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike(nil))
 			assert.That(t, ents.secretBytes, should.Match(
 				&model.SecretBytes{SecretBytes: []byte("this is a secret")}))
-			expectedProps := func(hasSecretBytes bool) model.TaskProperties {
+			expectedProps := func(hasSecretBytes bool, extraDims map[string][]string) model.TaskProperties {
+				dims := model.TaskDimensions{
+					"pool": []string{"pool"},
+				}
+				for k, v := range extraDims {
+					dims[k] = v
+				}
 				return model.TaskProperties{
 					GracePeriodSecs:      int64(60),
 					ExecutionTimeoutSecs: int64(300),
@@ -1430,9 +1446,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 					EnvPrefixes: model.EnvPrefixes{
 						"ep": []string{"a/b"},
 					},
-					Dimensions: model.TaskDimensions{
-						"pool": []string{"pool"},
-					},
+					Dimensions: dims,
 					Caches: []model.CacheEntry{
 						{
 							Name: "name",
@@ -1469,10 +1483,20 @@ func TestToTaskRequestEntities(t *testing.T) {
 					"k2:v2",
 				},
 				Tags: []string{
+					"authenticated:user:test@example.com",
 					"k1:v1",
 					"k2:v2",
+					"multiple_value:a",
+					"multiple_value:b",
+					"multiple_value:c",
+					"parent_task_id:60b2ed0a43023111",
+					"pool:pool",
+					"priority:30",
+					"realm:project:realm",
+					"service_account:bot",
 					"swarming.pool.task_template:prod",
 					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+					"user:parent_user",
 				},
 				ServiceAccount:       "bot",
 				Realm:                "project:realm",
@@ -1487,11 +1511,11 @@ func TestToTaskRequestEntities(t *testing.T) {
 				TaskSlices: []model.TaskSlice{
 					{
 						ExpirationSecs: int64(300),
-						Properties:     expectedProps(true),
+						Properties:     expectedProps(true, map[string][]string{"multiple_value": {"a|b|c"}}),
 					},
 					{
 						ExpirationSecs: int64(300),
-						Properties:     expectedProps(false),
+						Properties:     expectedProps(false, nil),
 					},
 				},
 			}
