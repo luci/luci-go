@@ -46,10 +46,10 @@ type Pool struct {
 	// Deployment contains the resolved task templates.
 	Deployment *configpb.TaskTemplateDeployment
 
-	// the RBE instance for tasks in this pool
+	// RBEInstance is the RBE instance for tasks in this pool.
 	RBEInstance string
 
-	// percent of tasks targeting this pool to send to RBE.
+	// RBEModePercent is the percent of tasks targeting this pool to send to RBE.
 	RBEModePercent int
 
 	rbeBotsSwarmingPercent int // percent of bots using Swarming scheduler

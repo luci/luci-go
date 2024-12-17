@@ -212,13 +212,13 @@ func TestValidateNewTask(t *testing.T) {
 				req := simpliestValidRequest("pool")
 				req.Priority = -1
 				_, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike("must be between 0 and 255"))
+				assert.That(t, err, should.ErrLike("must be between 1 and 255"))
 			})
 			t.Run("too_big", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.Priority = 500
 				_, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike("must be between 0 and 255"))
+				assert.That(t, err, should.ErrLike("must be between 1 and 255"))
 			})
 		})
 
@@ -341,7 +341,8 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("secret_bytes", func(t *ftt.Test) {
 				t.Run("too_long", func(t *ftt.Test) {
 					req := &apipb.NewTaskRequest{
-						Name: "new",
+						Name:     "new",
+						Priority: 30,
 						TaskSlices: []*apipb.TaskSlice{
 							{
 								Properties: &apipb.TaskProperties{
@@ -432,6 +433,7 @@ func TestValidateNewTask(t *testing.T) {
 				req := &apipb.NewTaskRequest{
 					Name:                 "new",
 					BotPingToleranceSecs: 300,
+					Priority:             30,
 					TaskSlices: []*apipb.TaskSlice{
 						simpliestValidSlice("pool1"),
 						simpliestValidSlice("pool2"),
@@ -445,6 +447,7 @@ func TestValidateNewTask(t *testing.T) {
 				req := &apipb.NewTaskRequest{
 					Name:                 "new",
 					BotPingToleranceSecs: 300,
+					Priority:             30,
 					TaskSlices: []*apipb.TaskSlice{
 						simpliestValidSlice("pool1"),
 						simpliestValidSlice("pool1"),
@@ -457,7 +460,8 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("task_properties", func(t *ftt.Test) {
 				t.Run("nil", func(t *ftt.Test) {
 					req := &apipb.NewTaskRequest{
-						Name: "new",
+						Name:     "new",
+						Priority: 30,
 						TaskSlices: []*apipb.TaskSlice{
 							{
 								ExpirationSecs: 600,

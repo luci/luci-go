@@ -109,10 +109,11 @@ func TestPriority(t *testing.T) {
 		err any
 	}{
 		{40, nil},
-		{0, nil},
+		{1, nil},
 		{255, nil},
-		{-1, "must be between 0 and 255"},
-		{256, "must be between 0 and 255"},
+		{0, "must be between 1 and 255"},
+		{-1, "must be between 1 and 255"},
+		{256, "must be between 1 and 255"},
 	}
 
 	for _, cs := range cases {

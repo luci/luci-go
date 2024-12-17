@@ -278,8 +278,9 @@ func ServiceAccount(sa string) error {
 
 // Priority checks a priority is correct.
 func Priority(p int32) error {
-	if p < 0 || p > maxPriority {
-		return errors.Reason("invalid %d, must be between 0 and %d", p, maxPriority).Err()
+	// Priority 0 is reserved for terminate tasks.
+	if p < 1 || p > maxPriority {
+		return errors.Reason("invalid %d, must be between 1 and %d", p, maxPriority).Err()
 	}
 	return nil
 }
