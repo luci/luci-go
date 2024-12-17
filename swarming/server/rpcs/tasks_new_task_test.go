@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -1612,6 +1613,68 @@ func TestNewTask(t *testing.T) {
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.That(t, err, should.ErrLike("swarming.tasks.actAs"))
 		})
+	})
+
+	ftt.Run("evaluate_only", t, func(t *ftt.Test) {
+		ctx = MockRequestState(ctx, state)
+		now := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, now)
+		req := simpliestValidRequest("visible-pool")
+		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+		req.EvaluateOnly = true
+		res, err := srv.NewTask(ctx, req)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, res.TaskId, should.Equal(""))
+		var empty *apipb.TaskResultResponse
+		assert.That(t, res.TaskResult, should.Match(empty))
+		props := &apipb.TaskProperties{
+			GracePeriodSecs:      60,
+			ExecutionTimeoutSecs: 300,
+			IoTimeoutSecs:        300,
+			Command:              []string{"command", "arg"},
+			Dimensions: []*apipb.StringPair{
+				{
+					Key:   "pool",
+					Value: "visible-pool",
+				},
+			},
+			CipdInput: &apipb.CipdInput{
+				Server: cfgtest.MockedCIPDServer,
+				ClientPackage: &apipb.CipdPackage{
+					PackageName: "client/pkg",
+					Version:     "latest",
+				},
+			},
+		}
+		expected := &apipb.TaskRequestResponse{
+			Name:                 "new",
+			Priority:             40,
+			ExpirationSecs:       300,
+			BotPingToleranceSecs: 1200,
+			Properties:           props,
+			Tags: []string{
+				"authenticated:user:test@example.com",
+				"pool:visible-pool",
+				"priority:40",
+				"realm:project:visible-task-realm",
+				"service_account:none",
+				"swarming.pool.task_template:none",
+				fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+				"user:none",
+			},
+			CreatedTs:      timestamppb.New(now),
+			Authenticated:  string(DefaultFakeCaller),
+			ServiceAccount: "none",
+			Realm:          "project:visible-task-realm",
+			Resultdb:       &apipb.ResultDBCfg{},
+			TaskSlices: []*apipb.TaskSlice{
+				{
+					ExpirationSecs: 300,
+					Properties:     props,
+				},
+			},
+		}
+		assert.That(t, res.Request, should.Match(expected))
 	})
 }
 

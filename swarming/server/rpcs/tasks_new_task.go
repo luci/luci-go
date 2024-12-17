@@ -109,9 +109,15 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		return nil, checkResult.ToGrpcErr()
 	}
 
-	_, err = toTaskRequestEntities(ctx, req, pool)
+	ents, err := toTaskRequestEntities(ctx, req, pool)
 	if err != nil {
 		return nil, err
+	}
+
+	if req.EvaluateOnly {
+		return &apipb.TaskRequestMetadataResponse{
+			Request: ents.request.ToProto(),
+		}, nil
 	}
 	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
