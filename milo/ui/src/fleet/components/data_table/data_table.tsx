@@ -116,6 +116,7 @@ export const DataTable = ({
       autosizeOnMount
       autosizeOptions={autosizeOptions}
       sx={{
+        border: 'none',
         [`& .${gridClasses.columnHeader}`]: {
           backgroundColor: colors.grey[100],
           height: 'unset !important',

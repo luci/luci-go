@@ -145,5 +145,3 @@ export const colors = {
   cyan,
   green,
 } as const;
-
-export default colors;

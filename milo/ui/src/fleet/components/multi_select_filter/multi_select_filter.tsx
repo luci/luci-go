@@ -26,7 +26,7 @@ export const MultiSelectFilter = ({
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
 }) => {
   return (
-    <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: 8 }}>
+    <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
       {filterOptions.map(
         (option, idx) =>
           option.options?.some((o2) =>

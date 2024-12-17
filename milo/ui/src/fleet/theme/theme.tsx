@@ -22,6 +22,9 @@ import { colors } from './colors';
 
 export const theme = createTheme(baseTheme, {
   palette: {
+    text: {
+      primary: colors.grey[900],
+    },
     primary: {
       main: colors.blue[600],
       dark: colors.blue[800],
@@ -56,6 +59,8 @@ export const theme = createTheme(baseTheme, {
     h4: { fontFamily: 'Google Sans', fontSize: 24, lineHeight: '32px' },
     h5: { fontFamily: 'Google Sans', fontSize: 22, lineHeight: '28px' },
     h6: { fontFamily: 'Google Sans', fontSize: 18, lineHeight: '24px' },
+    subhead1: { fontFamily: 'Google Sans', fontSize: 16, lineHeight: '24px' },
+    subhead2: { fontFamily: 'Google Sans', fontSize: 14, lineHeight: '24px' },
     subtitle1: {
       fontFamily: 'Roboto Medium',
       fontSize: 16,
@@ -132,5 +137,26 @@ export const theme = createTheme(baseTheme, {
 declare module '@mui/material/Chip' {
   interface ChipPropsVariantOverrides {
     filter: true;
+  }
+}
+
+declare module '@mui/material/styles' {
+  interface TypographyVariants {
+    subhead1?: React.CSSProperties;
+    subhead2?: React.CSSProperties;
+  }
+
+  // allow configuration using `createTheme()`
+  interface TypographyVariantsOptions {
+    subhead1?: React.CSSProperties;
+    subhead2?: React.CSSProperties;
+  }
+}
+
+// Update the Typography's variant prop options
+declare module '@mui/material/Typography' {
+  interface TypographyPropsVariantOverrides {
+    subhead1: true;
+    subhead2: true;
   }
 }

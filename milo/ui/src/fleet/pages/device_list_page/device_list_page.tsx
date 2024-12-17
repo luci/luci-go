@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Divider } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -19,6 +20,7 @@ import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
 import { DeviceTable } from '@/fleet/components/device_table';
+import { MainMetrics } from '@/fleet/components/main_metrics';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
   filtersUpdater,
@@ -29,6 +31,7 @@ import {
   SelectedFilters,
 } from '@/fleet/components/multi_select_filter/types';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { colors } from '@/fleet/theme/colors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -51,7 +54,8 @@ export const DeviceListPage = () => {
     <>
       <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
       <div>
-        hello from infra
+        <MainMetrics />
+        <Divider flexItem color={colors.grey[300]} />
         {dimensionsQuery.data && (
           <MultiSelectFilter
             filterOptions={toFilterOptions(dimensionsQuery.data)}
