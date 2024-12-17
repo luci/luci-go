@@ -1610,3 +1610,90 @@ func TestNewTask(t *testing.T) {
 		})
 	})
 }
+
+func TestApplyRBE(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("applyRBE", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
+		state := NewMockedRequestState()
+		poolCfg := state.Configs.MockPool("pool", "project:pool-realm")
+
+		setRBEInConfig := func(instance string, taskPercent int) context.Context {
+			if instance != "" {
+				poolCfg.RbeMigration = &configpb.Pool_RBEMigration{
+					RbeInstance:    instance,
+					RbeModePercent: int32(taskPercent),
+					BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+						{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 100},
+					},
+				}
+			}
+			return MockRequestState(ctx, state)
+		}
+
+		request := func(extraTag string) *apipb.NewTaskRequest {
+			req := simpliestValidRequest("pool")
+			req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+			if extraTag != "" {
+				req.Tags = append(req.Tags, extraTag)
+			}
+			return req
+		}
+
+		t.Run("no_rbe_in_config", func(t *ftt.Test) {
+			ctx := setRBEInConfig("", 0)
+			req := request("")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal(""))
+			assert.That(t, ents.request.Tags, should.NotContain("rbe:none"))
+		})
+
+		t.Run("prevent_rbe_from_request", func(t *ftt.Test) {
+			ctx := setRBEInConfig("rbe_instance", 50)
+			req := request("rbe:prevent")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal(""))
+			assert.That(t, ents.request.Tags, should.Contain("rbe:none"))
+		})
+
+		t.Run("allow_rbe_from_request", func(t *ftt.Test) {
+			ctx := setRBEInConfig("rbe_instance", 50)
+			req := request("rbe:allow")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
+			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
+		})
+
+		t.Run("rbe_0", func(t *ftt.Test) {
+			ctx := setRBEInConfig("rbe_instance", 0)
+			req := request("")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal(""))
+			assert.That(t, ents.request.Tags, should.Contain("rbe:none"))
+		})
+
+		t.Run("rbe_100", func(t *ftt.Test) {
+			ctx := setRBEInConfig("rbe_instance", 100)
+			req := request("")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
+			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
+		})
+
+		t.Run("random_dice", func(t *ftt.Test) {
+			ctx := setRBEInConfig("rbe_instance", 50)
+			req := request("")
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
+			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
+		})
+	})
+}

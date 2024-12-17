@@ -46,10 +46,15 @@ type Pool struct {
 	// Deployment contains the resolved task templates.
 	Deployment *configpb.TaskTemplateDeployment
 
-	rbeInstance            string // the RBE instance for tasks in this pool
-	rbeBotsSwarmingPercent int    // percent of bots using Swarming scheduler
-	rbeBotsHybridPercent   int    // percent of bots using both schedulers
-	rbeBotsRBEPercent      int    // percent of bots using RBE scheduler
+	// the RBE instance for tasks in this pool
+	RBEInstance string
+
+	// percent of tasks targeting this pool to send to RBE.
+	RBEModePercent int
+
+	rbeBotsSwarmingPercent int // percent of bots using Swarming scheduler
+	rbeBotsHybridPercent   int // percent of bots using both schedulers
+	rbeBotsRBEPercent      int // percent of bots using RBE scheduler
 }
 
 // RBEConfig are RBE-related parameters applied to a bot in a pool.
@@ -62,7 +67,7 @@ type RBEConfig struct {
 
 // rbeConfig returns RBE-related configuration for a bot in this pool.
 func (cfg *Pool) rbeConfig(botID string) RBEConfig {
-	if cfg.rbeInstance == "" {
+	if cfg.RBEInstance == "" {
 		return RBEConfig{
 			Mode: configpb.Pool_RBEMigration_BotModeAllocation_SWARMING,
 		}
@@ -86,12 +91,12 @@ func (cfg *Pool) rbeConfig(botID string) RBEConfig {
 	case rnd < cfg.rbeBotsSwarmingPercent+cfg.rbeBotsHybridPercent:
 		return RBEConfig{
 			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_HYBRID,
-			Instance: cfg.rbeInstance,
+			Instance: cfg.RBEInstance,
 		}
 	default:
 		return RBEConfig{
 			Mode:     configpb.Pool_RBEMigration_BotModeAllocation_RBE,
-			Instance: cfg.rbeInstance,
+			Instance: cfg.RBEInstance,
 		}
 	}
 }
@@ -149,11 +154,15 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 				return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
 			}
 		}
-		poolCfg.rbeInstance = rbeCfg.RbeInstance
+		poolCfg.RBEInstance = rbeCfg.RbeInstance
 		poolCfg.rbeBotsSwarmingPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_SWARMING]
 		poolCfg.rbeBotsHybridPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_HYBRID]
 		poolCfg.rbeBotsRBEPercent = allocs[configpb.Pool_RBEMigration_BotModeAllocation_RBE]
 		if poolCfg.rbeBotsSwarmingPercent+poolCfg.rbeBotsHybridPercent+poolCfg.rbeBotsRBEPercent != 100 {
+			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
+		}
+		poolCfg.RBEModePercent = int(rbeCfg.RbeModePercent)
+		if poolCfg.RBEModePercent < 0 || poolCfg.RBEModePercent > 100 {
 			return nil, errors.Reason("unexpectedly incorrect RBE migration config").Err()
 		}
 	}

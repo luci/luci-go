@@ -147,6 +147,9 @@ func TestNewPoolsConfig(t *testing.T) {
 			CanaryChance: 1000,
 		}
 		assert.Loosely(t, pools["a"].Deployment, should.Match(expectedShared))
+
+		assert.Loosely(t, pools["b"].RBEInstance, should.Equal("some-instance"))
+		assert.Loosely(t, pools["b"].RBEModePercent, should.Equal(66))
 	})
 }
 

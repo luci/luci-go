@@ -643,7 +643,7 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 		applyDefaultCIPD(&tr.TaskSlices[i].Properties, state)
 	}
 
-	// TODO(chanli): apply rbe_migration.
+	applyRBE(ctx, tr, state, pool)
 	sort.Strings(tr.Tags)
 	return res, nil
 }
@@ -927,5 +927,37 @@ func applyDefaultCIPD(props *model.TaskProperties, state *RequestState) {
 	}
 	if props.CIPDInput.ClientPackage.Version == "" {
 		props.CIPDInput.ClientPackage.Version = state.Config.DefaultCIPD.ClientPackage.Version
+	}
+}
+
+func applyRBE(ctx context.Context, tr *model.TaskRequest, state *RequestState, pool string) {
+	poolCfg := state.Config.Pool(pool)
+	if poolCfg == nil {
+		panic(fmt.Sprintf("pool %q not found after pool perm check", pool))
+	}
+
+	if poolCfg.RBEInstance == "" {
+		return
+	}
+
+	rbeModePercent := poolCfg.RBEModePercent
+	// Per-task overrides useful for one-off experiments.
+	for _, tag := range tr.Tags {
+		if tag == "rbe:prevent" {
+			rbeModePercent = 0
+			break
+		}
+		if tag == "rbe:allow" {
+			rbeModePercent = 100
+			break
+		}
+	}
+
+	useRBE := mathrand.Intn(ctx, 100) < rbeModePercent
+	if useRBE {
+		tr.RBEInstance = poolCfg.RBEInstance
+		tr.Tags = append(tr.Tags, fmt.Sprintf("rbe:%s", poolCfg.RBEInstance))
+	} else {
+		tr.Tags = append(tr.Tags, "rbe:none")
 	}
 }
