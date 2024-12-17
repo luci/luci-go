@@ -65,6 +65,7 @@ const (
 
 var (
 	dimensionKeyRe = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
+	sessionIDRe    = regexp.MustCompile(`^[a-z0-9\-_/]{1,50}$`)
 	reservedTags   = stringset.NewFromSlice([]string{"swarming.terminate"}...)
 
 	// cloudProjectIDRE is the cloud project identifier regex derived from
@@ -109,6 +110,14 @@ func DimensionValue(val string) error {
 	}
 	if strings.TrimSpace(val) != val {
 		return errors.Reason("the value should have no leading or trailing spaces").Err()
+	}
+	return nil
+}
+
+// SessionID checks if `val` is a valid bot session ID.
+func SessionID(val string) error {
+	if !sessionIDRe.MatchString(val) {
+		return errors.Reason("should match %s", sessionIDRe).Err()
 	}
 	return nil
 }

@@ -70,6 +70,27 @@ func TestDimensionValue(t *testing.T) {
 	}
 }
 
+func TestSessionID(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		val string
+		err any
+	}{
+		{"good-value_/09", nil},
+		{strings.Repeat("a", 50), nil},
+		{"", "should match"},
+		{strings.Repeat("a", 51), "should match"},
+		{"BAD", "should match"},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.val, func(t *testing.T) {
+			assert.That(t, SessionID(cs.val), should.ErrLike(cs.err))
+		})
+	}
+}
+
 func TestTag(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
