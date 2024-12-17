@@ -88,23 +88,6 @@ service ResultDB {
   rpc QueryNewTestVariants(QueryNewTestVariantsRequest)
       returns (QueryNewTestVariantsResponse) {};
 
-  // == Artifacts =============================================================
-
-  // Retrieves an artifact.
-  rpc GetArtifact(GetArtifactRequest) returns (Artifact) {};
-
-  // Retrieves artifacts for a parent invocation/testResult.
-  //
-  // Note: if the parent is an invocation, the response does not contain
-  // artifacts of included invocations. Use QueryArtifacts instead.
-  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse) {};
-
-  // Retrieves artifacts from an invocation, recursively.
-  // Can retrieve artifacts of test results included in the invocation
-  // directly or indirectly.
-  // Supports invocation inclusions.
-  rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
-
   // Retrieves test verdicts for a test run. A test run comprises only
   // the test results from a single invocation and not its included
   // invocations.
@@ -121,23 +104,6 @@ service ResultDB {
   // To use, the caller must have `resultdb.testResults.list` permission
   // on the queried invocation.
   rpc QueryRunTestVerdicts(QueryRunTestVerdictsRequest) returns (QueryRunTestVerdictsResponse) {};
-
-  // Lists the artifact contents as a list of log lines and
-  // performs best effort extraction of log information
-  // such as severity and timestamp for each line.
-  //
-  // Currently supports artifacts with content types: [text/plain,]
-  rpc ListArtifactLines(ListArtifactLinesRequest) returns (ListArtifactLinesResponse) {};
-
-  // Retrieves the line ranges in the given failure that do not usually appear
-  // in logs from passes.
-  //
-  // Lines are normalized before comparison to remove numbers, dates, tmp file
-  // paths, etc.
-  //
-  // Due to missed normalizations, sampling error or other reasons, this may
-  // not eliminate all lines that appear in passes.
-  rpc QueryArtifactFailureOnlyLines(QueryArtifactFailureOnlyLinesRequest) returns (QueryArtifactFailureOnlyLinesResponse) {};
 
   // Retrieves test verdicts from an invocation, recursively.
   // Supports invocation inclusions.
@@ -160,6 +126,42 @@ service ResultDB {
   // If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
   // the chain will stop and the rpc will return whatever it has found so far.
   rpc QueryInstruction(QueryInstructionRequest) returns (QueryInstructionResponse) {};
+
+  // == Artifacts =============================================================
+
+  // Retrieves an artifact.
+  rpc GetArtifact(GetArtifactRequest) returns (Artifact) {};
+
+  // Retrieves artifacts for a parent invocation/testResult.
+  //
+  // Note: if the parent is an invocation, the response does not contain
+  // artifacts of included invocations. Use QueryArtifacts instead.
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse) {};
+
+  // Retrieves artifacts from an invocation, recursively.
+  // Can retrieve artifacts of test results included in the invocation
+  // directly or indirectly.
+  // Supports invocation inclusions.
+  rpc QueryArtifacts(QueryArtifactsRequest) returns (QueryArtifactsResponse) {};
+
+  // Lists the artifact contents as a list of log lines and
+  // performs best effort extraction of log information
+  // such as severity and timestamp for each line.
+  //
+  // Currently supports artifacts with content types: [text/plain,]
+  rpc ListArtifactLines(ListArtifactLinesRequest) returns (ListArtifactLinesResponse) {};
+
+  // Retrieves the line ranges in the given failure that do not usually appear
+  // in logs from passes.
+  //
+  // Lines are normalized before comparison to remove numbers, dates, tmp file
+  // paths, etc.
+  //
+  // Due to missed normalizations, sampling error or other reasons, this may
+  // not eliminate all lines that appear in passes.
+  rpc QueryArtifactFailureOnlyLines(QueryArtifactFailureOnlyLinesRequest) returns (QueryArtifactFailureOnlyLinesResponse) {};
+
+  // == Log Search =============================================================
 
   // Queries result level artifacts that matches a search_string. Support regex or exact match.
   // Results are grouped by test_id, variant_hash, artifact_id.
