@@ -17,7 +17,6 @@ package directoryocclusion
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -107,10 +106,6 @@ func TestDirectoryOcclusion(t *testing.T) {
 				for i := 0; i < len(on); i += 2 {
 					chk.Add(dir, on[i], on[i+1])
 				}
-			}
-			var expected errors.MultiError
-			for _, err := range tc.errs {
-				expected = append(expected, errors.Reason(err).Err())
 			}
 			merr := chk.Conflicts()
 			assert.That(t, len(merr), should.Equal(len(tc.errs)))
