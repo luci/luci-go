@@ -17,6 +17,7 @@ package rpcs
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -36,6 +38,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
@@ -86,7 +89,7 @@ func fullSlice(secretBytes []byte) *apipb.TaskSlice {
 			},
 			EnvPrefixes: []*apipb.StringListPair{
 				{
-					Key: "key",
+					Key: "ep",
 					Value: []string{
 						"a/b",
 					},
@@ -939,7 +942,15 @@ func TestToTaskRequestEntities(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.Use(context.Background())
+	ctx = mathrand.Set(ctx, rand.New(rand.NewSource(123)))
+
 	state := NewMockedRequestState()
+	poolCfg := state.Configs.MockPool("pool", "project:pool-realm")
+	poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+		TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+			Prod: &configpb.TaskTemplate{},
+		},
+	}
 	ctx = MockRequestState(ctx, state)
 
 	ftt.Run("toTaskRequestEntities", t, func(t *ftt.Test) {
@@ -1040,6 +1051,348 @@ func TestToTaskRequestEntities(t *testing.T) {
 			assert.That(t, ents.request.ServiceAccount, should.Equal("none"))
 			assert.That(t, ents.request.BotPingToleranceSecs, should.Equal(int64(1200)))
 		})
+
+		t.Run("apply_task_template", func(t *ftt.Test) {
+			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
+			req := fullRequest()
+			req.ParentTaskId = ""
+
+			t.Run("conflicts_in_cache_name", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Cache: []*configpb.TaskTemplate_CacheEntry{
+								{
+									Name: "name",
+									Path: "path2",
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`request.cache "name" conflicts with pool's template`))
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			})
+
+			t.Run("conflicts_in_cache_path", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Cache: []*configpb.TaskTemplate_CacheEntry{
+								{
+									Name: "name1",
+									Path: "path",
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`"path": directory has conflicting owners: `+
+						`task_cache:name[] and task_template_cache:name1[]`))
+			})
+
+			t.Run("conflicts_in_cipd_packages", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+								{
+									Pkg:     "template/pkg",
+									Version: "version",
+									Path:    "c/d",
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`"c/d": directory has conflicting owners: `+
+						`task_cipd_packages[some/pkg:good:tag] and `+
+						`task_template_cipd_packages[template/pkg:version]`))
+			})
+
+			t.Run("conflicts_in_template_cache_cipd_packages", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Cache: []*configpb.TaskTemplate_CacheEntry{
+								{
+									Name: "name1",
+									Path: "c",
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`task_cipd_packages[some/pkg:good:tag] uses "c/d", `+
+						`which conflicts with task_template_cache:name1[] using "c"`))
+			})
+
+			t.Run("conflicts_in_env", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Env: []*configpb.TaskTemplate_Env{
+								{
+									Var:   "key",
+									Value: "b",
+									Prefix: []string{
+										"e/f",
+									},
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`request.env "key" conflicts with pool's template`))
+			})
+			t.Run("conflicts_in_env_prefix", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Env: []*configpb.TaskTemplate_Env{
+								{
+									Var:   "ep",
+									Value: "b",
+									Prefix: []string{
+										"e/f",
+									},
+								},
+							},
+						},
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+				_, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.That(t, err, should.ErrLike(
+					`request.env_prefix "ep" conflicts with pool's template`))
+			})
+
+			t.Run("pass", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
+					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{
+						Prod: &configpb.TaskTemplate{
+							Cache: []*configpb.TaskTemplate_CacheEntry{
+								{
+									Name: "template_c",
+									Path: "c/template",
+								},
+							},
+							CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+								{
+									Pkg:     "template/pkg",
+									Version: "prod",
+									Path:    "p/template",
+								},
+							},
+							Env: []*configpb.TaskTemplate_Env{
+								{
+									Var:   "key",
+									Value: "b",
+									Prefix: []string{
+										"e/f",
+									},
+									Soft: true,
+								},
+							},
+						},
+						Canary: &configpb.TaskTemplate{
+							Cache: []*configpb.TaskTemplate_CacheEntry{
+								{
+									Name: "template_c",
+									Path: "c/template",
+								},
+							},
+							CipdPackage: []*configpb.TaskTemplate_CipdPackage{
+								{
+									Pkg:     "template/pkg",
+									Version: "canary",
+									Path:    "p/template",
+								},
+							},
+							Env: []*configpb.TaskTemplate_Env{
+								{
+									Var:   "ep",
+									Value: "b",
+									Prefix: []string{
+										"e/f",
+									},
+									Soft: true,
+								},
+							},
+						},
+						CanaryChance: 1000,
+					},
+				}
+				ctx := MockRequestState(ctx, state)
+
+				expectedTags := func(template string) []string {
+					return []string{
+						"k1:v1",
+						"k2:v2",
+						fmt.Sprintf("swarming.pool.task_template:%s", template),
+						fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+					}
+				}
+
+				expectedEnv := func(template string) []*apipb.StringPair {
+					if template == "canary" {
+						return []*apipb.StringPair{
+							{
+								Key:   "ep",
+								Value: "b",
+							},
+							{
+								Key:   "key",
+								Value: "value",
+							},
+						}
+					}
+					return fullSlice(nil).Properties.Env
+				}
+
+				expectedEnvPrefix := func(template string) []*apipb.StringListPair {
+					switch template {
+					case "none":
+						return fullSlice(nil).Properties.EnvPrefixes
+					case "canary":
+						return []*apipb.StringListPair{
+							{
+								Key: "ep",
+								Value: []string{
+									"a/b",
+									"e/f",
+								},
+							},
+						}
+					case "prod":
+						return []*apipb.StringListPair{
+							{
+								Key: "ep",
+								Value: []string{
+									"a/b",
+								},
+							},
+							{
+								Key: "key",
+								Value: []string{
+									"e/f",
+								},
+							},
+						}
+					}
+					return nil
+				}
+
+				expectedCaches := func(template string) []*apipb.CacheEntry {
+					if template == "none" {
+						return fullSlice(nil).Properties.Caches
+					}
+					return []*apipb.CacheEntry{
+						{
+							Name: "name",
+							Path: "path",
+						},
+						{
+							Name: "template_c",
+							Path: "c/template",
+						},
+					}
+				}
+
+				expectedPackages := func(template string) []*apipb.CipdPackage {
+					if template == "none" {
+						return fullSlice(nil).Properties.CipdInput.Packages
+					}
+
+					if template == "prod" {
+						return []*apipb.CipdPackage{
+							{
+								PackageName: "some/pkg",
+								Version:     "good:tag",
+								Path:        "c/d",
+							},
+							{
+								PackageName: "template/pkg",
+								Version:     "prod",
+								Path:        "p/template",
+							},
+						}
+					}
+					return []*apipb.CipdPackage{
+						{
+							PackageName: "some/pkg",
+							Version:     "good:tag",
+							Path:        "c/d",
+						},
+						{
+							PackageName: "template/pkg",
+							Version:     "canary",
+							Path:        "p/template",
+						},
+					}
+				}
+
+				testCases := []struct {
+					poolTaskTemplate apipb.NewTaskRequest_PoolTaskTemplateField
+					template         string
+				}{
+					{
+						poolTaskTemplate: apipb.NewTaskRequest_AUTO,
+						template:         "prod",
+					},
+					{
+						poolTaskTemplate: apipb.NewTaskRequest_CANARY_PREFER,
+						template:         "canary",
+					},
+					{
+						poolTaskTemplate: apipb.NewTaskRequest_CANARY_NEVER,
+						template:         "prod",
+					},
+					{
+						poolTaskTemplate: apipb.NewTaskRequest_SKIP,
+						template:         "none",
+					},
+				}
+
+				for _, tc := range testCases {
+					t.Run(apipb.NewTaskRequest_PoolTaskTemplateField_name[int32(tc.poolTaskTemplate)], func(t *ftt.Test) {
+						req := fullRequest()
+						req.PoolTaskTemplate = tc.poolTaskTemplate
+						req.ParentTaskId = ""
+						ents, err := toTaskRequestEntities(ctx, req, "pool")
+						assert.That(t, err, should.ErrLike(nil))
+						res := ents.request.ToProto()
+						assert.That(t, res.Tags, should.Match(expectedTags(tc.template)))
+
+						props := res.GetTaskSlices()[0].GetProperties()
+						assert.That(t, props.GetCaches(), should.Match(expectedCaches(tc.template)))
+						assert.That(t, props.GetCipdInput().GetPackages(),
+							should.Match(expectedPackages(tc.template)))
+						assert.That(t, props.GetEnv(), should.Match(expectedEnv(tc.template)))
+						assert.That(t, props.GetEnvPrefixes(),
+							should.Match(expectedEnvPrefix(tc.template)))
+					})
+				}
+
+			})
+		})
+
 		t.Run("from_full_request", func(t *ftt.Test) {
 			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
 			ctx, _ = testclock.UseTime(ctx, now)
@@ -1050,6 +1403,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
 
 			req := fullRequest()
+
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
 			assert.That(t, err, should.ErrLike(nil))
 			assert.That(t, ents.secretBytes, should.Match(
@@ -1074,7 +1428,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 						"key": "value",
 					},
 					EnvPrefixes: model.EnvPrefixes{
-						"key": []string{"a/b"},
+						"ep": []string{"a/b"},
 					},
 					Dimensions: model.TaskDimensions{
 						"pool": []string{"pool"},
@@ -1113,6 +1467,12 @@ func TestToTaskRequestEntities(t *testing.T) {
 				ManualTags: []string{
 					"k1:v1",
 					"k2:v2",
+				},
+				Tags: []string{
+					"k1:v1",
+					"k2:v2",
+					"swarming.pool.task_template:prod",
+					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
 				},
 				ServiceAccount:       "bot",
 				Realm:                "project:realm",

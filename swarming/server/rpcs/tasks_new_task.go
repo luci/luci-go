@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/directoryocclusion"
 	"go.chromium.org/luci/swarming/server/model"
@@ -532,7 +535,8 @@ type trEntities struct {
 //
 // Returns a grpc error if there's an issue.
 func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool string) (*trEntities, error) {
-	chk := State(ctx).ACL
+	state := State(ctx)
+	chk := state.ACL
 	now := clock.Now(ctx).UTC()
 
 	tr := &model.TaskRequest{
@@ -601,11 +605,24 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 	}
 	tr.Expiration = now.Add(time.Duration(totalExpirationSecs) * time.Second)
 
-	// TODO(chanli): apply template.
+	tr.Tags = req.Tags
+
+	// apply task template.
+	template, additionalTags := selectTaskTemplate(ctx, state, pool, req.PoolTaskTemplate)
+	tr.Tags = append(tr.Tags, additionalTags...)
+
+	for i := range tr.TaskSlices {
+		if err := applyTemplate(&tr.TaskSlices[i].Properties, template); err != nil {
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"applying task template: %s", err)
+		}
+	}
+
 	// TODO(chanli): add auto generated tags.
 	// TODO(chanli): apply server defaults.
-	// TODO(chanli): apply pool config.
-
+	// TODO(chanli): apply rbe_migration.
+	sort.Strings(tr.Tags)
 	return res, nil
 }
 
@@ -738,4 +755,136 @@ func toTaskProperties(p *apipb.TaskProperties) model.TaskProperties {
 		}
 	}
 	return props
+}
+
+func selectTaskTemplate(ctx context.Context, state *RequestState, pool string, poolTaskTemplate apipb.NewTaskRequest_PoolTaskTemplateField) (*configpb.TaskTemplate, []string) {
+	poolCfg := state.Config.Pool(pool)
+	if poolCfg == nil {
+		panic(fmt.Sprintf("pool %q not found after pool perm check", pool))
+	}
+
+	tags := []string{fmt.Sprintf("swarming.pool.version:%s", state.Config.VersionInfo.Revision)}
+	var template *configpb.TaskTemplate
+
+	choose := func(tmp string) {
+		switch tmp {
+		case "prod":
+			tags = append(tags, "swarming.pool.task_template:prod")
+			template = poolCfg.Deployment.Prod
+		case "canary":
+			tags = append(tags, "swarming.pool.task_template:canary")
+			template = poolCfg.Deployment.Canary
+		case "none":
+			tags = append(tags, "swarming.pool.task_template:none")
+		default:
+			panic(`template can only be "prod", "canary" or "none"`)
+		}
+	}
+	switch poolTaskTemplate {
+	case apipb.NewTaskRequest_AUTO:
+		if poolCfg.Deployment.Canary == nil {
+			choose("prod")
+		} else {
+			// generate a random number in the range of [1, 9999]
+			randomNumber := mathrand.Intn(ctx, 9999) + 1
+			if randomNumber < int(poolCfg.Deployment.CanaryChance) {
+				choose("canary")
+			} else {
+				choose("prod")
+			}
+		}
+	case apipb.NewTaskRequest_CANARY_NEVER:
+		choose("prod")
+	case apipb.NewTaskRequest_CANARY_PREFER:
+		if poolCfg.Deployment.Canary != nil {
+			choose("canary")
+		} else {
+			choose("prod")
+		}
+	case apipb.NewTaskRequest_SKIP:
+		choose("none")
+	}
+	return template, tags
+}
+
+// applyTemplate applies the templated to props in place.
+func applyTemplate(props *model.TaskProperties, template *configpb.TaskTemplate) error {
+	if template == nil {
+		return nil
+	}
+
+	// check conflicts.
+	doc := directoryocclusion.NewChecker("")
+	reservedCacheNames := stringset.New(len(template.Cache))
+	for _, c := range template.Cache {
+		// Caches are all unique; they can't overlap. So set each of them a
+		// unique owner.
+		doc.Add(c.Path, fmt.Sprintf("task_template_cache:%s", c.Name), "")
+		reservedCacheNames.Add(c.Name)
+	}
+	for _, pkg := range template.CipdPackage {
+		// All cipd packages are considered compatible in terms of paths: it's
+		// totally legit to install many packages in the same directory.
+		// Thus we set the owner for all cipd packages to "task_template_cipd_packages".
+		doc.Add(pkg.Path, "task_template_cipd_packages", fmt.Sprintf("%s:%s", pkg.Pkg, pkg.Version))
+	}
+	for _, c := range props.Caches {
+		if reservedCacheNames.Has(c.Name) {
+			return errors.Reason("request.cache %q conflicts with pool's template", c.Name).Err()
+		}
+		doc.Add(c.Path, fmt.Sprintf("task_cache:%s", c.Name), "")
+	}
+	for _, pkg := range props.CIPDInput.Packages {
+		doc.Add(pkg.Path, "task_cipd_packages", fmt.Sprintf("%s:%s", pkg.PackageName, pkg.Version))
+	}
+
+	docErrs := doc.Conflicts()
+	if len(docErrs) > 0 {
+		return docErrs.AsError()
+	}
+
+	for _, c := range template.Cache {
+		props.Caches = append(props.Caches, model.CacheEntry{
+			Name: c.Name,
+			Path: c.Path,
+		})
+	}
+
+	for _, pkg := range template.CipdPackage {
+		props.CIPDInput.Packages = append(props.CIPDInput.Packages, model.CIPDPackage{
+			PackageName: pkg.Pkg,
+			Version:     pkg.Version,
+			Path:        pkg.Path,
+		})
+	}
+
+	return applyTemplateEnv(props, template)
+}
+
+// applyTemplateEnv applies the env from template to props in place.
+func applyTemplateEnv(props *model.TaskProperties, template *configpb.TaskTemplate) error {
+	for _, e := range template.Env {
+		if !e.Soft {
+			if _, ok := props.Env[e.Var]; ok {
+				return errors.Reason("request.env %q conflicts with pool's template", e.Var).Err()
+			}
+			if _, ok := props.EnvPrefixes[e.Var]; ok {
+				return errors.Reason("request.env_prefix %q conflicts with pool's template", e.Var).Err()
+			}
+		}
+
+		if e.Value != "" {
+			if _, ok := props.Env[e.Var]; !ok {
+				props.Env[e.Var] = e.Value
+			}
+		}
+
+		if len(e.Prefix) != 0 {
+			envPrefix := props.EnvPrefixes[e.Var]
+			envPrefix = append(envPrefix, e.Prefix...)
+			props.EnvPrefixes[e.Var] = envPrefix
+		}
+
+	}
+	return nil
 }
