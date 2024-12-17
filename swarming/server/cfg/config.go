@@ -15,6 +15,7 @@
 package cfg
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -62,6 +63,26 @@ const (
 	// A digest of a default *.cfg configs (calculated in the test).
 	emptyCfgDigest = "0NpkIis/WMci8PDKkLD3PB/t8B86nbBVjyD59iosjOM"
 )
+
+// BotChannel is either StableBot or CanaryBot.
+type BotChannel bool
+
+const (
+	StableBot BotChannel = false
+	CanaryBot BotChannel = true
+)
+
+// String returns either "stable" or "canary".
+func (c BotChannel) String() string {
+	switch c {
+	case StableBot:
+		return "stable"
+	case CanaryBot:
+		return "canary"
+	default:
+		panic("impossible")
+	}
+}
 
 // CIPD is used to communicate with the CIPD server.
 //
@@ -215,6 +236,24 @@ func (cfg *Config) Pool(name string) *Pool {
 // Pools returns a sorted list of all known pools.
 func (cfg *Config) Pools() []string {
 	return cfg.poolNames
+}
+
+// BotChannel returns what release channel and archive a bot should be using.
+func (cfg *Config) BotChannel(botID string) (BotChannel, *BotArchiveInfo) {
+	// Get a quasi random integer in range [0; 100) by hashing the bot ID.
+	// Do exactly what the Python code is doing to avoid bots flapping between
+	// modes when migrating Python => Go. This also uses a different hash seed to
+	// avoid "synchronizing" with a similar hash calculation in pools.go.
+	sum := sha256.Sum256(bytes.Join([][]byte{
+		[]byte("bot-channel:"),
+		[]byte(botID),
+	}, nil))
+	num := float32(sum[0]) + float32(sum[1])*256.0
+	rnd := int32(num * 99.9 / (256.0 + 256.0*256.0))
+	if rnd < cfg.settings.GetBotDeployment().GetCanaryPercent() {
+		return CanaryBot, &cfg.VersionInfo.CanaryBot
+	}
+	return StableBot, &cfg.VersionInfo.StableBot
 }
 
 // BotGroup returns a BotGroup config matching the given bot ID.

@@ -16,6 +16,7 @@ package cfg
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -710,6 +711,44 @@ func TestBotRBEConfig(t *testing.T) {
 			Instance: "some-instance",
 		}))
 	})
+}
+
+func TestBotChannel(t *testing.T) {
+	t.Parallel()
+
+	cfg := Config{
+		VersionInfo: VersionInfo{
+			StableBot: BotArchiveInfo{
+				PackageVersion: "stable",
+			},
+			CanaryBot: BotArchiveInfo{
+				PackageVersion: "canary",
+			},
+		},
+		settings: &configpb.SettingsCfg{
+			BotDeployment: &configpb.BotDeployment{
+				CanaryPercent: 20,
+			},
+		},
+	}
+
+	stableBots := 0
+	canaryBots := 0
+	for botID := range 1000 {
+		channel, archive := cfg.BotChannel(fmt.Sprintf("bot-%d", botID))
+		switch channel {
+		case StableBot:
+			stableBots++
+			assert.That(t, archive.PackageVersion, should.Equal("stable"))
+		case CanaryBot:
+			canaryBots++
+			assert.That(t, archive.PackageVersion, should.Equal("canary"))
+		}
+	}
+
+	// Roughly 80% stable, 20% canary.
+	assert.That(t, stableBots, should.Equal(802))
+	assert.That(t, canaryBots, should.Equal(198))
 }
 
 func testCtx() context.Context {
