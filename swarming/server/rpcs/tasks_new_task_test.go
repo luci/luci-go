@@ -109,7 +109,7 @@ func fullSlice(secretBytes []byte) *apipb.TaskSlice {
 				},
 			},
 			CipdInput: &apipb.CipdInput{
-				Server: "https://cipd.com",
+				Server: "https://cipd.example.com",
 				ClientPackage: &apipb.CipdPackage{
 					PackageName: "some/pkg",
 					Version:     "version",
@@ -678,30 +678,10 @@ func TestValidateNewTask(t *testing.T) {
 				})
 
 				t.Run("cipd_input", func(t *ftt.Test) {
-					t.Run("server", func(t *ftt.Test) {
-						cases := []struct {
-							tn     string
-							server string
-							err    any
-						}{
-							{"empty", "", "required"},
-							{"too_long", strings.Repeat("a", maxCIPDServerLength+1), "too long"},
-						}
-						for _, cs := range cases {
-							t.Run(cs.tn, func(t *ftt.Test) {
-								req := simpliestValidRequest("pool")
-								req.TaskSlices[0].Properties.CipdInput = &apipb.CipdInput{
-									Server: cs.server,
-								}
-								_, err := validateNewTask(ctx, req)
-								assert.That(t, err, should.ErrLike(cs.err))
-							})
-						}
-					})
 					t.Run("client_package", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.CipdInput = &apipb.CipdInput{
-							Server: "https://cipd.com",
+							Server: "https://cipd.example.com",
 						}
 						t.Run("nil", func(t *ftt.Test) {
 							_, err := validateNewTask(ctx, req)
@@ -737,7 +717,7 @@ func TestValidateNewTask(t *testing.T) {
 					t.Run("packages", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
 						req.TaskSlices[0].Properties.CipdInput = &apipb.CipdInput{
-							Server: "https://cipd.com",
+							Server: "https://cipd.example.com",
 							ClientPackage: &apipb.CipdPackage{
 								PackageName: "some/pkg",
 								Version:     "version",
@@ -1106,7 +1086,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 						},
 					},
 					CIPDInput: model.CIPDInput{
-						Server: "https://cipd.com",
+						Server: "https://cipd.example.com",
 						ClientPackage: model.CIPDPackage{
 							PackageName: "some/pkg",
 							Version:     "version",

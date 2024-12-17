@@ -107,6 +107,15 @@ var goodPoolsCfg = &configpb.PoolsCfg{
 			},
 		},
 	},
+	DefaultExternalServices: &configpb.ExternalServices{
+		Cipd: &configpb.ExternalServices_CIPD{
+			Server: "https://cipd.example.com",
+			ClientPackage: &configpb.CipdPackage{
+				PackageName: "client/pkg",
+				Version:     "latest",
+			},
+		},
+	},
 }
 
 func TestNewPoolsConfig(t *testing.T) {
@@ -169,10 +178,88 @@ func TestPoolsValidation(t *testing.T) {
 	})
 
 	ftt.Run("Errors", t, func(t *ftt.Test) {
+		t.Run("default_cipd", func(t *ftt.Test) {
+			testCases := []struct {
+				name string
+				cfg  *configpb.PoolsCfg
+				err  []string
+			}{
+				{
+					name: "no_server",
+					cfg: &configpb.PoolsCfg{
+						DefaultExternalServices: &configpb.ExternalServices{
+							Cipd: &configpb.ExternalServices_CIPD{
+								ClientPackage: &configpb.CipdPackage{
+									PackageName: "client/pkg",
+									Version:     "latest",
+								},
+							},
+						},
+					},
+					err: []string{`(default_cipd / server): required`},
+				},
+				{
+					name: "no_client_package",
+					cfg: &configpb.PoolsCfg{
+						DefaultExternalServices: &configpb.ExternalServices{
+							Cipd: &configpb.ExternalServices_CIPD{
+								Server: "https://cipd.example.com",
+							},
+						},
+					},
+					err: []string{`(default_cipd / client_package): required`},
+				},
+				{
+					name: "no_package_name",
+					cfg: &configpb.PoolsCfg{
+						DefaultExternalServices: &configpb.ExternalServices{
+							Cipd: &configpb.ExternalServices_CIPD{
+								Server: "https://cipd.example.com",
+								ClientPackage: &configpb.CipdPackage{
+									Version: "latest",
+								},
+							},
+						},
+					},
+					err: []string{`(default_cipd / client_package / name): required`},
+				},
+				{
+					name: "no_package_version",
+					cfg: &configpb.PoolsCfg{
+						DefaultExternalServices: &configpb.ExternalServices{
+							Cipd: &configpb.ExternalServices_CIPD{
+								Server: "https://cipd.example.com",
+								ClientPackage: &configpb.CipdPackage{
+									PackageName: "client/pkg",
+								},
+							},
+						},
+					},
+					err: []string{`(default_cipd / client_package / version): required`},
+				},
+			}
+			for _, tc := range testCases {
+				t.Run(tc.name, func(t *ftt.Test) {
+					for i := range tc.err {
+						tc.err[i] = `in "pools.cfg" ` + tc.err[i]
+					}
+					assert.Loosely(t, call(tc.cfg), should.Match(tc.err))
+				})
+			}
+		})
 		t.Run("pool", func(t *ftt.Test) {
 			onePool := func(p *configpb.Pool) *configpb.PoolsCfg {
 				return &configpb.PoolsCfg{
 					Pool: []*configpb.Pool{p},
+					DefaultExternalServices: &configpb.ExternalServices{
+						Cipd: &configpb.ExternalServices_CIPD{
+							Server: "https://cipd.example.com",
+							ClientPackage: &configpb.CipdPackage{
+								PackageName: "client/pkg",
+								Version:     "latest",
+							},
+						},
+					},
 				}
 			}
 
@@ -748,6 +835,15 @@ func TestPoolsValidation(t *testing.T) {
 
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *ftt.Test) {
+					tc.cfg.DefaultExternalServices = &configpb.ExternalServices{
+						Cipd: &configpb.ExternalServices_CIPD{
+							Server: "https://cipd.example.com",
+							ClientPackage: &configpb.CipdPackage{
+								PackageName: "client/pkg",
+								Version:     "latest",
+							},
+						},
+					}
 					for i := range tc.err {
 						tc.err[i] = `in "pools.cfg" ` + tc.err[i]
 					}

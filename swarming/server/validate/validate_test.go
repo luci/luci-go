@@ -316,6 +316,24 @@ func TestCaches(t *testing.T) {
 	})
 }
 
+func TestCIPDServer(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		tn     string
+		server string
+		err    any
+	}{
+		{"empty", "", "required"},
+		{"too_long", strings.Repeat("a", maxCIPDServerLength+1), "too long"},
+	}
+	for _, cs := range cases {
+		t.Run(cs.tn, func(t *testing.T) {
+			assert.That(t, CIPDServer(cs.server), should.ErrLike(cs.err))
+		})
+	}
+}
+
 func TestCIPDPackages(t *testing.T) {
 	t.Parallel()
 

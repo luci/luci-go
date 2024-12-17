@@ -62,7 +62,6 @@ const (
 	maxCmdArgs              = 128
 	maxOutputCount          = 4096
 	maxOutputPathLength     = 512
-	maxCIPDServerLength     = 1024
 	maxDimensionKeyCount    = 32
 	maxDimensionValueCount  = 16
 	orDimSep                = "|"
@@ -391,7 +390,7 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, doc *directo
 	switch {
 	case cipdInput == nil:
 		return nil
-	case teeErr(validateCIPDServer(cipdInput.Server), &err) != nil:
+	case teeErr(validate.CIPDServer(cipdInput.Server), &err) != nil:
 		return errors.Annotate(err, "server").Err()
 	case teeErr(validateCIPDClientPackage(cipdInput.ClientPackage), &err) != nil:
 		return errors.Annotate(err, "client_package").Err()
@@ -403,16 +402,6 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, doc *directo
 	return errors.Annotate(merr.AsError(), "packages").Err()
 }
 
-func validateCIPDServer(server string) error {
-	if server == "" {
-		return errors.New("required")
-	}
-	if err := validate.Length(server, maxCIPDServerLength); err != nil {
-		return err
-	}
-	return validate.SecureURL(server)
-}
-
 func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 	var err error
 	switch {
@@ -420,9 +409,9 @@ func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 		return errors.New("required")
 	case pkg.GetPath() != "":
 		return errors.New("path must be unset")
-	case teeErr(validate.CipdPackageName(pkg.PackageName), &err) != nil:
+	case teeErr(validate.CIPDPackageName(pkg.PackageName), &err) != nil:
 		return errors.Annotate(err, "package_name").Err()
-	case teeErr(validate.CipdPackageVersion(pkg.Version), &err) != nil:
+	case teeErr(validate.CIPDPackageVersion(pkg.Version), &err) != nil:
 		return errors.Annotate(err, "version").Err()
 	default:
 		return nil

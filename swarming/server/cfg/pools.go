@@ -181,6 +181,8 @@ func newPool(pb *configpb.Pool, dplMap map[string]*configpb.TaskTemplateDeployme
 func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 	pools := stringset.New(0)
 
+	validateDefaultCIPD(ctx, cfg.DefaultExternalServices.GetCipd(), len(cfg.Pool))
+
 	// task_template
 	ctx.Enter("task_template")
 	for i, tmp := range cfg.TaskTemplate {
@@ -320,6 +322,46 @@ func validatePoolsCfg(ctx *validation.Context, cfg *configpb.PoolsCfg) {
 		validatePool(pool)
 		ctx.Exit()
 	}
+}
+
+func validateDefaultCIPD(ctx *validation.Context, pb *configpb.ExternalServices_CIPD, numPools int) {
+	ctx.Enter("default_cipd")
+	defer ctx.Exit()
+
+	if pb == nil {
+		// Only require defaultCIPD if there are pools.
+		// Without pools it's fine to not set defaultCIPD, since there's nowhere
+		// to use defaultCIPD anyway.
+		if numPools > 0 {
+			ctx.Errorf("required")
+		}
+		return
+	}
+
+	ctx.Enter("server")
+	if err := validate.CIPDServer(pb.Server); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("client_package")
+	defer ctx.Exit()
+	clientPkg := pb.ClientPackage
+	if clientPkg == nil {
+		ctx.Errorf("required")
+		return
+	}
+	ctx.Enter("name")
+	if err := validate.CIPDPackageName(clientPkg.PackageName); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("version")
+	if err := validate.CIPDPackageVersion(clientPkg.Version); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
 }
 
 func validateRBEMigration(ctx *validation.Context, pb *configpb.Pool_RBEMigration) {

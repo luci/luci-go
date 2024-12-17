@@ -134,6 +134,15 @@ func TestParseAndValidateConfigs(t *testing.T) {
 					name: "blah"
 					realm: "test:bleh"
 				}
+				default_external_services {
+					cipd {
+						server: "https://cipd.example.com"
+						client_package {
+							package_name: "client/pkg"
+							version: "latest"
+						}
+					}
+				}
 			`,
 			"bots.cfg": `
 				trusted_dimensions: "pool"
@@ -167,13 +176,22 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		assert.That(t, err, should.ErrLike(nil))
 		assert.That(t, bundle, should.Match(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
-			Digest:   "LBLN3ToniTYTTcn5xamgqOWbmwiFx32hNaQfOdrW3mQ",
+			Digest:   "E9NO4r+ORh2B7LJlaQoTEGFy9cV9zKWGp4j8dATncDE",
 			Settings: &configpb.SettingsCfg{
 				GoogleAnalytics: "boo",
 			},
 			Pools: &configpb.PoolsCfg{
 				Pool: []*configpb.Pool{
 					{Name: []string{"blah"}, Realm: "test:bleh"},
+				},
+				DefaultExternalServices: &configpb.ExternalServices{
+					Cipd: &configpb.ExternalServices_CIPD{
+						Server: "https://cipd.example.com",
+						ClientPackage: &configpb.CipdPackage{
+							PackageName: "client/pkg",
+							Version:     "latest",
+						},
+					},
 				},
 			},
 			Bots: &configpb.BotsCfg{
@@ -312,6 +330,13 @@ func TestBuildQueriableConfig(t *testing.T) {
 	}
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
+		defaultCIPD := &configpb.ExternalServices_CIPD{
+			Server: "https://cipd.example.com",
+			ClientPackage: &configpb.CipdPackage{
+				PackageName: "client/pkg",
+				Version:     "latest",
+			},
+		}
 		cfg, err := build(&internalcfgpb.ConfigBundle{
 			Settings: withDefaultSettings(&configpb.SettingsCfg{
 				TrafficMigration: &configpb.TrafficMigration{
@@ -441,6 +466,9 @@ func TestBuildQueriableConfig(t *testing.T) {
 						},
 					},
 				},
+				DefaultExternalServices: &configpb.ExternalServices{
+					Cipd: defaultCIPD,
+				},
 			},
 			Bots: &configpb.BotsCfg{
 				BotGroup: []*configpb.BotGroup{
@@ -567,6 +595,8 @@ func TestBuildQueriableConfig(t *testing.T) {
 			},
 		}
 		assert.Loosely(t, poolB.Deployment, should.Match(expectedDeploymentB))
+
+		assert.That(t, cfg.DefaultCIPD, should.Match(defaultCIPD))
 
 		// Bots.cfg processed correctly.
 		botPool := func(botID string) string {

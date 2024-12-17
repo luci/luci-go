@@ -191,6 +191,9 @@ type Config struct {
 	VersionInfo VersionInfo
 	// Refreshed is the local time when the config was fetched from the datastore.
 	Refreshed time.Time
+	// DefaultCIPD is the default CIPD to use, including CIPD server and the
+	// client package.
+	DefaultCIPD *configpb.ExternalServices_CIPD
 
 	settings  *configpb.SettingsCfg
 	traffic   map[string]*configpb.TrafficMigration_Route
@@ -716,6 +719,7 @@ func buildQueriableConfig(ctx context.Context, ent *configBundle) (*Config, erro
 	return &Config{
 		VersionInfo: ent.VersionInfo,
 		Refreshed:   clock.Now(ctx),
+		DefaultCIPD: ent.Bundle.Pools.GetDefaultExternalServices().GetCipd(),
 		settings:    settings,
 		traffic:     traffic,
 		poolMap:     pools,

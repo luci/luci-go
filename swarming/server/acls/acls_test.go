@@ -600,7 +600,19 @@ func mockedConfig(settings *configpb.AuthSettings, pools map[string]string, bots
 		}
 	}
 	putPb("settings.cfg", &configpb.SettingsCfg{Auth: settings})
-	putPb("pools.cfg", &configpb.PoolsCfg{Pool: poolpb})
+	putPb("pools.cfg",
+		&configpb.PoolsCfg{
+			Pool: poolpb,
+			DefaultExternalServices: &configpb.ExternalServices{
+				Cipd: &configpb.ExternalServices_CIPD{
+					Server: "https://cipd.example.com",
+					ClientPackage: &configpb.CipdPackage{
+						PackageName: "client/pkg",
+						Version:     "latest",
+					},
+				},
+			},
+		})
 	putPb("bots.cfg", &configpb.BotsCfg{
 		TrustedDimensions: []string{"pool"},
 		BotGroup:          botpb,

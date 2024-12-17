@@ -96,12 +96,12 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 			ctx.Errorf("this is a required field")
 		} else {
 			ctx.Enter("package_name")
-			if err := validate.CipdPackageName(cfg.Cipd.DefaultClientPackage.PackageName); err != nil {
+			if err := validate.CIPDPackageName(cfg.Cipd.DefaultClientPackage.PackageName); err != nil {
 				ctx.Errorf("%s", err)
 			}
 			ctx.Exit()
 			ctx.Enter("version")
-			if err := validate.CipdPackageVersion(cfg.Cipd.DefaultClientPackage.Version); err != nil {
+			if err := validate.CIPDPackageVersion(cfg.Cipd.DefaultClientPackage.Version); err != nil {
 				ctx.Errorf("%s", err)
 			}
 			ctx.Exit()

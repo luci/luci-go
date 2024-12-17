@@ -63,7 +63,17 @@ func NewMockedConfigs() *MockedConfigs {
 				AdminsGroup: MockedAdminGroup,
 			},
 		},
-		Pools: &configpb.PoolsCfg{},
+		Pools: &configpb.PoolsCfg{
+			DefaultExternalServices: &configpb.ExternalServices{
+				Cipd: &configpb.ExternalServices_CIPD{
+					Server: MockedCIPDServer,
+					ClientPackage: &configpb.CipdPackage{
+						PackageName: "client/pkg",
+						Version:     "latest",
+					},
+				},
+			},
+		},
 		Bots: &configpb.BotsCfg{
 			TrustedDimensions: []string{"pool"},
 		},
@@ -181,6 +191,17 @@ func MockConfigs(ctx context.Context, configs *MockedConfigs) *cfg.Provider {
 	}
 
 	putPb("settings.cfg", configs.Settings)
+	if len(configs.Pools.GetPool()) > 0 && configs.Pools.GetDefaultExternalServices() == nil {
+		configs.Pools.DefaultExternalServices = &configpb.ExternalServices{
+			Cipd: &configpb.ExternalServices_CIPD{
+				Server: MockedCIPDServer,
+				ClientPackage: &configpb.CipdPackage{
+					PackageName: "client/pkg",
+					Version:     "latest",
+				},
+			},
+		}
+	}
 	putPb("pools.cfg", configs.Pools)
 	putPb("bots.cfg", configs.Bots)
 	for path, body := range configs.Scripts {

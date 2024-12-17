@@ -54,6 +54,7 @@ const (
 	maxCacheNameLength = 128
 	maxCachePathLength = 256
 
+	maxCIPDServerLength  = 1024
 	maxCIPDPackageCount  = 64
 	MaxPackagePathLength = 256
 
@@ -112,11 +113,22 @@ func DimensionValue(val string) error {
 	return nil
 }
 
-// CipdPackageName checks CIPD package name is correct.
+// CIPDServer checks CIPD server is correct.
+func CIPDServer(server string) error {
+	if server == "" {
+		return errors.New("required")
+	}
+	if err := Length(server, maxCIPDServerLength); err != nil {
+		return err
+	}
+	return SecureURL(server)
+}
+
+// CIPDPackageName checks CIPD package name is correct.
 //
 // The package name is allowed to be a template e.g. have "${platform}" and
 // other substitutions inside.
-func CipdPackageName(pkg string) error {
+func CIPDPackageName(pkg string) error {
 	if pkg == "" {
 		return errors.New("required")
 	}
@@ -130,8 +142,8 @@ func CipdPackageName(pkg string) error {
 	return nil
 }
 
-// CipdPackageVersion checks CIPD package version is correct.
-func CipdPackageVersion(ver string) error {
+// CIPDPackageVersion checks CIPD package version is correct.
+func CIPDPackageVersion(ver string) error {
 	if ver == "" {
 		return errors.New("required")
 	}
@@ -187,11 +199,11 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directory
 func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, doc *directoryocclusion.Checker, pkgSource string) errors.MultiError {
 	var merr errors.MultiError
 
-	if err := CipdPackageName(pkgName); err != nil {
+	if err := CIPDPackageName(pkgName); err != nil {
 		merr.MaybeAdd(errors.Annotate(err, "name").Err())
 	}
 
-	if err := CipdPackageVersion(pkg.GetVersion()); err != nil {
+	if err := CIPDPackageVersion(pkg.GetVersion()); err != nil {
 		merr.MaybeAdd(errors.Annotate(err, "version").Err())
 	}
 
