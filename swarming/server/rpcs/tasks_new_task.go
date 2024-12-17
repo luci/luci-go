@@ -393,7 +393,7 @@ func validateCipdInput(cipdInput *apipb.CipdInput, idempotent bool, doc *directo
 	switch {
 	case cipdInput == nil:
 		return nil
-	case teeErr(validate.CIPDServer(cipdInput.Server), &err) != nil:
+	case cipdInput.Server != "" && teeErr(validate.CIPDServer(cipdInput.Server), &err) != nil:
 		return errors.Annotate(err, "server").Err()
 	case teeErr(validateCIPDClientPackage(cipdInput.ClientPackage), &err) != nil:
 		return errors.Annotate(err, "client_package").Err()
@@ -409,8 +409,8 @@ func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 	var err error
 	switch {
 	case pkg == nil:
-		return errors.New("required")
-	case pkg.GetPath() != "":
+		return nil
+	case pkg.Path != "":
 		return errors.New("path must be unset")
 	case teeErr(validate.CIPDPackageName(pkg.PackageName), &err) != nil:
 		return errors.Annotate(err, "package_name").Err()
@@ -638,7 +638,11 @@ func toTaskRequestEntities(ctx context.Context, req *apipb.NewTaskRequest, pool 
 		}
 	}
 
-	// TODO(chanli): apply server defaults.
+	// apply default cipd info.
+	for i := range tr.TaskSlices {
+		applyDefaultCIPD(&tr.TaskSlices[i].Properties, state)
+	}
+
 	// TODO(chanli): apply rbe_migration.
 	sort.Strings(tr.Tags)
 	return res, nil
@@ -909,4 +913,19 @@ func applyTemplateEnv(props *model.TaskProperties, template *configpb.TaskTempla
 
 	}
 	return nil
+}
+
+func applyDefaultCIPD(props *model.TaskProperties, state *RequestState) {
+	if state.Config.DefaultCIPD == nil {
+		panic("default cipd not found from config")
+	}
+	if props.CIPDInput.Server == "" {
+		props.CIPDInput.Server = state.Config.DefaultCIPD.Server
+	}
+	if props.CIPDInput.ClientPackage.PackageName == "" {
+		props.CIPDInput.ClientPackage.PackageName = state.Config.DefaultCIPD.ClientPackage.PackageName
+	}
+	if props.CIPDInput.ClientPackage.Version == "" {
+		props.CIPDInput.ClientPackage.Version = state.Config.DefaultCIPD.ClientPackage.Version
+	}
 }

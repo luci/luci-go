@@ -40,6 +40,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
 	"go.chromium.org/luci/swarming/server/validate"
 )
@@ -686,10 +687,6 @@ func TestValidateNewTask(t *testing.T) {
 						req.TaskSlices[0].Properties.CipdInput = &apipb.CipdInput{
 							Server: "https://cipd.example.com",
 						}
-						t.Run("nil", func(t *ftt.Test) {
-							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("required"))
-						})
 						t.Run("with_path", func(t *ftt.Test) {
 							req.TaskSlices[0].Properties.CipdInput.ClientPackage = &apipb.CipdPackage{
 								Path: "a/b",
@@ -1397,6 +1394,25 @@ func TestToTaskRequestEntities(t *testing.T) {
 				}
 
 			})
+		})
+
+		t.Run("apply_default_cipd", func(t *ftt.Test) {
+			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
+
+			pID := "60b2ed0a43023111"
+			pTR := taskRequest(pID)
+			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
+			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+
+			req := fullRequest()
+			req.TaskSlices[0].Properties.CipdInput = nil
+
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.Server, should.Equal(cfgtest.MockedCIPDServer))
+			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.ClientPackage.PackageName, should.Equal("client/pkg"))
+			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.ClientPackage.Version, should.Equal("latest"))
 		})
 
 		t.Run("from_full_request", func(t *ftt.Test) {
