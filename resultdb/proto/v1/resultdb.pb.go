@@ -4684,82 +4684,82 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_rawDesc = []byte{
 	0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6c, 0x75, 0x63,
 	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
 	0x65, 0x72, 0x79, 0x4e, 0x65, 0x77, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
-	0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x51, 0x0a, 0x0b,
-	0x47, 0x65, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x12, 0x24, 0x2e, 0x6c, 0x75,
-	0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x47,
-	0x65, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x1a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
-	0x62, 0x2e, 0x76, 0x31, 0x2e, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x22, 0x00, 0x12,
-	0x62, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73,
-	0x12, 0x26, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x65, 0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69,
-	0x66, 0x61, 0x63, 0x74, 0x73, 0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72,
-	0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
-	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63,
-	0x74, 0x73, 0x12, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x54, 0x65,
-	0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
-	0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73,
-	0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66,
-	0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e,
-	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75,
-	0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69,
-	0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x12, 0x92, 0x01, 0x0a, 0x1d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74,
-	0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f, 0x6e, 0x6c, 0x79,
-	0x4c, 0x69, 0x6e, 0x65, 0x73, 0x12, 0x36, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73,
-	0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72,
-	0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f, 0x6e, 0x6c,
-	0x79, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e,
-	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x61,
-	0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f, 0x6e, 0x6c, 0x79, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x2a, 0x2e,
-	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e,
-	0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69,
-	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x42, 0x61, 0x74, 0x63,
-	0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73,
-	0x12, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
-	0x2e, 0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74,
-	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
-	0x76, 0x31, 0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56,
-	0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x6e, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
+	0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64,
+	0x69, 0x63, 0x74, 0x73, 0x12, 0x2d, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75,
+	0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x75, 0x6e,
+	0x54, 0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x75, 0x6e, 0x54,
+	0x65, 0x73, 0x74, 0x56, 0x65, 0x72, 0x64, 0x69, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65,
+	0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
 	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54,
-	0x65, 0x73, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74,
-	0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x5a, 0x0a, 0x0e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
-	0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x6c,
+	0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x77, 0x0a, 0x14, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65,
+	0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x2d, 0x2e,
+	0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31,
+	0x2e, 0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72,
+	0x69, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x6c,
 	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e,
-	0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x00, 0x12, 0x6b, 0x0a,
-	0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x29, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64,
-	0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75,
-	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c,
+	0x42, 0x61, 0x74, 0x63, 0x68, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69,
+	0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6e,
+	0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5a,
+	0x0a, 0x0e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x73,
+	0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x00, 0x12, 0x6b, 0x0a, 0x10, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x29,
+	0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76,
+	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x51, 0x0a, 0x0b, 0x47, 0x65, 0x74, 0x41, 0x72,
+	0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x12, 0x24, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x41, 0x72, 0x74,
+	0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e, 0x6c,
 	0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x22, 0x00, 0x12, 0x62, 0x0a, 0x0d, 0x4c, 0x69,
+	0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x12, 0x26, 0x2e, 0x6c, 0x75,
+	0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c,
+	0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66,
+	0x61, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x65,
+	0x0a, 0x0e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73,
+	0x12, 0x27, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63,
+	0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x6c, 0x75, 0x63, 0x69,
+	0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x11, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72, 0x74,
+	0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x12, 0x2a, 0x2e, 0x6c, 0x75, 0x63,
+	0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69,
+	0x73, 0x74, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x41, 0x72,
+	0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x92, 0x01, 0x0a, 0x1d, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41,
+	0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f, 0x6e,
+	0x6c, 0x79, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x12, 0x36, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72,
+	0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f,
+	0x6e, 0x6c, 0x79, 0x4c, 0x69, 0x6e, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x37, 0x2e, 0x6c, 0x75, 0x63, 0x69, 0x2e, 0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x64, 0x62, 0x2e,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
+	0x46, 0x61, 0x69, 0x6c, 0x75, 0x72, 0x65, 0x4f, 0x6e, 0x6c, 0x79, 0x4c, 0x69, 0x6e, 0x65, 0x73,
 	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x95, 0x01, 0x0a, 0x1e, 0x51,
 	0x75, 0x65, 0x72, 0x79, 0x54, 0x65, 0x73, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x41,
 	0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x47, 0x72, 0x6f, 0x75, 0x70, 0x73, 0x12, 0x37, 0x2e,
@@ -4967,17 +4967,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_depIdxs = []int32
 	11, // 63: luci.resultdb.v1.ResultDB.QueryTestExonerations:input_type -> luci.resultdb.v1.QueryTestExonerationsRequest
 	13, // 64: luci.resultdb.v1.ResultDB.QueryTestResultStatistics:input_type -> luci.resultdb.v1.QueryTestResultStatisticsRequest
 	32, // 65: luci.resultdb.v1.ResultDB.QueryNewTestVariants:input_type -> luci.resultdb.v1.QueryNewTestVariantsRequest
-	15, // 66: luci.resultdb.v1.ResultDB.GetArtifact:input_type -> luci.resultdb.v1.GetArtifactRequest
-	16, // 67: luci.resultdb.v1.ResultDB.ListArtifacts:input_type -> luci.resultdb.v1.ListArtifactsRequest
-	18, // 68: luci.resultdb.v1.ResultDB.QueryArtifacts:input_type -> luci.resultdb.v1.QueryArtifactsRequest
-	26, // 69: luci.resultdb.v1.ResultDB.QueryRunTestVerdicts:input_type -> luci.resultdb.v1.QueryRunTestVerdictsRequest
-	20, // 70: luci.resultdb.v1.ResultDB.ListArtifactLines:input_type -> luci.resultdb.v1.ListArtifactLinesRequest
-	22, // 71: luci.resultdb.v1.ResultDB.QueryArtifactFailureOnlyLines:input_type -> luci.resultdb.v1.QueryArtifactFailureOnlyLinesRequest
-	24, // 72: luci.resultdb.v1.ResultDB.QueryTestVariants:input_type -> luci.resultdb.v1.QueryTestVariantsRequest
-	28, // 73: luci.resultdb.v1.ResultDB.BatchGetTestVariants:input_type -> luci.resultdb.v1.BatchGetTestVariantsRequest
-	30, // 74: luci.resultdb.v1.ResultDB.QueryTestMetadata:input_type -> luci.resultdb.v1.QueryTestMetadataRequest
-	34, // 75: luci.resultdb.v1.ResultDB.GetInstruction:input_type -> luci.resultdb.v1.GetInstructionRequest
-	35, // 76: luci.resultdb.v1.ResultDB.QueryInstruction:input_type -> luci.resultdb.v1.QueryInstructionRequest
+	26, // 66: luci.resultdb.v1.ResultDB.QueryRunTestVerdicts:input_type -> luci.resultdb.v1.QueryRunTestVerdictsRequest
+	24, // 67: luci.resultdb.v1.ResultDB.QueryTestVariants:input_type -> luci.resultdb.v1.QueryTestVariantsRequest
+	28, // 68: luci.resultdb.v1.ResultDB.BatchGetTestVariants:input_type -> luci.resultdb.v1.BatchGetTestVariantsRequest
+	30, // 69: luci.resultdb.v1.ResultDB.QueryTestMetadata:input_type -> luci.resultdb.v1.QueryTestMetadataRequest
+	34, // 70: luci.resultdb.v1.ResultDB.GetInstruction:input_type -> luci.resultdb.v1.GetInstructionRequest
+	35, // 71: luci.resultdb.v1.ResultDB.QueryInstruction:input_type -> luci.resultdb.v1.QueryInstructionRequest
+	15, // 72: luci.resultdb.v1.ResultDB.GetArtifact:input_type -> luci.resultdb.v1.GetArtifactRequest
+	16, // 73: luci.resultdb.v1.ResultDB.ListArtifacts:input_type -> luci.resultdb.v1.ListArtifactsRequest
+	18, // 74: luci.resultdb.v1.ResultDB.QueryArtifacts:input_type -> luci.resultdb.v1.QueryArtifactsRequest
+	20, // 75: luci.resultdb.v1.ResultDB.ListArtifactLines:input_type -> luci.resultdb.v1.ListArtifactLinesRequest
+	22, // 76: luci.resultdb.v1.ResultDB.QueryArtifactFailureOnlyLines:input_type -> luci.resultdb.v1.QueryArtifactFailureOnlyLinesRequest
 	38, // 77: luci.resultdb.v1.ResultDB.QueryTestVariantArtifactGroups:input_type -> luci.resultdb.v1.QueryTestVariantArtifactGroupsRequest
 	40, // 78: luci.resultdb.v1.ResultDB.QueryTestVariantArtifacts:input_type -> luci.resultdb.v1.QueryTestVariantArtifactsRequest
 	42, // 79: luci.resultdb.v1.ResultDB.QueryInvocationVariantArtifactGroups:input_type -> luci.resultdb.v1.QueryInvocationVariantArtifactGroupsRequest
@@ -4992,17 +4992,17 @@ var file_go_chromium_org_luci_resultdb_proto_v1_resultdb_proto_depIdxs = []int32
 	12, // 88: luci.resultdb.v1.ResultDB.QueryTestExonerations:output_type -> luci.resultdb.v1.QueryTestExonerationsResponse
 	14, // 89: luci.resultdb.v1.ResultDB.QueryTestResultStatistics:output_type -> luci.resultdb.v1.QueryTestResultStatisticsResponse
 	33, // 90: luci.resultdb.v1.ResultDB.QueryNewTestVariants:output_type -> luci.resultdb.v1.QueryNewTestVariantsResponse
-	63, // 91: luci.resultdb.v1.ResultDB.GetArtifact:output_type -> luci.resultdb.v1.Artifact
-	17, // 92: luci.resultdb.v1.ResultDB.ListArtifacts:output_type -> luci.resultdb.v1.ListArtifactsResponse
-	19, // 93: luci.resultdb.v1.ResultDB.QueryArtifacts:output_type -> luci.resultdb.v1.QueryArtifactsResponse
-	27, // 94: luci.resultdb.v1.ResultDB.QueryRunTestVerdicts:output_type -> luci.resultdb.v1.QueryRunTestVerdictsResponse
-	21, // 95: luci.resultdb.v1.ResultDB.ListArtifactLines:output_type -> luci.resultdb.v1.ListArtifactLinesResponse
-	23, // 96: luci.resultdb.v1.ResultDB.QueryArtifactFailureOnlyLines:output_type -> luci.resultdb.v1.QueryArtifactFailureOnlyLinesResponse
-	25, // 97: luci.resultdb.v1.ResultDB.QueryTestVariants:output_type -> luci.resultdb.v1.QueryTestVariantsResponse
-	29, // 98: luci.resultdb.v1.ResultDB.BatchGetTestVariants:output_type -> luci.resultdb.v1.BatchGetTestVariantsResponse
-	31, // 99: luci.resultdb.v1.ResultDB.QueryTestMetadata:output_type -> luci.resultdb.v1.QueryTestMetadataResponse
-	71, // 100: luci.resultdb.v1.ResultDB.GetInstruction:output_type -> luci.resultdb.v1.Instruction
-	36, // 101: luci.resultdb.v1.ResultDB.QueryInstruction:output_type -> luci.resultdb.v1.QueryInstructionResponse
+	27, // 91: luci.resultdb.v1.ResultDB.QueryRunTestVerdicts:output_type -> luci.resultdb.v1.QueryRunTestVerdictsResponse
+	25, // 92: luci.resultdb.v1.ResultDB.QueryTestVariants:output_type -> luci.resultdb.v1.QueryTestVariantsResponse
+	29, // 93: luci.resultdb.v1.ResultDB.BatchGetTestVariants:output_type -> luci.resultdb.v1.BatchGetTestVariantsResponse
+	31, // 94: luci.resultdb.v1.ResultDB.QueryTestMetadata:output_type -> luci.resultdb.v1.QueryTestMetadataResponse
+	71, // 95: luci.resultdb.v1.ResultDB.GetInstruction:output_type -> luci.resultdb.v1.Instruction
+	36, // 96: luci.resultdb.v1.ResultDB.QueryInstruction:output_type -> luci.resultdb.v1.QueryInstructionResponse
+	63, // 97: luci.resultdb.v1.ResultDB.GetArtifact:output_type -> luci.resultdb.v1.Artifact
+	17, // 98: luci.resultdb.v1.ResultDB.ListArtifacts:output_type -> luci.resultdb.v1.ListArtifactsResponse
+	19, // 99: luci.resultdb.v1.ResultDB.QueryArtifacts:output_type -> luci.resultdb.v1.QueryArtifactsResponse
+	21, // 100: luci.resultdb.v1.ResultDB.ListArtifactLines:output_type -> luci.resultdb.v1.ListArtifactLinesResponse
+	23, // 101: luci.resultdb.v1.ResultDB.QueryArtifactFailureOnlyLines:output_type -> luci.resultdb.v1.QueryArtifactFailureOnlyLinesResponse
 	39, // 102: luci.resultdb.v1.ResultDB.QueryTestVariantArtifactGroups:output_type -> luci.resultdb.v1.QueryTestVariantArtifactGroupsResponse
 	41, // 103: luci.resultdb.v1.ResultDB.QueryTestVariantArtifacts:output_type -> luci.resultdb.v1.QueryTestVariantArtifactsResponse
 	43, // 104: luci.resultdb.v1.ResultDB.QueryInvocationVariantArtifactGroups:output_type -> luci.resultdb.v1.QueryInvocationVariantArtifactGroupsResponse
@@ -5102,18 +5102,6 @@ type ResultDBClient interface {
 	// run in the given invocation against the submitted test history for the
 	// source.
 	QueryNewTestVariants(ctx context.Context, in *QueryNewTestVariantsRequest, opts ...grpc.CallOption) (*QueryNewTestVariantsResponse, error)
-	// Retrieves an artifact.
-	GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error)
-	// Retrieves artifacts for a parent invocation/testResult.
-	//
-	// Note: if the parent is an invocation, the response does not contain
-	// artifacts of included invocations. Use QueryArtifacts instead.
-	ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error)
-	// Retrieves artifacts from an invocation, recursively.
-	// Can retrieve artifacts of test results included in the invocation
-	// directly or indirectly.
-	// Supports invocation inclusions.
-	QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error)
 	// Retrieves test verdicts for a test run. A test run comprises only
 	// the test results from a single invocation and not its included
 	// invocations.
@@ -5130,21 +5118,6 @@ type ResultDBClient interface {
 	// To use, the caller must have `resultdb.testResults.list` permission
 	// on the queried invocation.
 	QueryRunTestVerdicts(ctx context.Context, in *QueryRunTestVerdictsRequest, opts ...grpc.CallOption) (*QueryRunTestVerdictsResponse, error)
-	// Lists the artifact contents as a list of log lines and
-	// performs best effort extraction of log information
-	// such as severity and timestamp for each line.
-	//
-	// Currently supports artifacts with content types: [text/plain,]
-	ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error)
-	// Retrieves the line ranges in the given failure that do not usually appear
-	// in logs from passes.
-	//
-	// Lines are normalized before comparison to remove numbers, dates, tmp file
-	// paths, etc.
-	//
-	// Due to missed normalizations, sampling error or other reasons, this may
-	// not eliminate all lines that appear in passes.
-	QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error)
 	// Retrieves test verdicts from an invocation, recursively.
 	// Supports invocation inclusions.
 	QueryTestVariants(ctx context.Context, in *QueryTestVariantsRequest, opts ...grpc.CallOption) (*QueryTestVariantsResponse, error)
@@ -5162,6 +5135,33 @@ type ResultDBClient interface {
 	// If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
 	// the chain will stop and the rpc will return whatever it has found so far.
 	QueryInstruction(ctx context.Context, in *QueryInstructionRequest, opts ...grpc.CallOption) (*QueryInstructionResponse, error)
+	// Retrieves an artifact.
+	GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error)
+	// Retrieves artifacts for a parent invocation/testResult.
+	//
+	// Note: if the parent is an invocation, the response does not contain
+	// artifacts of included invocations. Use QueryArtifacts instead.
+	ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error)
+	// Retrieves artifacts from an invocation, recursively.
+	// Can retrieve artifacts of test results included in the invocation
+	// directly or indirectly.
+	// Supports invocation inclusions.
+	QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error)
+	// Lists the artifact contents as a list of log lines and
+	// performs best effort extraction of log information
+	// such as severity and timestamp for each line.
+	//
+	// Currently supports artifacts with content types: [text/plain,]
+	ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error)
+	// Retrieves the line ranges in the given failure that do not usually appear
+	// in logs from passes.
+	//
+	// Lines are normalized before comparison to remove numbers, dates, tmp file
+	// paths, etc.
+	//
+	// Due to missed normalizations, sampling error or other reasons, this may
+	// not eliminate all lines that appear in passes.
+	QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error)
 	// Queries result level artifacts that matches a search_string. Support regex or exact match.
 	// Results are grouped by test_id, variant_hash, artifact_id.
 	// Within each group, artifacts are sorted by recency and at most 3 are returned.
@@ -5275,54 +5275,9 @@ func (c *resultDBPRPCClient) QueryNewTestVariants(ctx context.Context, in *Query
 	return out, nil
 }
 
-func (c *resultDBPRPCClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
-	out := new(Artifact)
-	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "GetArtifact", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBPRPCClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
-	out := new(ListArtifactsResponse)
-	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "ListArtifacts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBPRPCClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
-	out := new(QueryArtifactsResponse)
-	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryArtifacts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *resultDBPRPCClient) QueryRunTestVerdicts(ctx context.Context, in *QueryRunTestVerdictsRequest, opts ...grpc.CallOption) (*QueryRunTestVerdictsResponse, error) {
 	out := new(QueryRunTestVerdictsResponse)
 	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryRunTestVerdicts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBPRPCClient) ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error) {
-	out := new(ListArtifactLinesResponse)
-	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "ListArtifactLines", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBPRPCClient) QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error) {
-	out := new(QueryArtifactFailureOnlyLinesResponse)
-	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryArtifactFailureOnlyLines", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5368,6 +5323,51 @@ func (c *resultDBPRPCClient) GetInstruction(ctx context.Context, in *GetInstruct
 func (c *resultDBPRPCClient) QueryInstruction(ctx context.Context, in *QueryInstructionRequest, opts ...grpc.CallOption) (*QueryInstructionResponse, error) {
 	out := new(QueryInstructionResponse)
 	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryInstruction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
+	out := new(Artifact)
+	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "GetArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
+	out := new(ListArtifactsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "ListArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
+	out := new(QueryArtifactsResponse)
+	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error) {
+	out := new(ListArtifactLinesResponse)
+	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "ListArtifactLines", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBPRPCClient) QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error) {
+	out := new(QueryArtifactFailureOnlyLinesResponse)
+	err := c.client.Call(ctx, "luci.resultdb.v1.ResultDB", "QueryArtifactFailureOnlyLines", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5508,54 +5508,9 @@ func (c *resultDBClient) QueryNewTestVariants(ctx context.Context, in *QueryNewT
 	return out, nil
 }
 
-func (c *resultDBClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
-	out := new(Artifact)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/GetArtifact", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
-	out := new(ListArtifactsResponse)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/ListArtifacts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
-	out := new(QueryArtifactsResponse)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryArtifacts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *resultDBClient) QueryRunTestVerdicts(ctx context.Context, in *QueryRunTestVerdictsRequest, opts ...grpc.CallOption) (*QueryRunTestVerdictsResponse, error) {
 	out := new(QueryRunTestVerdictsResponse)
 	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryRunTestVerdicts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBClient) ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error) {
-	out := new(ListArtifactLinesResponse)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/ListArtifactLines", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *resultDBClient) QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error) {
-	out := new(QueryArtifactFailureOnlyLinesResponse)
-	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryArtifactFailureOnlyLines", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5601,6 +5556,51 @@ func (c *resultDBClient) GetInstruction(ctx context.Context, in *GetInstructionR
 func (c *resultDBClient) QueryInstruction(ctx context.Context, in *QueryInstructionRequest, opts ...grpc.CallOption) (*QueryInstructionResponse, error) {
 	out := new(QueryInstructionResponse)
 	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryInstruction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) GetArtifact(ctx context.Context, in *GetArtifactRequest, opts ...grpc.CallOption) (*Artifact, error) {
+	out := new(Artifact)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/GetArtifact", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) ListArtifacts(ctx context.Context, in *ListArtifactsRequest, opts ...grpc.CallOption) (*ListArtifactsResponse, error) {
+	out := new(ListArtifactsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/ListArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) QueryArtifacts(ctx context.Context, in *QueryArtifactsRequest, opts ...grpc.CallOption) (*QueryArtifactsResponse, error) {
+	out := new(QueryArtifactsResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryArtifacts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) ListArtifactLines(ctx context.Context, in *ListArtifactLinesRequest, opts ...grpc.CallOption) (*ListArtifactLinesResponse, error) {
+	out := new(ListArtifactLinesResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/ListArtifactLines", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *resultDBClient) QueryArtifactFailureOnlyLines(ctx context.Context, in *QueryArtifactFailureOnlyLinesRequest, opts ...grpc.CallOption) (*QueryArtifactFailureOnlyLinesResponse, error) {
+	out := new(QueryArtifactFailureOnlyLinesResponse)
+	err := c.cc.Invoke(ctx, "/luci.resultdb.v1.ResultDB/QueryArtifactFailureOnlyLines", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -5680,18 +5680,6 @@ type ResultDBServer interface {
 	// run in the given invocation against the submitted test history for the
 	// source.
 	QueryNewTestVariants(context.Context, *QueryNewTestVariantsRequest) (*QueryNewTestVariantsResponse, error)
-	// Retrieves an artifact.
-	GetArtifact(context.Context, *GetArtifactRequest) (*Artifact, error)
-	// Retrieves artifacts for a parent invocation/testResult.
-	//
-	// Note: if the parent is an invocation, the response does not contain
-	// artifacts of included invocations. Use QueryArtifacts instead.
-	ListArtifacts(context.Context, *ListArtifactsRequest) (*ListArtifactsResponse, error)
-	// Retrieves artifacts from an invocation, recursively.
-	// Can retrieve artifacts of test results included in the invocation
-	// directly or indirectly.
-	// Supports invocation inclusions.
-	QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error)
 	// Retrieves test verdicts for a test run. A test run comprises only
 	// the test results from a single invocation and not its included
 	// invocations.
@@ -5708,21 +5696,6 @@ type ResultDBServer interface {
 	// To use, the caller must have `resultdb.testResults.list` permission
 	// on the queried invocation.
 	QueryRunTestVerdicts(context.Context, *QueryRunTestVerdictsRequest) (*QueryRunTestVerdictsResponse, error)
-	// Lists the artifact contents as a list of log lines and
-	// performs best effort extraction of log information
-	// such as severity and timestamp for each line.
-	//
-	// Currently supports artifacts with content types: [text/plain,]
-	ListArtifactLines(context.Context, *ListArtifactLinesRequest) (*ListArtifactLinesResponse, error)
-	// Retrieves the line ranges in the given failure that do not usually appear
-	// in logs from passes.
-	//
-	// Lines are normalized before comparison to remove numbers, dates, tmp file
-	// paths, etc.
-	//
-	// Due to missed normalizations, sampling error or other reasons, this may
-	// not eliminate all lines that appear in passes.
-	QueryArtifactFailureOnlyLines(context.Context, *QueryArtifactFailureOnlyLinesRequest) (*QueryArtifactFailureOnlyLinesResponse, error)
 	// Retrieves test verdicts from an invocation, recursively.
 	// Supports invocation inclusions.
 	QueryTestVariants(context.Context, *QueryTestVariantsRequest) (*QueryTestVariantsResponse, error)
@@ -5740,6 +5713,33 @@ type ResultDBServer interface {
 	// If an error occurs while traversing a chain (e.g. circular dependency, permission, not found...),
 	// the chain will stop and the rpc will return whatever it has found so far.
 	QueryInstruction(context.Context, *QueryInstructionRequest) (*QueryInstructionResponse, error)
+	// Retrieves an artifact.
+	GetArtifact(context.Context, *GetArtifactRequest) (*Artifact, error)
+	// Retrieves artifacts for a parent invocation/testResult.
+	//
+	// Note: if the parent is an invocation, the response does not contain
+	// artifacts of included invocations. Use QueryArtifacts instead.
+	ListArtifacts(context.Context, *ListArtifactsRequest) (*ListArtifactsResponse, error)
+	// Retrieves artifacts from an invocation, recursively.
+	// Can retrieve artifacts of test results included in the invocation
+	// directly or indirectly.
+	// Supports invocation inclusions.
+	QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error)
+	// Lists the artifact contents as a list of log lines and
+	// performs best effort extraction of log information
+	// such as severity and timestamp for each line.
+	//
+	// Currently supports artifacts with content types: [text/plain,]
+	ListArtifactLines(context.Context, *ListArtifactLinesRequest) (*ListArtifactLinesResponse, error)
+	// Retrieves the line ranges in the given failure that do not usually appear
+	// in logs from passes.
+	//
+	// Lines are normalized before comparison to remove numbers, dates, tmp file
+	// paths, etc.
+	//
+	// Due to missed normalizations, sampling error or other reasons, this may
+	// not eliminate all lines that appear in passes.
+	QueryArtifactFailureOnlyLines(context.Context, *QueryArtifactFailureOnlyLinesRequest) (*QueryArtifactFailureOnlyLinesResponse, error)
 	// Queries result level artifacts that matches a search_string. Support regex or exact match.
 	// Results are grouped by test_id, variant_hash, artifact_id.
 	// Within each group, artifacts are sorted by recency and at most 3 are returned.
@@ -5790,23 +5790,8 @@ func (*UnimplementedResultDBServer) QueryTestResultStatistics(context.Context, *
 func (*UnimplementedResultDBServer) QueryNewTestVariants(context.Context, *QueryNewTestVariantsRequest) (*QueryNewTestVariantsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryNewTestVariants not implemented")
 }
-func (*UnimplementedResultDBServer) GetArtifact(context.Context, *GetArtifactRequest) (*Artifact, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArtifact not implemented")
-}
-func (*UnimplementedResultDBServer) ListArtifacts(context.Context, *ListArtifactsRequest) (*ListArtifactsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListArtifacts not implemented")
-}
-func (*UnimplementedResultDBServer) QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryArtifacts not implemented")
-}
 func (*UnimplementedResultDBServer) QueryRunTestVerdicts(context.Context, *QueryRunTestVerdictsRequest) (*QueryRunTestVerdictsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryRunTestVerdicts not implemented")
-}
-func (*UnimplementedResultDBServer) ListArtifactLines(context.Context, *ListArtifactLinesRequest) (*ListArtifactLinesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListArtifactLines not implemented")
-}
-func (*UnimplementedResultDBServer) QueryArtifactFailureOnlyLines(context.Context, *QueryArtifactFailureOnlyLinesRequest) (*QueryArtifactFailureOnlyLinesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryArtifactFailureOnlyLines not implemented")
 }
 func (*UnimplementedResultDBServer) QueryTestVariants(context.Context, *QueryTestVariantsRequest) (*QueryTestVariantsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTestVariants not implemented")
@@ -5822,6 +5807,21 @@ func (*UnimplementedResultDBServer) GetInstruction(context.Context, *GetInstruct
 }
 func (*UnimplementedResultDBServer) QueryInstruction(context.Context, *QueryInstructionRequest) (*QueryInstructionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryInstruction not implemented")
+}
+func (*UnimplementedResultDBServer) GetArtifact(context.Context, *GetArtifactRequest) (*Artifact, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetArtifact not implemented")
+}
+func (*UnimplementedResultDBServer) ListArtifacts(context.Context, *ListArtifactsRequest) (*ListArtifactsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListArtifacts not implemented")
+}
+func (*UnimplementedResultDBServer) QueryArtifacts(context.Context, *QueryArtifactsRequest) (*QueryArtifactsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryArtifacts not implemented")
+}
+func (*UnimplementedResultDBServer) ListArtifactLines(context.Context, *ListArtifactLinesRequest) (*ListArtifactLinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListArtifactLines not implemented")
+}
+func (*UnimplementedResultDBServer) QueryArtifactFailureOnlyLines(context.Context, *QueryArtifactFailureOnlyLinesRequest) (*QueryArtifactFailureOnlyLinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryArtifactFailureOnlyLines not implemented")
 }
 func (*UnimplementedResultDBServer) QueryTestVariantArtifactGroups(context.Context, *QueryTestVariantArtifactGroupsRequest) (*QueryTestVariantArtifactGroupsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTestVariantArtifactGroups not implemented")
@@ -6020,60 +6020,6 @@ func _ResultDB_QueryNewTestVariants_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ResultDB_GetArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetArtifactRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResultDBServer).GetArtifact(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.ResultDB/GetArtifact",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResultDBServer).GetArtifact(ctx, req.(*GetArtifactRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResultDB_ListArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListArtifactsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResultDBServer).ListArtifacts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.ResultDB/ListArtifacts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResultDBServer).ListArtifacts(ctx, req.(*ListArtifactsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResultDB_QueryArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryArtifactsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResultDBServer).QueryArtifacts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.ResultDB/QueryArtifacts",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResultDBServer).QueryArtifacts(ctx, req.(*QueryArtifactsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ResultDB_QueryRunTestVerdicts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryRunTestVerdictsRequest)
 	if err := dec(in); err != nil {
@@ -6088,42 +6034,6 @@ func _ResultDB_QueryRunTestVerdicts_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResultDBServer).QueryRunTestVerdicts(ctx, req.(*QueryRunTestVerdictsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResultDB_ListArtifactLines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListArtifactLinesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResultDBServer).ListArtifactLines(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.ResultDB/ListArtifactLines",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResultDBServer).ListArtifactLines(ctx, req.(*ListArtifactLinesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ResultDB_QueryArtifactFailureOnlyLines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryArtifactFailureOnlyLinesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ResultDBServer).QueryArtifactFailureOnlyLines(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.resultdb.v1.ResultDB/QueryArtifactFailureOnlyLines",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ResultDBServer).QueryArtifactFailureOnlyLines(ctx, req.(*QueryArtifactFailureOnlyLinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -6214,6 +6124,96 @@ func _ResultDB_QueryInstruction_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ResultDBServer).QueryInstruction(ctx, req.(*QueryInstructionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_GetArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetArtifactRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).GetArtifact(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.ResultDB/GetArtifact",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).GetArtifact(ctx, req.(*GetArtifactRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_ListArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListArtifactsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).ListArtifacts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.ResultDB/ListArtifacts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).ListArtifacts(ctx, req.(*ListArtifactsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_QueryArtifacts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryArtifactsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).QueryArtifacts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.ResultDB/QueryArtifacts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).QueryArtifacts(ctx, req.(*QueryArtifactsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_ListArtifactLines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListArtifactLinesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).ListArtifactLines(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.ResultDB/ListArtifactLines",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).ListArtifactLines(ctx, req.(*ListArtifactLinesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ResultDB_QueryArtifactFailureOnlyLines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryArtifactFailureOnlyLinesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ResultDBServer).QueryArtifactFailureOnlyLines(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/luci.resultdb.v1.ResultDB/QueryArtifactFailureOnlyLines",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ResultDBServer).QueryArtifactFailureOnlyLines(ctx, req.(*QueryArtifactFailureOnlyLinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -6335,28 +6335,8 @@ var _ResultDB_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ResultDB_QueryNewTestVariants_Handler,
 		},
 		{
-			MethodName: "GetArtifact",
-			Handler:    _ResultDB_GetArtifact_Handler,
-		},
-		{
-			MethodName: "ListArtifacts",
-			Handler:    _ResultDB_ListArtifacts_Handler,
-		},
-		{
-			MethodName: "QueryArtifacts",
-			Handler:    _ResultDB_QueryArtifacts_Handler,
-		},
-		{
 			MethodName: "QueryRunTestVerdicts",
 			Handler:    _ResultDB_QueryRunTestVerdicts_Handler,
-		},
-		{
-			MethodName: "ListArtifactLines",
-			Handler:    _ResultDB_ListArtifactLines_Handler,
-		},
-		{
-			MethodName: "QueryArtifactFailureOnlyLines",
-			Handler:    _ResultDB_QueryArtifactFailureOnlyLines_Handler,
 		},
 		{
 			MethodName: "QueryTestVariants",
@@ -6377,6 +6357,26 @@ var _ResultDB_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryInstruction",
 			Handler:    _ResultDB_QueryInstruction_Handler,
+		},
+		{
+			MethodName: "GetArtifact",
+			Handler:    _ResultDB_GetArtifact_Handler,
+		},
+		{
+			MethodName: "ListArtifacts",
+			Handler:    _ResultDB_ListArtifacts_Handler,
+		},
+		{
+			MethodName: "QueryArtifacts",
+			Handler:    _ResultDB_QueryArtifacts_Handler,
+		},
+		{
+			MethodName: "ListArtifactLines",
+			Handler:    _ResultDB_ListArtifactLines_Handler,
+		},
+		{
+			MethodName: "QueryArtifactFailureOnlyLines",
+			Handler:    _ResultDB_QueryArtifactFailureOnlyLines_Handler,
 		},
 		{
 			MethodName: "QueryTestVariantArtifactGroups",
