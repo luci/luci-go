@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 
@@ -79,7 +80,7 @@ func (b *Binding) badness() int {
 // Bindings is a list of bindings in a single realm for a single permission.
 type Bindings []Binding
 
-// Check returns true of any of the bindings in the list are applying.
+// Check returns true if any of the bindings in the list are applying.
 //
 // Checks conditions on `attrs` and memberships of the identity represented by
 // `q`.
@@ -87,7 +88,7 @@ func (b Bindings) Check(ctx context.Context, q *graph.MembershipsQueryCache, att
 	for _, binding := range b {
 		if binding.Condition == nil || binding.Condition.Eval(ctx, attrs) {
 			switch {
-			case binding.Idents.Has(string(q.Identity)):
+			case binding.Idents.Has(string(q.NormalizedIdentity)):
 				return true // was granted the permission explicitly in the ACL
 			case q.IsMemberOfAny(binding.Groups):
 				return true // has the permission through a group
@@ -367,7 +368,8 @@ func (si stringInterner) intern(s string) string {
 }
 
 // categorizePrincipals splits a list of principals into a list of groups
-// (identified by their indexes in a QueryableGraph) and list of identity names.
+// (identified by their indexes in a QueryableGraph) and list of normalized
+// identity names.
 //
 // Unknown groups are silently skipped.
 func categorizePrincipals(p []string, qg *graph.QueryableGraph, interner stringInterner) (groups []graph.NodeIndex, idents []string) {
@@ -377,7 +379,7 @@ func categorizePrincipals(p []string, qg *graph.QueryableGraph, interner stringI
 				groups = append(groups, idx)
 			}
 		} else {
-			idents = append(idents, interner.intern(principal))
+			idents = append(idents, interner.intern(string(identity.NewNormalizedIdentity(principal))))
 		}
 	}
 	return

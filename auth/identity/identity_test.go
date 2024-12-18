@@ -58,4 +58,32 @@ func TestIdentity(t *testing.T) {
 		assert.Loosely(t, Identity("service:abc").Email(), should.BeEmpty)
 		assert.Loosely(t, Identity("???").Email(), should.BeEmpty)
 	})
+
+	ftt.Run("AsNormalized works", t, func(t *ftt.Test) {
+		assert.Loosely(t,
+			string(Identity("user:Abc@Example.COM").AsNormalized()),
+			should.Equal(normalize("user:Abc@Example.COM")))
+
+		assert.Loosely(t,
+			string(Identity("service:TEST:Service-a").AsNormalized()),
+			should.Equal(normalize("service:TEST:Service-a")))
+
+		assert.Loosely(t,
+			string(Identity("bot:testBotAccount@Example.COM").AsNormalized()),
+			should.Equal(normalize("bot:testBotAccount@Example.COM")))
+	})
+}
+
+func TestNormalizedIdentity(t *testing.T) {
+	ftt.Run("Equivalent User NormalizedIdentities match", t, func(t *ftt.Test) {
+		lowerNID := Identity("user:abc@example.com").AsNormalized()
+		mixedNID := Identity("user:AbC@eXaMpLe.CoM").AsNormalized()
+		assert.Loosely(t, lowerNID, should.Equal(mixedNID))
+	})
+
+	ftt.Run("Non-User NormalizedIdentities are distinct", t, func(t *ftt.Test) {
+		lowerNID := Identity("service:test-service").AsNormalized()
+		mixedNID := Identity("service:Test-Service").AsNormalized()
+		assert.Loosely(t, lowerNID, should.NotEqual(mixedNID))
+	})
 }

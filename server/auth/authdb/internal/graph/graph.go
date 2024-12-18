@@ -296,18 +296,20 @@ func (g *Graph) buildGlobsMap() (map[NodeIndex]globset.GlobSet, error) {
 	return globs, nil
 }
 
-// buildMembershipsMap builds a map: an identity => groups it belongs to.
+// buildMembershipsMap builds a map:
+// normalized identity => groups it belongs to.
 //
 // Considers only direct mentions of identities in Members field of groups
 // (i.e. ignores globs).
-func (g *Graph) buildMembershipsMap() map[identity.Identity]SortedNodeSet {
-	sets := make(map[string]NodeSet) // identity string => groups it belongs to
+func (g *Graph) buildMembershipsMap() map[identity.NormalizedIdentity]SortedNodeSet {
+	sets := make(map[identity.NormalizedIdentity]NodeSet) // normalized identity => groups it belongs to
 	for idx, node := range g.Nodes {
 		if len(node.Members) == 0 {
 			continue
 		}
 		ancestors := g.Ancestors(NodeIndex(idx))
-		for _, ident := range node.Members {
+		for _, m := range node.Members {
+			ident := identity.Identity(m).AsNormalized()
 			nodeSet := sets[ident]
 			if nodeSet == nil {
 				nodeSet = make(NodeSet, len(ancestors))
@@ -318,10 +320,10 @@ func (g *Graph) buildMembershipsMap() map[identity.Identity]SortedNodeSet {
 	}
 
 	// Convert sets to slices and find duplicates to reduce memory footprint.
-	memberships := make(map[identity.Identity]SortedNodeSet, len(sets))
+	memberships := make(map[identity.NormalizedIdentity]SortedNodeSet, len(sets))
 	dedupper := NodeSetDedupper{}
 	for ident, nodeSet := range sets {
-		memberships[identity.Identity(ident)] = dedupper.Dedup(nodeSet)
+		memberships[ident] = dedupper.Dedup(nodeSet)
 	}
 
 	return memberships
@@ -338,9 +340,9 @@ func (g *Graph) buildMembershipsMap() map[identity.Identity]SortedNodeSet {
 // preallocated map[identity.Identity]SortedNodeSet (with empty keys!) is
 // already *half* the size of the fully populated one.
 type QueryableGraph struct {
-	groups      map[string]NodeIndex                // group name => group index
-	memberships map[identity.Identity]SortedNodeSet // identity => groups it belongs to
-	globs       map[NodeIndex]globset.GlobSet       // group index => globs inside it
+	groups      map[string]NodeIndex                          // group name => group index
+	memberships map[identity.NormalizedIdentity]SortedNodeSet // identity => groups it belongs to
+	globs       map[NodeIndex]globset.GlobSet                 // group index => globs inside it
 }
 
 // BuildQueryable constructs the queryable graph from a list of AuthGroups.
@@ -371,7 +373,7 @@ const (
 // IsMember returns true if the given identity belongs to the given group.
 func (g *QueryableGraph) IsMember(ident identity.Identity, group string) IsMemberResult {
 	if grpIdx, ok := g.groups[group]; ok {
-		if g.memberships[ident].Has(grpIdx) || g.globs[grpIdx].Has(ident) {
+		if g.memberships[ident.AsNormalized()].Has(grpIdx) || g.globs[grpIdx].Has(ident) {
 			return IdentIsMember
 		}
 		return IdentIsNotMember
@@ -384,10 +386,12 @@ func (g *QueryableGraph) IsMember(ident identity.Identity, group string) IsMembe
 // This query can be used to answer a bunch of IsMemberOfAny questions, caching
 // some internal state in-between them.
 func (g *QueryableGraph) MembershipsQueryCache(ident identity.Identity) MembershipsQueryCache {
+	normIdent := ident.AsNormalized()
 	return MembershipsQueryCache{
-		Identity:    ident,
-		graph:       g,
-		memberships: g.memberships[ident],
+		Identity:           ident,
+		NormalizedIdentity: normIdent,
+		graph:              g,
+		memberships:        g.memberships[normIdent],
 	}
 }
 
@@ -396,6 +400,8 @@ func (g *QueryableGraph) MembershipsQueryCache(ident identity.Identity) Membersh
 type MembershipsQueryCache struct {
 	// Identity whose memberships are being queried.
 	Identity identity.Identity
+	// The normalized version of Identity.
+	NormalizedIdentity identity.NormalizedIdentity
 
 	graph       *QueryableGraph
 	memberships SortedNodeSet

@@ -164,12 +164,19 @@ func TestSnapshotDB(t *testing.T) {
 		}
 
 		assert.Loosely(t, call("user:abc@example.com", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@Example.com", "direct"), should.BeTrue)
 		assert.Loosely(t, call("user:another@example.com", "direct"), should.BeFalse)
+		assert.Loosely(t, call("user:another@Example.com", "direct"), should.BeFalse)
 
 		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.BeTrue)
+		assert.Loosely(t, call("user:Abc@example.com", "via glob"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@Example.com", "via glob"), should.BeFalse)
 		assert.Loosely(t, call("user:abc@another.com", "via glob"), should.BeFalse)
+		assert.Loosely(t, call("user:Abc@another.com", "via glob"), should.BeFalse)
+		assert.Loosely(t, call("user:abc@Another.com", "via glob"), should.BeFalse)
 
 		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.BeTrue)
+		assert.Loosely(t, call("user:Abc@Example.com", "via nested"), should.BeTrue)
 		assert.Loosely(t, call("user:another@example.com", "via nested"), should.BeFalse)
 
 		assert.Loosely(t, call("user:abc@example.com", "cycle"), should.BeFalse)
@@ -178,7 +185,10 @@ func TestSnapshotDB(t *testing.T) {
 
 		assert.Loosely(t, call("user:abc@example.com"), should.BeFalse)
 		assert.Loosely(t, call("user:abc@example.com", "unknown", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@Example.com", "unknown", "direct"), should.BeTrue)
 		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@Example.com", "via glob", "direct"), should.BeTrue)
+		assert.Loosely(t, call("user:abc@Example.com", "unknown", "via glob"), should.BeFalse)
 	})
 
 	ftt.Run("CheckMembership works", t, func(t *ftt.Test) {
@@ -189,12 +199,14 @@ func TestSnapshotDB(t *testing.T) {
 		}
 
 		assert.Loosely(t, call("user:abc@example.com", "direct"), should.Resemble([]string{"direct"}))
+		assert.Loosely(t, call("user:Abc@Example.COM", "direct"), should.Match([]string{"direct"}))
 		assert.Loosely(t, call("user:another@example.com", "direct"), should.BeNil)
 
 		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.Resemble([]string{"via glob"}))
 		assert.Loosely(t, call("user:abc@another.com", "via glob"), should.BeNil)
 
 		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.Resemble([]string{"via nested"}))
+		assert.Loosely(t, call("user:Abc@Example.COM", "via nested"), should.Match([]string{"via nested"}))
 		assert.Loosely(t, call("user:another@example.com", "via nested"), should.BeNil)
 
 		assert.Loosely(t, call("user:abc@example.com", "cycle"), should.BeNil)
@@ -294,6 +306,11 @@ func TestSnapshotDB(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ok, should.BeTrue)
 
+			// A hit through a group despite email having different casing.
+			ok, err = db.HasPermission(ctx, "user:Abc@Example.COM", perm1, "proj:some/realm", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ok, should.BeTrue)
+
 			// Fallback to the root.
 			ok, err = db.HasPermission(ctx, "user:root@example.com", perm1, "proj:unknown", nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -352,6 +369,12 @@ func TestSnapshotDB(t *testing.T) {
 			sort.Strings(r)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, r, should.Resemble([]string{"another:realm", "proj:some/realm"}))
+
+			// A direct hit with different casing.
+			r, err = db.QueryRealms(ctx, "user:Realm@example.com", perm1, "", nil)
+			sort.Strings(r)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r, should.Match([]string{"another:realm", "proj:some/realm"}))
 
 			// Filtering by project.
 			r, err = db.QueryRealms(ctx, "user:realm@example.com", perm1, "proj", nil)

@@ -222,6 +222,7 @@ func TestQueryable(t *testing.T) {
 		assert.Loosely(t, q.IsMember("user:a@3.example.com", "no globs"), should.Equal(IdentIsNotMember))
 
 		assert.Loosely(t, q.IsMember("user:a@1.example.com", "root"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:a@1.Example.COM", "root"), should.Equal(IdentIsNotMember))
 		assert.Loosely(t, q.IsMember("user:a@1.example.com", "child1"), should.Equal(IdentIsNotMember))
 		assert.Loosely(t, q.IsMember("user:a@1.example.com", "child2"), should.Equal(IdentIsNotMember))
 	})
@@ -254,20 +255,21 @@ func TestQueryable(t *testing.T) {
 		})
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, q.memberships, should.Resemble(map[identity.Identity]SortedNodeSet{
-			"user:1@example.com": {0, 1, 3},
-			"user:2@example.com": {0, 1, 3},
-			"user:3@example.com": {0, 1, 2, 3},
-			"user:4@example.com": {3},
+		assert.Loosely(t, q.memberships, should.Match(map[identity.NormalizedIdentity]SortedNodeSet{
+			identity.NewNormalizedIdentity("user:1@example.com"): {0, 1, 3},
+			identity.NewNormalizedIdentity("user:2@example.com"): {0, 1, 3},
+			identity.NewNormalizedIdentity("user:3@example.com"): {0, 1, 2, 3},
+			identity.NewNormalizedIdentity("user:4@example.com"): {3},
 		}))
 
 		// Identical SortedNodeSet's are shared by reference.
-		a := q.memberships["user:1@example.com"]
-		b := q.memberships["user:2@example.com"]
+		a := q.memberships[identity.NewNormalizedIdentity("user:1@example.com")]
+		b := q.memberships[identity.NewNormalizedIdentity("user:2@example.com")]
 		assert.Loosely(t, &a[0] == &b[0], should.BeTrue)
 
 		assert.Loosely(t, q.IsMember("user:1@example.com", "root"), should.Equal(IdentIsMember))
 		assert.Loosely(t, q.IsMember("user:1@example.com", "child1"), should.Equal(IdentIsMember))
+		assert.Loosely(t, q.IsMember("user:1@Example.COM", "child1"), should.Equal(IdentIsMember))
 		assert.Loosely(t, q.IsMember("user:1@example.com", "child2"), should.Equal(IdentIsNotMember))
 		assert.Loosely(t, q.IsMember("user:1@example.com", "standalone"), should.Equal(IdentIsMember))
 		assert.Loosely(t, q.IsMember("user:1@example.com", "unknown"), should.Equal(GroupIsUnknown))
@@ -302,7 +304,7 @@ func TestQueryable(t *testing.T) {
 		q1 := q.MembershipsQueryCache("user:1@example.com")
 		assert.Loosely(t, q1.IsMemberOfAny([]NodeIndex{root, standalone}), should.BeTrue)
 
-		q2 := q.MembershipsQueryCache("user:3@example.com")
+		q2 := q.MembershipsQueryCache("user:3@eXaMpLe.COM")
 		assert.Loosely(t, q2.IsMemberOfAny([]NodeIndex{root, standalone}), should.BeTrue)
 		assert.Loosely(t, q2.IsMemberOfAny([]NodeIndex{standalone}), should.BeFalse)
 

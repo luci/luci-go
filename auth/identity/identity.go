@@ -60,6 +60,11 @@ var KnownKinds = map[Kind]*regexp.Regexp{
 // depends on a kind (see comments for Kind values).
 type Identity string
 
+// NormalizedIdentity is similar to Identity, but for identities with 'kind'
+// User, the 'value' component has been normalized. This is primarily to support
+// case-insensitive checks.
+type NormalizedIdentity string
+
 // AnonymousIdentity represents anonymous user.
 const AnonymousIdentity Identity = "anonymous:anonymous"
 
@@ -119,4 +124,28 @@ func (id Identity) Email() string {
 		return chunks[1]
 	}
 	return ""
+}
+
+// AsNormalized returns the Identity as a NormalizedIdentity.
+func (id Identity) AsNormalized() NormalizedIdentity {
+	return NewNormalizedIdentity(string(id))
+}
+
+// NewNormalizedIdentity creates a NormalizedIdentity from the given 'identity'
+// string. Note: the returned NormalizedIdentity may be an invalid identity,
+// as no validation occurs.
+func NewNormalizedIdentity(identity string) NormalizedIdentity {
+	return NormalizedIdentity(normalize(identity))
+}
+
+// normalize applies normalization to the given 'identity' string.
+func normalize(identity string) string {
+	if strings.HasPrefix(identity, "user:") {
+		// Normalization is simply making the 'value' component all lowercase,
+		// but this implementation could change.
+		return strings.ToLower(identity)
+	}
+
+	// Not a User identity so return as-is.
+	return identity
 }
