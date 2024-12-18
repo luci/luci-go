@@ -82,13 +82,13 @@ func TestGraph(t *testing.T) {
 			"3": nil,
 		})
 
-		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1", "2", "3"}))
-		assert.Loosely(t, descendants(g, "2"), should.Resemble([]string{"2", "3"}))
-		assert.Loosely(t, descendants(g, "3"), should.Resemble([]string{"3"}))
+		assert.Loosely(t, descendants(g, "1"), should.Match([]string{"1", "2", "3"}))
+		assert.Loosely(t, descendants(g, "2"), should.Match([]string{"2", "3"}))
+		assert.Loosely(t, descendants(g, "3"), should.Match([]string{"3"}))
 
-		assert.Loosely(t, ancestors(g, "1"), should.Resemble([]string{"1"}))
-		assert.Loosely(t, ancestors(g, "2"), should.Resemble([]string{"1", "2"}))
-		assert.Loosely(t, ancestors(g, "3"), should.Resemble([]string{"1", "2", "3"}))
+		assert.Loosely(t, ancestors(g, "1"), should.Match([]string{"1"}))
+		assert.Loosely(t, ancestors(g, "2"), should.Match([]string{"1", "2"}))
+		assert.Loosely(t, ancestors(g, "3"), should.Match([]string{"1", "2", "3"}))
 	})
 
 	ftt.Run("Tree", t, func(t *ftt.Test) {
@@ -99,9 +99,9 @@ func TestGraph(t *testing.T) {
 			"l2":   nil,
 			"r2":   nil,
 		})
-		assert.Loosely(t, descendants(g, "root"), should.Resemble([]string{"l1", "l2", "r1", "r2", "root"}))
-		assert.Loosely(t, descendants(g, "l1"), should.Resemble([]string{"l1", "l2", "r2"}))
-		assert.Loosely(t, ancestors(g, "r2"), should.Resemble([]string{"l1", "r2", "root"}))
+		assert.Loosely(t, descendants(g, "root"), should.Match([]string{"l1", "l2", "r1", "r2", "root"}))
+		assert.Loosely(t, descendants(g, "l1"), should.Match([]string{"l1", "l2", "r2"}))
+		assert.Loosely(t, ancestors(g, "r2"), should.Match([]string{"l1", "r2", "root"}))
 	})
 
 	ftt.Run("Diamond", t, func(t *ftt.Test) {
@@ -111,8 +111,8 @@ func TestGraph(t *testing.T) {
 			"r":    {"leaf"},
 			"leaf": nil,
 		})
-		assert.Loosely(t, descendants(g, "root"), should.Resemble([]string{"l", "leaf", "r", "root"}))
-		assert.Loosely(t, ancestors(g, "leaf"), should.Resemble([]string{"l", "leaf", "r", "root"}))
+		assert.Loosely(t, descendants(g, "root"), should.Match([]string{"l", "leaf", "r", "root"}))
+		assert.Loosely(t, ancestors(g, "leaf"), should.Match([]string{"l", "leaf", "r", "root"}))
 	})
 
 	ftt.Run("Cycle", t, func(t *ftt.Test) {
@@ -124,15 +124,15 @@ func TestGraph(t *testing.T) {
 		})
 		// Note: in presence of cycles the results of calls below generally depend
 		// on order they were called.
-		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1", "2"}))
-		assert.Loosely(t, descendants(g, "2"), should.Resemble([]string{"2"}))
-		assert.Loosely(t, ancestors(g, "1"), should.Resemble([]string{"1", "2"}))
-		assert.Loosely(t, ancestors(g, "2"), should.Resemble([]string{"2"}))
+		assert.Loosely(t, descendants(g, "1"), should.Match([]string{"1", "2"}))
+		assert.Loosely(t, descendants(g, "2"), should.Match([]string{"2"}))
+		assert.Loosely(t, ancestors(g, "1"), should.Match([]string{"1", "2"}))
+		assert.Loosely(t, ancestors(g, "2"), should.Match([]string{"2"}))
 	})
 
 	ftt.Run("Bad nested group reference", t, func(t *ftt.Test) {
 		g := mkGraph(map[string][]string{"1": {"missing"}})
-		assert.Loosely(t, descendants(g, "1"), should.Resemble([]string{"1"}))
+		assert.Loosely(t, descendants(g, "1"), should.Match([]string{"1"}))
 	})
 }
 
@@ -153,7 +153,7 @@ func TestNodeSet(t *testing.T) {
 		ns3.Update(ns2)
 
 		sorted := ns3.Sort()
-		assert.Loosely(t, sorted, should.Resemble(SortedNodeSet{3, 5, 10}))
+		assert.Loosely(t, sorted, should.Match(SortedNodeSet{3, 5, 10}))
 
 		assert.Loosely(t, sorted.Has(1), should.BeFalse)
 		assert.Loosely(t, sorted.Has(3), should.BeTrue)
@@ -204,7 +204,7 @@ func TestQueryable(t *testing.T) {
 			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, stringifyGlobMap(q.globs), should.Resemble(map[NodeIndex]string{
+		assert.Loosely(t, stringifyGlobMap(q.globs), should.Match(map[NodeIndex]string{
 			0: "user:^((.*@1\\.example\\.com)|(.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
 			1: "user:^((.*@2\\.example\\.com)|(.*@3\\.example\\.com))$",
 			2: "user:^.*@3\\.example\\.com$",

@@ -198,14 +198,14 @@ func TestSnapshotDB(t *testing.T) {
 			return res
 		}
 
-		assert.Loosely(t, call("user:abc@example.com", "direct"), should.Resemble([]string{"direct"}))
+		assert.Loosely(t, call("user:abc@example.com", "direct"), should.Match([]string{"direct"}))
 		assert.Loosely(t, call("user:Abc@Example.COM", "direct"), should.Match([]string{"direct"}))
 		assert.Loosely(t, call("user:another@example.com", "direct"), should.BeNil)
 
-		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.Resemble([]string{"via glob"}))
+		assert.Loosely(t, call("user:abc@example.com", "via glob"), should.Match([]string{"via glob"}))
 		assert.Loosely(t, call("user:abc@another.com", "via glob"), should.BeNil)
 
-		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.Resemble([]string{"via nested"}))
+		assert.Loosely(t, call("user:abc@example.com", "via nested"), should.Match([]string{"via nested"}))
 		assert.Loosely(t, call("user:Abc@Example.COM", "via nested"), should.Match([]string{"via nested"}))
 		assert.Loosely(t, call("user:another@example.com", "via nested"), should.BeNil)
 
@@ -214,14 +214,14 @@ func TestSnapshotDB(t *testing.T) {
 		assert.Loosely(t, call("user:abc@example.com", "unknown nested"), should.BeNil)
 
 		assert.Loosely(t, call("user:abc@example.com"), should.BeNil)
-		assert.Loosely(t, call("user:abc@example.com", "unknown", "direct"), should.Resemble([]string{"direct"}))
-		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.Resemble([]string{"via glob", "direct"}))
+		assert.Loosely(t, call("user:abc@example.com", "unknown", "direct"), should.Match([]string{"direct"}))
+		assert.Loosely(t, call("user:abc@example.com", "via glob", "direct"), should.Match([]string{"via glob", "direct"}))
 	})
 
 	ftt.Run("FilterKnownGroups works", t, func(t *ftt.Test) {
 		known, err := db.FilterKnownGroups(ctx, []string{"direct", "unknown", "empty", "direct", "unknown"})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, known, should.Resemble([]string{"direct", "empty", "direct"}))
+		assert.Loosely(t, known, should.Match([]string{"direct", "empty", "direct"}))
 	})
 
 	ftt.Run("With realms", t, func(t *ftt.Test) {
@@ -368,7 +368,7 @@ func TestSnapshotDB(t *testing.T) {
 			r, err := db.QueryRealms(ctx, "user:realm@example.com", perm1, "", nil)
 			sort.Strings(r)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble([]string{"another:realm", "proj:some/realm"}))
+			assert.Loosely(t, r, should.Match([]string{"another:realm", "proj:some/realm"}))
 
 			// A direct hit with different casing.
 			r, err = db.QueryRealms(ctx, "user:Realm@example.com", perm1, "", nil)
@@ -379,12 +379,12 @@ func TestSnapshotDB(t *testing.T) {
 			// Filtering by project.
 			r, err = db.QueryRealms(ctx, "user:realm@example.com", perm1, "proj", nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
+			assert.Loosely(t, r, should.Match([]string{"proj:some/realm"}))
 
 			// A hit through a group.
 			r, err = db.QueryRealms(ctx, "user:abc@example.com", perm1, "", nil)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
+			assert.Loosely(t, r, should.Match([]string{"proj:some/realm"}))
 		})
 
 		t.Run("QueryRealms with conditional bindings", func(t *ftt.Test) {
@@ -394,7 +394,7 @@ func TestSnapshotDB(t *testing.T) {
 
 			r, err = db.QueryRealms(ctx, "user:cond@example.com", perm1, "", realms.Attrs{"a": "ok_1"})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, r, should.Resemble([]string{"proj:some/realm"}))
+			assert.Loosely(t, r, should.Match([]string{"proj:some/realm"}))
 
 			r, err = db.QueryRealms(ctx, "user:cond@example.com", perm1, "", realms.Attrs{"a": "???"})
 			assert.Loosely(t, err, should.BeNil)
@@ -410,19 +410,19 @@ func TestSnapshotDB(t *testing.T) {
 			// Known realm with data.
 			d, err := db.GetRealmData(ctx, "proj:some/realm")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{
+			assert.Loosely(t, d, should.Match(&protocol.RealmData{
 				EnforceInService: []string{"some"},
 			}))
 
 			// Known realm, with no data.
 			d, err = db.GetRealmData(ctx, "proj:empty")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{}))
+			assert.Loosely(t, d, should.Match(&protocol.RealmData{}))
 
 			// Fallback to root.
 			d, err = db.GetRealmData(ctx, "proj:unknown")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, d, should.Resemble(&protocol.RealmData{
+			assert.Loosely(t, d, should.Match(&protocol.RealmData{
 				EnforceInService: []string{"root"},
 			}))
 
