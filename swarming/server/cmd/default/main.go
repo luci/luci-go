@@ -145,9 +145,13 @@ func main() {
 		botsrv.GET(botSrv, "/bot_code", botAPI.BotCode)
 		botsrv.GET(botSrv, "/swarming/api/v1/bot/bot_code/:Version", botAPI.BotCode)
 
-		// Bot API session management endpoints.
-		botsrv.JSON(botSrv, "/swarming/api/v1/bot/handshake", botAPI.Handshake)
-		botsrv.JSON(botSrv, "/swarming/api/v1/bot/poll", botAPI.Poll)
+		// Bot API session management endpoints. They know how to deal with missing
+		// session token and thus use NoSessionJSON. All other bot API endpoints
+		// require a valid session and thus use JSON handler.
+		botsrv.NoSessionJSON(botSrv, "/swarming/api/v1/bot/handshake", botAPI.Handshake)
+		botsrv.NoSessionJSON(botSrv, "/swarming/api/v1/bot/poll", botAPI.Poll)
+
+		// Bot API for claiming tasks and reporting events.
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/claim", botAPI.Claim)
 		botsrv.JSON(botSrv, "/swarming/api/v1/bot/event", botAPI.Event)
 

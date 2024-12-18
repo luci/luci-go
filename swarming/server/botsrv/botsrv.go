@@ -181,80 +181,26 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		req := c.Request
 		wrt := c.Writer
 
-		// Deserialized request body.
-		var body *B
-		// Deserialized (but perhaps expired) session.
-		var session *internalspb.Session
-
-		// writeErr logs a gRPC error and writes it to the HTTP response.
-		writeErr := func(err error) {
-			// Log request details to help in debugging errors.
-			logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
-			logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
-			if session != nil {
-				logging.Infof(ctx, "Bot ID: %s", session.BotId)
-				logging.Infof(ctx, "Session ID: %s", session.SessionId)
-				logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
-				if session.DebugInfo != nil {
-					logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
-					logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
-				}
-				if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
-					logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
-					logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
-				}
-			}
-			if body != nil {
-				blob, _ := json.MarshalIndent(RB(body).ExtractDebugRequest(), "", "  ")
-				logging.Infof(ctx, "Request body:\n%s", blob)
-			}
-
-			// Log the actual error.
-			err = grpcutil.GRPCifyAndLogErr(ctx, err)
-			statusCode := status.Code(err)
-			httpCode := grpcutil.CodeStatus(statusCode)
-			if statusCode == codes.Unavailable {
-				// UNAVAILABLE seems to happen a lot, but in bursts (probably when the
-				// RBE scheduler restarts). Log it at the warning severity to make other
-				// errors more noticeable.
-				logging.Warningf(ctx, "HTTP %d: %s", httpCode, err)
-			} else {
-				logging.Errorf(ctx, "HTTP %d: %s", httpCode, err)
-			}
-
-			http.Error(wrt, err.Error(), httpCode)
-		}
-
 		// Deserialize JSON request body.
-		if ct := req.Header.Get("Content-Type"); strings.ToLower(ct) != "application/json; charset=utf-8" {
-			writeErr(status.Errorf(codes.InvalidArgument, "bad content type %q", ct))
-			return
-		}
-		raw, err := io.ReadAll(req.Body)
-		if err != nil {
-			writeErr(status.Errorf(codes.Internal, "error reading request body: %s", err))
-			return
-		}
-		body = new(B)
-		if err := json.Unmarshal(raw, body); err != nil {
-			logging.Warningf(ctx, "Unrecognized request:\n%s", raw)
-			writeErr(status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err))
+		body := new(B)
+		if err := readRequest(req, body); err != nil {
+			writeErr(err, req, wrt, nil, nil)
 			return
 		}
 
 		// A valid non-expired session token is required to authenticate the bot.
 		sessionTok := RB(body).ExtractSession()
 		if len(sessionTok) == 0 {
-			writeErr(status.Errorf(codes.Unauthenticated, "no session token"))
+			writeErr(status.Errorf(codes.Unauthenticated, "no session token"), req, wrt, RB(body), nil)
 			return
 		}
-		session, err = botsession.Unmarshal(sessionTok, s.hmacSecret)
+		session, err := botsession.Unmarshal(sessionTok, s.hmacSecret)
 		if err != nil {
-			writeErr(status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err))
+			writeErr(status.Errorf(codes.Unauthenticated, "failed to verify or deserialize session token: %s", err), req, wrt, RB(body), nil)
 			return
 		}
 		if dt := clock.Now(ctx).Sub(session.Expiry.AsTime()); dt > 0 {
-			writeErr(status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt))
+			writeErr(status.Errorf(codes.Unauthenticated, "session token has expired %s ago", dt), req, wrt, RB(body), session)
 			return
 		}
 
@@ -268,9 +214,9 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		// expiry correctly before launching long-running tasks.
 		if err := AuthorizeBot(ctx, session.BotId, session.BotConfig.GetBotAuth()); err != nil {
 			if transient.Tag.In(err) {
-				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err))
+				writeErr(status.Errorf(codes.Internal, "transient error checking bot credentials: %s", err), req, wrt, RB(body), session)
 			} else {
-				writeErr(status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err))
+				writeErr(status.Errorf(codes.Unauthenticated, "bad bot credentials: %s", err), req, wrt, RB(body), session)
 			}
 			return
 		}
@@ -280,10 +226,10 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		knownBot, err := s.knownBots(ctx, session.BotId)
 		switch {
 		case err != nil:
-			writeErr(status.Errorf(codes.Internal, "error fetching bot info: %s", err))
+			writeErr(status.Errorf(codes.Internal, "error fetching bot info: %s", err), req, wrt, RB(body), session)
 			return
 		case knownBot == nil:
-			writeErr(status.Errorf(codes.PermissionDenied, "%q is not a registered bot", session.BotId))
+			writeErr(status.Errorf(codes.PermissionDenied, "%q is not a registered bot", session.BotId), req, wrt, RB(body), session)
 			return
 		}
 
@@ -298,11 +244,11 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		// bot is registered. This check is here to avoid panics up the stack if
 		// something in the datastore is wrong for some reason.
 		if !slices.Equal(extractDim(knownBot.Dimensions, "id"), []string{session.BotId}) {
-			writeErr(status.Errorf(codes.Internal, `wrong stored "id" dimension`))
+			writeErr(status.Errorf(codes.Internal, `wrong stored "id" dimension`), req, wrt, RB(body), session)
 			return
 		}
 		if len(extractDim(knownBot.Dimensions, "pool")) == 0 {
-			writeErr(status.Errorf(codes.Internal, `no stored "pool" dimension`))
+			writeErr(status.Errorf(codes.Internal, `no stored "pool" dimension`), req, wrt, RB(body), session)
 			return
 		}
 
@@ -312,22 +258,115 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 			Dimensions: knownBot.Dimensions,
 		})
 		if err != nil {
-			writeErr(err)
+			writeErr(err, req, wrt, RB(body), session)
+		} else {
+			writeResponse(req, wrt, resp)
+		}
+	})
+}
+
+// NoSessionJSON is like JSON handler, except it doesn't check the session.
+//
+// It authenticates the bot or user credentials (if any), but doesn't itself
+// check bots.cfg authorization rules or the session token.
+//
+// This is needed for the handshake and bot poll handlers since they need to
+// handle missing or expired session tokens themselves. These handlers do
+// necessary authorization checks inside.
+func NoSessionJSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler[B]) {
+	s.router.POST(route, s.middlewares, func(c *router.Context) {
+		ctx := c.Request.Context()
+		req := c.Request
+		wrt := c.Writer
+
+		body := new(B)
+		if err := readRequest(req, body); err != nil {
+			writeErr(err, req, wrt, nil, nil)
 			return
 		}
 
-		// Success! Write back the response.
-		wrt.Header().Set("Content-Type", "application/json; charset=utf-8")
-		var werr error
-		if resp == nil {
-			_, werr = wrt.Write([]byte("{\"ok\": true}\n"))
+		resp, err := h(ctx, body, &Request{})
+		if err != nil {
+			writeErr(err, req, wrt, RB(body), nil)
 		} else {
-			werr = json.NewEncoder(wrt).Encode(resp)
-		}
-		if werr != nil {
-			logging.Errorf(ctx, "Error writing the response: %s", werr)
+			writeResponse(req, wrt, resp)
 		}
 	})
+}
+
+// readRequest reads JSON request body.
+//
+// Returns gRPC status errors.
+func readRequest(req *http.Request, body any) error {
+	if ct := req.Header.Get("Content-Type"); strings.ToLower(ct) != "application/json; charset=utf-8" {
+		return status.Errorf(codes.InvalidArgument, "bad content type %q", ct)
+	}
+	raw, err := io.ReadAll(req.Body)
+	if err != nil {
+		return status.Errorf(codes.Internal, "error reading request body: %s", err)
+	}
+	if err := json.Unmarshal(raw, body); err != nil {
+		logging.Warningf(req.Context(), "Unrecognized request:\n%s", raw)
+		return status.Errorf(codes.InvalidArgument, "failed to deserialized the request: %s", err)
+	}
+	return nil
+}
+
+// writeResponse writes a successful response.
+func writeResponse(req *http.Request, rw http.ResponseWriter, resp Response) {
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	var werr error
+	if resp == nil {
+		_, werr = rw.Write([]byte("{\"ok\": true}\n"))
+	} else {
+		werr = json.NewEncoder(rw).Encode(resp)
+	}
+	if werr != nil {
+		logging.Errorf(req.Context(), "Error writing the response: %s", werr)
+	}
+}
+
+// writeErr logs an error (with request details) and sends it as the response.
+//
+// Expects gRPC error as input, using its code to derive HTTP status code.
+func writeErr(err error, req *http.Request, rw http.ResponseWriter, body RequestBody, session *internalspb.Session) {
+	ctx := req.Context()
+
+	// Log request details to help in debugging errors.
+	logging.Infof(ctx, "Bot IP: %s", auth.GetState(ctx).PeerIP())
+	logging.Infof(ctx, "Authenticated: %s", auth.GetState(ctx).PeerIdentity())
+	if session != nil {
+		logging.Infof(ctx, "Bot ID: %s", session.BotId)
+		logging.Infof(ctx, "Session ID: %s", session.SessionId)
+		logging.Infof(ctx, "RBE session: %s", session.RbeBotSessionId)
+		if session.DebugInfo != nil {
+			logging.Infof(ctx, "Session age: %s", clock.Now(ctx).Sub(session.DebugInfo.Created.AsTime()))
+			logging.Infof(ctx, "Session by: %s, %s", session.DebugInfo.SwarmingVersion, session.DebugInfo.RequestId)
+		}
+		if cfgDbg := session.BotConfig.GetDebugInfo(); cfgDbg != nil {
+			logging.Infof(ctx, "Config snapshot age: %s", clock.Now(ctx).Sub(cfgDbg.Created.AsTime()))
+			logging.Infof(ctx, "Config snapshot by: %s, %s", cfgDbg.SwarmingVersion, cfgDbg.RequestId)
+		}
+	}
+	if body != nil {
+		blob, _ := json.MarshalIndent(body.ExtractDebugRequest(), "", "  ")
+		logging.Infof(ctx, "Request body:\n%s", blob)
+	}
+
+	// Log the actual error.
+	err = grpcutil.GRPCifyAndLogErr(ctx, err)
+	statusCode := status.Code(err)
+	httpCode := grpcutil.CodeStatus(statusCode)
+	if statusCode == codes.Unavailable {
+		// UNAVAILABLE seems to happen a lot, but in bursts (probably when the
+		// RBE scheduler restarts). Log it at the warning severity to make other
+		// errors more noticeable.
+		logging.Warningf(ctx, "HTTP %d: %s", httpCode, err)
+	} else {
+		logging.Errorf(ctx, "HTTP %d: %s", httpCode, err)
+	}
+
+	http.Error(rw, err.Error(), httpCode)
 }
 
 // extractDim extracts dimension values from a list of flat dimensions.

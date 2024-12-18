@@ -103,17 +103,22 @@ func TestBotHandler(t *testing.T) {
 		var lastRequest *Request
 		var nextResponse Response
 		var nextError error
-		JSON(srv, "/test", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
+		JSON(srv, "/with-session", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
+			lastBody = body
+			lastRequest = r
+			return nextResponse, nextError
+		})
+		NoSessionJSON(srv, "/no-session", func(_ context.Context, body *testRequest, r *Request) (Response, error) {
 			lastBody = body
 			lastRequest = r
 			return nextResponse, nextError
 		})
 
-		callRaw := func(body []byte, ct string, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
+		callRaw := func(uri string, body []byte, ct string, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			lastRequest = nil
 			nextResponse = mockedResp
 			nextError = mockedErr
-			rq := httptest.NewRequest("POST", "/test", bytes.NewReader(body)).WithContext(ctx)
+			rq := httptest.NewRequest("POST", uri, bytes.NewReader(body)).WithContext(ctx)
 			if ct != "" {
 				rq.Header.Set("Content-Type", ct)
 			}
@@ -127,10 +132,10 @@ func TestBotHandler(t *testing.T) {
 			return lastBody, lastRequest, res.StatusCode, string(respBody)
 		}
 
-		call := func(body testRequest, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
+		call := func(uri string, body testRequest, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			blob, err := json.Marshal(&body)
 			assert.Loosely(t, err, should.BeNil)
-			return callRaw(blob, "application/json; charset=utf-8", mockedResp, mockedErr)
+			return callRaw(uri, blob, "application/json; charset=utf-8", mockedResp, mockedErr)
 		}
 
 		makeSession := func(botID, sessionID string, ba *configpb.BotAuth) *internalspb.Session {
@@ -154,38 +159,55 @@ func TestBotHandler(t *testing.T) {
 		}
 
 		t.Run("Happy path", func(t *ftt.Test) {
-			session := makeSession("good-bot", "sid", goodBotAuth)
+			t.Run("With session", func(t *ftt.Test) {
+				session := makeSession("good-bot", "sid", goodBotAuth)
+				req := testRequest{
+					Session: genSessionToken(session),
+				}
 
-			req := testRequest{
-				Session: genSessionToken(session),
-			}
+				body, seenReq, status, resp := call("/with-session", req, "some-response", nil)
+				assert.Loosely(t, status, should.Equal(http.StatusOK))
+				assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+				assert.Loosely(t, body, should.Match(&req))
+				assert.Loosely(t, seenReq.Session, should.Match(session))
+				assert.Loosely(t, seenReq.Dimensions, should.Match(goodDims))
+			})
 
-			body, seenReq, status, resp := call(req, "some-response", nil)
-			assert.Loosely(t, status, should.Equal(http.StatusOK))
-			assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
-			assert.Loosely(t, body, should.Match(&req))
-			assert.Loosely(t, seenReq.Session, should.Match(session))
-			assert.Loosely(t, seenReq.Dimensions, should.Match(goodDims))
+			t.Run("No session", func(t *ftt.Test) {
+				req := testRequest{
+					Session: []byte("ignored"),
+				}
+				body, seenReq, status, resp := call("/no-session", req, "some-response", nil)
+				assert.Loosely(t, status, should.Equal(http.StatusOK))
+				assert.Loosely(t, resp, should.Equal("\"some-response\"\n"))
+				assert.Loosely(t, body, should.Match(&req))
+				assert.Loosely(t, seenReq.Session, should.BeNil)
+				assert.Loosely(t, seenReq.Dimensions, should.BeNil)
+			})
 		})
 
 		t.Run("Bad Content-Type", func(t *ftt.Test) {
-			_, seenReq, status, resp := callRaw([]byte("ignored"), "application/x-www-form-urlencoded", nil, nil)
-			assert.Loosely(t, seenReq, should.BeNil)
-			assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
-			assert.Loosely(t, resp, should.ContainSubstring("bad content type"))
+			for _, uri := range []string{"/with-session", "/no-session"} {
+				_, seenReq, status, resp := callRaw(uri, []byte("ignored"), "application/x-www-form-urlencoded", nil, nil)
+				assert.Loosely(t, seenReq, should.BeNil)
+				assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, resp, should.ContainSubstring("bad content type"))
+			}
 		})
 
 		t.Run("Not JSON", func(t *ftt.Test) {
-			_, seenReq, status, resp := callRaw([]byte("what is this"), "application/json; charset=utf-8", nil, nil)
-			assert.Loosely(t, seenReq, should.BeNil)
-			assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
-			assert.Loosely(t, resp, should.ContainSubstring("failed to deserialized"))
+			for _, uri := range []string{"/with-session", "/no-session"} {
+				_, seenReq, status, resp := callRaw(uri, []byte("what is this"), "application/json; charset=utf-8", nil, nil)
+				assert.Loosely(t, seenReq, should.BeNil)
+				assert.Loosely(t, status, should.Equal(http.StatusBadRequest))
+				assert.Loosely(t, resp, should.ContainSubstring("failed to deserialized"))
+			}
 		})
 
 		t.Run("No session token", func(t *ftt.Test) {
 			req := testRequest{}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
 			assert.Loosely(t, resp, should.ContainSubstring("no session token"))
@@ -196,7 +218,7 @@ func TestBotHandler(t *testing.T) {
 				Session: []byte("not-a-token"),
 			}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
 			assert.Loosely(t, resp, should.ContainSubstring("failed to verify or deserialize session token"))
@@ -210,7 +232,7 @@ func TestBotHandler(t *testing.T) {
 				Session: genSessionToken(session),
 			}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
 			assert.Loosely(t, resp, should.ContainSubstring("session token has expired 5m0s ago"))
@@ -225,7 +247,7 @@ func TestBotHandler(t *testing.T) {
 				Session: genSessionToken(session),
 			}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusUnauthorized))
 			assert.Loosely(t, resp, should.ContainSubstring("bad bot credentials"))
@@ -241,7 +263,7 @@ func TestBotHandler(t *testing.T) {
 				Session: genSessionToken(session),
 			}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusForbidden))
 			assert.Loosely(t, resp, should.ContainSubstring("is not a registered bot"))
@@ -260,7 +282,7 @@ func TestBotHandler(t *testing.T) {
 				Session: genSessionToken(session),
 			}
 
-			_, seenReq, status, resp := call(req, "some-response", nil)
+			_, seenReq, status, resp := call("/with-session", req, "some-response", nil)
 			assert.Loosely(t, seenReq, should.BeNil)
 			assert.Loosely(t, status, should.Equal(http.StatusInternalServerError))
 			assert.Loosely(t, resp, should.ContainSubstring("wrong stored \"id\" dimension"))
