@@ -19,6 +19,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -85,9 +87,9 @@ func TestGraphBuilding(t *testing.T) {
 			globs: []identity.Glob{
 				identity.Glob("user:*@example.com"),
 			},
-			membersIndex: map[identity.Identity][]string{
-				identity.Identity("user:m1@example.com"): {"group-0", "group-1"},
-				identity.Identity("user:m2@example.com"): {"group-1"},
+			membersIndex: map[identity.NormalizedIdentity][]string{
+				identity.NewNormalizedIdentity("user:m1@example.com"): {"group-0", "group-1"},
+				identity.NewNormalizedIdentity("user:m2@example.com"): {"group-1"},
 			},
 			globsIndex: map[identity.Glob][]string{
 				identity.Glob("user:*@example.com"): {"group-0", "group-2"},
@@ -232,6 +234,8 @@ func TestGetRelevantSubgraph(t *testing.T) {
 		testGroup1 := "group-1"
 		testGroup2 := "group-2"
 		testUser0 := "user:m0@example.com"
+		testUser0MatchingGlob := "user:M0@example.com"
+		testUser0MixedCasing := "user:M0@ExAmPlE.CoM"
 		testUser1 := "user:m1@example.com"
 		testGlob := "user:*@example.com"
 
@@ -318,6 +322,100 @@ func TestGetRelevantSubgraph(t *testing.T) {
 			}
 
 			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
+
+			t.Run("equivalent Identity principal", func(t *ftt.Test) {
+				principal := NodeKey{Identity, testUser0MatchingGlob}
+
+				subgraph, err := graph.GetRelevantSubgraph(principal)
+				assert.Loosely(t, err, should.BeNil)
+
+				expectedSubgraph := &Subgraph{
+					Nodes: []*SubgraphNode{
+						{ // 0
+							NodeKey: NodeKey{
+								Kind:  Identity,
+								Value: testUser0MatchingGlob,
+							},
+							IncludedBy: []int32{1, 2, 3},
+						},
+						{ // 1
+							NodeKey: NodeKey{
+								Kind:  Glob,
+								Value: testGlob,
+							},
+							IncludedBy: []int32{2, 4},
+						},
+						{ // 2
+							NodeKey: NodeKey{
+								Kind:  Group,
+								Value: testGroup0,
+							},
+							IncludedBy: []int32{3},
+						},
+						{ // 3
+							NodeKey: NodeKey{
+								Kind:  Group,
+								Value: testGroup1,
+							},
+						},
+						{ // 4
+							NodeKey: NodeKey{
+								Kind:  Group,
+								Value: testGroup2,
+							},
+						},
+					},
+					nodesToID: map[NodeKey]int32{
+						{Identity, testUser0MatchingGlob}: 0,
+						{Glob, testGlob}:                  1,
+						{Group, testGroup0}:               2,
+						{Group, testGroup1}:               3,
+						{Group, testGroup2}:               4,
+					},
+				}
+
+				assert.Loosely(t, subgraph,
+					should.Match(expectedSubgraph, cmp.AllowUnexported(Subgraph{})))
+			})
+		})
+
+		t.Run("Identity principal respects glob case", func(t *ftt.Test) {
+			principal := NodeKey{Identity, testUser0MixedCasing}
+			subgraph, err := graph.GetRelevantSubgraph(principal)
+			assert.Loosely(t, err, should.BeNil)
+
+			expectedSubgraph := &Subgraph{
+				Nodes: []*SubgraphNode{
+					{ // 0
+						NodeKey: NodeKey{
+							Kind:  Identity,
+							Value: testUser0MixedCasing,
+						},
+						IncludedBy: []int32{1, 2},
+					},
+					{ // 1
+						NodeKey: NodeKey{
+							Kind:  Group,
+							Value: testGroup0,
+						},
+						IncludedBy: []int32{2},
+					},
+					{ // 2
+						NodeKey: NodeKey{
+							Kind:  Group,
+							Value: testGroup1,
+						},
+					},
+				},
+				nodesToID: map[NodeKey]int32{
+					{Identity, testUser0MixedCasing}: 0,
+					{Group, testGroup0}:              1,
+					{Group, testGroup1}:              2,
+				},
+			}
+
+			assert.Loosely(t, subgraph,
+				should.Match(expectedSubgraph, cmp.AllowUnexported(Subgraph{})))
 		})
 
 		t.Run("Testing Glob principal.", func(t *ftt.Test) {

@@ -37,7 +37,7 @@ type Graph struct {
 	// All known globs sorted alphabetically.
 	globs []identity.Glob
 	// Group names that directly include the given identity.
-	membersIndex map[identity.Identity][]string
+	membersIndex map[identity.NormalizedIdentity][]string
 	// Group names that directly include the given glob.
 	globsIndex map[identity.Glob][]string
 }
@@ -63,7 +63,7 @@ func (g *Graph) initializeNodes(groups []*model.AuthGroup) {
 
 		// Populate members.
 		for _, member := range group.Members {
-			memberIdentity := identity.Identity(member)
+			memberIdentity := identity.NewNormalizedIdentity(member)
 			g.membersIndex[memberIdentity] = append(g.membersIndex[memberIdentity], group.ID)
 		}
 	}
@@ -94,7 +94,7 @@ func (g *Graph) initializeNodes(groups []*model.AuthGroup) {
 func NewGraph(groups []*model.AuthGroup) *Graph {
 	graph := &Graph{
 		groups:       make(map[string]*groupNode, len(groups)),
-		membersIndex: map[identity.Identity][]string{},
+		membersIndex: map[identity.NormalizedIdentity][]string{},
 		globsIndex:   map[identity.Glob][]string{},
 	}
 
@@ -227,7 +227,7 @@ func (g *Graph) GetRelevantSubgraph(principal NodeKey) (*Subgraph, error) {
 		}
 
 		// Find all the groups that directly mention the identity.
-		for _, group := range g.membersIndex[identity.Identity(principal.Value)] {
+		for _, group := range g.membersIndex[ident.AsNormalized()] {
 			subgraph.addEdge(rootID, g.traverse(group, subgraph))
 		}
 	case Glob:
