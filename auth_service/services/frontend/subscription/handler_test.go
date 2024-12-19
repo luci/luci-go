@@ -59,7 +59,7 @@ func TestCheckAccess(t *testing.T) {
 		ctl := gomock.NewController(t)
 		mockPubsubClient := pubsub.NewMockedClient(ctx, ctl)
 		ctx = mockPubsubClient.Ctx
-		policy := pubsub.StubPolicy("someone@example.com")
+		policy := pubsub.StubPolicy("user:someone@example.com")
 
 		// Set up settings config.
 		cfg := &configspb.SettingsCfg{}
@@ -242,7 +242,7 @@ func TestAuthorize(t *testing.T) {
 
 			// Set expected Pubsub client calls.
 			gomock.InOrder(
-				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(pubsub.StubPolicy("somebody@example.com"), nil).Times(1),
+				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(pubsub.StubPolicy("user:somebody@example.com"), nil).Times(1),
 				mockPubsubClient.Client.EXPECT().Close().Times(1))
 
 			// Set up an authorized user.
@@ -321,7 +321,7 @@ func TestDeauthorize(t *testing.T) {
 
 			// Set expected Pubsub client calls.
 			gomock.InOrder(
-				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(pubsub.StubPolicy("someone@example.com"), nil).Times(1),
+				mockPubsubClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(pubsub.StubPolicy("user:someone@example.com"), nil).Times(1),
 				mockPubsubClient.Client.EXPECT().SetIAMPolicy(gomock.Any(), gomock.Any()).Times(1),
 				mockPubsubClient.Client.EXPECT().Close().Times(1))
 

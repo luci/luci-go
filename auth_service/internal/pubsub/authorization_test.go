@@ -39,7 +39,7 @@ func TestIsAuthorized(t *testing.T) {
 		mockClient := NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
-		policy := StubPolicy("someone@example.com")
+		policy := StubPolicy("user:someone@example.com")
 
 		t.Run("true for authorized account", func(t *ftt.Test) {
 			// Define expected client calls.
@@ -78,7 +78,7 @@ func TestAuthorizeSubscriber(t *testing.T) {
 		mockClient := NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
-		policy := StubPolicy("someone@example.com")
+		policy := StubPolicy("user:someone@example.com")
 
 		t.Run("exits early for authorized account", func(t *ftt.Test) {
 			// Define expected client calls.
@@ -114,7 +114,7 @@ func TestDeuthorizeSubscriber(t *testing.T) {
 		mockClient := NewMockedClient(ctx, ctl)
 		ctx = mockClient.Ctx
 
-		policy := StubPolicy("someone@example.com")
+		policy := StubPolicy("user:someone@example.com")
 
 		t.Run("deauthorizes account", func(t *ftt.Test) {
 			// Define expected client calls.
@@ -148,7 +148,6 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 		mockClient := NewMockedClient(context.Background(), ctl)
 		ctx := mockClient.Ctx
 
-		policy := StubPolicy("old.trusted@example.com")
 		trustedGroup := "trusted-group-name"
 
 		t.Run("revokes if not trusted", func(t *ftt.Test) {
@@ -160,6 +159,26 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 			})
 
 			// Define expected client calls.
+			policy := StubPolicy("user:old.trusted@example.com")
+			gomock.InOrder(
+				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
+				mockClient.Client.EXPECT().SetIAMPolicy(gomock.Any(), gomock.Any()).Times(1),
+				mockClient.Client.EXPECT().Close().Times(1),
+			)
+
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
+		})
+
+		t.Run("revokes if deleted, even if trusted", func(t *ftt.Test) {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				FakeDB: authtest.NewFakeDB(
+					authtest.MockMembership("user:project-name@example.com", trustedGroup),
+				),
+			})
+
+			// Define expected client calls.
+			policy := StubPolicy("deleted:serviceAccount:project-name@example.com")
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
 				mockClient.Client.EXPECT().SetIAMPolicy(gomock.Any(), gomock.Any()).Times(1),
@@ -178,6 +197,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 			})
 
 			// Define expected client calls.
+			policy := StubPolicy("user:old.trusted@example.com")
 			gomock.InOrder(
 				mockClient.Client.EXPECT().GetIAMPolicy(gomock.Any()).Return(policy, nil).Times(1),
 				mockClient.Client.EXPECT().Close().Times(1),

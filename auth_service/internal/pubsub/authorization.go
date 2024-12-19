@@ -32,6 +32,10 @@ const (
 	// Prefixes for account identifiers, to be used with email addresses.
 	serviceAccountPrefix = "serviceAccount:"
 	userPrefix           = "user:"
+
+	// Prefix for a deleted account,
+	// e.g. "deleted:serviceAccount:project-name@example.serviceaccount.com"
+	deletedPrefix = "deleted:"
 )
 
 // IsAuthorizedSubscriber returns whether the account is authorized to
@@ -158,6 +162,15 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string, dryRun b
 	updated := false
 	allAuthorized := policy.Members(subscriberRole)
 	for _, iamIdentity := range allAuthorized {
+		if strings.HasPrefix(iamIdentity, deletedPrefix) {
+			logging.Warningf(ctx,
+				"detected deleted account %q - revoking subscribing authorization",
+				iamIdentity)
+			policy.Remove(iamIdentity, subscriberRole)
+			updated = true
+			continue
+		}
+
 		email, err := iamIdentityToEmail(iamIdentity)
 		if err != nil {
 			// Non-fatal - just log the error.

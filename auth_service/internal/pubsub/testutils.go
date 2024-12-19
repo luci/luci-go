@@ -37,13 +37,13 @@ func NewMockedClient(ctx context.Context, ctl *gomock.Controller) *MockedPubsubC
 	}
 }
 
-// StubPolicy returns a stub IAM policy, where only the given emails
+// StubPolicy returns a stub IAM policy, where only the given IAM identities
 // have been granted the subscriber role. The stub policy can be used as
 // the return value of mocks in tests.
-func StubPolicy(emails ...string) *iam.Policy {
+func StubPolicy(iamIdentities ...string) *iam.Policy {
 	p := &iam.Policy{}
-	for _, email := range emails {
-		p.Add(emailToIAMIdentity(email), subscriberRole)
+	for _, id := range iamIdentities {
+		p.Add(id, subscriberRole)
 	}
 
 	return p
