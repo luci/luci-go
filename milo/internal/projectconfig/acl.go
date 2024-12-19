@@ -22,7 +22,10 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 )
+
+var permProjectsGet = realms.RegisterPermission("milo.projects.get")
 
 // Helper functions for ACL checking.
 
@@ -40,28 +43,44 @@ func IsAllowed(c context.Context, project string) (bool, error) {
 		logging.Errorf(c, "datastore error when fetching project %q: %s", project, err)
 		return false, errors.New("internal server error", grpcutil.InternalTag)
 	default:
-		return CheckACL(c, proj.ACL)
+		return CheckACL(c, project, proj.ACL)
 	}
 }
 
-// CheckACL returns true if the caller is in the ACL.
+// CheckACL returns true if the caller is allowed to see this project given its
+// ACL.
 //
 // Returns an internal error if the check itself fails.
-func CheckACL(c context.Context, acl ACL) (bool, error) {
+func CheckACL(c context.Context, project string, acl ACL) (bool, error) {
+	// First check realm ACLs. Then fallback on legacy ACLs.
+	realm := realms.Join(project, realms.ProjectRealm)
+	switch yes, err := auth.HasPermission(c, permProjectsGet, realm, nil); {
+	case err != nil:
+		logging.Errorf(c, "error when checking realms ACL: %s", err)
+		return false, errors.New("internal server error", grpcutil.InternalTag)
+	case yes:
+		return true, nil
+	}
+
 	// Try to find a direct hit first, it is cheaper.
 	caller := auth.CurrentIdentity(c)
 	for _, ident := range acl.Identities {
 		if caller == ident {
+			logging.Infof(c, "Fallback on legacy ACLs for project %s", project)
 			return true, nil
 		}
 	}
+
 	// More expensive groups check comes second. Note that admins implicitly have
 	// access to all projects.
 	// TODO(nodir): unhardcode group name to config file if there is a need
 	yes, err := auth.IsMember(c, append(acl.Groups, "administrators")...)
 	if err != nil {
-		logging.Errorf(c, "error when checking administrators ACL: %s", err)
+		logging.Errorf(c, "error when checking group ACL: %s", err)
 		return false, errors.New("internal server error", grpcutil.InternalTag)
+	}
+	if yes {
+		logging.Infof(c, "Fallback on legacy ACLs for project %s", project)
 	}
 	return yes, nil
 }

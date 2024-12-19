@@ -84,6 +84,12 @@ func TestACL(t *testing.T) {
 				c = auth.WithState(c, &authtest.FakeState{
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
+					IdentityPermissions: []authtest.RealmPermission{
+						{
+							Realm:      "realms:@project",
+							Permission: permProjectsGet,
+						},
+					},
 				})
 				t.Run("Read private project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "secret")
@@ -93,6 +99,11 @@ func TestACL(t *testing.T) {
 				t.Run("Read un/misconfigured project", func(t *ftt.Test) {
 					ok, err := IsAllowed(c, "misconfigured")
 					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
+				})
+				t.Run("Read project that uses realms", func(t *ftt.Test) {
+					ok, err := IsAllowed(c, "realms")
+					assert.Loosely(t, ok, should.Equal(true))
 					assert.Loosely(t, err, should.BeNil)
 				})
 			})
@@ -112,6 +123,11 @@ func TestACL(t *testing.T) {
 					assert.Loosely(t, ok, should.Equal(false))
 					assert.Loosely(t, err, should.BeNil)
 				})
+				t.Run("Read project that uses realms", func(t *ftt.Test) {
+					ok, err := IsAllowed(c, "realms")
+					assert.Loosely(t, ok, should.Equal(false))
+					assert.Loosely(t, err, should.BeNil)
+				})
 			})
 		})
 	})
@@ -127,12 +143,20 @@ name: "opensource"
 access: "group:all"
 `
 
+var realmProjectCfg = `
+name: "realms"
+# No access fields here.
+`
+
 var aclConfgs = map[config.Set]memcfg.Files{
 	"projects/secret": {
 		"project.cfg": secretProjectCfg,
 	},
 	"projects/opensource": {
 		"project.cfg": publicProjectCfg,
+	},
+	"projects/realms": {
+		"project.cfg": realmProjectCfg,
 	},
 	"project/misconfigured": {
 		"probject.cfg": secretProjectCfg,
