@@ -24,6 +24,7 @@ import {
   usePagerContext,
 } from '@/common/components/params_pager';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { SelectedOptions } from '@/fleet/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
@@ -32,7 +33,6 @@ import {
 
 import { DataTable } from '../data_table';
 import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
-import { SelectedFilters } from '../multi_select_filter/types';
 
 import { BASE_DIMENSIONS, getColumns, DEFAULT_COLUMNS } from './columns';
 
@@ -70,7 +70,7 @@ function getRow(device: Device): Record<string, string> {
 }
 
 interface DeviceTableProps {
-  filter: SelectedFilters;
+  filter: SelectedOptions;
 }
 
 export function DeviceTable({ filter }: DeviceTableProps) {

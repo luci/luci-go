@@ -69,9 +69,6 @@ export const DataTable = ({
   onSortModelChange,
 }: DataTableProps) => {
   const apiRef = useGridApiRef();
-
-  const [columnsButtonEl, setColumnsButtonEl] =
-    React.useState<HTMLButtonElement | null>(null);
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   const onColumnVisibilityModelChange = (
@@ -140,14 +137,6 @@ export const DataTable = ({
         pagination: Pagination,
       }}
       slotProps={{
-        panel: {
-          anchorEl: columnsButtonEl,
-          placement: 'bottom-end',
-        },
-        columnsManagement: {
-          disableShowHideToggle: true,
-        },
-        toolbar: { setColumnsButtonEl },
         pagination: {
           pagerCtx: pagerCtx,
           nextPageToken: nextPageToken,

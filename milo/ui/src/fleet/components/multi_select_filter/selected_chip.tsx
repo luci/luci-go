@@ -16,17 +16,18 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip } from '@mui/material';
 import { useState } from 'react';
 
-import { OptionsDropdown } from './options_dropdown';
-import { FilterOption, SelectedFilters } from './types';
+import { Option, SelectedOptions } from '@/fleet/types';
+
+import { OptionsDropdown } from '../options_dropdown';
 
 export function SelectedChip({
   option,
   selectedOptions,
   setSelectedOptions,
 }: {
-  option: FilterOption;
-  selectedOptions: SelectedFilters;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  option: Option;
+  selectedOptions: SelectedOptions;
+  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -57,7 +58,7 @@ export function SelectedChip({
         }}
         variant="filter"
         onDelete={(_) =>
-          setSelectedOptions((currentFilters: SelectedFilters) => ({
+          setSelectedOptions((currentFilters: SelectedOptions) => ({
             ...currentFilters,
             [option.value]: [],
           }))

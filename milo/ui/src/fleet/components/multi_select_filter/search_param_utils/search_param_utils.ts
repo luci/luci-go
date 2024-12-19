@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SelectedFilters } from '../types';
+import { SelectedOptions } from '@/fleet/types';
 
 const FILTERS_PARAM_KEY = 'filters';
 
@@ -25,8 +25,8 @@ const FILTERS_PARAM_KEY = 'filters';
  */
 export const parseFilters = (
   str: string,
-  filters: SelectedFilters = {},
-): SelectedFilters => {
+  filters: SelectedOptions = {},
+): SelectedOptions => {
   const firstEqIdx = str.indexOf('=');
   if (firstEqIdx === -1) return filters;
 
@@ -67,7 +67,7 @@ export const parseFilters = (
  * E.g.: "fleet_labels.pool = (default AND test)"
  * TODO: Consider moving this to a shared location
  */
-export const stringifyFilters = (filters: SelectedFilters): string =>
+export const stringifyFilters = (filters: SelectedOptions): string =>
   Object.entries(filters)
     .filter(([_key, values]) => values && values[0])
     .map(([key, values]) =>
@@ -92,7 +92,7 @@ export function getFilters(params: URLSearchParams) {
 /**
  * Update the URLSearchParams with the new filter.
  */
-export function filtersUpdater(newFilters: SelectedFilters) {
+export function filtersUpdater(newFilters: SelectedOptions) {
   return (params: URLSearchParams) => {
     const searchParams = new URLSearchParams(params);
     if (Object.keys(newFilters).length === 0) {

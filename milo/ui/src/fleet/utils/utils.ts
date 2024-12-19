@@ -130,16 +130,29 @@ export function hasAnyModifier(e: React.KeyboardEvent<HTMLDivElement>) {
  */
 export function keyboardUpDownHandler(e: React.KeyboardEvent) {
   const target = e.target as HTMLElement;
-  const nextSibling = target?.nextSibling as HTMLElement | undefined;
-  const prevSibling = target?.previousSibling as HTMLElement | undefined;
+  const parent = target.parentElement;
+  const siblings = Array.from(parent?.children || []);
+
+  let nextSibling: HTMLElement | undefined;
+  let prevSibling: HTMLElement | undefined;
+
+  const currentIndex = siblings.indexOf(target);
+
   switch (e.key) {
     case e.ctrlKey && 'j':
     case 'ArrowDown':
+      if (siblings.length === 0) return;
+      nextSibling = siblings[(currentIndex + 1) % siblings.length] as
+        | HTMLElement
+        | undefined;
       nextSibling?.focus();
       e.stopPropagation();
       break;
     case e.ctrlKey && 'k':
     case 'ArrowUp':
+      prevSibling = siblings[
+        (currentIndex - 1 + siblings.length) % siblings.length
+      ] as HTMLElement | undefined;
       prevSibling?.focus();
       e.stopPropagation();
       break;

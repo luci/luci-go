@@ -12,13 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type FilterOption = {
-  label: string;
-  value: string;
-  options: {
-    label: string;
-    value: string;
-  }[];
-};
-
-export type SelectedFilters = Record<string, string[]>;
+export { OptionsDropdown } from './options_dropdown';

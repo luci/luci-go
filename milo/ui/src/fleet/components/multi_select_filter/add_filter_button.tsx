@@ -16,17 +16,18 @@ import AddIcon from '@mui/icons-material/Add';
 import { Chip, colors } from '@mui/material';
 import { useState } from 'react';
 
+import { Option, SelectedOptions } from '@/fleet/types';
+
 import { AddFilterDropdown } from './add_filter_dropdown';
-import { FilterOption, SelectedFilters } from './types';
 
 export function AddFilterButton({
   filterOptions,
   selectedOptions,
   setSelectedOptions,
 }: {
-  filterOptions: FilterOption[];
-  selectedOptions: SelectedFilters;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  filterOptions: Option[];
+  selectedOptions: SelectedOptions;
+  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 

@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Option } from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
+
 import { AddFilterButton } from './add_filter_button';
 import { SelectedChip } from './selected_chip';
-import { FilterOption, SelectedFilters } from './types';
 
 export const MultiSelectFilter = ({
   filterOptions,
   selectedOptions,
   setSelectedOptions,
 }: {
-  filterOptions: FilterOption[];
-  selectedOptions: SelectedFilters;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  filterOptions: Option[];
+  selectedOptions: SelectedOptions;
+  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) => {
   return (
     <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>

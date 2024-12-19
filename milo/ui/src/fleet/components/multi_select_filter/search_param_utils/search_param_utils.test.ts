@@ -14,11 +14,11 @@
 
 import { format as prettyFormat } from 'pretty-format'; // ES2015 modules
 
-import { SelectedFilters } from '../types';
+import { SelectedOptions } from '@/fleet/types';
 
 import { parseFilters, stringifyFilters } from './search_param_utils';
 
-const sharedTestCases: [SelectedFilters, string][] = [
+const sharedTestCases: [SelectedOptions, string][] = [
   [{}, ''],
   [
     {
@@ -56,7 +56,7 @@ const sharedTestCases: [SelectedFilters, string][] = [
   ],
 ];
 
-const justStringifyCases: [SelectedFilters, string][] = [
+const justStringifyCases: [SelectedOptions, string][] = [
   [
     {
       key: ['value1'],
@@ -72,7 +72,7 @@ const justStringifyCases: [SelectedFilters, string][] = [
   ],
 ];
 
-const justParseCases: [SelectedFilters, string][] = [
+const justParseCases: [SelectedOptions, string][] = [
   [
     {
       key1: ['value1', 'value2'],

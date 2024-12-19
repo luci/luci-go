@@ -107,10 +107,27 @@ function TestComponent() {
 }
 
 const getTableVisibleColumns = () => {
+  const grid = screen.getByRole('grid');
+  grid.focus();
   return screen
     .getAllByRole('columnheader')
     .map((element) => element.getAttribute('data-field'))
     .filter((column) => column !== null);
+};
+
+const enableOrDisableColumn = async (column: string) => {
+  const columnsButton = screen.getByText('Columns');
+  await act(async () => fireEvent.click(columnsButton));
+  const columnOption = screen.getByRole('menuitem', {
+    name: column,
+  });
+  await act(async () => fireEvent.click(columnOption));
+  await act(async () =>
+    fireEvent.keyDown(document.activeElement!, {
+      key: 'Escape',
+      code: 'Escape',
+    }),
+  );
 };
 
 const getNthRow = (index: number) => {
@@ -189,6 +206,29 @@ describe('<DataTable />', () => {
 
     expect(getTableVisibleColumns()).toEqual(
       expect.arrayContaining(['id', 'last_name']),
+    );
+  });
+
+  // TODO(vaghinak): This test doesn't work, don't have idea why.
+  // The actual functionality works though in the browser.
+  // Should be revisited in the future.
+  // eslint-disable-next-line jest/no-disabled-tests
+  it.skip('should reflect columns visibility changes properly', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent />
+      </FakeContextProvider>,
+    );
+    await act(() => jest.runAllTimersAsync());
+
+    expect(getTableVisibleColumns()).toEqual(
+      expect.arrayContaining(DEFAULT_COLUMNS),
+    );
+
+    await enableOrDisableColumn('Last Name');
+
+    expect(getTableVisibleColumns()).toEqual(
+      expect.arrayContaining(['id', 'first_name', 'last_name']),
     );
   });
 

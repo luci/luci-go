@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FilterOption } from './types';
+import { Option } from '@/fleet/types';
 
-export const TEST_FILTER_OPTIONS: FilterOption[] = [
+export const TEST_FILTER_OPTIONS: Option[] = [
   {
     label: 'Option 1',
     value: 'val-1',

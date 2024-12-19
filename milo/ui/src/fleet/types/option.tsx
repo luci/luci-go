@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Box from '@mui/material/Box';
-import { GridToolbarContainer } from '@mui/x-data-grid';
+export type Option = {
+  label: string;
+  value: string;
+  options: {
+    label: string;
+    value: string;
+  }[];
+};
 
-import { ColumnsButton } from './columns_button';
-
-export function Toolbar() {
-  return (
-    <GridToolbarContainer>
-      <Box sx={{ flexGrow: 1 }} />
-      <ColumnsButton />
-    </GridToolbarContainer>
-  );
-}
+export type SelectedOptions = Record<string, string[]>;

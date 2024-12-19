@@ -13,16 +13,16 @@
 // limitations under the License.
 
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import SearchIcon from '@mui/icons-material/Search';
-import { MenuItem, TextField, Menu } from '@mui/material';
+import { MenuItem, Menu } from '@mui/material';
 import _ from 'lodash';
 import { useMemo, useRef, useState } from 'react';
 
-import { HighlightCharacter } from '../highlight_character';
+import { Option, SelectedOptions } from '@/fleet/types';
 
-import { OptionsDropdown } from './options_dropdown';
-import { FilterOption, SelectedFilters } from './types';
-import { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from './utils';
+import { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from '../../utils';
+import { HighlightCharacter } from '../highlight_character';
+import { OptionsDropdown } from '../options_dropdown';
+import { SearchInput } from '../search_input';
 
 export function AddFilterDropdown({
   filterOptions,
@@ -31,9 +31,9 @@ export function AddFilterDropdown({
   anchorEl,
   setAnchorEL,
 }: {
-  filterOptions: FilterOption[];
-  selectedOptions: SelectedFilters;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedFilters>>;
+  filterOptions: Option[];
+  selectedOptions: SelectedOptions;
+  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
 }) {
@@ -99,49 +99,13 @@ export function AddFilterDropdown({
         }
       }}
     >
-      <div
-        role="menu"
-        tabIndex={0}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 15,
-          padding: '0 10px',
+      <SearchInput
+        searchInput={searchInput}
+        searchQuery={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.currentTarget.value);
         }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            searchInput.current?.focus();
-          }
-        }}
-      >
-        <TextField
-          inputRef={searchInput}
-          placeholder="search"
-          variant="standard"
-          onChange={(e) => {
-            setSearchQuery(e.currentTarget.value);
-          }}
-          value={searchQuery}
-          // eslint-disable-next-line jsx-a11y/no-autofocus
-          autoFocus
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (
-              e.key === 'Escape' ||
-              e.key === 'ArrowDown' ||
-              (e.key === 'j' && e.ctrlKey)
-            ) {
-              e.currentTarget.parentElement?.focus();
-              e.preventDefault();
-            }
-          }}
-          slotProps={{
-            input: {
-              startAdornment: <SearchIcon sx={{ marginRight: '10px' }} />,
-            },
-          }}
-        />
-      </div>
+      />
       {filterResults.map((searchResult, idx) => {
         const parent = searchResult[0].parent ?? searchResult[0].el;
         const parentMatches = searchResult
@@ -209,7 +173,7 @@ export function AddFilterDropdown({
               anchorEl={anchorElInner}
               open={anchorElInner !== null && open === idx}
               option={parent}
-              matches={childrenMatches}
+              highlightedCharacters={childrenMatches}
               transformOrigin={{
                 vertical: 'center',
                 horizontal: 'left',

@@ -26,12 +26,9 @@ import {
   filtersUpdater,
   getFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
-import {
-  FilterOption,
-  SelectedFilters,
-} from '@/fleet/components/multi_select_filter/types';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
+import { Option, SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -39,7 +36,7 @@ import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/flee
 export const DeviceListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const [selectedOptions, setSelectedOptions] = useState<SelectedFilters>(
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
     getFilters(searchParams),
   );
 
@@ -69,9 +66,7 @@ export const DeviceListPage = () => {
   );
 };
 
-const toFilterOptions = (
-  response: GetDeviceDimensionsResponse,
-): FilterOption[] => {
+const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
@@ -80,7 +75,7 @@ const toFilterOptions = (
         options: value.values.map((value) => {
           return { label: value, value: value };
         }),
-      } as FilterOption;
+      } as Option;
     },
   );
 
@@ -91,7 +86,7 @@ const toFilterOptions = (
       options: value.values.map((value) => {
         return { label: value, value: value };
       }),
-    } as FilterOption;
+    } as Option;
   });
 
   return baseDimensions.concat(labels);

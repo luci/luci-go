@@ -22,15 +22,16 @@ import {
 } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 
+import { SelectedOptions } from '@/fleet/types';
+
 import { TEST_FILTER_OPTIONS } from './mock_data';
-import { SelectedFilters } from './types';
 
 import { MultiSelectFilter } from '.';
 
 const mockSelectedOptions = jest.fn();
 
 const TestComponent = () => {
-  const [selectedOptions, setSelectedOptions] = useState<SelectedFilters>({});
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>({});
   useEffect(() => {
     mockSelectedOptions(selectedOptions);
   }, [selectedOptions]);
@@ -113,7 +114,7 @@ describe('<MultiSelectFilter />', () => {
     ).toBeInTheDocument();
     expect(mockSelectedOptions).toHaveBeenLastCalledWith({
       'val-1': ['o11'],
-    } as SelectedFilters);
+    } as SelectedOptions);
     await act(() => jest.runAllTimersAsync());
 
     click(['1 | [ Option 1 ]: The first option', 'The second option', 'Apply']);

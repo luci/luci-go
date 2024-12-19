@@ -14,7 +14,7 @@
 
 import { fuzzySort } from './utils';
 
-describe('multi_select_filter/utils', () => {
+describe('utils', () => {
   describe('fuzzySort', () => {
     it('find a perfect match', () => {
       const options = ['abc', 'def', 'ghi'];

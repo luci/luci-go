@@ -12,16 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import Box from '@mui/material/Box';
-import { GridToolbarContainer } from '@mui/x-data-grid';
-
-import { ColumnsButton } from './columns_button';
-
-export function Toolbar() {
-  return (
-    <GridToolbarContainer>
-      <Box sx={{ flexGrow: 1 }} />
-      <ColumnsButton />
-    </GridToolbarContainer>
-  );
-}
+export { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from './utils';
