@@ -26,6 +26,38 @@ const API_BASE_PATH = 'https://content-issuetracker.corp.googleapis.com/';
 // This is because this is a private API and we only define what we need for our code.
 
 /**
+ * Gets the current state of a single component
+ */
+export const useGetComponentQuery = (
+  params: GetComponentParams,
+  queryOptions: UseQueryOptions<ComponentJson>,
+): UseQueryResult<ComponentJson> => {
+  return useGapiQuery<ComponentJson>(
+    {
+      method: 'GET',
+      path: API_BASE_PATH + `v1/components/${params.componentId}`,
+    },
+    queryOptions,
+  );
+};
+
+/**
+ * Gets the current state of a single issue
+ */
+export const useGetIssueQuery = (
+  params: GetIssueParams,
+  queryOptions: UseQueryOptions<IssueJson>,
+): UseQueryResult<IssueJson> => {
+  return useGapiQuery<IssueJson>(
+    {
+      method: 'GET',
+      path: API_BASE_PATH + `v1/issues/${params.issueId}`,
+    },
+    queryOptions,
+  );
+};
+
+/**
  * Searches issues in the search cache (which may be stale), then returns the
  * current state of the matched issues (which may no longer match
  * query and may no longer be in the order indicated by order_by).
@@ -59,6 +91,14 @@ export function useInfiniteIssueListQuery(
     },
     queryOptions,
   );
+}
+
+export interface GetIssueParams {
+  /**
+   * The id of the issue to get.
+   * E.g. "1234"
+   */
+  issueId: string;
 }
 
 export interface IssueListParams {
@@ -173,12 +213,67 @@ export interface IssueStateJson {
   title: string;
 
   /**
+   * The id of the component the issue belongs to.
+   * E.g. "1234"
+   */
+  componentId: string;
+
+  /**
    * The current priority of the issue.
+   * E.g. "P2"
    */
   priority: string;
 
   /**
    * The current state of the issue.
+   * E.g. "OBSOLETE"
    */
   status: string;
+
+  /**
+   * The current severity of the issue.
+   * E.g. "S2"
+   */
+  severity: string;
+
+  /**
+   * The issue type.
+   * E.g. "BUG"
+   */
+  type: string;
+
+  /**
+   * The user that the issue is assigned to.
+   */
+  assignee: IssueUserJson;
+}
+
+export interface IssueUserJson {
+  /**
+   * The email address of the user.
+   */
+  emailAddress: string;
+}
+
+export interface GetComponentParams {
+  /**
+   * The id of the component to get.
+   * E.g. "1234"
+   */
+  componentId: string;
+}
+
+export interface ComponentJson {
+  /**
+   * The path info of the component.
+   */
+  componentPathInfo: ComponentPathInfoJson;
+}
+
+export interface ComponentPathInfoJson {
+  /**
+   * The names of this component and all of it's ancestor components in order.
+   * E.g. ["grandparent", "parent", "example component"]
+   */
+  componentPathNames: string[];
 }

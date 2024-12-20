@@ -55,6 +55,7 @@ export const CreateGroupDialog = ({
     name,
     statusMessage,
     alertKeys: alerts.map((a) => a.alert.key),
+    bugs: [],
   };
   return (
     <Dialog open onClose={onClose}>

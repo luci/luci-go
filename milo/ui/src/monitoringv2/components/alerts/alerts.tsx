@@ -51,6 +51,7 @@ export interface AlertGroup {
   name: string;
   statusMessage: string;
   alertKeys: string[];
+  bugs: string[];
 }
 
 export const Alerts = () => {
