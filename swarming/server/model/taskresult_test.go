@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/zlib"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
@@ -472,6 +474,47 @@ func TestTaskResultSummary(t *testing.T) {
 			got, err = trs.GetOutput(ctx, 5*ChunkSize+1, 10000)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, got, should.HaveLength(0))
+		})
+	})
+
+	ftt.Run("TaskResultSummaryFromID", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+
+		t.Run("empty_id", func(t *ftt.Test) {
+			_, err := TaskResultSummaryFromID(ctx, "")
+			assert.That(t, err, should.ErrLike("task_id is required"))
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run("invalid_id", func(t *ftt.Test) {
+			_, err := TaskResultSummaryFromID(ctx, "not_a_task_id")
+			assert.That(t, err, should.ErrLike("bad task ID"))
+			assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run("not_found", func(t *ftt.Test) {
+			_, err := TaskResultSummaryFromID(ctx, "65aba3a3e6b99310")
+			assert.That(t, err, should.ErrLike("no such task"))
+			assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
+		})
+
+		t.Run("ok", func(t *ftt.Test) {
+			taskID := "65aba3a3e6b99310"
+			reqKey, err := TaskIDToRequestKey(ctx, taskID)
+			assert.Loosely(t, err, should.BeNil)
+			tr := &TaskRequest{
+				Key: reqKey,
+			}
+			trs := &TaskResultSummary{
+				Key: TaskResultSummaryKey(ctx, reqKey),
+				TaskResultCommon: TaskResultCommon{
+					State: apipb.TaskState_COMPLETED,
+				},
+			}
+			assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
+			res, err := TaskResultSummaryFromID(ctx, taskID)
+			assert.That(t, err, should.ErrLike(nil))
+			assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
 		})
 	})
 }

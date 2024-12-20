@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/zlib"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
@@ -616,6 +618,30 @@ func (p *TaskResultSummary) PendingNow(ctx context.Context, now time.Time) (diff
 // TaskResultSummaryKey construct a summary key given a task request key.
 func TaskResultSummaryKey(ctx context.Context, taskReq *datastore.Key) *datastore.Key {
 	return datastore.NewKey(ctx, "TaskResultSummary", "", 1, taskReq)
+}
+
+// TaskResultSummaryFromID returns a TaskResultSummary entity given a task id.
+//
+// Returns a grpc error if there's an issue.
+func TaskResultSummaryFromID(ctx context.Context, id string) (*TaskResultSummary, error) {
+	if id == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "task_id is required")
+	}
+
+	key, err := TaskIDToRequestKey(ctx, id)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "task_id %s: %s", id, err)
+	}
+
+	trs := &TaskResultSummary{Key: TaskResultSummaryKey(ctx, key)}
+	switch err = datastore.Get(ctx, trs); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, status.Errorf(codes.NotFound, "no such task")
+	case err != nil:
+		logging.Errorf(ctx, "Error fetching TaskResultSummary %s: %s", id, err)
+		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
+	}
+	return trs, nil
 }
 
 // TaskRunResult contains result of an attempt to run a task on a bot.

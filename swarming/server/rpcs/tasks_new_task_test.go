@@ -1676,6 +1676,37 @@ func TestNewTask(t *testing.T) {
 		}
 		assert.That(t, res.Request, should.Match(expected))
 	})
+
+	ftt.Run("dedup_by_task_request_id", t, func(t *ftt.Test) {
+		ctx = MockRequestState(ctx, state)
+
+		id := "65aba3a3e6b99310"
+		reqKey, err := model.TaskIDToRequestKey(ctx, id)
+		assert.That(t, err, should.ErrLike(nil))
+		tr := &model.TaskRequest{
+			Key: reqKey,
+		}
+		trs := &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, reqKey),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+		tri := &model.TaskRequestID{
+			Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
+			TaskID: id,
+		}
+		assert.That(t, datastore.Put(ctx, tr, trs, tri), should.ErrLike(nil))
+
+		req := simpliestValidRequest("visible-pool")
+		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+		req.RequestUuid = "request-id"
+
+		res, err := srv.NewTask(ctx, req)
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, res.TaskId, should.Equal(id))
+		assert.That(t, res.TaskResult, should.Match(trs.ToProto()))
+	})
 }
 
 func TestApplyRBE(t *testing.T) {

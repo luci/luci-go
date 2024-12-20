@@ -35,18 +35,9 @@ func (*TasksServer) GetResult(ctx context.Context, req *apipb.TaskIdWithPerfRequ
 		return nil, status.Errorf(codes.InvalidArgument, "task_id is required")
 	}
 
-	key, err := model.TaskIDToRequestKey(ctx, req.TaskId)
+	trs, err := model.TaskResultSummaryFromID(ctx, req.TaskId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "task_id %s: %s", req.TaskId, err)
-	}
-
-	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, key)}
-	switch err = datastore.Get(ctx, trs); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, status.Errorf(codes.NotFound, "no such task")
-	case err != nil:
-		logging.Errorf(ctx, "Error fetching TaskResultSummary %s: %s", req.TaskId, err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
+		return nil, err
 	}
 
 	res := State(ctx).ACL.CheckTaskPerm(ctx, trs, acls.PermTasksGet)

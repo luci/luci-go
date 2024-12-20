@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/directoryocclusion"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 	"go.chromium.org/luci/swarming/server/validate"
 )
 
@@ -119,7 +120,27 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 			Request: ents.request.ToProto(),
 		}, nil
 	}
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+
+	var requestID string
+	if req.RequestUuid != "" {
+		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
+	}
+	schedule := &tasks.Creation{
+		RequestID:   requestID,
+		Request:     ents.request,
+		SecretBytes: ents.secretBytes,
+	}
+
+	trs, err := schedule.Run(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apipb.TaskRequestMetadataResponse{
+		TaskId:     model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
+		Request:    ents.request.ToProto(),
+		TaskResult: trs.ToProto(),
+	}, nil
 }
 
 // teeErr saves `err` in `keep` and then returns `err`
