@@ -58,7 +58,7 @@ const PageContainer = styled.div({
 const GraphContainer = styled.div({
   display: 'grid',
   margin: '0 5px',
-  gridTemplateColumns: 'auto 1fr auto',
+  gridTemplateColumns: 'auto minmax(1000px, 1fr) auto',
   gridTemplateRows: 'auto 1fr',
   gridTemplateAreas: `
   'v-table graph extra'`,
