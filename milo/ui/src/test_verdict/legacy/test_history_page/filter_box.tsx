@@ -86,8 +86,8 @@ export class TestHistoryFilterBoxElement extends MobxLitElement {
         .key=${'/'}
         .handler=${() => {
           // Set a tiny timeout to ensure '/' isn't recorded by the input box.
-          setTimeout(
-            () => this.shadowRoot?.getElementById('input-box')!.focus(),
+          setTimeout(() =>
+            this.shadowRoot?.getElementById('input-box')!.focus(),
           );
         }}
       >

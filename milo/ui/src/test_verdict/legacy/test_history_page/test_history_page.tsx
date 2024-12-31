@@ -27,6 +27,7 @@ import { GraphType } from '@/common/store/test_history_page';
 import { extractProject } from '@/common/tools/utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { getObjectId } from '@/generic_libs/tools/utils';
 
 import { DateAxis } from './date_axis';
 import { DurationGraph } from './duration_graph';
@@ -107,6 +108,10 @@ export const TestHistoryPage = observer(() => {
   }, [pageState.filterText, setSearchParams]);
 
   const entriesQuery = useQuery({
+    queryKey: [
+      'test-history-entries-loader',
+      pageState.entriesLoader ? getObjectId(pageState.entriesLoader) : '',
+    ],
     queryFn: () => pageState.entriesLoader?.loadFirstPage(),
     enabled: Boolean(pageState.entriesLoader),
   });
@@ -115,6 +120,10 @@ export const TestHistoryPage = observer(() => {
   }
 
   const variantQuery = useQuery({
+    queryKey: [
+      'test-history-variants-loader',
+      pageState.variantsLoader ? getObjectId(pageState.variantsLoader) : '',
+    ],
     queryFn: () => pageState.variantsLoader?.loadFirstPage(),
     enabled: Boolean(pageState.variantsLoader),
   });
