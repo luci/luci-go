@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Setup for push-on-green. See b/367097786.
+# Experimental setup for user-initialed-rollback. See b/381131084.
+# Must be kept in sync with service-ui.yaml (other than the service name).
 
-service: ui
+service: ui-fallback
 runtime: go123
 
 instance_class: F4_1G

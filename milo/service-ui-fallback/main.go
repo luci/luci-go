@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main contains setup for push-on-green. See b/367097786.
+// Package main contains the experimental setup for user-initiated-rollback.
+// See b/381131084.
 package main
 
 import (

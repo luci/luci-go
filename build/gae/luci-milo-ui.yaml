@@ -14,3 +14,6 @@ build:
   - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-ui
+  - go_gae_bundle: ${inputsdir}/service-ui-fallback/service-ui-fallback.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui-fallback
