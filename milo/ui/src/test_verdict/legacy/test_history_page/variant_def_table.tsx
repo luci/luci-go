@@ -75,6 +75,7 @@ export class TestHistoryVariantDefTableElement extends MobxExtLitElement {
     td {
       line-height: ${CELL_SIZE}px;
       height: ${CELL_SIZE}px;
+      white-space: nowrap;
     }
     tr:nth-child(odd) {
       background-color: var(--block-background-color);
