@@ -17,6 +17,7 @@
 package uiserver
 
 import (
+	"path"
 	"text/template"
 
 	"go.chromium.org/luci/common/logging"
@@ -41,9 +42,9 @@ var uiVersionJsTemplate = template.Must(template.New("ui_version.js").Parse(uiVe
 //
 // Note that the UI version can only be served from the UI service because the
 // other services do not know the version of the UI service.
-func Main() {
+func Main(pathPrefix string) {
 	server.Main(nil, nil, func(srv *server.Server) error {
-		srv.Routes.GET("ui_version.js", nil, func(c *router.Context) {
+		srv.Routes.GET(path.Join(pathPrefix, "ui_version.js"), nil, func(c *router.Context) {
 			header := c.Writer.Header()
 			header.Set("content-type", "text/javascript")
 

@@ -1,4 +1,4 @@
-# Copyright 2024 The LUCI Authors.
+# Copyright 2025 The LUCI Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +13,10 @@
 # limitations under the License.
 
 # Experimental setup for user-initialed-rollback. See b/381131084.
-# Must be kept in sync with service-ui.yaml (other than the service name).
+# Must be kept in sync with service-ui.yaml (other than the service name and
+# path prefix).
 
-service: ui-fallback
+service: ui-old
 runtime: go123
 
 instance_class: F4_1G
@@ -29,13 +30,13 @@ automatic_scaling:
 
 handlers:
 # Host root_sw.js at root so it can have root scope.
-- url: /(root_sw\.js(\.map)?)$
+- url: /old-ui/(root_sw\.js(\.map)?)$
   secure: always
   static_files: ui/dist/\1
   upload: ui/dist/(root_sw\.js(\.map)?)$
 
 # Immutable SPA static resources.
-- url: /ui/immutable
+- url: /old-ui/ui/immutable
   secure: always
   static_dir: ui/dist/ui/immutable
   # All files have content hash in their filenames.
@@ -43,7 +44,7 @@ handlers:
   expiration: 7d
 
 # Some other SPA static resources.
-- url: /(ui/(ui_sw\.js(\.map)?|manifest\.webmanifest))$
+- url: /old-ui/(ui/(ui_sw\.js(\.map)?|manifest\.webmanifest))$
   secure: always
   static_files: ui/dist/\1
   upload: ui/dist/(ui/(ui_sw\.js(\.map)?|manifest\.webmanifest))$
@@ -57,7 +58,7 @@ handlers:
 # routes but not on the `/ui` route. Therefore the `/ui` route cannot enjoy the
 # performance benefit delivered by the UI service worker. `/ui` requests should
 # be redirected to `/ui/` by the root service worker or the golang server.
-- url: /ui/.*
+- url: /old-ui/ui/.*
   secure: always
   static_files: ui/dist/ui/index.html
   upload: ui/dist/ui/index.html

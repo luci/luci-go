@@ -13,6 +13,11 @@
 /frontend/ui/*
 !/frontend/ui/dist
 
-# Experimental setup for push-on-green. See b/367097786.
 /service-ui/ui/*
 !/service-ui/ui/dist
+
+# Experimental setup for user-initiated-rollback. See b/381131084.
+/service-ui-new/ui/*
+!/service-ui-new/ui/dist
+/service-ui-old/ui/*
+!/service-ui-old/ui/dist

@@ -14,6 +14,14 @@ build:
   - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-ui
-  - go_gae_bundle: ${inputsdir}/service-ui-fallback/service-ui-fallback.yaml
+
+  # Experimental setup for user-initiated-rollback. See b/381131084.
+  - go_gae_bundle: ${inputsdir}/service-ui-dispatcher/service-ui-dispatcher.yaml
     go_gae_bundle_as_module: True
-    dest: ${contextdir}/service-ui-fallback
+    dest: ${contextdir}/service-ui-dispatcher
+  - go_gae_bundle: ${inputsdir}/service-ui-new/service-ui-new.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui-new
+  - go_gae_bundle: ${inputsdir}/service-ui-old/service-ui-old.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui-old

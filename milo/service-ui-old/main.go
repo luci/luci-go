@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package main contains setup for push-on-green. See b/367097786.
+// Package main contains the experimental setup for user-initiated-rollback.
+// See b/381131084.
 package main
 
 import (
@@ -20,5 +21,5 @@ import (
 )
 
 func main() {
-	uiserver.Main("")
+	uiserver.Main("/old-ui")
 }
