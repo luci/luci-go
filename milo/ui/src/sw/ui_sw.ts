@@ -65,7 +65,10 @@ self.addEventListener('fetch', async (e) => {
   // The version of the UI is the AppEngine UI service version that installed
   // this service worker. Not the current active AppEngine UI service version.
   if (e.request.url === self.origin + '/ui_version.js') {
-    const res = new Response(`self.UI_VERSION = '${UI_VERSION}';\n`);
+    const res = new Response(`
+      self.UI_VERSION = '${UI_VERSION}';
+      self.UI_VERSION_TYPE = '${UI_VERSION_TYPE}';
+    `);
     res.headers.set('content-type', 'text/javascript');
     e.respondWith(res);
     return;

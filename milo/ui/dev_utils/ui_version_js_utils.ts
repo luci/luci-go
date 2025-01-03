@@ -47,7 +47,10 @@ export function stableUiVersionJsLinkPlugin(): Plugin {
  */
 export function getLocalUiVersionJs(env: Record<string, string | undefined>) {
   const localUiVersion = env['VITE_LOCAL_UI_VERSION'];
-  const localUiVersionJs = `self.UI_VERSION = '${localUiVersion}';\n`;
+  const localUiVersionJs = `
+    self.UI_VERSION = '${localUiVersion}';
+    self.UI_VERSION_TYPE = 'local-ui';
+  `;
   return localUiVersionJs;
 }
 

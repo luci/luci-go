@@ -21,5 +21,5 @@ import (
 )
 
 func main() {
-	uiserver.Main("/new-ui")
+	uiserver.Main("new-ui")
 }

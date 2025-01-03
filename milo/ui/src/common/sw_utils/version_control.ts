@@ -13,6 +13,15 @@
 // limitations under the License.
 
 /**
+ * The key of the cookie that controls user-initiated-rollback.
+ *
+ * Note that this should not be used to detect whether user is on the old
+ * version. Because the page may not have been refreshed after the cookie is
+ * updated.
+ */
+const ROLLBACK_COOKIE_KEY = 'USER_INITIATED_ROLLBACK';
+
+/**
  * Once the user switches back to the old version, persist the selection for one
  * week.
  */
@@ -22,7 +31,7 @@ const ROLLBACK_PERSIST_DURATION = 7 * 24 * 60 * 60 * 1000;
  * Activate the old UI and reload the page.
  */
 export async function switchToOldUI() {
-  document.cookie = `USER_INITIATED_ROLLBACK=true; expires=${new Date(Date.now() + ROLLBACK_PERSIST_DURATION)}`;
+  document.cookie = `${ROLLBACK_COOKIE_KEY}=true; expires=${new Date(Date.now() + ROLLBACK_PERSIST_DURATION)}`;
 
   await reactivateUI();
 }
@@ -31,7 +40,7 @@ export async function switchToOldUI() {
  * Activate the new UI and reload the page.
  */
 export async function switchToNewUI() {
-  document.cookie = `USER_INITIATED_ROLLBACK=false`;
+  document.cookie = `${ROLLBACK_COOKIE_KEY}=false`;
 
   await reactivateUI();
 }

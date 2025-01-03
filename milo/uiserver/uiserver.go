@@ -27,6 +27,7 @@ import (
 
 var uiVersionJsTemplateStr = `
 	self.UI_VERSION = '{{.Version}}';
+	self.UI_VERSION_TYPE = '{{.VersionType}}';
 `
 
 var uiVersionJsTemplate = template.Must(template.New("ui_version.js").Parse(uiVersionJsTemplateStr))
@@ -42,9 +43,9 @@ var uiVersionJsTemplate = template.Must(template.New("ui_version.js").Parse(uiVe
 //
 // Note that the UI version can only be served from the UI service because the
 // other services do not know the version of the UI service.
-func Main(pathPrefix string) {
+func Main(versionType string) {
 	server.Main(nil, nil, func(srv *server.Server) error {
-		srv.Routes.GET(path.Join(pathPrefix, "ui_version.js"), nil, func(c *router.Context) {
+		srv.Routes.GET(path.Join(versionType, "ui_version.js"), nil, func(c *router.Context) {
 			header := c.Writer.Header()
 			header.Set("content-type", "text/javascript")
 
@@ -52,7 +53,8 @@ func Main(pathPrefix string) {
 			// re-served by the service worker.
 			header.Set("cache-control", "no-cache")
 			err := uiVersionJsTemplate.Execute(c.Writer, map[string]any{
-				"Version": srv.Options.ImageVersion(),
+				"Version":     srv.Options.ImageVersion(),
+				"VersionType": versionType,
 			})
 			if err != nil {
 				logging.Errorf(c.Request.Context(), "Failed to execute ui_version.js template: %s", err)
