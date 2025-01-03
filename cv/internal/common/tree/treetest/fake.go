@@ -17,68 +17,85 @@ package treetest
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 
-	"go.chromium.org/luci/common/clock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/cv/internal/common/tree"
+	"go.chromium.org/luci/common/testing/prpctest"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 )
 
-// Fake simulates Tree status app in test.
-type Fake struct {
-	// TreeStatus represents the current status of this fake Tree.
-	TreeStatus tree.Status
-	// Error forces FetchLatest to fail when set.
-	Error error
+// FakeServer simulates tree status server used in test.
+type FakeServer struct {
+	tspb.UnimplementedTreeStatusServer
+	prpcSrv     *prpctest.Server
+	stateByTree map[string]tspb.GeneralState
+	errorByTree map[string]error
 	// mu protects access/mutation to this fake Tree.
 	mu sync.RWMutex
 }
 
-// NewFake returns a fake Tree.
-func NewFake(ctx context.Context, state tree.State) *Fake {
-	return &Fake{
-		TreeStatus: tree.Status{
-			State: state,
-			Since: clock.Now(ctx).UTC(),
-		},
-	}
-}
-
-// Client returns a client of this Fake Tree.
-func (f *Fake) Client() tree.Client {
-	return &client{f}
-}
-
-// InjectErr causes Fake tree status app to return error.
+// NewFakeServer returns a fake tree status server.
 //
-// Passing nil error will bring tree status app to normal.
-func (f *Fake) InjectErr(err error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.Error = err
+// `Shutdown` SHOULD be called after test completes.
+func NewFakeServer(ctx context.Context) *FakeServer {
+	prpcSrv := &prpctest.Server{}
+	fs := &FakeServer{
+		prpcSrv:     prpcSrv,
+		stateByTree: make(map[string]tspb.GeneralState),
+		errorByTree: make(map[string]error),
+	}
+	tspb.RegisterTreeStatusServer(prpcSrv, fs)
+	prpcSrv.Start(ctx)
+	return fs
 }
 
-// ModifyState changes the state of this fake Tree.
-func (f *Fake) ModifyState(ctx context.Context, newState tree.State) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	if f.TreeStatus.State != newState {
-		f.TreeStatus.State = newState
-		f.TreeStatus.Since = clock.Now(ctx).UTC()
+// GetStatus implements `tspb.TreeStatusServer`.
+func (fs *FakeServer) GetStatus(ctx context.Context, req *tspb.GetStatusRequest) (*tspb.Status, error) {
+	fs.mu.RLock()
+	defer fs.mu.RUnlock()
+	if err, ok := fs.errorByTree[req.GetName()]; ok && err != nil {
+		return nil, err
+	}
+	if state, ok := fs.stateByTree[req.GetName()]; ok {
+		return &tspb.Status{
+			Name:         req.GetName(),
+			GeneralState: state,
+		}, nil
+	}
+	return nil, status.Errorf(codes.NotFound, "tree %q not found", req.GetName())
+}
+
+// Host returns the address of fake tree status server.
+func (fs *FakeServer) Host() string {
+	if fs.prpcSrv == nil {
+		panic(errors.New("fake tree status server is not initialized"))
+	}
+	return fs.prpcSrv.Host
+}
+
+// Shutdown closes the fake tree status server.
+func (fs *FakeServer) Shutdown() {
+	if fs.prpcSrv != nil {
+		fs.prpcSrv.Close()
 	}
 }
 
-type client struct {
-	fake *Fake
+// InjectErr makes Tree status server return error for the given tree.
+//
+// Passing nil error will bring the tree back to normal.
+func (fs *FakeServer) InjectErr(treeName string, err error) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+	fs.errorByTree[fmt.Sprintf("trees/%s/status/latest", treeName)] = err
 }
 
-var _ tree.Client = (*client)(nil)
-
-func (c *client) FetchLatest(ctx context.Context, treeName string) (tree.Status, error) {
-	c.fake.mu.RLock()
-	defer c.fake.mu.RUnlock()
-	if c.fake.Error != nil {
-		return tree.Status{}, c.fake.Error
-	}
-	return c.fake.TreeStatus, nil
+// ModifyState sets the state of the given tree.
+func (fs *FakeServer) ModifyState(treeName string, state tspb.GeneralState) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+	fs.stateByTree[fmt.Sprintf("trees/%s/status/latest", treeName)] = state
 }

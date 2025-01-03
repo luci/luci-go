@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -34,11 +35,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -82,7 +83,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 					Name: "main",
 					Verifiers: &cfgpb.Verifiers{
 						TreeStatus: &cfgpb.Verifiers_TreeStatus{
-							Url: "tree.example.com",
+							TreeName: lProject,
 						},
 					},
 				},
@@ -216,21 +217,22 @@ func TestOnReadyForSubmission(t *testing.T) {
 			t.Run(fmt.Sprintf("When status is %s", status), func(t *ftt.Test) {
 				rs.Status = status
 				t.Run("Mark submitting if Submit Queue is acquired and tree is open", func(t *ftt.Test) {
+					ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_OPEN)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
-					assert.Loosely(t, res.State.Submission, should.Resemble(&run.Submission{
+					assert.That(t, res.State.Status, should.Equal(run.Status_SUBMITTING))
+					assert.That(t, res.State.Submission, should.Match(&run.Submission{
 						Deadline:          timestamppb.New(now.Add(defaultSubmissionDuration)),
 						Cls:               []int64{2, 1}, // in submission order
 						TaskId:            "task-foo",
 						TreeOpen:          true,
 						LastTreeCheckTime: timestamppb.New(now),
 					}))
-					assert.Loosely(t, res.State.SubmissionScheduled, should.BeTrue)
+					assert.That(t, res.State.SubmissionScheduled, should.BeTrue)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
-					assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+					assert.That(t, res.PreserveEvents, should.BeFalse)
 					assert.Loosely(t, res.PostProcessFn, should.NotBeNil)
-					assert.Loosely(t, submit.MustCurrentRun(ctx, lProject), should.Equal(rid))
+					assert.That(t, submit.MustCurrentRun(ctx, lProject), should.Equal(rid))
 					runtest.AssertReceivedReadyForSubmission(t, ctx, rid, now.Add(10*time.Second))
 					assert.Loosely(t, res.State.LogEntries, should.HaveLength(2))
 					assert.Loosely(t, res.State.LogEntries[0].Kind, should.HaveType[*run.LogEntry_AcquiredSubmitQueue_])
@@ -261,7 +263,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				})
 
 				t.Run("Revisit after 1 mintues if tree is closed", func(t *ftt.Test) {
-					ct.TreeFake.ModifyState(ctx, tree.Closed)
+					ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
@@ -283,8 +285,7 @@ func TestOnReadyForSubmission(t *testing.T) {
 				})
 
 				t.Run("Set TreeErrorSince on first failure", func(t *ftt.Test) {
-					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
-					ct.TreeFake.InjectErr(fmt.Errorf("error while fetching tree status"))
+					ct.TreeFakeSrv.InjectErr(lProject, errors.New("error while fetching tree status"))
 					res, err := h.OnReadyForSubmission(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))

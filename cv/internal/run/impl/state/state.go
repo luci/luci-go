@@ -25,6 +25,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/tree"
@@ -154,42 +156,53 @@ func (rs *RunState) CloneSubmission() {
 // In case fetching the status results in error for the first time, it records
 // the time in the appropriate field in Submission.
 // Records a new LogEntry.
-func (rs *RunState) CheckTree(ctx context.Context, tc tree.Client) (bool, error) {
-	treeOpen := true
-	if !rs.Options.GetSkipTreeChecks() {
-		cg, err := prjcfg.GetConfigGroup(ctx, rs.ID.LUCIProject(), rs.ConfigGroupID)
-		if err != nil {
-			return false, err
-		}
-
-		treeName := cg.Content.GetVerifiers().GetTreeStatus().GetTreeName()
-		if treeName == "" {
-			treeName = tree.URLToTreeName(cg.Content.GetVerifiers().GetTreeStatus().GetUrl())
-		}
-		if treeName != "" {
-			status, err := tc.FetchLatest(ctx, treeName)
-			switch {
-			case err != nil && rs.Submission.TreeErrorSince == nil:
-				rs.Submission.TreeErrorSince = timestamppb.New(clock.Now(ctx))
-				fallthrough
-			case err != nil:
-				rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx))
-				return false, err
-			}
-			rs.Submission.TreeErrorSince = nil
-			treeOpen = status.State == tree.Open || status.State == tree.Throttled
-			rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
-				Time: timestamppb.New(clock.Now(ctx)),
-				Kind: &run.LogEntry_TreeChecked_{
-					TreeChecked: &run.LogEntry_TreeChecked{
-						Open: treeOpen,
-					},
-				},
-			})
-		}
+func (rs *RunState) CheckTree(ctx context.Context, treeFactory tree.ClientFactory) (treeOpen bool, err error) {
+	defer func() {
+		rs.Submission.TreeOpen = treeOpen
+		rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
+	}()
+	if rs.Options.GetSkipTreeChecks() {
+		return true, nil
 	}
-	rs.Submission.TreeOpen = treeOpen
-	rs.Submission.LastTreeCheckTime = timestamppb.New(clock.Now(ctx).UTC())
+
+	luciProject := rs.ID.LUCIProject()
+	cg, err := prjcfg.GetConfigGroup(ctx, luciProject, rs.ConfigGroupID)
+	if err != nil {
+		return false, err
+	}
+
+	treeName := tree.TreeName(cg.Content.GetVerifiers().GetTreeStatus())
+	if treeName == "" {
+		return true, nil // no tree defined
+	}
+	tc, err := treeFactory.MakeClient(ctx, luciProject)
+	if err != nil {
+		return false, fmt.Errorf("failed to create tree client for project %q: %w", luciProject, err)
+	}
+	resp, err := tc.GetStatus(ctx, &tspb.GetStatusRequest{
+		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
+	})
+	if err != nil {
+		if rs.Submission.TreeErrorSince == nil {
+			rs.Submission.TreeErrorSince = timestamppb.New(clock.Now(ctx))
+		}
+		logging.Errorf(ctx, "failed to fetch tree status for %s: %s", treeName, err)
+		return false, err
+	}
+
+	rs.Submission.TreeErrorSince = nil
+	switch resp.GetGeneralState() {
+	case tspb.GeneralState_OPEN, tspb.GeneralState_THROTTLED:
+		treeOpen = true
+	}
+	rs.LogEntries = append(rs.LogEntries, &run.LogEntry{
+		Time: timestamppb.New(clock.Now(ctx)),
+		Kind: &run.LogEntry_TreeChecked_{
+			TreeChecked: &run.LogEntry_TreeChecked{
+				Open: treeOpen,
+			},
+		},
+	})
 	return treeOpen, nil
 }
 

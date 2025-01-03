@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -54,7 +55,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 	rs = rs.ShallowCopy()
 	if shouldCheckTree(ctx, rs.Status, rs.Submission) {
 		rs.CloneSubmission()
-		switch open, err := rs.CheckTree(ctx, impl.TreeClient); {
+		switch open, err := rs.CheckTree(ctx, impl.TreeFactory); {
 		case err != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
 			// The tree has been erroring for too long. Reset the triggers and
 			// fail the run.
@@ -69,7 +70,7 @@ func (impl *Impl) Poke(ctx context.Context, rs *state.RunState) (*Result, error)
 				// Add the same set of group/people to the attention set.
 				addToAttention: whoms,
 				reason:         submissionFailureAttentionReason,
-				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+				message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, tree.TreeName(cg.Content.GetVerifiers().GetTreeStatus())),
 			}
 			for _, cl := range rs.CLs {
 				if !rs.HasRootCL() || rs.RootCL == cl {

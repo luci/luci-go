@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
@@ -52,7 +53,7 @@ func TestCheckTree(t *testing.T) {
 					Name: "main",
 					Verifiers: &cfgpb.Verifiers{
 						TreeStatus: &cfgpb.Verifiers_TreeStatus{
-							Url: "https://tree-status.appspot.com",
+							TreeName: lProject,
 						},
 					},
 				},
@@ -62,38 +63,37 @@ func TestCheckTree(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 		rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
-		client := ct.TreeFake.Client()
-
+		clientFactory := tree.NewClientFactory(ct.TreeFakeSrv.Host())
 		t.Run("Open", func(t *ftt.Test) {
-			ct.TreeFake.ModifyState(ctx, tree.Open)
-			open, err := rs.CheckTree(ctx, client)
+			ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_OPEN)
+			open, err := rs.CheckTree(ctx, clientFactory)
 			assert.NoErr(t, err)
-			assert.Loosely(t, open, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
+			assert.That(t, open, should.BeTrue)
+			assert.That(t, rs.Run.Submission.TreeOpen, should.BeTrue)
+			assert.That(t, rs.Run.Submission.LastTreeCheckTime, should.Match(timestamppb.New(ct.Clock.Now().UTC())))
 		})
 
 		t.Run("Closed", func(t *ftt.Test) {
-			ct.TreeFake.ModifyState(ctx, tree.Closed)
-			open, err := rs.CheckTree(ctx, client)
+			ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
+			open, err := rs.CheckTree(ctx, clientFactory)
 			assert.NoErr(t, err)
-			assert.Loosely(t, open, should.BeFalse)
-			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeFalse)
-			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
+			assert.That(t, open, should.BeFalse)
+			assert.That(t, rs.Run.Submission.TreeOpen, should.BeFalse)
+			assert.That(t, rs.Run.Submission.LastTreeCheckTime, should.Match(timestamppb.New(ct.Clock.Now().UTC())))
 		})
 
 		t.Run("Closed but ignored", func(t *ftt.Test) {
-			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
 			rs.Run.Options = &run.Options{SkipTreeChecks: true}
-			open, err := rs.CheckTree(ctx, client)
+			open, err := rs.CheckTree(ctx, clientFactory)
 			assert.NoErr(t, err)
-			assert.Loosely(t, open, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
+			assert.That(t, open, should.BeTrue)
+			assert.That(t, rs.Run.Submission.TreeOpen, should.BeTrue)
+			assert.That(t, rs.Run.Submission.LastTreeCheckTime, should.Match(timestamppb.New(ct.Clock.Now().UTC())))
 		})
 
 		t.Run("Tree not defined", func(t *ftt.Test) {
-			ct.TreeFake.ModifyState(ctx, tree.Closed)
+			ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
 			prjcfgtest.Update(ctx, lProject, &cfgpb.Config{
 				ConfigGroups: []*cfgpb.ConfigGroup{
 					{Name: "main"},
@@ -104,11 +104,11 @@ func TestCheckTree(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, meta.ConfigGroupIDs, should.HaveLength(1))
 			rs.Run.ConfigGroupID = meta.ConfigGroupIDs[0]
-			open, err := rs.CheckTree(ctx, client)
+			open, err := rs.CheckTree(ctx, clientFactory)
 			assert.NoErr(t, err)
-			assert.Loosely(t, open, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.TreeOpen, should.BeTrue)
-			assert.Loosely(t, rs.Run.Submission.LastTreeCheckTime, should.Resemble(timestamppb.New(ct.Clock.Now().UTC())))
+			assert.That(t, open, should.BeTrue)
+			assert.That(t, rs.Run.Submission.TreeOpen, should.BeTrue)
+			assert.That(t, rs.Run.Submission.LastTreeCheckTime, should.Match(timestamppb.New(ct.Clock.Now().UTC())))
 		})
 	})
 }

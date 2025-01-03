@@ -143,7 +143,7 @@ type Impl struct {
 	CLMutator   *changelist.Mutator
 	BQExporter  *bq.Exporter
 	RdbNotifier *rdb.Notifier
-	TreeClient  tree.Client
+	TreeFactory tree.ClientFactory
 	Publisher   *pubsub.Publisher
 	Env         *common.Env
 }

@@ -37,6 +37,7 @@ import (
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
 	"go.chromium.org/luci/cv/internal/run"
@@ -127,7 +128,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 		return &Result{State: rs}, nil
 	}
 	rs.CloneSubmission()
-	switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeClient); {
+	switch treeOpen, treeErr := rs.CheckTree(ctx, impl.TreeFactory); {
 	case treeErr != nil && clock.Since(ctx, rs.Submission.TreeErrorSince.AsTime()) > treeStatusFailureTimeLimit:
 		// Failed to fetch status for a long time. Fail the Run.
 		if err := releaseSubmitQueue(ctx, rs, impl.RM); err != nil {
@@ -140,7 +141,7 @@ func (impl *Impl) OnReadyForSubmission(ctx context.Context, rs *state.RunState) 
 			// Add the same set of group/people to the attention set.
 			addToAttention: whoms,
 			reason:         treeStatusCheckFailedReason,
-			message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, cg.Content.GetVerifiers().GetTreeStatus().GetUrl()),
+			message:        fmt.Sprintf(persistentTreeStatusAppFailureTemplate, tree.TreeName(cg.Content.GetVerifiers().GetTreeStatus())),
 		}
 		for _, cl := range rs.CLs {
 			if !rs.HasRootCL() || rs.RootCL == cl {
@@ -795,7 +796,7 @@ const (
 		// so that CV doesn't get blamed for timeout it isn't responsible for.
 		"Please contact LUCI team.\n\n" + cvBugLink
 	persistentTreeStatusAppFailureTemplate = "Could not submit this CL " +
-		"because the tree status app at %s repeatedly returned failures. "
+		"because the tree %s repeatedly returned failures. "
 	treeStatusCheckFailedReason      = "Tree status check failed."
 	submissionFailureAttentionReason = "Submission failed."
 )

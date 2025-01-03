@@ -123,17 +123,14 @@ func main() {
 		tryjobCancellator.RegisterBackend(bbFacade)
 
 		_ = pmimpl.New(pmNotifier, runNotifier, clMutator, gFactory, clUpdater)
-		tc, err := tree.NewClient(srv.Context, luciTreeStatusHost)
-		if err != nil {
-			return err
-		}
+		treeFactory := tree.NewClientFactory(luciTreeStatusHost)
 		bqc, err := bq.NewProdClient(srv.Context, srv.Options.CloudProject)
 		if err != nil {
 			return err
 		}
 		rdbClientFactory := rdb.NewRecorderClientFactory()
 		qm := quota.NewManager(gFactory)
-		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, tc, bqc, rdbClientFactory, qm, env)
+		_ = runimpl.New(runNotifier, pmNotifier, tryjobNotifier, clMutator, clUpdater, gFactory, bbFactory, treeFactory, bqc, rdbClientFactory, qm, env)
 
 		// Setup pRPC authentication.
 		srv.SetRPCAuthMethods([]auth.Method{

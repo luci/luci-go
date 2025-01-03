@@ -16,7 +16,7 @@ package handler
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -29,11 +29,11 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/gae/service/datastore"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
-	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -66,7 +66,7 @@ func TestPoke(t *testing.T) {
 					Name: "main",
 					Verifiers: &cfgpb.Verifiers{
 						TreeStatus: &cfgpb.Verifiers_TreeStatus{
-							Url: "tree.example.com",
+							TreeName: lProject,
 						},
 						GerritCqAbility: &cfgpb.Verifiers_GerritCQAbility{
 							DryRunAccessList: []string{dryRunners},
@@ -162,6 +162,7 @@ func TestPoke(t *testing.T) {
 				}
 
 				t.Run("Open", func(t *ftt.Test) {
+					ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_OPEN)
 					res, err := h.Poke(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -179,7 +180,7 @@ func TestPoke(t *testing.T) {
 				})
 
 				t.Run("Close", func(t *ftt.Test) {
-					ct.TreeFake.ModifyState(ctx, tree.Closed)
+					ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
 					res, err := h.Poke(ctx, rs)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.SideEffectFn, should.BeNil)
@@ -195,28 +196,27 @@ func TestPoke(t *testing.T) {
 				})
 
 				t.Run("Failed", func(t *ftt.Test) {
-					ct.TreeFake.ModifyState(ctx, tree.StateUnknown)
-					ct.TreeFake.InjectErr(fmt.Errorf("error retrieving tree status"))
+					ct.TreeFakeSrv.InjectErr(lProject, errors.New("error retrieving tree status"))
 					t.Run("Not too long", func(t *ftt.Test) {
 						res, err := h.Poke(ctx, rs)
 						assert.NoErr(t, err)
-						assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+						assert.That(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 					})
 
 					t.Run("Too long", func(t *ftt.Test) {
 						rs.Submission.TreeErrorSince = timestamppb.New(now.Add(-11 * time.Minute))
 						res, err := h.Poke(ctx, rs)
 						assert.NoErr(t, err)
-						assert.Loosely(t, res.State, should.NotEqual(rs))
+						assert.That(t, res.State, should.NotEqual(rs))
 						assert.Loosely(t, res.SideEffectFn, should.BeNil)
-						assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+						assert.That(t, res.PreserveEvents, should.BeFalse)
 						assert.Loosely(t, res.PostProcessFn, should.BeNil)
 						assert.Loosely(t, res.State.NewLongOpIDs, should.HaveLength(1))
 						ct := res.State.OngoingLongOps.Ops[res.State.NewLongOpIDs[0]].GetResetTriggers()
-						assert.Loosely(t, ct.RunStatusIfSucceeded, should.Equal(run.Status_FAILED))
+						assert.That(t, ct.RunStatusIfSucceeded, should.Equal(run.Status_FAILED))
 						assert.Loosely(t, ct.Requests, should.HaveLength(1))
-						assert.Loosely(t, ct.Requests[0].Message, should.ContainSubstring("Could not submit this CL because the tree status app at tree.example.com repeatedly returned failures"))
-						assert.Loosely(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
+						assert.That(t, ct.Requests[0].Message, should.ContainSubstring("Could not submit this CL because the tree infra repeatedly returned failures"))
+						assert.That(t, res.State.Status, should.Equal(run.Status_WAITING_FOR_SUBMISSION))
 						t.Run("Reset trigger on root CL only", func(t *ftt.Test) {
 							rs.CLs = append(rs.CLs, cl.ID+1000)
 							rs.RootCL = cl.ID

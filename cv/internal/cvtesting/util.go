@@ -64,7 +64,6 @@ import (
 	bbfake "go.chromium.org/luci/cv/internal/buildbucket/fake"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/bq"
-	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/common/tree/treetest"
 	"go.chromium.org/luci/cv/internal/configs/srvcfg"
 	"go.chromium.org/luci/cv/internal/gerrit"
@@ -93,8 +92,8 @@ type Test struct {
 	GFake *gf.Fake
 	// BuildbucketFake is a Buildbucket fake. Defaults to an empty one.
 	BuildbucketFake *bbfake.Fake
-	// TreeFake is a fake Tree. Defaults to an open Tree.
-	TreeFake *treetest.Fake
+	// TreeFakeSrv is a fake Tree status server.
+	TreeFakeSrv *treetest.FakeServer
 	// BQFake is a fake BQ client.
 	BQFake *bq.Fake
 	// TQDispatcher is a dispatcher with which task classes must be registered.
@@ -204,8 +203,9 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	if t.BuildbucketFake == nil {
 		t.BuildbucketFake = &bbfake.Fake{}
 	}
-	if t.TreeFake == nil {
-		t.TreeFake = treetest.NewFake(ctx, tree.Open)
+	if t.TreeFakeSrv == nil {
+		t.TreeFakeSrv = treetest.NewFakeServer(ctx)
+		t.TB.Cleanup(t.TreeFakeSrv.Shutdown)
 	}
 	if t.BQFake == nil {
 		t.BQFake = &bq.Fake{}

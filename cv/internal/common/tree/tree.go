@@ -17,106 +17,70 @@ package tree
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/lhttp"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	tspb "go.chromium.org/luci/tree_status/proto/v1"
+
+	cfgpb "go.chromium.org/luci/cv/api/config/v2"
 )
 
-// Client defines the interface that interacts with Tree status App.
-type Client interface {
-	// FetchLatest fetches the latest tree status.
-	FetchLatest(ctx context.Context, endpoint string) (Status, error)
+// ClientFactory creates client for tree status server that ties to a LUCI project.
+type ClientFactory interface {
+	MakeClient(ctx context.Context, luciProject string) (tspb.TreeStatusClient, error)
 }
 
-// Status models the status returned by tree status app.
-//
-// Note that only fields that are needed in CV are included.
-// Source of Truth: https://source.chromium.org/chromium/infra/infra/+/52a8cfcb436b0012e668630a2f261237046a033a:appengine/chromium_status/appengine_module/chromium_status/status.py;l=209-252
-type Status struct {
-	// State describes the Tree state.
-	State State
-	// Since is the timestamp when the tree obtains the current state.
-	Since time.Time
-}
-
-// State enumerates possible values for tree state.
-type State int8
-
-const (
-	StateUnknown State = iota
-	Open
-	Closed
-	Throttled
-	InMaintenance
-)
-
-func convertToTreeState(s tspb.GeneralState) State {
-	switch s {
-	case tspb.GeneralState_OPEN:
-		return Open
-	case tspb.GeneralState_CLOSED:
-		return Closed
-	case tspb.GeneralState_THROTTLED:
-		return Throttled
-	case tspb.GeneralState_MAINTENANCE:
-		return InMaintenance
-	default:
-		return StateUnknown
+// NewClientFactory returns a ClientFactory instance.
+func NewClientFactory(host string) ClientFactory {
+	return &prpcClientFactory{
+		host: host,
 	}
 }
 
-func NewClient(ctx context.Context, luciTreeStatusHost string) (Client, error) {
-	t, err := auth.GetRPCTransport(ctx, auth.AsSelf)
-	if err != nil {
-		return nil, err
-	}
-	rpcOpts := prpc.DefaultOptions()
-	rpcOpts.Insecure = lhttp.IsLocalHost(luciTreeStatusHost)
+type prpcClientFactory struct {
+	host string
+}
+
+// MakeClient implements `ClientFactory`
+func (f *prpcClientFactory) MakeClient(ctx context.Context, luciProject string) (tspb.TreeStatusClient, error) {
 	prpcClient := &prpc.Client{
-		C:                     &http.Client{Transport: t},
-		Host:                  luciTreeStatusHost,
-		Options:               rpcOpts,
-		MaxConcurrentRequests: 100,
+		Host: f.host,
 	}
-
-	return &treeStatusClientImpl{
-		client: tspb.NewTreeStatusPRPCClient(prpcClient),
-	}, nil
-}
-
-type treeStatusClientImpl struct {
-	client tspb.TreeStatusClient
-}
-
-// FetchLatest fetches the latest tree status.
-func (c treeStatusClientImpl) FetchLatest(ctx context.Context, treeName string) (Status, error) {
-	response, err := c.client.GetStatus(ctx, &tspb.GetStatusRequest{
-		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
-	})
-	if err != nil {
-		return Status{}, errors.Annotate(err, "failed to fetch tree status for %s", treeName).Err()
+	if lhttp.IsLocalHost(f.host) { // testing
+		prpcClient.Options = &prpc.Options{
+			Retry:    retry.None,
+			Insecure: true,
+		}
+	} else {
+		rt, err := auth.GetRPCTransport(ctx, auth.AsProject, auth.WithProject(luciProject))
+		if err != nil {
+			return nil, err
+		}
+		prpcClient.C = &http.Client{Transport: rt}
 	}
-
-	return Status{
-		State: convertToTreeState(response.GeneralState),
-		Since: response.CreateTime.AsTime(),
-	}, nil
+	return tspb.NewTreeStatusPRPCClient(prpcClient), nil
 }
 
-// URLToTreeName converts a tree status endpoint URL to a tree name.
-// This follows the convention used to convert the URL in the old tree status apps.
-func URLToTreeName(url string) string {
-	treeName := strings.TrimPrefix(url, "https://")
-	treeName = strings.TrimPrefix(treeName, "http://")
-	treeName = strings.TrimSuffix(treeName, "/")
-	treeName = strings.TrimSuffix(treeName, ".appspot.com")
-	treeName = strings.TrimSuffix(treeName, "-status")
-	return treeName
+// TreeName extracts tree name from the config.
+//
+// Converts a tree status endpoint URL to a tree name if only the URL is
+// specified
+func TreeName(config *cfgpb.Verifiers_TreeStatus) string {
+	switch {
+	case config.GetTreeName() != "":
+		return config.GetTreeName()
+	case config.GetUrl() != "":
+		treeName := strings.TrimPrefix(config.GetUrl(), "https://")
+		treeName = strings.TrimPrefix(treeName, "http://")
+		treeName = strings.TrimSuffix(treeName, "/")
+		treeName = strings.TrimSuffix(treeName, ".appspot.com")
+		treeName = strings.TrimSuffix(treeName, "-status")
+		return treeName
+	default:
+		return ""
+	}
 }

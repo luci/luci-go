@@ -38,6 +38,7 @@ import (
 	apipb "go.chromium.org/luci/cv/api/v1"
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
@@ -720,7 +721,7 @@ func makeImpl(ct *cvtesting.Test) (*Impl, dependencies) {
 		TN:          deps.tjNotifier,
 		CLMutator:   changelist.NewMutator(ct.TQDispatcher, deps.pm, deps.rm, nil),
 		CLUpdater:   deps.clUpdater,
-		TreeClient:  ct.TreeFake.Client(),
+		TreeFactory: tree.NewClientFactory(ct.TreeFakeSrv.Host()),
 		GFactory:    ct.GFactory(),
 		BQExporter:  bq.NewExporter(ct.TQDispatcher, ct.BQFake, ct.Env),
 		RdbNotifier: rdb.NewNotifier(ct.TQDispatcher, cf),

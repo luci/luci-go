@@ -53,6 +53,7 @@ import (
 	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/common/eventbox"
+	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/gerrit/trigger"
@@ -176,7 +177,7 @@ func (t *Test) SetUp(testingT testing.TB) context.Context {
 	gerritupdater.RegisterUpdater(clUpdater, gFactory)
 	rdbFactory := rdb.NewMockRecorderClientFactory(t.Test.GoMockCtl)
 	_ = pmimpl.New(t.PMNotifier, t.RunNotifier, clMutator, gFactory, clUpdater)
-	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, t.TreeFake.Client(), t.BQFake, rdbFactory, qm, t.Env)
+	_ = runimpl.New(t.RunNotifier, t.PMNotifier, tjNotifier, clMutator, clUpdater, gFactory, bbFactory, tree.NewClientFactory(t.TreeFakeSrv.Host()), t.BQFake, rdbFactory, qm, t.Env)
 	bbFacade := &bbfacade.Facade{
 		ClientFactory: bbFactory,
 	}

@@ -15,6 +15,7 @@
 package e2e
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -22,9 +23,9 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	tspb "go.chromium.org/luci/tree_status/proto/v1"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
-	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
@@ -44,11 +45,11 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 		const gChangeSubmit = 200
 
 		t.Run("CV fails Full Run if tree status app is down", func(t *ftt.Test) {
-			ct.TreeFake.InjectErr(fmt.Errorf("tree status app is down"))
+			ct.TreeFakeSrv.InjectErr(lProject, errors.New("tree status server is down"))
 
 			cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 			cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
-				Url: "https://tree-status.example.com/",
+				TreeName: lProject,
 			}
 			prjcfgtest.Create(ctx, lProject, cfg)
 			assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
@@ -82,10 +83,10 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 				return r.Status == run.Status_FAILED
 			})
 			info := ct.GFake.GetChange(gHost, gChange).Info
-			assert.Loosely(t, info.GetStatus(), should.Equal(gerritpb.ChangeStatus_NEW))
-			assert.Loosely(t, info.Messages[len(info.Messages)-1].Message, should.ContainSubstring("Could not submit this CL because the tree status app"))
-			assert.Loosely(t, info.Messages[len(info.Messages)-1].Message, should.ContainSubstring("repeatedly returned failures"))
-			assert.Loosely(t, info.GetLabels()["Commit-Queue"].Value, should.BeZero)
+			assert.That(t, info.GetStatus(), should.Equal(gerritpb.ChangeStatus_NEW))
+			assert.That(t, info.Messages[len(info.Messages)-1].Message, should.ContainSubstring("Could not submit this CL because the tree"))
+			assert.That(t, info.Messages[len(info.Messages)-1].Message, should.ContainSubstring("repeatedly returned failures"))
+			assert.That(t, info.GetLabels()["Commit-Queue"].Value, should.Equal(int32(0)))
 		})
 
 		t.Run("CV submits Full Run only iff No-Tree-Checks: True", func(t *ftt.Test) {
@@ -98,7 +99,7 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 			check := func(t testing.TB) {
 				cfg := MakeCfgSingular("cg0", gHost, gRepo, gRef)
 				cfg.ConfigGroups[0].Verifiers.TreeStatus = &cfgpb.Verifiers_TreeStatus{
-					Url: "https://tree-status.example.com/",
+					TreeName: lProject,
 				}
 				prjcfgtest.Create(ctx, lProject, cfg)
 				assert.Loosely(t, ct.PMNotifier.UpdateConfig(ctx, lProject), should.BeNil)
@@ -141,20 +142,25 @@ func TestSubmissionDuringClosedTree(t *testing.T) {
 				assert.Loosely(t, ct.GFake.GetChange(gHost, gChangeSubmit).Info.GetStatus(), should.Equal(gerritpb.ChangeStatus_MERGED))
 
 				// And the tree must not open.
-				st, err := ct.TreeFake.Client().FetchLatest(ctx, "whatever")
-				assert.Loosely(t, err, should.Equal(expectedErr))
-				assert.Loosely(t, st.State, should.NotEqual(tree.Open))
-
+				status, err := ct.TreeFakeSrv.GetStatus(ctx, &tspb.GetStatusRequest{
+					Name: fmt.Sprintf("trees/%s/status/latest", lProject),
+				})
+				if expectedErr != nil {
+					assert.That(t, err, should.ErrLikeError(expectedErr))
+				} else {
+					assert.NoErr(t, err)
+					assert.That(t, status.GeneralState, should.NotEqual(tspb.GeneralState_OPEN))
+				}
 			}
 
 			t.Run("when tree is closed", func(t *ftt.Test) {
-				ct.TreeFake.ModifyState(ctx, tree.Closed)
+				ct.TreeFakeSrv.ModifyState(lProject, tspb.GeneralState_CLOSED)
 				check(t)
 			})
 
 			t.Run("when tree status app is failing", func(t *ftt.Test) {
-				expectedErr = fmt.Errorf("tree status app is down")
-				ct.TreeFake.InjectErr(expectedErr)
+				expectedErr = errors.New("tree status server is down")
+				ct.TreeFakeSrv.InjectErr(lProject, expectedErr)
 				check(t)
 			})
 		})
