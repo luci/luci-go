@@ -30,9 +30,26 @@ export async function _updateLastKnownFreshTime() {
   await kvSet(LAST_KNOWN_FRESH_TIME_KEY, Date.now());
 }
 
-self.registration
-  ?.update() // Add `?` to ensure this works in unit tests.
-  .finally(() => kvSet(LAST_KNOWN_FRESH_TIME_KEY, Date.now()));
+self.addEventListener('activate', (e) => {
+  e.waitUntil(kvSet(LAST_KNOWN_FRESH_TIME_KEY, Date.now()));
+});
+
+// Add `?` to ensure this works in unit tests.
+if (self.serviceWorker?.state === 'activated') {
+  // If the service worker is already activated and there is no new version, we
+  // still want to update the last known fresh time so the service worker is not
+  // considered stale.
+  //
+  // We only call `.update` when the service worker is activated because calling
+  // `.update` on a non-activated service worker will lead to errors, which adds
+  // noise to the console.
+  //
+  // When the servicer worker is not `activated`, the last known fresh time
+  // would've been updated in the `activate` event handler above.
+  self.registration
+    .update()
+    .finally(() => kvSet(LAST_KNOWN_FRESH_TIME_KEY, Date.now()));
+}
 
 export interface CreateHandlerBoundToURLOptions {
   /**
