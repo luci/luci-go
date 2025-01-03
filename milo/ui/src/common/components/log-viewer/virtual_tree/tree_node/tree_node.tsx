@@ -108,8 +108,8 @@ export function TreeNode<T extends TreeNodeData>({
             style={{ display: 'flex', alignItems: 'center' }}
           >
             {treeNodeData.isOpen
-              ? collapseIcon ?? <ExpandMoreIcon sx={{ fontSize: '18px' }} />
-              : expandIcon ?? <ChevronRightIcon sx={{ fontSize: '18px' }} />}
+              ? (collapseIcon ?? <ExpandMoreIcon sx={{ fontSize: '18px' }} />)
+              : (expandIcon ?? <ChevronRightIcon sx={{ fontSize: '18px' }} />)}
           </div>
           <Typography
             component="span"

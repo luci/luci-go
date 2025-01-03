@@ -28,12 +28,12 @@ export const statusColor = (state: GeneralState | undefined): string => {
   return state === GeneralState.OPEN
     ? 'var(--success-color)'
     : state === GeneralState.CLOSED
-    ? 'var(--failure-color)'
-    : state === GeneralState.THROTTLED
-    ? 'var(--warning-text-color)'
-    : state === GeneralState.MAINTENANCE
-    ? 'var(--critical-failure-color)'
-    : 'inherit';
+      ? 'var(--failure-color)'
+      : state === GeneralState.THROTTLED
+        ? 'var(--warning-text-color)'
+        : state === GeneralState.MAINTENANCE
+          ? 'var(--critical-failure-color)'
+          : 'inherit';
 };
 
 export interface StatusIconProps {

@@ -14,10 +14,10 @@
 
 export type GenFeedbackUrlArgs =
   | {
-    errMsg?: string;
-    stacktrace?: string;
-    bugComponent?: string;
-  }
+      errMsg?: string;
+      stacktrace?: string;
+      bugComponent?: string;
+    }
   | undefined;
 /**
  * Generates URL for collecting feedback.

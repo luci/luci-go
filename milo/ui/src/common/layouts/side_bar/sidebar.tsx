@@ -28,12 +28,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { useSelectedPage, useProject } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import { QueryTreesRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
-import { useAuthState } from '@/common/components/auth_state_provider';
 
 import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
 

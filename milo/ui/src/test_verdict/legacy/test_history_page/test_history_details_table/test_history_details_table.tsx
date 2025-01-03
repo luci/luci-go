@@ -152,7 +152,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
     return html`
       <span
         style=${styleMap({
-          display: entriesLoader?.isLoading ?? true ? 'none' : '',
+          display: (entriesLoader?.isLoading ?? true) ? 'none' : '',
         })}
         @click=${() => this.loadMore()}
       >
@@ -160,7 +160,7 @@ export class TestHistoryDetailsTableElement extends MobxExtLitElement {
       </span>
       <span
         style=${styleMap({
-          display: entriesLoader?.isLoading ?? true ? '' : 'none',
+          display: (entriesLoader?.isLoading ?? true) ? '' : 'none',
           cursor: 'initial',
         })}
       >

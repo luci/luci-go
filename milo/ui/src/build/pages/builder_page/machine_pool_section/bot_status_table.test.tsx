@@ -36,32 +36,36 @@ describe('BotStatusTable', () => {
     );
 
     let statusRow: HTMLElement;
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Idle])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Idle],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('2');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
       '20%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Busy])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Busy],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('4');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
       '40%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Quarantined])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Quarantined],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('1');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
       '10%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Dead])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Dead],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('3');
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
       'width',
@@ -86,8 +90,9 @@ describe('BotStatusTable', () => {
     );
 
     let statusRow: HTMLElement;
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Idle])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Idle],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('0');
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
@@ -95,8 +100,9 @@ describe('BotStatusTable', () => {
       '0%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Busy])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Busy],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('0');
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
@@ -104,8 +110,9 @@ describe('BotStatusTable', () => {
       '0%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Quarantined])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Quarantined],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('0');
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(
@@ -113,8 +120,9 @@ describe('BotStatusTable', () => {
       '0%',
     );
 
-    statusRow = screen.getByText(BOT_STATUS_LABEL_MAP[BotStatus.Dead])
-      .parentElement!;
+    statusRow = screen.getByText(
+      BOT_STATUS_LABEL_MAP[BotStatus.Dead],
+    ).parentElement!;
     expect(statusRow.querySelector('td:nth-child(2)')).toHaveTextContent('0');
     // Width should be 0% rather than NaN%.
     expect(statusRow.querySelector('td:nth-child(3)>div')).toHaveStyleRule(

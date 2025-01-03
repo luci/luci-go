@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 import { DateTime } from 'luxon';
+
+import { LONG_TIME_FORMAT } from '@/common/tools/time_utils';
 
 export function getFormattedDuration(start?: string, end?: string): string {
   if (!start || !end) {

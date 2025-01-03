@@ -122,7 +122,8 @@ export function InstructionDialog({
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={currentTarget} onChange={handleTabChange}>
                 {[...targetedInstructions.keys()].map((target, index) => (
-                  <Tab sx={{ color: 'black'}}
+                  <Tab
+                    sx={{ color: 'black' }}
                     key={index}
                     label={INSTRUCTION_TARGET_DISPLAY_MAP[target]}
                     value={target}

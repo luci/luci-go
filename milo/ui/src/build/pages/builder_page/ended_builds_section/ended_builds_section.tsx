@@ -107,7 +107,7 @@ export function EndedBuildsSection({ builderId }: EndedBuildsSectionProps) {
     throw error;
   }
 
-  const nextPageToken = isPreviousData ? '' : data?.nextPageToken ?? '';
+  const nextPageToken = isPreviousData ? '' : (data?.nextPageToken ?? '');
   const builds = (data?.builds || []) as readonly OutputBuild[];
 
   return (

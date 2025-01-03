@@ -100,11 +100,8 @@ export function parseTestResultSearchQuery(
         if (tValue) {
           return (v: TestVariant) =>
             negate ===
-            !v.results?.some(
-              (r) =>
-                r.result.tags?.some(
-                  (t) => t.key === tKey && t.value === tValue,
-                ),
+            !v.results?.some((r) =>
+              r.result.tags?.some((t) => t.key === tKey && t.value === tValue),
             );
         } else {
           return (v: TestVariant) =>

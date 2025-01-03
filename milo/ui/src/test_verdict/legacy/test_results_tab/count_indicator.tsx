@@ -60,9 +60,8 @@ export class TestResultsTabCountIndicatorElement extends MobxExtLitElement {
       reaction(
         () => this.invState.testLoader,
         (testLoader) =>
-          reportErrorAsync(
-            this,
-            async () => testLoader?.loadFirstPageOfTestVariants(),
+          reportErrorAsync(this, async () =>
+            testLoader?.loadFirstPageOfTestVariants(),
           )(),
         { fireImmediately: true },
       ),
