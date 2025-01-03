@@ -17,39 +17,54 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 
 import './groups_list.css';
 
 interface GroupsFormListReadonlyProps {
-    initialItems: string[];
-    name: string;
+  initialItems: string[];
+  name: string;
 }
 
-export function GroupsFormListReadonly({ initialItems, name } :GroupsFormListReadonlyProps) {
-    const [items, setItems] = useState<string[]>(initialItems);
+export function GroupsFormListReadonly({
+  initialItems,
+  name,
+}: GroupsFormListReadonlyProps) {
+  const [items, setItems] = useState<string[]>(initialItems);
 
-    useEffect(() => {
-        setItems(initialItems)
-    }, [initialItems])
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
-    return (
-    <TableContainer data-testid='groups-form-list-readonly'>
-    <Table sx={{ p: 0, pt: '15px', width: '100%' }}>
+  return (
+    <TableContainer data-testid="groups-form-list-readonly">
+      <Table sx={{ p: 0, pt: '15px', width: '100%' }}>
         <TableBody>
-      <TableRow>
-        <TableCell colSpan={2} sx={{pb :0}} style={{minHeight: '45px'}}>
-          <Typography variant="h6"> {name}</Typography>
-        </TableCell>
-      </TableRow>
-      {items && items.map((item, index) =>
-        <TableRow key={index} style={{height: '34px'}} sx={{borderBottom: '1px solid rgb(224, 224, 224)'}} data-testid={`item-row-${item}`}>
-          <TableCell sx={{p: 0, pt: '1px'}} style={{minHeight: '30px'}}>
-            <Typography variant="body2" sx={{ml: 1.5}}>{item}</Typography>
-          </TableCell>
-        </TableRow>
-      )}
-      </TableBody>
-    </Table>
-  </TableContainer>);
+          <TableRow>
+            <TableCell colSpan={2} sx={{ pb: 0 }} style={{ minHeight: '45px' }}>
+              <Typography variant="h6"> {name}</Typography>
+            </TableCell>
+          </TableRow>
+          {items &&
+            items.map((item, index) => (
+              <TableRow
+                key={index}
+                style={{ height: '34px' }}
+                sx={{ borderBottom: '1px solid rgb(224, 224, 224)' }}
+                data-testid={`item-row-${item}`}
+              >
+                <TableCell
+                  sx={{ p: 0, pt: '1px' }}
+                  style={{ minHeight: '30px' }}
+                >
+                  <Typography variant="body2" sx={{ ml: 1.5 }}>
+                    {item}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 }

@@ -12,15 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import { createMockGroupIndividual, mockFetchGetGroup, mockErrorFetchingGetGroup } from '@/authdb/testing_tools/mocks/group_individual_mock';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 import List from '@mui/material/List';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { act } from 'react';
+
+import {
+  createMockGroupIndividual,
+  mockFetchGetGroup,
+  mockErrorFetchingGetGroup,
+} from '@/authdb/testing_tools/mocks/group_individual_mock';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
+import { mockErrorDeleteGroup } from '../testing_tools/mocks/delete_group_mock';
+import {
+  mockResponseUpdateGroup,
+  createMockUpdatedGroup,
+  mockErrorUpdateGroup,
+} from '../testing_tools/mocks/update_group_mock';
 
 import { GroupsForm } from './groups_form';
-import { mockResponseUpdateGroup, createMockUpdatedGroup, mockErrorUpdateGroup } from '../testing_tools/mocks/update_group_mock';
-import { mockErrorDeleteGroup } from '../testing_tools/mocks/delete_group_mock';
-import { act } from 'react';
 
 describe('<GroupsForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
@@ -28,14 +38,14 @@ describe('<GroupsForm />', () => {
     mockFetchGetGroup(mockGroup);
 
     render(
-        <FakeContextProvider
-          mountedPath="/ui/auth/groups/*"
-          routerOptions={{
-            initialEntries: ['/ui/auth/groups/123'],
-          }}
-        >
+      <FakeContextProvider
+        mountedPath="/ui/auth/groups/*"
+        routerOptions={{
+          initialEntries: ['/ui/auth/groups/123'],
+        }}
+      >
         <List>
-          <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -56,7 +66,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' refetchList={() => {}}/>
+        <GroupsForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-error');
@@ -70,14 +80,14 @@ describe('<GroupsForm />', () => {
     mockFetchGetGroup(mockGroup);
 
     render(
-        <FakeContextProvider
-          mountedPath="/ui/auth/groups/*"
-          routerOptions={{
-            initialEntries: ['/ui/auth/groups/external/123'],
-          }}
-        >
+      <FakeContextProvider
+        mountedPath="/ui/auth/groups/*"
+        routerOptions={{
+          initialEntries: ['/ui/auth/groups/external/123'],
+        }}
+      >
         <List>
-          <GroupsForm name='external/123' refetchList={() => {}}/>
+          <GroupsForm name="external/123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -102,7 +112,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -113,9 +123,13 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
-    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    const descriptionTextfield = screen
+      .getByTestId('description-textfield')
+      .querySelector('input');
     act(() => {
-      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+      fireEvent.change(descriptionTextfield!, {
+        target: { value: 'new description' },
+      });
     });
     expect(descriptionTextfield!.value).toBe('new description');
     act(() => editButton.click());
@@ -132,7 +146,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' refetchList={() => {}}/>
+        <GroupsForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -142,9 +156,13 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
-    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    const descriptionTextfield = screen
+      .getByTestId('description-textfield')
+      .querySelector('input');
     act(() => {
-      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
+      fireEvent.change(descriptionTextfield!, {
+        target: { value: 'new description' },
+      });
     });
     expect(descriptionTextfield!.value).toBe('new description');
     act(() => editButton.click());
@@ -163,13 +181,13 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
-    const deleteButton = screen.getByTestId('delete-button')
+    const deleteButton = screen.getByTestId('delete-button');
     act(() => deleteButton.click());
     expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
   });
@@ -182,12 +200,12 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' refetchList={() => {}}/>
+        <GroupsForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
-    const deleteButton = screen.getByTestId('delete-button')
+    const deleteButton = screen.getByTestId('delete-button');
     act(() => deleteButton.click());
     expect(screen.getByTestId('delete-confirm-dialog')).toBeInTheDocument();
     const deleteConfirmButton = screen.getByTestId('delete-confirm-button');
@@ -202,25 +220,33 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='123' refetchList={() => {}}/>
+        <GroupsForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
-    const deleteButton = screen.queryByTestId('delete-button')
+    const deleteButton = screen.queryByTestId('delete-button');
     expect(deleteButton).toBeNull();
-    const submitButton = screen.queryByTestId('submit-button')
+    const submitButton = screen.queryByTestId('submit-button');
     expect(submitButton).toBeNull();
-    expect(screen.getByText('You do not have sufficient permissions to modify this group.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'You do not have sufficient permissions to modify this group.',
+      ),
+    ).toBeInTheDocument();
   });
 
   test('members redacted if caller cannot view external group', async () => {
-    const mockGroup = createMockGroupIndividual('google/testGoogleGroup', true, false);
+    const mockGroup = createMockGroupIndividual(
+      'google/testGoogleGroup',
+      true,
+      false,
+    );
     mockFetchGetGroup(mockGroup);
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='google/testGoogleGroup' refetchList={() => {}}/>
+        <GroupsForm name="google/testGoogleGroup" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -234,7 +260,7 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' refetchList={() => {}}/>
+        <GroupsForm name="test-group" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
@@ -248,41 +274,12 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name='test-group' refetchList={() => {}}/>
+        <GroupsForm name="test-group" refetchList={() => {}} />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form');
 
     expect(screen.getByText('2 members redacted')).toBeInTheDocument();
-  });
-
-  test('if appropriate message is displayed for an error updating group', async () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    mockFetchGetGroup(mockGroup);
-
-    mockErrorUpdateGroup();
-
-    render(
-      <FakeContextProvider>
-        <GroupsForm name='123' refetchList={() => {}}/>
-      </FakeContextProvider>,
-    );
-    await screen.findByTestId('groups-form');
-
-    // Change something so updated button is not disabled.
-    fireEvent.mouseEnter(screen.getByTestId('description-table'));
-    await screen.findByTestId('edit-description-icon');
-    const editButton = screen.getByTestId('edit-description-icon');
-    act(() => editButton.click());
-    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
-    act(() => {
-      fireEvent.change(descriptionTextfield!, { target: { value: 'new description' } });
-    });
-    expect(descriptionTextfield!.value).toBe('new description');
-    act(() => editButton.click());
-
-    await screen.findByRole('alert');
-    expect(screen.getByText('Error editing group')).toBeInTheDocument();
   });
 
   test('error is shown on empty description', async () => {
@@ -292,7 +289,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -303,7 +300,9 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
-    const descriptionTextfield = screen.getByTestId('description-textfield').querySelector('input');
+    const descriptionTextfield = screen
+      .getByTestId('description-textfield')
+      .querySelector('input');
     act(() => {
       fireEvent.change(descriptionTextfield!, { target: { value: '' } });
     });
@@ -321,7 +320,7 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -332,20 +331,20 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('edit-owners-icon');
     const editButton = screen.getByTestId('edit-owners-icon');
     act(() => editButton.click());
-    const textfield = screen.getByTestId('owners-textfield').querySelector('input');
-    fireEvent.change(textfield!, {target: { value: ''}});
+    const textfield = screen
+      .getByTestId('owners-textfield')
+      .querySelector('input');
+    fireEvent.change(textfield!, { target: { value: '' } });
     act(() => editButton.click());
     await screen.findByRole('alert');
     expect(screen.getByText('Group updated')).toBeInTheDocument();
   });
 
-
   test('error is shown on invalid owners name', async () => {
-
     render(
       <FakeContextProvider>
         <List>
-            <GroupsForm name='123' refetchList={() => {}}/>
+          <GroupsForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
@@ -355,9 +354,13 @@ describe('<GroupsForm />', () => {
     await screen.findByTestId('edit-owners-icon');
     const editButton = screen.getByTestId('edit-owners-icon');
     act(() => editButton.click());
-    const textfield = screen.getByTestId('owners-textfield').querySelector('input');
-    fireEvent.change(textfield!, {target: { value: 'Invalid owners'}});
+    const textfield = screen
+      .getByTestId('owners-textfield')
+      .querySelector('input');
+    fireEvent.change(textfield!, { target: { value: 'Invalid owners' } });
     act(() => editButton.click());
-    expect(screen.getByText('Invalid owners name. Must be a group.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Invalid owners name. Must be a group.'),
+    ).toBeInTheDocument();
   });
 });

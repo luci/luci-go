@@ -13,18 +13,24 @@
 // limitations under the License.
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'
+import userEvent from '@testing-library/user-event';
+import { act } from 'react';
+
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { GroupsFormList } from './groups_form_list';
-import { act } from 'react';
 
 describe('<GroupsFormList editable/>', () => {
   const mockGroup = createMockGroupIndividual('123', true, true);
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Members' initialValues={mockGroup.members as string[]} submitValues={() => {}}/>
+        <GroupsFormList
+          name="Members"
+          initialValues={mockGroup.members as string[]}
+          submitValues={() => {}}
+        />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');
@@ -43,20 +49,22 @@ describe('<GroupsFormList editable/>', () => {
     for (let i = 0; i < mockGroup.members.length; i++) {
       const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
       fireEvent.mouseEnter(row);
-      const removeCheckbox = screen.getByTestId(`checkbox-button-${mockGroup.members[i]}`).querySelector('input');
+      const removeCheckbox = screen
+        .getByTestId(`checkbox-button-${mockGroup.members[i]}`)
+        .querySelector('input');
       act(() => removeCheckbox!.click());
       const removeButton = screen.getByTestId('remove-button');
       act(() => removeButton.click());
       expect(screen.queryByTestId('remove-confirm-dialog')).not.toBeNull();
     }
-  })
+  });
 
   test('shows add button', async () => {
     // Check that remove button exists for each member.
     const addButton = screen.queryByTestId('add-button');
     // Check add button appears on edit.
     expect(addButton).not.toBeNull();
-  })
+  });
 
   test('can add members', async () => {
     // Click add button.
@@ -64,7 +72,9 @@ describe('<GroupsFormList editable/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember@email.com');
     expect(textfield!.value).toBe('newMember@email.com');
@@ -74,7 +84,7 @@ describe('<GroupsFormList editable/>', () => {
     act(() => confirmButton!.click());
     // Check new member shown in list?
     expect(screen.getByText('newMember@email.com')).toBeInTheDocument();
-  })
+  });
 
   test('shows error message on adding email with no @ symbol', async () => {
     // Click add button.
@@ -82,7 +92,9 @@ describe('<GroupsFormList editable/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember');
     // Click confirm button.
@@ -90,7 +102,7 @@ describe('<GroupsFormList editable/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Members: newMember')).toBeInTheDocument();
-  })
+  });
 
   test('shows error message on invalid email', async () => {
     // Click add button.
@@ -98,15 +110,19 @@ describe('<GroupsFormList editable/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember@email/com');
     // Click confirm button.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
-    expect(screen.getByText('Invalid Members: newMember@email/com')).toBeInTheDocument();
-  })
+    expect(
+      screen.getByText('Invalid Members: newMember@email/com'),
+    ).toBeInTheDocument();
+  });
 
   test('shows error message on duplicate item added', async () => {
     // Click add button.
@@ -114,15 +130,19 @@ describe('<GroupsFormList editable/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'member1@email.com');
     // Add member that already exists.
     const confirmButton = screen.queryByTestId('confirm-button');
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
-    expect(screen.getByText('Invalid Members: member1@email.com')).toBeInTheDocument();
-  })
+    expect(
+      screen.getByText('Invalid Members: member1@email.com'),
+    ).toBeInTheDocument();
+  });
 
   test('hides textfield with clear button', async () => {
     // Click add button.
@@ -130,7 +150,9 @@ describe('<GroupsFormList editable/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'newMember');
     // Click clear button.
@@ -140,7 +162,7 @@ describe('<GroupsFormList editable/>', () => {
     // Check textfield is no longer shown.
     await screen.findByTestId('add-button');
     expect(textfield).not.toBeInTheDocument();
-  })
+  });
 });
 
 describe('<GroupsFormList editable globs/>', () => {
@@ -148,7 +170,11 @@ describe('<GroupsFormList editable globs/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Globs' initialValues={mockGroup.members as string[]} submitValues={() => {}}/>
+        <GroupsFormList
+          name="Globs"
+          initialValues={mockGroup.members as string[]}
+          submitValues={() => {}}
+        />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');
@@ -159,7 +185,9 @@ describe('<GroupsFormList editable globs/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, '.glob');
     // Click confirm button.
@@ -167,7 +195,7 @@ describe('<GroupsFormList editable globs/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Globs: .glob')).toBeInTheDocument();
-  })
+  });
 });
 
 describe('<GroupsFormList editable subgroups/>', () => {
@@ -175,7 +203,11 @@ describe('<GroupsFormList editable subgroups/>', () => {
   beforeEach(async () => {
     render(
       <FakeContextProvider>
-        <GroupsFormList name='Subgroups' initialValues={mockGroup.members as string[]} submitValues={() => {}}/>
+        <GroupsFormList
+          name="Subgroups"
+          initialValues={mockGroup.members as string[]}
+          submitValues={() => {}}
+        />
       </FakeContextProvider>,
     );
     await screen.findByTestId('groups-form-list');
@@ -186,7 +218,9 @@ describe('<GroupsFormList editable subgroups/>', () => {
     expect(addButton).not.toBeNull();
     act(() => addButton!.click());
     // Type in textfield.
-    const textfield = screen.getByTestId('add-textfield').querySelector('textarea');
+    const textfield = screen
+      .getByTestId('add-textfield')
+      .querySelector('textarea');
     expect(textfield).toBeInTheDocument();
     await userEvent.type(textfield!, 'Subgroup');
     // Click confirm button.
@@ -194,5 +228,5 @@ describe('<GroupsFormList editable subgroups/>', () => {
     expect(confirmButton).toBeNull();
     // Check correct error message is shown.
     expect(screen.getByText('Invalid Subgroups: Subgroup')).toBeInTheDocument();
-  })
+  });
 });

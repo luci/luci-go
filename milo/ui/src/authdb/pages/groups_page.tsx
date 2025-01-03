@@ -20,16 +20,17 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import { useEffect, createRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
 import { GroupsForm } from '@/authdb/components/groups_form';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
-import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useNavigate, useParams } from 'react-router-dom';
-import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { GroupsListElement } from '@/authdb/components/groups_list';
-import { UiPage } from '@/common/constants/view';
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { PageMeta } from '@/common/components/page_meta';
+import { UiPage } from '@/common/constants/view';
+import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export function GroupsPage() {
   const { ['__luci_ui__-raw-*']: groupName } = useParams();
@@ -51,21 +52,28 @@ export function GroupsPage() {
 
   const refetchGroups = () => {
     listRef.current?.refetchList();
-  }
+  };
 
   return (
     <Paper className="groups-container-paper">
       <PageMeta title="Groups" selectedPage={UiPage.AuthService} />
       <Alert severity="warning">
-        <AlertTitle>Integration of LUCI Auth Service here is under construction.</AlertTitle>
-        Only group editing is supported. Please visit {' '}
-        <a href='https://chrome-infra-auth.appspot.com/auth/groups/' target="_blank">
-          Auth Service
-        </a>
-        {' '} for other functionality. Please provide {' '}
+        <AlertTitle>
+          Integration of LUCI Auth Service here is under construction.
+        </AlertTitle>
+        Only group editing is supported. Please visit{' '}
         <a
-          href='https://b.corp.google.com/issues/new?component=1435307&template=2026255'
+          href="https://chrome-infra-auth.appspot.com/auth/groups/"
           target="_blank"
+          rel="noreferrer"
+        >
+          Auth Service
+        </a>{' '}
+        for other functionality. Please provide{' '}
+        <a
+          href="https://b.corp.google.com/issues/new?component=1435307&template=2026255"
+          target="_blank"
+          rel="noreferrer"
         >
           feedback.
         </a>
@@ -75,7 +83,11 @@ export function GroupsPage() {
           item
           xs={4}
           className="container-left"
-          sx={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #bdbdbd' }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            borderRight: '1px solid #bdbdbd',
+          }}
         >
           <GroupsList selectedGroup={groupName} ref={listRef} />
         </Grid>
@@ -113,7 +125,7 @@ export function Component() {
         key="authdb-group"
       >
         <GroupsPage />
-      </RecoverableErrorBoundary >
+      </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
 }

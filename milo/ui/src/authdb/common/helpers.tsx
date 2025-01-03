@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+/* eslint-disable no-useless-escape */
 
 import validator from 'validator';
 
@@ -30,41 +31,41 @@ const globRe = /^[\w\.\+\*\@\%\-\:]*\*[\w\.\+\*\@\%\-\:]*$/;
 
 // Appends '<prefix>:' to a string if it doesn't have a prefix.
 const addPrefix = (prefix: string, str: string) => {
-    return str.indexOf(':') == -1 ? prefix + ':' + str : str;
+  return str.indexOf(':') === -1 ? prefix + ':' + str : str;
 };
 
 export const addPrefixToItems = (prefix: string, items: string[]) => {
-    return items.map((item) => addPrefix(prefix, item));
+  return items.map((item) => addPrefix(prefix, item));
 };
 
 // True if string looks like a glob pattern.
 export const isGlob = (item: string) => {
-    return globRe.test(item);
+  return globRe.test(item);
 };
 
 export const isMember = (item: string) => {
-    if (!memberRe.test(item)) {
-        return false;
-    }
+  if (!memberRe.test(item)) {
+    return false;
+  }
 
-    switch (item.split(':', 1)[0]) {
-        case 'anonymous':
-            return anonymousIdentityRe.test(item);
-        case 'bot':
-            return botIdentityRe.test(item);
-        case 'project':
-            return projectIdentityRe.test(item);
-        case 'service':
-            return serviceIdentityRe.test(item);
-        case 'user':
-        default:
-            // The member identity type is "user" (either explicitly,
-            // or implicitly assumed when no type is specified).
-            // It must be an email.
-            return validator.isEmail(item.replace('user:', ''));
-    }
+  switch (item.split(':', 1)[0]) {
+    case 'anonymous':
+      return anonymousIdentityRe.test(item);
+    case 'bot':
+      return botIdentityRe.test(item);
+    case 'project':
+      return projectIdentityRe.test(item);
+    case 'service':
+      return serviceIdentityRe.test(item);
+    case 'user':
+    default:
+      // The member identity type is "user" (either explicitly,
+      // or implicitly assumed when no type is specified).
+      // It must be an email.
+      return validator.isEmail(item.replace('user:', ''));
+  }
 };
 
 export const isSubgroup = (item: string) => {
-    return nameRe.test(item!);
+  return nameRe.test(item!);
 };

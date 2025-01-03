@@ -13,13 +13,16 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import fetchMock from 'fetch-mock-jest';
 
 import { createMockGroup } from '@/authdb/testing_tools/mocks/group_mock';
-import { mockFetchGroups, mockErrorFetchingGroups } from '@/authdb/testing_tools/mocks/groups_list_mock';
-
+import {
+  mockFetchGroups,
+  mockErrorFetchingGroups,
+} from '@/authdb/testing_tools/mocks/groups_list_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { GroupsList } from './groups_list';
-import fetchMock from 'fetch-mock-jest';
 
 describe('<GroupsList />', () => {
   afterEach(() => {
@@ -28,22 +31,22 @@ describe('<GroupsList />', () => {
   });
   test('if groups list are displayed', async () => {
     const mockGroups = [
-        createMockGroup('123'),
-        createMockGroup('124'),
-        createMockGroup('125'),
+      createMockGroup('123'),
+      createMockGroup('124'),
+      createMockGroup('125'),
     ];
     mockFetchGroups(mockGroups);
 
     render(
       <FakeContextProvider>
-            <GroupsList selectedGroup='123'/>
+        <GroupsList selectedGroup="123" />
       </FakeContextProvider>,
     );
 
     await screen.findByTestId('groups-list');
 
     mockGroups.forEach((mockGroup) => {
-        expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
+      expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
     });
   });
 
@@ -51,9 +54,9 @@ describe('<GroupsList />', () => {
     mockErrorFetchingGroups();
 
     render(
-        <FakeContextProvider>
-            <GroupsList selectedGroup='123'/>
-        </FakeContextProvider>,
+      <FakeContextProvider>
+        <GroupsList selectedGroup="123" />
+      </FakeContextProvider>,
     );
     await screen.findByTestId('groups-list-error');
 

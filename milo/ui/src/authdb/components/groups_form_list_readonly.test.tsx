@@ -13,31 +13,38 @@
 // limitations under the License.
 
 import { render, screen, fireEvent } from '@testing-library/react';
+
 import { createMockGroupIndividual } from '@/authdb/testing_tools/mocks/group_individual_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+
 import { GroupsFormListReadonly } from './groups_form_list_readonly';
 
 describe('<GroupsFormList readonly/>', () => {
-    const mockGroup = createMockGroupIndividual('123', false, true);
-    beforeEach(async () => {
-      render(
-        <FakeContextProvider>
-          <GroupsFormListReadonly name='Members' initialItems={mockGroup.members as string[]}/>
-        </FakeContextProvider>,
-      );
-      await screen.findByTestId('groups-form-list-readonly');
-    });
-  test('does not show add button', async() => {
+  const mockGroup = createMockGroupIndividual('123', false, true);
+  beforeEach(async () => {
+    render(
+      <FakeContextProvider>
+        <GroupsFormListReadonly
+          name="Members"
+          initialItems={mockGroup.members as string[]}
+        />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('groups-form-list-readonly');
+  });
+  test('does not show add button', async () => {
     const addButton = screen.queryByTestId('add-button');
     expect(addButton).toBeNull();
   });
 
-  test('does not show remove button on hover', async() => {
+  test('does not show remove button on hover', async () => {
     // Simulate mouse enter event each row.
     for (let i = 0; i < mockGroup.members.length; i++) {
       const row = screen.getByTestId(`item-row-${mockGroup.members[i]}`);
       fireEvent.mouseEnter(row);
-      expect(screen.queryByTestId(`remove-button-${mockGroup.members[i]}`)).toBeNull();
+      expect(
+        screen.queryByTestId(`remove-button-${mockGroup.members[i]}`),
+      ).toBeNull();
     }
   });
 });

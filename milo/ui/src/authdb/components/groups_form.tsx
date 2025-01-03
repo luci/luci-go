@@ -81,7 +81,7 @@ function stripPrefix(prefix: string, str: string) {
   if (!str) {
     return '';
   }
-  if (str.slice(0, prefix.length + 1) == prefix + ':') {
+  if (str.slice(0, prefix.length + 1) === prefix + ':') {
     return str.slice(prefix.length + 1, str.length);
   } else {
     return str;
@@ -132,7 +132,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   } = useQuery({
     ...client.GetGroup.query({ name: name }),
     onSuccess: (response) => {
-      setIsExternal(isExternalGroupName(response?.name!));
+      setIsExternal(isExternalGroupName(response?.name));
     },
     refetchOnWindowFocus: false,
   });
@@ -205,10 +205,13 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     setSuccessEditedGroup(false);
     const editedMembers = addPrefixToItems(
       'user',
-      membersRef.current?.getItems()!,
+      membersRef.current?.getItems() || [],
     );
     const editedSubgroups = subgroupsRef.current?.getItems();
-    const editedGlobs = addPrefixToItems('user', globsRef.current?.getItems()!);
+    const editedGlobs = addPrefixToItems(
+      'user',
+      globsRef.current?.getItems() || [],
+    );
     const editedGroup = AuthGroup.fromPartial({
       name: name,
       description: description || '',
@@ -222,7 +225,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   };
 
   const checkFieldSubmit = (keyPressed: string, field: string) => {
-    if (keyPressed != 'Enter') {
+    if (keyPressed !== 'Enter') {
       return;
     }
     submitField(field);
@@ -304,16 +307,16 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   }
 
   const initialDescription = response?.description;
-  if (description == null) {
+  if (description === undefined) {
     setSavedDescription(initialDescription || '');
     setDescription(initialDescription || '');
   }
   const initialOwners = response?.owners;
-  if (owners == null) {
+  if (owners === undefined) {
     setSavedOwners(initialOwners || '');
     setOwners(initialOwners || '');
   }
-  if (etag == null) {
+  if (etag === undefined) {
     setEtag(response?.etag);
   }
 

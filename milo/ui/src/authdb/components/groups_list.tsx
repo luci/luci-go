@@ -20,13 +20,14 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import { useQuery } from '@tanstack/react-query';
-import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
-import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import {useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso'
+import { useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+
+import { GroupsListItem } from '@/authdb/components/groups_list_item';
+import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
+import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 interface GroupsListProps {
   selectedGroup: string;
@@ -38,126 +39,135 @@ export interface GroupsListElement {
 }
 
 export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
-  (
-    { selectedGroup }, ref
-  ) => {
-  const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const [visibleRange, setVisibleRange] = useState({
-    startIndex: 0,
-    endIndex: 0,
-  })
+  function GroupList({ selectedGroup }, ref) {
+    const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
+    const virtuosoRef = useRef<VirtuosoHandle>(null);
+    const [visibleRange, setVisibleRange] = useState({
+      startIndex: 0,
+      endIndex: 0,
+    });
 
-  const client = useAuthServiceClient();
-  const {
-    isLoading,
-    isError,
-    data: response,
-    error,
-    refetch,
-  } = useQuery({
-    ...client.ListGroups.query({}),
-    refetchOnWindowFocus: false,
-  })
-  const allGroups: readonly AuthGroup[] = response?.groups || [];
+    const client = useAuthServiceClient();
+    const {
+      isLoading,
+      isError,
+      data: response,
+      error,
+      refetch,
+    } = useQuery({
+      ...client.ListGroups.query({}),
+      refetchOnWindowFocus: false,
+    });
+    const allGroups: readonly AuthGroup[] = response?.groups || [];
 
-  useImperativeHandle(ref, () => ({
-    refetchList: () => {
-      if (refetch) {
-        refetch();
+    useImperativeHandle(ref, () => ({
+      refetchList: () => {
+        if (refetch) {
+          refetch();
+        }
+      },
+      scrollToGroup: (name: string) => {
+        scrollToGroup(name);
+      },
+    }));
+
+    const changeSearchQuery = (query: string) => {
+      setFilteredGroups(
+        allGroups.filter((group) => group.name.includes(query.toLowerCase())),
+      );
+    };
+
+    const groups = filteredGroups ? filteredGroups : allGroups;
+
+    const getIndexToSelect = () => {
+      return Math.max(
+        groups.findIndex((g) => g.name === selectedGroup),
+        0,
+      );
+    };
+
+    const scrollToGroup = (groupName: string) => {
+      let indexToSelect: number = 0;
+      for (let i = 0; i < groups.length; i++) {
+        if (groups[i].name === groupName) {
+          indexToSelect = i;
+          break;
+        }
       }
-    },
-    scrollToGroup: (name: string) => {
-      scrollToGroup(name);
-    }
-  }));
-
-  const changeSearchQuery = (query: string) => {
-    setFilteredGroups(allGroups.filter(group => group.name.includes(query.toLowerCase())));
-  }
-
-  const groups = (filteredGroups) ? filteredGroups : allGroups;
-
-  const getIndexToSelect = () => {
-    return Math.max(groups.findIndex((g) => g.name === selectedGroup), 0);
-  }
-
-  const scrollToGroup = (groupName: string) => {
-    let indexToSelect: number = 0;
-    for (let i = 0; i < groups.length; i++) {
-      if (groups[i].name === groupName) {
-        indexToSelect = i
-        break;
+      if (
+        !(
+          indexToSelect >= visibleRange.startIndex &&
+          indexToSelect <= visibleRange.endIndex
+        )
+      ) {
+        virtuosoRef.current?.scrollToIndex({
+          index: indexToSelect,
+        });
       }
+    };
+
+    if (isLoading) {
+      return (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <CircularProgress />
+        </Box>
+      );
     }
-    if (!(indexToSelect >= visibleRange.startIndex && indexToSelect <= visibleRange.endIndex)) {
-      virtuosoRef.current?.scrollToIndex({
-        index: indexToSelect,
-      });
+
+    if (isError) {
+      return (
+        <div className="section" data-testid="groups-list-error">
+          <Alert severity="error">
+            <AlertTitle>Failed to load groups list</AlertTitle>
+            <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
+          </Alert>
+        </div>
+      );
     }
-  }
 
-  if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center">
-        <CircularProgress />
-      </Box>
+      <>
+        <Box sx={{ p: 2 }}>
+          <TextField
+            id="outlined-basic"
+            label="Search for an existing group"
+            variant="outlined"
+            style={{ width: '100%' }}
+            onChange={(e) => changeSearchQuery(e.target.value)}
+          />
+        </Box>
+        <Box>
+          <Button
+            variant="contained"
+            disableElevation
+            sx={{ m: '16px', mt: 0 }}
+            data-testid="create-button"
+            component={Link}
+            to={getURLPathFromAuthGroup('new!')}
+          >
+            Create Group
+          </Button>
+        </Box>
+        <Box sx={{ height: '100%' }} data-testid="groups-list">
+          <Virtuoso
+            ref={virtuosoRef}
+            style={{ height: '100%' }}
+            totalCount={groups.length}
+            initialItemCount={3}
+            rangeChanged={setVisibleRange}
+            initialTopMostItemIndex={getIndexToSelect()}
+            itemContent={(index) => {
+              return (
+                <GroupsListItem
+                  group={groups[index]}
+                  selected={groups[index].name === selectedGroup}
+                  key={index}
+                ></GroupsListItem>
+              );
+            }}
+          />
+        </Box>
+      </>
     );
-  }
-
-  if (isError) {
-    return (
-      <div className="section" data-testid="groups-list-error">
-        <Alert severity="error">
-          <AlertTitle>Failed to load groups list</AlertTitle>
-          <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
-        </Alert>
-      </div>
-    );
-  }
-
-  return (
-    <>
-    <Box sx={{ p: 2 }}>
-      <TextField
-        id="outlined-basic"
-        label="Search for an existing group"
-        variant="outlined"
-        style={{ width: '100%' }}
-        onChange={e => changeSearchQuery(e.target.value)} />
-    </Box>
-    <Box>
-      <Button
-        variant="contained"
-        disableElevation
-        sx={{ m: '16px', mt: 0 }}
-        data-testid='create-button'
-        component={Link}
-        to={getURLPathFromAuthGroup('new!')}
-        >
-        Create Group
-      </Button>
-    </Box>
-    <Box sx={{height: '100%'}} data-testid='groups-list'>
-      <Virtuoso
-        ref={virtuosoRef}
-        style={{ height: '100%'}}
-        totalCount={groups.length}
-        initialItemCount={3}
-        rangeChanged={setVisibleRange}
-        initialTopMostItemIndex={getIndexToSelect()}
-        itemContent={(index) => {
-          return (
-            <GroupsListItem
-              group={groups[index]}
-              selected={groups[index].name == selectedGroup}
-              key={index}>
-            </GroupsListItem>
-          );
-        }}
-      />
-    </Box>
-    </>
-  );
-}
+  },
 );

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import List from '@mui/material/List';
 import { render, screen } from '@testing-library/react';
 
 import { createMockGroup } from '@/authdb/testing_tools/mocks/group_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
-import List from '@mui/material/List';
 
 import { GroupsListItem } from './groups_list_item';
 
@@ -27,7 +27,7 @@ describe('<GroupsListItem />', () => {
     render(
       <FakeContextProvider>
         <List>
-            <GroupsListItem group={mockGroup} selected={false}/>
+          <GroupsListItem group={mockGroup} selected={false} />
         </List>
       </FakeContextProvider>,
     );

@@ -15,33 +15,33 @@
 import { isGlob, isMember } from './helpers';
 
 describe('isGlob validation works', () => {
-    test.each([
-        ['service:k*nd!', false],
-        ['a@example.com', false],
-        ['bot:specific_bot_name', false],
-        ['*', true],
-        ['user:*@example.com', true],
-        ['service:*-test-*-pattern', true],
-    ])('item is "%s"', (item, expected) => {
-        expect(isGlob(item)).toBe(expected);
-    });
+  test.each([
+    ['service:k*nd!', false],
+    ['a@example.com', false],
+    ['bot:specific_bot_name', false],
+    ['*', true],
+    ['user:*@example.com', true],
+    ['service:*-test-*-pattern', true],
+  ])('item is "%s"', (item, expected) => {
+    expect(isGlob(item)).toBe(expected);
+  });
 });
 
 describe('isMember validation works', () => {
-    test.each([
-        ['unknown:kind', false],
-        ['anonymous:user', false],
-        ['bot:invalid:character', false],
-        ['project:Invalid-uppercase', false],
-        ['service:test@example.com', false],
-        ['not-an-email', false],
-        ['anonymous:anonymous', true],
-        ['bot:mega.tron@bots_r-us', true],
-        ['project:open-source-123', true],
-        ['service:example-service:name', true],
-        ['user:test@example.com', true],
-        ['test@example.com', true],
-    ])('item is "%s"', (item, expected) => {
-        expect(isMember(item)).toBe(expected);
-    });
+  test.each([
+    ['unknown:kind', false],
+    ['anonymous:user', false],
+    ['bot:invalid:character', false],
+    ['project:Invalid-uppercase', false],
+    ['service:test@example.com', false],
+    ['not-an-email', false],
+    ['anonymous:anonymous', true],
+    ['bot:mega.tron@bots_r-us', true],
+    ['project:open-source-123', true],
+    ['service:example-service:name', true],
+    ['user:test@example.com', true],
+    ['test@example.com', true],
+  ])('item is "%s"', (item, expected) => {
+    expect(isMember(item)).toBe(expected);
+  });
 });
