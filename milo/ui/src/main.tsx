@@ -24,7 +24,7 @@ import { App } from '@/App';
 import {
   switchToNewUI,
   switchToOldUI,
-} from '@/common/sw_utils/version_control';
+} from '@/common/components/version_control';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
 import { IsDevEnvProvider } from '@/generic_libs/hooks/is_dev_env';
 import { assertNonNullable } from '@/generic_libs/tools/utils';

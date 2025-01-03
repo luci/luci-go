@@ -45,11 +45,14 @@ export function stableUiVersionJsLinkPlugin(): Plugin {
 /**
  * Construct a `ui_version.js` file from environment variables.
  */
-export function getLocalUiVersionJs(env: Record<string, string | undefined>) {
+export function getLocalUiVersionJs(
+  env: Record<string, string | undefined>,
+  versionType: 'new-ui' | 'old-ui',
+) {
   const localUiVersion = env['VITE_LOCAL_UI_VERSION'];
   const localUiVersionJs = `
     self.UI_VERSION = '${localUiVersion}';
-    self.UI_VERSION_TYPE = 'local-ui';
+    self.UI_VERSION_TYPE = '${versionType}';
   `;
   return localUiVersionJs;
 }
@@ -58,10 +61,7 @@ export function getLocalUiVersionJs(env: Record<string, string | undefined>) {
  * Get a virtual-ui-version-js plugin so we can import ui_version.js in the
  * service workers with the correct syntax required by different environments.
  */
-export function getVirtualUiVersionJsPlugin(
-  mode: string,
-  env: Record<string, string | undefined>,
-): Plugin {
+export function getVirtualUiVersionJsPlugin(mode: string): Plugin {
   return {
     name: 'luci-ui-virtual-ui-version-js',
     resolveId: (id, importer) => {
@@ -96,8 +96,8 @@ export function getVirtualUiVersionJsPlugin(
 
       // During development, the service worker script can only be a JS module,
       // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`. So we inject the ui_version directly.
-      return getLocalUiVersionJs(env);
+      // It cannot use the `importScripts`.  So we need to use the `import`.
+      return "import '/ui_version.js';";
     },
   };
 }

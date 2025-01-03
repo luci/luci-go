@@ -25,12 +25,11 @@ declare const UI_VERSION: string;
  * Possible values are:
  *  * 'new-ui': for regular UI.
  *  * 'old-ui': when user has activated USER_INITIATED_ROLLBACK.
- *  * 'local-ui': during local development.
  *
  * Declared in the server generated file, /ui_version.js, included as a script
  * tag.
  */
-declare const UI_VERSION_TYPE: string;
+declare const UI_VERSION_TYPE: 'new-ui' | 'old-ui';
 
 /**
  * Settings of the app.

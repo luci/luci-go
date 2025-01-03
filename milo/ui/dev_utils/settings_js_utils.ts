@@ -104,10 +104,7 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
  * Get a virtual-settings-js plugin so we can import settings.js in the service
  * workers with the correct syntax required by different environments.
  */
-export function getVirtualSettingsJsPlugin(
-  mode: string,
-  env: Record<string, string | undefined>,
-): Plugin {
+export function getVirtualSettingsJsPlugin(mode: string): Plugin {
   return {
     name: 'luci-ui-virtual-settings-js',
     resolveId: (id, importer) => {
@@ -142,8 +139,8 @@ export function getVirtualSettingsJsPlugin(
 
       // During development, the service worker script can only be a JS module,
       // because it runs through the same pipeline as the rest of the scripts.
-      // It cannot use the `importScripts`. So we inject the settings directly.
-      return getLocalDevSettingsJs(env);
+      // It cannot use the `importScripts`. So we need to use the `import`.
+      return "import '/settings.js';";
     },
   };
 }

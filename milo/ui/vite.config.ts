@@ -57,8 +57,8 @@ export default defineConfig(({ mode }) => {
   // running integration tests in a builder.
   const baseOutDir = env['VITE_LOCAL_BASE_OUT_DIR'] ?? 'dist';
 
-  const virtualSettingsJs = getVirtualSettingsJsPlugin(mode, env);
-  const virtualUiVersionJs = getVirtualUiVersionJsPlugin(mode, env);
+  const virtualSettingsJs = getVirtualSettingsJsPlugin(mode);
+  const virtualUiVersionJs = getVirtualUiVersionJsPlugin(mode);
   const overrideMiloHost = overrideMiloHostPlugin(env);
   const defineRoutesRegex = replace({
     preventAssignment: true,

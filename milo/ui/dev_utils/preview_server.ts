@@ -46,7 +46,14 @@ export function previewServer(
           return next();
         }
         res.setHeader('content-type', 'text/javascript');
-        res.end(getLocalUiVersionJs(env));
+        res.end(
+          getLocalUiVersionJs(
+            env,
+            req.headers.cookie?.includes('USER_INITIATED_ROLLBACK=true')
+              ? 'old-ui'
+              : 'new-ui',
+          ),
+        );
       });
 
       // Serve files in `./dist/` but not in `./dist/ui/` (e.g. `root_sw.js`).

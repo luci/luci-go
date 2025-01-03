@@ -31,7 +31,7 @@ const ROLLBACK_PERSIST_DURATION = 7 * 24 * 60 * 60 * 1000;
  * Activate the old UI and reload the page.
  */
 export async function switchToOldUI() {
-  document.cookie = `${ROLLBACK_COOKIE_KEY}=true; expires=${new Date(Date.now() + ROLLBACK_PERSIST_DURATION)}`;
+  document.cookie = `${ROLLBACK_COOKIE_KEY}=true; path=/; expires=${new Date(Date.now() + ROLLBACK_PERSIST_DURATION)}`;
 
   await reactivateUI();
 }
@@ -40,7 +40,7 @@ export async function switchToOldUI() {
  * Activate the new UI and reload the page.
  */
 export async function switchToNewUI() {
-  document.cookie = `${ROLLBACK_COOKIE_KEY}=false`;
+  document.cookie = `${ROLLBACK_COOKIE_KEY}=false; path=/`;
 
   await reactivateUI();
 }
