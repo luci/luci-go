@@ -21,7 +21,7 @@ import 'virtual:override-milo-host';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
 
-import { Prefetcher } from '@/common/service_workers/prefetch';
+import { Prefetcher } from '@/common/sw_utils/prefetch';
 
 import { createHandlerBoundToURL } from './stale_while_revalidate';
 
