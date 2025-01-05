@@ -145,6 +145,7 @@ export const TestHistoryPage = observer(() => {
       <div
         css={{
           width: '100%',
+          boxSizing: 'border-box',
           backgroundColor: 'var(--block-background-color)',
           padding: '6px 16px',
         }}
