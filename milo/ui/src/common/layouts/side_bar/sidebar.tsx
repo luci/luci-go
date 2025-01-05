@@ -85,9 +85,14 @@ export const Sidebar = ({ open }: Props) => {
   return (
     <Drawer
       sx={{
+        position: 'relative',
+        height: '100%',
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
+          position: 'sticky',
+          height: 'min(100vh, 100%)',
+          top: '0px',
         },
       }}
       variant="persistent"

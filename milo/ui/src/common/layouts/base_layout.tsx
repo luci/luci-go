@@ -68,7 +68,11 @@ export const BaseLayout = () => {
       </Sticky>
       <Sticky
         left
-        sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
+        sx={{
+          gridRow: '1/4',
+          gridColumn: '1/2',
+          zIndex: (theme) => theme.zIndex.drawer,
+        }}
       >
         <Sidebar open={sidebarOpen} />
       </Sticky>
