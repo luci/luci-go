@@ -29,18 +29,24 @@ dispatch:
 - url: "*/rpcexplorer/*"
   service: api
 
-# Route UI requests to the UI service.
+# Route UI requests to the UI dispatcher service.
 # Note that routes that redirects to the `/ui/*` routes (e.g. `/ui`, `/`) are
-# not handled by the UI service itself.
+# not handled by the UI services themselves.
 - url: "*/ui/*"
-  service: ui
+  service: ui-dispatcher
 # Additionally, the UI service serves the root service worker script.
 - url: "*/root_sw.js"
-  service: ui
+  service: ui-dispatcher
 - url: "*/root_sw.js.map"
-  service: ui
+  service: ui-dispatcher
 # The UI service also serve its own version.
 - url: "*/ui_version.js"
-  service: ui
+  service: ui-dispatcher
+
+# Route the dispatched UI requests to the corresponding services.
+- url: "*/new-ui/*"
+  service: ui-new
+- url: "*/old-ui/*"
+  service: ui-old
 
 # All other requests are routed to the 'default' service by default.
