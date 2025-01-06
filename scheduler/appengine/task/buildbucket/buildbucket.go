@@ -136,7 +136,7 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 		return
 	}
 	// Default tags can not be overridden.
-	defTags := defaultTags(nil, nil, nil)
+	defTags := defaultTags(context.Background(), nil)
 	for _, kv := range utils.UnpackKVList(cfg.Tags, ':') {
 		if _, ok := defTags[kv.Key]; ok {
 			c.Errorf("tag %q is reserved", kv.Key)
@@ -146,13 +146,19 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 
 // defaultTags returns map with default set of tags.
 //
-// If context is nil, only keys are set.
-func defaultTags(c context.Context, ctl task.Controller, cfg *messages.BuildbucketTask) map[string]string {
-	if c != nil {
+// If context does not contain service info, only keys are set and the values are empty strings.
+//
+// The map returned by this function will always contain precisely the following keys:
+// 1) "scheduler_invocation_id"
+// 2) "scheduler_job_id"
+// 3) "user_agent"
+func defaultTags(ctx context.Context, ctl task.Controller) map[string]string {
+	goodCtx := info.Raw(ctx) != nil
+	if goodCtx {
 		return map[string]string{
 			"scheduler_invocation_id": fmt.Sprintf("%d", ctl.InvocationID()),
 			"scheduler_job_id":        ctl.JobID(),
-			"user_agent":              info.AppID(c),
+			"user_agent":              info.AppID(ctx),
 		}
 	}
 	return map[string]string{
@@ -198,7 +204,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	// Join tags from all known sources. Note: no overriding here for now, tags
 	// with identical keys are allowed.
-	tags := utils.KVListFromMap(defaultTags(c, ctl, cfg)).Pack(':')
+	tags := utils.KVListFromMap(defaultTags(c, ctl)).Pack(':')
 	tags = append(tags, cfg.Tags...)
 	tags = append(tags, req.Tags...)
 
