@@ -44,7 +44,7 @@ const RightGroupContainer = styled(Box)`
 export function VersionBanner() {
   const switchVersion = useSwitchVersion();
 
-  if (UI_VERSION_TYPE === 'new-ui') {
+  if (UI_VERSION_TYPE !== 'old-ui') {
     return <></>;
   }
 
