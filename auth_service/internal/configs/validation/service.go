@@ -82,25 +82,6 @@ func validateAllowlistCfg(cfg *configspb.IPAllowlistConfig) error {
 		}
 	}
 
-	// Assignment validation
-	idents := stringset.New(len(cfg.GetAssignments()))
-	for _, a := range cfg.GetAssignments() {
-		ident := a.GetIdentity()
-		alName := a.GetIpAllowlistName()
-
-		// Checks if valid Identity.
-		if _, err := identity.MakeIdentity(ident); err != nil {
-			return err
-		}
-		if !allowlists.Has(alName) {
-			return errors.New(fmt.Sprintf("unknown allowlist %s", alName))
-		}
-		if idents.Has(ident) {
-			return errors.New(fmt.Sprintf("identity %s defined twice", ident))
-		}
-		idents.Add(ident)
-	}
-
 	return nil
 }
 

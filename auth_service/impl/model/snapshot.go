@@ -37,9 +37,6 @@ type Snapshot struct {
 	IPAllowlists     []*AuthIPAllowlist
 	RealmsGlobals    *AuthRealmsGlobals
 	ProjectRealms    []*AuthProjectRealms
-
-	// TODO:
-	//   IPAllowlistAssignments
 }
 
 // TakeSnapshot takes a consistent snapshot of the replicated subset of AuthDB
@@ -93,9 +90,6 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 			snap.ProjectRealms, err = GetAllAuthProjectRealms(ctx)
 			return
 		})
-
-		// TODO:
-		//  IPAllowlistAssignments
 
 		return gr.Wait()
 	}, &datastore.TransactionOptions{ReadOnly: true})
@@ -151,7 +145,6 @@ func (s *Snapshot) ToAuthDBProto(ctx context.Context, useV1Perms bool) (*protoco
 		Groups:                   groups,
 		IpWhitelists:             allowlists,
 		Realms:                   realms,
-		IpWhitelistAssignments:   nil, // TODO
 	}, nil
 }
 

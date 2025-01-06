@@ -409,8 +409,6 @@ func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTas
 var knownHistoricalEntities = map[string]diffFunc{
 	"AuthGroupHistory":       diffGroups,
 	"AuthIPWhitelistHistory": diffIPAllowlists,
-	// TODO(cjacomet): AuthIPWhitelistAssignments hasn't been used since 2015,
-	// either implement it in full or remove it from Python code base.
 	"AuthGlobalConfigHistory":  diffGlobalConfig,
 	"AuthRealmsGlobalsHistory": diffRealmsGlobals,
 	"AuthProjectRealmsHistory": diffProjectRealms,

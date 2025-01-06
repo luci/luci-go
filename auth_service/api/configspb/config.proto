@@ -88,9 +88,10 @@ message GroupImporterConfig {
   repeated TarballUploadEntry tarball_upload = 3;
 }
 
-// IP allowlists config: a set of named IP allowlists and a mapping between
-// identity name -> IP allowlist to restrict it to.
+// IP allowlists config: a set of named IP allowlists.
 message IPAllowlistConfig {
+  reserved 2; // used to be 'assignments', no longer used.
+
   message IPAllowlist {
     // Name of the IP allowlist.
     string name = 1;
@@ -100,17 +101,8 @@ message IPAllowlistConfig {
     repeated string includes = 3;
   }
 
-  message Assignment {
-    // Identity to restrict IPs to.
-    string identity = 1;
-    // Name of the corresponding IPAllowlist with a set of subnets.
-    string ip_allowlist_name = 2;
-  }
-
   // A set of named subnets.
   repeated IPAllowlist ip_allowlists = 1;
-  // A mapping "identity name -> IP allowlist name".
-  repeated Assignment assignments = 2;
 }
 
 // Legacy config, this is maintained to support clients still utilizing

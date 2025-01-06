@@ -332,13 +332,6 @@ func diffAuthDBs(a, b *protocol.AuthDB) []string {
 	if !ipAllowlistsEqual {
 		diffs = append(diffs, "IpAllowlists")
 	}
-	ipAllowlistAssignmentsEqual := slices.EqualFunc(a.IpWhitelistAssignments, b.IpWhitelistAssignments,
-		func(assignA, assignB *protocol.AuthIPWhitelistAssignment) bool {
-			return proto.Equal(assignA, assignB)
-		})
-	if !ipAllowlistAssignmentsEqual {
-		diffs = append(diffs, "IpAllowlistsAssignments")
-	}
 
 	// Record group differences if present.
 	groupCountA := len(a.Groups)

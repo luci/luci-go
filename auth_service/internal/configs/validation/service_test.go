@@ -55,10 +55,6 @@ func TestAllowlistConfigValidation(t *testing.T) {
 				name: "region99"
 				subnets: "127.0.0.1/20"
 			}
-			assignments {
-				identity: "user:test-user@google.com"
-				ip_allowlist_name: "bots"
-			}
 		`
 
 		t.Run("OK", func(t *ftt.Test) {
@@ -120,46 +116,6 @@ func TestAllowlistConfigValidation(t *testing.T) {
 			`
 			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
 			assert.Loosely(t, vctx.Finalize(), should.ErrLike("unable to parse IP for subnet"))
-		})
-
-		t.Run("Bad Identity format", func(t *ftt.Test) {
-			badCfg := `
-				assignments {
-					identity: "test-user@example.com"
-					ip_allowlist_name: "bots"
-				}
-			`
-			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.ErrLike("bad identity"))
-		})
-
-		t.Run("Unknown allowlist in assignment", func(t *ftt.Test) {
-			badCfg := `
-				assignments {
-					identity: "user:test-user@example.com"
-					ip_allowlist_name: "bots"
-				}
-			`
-			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.ErrLike("unknown allowlist"))
-		})
-
-		t.Run("Identity defined twice", func(t *ftt.Test) {
-			badCfg := `
-				ip_allowlists {
-					name: "bots"
-				}
-				assignments {
-					identity: "user:test-user@example.com"
-					ip_allowlist_name: "bots"
-				}
-				assignments {
-					identity: "user:test-user@example.com"
-					ip_allowlist_name: "bots"
-				}
-			`
-			assert.Loosely(t, validateAllowlist(vctx, configSet, path, []byte(badCfg)), should.BeNil)
-			assert.Loosely(t, vctx.Finalize(), should.ErrLike("defined twice"))
 		})
 
 		t.Run("Validate allowlist unknown includes", func(t *ftt.Test) {

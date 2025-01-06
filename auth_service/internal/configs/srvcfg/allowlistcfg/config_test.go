@@ -46,12 +46,6 @@ func TestConfigContext(t *testing.T) {
 				},
 			},
 		},
-		Assignments: []*configspb.IPAllowlistConfig_Assignment{
-			{
-				Identity:        "abc@example.com",
-				IpAllowlistName: "test-allowlist-1",
-			},
-		},
 	}
 
 	ftt.Run("Getting without setting fails", t, func(t *ftt.Test) {
