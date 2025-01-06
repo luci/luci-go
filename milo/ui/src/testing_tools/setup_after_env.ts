@@ -48,11 +48,13 @@ dotenv.config({
 // the same so they are available to code run under the test environment.
 const serverInjectedVars = self as unknown as {
   UI_VERSION: typeof UI_VERSION;
+  UI_VERSION_TYPE: typeof UI_VERSION_TYPE;
   SETTINGS: typeof SETTINGS;
 };
 serverInjectedVars.UI_VERSION = assertNonNullable(
   process.env['VITE_LOCAL_UI_VERSION'],
 );
+serverInjectedVars.UI_VERSION_TYPE = 'new-ui';
 serverInjectedVars.SETTINGS = Object.freeze({
   buildbucket: {
     host: assertNonNullable(process.env['VITE_BUILDBUCKET_HOST']),

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Duration } from 'luxon';
+
+import { ROLLBACK_PERSIST_DURATION_WEEK } from './constants';
+
 /**
  * The key of the cookie that controls user-initiated-rollback.
  *
@@ -22,16 +26,13 @@
 const ROLLBACK_COOKIE_KEY = 'USER_INITIATED_ROLLBACK';
 
 /**
- * Once the user switches back to the old version, persist the selection for one
- * week.
- */
-const ROLLBACK_PERSIST_DURATION = 7 * 24 * 60 * 60 * 1000;
-
-/**
  * Activate the old UI and reload the page.
  */
 export async function switchToOldUI() {
-  document.cookie = `${ROLLBACK_COOKIE_KEY}=true; path=/; expires=${new Date(Date.now() + ROLLBACK_PERSIST_DURATION)}`;
+  const maxAge =
+    Duration.fromObject({ week: ROLLBACK_PERSIST_DURATION_WEEK }).toMillis() /
+    1000;
+  document.cookie = `${ROLLBACK_COOKIE_KEY}=true; path=/; max-age=${maxAge}`;
 
   await reactivateUI();
 }

@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './controls';
-export * from './constants';
-export * from './version_control_provider';
-export * from './version_control_icon';
-export { useSwitchVersion, useIsSwitchingVersion } from './context';
+/**
+ * The number of weeks user will stay on the old version of LUCI UI.
+ */
+export const ROLLBACK_PERSIST_DURATION_WEEK = 1;
+
+/**
+ * The number of weeks since the old LUCI UI version was released.
+ */
+export const ROLLBACK_DURATION_WEEK = 2;

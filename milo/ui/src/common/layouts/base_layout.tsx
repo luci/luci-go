@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { styled } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import { ReactNode } from 'react';
 import { Outlet, UIMatch, useMatches } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
@@ -27,13 +27,15 @@ import { AppBar } from './app_bar';
 import { CookieConsentBar } from './cookie_consent_bar';
 import { PrivacyFooter } from './privacy_footer';
 import { Sidebar } from './side_bar';
+import { VersionBanner } from './version_banner';
 
 const ScrollingBase = styled(QueuedStickyScrollingBase)`
   display: grid;
   min-height: 100vh;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   grid-template-columns: auto 1fr;
   grid-template-areas:
+    'banner banner'
     'app-bar app-bar'
     'sidebar main'
     'sidebar footer';
@@ -60,6 +62,9 @@ export const BaseLayout = () => {
 
   return (
     <ScrollingBase>
+      <Box sx={{ gridArea: 'banner', zIndex: (theme) => theme.zIndex.appBar }}>
+        <VersionBanner />
+      </Box>
       <Sticky
         top
         sx={{ gridArea: 'app-bar', zIndex: (theme) => theme.zIndex.appBar }}
@@ -69,7 +74,7 @@ export const BaseLayout = () => {
       <Sticky
         left
         sx={{
-          gridRow: '1/4',
+          gridRow: '2/5',
           gridColumn: '1/2',
           zIndex: (theme) => theme.zIndex.drawer,
         }}

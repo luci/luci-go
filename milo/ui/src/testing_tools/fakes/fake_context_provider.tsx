@@ -26,6 +26,7 @@ import {
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { VersionControlProvider } from '@/common/components/version_control/version_control_provider';
 import { UiPage } from '@/common/constants/view';
 import { FeatureFlagsProvider } from '@/common/feature_flags/provider';
 import { theme } from '@/common/themes/base';
@@ -122,18 +123,20 @@ export function FakeContextProvider({
       <LocalizationProvider dateAdapter={AdapterLuxon}>
         <QueryClientProvider client={client}>
           <SingletonStoreProvider>
-            <PageMetaProvider
-              initPage={pageMeta?.selectedPage}
-              initProject={pageMeta?.project}
-            >
-              <ReleaseNotesProvider
-                initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+            <VersionControlProvider>
+              <PageMetaProvider
+                initPage={pageMeta?.selectedPage}
+                initProject={pageMeta?.project}
               >
-                <PageConfigStateProvider>
-                  <RouterProvider router={router} />
-                </PageConfigStateProvider>
-              </ReleaseNotesProvider>
-            </PageMetaProvider>
+                <ReleaseNotesProvider
+                  initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
+                >
+                  <PageConfigStateProvider>
+                    <RouterProvider router={router} />
+                  </PageConfigStateProvider>
+                </ReleaseNotesProvider>
+              </PageMetaProvider>
+            </VersionControlProvider>
           </SingletonStoreProvider>
         </QueryClientProvider>
       </LocalizationProvider>

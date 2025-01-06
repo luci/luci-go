@@ -49,6 +49,7 @@ import { routes } from '@/core/routes';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
 
+import { VersionControlProvider } from './common/components/version_control/version_control_provider';
 import { FeatureFlagsProvider } from './common/feature_flags/provider';
 import { parseReleaseNotes } from './core/components/release_notes/common';
 import { useIsDevEnv } from './generic_libs/hooks/is_dev_env';
@@ -188,20 +189,22 @@ export function App() {
       <ThemeProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
           <SingletonStoreProvider>
-            <StoreProvider value={store}>
-              <LitEnvProvider>
-                <PageMetaProvider>
-                  <ReleaseNotesProvider
-                    initReleaseNotes={parseReleaseNotes(releaseNotes)}
-                  >
-                    <PageConfigStateProvider>
-                      <milo-tooltip />
-                      <RouterProvider router={router} />
-                    </PageConfigStateProvider>
-                  </ReleaseNotesProvider>
-                </PageMetaProvider>
-              </LitEnvProvider>
-            </StoreProvider>
+            <VersionControlProvider>
+              <StoreProvider value={store}>
+                <LitEnvProvider>
+                  <PageMetaProvider>
+                    <ReleaseNotesProvider
+                      initReleaseNotes={parseReleaseNotes(releaseNotes)}
+                    >
+                      <PageConfigStateProvider>
+                        <milo-tooltip />
+                        <RouterProvider router={router} />
+                      </PageConfigStateProvider>
+                    </ReleaseNotesProvider>
+                  </PageMetaProvider>
+                </LitEnvProvider>
+              </StoreProvider>
+            </VersionControlProvider>
           </SingletonStoreProvider>
         </QueryClientProvider>
       </ThemeProvider>
