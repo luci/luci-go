@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Alert, AlertTitle, Button } from '@mui/material';
+import { Alert, AlertTitle, Box, Button } from '@mui/material';
 import { ReactNode, useEffect } from 'react';
 
+import {
+  ROLLBACK_DURATION_WEEK,
+  VersionControlIcon,
+  useSwitchVersion,
+} from '@/common/components/version_control';
 import { logging } from '@/common/tools/logging';
 import { genFeedbackUrl } from '@/common/tools/utils';
 
@@ -35,6 +40,7 @@ export function ErrorDisplay({
   showFileBugButton,
   onTryAgain,
 }: ErrorDisplayProps) {
+  const switchVersion = useSwitchVersion();
   useEffect(() => {
     // Log the error to so we can inspect it in the browser console.
     logging.error(error);
@@ -70,6 +76,32 @@ export function ErrorDisplay({
         </Button>
       )}
       {onTryAgain && <Button onClick={() => onTryAgain()}>Try Again</Button>}
+      {UI_VERSION_TYPE === 'new-ui' && (
+        <Box sx={{ fontSize: '0.8em', marginTop: '10px' }}>
+          If you suspect this is a recent regression in LUCI UI, you can try{' '}
+          <Button
+            endIcon={<VersionControlIcon />}
+            size="small"
+            onClick={() => switchVersion()}
+            sx={{
+              padding: 0,
+              fontSize: '0.85em',
+              verticalAlign: 'baseline',
+              marginRight: '4px',
+              '& > .MuiButton-endIcon': {
+                marginTop: '-1px',
+                marginLeft: '2px',
+                '& > .MuiSvgIcon-root': {
+                  fontSize: '1.5em',
+                },
+              },
+            }}
+          >
+            switching
+          </Button>{' '}
+          to the LUCI UI version released {ROLLBACK_DURATION_WEEK} weeks ago.
+        </Box>
+      )}
     </Alert>
   );
 }

@@ -24,10 +24,21 @@ import { useState, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useSetShowPageConfig } from '@/common/components/page_config_state_provider';
+import {
+  VersionControlIcon,
+  useSwitchVersion,
+  ROLLBACK_DURATION_WEEK,
+} from '@/common/components/version_control';
 import { ReleaseNotesTooltip } from '@/core/components/release_notes';
+
+const isNewUI = UI_VERSION_TYPE === 'new-ui';
 
 export function AppMenu() {
   const setShowPageConfig = useSetShowPageConfig();
+  const switchVersion = useSwitchVersion();
+  const switchVersionTitle = isNewUI
+    ? `Switch to the LUCI UI version released ${ROLLBACK_DURATION_WEEK} weeks ago.`
+    : 'Switch to the current active version of LUCI UI.';
 
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
@@ -75,6 +86,12 @@ export function AppMenu() {
             <DescriptionIcon />
           </ListItemIcon>
           <ListItemText>{"What's new"}</ListItemText>
+        </MenuItem>
+        <MenuItem title={switchVersionTitle} onClick={() => switchVersion()}>
+          <ListItemIcon>
+            <VersionControlIcon />
+          </ListItemIcon>
+          <ListItemText>Switch to {isNewUI ? 'old' : 'new'} UI</ListItemText>
         </MenuItem>
         <MenuItem
           onClick={() => setShowPageConfig!(true)}

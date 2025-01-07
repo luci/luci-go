@@ -21,10 +21,6 @@ import { configure } from 'mobx';
 import { createRoot } from 'react-dom/client';
 
 import { App } from '@/App';
-import {
-  switchToNewUI,
-  switchToOldUI,
-} from '@/common/components/version_control';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
 import { IsDevEnvProvider } from '@/generic_libs/hooks/is_dev_env';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
@@ -59,14 +55,3 @@ declare module 'luxon' {
     throwOnInvalid: true;
   }
 }
-
-// Inject those functions to a global scope so we can invoke them via browser
-// console.
-//
-// TODO(b/381131084): expose those switches as UI controls and stop injecting
-// them to the global scope.
-//
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).switchToNewUI = switchToNewUI;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).switchToOldUI = switchToOldUI;
