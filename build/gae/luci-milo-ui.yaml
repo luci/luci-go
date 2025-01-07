@@ -11,9 +11,6 @@ build:
     cwd: ${inputsdir}/ui
   - run: ['make', 'build']
     cwd: ${inputsdir}/ui
-  - go_gae_bundle: ${inputsdir}/service-ui-dispatcher/service-ui-dispatcher.yaml
-    go_gae_bundle_as_module: True
-    dest: ${contextdir}/service-ui-dispatcher
   - go_gae_bundle: ${inputsdir}/service-ui-new/service-ui-new.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-ui-new
