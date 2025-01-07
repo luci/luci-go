@@ -13,3 +13,6 @@ build:
   - go_gae_bundle: ${inputsdir}/service-api/service-api.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-api
+  - go_gae_bundle: ${inputsdir}/service-ui-dispatcher/service-ui-dispatcher.yaml
+    go_gae_bundle_as_module: True
+    dest: ${contextdir}/service-ui-dispatcher
