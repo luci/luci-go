@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Experimental setup for user-initialed-rollback. See b/381131084.
-# Must be kept in sync with service-ui.yaml (other than the service name and
+# Must be kept in sync with service-ui-new.yaml (other than the service name and
 # path prefix).
 
 service: ui-old

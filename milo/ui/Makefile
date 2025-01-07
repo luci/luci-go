@@ -45,4 +45,4 @@ up-dev:
 # may not exist.
 deploy-ui-demo:
 	export VITE_OVERRIDE_MILO_HOST=staging.milo.api.luci.app && npm run build
-	gae.py upload -p ../ -A luci-milo-dev ui -f
+	gae.py upload -p ../ -A luci-milo-dev ui-new -f

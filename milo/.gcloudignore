@@ -10,13 +10,6 @@
 .gcloudignore
 .gitignore
 
-/frontend/ui/*
-!/frontend/ui/dist
-
-/service-ui/ui/*
-!/service-ui/ui/dist
-
-# Experimental setup for user-initiated-rollback. See b/381131084.
 /service-ui-new/ui/*
 !/service-ui-new/ui/dist
 /service-ui-old/ui/*

@@ -11,11 +11,6 @@ build:
     cwd: ${inputsdir}/ui
   - run: ['make', 'build']
     cwd: ${inputsdir}/ui
-  - go_gae_bundle: ${inputsdir}/service-ui/service-ui.yaml
-    go_gae_bundle_as_module: True
-    dest: ${contextdir}/service-ui
-
-  # Experimental setup for user-initiated-rollback. See b/381131084.
   - go_gae_bundle: ${inputsdir}/service-ui-dispatcher/service-ui-dispatcher.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/service-ui-dispatcher
