@@ -47,10 +47,19 @@ export async function switchToNewUI() {
 }
 
 async function reactivateUI() {
-  // Unregister all the service workers so the new page load request will hit
-  // the server and be served with another version.
   const registrations = await navigator.serviceWorker.getRegistrations();
+
+  // Ensure all service workers are updated.
+  await Promise.allSettled(registrations.map((reg) => reg.update()));
+
+  // Unregister all service workers to ensure the first request (after reload)
+  // is not intercepted by the service worker due to race conditions.
   await Promise.allSettled(registrations.map((reg) => reg.unregister()));
+
+  // If the above doesn't work (e.g. when the service worker takes a long time
+  // to update), we can use the same logic used to implement
+  // `stale-while-revalidate` function of the service worker to mark the
+  // current service worker as "outdated".
 
   location.reload();
 }
