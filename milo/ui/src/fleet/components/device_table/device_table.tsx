@@ -42,7 +42,7 @@ const DEFAULT_PAGE_SIZE = 25;
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {
     if (error.code === 7) {
-      return 'You dont have permission to list devices';
+      return "You don't have permission to list devices";
     }
 
     return error.description;

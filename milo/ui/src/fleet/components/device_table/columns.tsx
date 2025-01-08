@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef } from '@mui/x-data-grid';
+import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { Link } from 'react-router-dom';
 
 import {
   Device,
@@ -26,6 +27,7 @@ interface Dimension {
   id: string; // unique id used for sorting and filtering
   displayName: string;
   getValue: (device: Device) => string;
+  renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
 }
 
 export const DEFAULT_COLUMNS: string[] = [
@@ -40,6 +42,16 @@ export const BASE_DIMENSIONS: Dimension[] = [
     id: 'id',
     displayName: 'ID',
     getValue: (device: Device) => device.id,
+    renderCell: (props) => (
+      <Cell
+        {...props}
+        value={
+          <Link to={`/ui/fleet/labs/devices/${props.value}`}>
+            {props.value}
+          </Link>
+        }
+      />
+    ),
   },
   {
     id: 'dut_id',
@@ -85,7 +97,10 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
     editable: false,
     minWidth: 70,
     maxWidth: 700,
-    renderCell: (props) => <Cell {...props} />,
+    renderCell: (props) =>
+      BASE_DIMENSIONS.find((dim) => dim.id === id)?.renderCell?.(props) || (
+        <Cell {...props}></Cell>
+      ),
   }));
 
   return columns;
