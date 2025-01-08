@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"fmt"
 	"reflect"
 	"sort"
 	"time"
@@ -25,6 +26,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -35,7 +38,7 @@ import (
 // TaskRequest contains a user request to execute a task.
 //
 // Key ID is a decreasing integer based on time plus some randomness on lower
-// order bits. See NewTaskRequestID for the complete gory details.
+// order bits. See taskid.go for the complete gory details.
 //
 // This entity is immutable.
 type TaskRequest struct {
@@ -201,6 +204,24 @@ type TaskRequest struct {
 
 	// LegacyHasBuildToken is no longer used.
 	LegacyHasBuildToken LegacyProperty `gae:"has_build_token"`
+}
+
+// NewTaskRequestKey constructs TaskRequest key given a timestamp.
+//
+// See taskid.go for more explanation.
+func NewTaskRequestKey(ctx context.Context) *datastore.Key {
+	buf := make([]byte, 2)
+	_, err := cryptorand.Read(ctx, buf)
+	if err != nil {
+		panic(fmt.Sprintf("failed to read bytes from random source: %s", err))
+	}
+	rn := binary.LittleEndian.Uint16(buf)
+	key, err := TimestampToRequestKey(ctx, clock.Now(ctx), int64(rn))
+	if err != nil {
+		panic(fmt.Sprintf(
+			"failed to convert a timestamp to a task request key: %s", err))
+	}
+	return key
 }
 
 // Pool is the pool the task wants to run in.
@@ -794,9 +815,4 @@ func (p *EnvPrefixes) FromProperty(prop datastore.Property) error {
 // ToProto converts EnvPrefixes to []*apipb.StringListPair
 func (p EnvPrefixes) ToProto() []*apipb.StringListPair {
 	return MapToStringListPair((map[string][]string)(p), true)
-}
-
-// NewTaskRequestID generates an ID for a new task.
-func NewTaskRequestID(ctx context.Context) int64 {
-	panic("not implemented")
 }

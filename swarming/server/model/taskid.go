@@ -115,8 +115,31 @@ func TaskIDToRequestKey(ctx context.Context, taskID string) (*datastore.Key, err
 
 // TimestampToRequestKey converts a timestamp to a request key.
 //
+// Task id is a 64 bits integer represented as a string to the user:
+//   - 1 highest order bits set to 0 to keep value positive - see
+//     `taskRequestIDMask`.
+//   - 43 bits is time since `BeginningOfTheWorld` at 1ms resolution - see
+//     `BeginningOfTheWorld` for more details.
+//   - 16 bits set to a random value or a server instance specific value.
+//     Assuming an instance is internally consistent with itself, it can ensure
+//     to not reuse the same 16 bits in two consecutive requests and/or throttle
+//     itself to one request per millisecond.
+//     Using random value reduces to 2**-15 the probability of collision on
+//     exact same timestamp at 1ms resolution, so a maximum theoretical rate of
+//     65536000 requests/sec but an effective rate in the range of ~64k
+//     requests/sec without much transaction conflicts. We should be fine.
+//   - 4 bits set to 0x1. This is to represent the 'version' of the entity
+//     schema. Previous version had 0. Note that this value is XOR'ed in the DB
+//     so it's stored as 0xE. When the TaskRequest entity tree is modified in a
+//     breaking way that affects the packing and unpacking of task ids, this
+//     value should be bumped.
+//
+// The key id is this value XORed with `taskRequestIDMask` - also see
+// `taskRequestIDMask` for more details.
+//
 // Note that this function does NOT accept a task id. This functions is
-// primarily meant for limiting queries to a task creation time range.
+// primarily meant for creating new request keys and limiting queries to a task
+// creation time range.
 func TimestampToRequestKey(ctx context.Context, timestamp time.Time, suffix int64) (*datastore.Key, error) {
 	if suffix < 0 || suffix > 0xffff {
 		return nil, errors.Reason("invalid suffix").Err()

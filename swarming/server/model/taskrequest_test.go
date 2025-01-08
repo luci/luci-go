@@ -21,6 +21,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -190,6 +192,17 @@ func TestTaskRequest(t *testing.T) {
 				assert.Loosely(t, partiallyPopulated.BotID(), should.BeEmpty)
 			})
 		})
+	})
+
+	ftt.Run("NewTaskRequestKey", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		now := time.Date(2025, time.January, 1, 2, 3, 4, 5, time.UTC)
+		ctx, _ = testclock.UseTime(ctx, now)
+		ctx = cryptorand.MockForTest(ctx, 0)
+
+		key := NewTaskRequestKey(ctx)
+		assert.That(t, RequestKeyToTaskID(key, AsRequest),
+			should.Equal("6e386bafc012fa10"))
 	})
 }
 
