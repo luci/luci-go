@@ -18,6 +18,7 @@ import { FleetConsoleClientImpl } from '@/proto/infra/fleetconsole/api/fleetcons
 export function useFleetConsoleClient() {
   return usePrpcServiceClient({
     host: SETTINGS.fleetConsole.host,
+    insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
     ClientImpl: FleetConsoleClientImpl,
   });
 }
