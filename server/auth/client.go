@@ -969,11 +969,7 @@ func parseAudPattern(pat string) (audGenerator, error) {
 			if err == nil {
 				switch match {
 				case "${host}":
-					// Prefer a value of `Host` header when given.
-					if req.Host != "" {
-						return req.Host
-					}
-					return req.URL.Host
+					return renderAudHost(req)
 				default:
 					err = errors.Reason("unknown var %s", match).Err()
 				}
@@ -997,6 +993,25 @@ func parseAudPattern(pat string) (audGenerator, error) {
 	}
 
 	return renderPat, nil
+}
+
+// renderAudHost renders "${host}" variable used in the audience pattern string.
+func renderAudHost(req *http.Request) string {
+	// Prefer a value of `Host` header when given.
+	host := req.Host
+	if host == "" {
+		host = req.URL.Host
+	}
+	// Strip the default port number. This is mostly useful when calling Cloud Run
+	// which doesn't like audiences with "...:443".
+	switch req.URL.Scheme {
+	case "http":
+		return strings.TrimSuffix(host, ":80")
+	case "https":
+		return strings.TrimSuffix(host, ":443")
+	default:
+		return host
+	}
 }
 
 // getRPCHeaders calls opts.getRPCHeaders callback, passing it correct context.

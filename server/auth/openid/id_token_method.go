@@ -16,6 +16,7 @@ package openid
 
 import (
 	"context"
+	"net/url"
 	"strings"
 
 	"go.chromium.org/luci/auth/jwt"
@@ -84,10 +85,32 @@ var _ interface {
 // It verifies token's audience matches "Host" request header. Suitable for
 // environments where "Host" header can be trusted.
 func AudienceMatchesHost(ctx context.Context, r auth.RequestMetadata, aud string) (valid bool, err error) {
-	if host := r.Host(); host != "" {
-		return aud == "https://"+host || strings.HasPrefix(aud, "https://"+host+"/"), nil
+	reqHost := r.Host()
+	if reqHost == "" {
+		return false, nil
 	}
-	return false, nil
+
+	// The audience is expected to be an absolute URL, e.g. "https://...".
+	parsedAud, err := url.Parse(aud)
+	if err != nil || !parsedAud.IsAbs() || parsedAud.Host == "" {
+		return false, nil // not a valid URL audience
+	}
+	audHost := parsedAud.Host
+
+	// Normalize host strings by stripping the default port, if present.
+	var port string
+	switch parsedAud.Scheme {
+	case "http":
+		port = ":80"
+	case "https":
+		port = ":443"
+	}
+	if port != "" {
+		reqHost = strings.TrimSuffix(reqHost, port)
+		audHost = strings.TrimSuffix(audHost, port)
+	}
+
+	return strings.EqualFold(reqHost, audHost), nil
 }
 
 // Authenticate extracts user information from the incoming request.

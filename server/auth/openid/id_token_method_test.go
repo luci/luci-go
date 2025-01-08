@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -58,7 +59,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		AudienceCheck: AudienceMatchesHost,
 		discoveryURL:  provider.discoveryURL,
 	}
-	call := func(authHeader string) (*auth.User, error) {
+	call := func(fakeHost, authHeader string) (*auth.User, error) {
 		req := authtest.NewFakeRequestMetadata()
 		req.FakeHost = fakeHost
 		req.FakeHeader.Set("Authorization", authHeader)
@@ -67,19 +68,19 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 	}
 
 	ftt.Run("Skipped if no header", t, func(t *ftt.Test) {
-		user, err := call("")
+		user, err := call(fakeHost, "")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, user, should.BeNil)
 	})
 
 	ftt.Run("Skipped if not Bearer", t, func(t *ftt.Test) {
-		user, err := call("OAuth zzz")
+		user, err := call(fakeHost, "OAuth zzz")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, user, should.BeNil)
 	})
 
 	ftt.Run("Not JWT token and SkipNonJWT == false", t, func(t *ftt.Test) {
-		user, err := call("Bearer " + "im-not-a-jwt")
+		user, err := call(fakeHost, "Bearer "+"im-not-a-jwt")
 		assert.Loosely(t, err, should.ErrLike("bad ID token: bad JWT"))
 		assert.Loosely(t, user, should.BeNil)
 	})
@@ -87,14 +88,14 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 	ftt.Run("Not JWT token and SkipNonJWT == true", t, func(t *ftt.Test) {
 		method.SkipNonJWT = true
 
-		user, err := call("Bearer " + "im-not-a-jwt")
+		user, err := call(fakeHost, "Bearer "+"im-not-a-jwt")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, user, should.BeNil)
 	})
 
 	ftt.Run("Regular user", t, func(t *ftt.Test) {
 		t.Run("Happy path", func(t *ftt.Test) {
-			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+			user, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",
@@ -116,7 +117,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		})
 
 		t.Run("Expired token", func(t *ftt.Test) {
-			_, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+			_, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",
@@ -133,7 +134,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 
 	ftt.Run("Service account", t, func(t *ftt.Test) {
 		t.Run("Happy path using Audience field", func(t *ftt.Test) {
-			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+			user, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",
@@ -149,42 +150,70 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 			}))
 		})
 
-		t.Run("Happy path using AudienceCheck field (direct host hit)", func(t *ftt.Test) {
-			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
-				Iss:           provider.Issuer,
-				EmailVerified: true,
-				Sub:           "some-sub",
-				Email:         "example@example.gserviceaccount.com",
-				Aud:           "https://" + fakeHost,
-				Iat:           clock.Now(ctx).Unix(),
-				Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
-			}))
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, user, should.Resemble(&auth.User{
-				Identity: "user:example@example.gserviceaccount.com",
-				Email:    "example@example.gserviceaccount.com",
-			}))
+		t.Run("Happy path using AudienceCheck field", func(t *ftt.Test) {
+			cases := []struct {
+				host string
+				aud  string
+			}{
+				{fakeHost, "https://" + fakeHost},
+				{"FAKE-host.example.com", "https://fake-host.EXAMPLE.com"},
+				{fakeHost, "https://" + fakeHost + "/blah"},
+				{fakeHost + ":443", "https://" + fakeHost},
+				{fakeHost, "https://" + fakeHost + ":443"},
+				{fakeHost + ":443", "https://" + fakeHost + ":443"},
+				{fakeHost + ":8888", "https://" + fakeHost + ":8888"},
+			}
+			for _, cs := range cases {
+				user, err := call(cs.host, "Bearer "+provider.mintIDToken(ctx, IDToken{
+					Iss:           provider.Issuer,
+					EmailVerified: true,
+					Sub:           "some-sub",
+					Email:         "example@example.gserviceaccount.com",
+					Aud:           cs.aud,
+					Iat:           clock.Now(ctx).Unix(),
+					Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
+				}))
+				assert.Loosely(t, err, should.BeNil,
+					truth.Explain("host:%s aud:%s", cs.host, cs.aud),
+				)
+				assert.Loosely(t, user, should.Resemble(&auth.User{
+					Identity: "user:example@example.gserviceaccount.com",
+					Email:    "example@example.gserviceaccount.com",
+				}))
+			}
 		})
 
-		t.Run("Happy path using AudienceCheck field (host prefix hit)", func(t *ftt.Test) {
-			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
-				Iss:           provider.Issuer,
-				EmailVerified: true,
-				Sub:           "some-sub",
-				Email:         "example@example.gserviceaccount.com",
-				Aud:           "https://" + fakeHost + "/some/path",
-				Iat:           clock.Now(ctx).Unix(),
-				Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
-			}))
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, user, should.Resemble(&auth.User{
-				Identity: "user:example@example.gserviceaccount.com",
-				Email:    "example@example.gserviceaccount.com",
-			}))
+		t.Run("Mismatched aud in AudienceCheck", func(t *ftt.Test) {
+			cases := []struct {
+				host string
+				aud  string
+			}{
+				{fakeHost, "what-is-this"},
+				{fakeHost, "/abc"},
+				{fakeHost, "https://../"},
+				{fakeHost, "://" + fakeHost},
+				{fakeHost, fakeHost},
+				{fakeHost, fakeHost + "/blah"},
+				{fakeHost, "https://" + fakeHost + ":8888"},
+			}
+			for _, cs := range cases {
+				_, err := call(cs.host, "Bearer "+provider.mintIDToken(ctx, IDToken{
+					Iss:           provider.Issuer,
+					EmailVerified: true,
+					Sub:           "some-sub",
+					Email:         "example@example.gserviceaccount.com",
+					Aud:           cs.aud,
+					Iat:           clock.Now(ctx).Unix(),
+					Exp:           clock.Now(ctx).Add(time.Hour).Unix(),
+				}))
+				assert.Loosely(t, err, should.Equal(auth.ErrBadAudience),
+					truth.Explain("host:%s aud:%s", cs.host, cs.aud),
+				)
+			}
 		})
 
 		t.Run("Happy path using OAuth2 client ID", func(t *ftt.Test) {
-			user, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+			user, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",
@@ -202,7 +231,7 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		})
 
 		t.Run("Unknown audience", func(t *ftt.Test) {
-			_, err := call("Bearer " + provider.mintIDToken(ctx, IDToken{
+			_, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
 				Iss:           provider.Issuer,
 				EmailVerified: true,
 				Sub:           "some-sub",

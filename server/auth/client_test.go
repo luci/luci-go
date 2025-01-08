@@ -19,6 +19,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -117,7 +118,7 @@ func TestGetRPCTransport(t *testing.T) {
 				MintIDTokenForServiceAccount: func(ic context.Context, p MintIDTokenParams) (*Token, error) {
 					assert.Loosely(t, p, should.Resemble(MintIDTokenParams{
 						ServiceAccount: ownServiceAccountName,
-						Audience:       "https://another.example.com:443/aud",
+						Audience:       "https://another.example.com/aud",
 						MinTTL:         2 * time.Minute,
 					}))
 					return &Token{
@@ -542,10 +543,29 @@ func TestParseAudPattern(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		s, err := cb(&http.Request{
-			Host: "something.example.com:443",
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   "something.example.com:443",
+				Path:   "/blah",
+			},
 		})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, s, should.Equal("https://something.example.com:443/zzz"))
+		assert.Loosely(t, s, should.Equal("https://something.example.com/zzz"))
+	})
+
+	ftt.Run("Custom port", t, func(t *ftt.Test) {
+		cb, err := parseAudPattern("https://${host}/zzz")
+		assert.Loosely(t, err, should.BeNil)
+
+		s, err := cb(&http.Request{
+			URL: &url.URL{
+				Scheme: "https",
+				Host:   "something.example.com:8888",
+				Path:   "/blah",
+			},
+		})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, s, should.Equal("https://something.example.com:8888/zzz"))
 	})
 
 	ftt.Run("Static", t, func(t *ftt.Test) {
