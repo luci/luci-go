@@ -49,6 +49,14 @@ export const routes: RouteObject[] = [
     lazy: () => import('@/core/routes/search_loader/search_redirection_loader'),
   },
   {
+    path: 'internal/always-fail',
+    lazy: () => import('@/core/pages/always_fail_page'),
+  },
+  {
+    path: 'doc/release-notes',
+    lazy: () => import('@/core/pages/release_notes_page'),
+  },
+  {
     path: 'builder-search',
     lazy: () => import('@/build/pages/builder_search_page'),
   },
@@ -204,10 +212,6 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/bisection/pages/test_analysis_details'),
       },
     ],
-  },
-  {
-    path: 'doc/release-notes',
-    lazy: () => import('@/core/pages/release_notes_page'),
   },
   // When promoting lab pages out of labs, move them to their respective feature
   // area. See go/luci-ui-path-segregation for details.

@@ -49,7 +49,7 @@ export function VersionBanner() {
   }
 
   return (
-    <Container>
+    <Container aria-label="Old UI Version Banner">
       <LeftGroupContainer>
         <Alert severity="warning" sx={{ padding: 0 }} action={<></>}>
           <AlertTitle>

@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { defineConfig } from 'cypress';
+import { ReactNode } from 'react';
 
-export default defineConfig({
-  e2e: {
-    baseUrl: 'http://localhost:8000',
-    retries: 2,
-  },
-});
+/**
+ * A page that always throw an error.
+ *
+ * This is used for test purpose only.
+ */
+export function AlwaysFailPage(): ReactNode {
+  throw Error(`hard coded error`);
+}
+
+export function Component(): ReactNode {
+  return <AlwaysFailPage />;
+}

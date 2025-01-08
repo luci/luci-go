@@ -17,6 +17,7 @@ import { ReactNode } from 'react';
 import { Outlet, UIMatch, useMatches } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
+import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   QueuedStickyScrollingBase,
   StickyOffset,
@@ -85,12 +86,23 @@ export const BaseLayout = () => {
         <PrivacyFooter />
       </Sticky>
       <StickyOffset component="main" sx={{ gridArea: 'main' }}>
-        {/* Do not conditionally render the <Outlet /> base on the navigation
-         ** state. Otherwise the page state will be reset if a page navigates
-         ** to itself, which can happen when the query search param is updated.
-         ** In the worst case, this may lead to infinite reload if the query
-         ** search param is updated when the component is mounted. */}
-        <Outlet />
+        {/* Catch errors here so that when the child do not catch their own
+         ** errors, we still render the layout. This is important because the
+         ** layout contains potential workarounds to the errors (e.g. login/out
+         ** error report, version switches, feature flag toggles, etc).
+         **
+         ** The child pages should still prefer defining their own error
+         ** handlers. See the documentation in `<LoginPage />` for details.
+         */}
+        <RecoverableErrorBoundary key="base-layout">
+          {/* Do not conditionally render the <Outlet /> base on the navigation
+           ** state. Otherwise the page state will be reset if a page navigates
+           ** to itself, which can happen when the query search param is
+           ** updated. In the worst case, this may lead to infinite reload if
+           ** the query search param is updated when the component is mounted.
+           */}
+          <Outlet />
+        </RecoverableErrorBoundary>
       </StickyOffset>
       <CookieConsentBar />
     </ScrollingBase>
