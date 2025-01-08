@@ -31,7 +31,7 @@ export function BuildPageShortLink() {
   const navigate = useNavigate();
 
   if (!buildId) {
-    throw new Error('invariant violated: buildId should be set');
+    throw new Error('invariant violated: buildId must be set');
   }
 
   const queryClient = useQueryClient();

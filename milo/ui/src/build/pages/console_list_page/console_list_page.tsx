@@ -19,7 +19,7 @@ import { useParams } from 'react-router-dom';
 
 import { OutputQueryConsoleSnapshotsResponse } from '@/build/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -31,8 +31,9 @@ import { ProjectIdBar } from './project_id_bar';
 export function ConsoleListPage() {
   const { project } = useParams();
   if (!project) {
-    throw new Error('invariant violated: project should be set');
+    throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
 
   const client = useMiloInternalClient();
   const { data, error, isError, isLoading, fetchNextPage, hasNextPage } =
@@ -59,11 +60,7 @@ export function ConsoleListPage() {
 
   return (
     <>
-      <PageMeta
-        project={project}
-        selectedPage={UiPage.BuilderGroups}
-        title={`${project} | Builder Groups`}
-      />
+      <PageMeta title={`${project} | Builder Groups`} />
       <ProjectIdBar project={project} />
       <LinearProgress
         value={100}
@@ -89,6 +86,8 @@ export function ConsoleListPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.BuilderGroups);
+
   return (
     <TrackLeafRoutePageView contentGroup="console-list">
       <RecoverableErrorBoundary

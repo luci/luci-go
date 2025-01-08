@@ -39,7 +39,7 @@ import {
 } from '@/common/components/error_handling';
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
-import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { PageMetaProvider } from '@/common/components/page_meta';
 import { NON_TRANSIENT_ERROR_CODES } from '@/common/constants/rpc';
 import { BaseLayout } from '@/common/layouts/base_layout';
 import { Store, StoreProvider } from '@/common/store';

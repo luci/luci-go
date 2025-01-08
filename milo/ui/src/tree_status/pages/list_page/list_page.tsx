@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import {
   ParamsPager,
   getPageSize,
@@ -37,6 +37,10 @@ import { useTreeStatusClient } from '@/tree_status/hooks/prpc_clients';
 
 export const TreeStatusListPage = () => {
   const { tree: treeName } = useParams();
+  if (!treeName) {
+    throw new Error('invariant violated: tree must be set');
+  }
+
   const pagerCtx = usePagerContext({
     pageSizeOptions: [25, 50, 100, 200],
     defaultPageSize: 50,
@@ -74,9 +78,6 @@ export const TreeStatusListPage = () => {
     refetchOnWindowFocus: false,
   });
 
-  if (!treeName) {
-    return <Alert severity="error">No tree name specified</Alert>;
-  }
   if (status.isError) {
     throw status.error;
   }
@@ -93,14 +94,11 @@ export const TreeStatusListPage = () => {
     (tree.data && tree.data.projects.length > 0
       ? tree.data.projects[0]
       : treeName);
+  useProject(project);
 
   return (
     <div>
-      <PageMeta
-        title="Tree Status"
-        selectedPage={UiPage.TreeStatus}
-        project={project}
-      />
+      <PageMeta title="Tree Status" />
       <Alert severity="info">
         <strong>Tree status for the tree {treeName}</strong>
         <p>
@@ -147,6 +145,8 @@ export const TreeStatusListPage = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.TreeStatus);
+
   return (
     <TrackLeafRoutePageView contentGroup="tree-status-list">
       <RecoverableErrorBoundary

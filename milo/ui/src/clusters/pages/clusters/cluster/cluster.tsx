@@ -19,26 +19,19 @@ import { useParams } from 'react-router-dom';
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
 import { ClusterContextProvider } from '@/clusters/components/cluster/cluster_context';
 import ClusterTopPanel from '@/clusters/components/cluster/cluster_top_panel/cluster_top_panel';
-import ErrorAlert from '@/clusters/components/error_alert/error_alert';
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 export const ClusterPage = () => {
   const { project, algorithm, id } = useParams();
-
   if (!project || !algorithm || !id) {
-    return (
-      <ErrorAlert
-        errorTitle="Project or Cluster ID is not specified"
-        errorText="Project or Cluster ID not specified in the URL, please make sure you have the correct URL and try again."
-        showError
-      />
-    );
+    throw new Error('invariant violated: project, algorithm, id must be set');
   }
+  useProject(project);
 
   return (
     <ClusterContextProvider
@@ -46,11 +39,7 @@ export const ClusterPage = () => {
       clusterAlgorithm={algorithm}
       clusterId={id}
     >
-      <PageMeta
-        title={`Cluster | ${algorithm} - ${id}`}
-        project={project}
-        selectedPage={UiPage.Clusters}
-      />
+      <PageMeta title={`Cluster | ${algorithm} - ${id}`} />
       <Container className="mt-1" maxWidth={false}>
         <Grid sx={{ mt: 1 }} container spacing={2}>
           <Grid size={12}>
@@ -66,6 +55,8 @@ export const ClusterPage = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.Clusters);
+
   return (
     <TrackLeafRoutePageView contentGroup="cluster">
       <RecoverableErrorBoundary

@@ -12,46 +12,61 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useContext } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 
-import { PageMetaContext } from './page_meta_provider';
+import { UiPage } from '@/common/constants/view';
 
-export function useSelectedPage() {
-  const context = useContext(PageMetaContext);
+import { PageMetaStateCtx, PageMetaDispatcherCtx } from './context';
 
-  if (!context) {
-    throw new Error('useSelectedPage can only be used in a PageMetaContext');
+/**
+ * Mark the component with a page identifier.
+ *
+ * At most one page can be activated at a time.
+ */
+export function usePageId(pageId: UiPage) {
+  const dispatch = useContext(PageMetaDispatcherCtx);
+  if (dispatch === undefined) {
+    throw new Error('usePageId can only be used in a PageMetaProvider');
   }
 
-  return context.selectedPage;
+  const hookId = useRef();
+  useEffect(() => {
+    dispatch({ type: 'activatePage', pageId, hookId });
+    return () => dispatch({ type: 'deactivatePage', pageId, hookId });
+  }, [dispatch, pageId]);
 }
 
-export function useProject() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSelectedProject can only be used in a PageMetaContext');
+export function useActivePageId() {
+  const state = useContext(PageMetaStateCtx);
+  if (state === undefined) {
+    throw new Error('useActivePageId can only be used in a PageMetaProvider');
   }
 
-  return context.project;
+  return state.activePage?.pageId;
 }
 
-export function useSetSelectedPage() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSetSelectedPage can only be used in a PageMetaContext');
+export function useProject(project: string | undefined) {
+  const dispatch = useContext(PageMetaDispatcherCtx);
+  if (dispatch === undefined) {
+    throw new Error('useProject can only be used in a PageMetaProvider');
   }
 
-  return context.setSelectedPage;
+  useEffect(() => {
+    if (!project) {
+      return;
+    }
+
+    dispatch({ type: 'setProject', project });
+  }, [dispatch, project]);
 }
 
-export function useSetProject() {
-  const context = useContext(PageMetaContext);
-
-  if (!context) {
-    throw new Error('useSetProject can only be used in a PageMetaContext');
+export function useLastSelectedProject() {
+  const state = useContext(PageMetaStateCtx);
+  if (state === undefined) {
+    throw new Error(
+      'useLastSelectedProject can only be used in a PageMetaProvider',
+    );
   }
 
-  return context.setProject;
+  return state.project;
 }

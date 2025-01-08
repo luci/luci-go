@@ -14,25 +14,35 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { PageMetaContext } from '@/common/components/page_meta/page_meta_provider';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AppDetails } from './app_details';
 
+interface ProjectSetterProps {
+  readonly project: string;
+}
+
+function ProjectSetter({ project }: ProjectSetterProps) {
+  useProject(project);
+  return <></>;
+}
+
+interface PageSetterProps {
+  readonly pageId: UiPage;
+}
+
+function PageSetter({ pageId }: PageSetterProps) {
+  usePageId(pageId);
+  return <></>;
+}
+
 describe('AppDetails', () => {
   it('should display app name given no data', async () => {
     render(
       <FakeContextProvider>
-        <PageMetaContext.Provider
-          value={{
-            setProject: () => {},
-            setSelectedPage: () => {},
-          }}
-        >
-          <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
-        </PageMetaContext.Provider>
-        ,
+        <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </FakeContextProvider>,
     );
     await screen.findByLabelText('menu');
@@ -41,11 +51,8 @@ describe('AppDetails', () => {
 
   it('should display selected page', async () => {
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-        }}
-      >
+      <FakeContextProvider>
+        <PageSetter pageId={UiPage.Builders} />
         <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </FakeContextProvider>,
     );
@@ -56,18 +63,13 @@ describe('AppDetails', () => {
 
   it('should display project', async () => {
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-          project: 'chrome',
-        }}
-      >
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
         <AppDetails open={true} handleSidebarChanged={(_: boolean) => {}} />
       </FakeContextProvider>,
     );
     await screen.findByLabelText('menu');
     expect(screen.getByText('LUCI')).toBeInTheDocument();
-    expect(screen.getByText('Builders')).toBeInTheDocument();
     expect(screen.getByText('chrome')).toBeInTheDocument();
   });
 });

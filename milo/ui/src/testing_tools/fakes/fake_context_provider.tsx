@@ -25,9 +25,8 @@ import {
 } from 'react-router-dom';
 
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
-import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { PageMetaProvider } from '@/common/components/page_meta';
 import { VersionControlProvider } from '@/common/components/version_control/version_control_provider';
-import { UiPage } from '@/common/constants/view';
 import { FeatureFlagsProvider } from '@/common/feature_flags/provider';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
@@ -41,10 +40,6 @@ interface FakeContextProviderProps {
   readonly routerOptions?: Parameters<typeof createMemoryRouter>[1];
   readonly siblingRoutes?: RouteObject[];
   readonly errorElement?: ReactNode;
-  readonly pageMeta?: {
-    readonly project?: string;
-    readonly selectedPage?: UiPage;
-  };
   readonly children: ReactNode;
 }
 
@@ -56,7 +51,6 @@ export function FakeContextProvider({
   routerOptions,
   siblingRoutes = [],
   errorElement,
-  pageMeta,
   children,
 }: FakeContextProviderProps) {
   const [client] = useState(() => {
@@ -124,10 +118,7 @@ export function FakeContextProvider({
         <QueryClientProvider client={client}>
           <SingletonStoreProvider>
             <VersionControlProvider>
-              <PageMetaProvider
-                initPage={pageMeta?.selectedPage}
-                initProject={pageMeta?.project}
-              >
+              <PageMetaProvider>
                 <ReleaseNotesProvider
                   initReleaseNotes={{ latest: '', latestVersion: -1, past: '' }}
                 >

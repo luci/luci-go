@@ -31,7 +31,7 @@ export function SwarmingBuildPage() {
   const navigate = useNavigate();
 
   if (!taskId) {
-    throw new Error('invariant violated: taskId should be set');
+    throw new Error('invariant violated: taskId must be set');
   }
 
   const swarmingHost =

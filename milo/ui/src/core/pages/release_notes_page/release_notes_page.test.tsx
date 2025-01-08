@@ -14,7 +14,7 @@
 
 import { cleanup, render, screen } from '@testing-library/react';
 
-import { PageMetaProvider } from '@/common/components/page_meta/page_meta_provider';
+import { PageMetaProvider } from '@/common/components/page_meta';
 import {
   ReleaseNotesProvider,
   useHasNewRelease,

@@ -29,7 +29,7 @@ export const useFetchProjectConfig = (
     ['projectconfig', project],
     async () => {
       if (!project) {
-        throw new Error('invariant violated: project should be set');
+        throw new Error('invariant violated: project must be set');
       }
       const request: GetProjectConfigRequest = {
         name: `projects/${encodeURIComponent(project)}/config`,

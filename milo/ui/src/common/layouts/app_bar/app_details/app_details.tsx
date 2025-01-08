@@ -20,7 +20,10 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router-dom';
 
-import { useSelectedPage, useProject } from '@/common/components/page_meta';
+import {
+  useActivePageId,
+  useLastSelectedProject,
+} from '@/common/components/page_meta';
 import { getProjectURLPath } from '@/common/tools/url_utils';
 
 import { PAGE_LABEL_MAP } from '../../constants';
@@ -31,8 +34,8 @@ interface Props {
 }
 
 export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
-  const selectedPage = useSelectedPage();
-  const project = useProject();
+  const activePage = useActivePageId();
+  const project = useLastSelectedProject();
   return (
     <>
       <IconButton
@@ -90,11 +93,11 @@ export const AppDetails = ({ open, handleSidebarChanged }: Props) => {
             </Link>
           </>
         )}
-        {selectedPage && (
+        {activePage && (
           <>
             <Divider flexItem orientation="vertical" sx={{ mr: 2 }} />
             <Typography variant="h6" component="div" sx={{ pr: 2 }}>
-              {PAGE_LABEL_MAP[selectedPage]}
+              {PAGE_LABEL_MAP[activePage]}
             </Typography>
           </>
         )}

@@ -23,7 +23,7 @@ import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import RulesTable from '@/clusters/components/rules_table/rules_table';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -34,9 +34,14 @@ const rulesDescription =
 
 const RulesPage = () => {
   const { project } = useParams();
+  if (!project) {
+    throw new Error('invariant violated: project must be set');
+  }
+  useProject(project);
+
   return (
     <Container maxWidth={false}>
-      <PageMeta title="Rules" project={project} selectedPage={UiPage.Rules} />
+      <PageMeta title="Rules" />
       <Grid container>
         <Grid size={8}>
           <PageHeading>
@@ -61,6 +66,8 @@ const RulesPage = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.Rules);
+
   return (
     <TrackLeafRoutePageView contentGroup="rules">
       <RecoverableErrorBoundary

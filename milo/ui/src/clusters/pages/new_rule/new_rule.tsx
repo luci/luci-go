@@ -36,7 +36,7 @@ import {
 import { useRulesService } from '@/clusters/services/services';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -48,6 +48,11 @@ import {
 
 export const NewRulePage = () => {
   const { project } = useParams();
+  if (!project) {
+    throw new Error('invariant violated: project must be set');
+  }
+  useProject(project);
+
   const navigate = useNavigate();
   const [searchParams] = useSyncedSearchParams();
 
@@ -81,16 +86,6 @@ export const NewRulePage = () => {
       });
     }
   }, [searchParams]);
-
-  if (!project) {
-    return (
-      <ErrorAlert
-        errorTitle="Project not found"
-        errorText="A project is required to create a rule, please check the URL and try again."
-        showError
-      />
-    );
-  }
 
   const handleBugIdChange = (bugId: string) => {
     setBugId(bugId);
@@ -154,11 +149,7 @@ export const NewRulePage = () => {
           mx: 2,
         }}
       >
-        <PageMeta
-          title="New Rule"
-          project={project}
-          selectedPage={UiPage.Rules}
-        />
+        <PageMeta title="New Rule" />
         <PanelHeading>New Rule</PanelHeading>
         <Grid container direction="column" spacing={1}>
           <Grid size="grow">
@@ -204,6 +195,8 @@ export const NewRulePage = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.Rules);
+
   return (
     <TrackLeafRoutePageView contentGroup="new-rule">
       <RecoverableErrorBoundary

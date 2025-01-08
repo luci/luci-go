@@ -16,7 +16,6 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 
-import { UiPage } from '@/common/constants/view';
 import {
   ListBuildersRequest,
   ListBuildersResponse,
@@ -82,11 +81,7 @@ describe('<BuilderSearchPage />', () => {
       );
 
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-        }}
-      >
+      <FakeContextProvider>
         <VirtuosoMockContext.Provider
           value={{ viewportHeight: 1000, itemHeight: 1 }}
         >

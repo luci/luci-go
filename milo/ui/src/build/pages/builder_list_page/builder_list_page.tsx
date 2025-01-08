@@ -20,7 +20,7 @@ import { useParams } from 'react-router-dom';
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
@@ -30,8 +30,9 @@ import { BuilderListIdBar } from './builder_list_id_bar';
 export function BuilderListPage() {
   const { project } = useParams();
   if (!project) {
-    throw new Error('invariant violated: project should be set');
+    throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
 
   const client = useBuildersClient();
   const { data, isLoading, error, isError, fetchNextPage, hasNextPage } =
@@ -62,11 +63,7 @@ export function BuilderListPage() {
 
   return (
     <>
-      <PageMeta
-        project={project}
-        selectedPage={UiPage.Builders}
-        title={`${project} | Builders`}
-      />
+      <PageMeta title={`${project} | Builders`} />
       <BuilderListIdBar project={project} />
       <LinearProgress
         value={100}
@@ -87,6 +84,8 @@ export function BuilderListPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.Builders);
+
   return (
     <TrackLeafRoutePageView contentGroup="builder-list">
       <RecoverableErrorBoundary

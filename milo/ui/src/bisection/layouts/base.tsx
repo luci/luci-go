@@ -15,29 +15,28 @@
 import { Outlet, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
 export const BisectionLayout = () => {
   const { project } = useParams();
-
   if (!project) {
-    throw new Error('invariant violated: project should be set');
+    throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
+
   return (
     <>
-      <PageMeta
-        project={project}
-        title="Bisection"
-        selectedPage={UiPage.Bisection}
-      />
+      <PageMeta title="Bisection" />
       <Outlet />
     </>
   );
 };
 
 export function Component() {
+  usePageId(UiPage.Bisection);
+
   return (
     <ContentGroup group="bisection">
       <RecoverableErrorBoundary

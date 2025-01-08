@@ -18,7 +18,7 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta/page_meta';
+import { PageMeta, useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants/legacy';
 import { useStore } from '@/common/store';
@@ -40,7 +40,7 @@ export const InvocationPage = observer(() => {
   const store = useStore();
 
   if (!invId) {
-    throw new Error('invariant violated: invId should be set');
+    throw new Error('invariant violated: invId must be set');
   }
 
   useEffect(() => {
@@ -49,11 +49,12 @@ export const InvocationPage = observer(() => {
 
   const inv = store.invocationPage.invocation.invocation;
   const project = store.invocationPage.invocation.project;
+  useProject(project || '');
   const parsedInvId = parseInvId(invId);
 
   return (
     <InvLitEnvProvider>
-      <PageMeta project={project || ''} title={`inv: ${invId}`} />
+      <PageMeta title={`inv: ${invId}`} />
       <div
         css={{
           backgroundColor: 'var(--block-background-color)',

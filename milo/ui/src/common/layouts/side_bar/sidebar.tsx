@@ -29,7 +29,10 @@ import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
-import { useSelectedPage, useProject } from '@/common/components/page_meta';
+import {
+  useActivePageId,
+  useLastSelectedProject,
+} from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
@@ -59,8 +62,8 @@ interface Props {
 }
 
 export const Sidebar = ({ open }: Props) => {
-  const project = useProject();
-  const selectedPage = useSelectedPage();
+  const project = useLastSelectedProject();
+  const activePage = useActivePageId();
   const { email } = useAuthState();
 
   const client = useTreesClient();
@@ -117,7 +120,7 @@ export const Sidebar = ({ open }: Props) => {
                     justifyContent: 'center',
                     px: 2.5,
                   }}
-                  selected={sidebarPage.page === selectedPage}
+                  selected={sidebarPage.page === activePage}
                   component={sidebarPage.external ? MaterialLink : Link}
                   to={sidebarPage.url}
                   target={sidebarPage.external ? '_blank' : ''}

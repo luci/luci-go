@@ -14,7 +14,7 @@
 
 import { act, render, screen } from '@testing-library/react';
 
-import { UiPage } from '@/common/constants/view';
+import { useProject } from '@/common/components/page_meta';
 import {
   QueryTreesResponse,
   TreesClientImpl,
@@ -22,6 +22,16 @@ import {
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { Sidebar } from './sidebar';
+
+interface ProjectSetterProps {
+  readonly project: string;
+}
+
+// eslint-disable-next-line jest/no-export
+export function ProjectSetter({ project }: ProjectSetterProps) {
+  useProject(project);
+  return <></>;
+}
 
 describe('Sidebar', () => {
   beforeEach(() => {
@@ -34,11 +44,7 @@ describe('Sidebar', () => {
 
   it('given an empty project, should display builders search', async () => {
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.BuilderSearch,
-        }}
-      >
+      <FakeContextProvider>
         <Sidebar open={true} />
       </FakeContextProvider>,
     );
@@ -49,12 +55,8 @@ describe('Sidebar', () => {
 
   it('should display a list of navigation items for a project', async () => {
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-          project: 'chrome',
-        }}
-      >
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
         <Sidebar open={true} />
       </FakeContextProvider>,
     );
@@ -83,12 +85,8 @@ describe('Sidebar', () => {
         });
       });
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-          project: 'chrome',
-        }}
-      >
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
         <Sidebar open={true} />
       </FakeContextProvider>,
     );
@@ -115,12 +113,8 @@ describe('Sidebar', () => {
         });
       });
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-          project: 'chrome',
-        }}
-      >
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
         <Sidebar open={true} />
       </FakeContextProvider>,
     );
@@ -154,12 +148,8 @@ describe('Sidebar', () => {
         });
       });
     render(
-      <FakeContextProvider
-        pageMeta={{
-          selectedPage: UiPage.Builders,
-          project: 'chrome',
-        }}
-      >
+      <FakeContextProvider>
+        <ProjectSetter project="chrome" />
         <Sidebar open={true} />
       </FakeContextProvider>,
     );

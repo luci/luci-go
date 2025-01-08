@@ -40,7 +40,7 @@ const Container = styled(Box)`
 export function DetailsTab() {
   const { invId } = useParams();
   if (!invId) {
-    throw new Error('invariant violated: invId should be set');
+    throw new Error('invariant violated: invId must be set');
   }
   const [propertyViewerConfig, _] = useState<PropertyViewerConfigInstance>(
     PropertyViewerConfig.create({}),

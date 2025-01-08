@@ -16,7 +16,7 @@ import { useParams } from 'react-router-dom';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -29,6 +29,7 @@ export function RegressionDetailsPage() {
   if (!project) {
     throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
 
   // TODO(b/321110247): once we have a stable regression group ID, pass it via
   // the path params instead of passing a bunch of filters via search query
@@ -51,11 +52,7 @@ export function RegressionDetailsPage() {
 
   return (
     <>
-      <PageMeta
-        selectedPage={UiPage.RegressionDetails}
-        title="regression details"
-        project={project}
-      ></PageMeta>
+      <PageMeta title="regression details"></PageMeta>
       <RegressionDetails
         testVariantBranch={testVariantBranch}
         nominalStartPosition={nominalStartPosition}
@@ -67,6 +64,8 @@ export function RegressionDetailsPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.RegressionDetails);
+
   return (
     <TrackLeafRoutePageView
       contentGroup="regression-details"

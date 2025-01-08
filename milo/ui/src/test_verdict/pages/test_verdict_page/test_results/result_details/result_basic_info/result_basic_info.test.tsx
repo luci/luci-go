@@ -196,11 +196,7 @@ describe('<ResultBasicInfo />', () => {
     ]);
     // act
     render(
-      <FakeContextProvider
-        pageMeta={{
-          project: 'chromium',
-        }}
-      >
+      <FakeContextProvider>
         <FakeTestVerdictContextProvider>
           <TestResultsProvider results={[]} clustersMap={clustersMap}>
             <ResultDataProvider result={failedResult}>
@@ -263,11 +259,7 @@ describe('<ResultBasicInfo />', () => {
 
     // act
     render(
-      <FakeContextProvider
-        pageMeta={{
-          project: 'chromium',
-        }}
-      >
+      <FakeContextProvider>
         <FakeTestVerdictContextProvider>
           <TestResultsProvider results={[]} clustersMap={clustersMap}>
             <ResultDataProvider result={failedResult}>

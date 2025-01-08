@@ -22,7 +22,7 @@ import PageHeading from '@/clusters/components/headings/page_heading/page_headin
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -34,14 +34,14 @@ const clustersDescription =
 
 export const ClustersPage = () => {
   const { project } = useParams();
+  if (!project) {
+    throw new Error('invariant violated: must should be set');
+  }
+  useProject(project);
 
   return (
     <Container maxWidth={false}>
-      <PageMeta
-        title="Clusters"
-        project={project}
-        selectedPage={UiPage.Clusters}
-      />
+      <PageMeta title="Clusters" />
       <Grid container>
         <Grid size={8}>
           <PageHeading>
@@ -56,6 +56,8 @@ export const ClustersPage = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.Clusters);
+
   return (
     <TrackLeafRoutePageView contentGroup="clusters">
       <RecoverableErrorBoundary

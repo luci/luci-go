@@ -16,37 +16,18 @@ import { useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 
 import milo from '@/common/assets/favicons/milo-32.png';
-import { UiPage } from '@/common/constants/view';
-
-import { useProject, useSetProject, useSetSelectedPage } from './hooks';
 
 const DEFAULT_FAVICON = milo;
 
 export interface PageMetaProps {
   title: string;
-  selectedPage?: UiPage;
-  project?: string;
   favicon?: string;
 }
 
 /**
  * Handles setting the sidebar selected item and title of the page.
  */
-export const PageMeta = ({
-  title,
-  selectedPage,
-  project,
-  favicon,
-}: PageMetaProps) => {
-  const setProject = useSetProject();
-  const setSelectedPage = useSetSelectedPage();
-  const currentProject = useProject();
-
-  useEffect(() => {
-    setSelectedPage(selectedPage);
-    setProject(project || currentProject);
-  }, [currentProject, project, selectedPage, setProject, setSelectedPage]);
-
+export const PageMeta = ({ title, favicon }: PageMetaProps) => {
   useEffect(() => {
     if (favicon === undefined) {
       return () => {};

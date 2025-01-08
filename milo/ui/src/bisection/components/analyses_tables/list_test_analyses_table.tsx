@@ -54,7 +54,7 @@ export function ListTestAnalysesTable() {
   const { project } = useParams();
   if (!project) {
     // The page should always be mounted to a path where project is set.
-    throw new Error('invariant violated: project should be set');
+    throw new Error('invariant violated: project must be set');
   }
   // TODO: implement sorting & filtering for certain columns
 

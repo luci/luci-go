@@ -22,7 +22,7 @@ import {
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
@@ -33,7 +33,7 @@ export function BlamelistPage() {
   const { project, testId, variantHash, refHash } = useParams();
   if (!project || !testId || !variantHash || !refHash) {
     throw new Error(
-      'invariant violated: project, testId, variantHash, refHash should be set',
+      'invariant violated: project, testId, variantHash, refHash must be set',
     );
   }
 
@@ -111,18 +111,17 @@ export function BlamelistPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.Blamelist);
+
   const { project } = useParams();
   if (!project) {
-    throw new Error('invariant violated: project should be set');
+    throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
 
   return (
     <>
-      <PageMeta
-        project={project}
-        title="Blamelist"
-        selectedPage={UiPage.Blamelist}
-      />
+      <PageMeta title="Blamelist" />
       <TrackLeafRoutePageView contentGroup="blamelist">
         <RecoverableErrorBoundary
           // See the documentation in `<LoginPage />` to learn why we handle

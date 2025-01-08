@@ -12,44 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Dispatch, SetStateAction, createContext, useState } from 'react';
+import { useReducer } from 'react';
 
-import { UiPage } from '@/common/constants/view';
-
-interface PageMetaContextData {
-  selectedPage?: UiPage;
-  setSelectedPage: Dispatch<SetStateAction<UiPage | undefined>>;
-  project?: string;
-  setProject: Dispatch<SetStateAction<string | undefined>>;
-}
-
-export const PageMetaContext = createContext<PageMetaContextData | null>(null);
+import { PageMetaStateCtx, PageMetaDispatcherCtx } from './context';
+import { reducer } from './reducer';
 
 interface Props {
-  children: React.ReactNode;
-  initProject?: string;
-  initPage?: UiPage;
+  readonly children: React.ReactNode;
 }
 
-export const PageMetaProvider = ({
-  children,
-  initProject = '',
-  initPage = UiPage.Builders,
-}: Props) => {
-  const [selectedPage, setSelectedPage] = useState<UiPage | undefined>(
-    initPage,
-  );
-  const [project, setProject] = useState<string | undefined>(initProject);
+export const PageMetaProvider = ({ children }: Props) => {
+  const [state, dispatcher] = useReducer(reducer, {
+    activePage: null,
+    project: undefined,
+  });
+
   return (
-    <PageMetaContext.Provider
-      value={{
-        selectedPage,
-        setSelectedPage,
-        project,
-        setProject,
-      }}
-    >
-      {children}
-    </PageMetaContext.Provider>
+    <PageMetaDispatcherCtx.Provider value={dispatcher}>
+      <PageMetaStateCtx.Provider value={state}>
+        {children}
+      </PageMetaStateCtx.Provider>
+    </PageMetaDispatcherCtx.Provider>
   );
 };

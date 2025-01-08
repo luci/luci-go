@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta/page_meta';
+import { PageMeta, useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -31,7 +31,7 @@ import { VerdictCountIndicator } from './verdict_count_indicator';
 export function InvocationPage() {
   const { invId } = useParams();
   if (!invId) {
-    throw new Error('invariant violated: invId should be set');
+    throw new Error('invariant violated: invId must be set');
   }
 
   const invName = 'invocations/' + invId;
@@ -45,10 +45,11 @@ export function InvocationPage() {
   }
 
   const project = data?.realm.split(':', 2)[0] || '';
+  useProject(project);
 
   return (
     <>
-      <PageMeta project={project} title={`inv: ${invId}`} />
+      <PageMeta title={`inv: ${invId}`} />
       <InvocationIdBar invName={invName} />
       <LinearProgress
         value={100}

@@ -15,7 +15,7 @@
 import Box from '@mui/material/Box';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -41,7 +41,7 @@ export function BuilderSearchPage() {
 
   return (
     <Box sx={{ px: 6, py: 2 }}>
-      <PageMeta title="Builder search" selectedPage={UiPage.BuilderSearch} />
+      <PageMeta title="Builder search" />
       <Box sx={{ mx: 20 }}>
         <SearchInput
           placeholder="Search builders"
@@ -58,6 +58,8 @@ export function BuilderSearchPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.BuilderSearch);
+
   return (
     <TrackLeafRoutePageView contentGroup="builder-search">
       <RecoverableErrorBoundary

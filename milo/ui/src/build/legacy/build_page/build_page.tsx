@@ -34,7 +34,7 @@ import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
-import { PageMeta } from '@/common/components/page_meta/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
@@ -72,9 +72,10 @@ export const BuildPage = observer(() => {
 
   if (!project || !bucket || !builder || !buildNumOrId) {
     throw new Error(
-      'invariant violated: project, bucket, builder, buildNumOrId should be set',
+      'invariant violated: project, bucket, builder, buildNumOrId must be set',
     );
   }
+  useProject(project);
   const builderId = { project, bucket, builder };
 
   const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
@@ -145,12 +146,7 @@ export const BuildPage = observer(() => {
     <BuildContextProvider build={build}>
       <InvocationProvider value={store.buildPage.invocation}>
         <BuildLitEnvProvider>
-          <PageMeta
-            project={project}
-            selectedPage={UiPage.Builders}
-            title={documentTitle}
-            favicon={faviconUrl}
-          />
+          <PageMeta title={documentTitle} favicon={faviconUrl} />
           <ChangeConfigDialog
             open={showConfigDialog}
             onClose={() => setShowConfigDialog(false)}
@@ -209,6 +205,8 @@ export const BuildPage = observer(() => {
 });
 
 export function Component() {
+  usePageId(UiPage.Builders);
+
   return (
     <ContentGroup group="build">
       <RecoverableErrorBoundary

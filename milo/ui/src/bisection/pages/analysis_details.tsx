@@ -77,7 +77,7 @@ export function AnalysisDetailsPage() {
   const { bbid } = useParams();
   if (!bbid) {
     // The page should always be mounted to a path where bbid is set.
-    throw new Error('invariant violated: bbid should be set');
+    throw new Error('invariant violated: bbid must be set');
   }
 
   const [currentTab, setCurrentTab] = useState(AnalysisComponentTabs.HEURISTIC);

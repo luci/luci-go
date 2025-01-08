@@ -16,7 +16,7 @@ import Box from '@mui/material/Box';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { DEFAULT_TEST_PROJECT } from '@/core/routes/search_loader/search_redirection_loader';
@@ -43,14 +43,11 @@ export const TestSearch = () => {
   };
 
   const selectedProject = project || DEFAULT_TEST_PROJECT;
+  useProject(selectedProject);
 
   return (
     <Box sx={{ px: 6, py: 2 }}>
-      <PageMeta
-        title="Test search"
-        project={selectedProject}
-        selectedPage={UiPage.TestHistory}
-      />
+      <PageMeta title="Test search" />
       <Box sx={{ mx: 20 }}>
         <SearchInput
           placeholder="Search tests in the specified project"
@@ -67,6 +64,8 @@ export const TestSearch = () => {
 };
 
 export function Component() {
+  usePageId(UiPage.TestHistory);
+
   return (
     <TrackLeafRoutePageView contentGroup="test-search">
       <RecoverableErrorBoundary

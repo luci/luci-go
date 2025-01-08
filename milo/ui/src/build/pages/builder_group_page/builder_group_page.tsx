@@ -19,7 +19,7 @@ import { useParams } from 'react-router-dom';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -30,8 +30,9 @@ import { BuilderGroupIdBar } from './builder_group_id_bar';
 export function BuilderGroupPage() {
   const { project, group } = useParams();
   if (!project || !group) {
-    throw new Error('invariant violated: project, group should be set');
+    throw new Error('invariant violated: project, group must be set');
   }
+  useProject(project);
 
   const client = useMiloInternalClient();
   const { data, isLoading, error, isError, fetchNextPage, hasNextPage } =
@@ -63,11 +64,7 @@ export function BuilderGroupPage() {
 
   return (
     <>
-      <PageMeta
-        project={project}
-        selectedPage={UiPage.Builders}
-        title={`${project} | ${group} | Builders`}
-      />
+      <PageMeta title={`${project} | ${group} | Builders`} />
       <BuilderGroupIdBar project={project} group={group} />
       <LinearProgress
         value={100}
@@ -88,6 +85,8 @@ export function BuilderGroupPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.Builders);
+
   return (
     <TrackLeafRoutePageView contentGroup="builder-group">
       <RecoverableErrorBoundary

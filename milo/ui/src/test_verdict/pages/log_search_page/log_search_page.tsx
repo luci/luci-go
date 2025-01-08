@@ -15,7 +15,7 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
@@ -24,22 +24,21 @@ import { LogSearch } from './log_search';
 export function LogSearchPage() {
   const { project } = useParams();
   if (!project) {
-    throw new Error('project must be set');
+    throw new Error('invariant violated: project must be set');
   }
+  useProject(project);
 
   return (
     <>
-      <PageMeta
-        selectedPage={UiPage.LogSearch}
-        title="log search"
-        project={project}
-      ></PageMeta>
+      <PageMeta title="log search"></PageMeta>
       <LogSearch />
     </>
   );
 }
 
 export function Component() {
+  usePageId(UiPage.LogSearch);
+
   return (
     <ContentGroup group="log-search">
       <RecoverableErrorBoundary

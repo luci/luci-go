@@ -70,7 +70,7 @@ export const MonitoringCtx = createContext<MonitoringContext | null>(null);
 interface Props {
   children: ReactNode;
   treeName: string | undefined;
-  tree: TreeJson;
+  tree?: TreeJson;
 }
 
 export function MonitoringProvider({ children, treeName, tree }: Props) {

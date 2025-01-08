@@ -1,4 +1,4 @@
-// Copyright 2023 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from './page_meta_provider';
-export { PageMeta } from './page_meta';
-export type { PageMetaProps } from './page_meta';
-export * from './hooks';
+import { Dispatch, createContext } from 'react';
+
+import { Action, PageMetaState } from './reducer';
+
+export const PageMetaDispatcherCtx = createContext<
+  Dispatch<Action> | undefined
+>(undefined);
+
+export const PageMetaStateCtx = createContext<PageMetaState | undefined>(
+  undefined,
+);

@@ -27,7 +27,7 @@ import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
 import { GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -56,7 +56,7 @@ export function GroupsPage() {
 
   return (
     <Paper className="groups-container-paper">
-      <PageMeta title="Groups" selectedPage={UiPage.AuthService} />
+      <PageMeta title="Groups" />
       <Alert severity="warning">
         <AlertTitle>
           Integration of LUCI Auth Service here is under construction.
@@ -117,6 +117,8 @@ export function GroupsPage() {
 }
 
 export function Component() {
+  usePageId(UiPage.AuthService);
+
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">
       <RecoverableErrorBoundary

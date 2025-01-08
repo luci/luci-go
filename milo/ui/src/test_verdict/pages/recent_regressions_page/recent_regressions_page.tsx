@@ -15,7 +15,7 @@
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
+import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -26,20 +26,19 @@ export function RecentRegressionsPage() {
   if (!project) {
     throw new Error('project must be set');
   }
+  useProject(project);
 
   return (
     <>
-      <PageMeta
-        selectedPage={UiPage.RecentRegressions}
-        title="recent regressions"
-        project={project}
-      ></PageMeta>
+      <PageMeta title="recent regressions"></PageMeta>
       <RecentRegressions project={project} />
     </>
   );
 }
 
 export function Component() {
+  usePageId(UiPage.RecentRegressions);
+
   return (
     <TrackLeafRoutePageView contentGroup="recent-regressions">
       <RecoverableErrorBoundary

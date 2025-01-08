@@ -51,7 +51,7 @@ export function TestAnalysisDetailsPage() {
   const { id } = useParams();
   if (!id) {
     // The page should always be mounted to a path where id is set.
-    throw new Error('invariant violated: id should be set');
+    throw new Error('invariant violated: id must be set');
   }
   const [currentTab, setCurrentTab] = useState(
     AnalysisComponentTabs.NTH_SECTION,
