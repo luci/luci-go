@@ -22,6 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { forwardRef } from 'react';
+import { Helmet } from 'react-helmet';
 import {
   Link as RouterLink,
   LinkProps as RouterLinkProps,
@@ -29,7 +30,7 @@ import {
 } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Alerts } from '@/monitoring/components/alerts';
@@ -44,7 +45,6 @@ export const MonitoringPage = () => {
 
   return (
     <MonitoringProvider tree={tree} treeName={treeName}>
-      <PageMeta title="Monitoring" />
       {!tree || !treeName ? (
         <>
           <Typography
@@ -93,6 +93,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="monitoring">
+      <Helmet>
+        <title>Monitoring</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

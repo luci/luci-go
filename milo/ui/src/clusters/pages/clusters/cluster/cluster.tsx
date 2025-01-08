@@ -14,6 +14,7 @@
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
@@ -22,7 +23,7 @@ import ClusterTopPanel from '@/clusters/components/cluster/cluster_top_panel/clu
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -39,7 +40,11 @@ export const ClusterPage = () => {
       clusterAlgorithm={algorithm}
       clusterId={id}
     >
-      <PageMeta title={`Cluster | ${algorithm} - ${id}`} />
+      <Helmet>
+        <title>
+          Cluster | {algorithm} - {id}
+        </title>
+      </Helmet>
       <Container className="mt-1" maxWidth={false}>
         <Grid sx={{ mt: 1 }} container spacing={2}>
           <Grid size={12}>

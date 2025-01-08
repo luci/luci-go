@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { ParsedTestVariantBranchName } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -51,15 +52,12 @@ export function RegressionDetailsPage() {
   const predicate = ChangepointPredicate.fromJSON(JSON.parse(cp));
 
   return (
-    <>
-      <PageMeta title="regression details"></PageMeta>
-      <RegressionDetails
-        testVariantBranch={testVariantBranch}
-        nominalStartPosition={nominalStartPosition}
-        startHour={startHour}
-        predicate={predicate}
-      />
-    </>
+    <RegressionDetails
+      testVariantBranch={testVariantBranch}
+      nominalStartPosition={nominalStartPosition}
+      startHour={startHour}
+      predicate={predicate}
+    />
   );
 }
 
@@ -71,6 +69,9 @@ export function Component() {
       contentGroup="regression-details"
       searchParamKeys={['tvb', 'nsp', 'sh', 'cp']}
     >
+      <Helmet>
+        <title>Regression details</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

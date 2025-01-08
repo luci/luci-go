@@ -17,10 +17,11 @@ import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
@@ -138,7 +139,6 @@ export const TestHistoryPage = observer(() => {
 
   return (
     <PageContainer>
-      <PageMeta title="Test history" />
       <div
         css={{
           width: '100%',
@@ -183,6 +183,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="test-history">
+      <Helmet>
+        <title>Test history</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

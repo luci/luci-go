@@ -14,6 +14,7 @@
 
 import { Box, styled } from '@mui/material';
 import { ReactNode } from 'react';
+import { Helmet } from 'react-helmet';
 import { Outlet, UIMatch, useMatches } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
@@ -63,6 +64,7 @@ export const BaseLayout = () => {
 
   return (
     <ScrollingBase>
+      <Helmet titleTemplate="%s | LUCI" />
       <Box sx={{ gridArea: 'banner', zIndex: (theme) => theme.zIndex.appBar }}>
         <VersionBanner />
       </Box>

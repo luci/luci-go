@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
@@ -28,12 +29,7 @@ export function LogSearchPage() {
   }
   useProject(project);
 
-  return (
-    <>
-      <PageMeta title="log search"></PageMeta>
-      <LogSearch />
-    </>
-  );
+  return <LogSearch />;
 }
 
 export function Component() {
@@ -41,6 +37,9 @@ export function Component() {
 
   return (
     <ContentGroup group="log-search">
+      <Helmet>
+        <title>Log search</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

@@ -14,10 +14,11 @@
 
 import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, useProject } from '@/common/components/page_meta';
+import { useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -49,7 +50,9 @@ export function InvocationPage() {
 
   return (
     <>
-      <PageMeta title={`inv: ${invId}`} />
+      <Helmet>
+        <title>inv: {invId}</title>
+      </Helmet>
       <InvocationIdBar invName={invName} />
       <LinearProgress
         value={100}

@@ -17,10 +17,11 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useQuery } from '@tanstack/react-query';
 import { upperFirst } from 'lodash-es';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -91,11 +92,12 @@ export function TestVerdictPage() {
       }}
       flexDirection="column"
     >
-      <PageMeta
-        title={`${upperFirst(VERDICT_STATUS_DISPLAY_MAP[verdict.status])} | ${
-          verdict.testId
-        }`}
-      />
+      <Helmet>
+        <title>
+          {upperFirst(VERDICT_STATUS_DISPLAY_MAP[verdict.status])} |{' '}
+          {verdict.testId}
+        </title>
+      </Helmet>
       <TestVerdictProvider
         invocationID={invID}
         project={project}

@@ -16,6 +16,7 @@ import { LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -34,7 +35,7 @@ import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
@@ -146,7 +147,10 @@ export const BuildPage = observer(() => {
     <BuildContextProvider build={build}>
       <InvocationProvider value={store.buildPage.invocation}>
         <BuildLitEnvProvider>
-          <PageMeta title={documentTitle} favicon={faviconUrl} />
+          <Helmet>
+            <title>{documentTitle}</title>
+            <link rel="icon" type="image/x-icon" href={faviconUrl} />
+          </Helmet>
           <ChangeConfigDialog
             open={showConfigDialog}
             onClose={() => setShowConfigDialog(false)}

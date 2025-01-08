@@ -14,10 +14,11 @@
 
 import { Alert, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import {
   ParamsPager,
   getPageSize,
@@ -98,7 +99,6 @@ export const TreeStatusListPage = () => {
 
   return (
     <div>
-      <PageMeta title="Tree Status" />
       <Alert severity="info">
         <strong>Tree status for the tree {treeName}</strong>
         <p>
@@ -149,6 +149,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="tree-status-list">
+      <Helmet>
+        <title>Tree status</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

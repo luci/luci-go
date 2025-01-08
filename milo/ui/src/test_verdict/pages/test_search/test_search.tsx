@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { DEFAULT_TEST_PROJECT } from '@/core/routes/search_loader/search_redirection_loader';
@@ -47,7 +48,6 @@ export const TestSearch = () => {
 
   return (
     <Box sx={{ px: 6, py: 2 }}>
-      <PageMeta title="Test search" />
       <Box sx={{ mx: 20 }}>
         <SearchInput
           placeholder="Search tests in the specified project"
@@ -68,6 +68,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="test-search">
+      <Helmet>
+        <title>Test search</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

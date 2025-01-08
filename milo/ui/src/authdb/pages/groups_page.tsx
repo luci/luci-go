@@ -20,6 +20,7 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import { useEffect, createRef } from 'react';
+import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { GroupsForm } from '@/authdb/components/groups_form';
@@ -27,7 +28,7 @@ import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
 import { GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId } from '@/common/components/page_meta';
+import { usePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -56,7 +57,6 @@ export function GroupsPage() {
 
   return (
     <Paper className="groups-container-paper">
-      <PageMeta title="Groups" />
       <Alert severity="warning">
         <AlertTitle>
           Integration of LUCI Auth Service here is under construction.
@@ -121,6 +121,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">
+      <Helmet>
+        <title>Groups</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

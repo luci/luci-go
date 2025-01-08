@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Helmet } from 'react-helmet';
 import { Outlet, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
@@ -26,12 +27,7 @@ export const BisectionLayout = () => {
   }
   useProject(project);
 
-  return (
-    <>
-      <PageMeta title="Bisection" />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 };
 
 export function Component() {
@@ -39,6 +35,9 @@ export function Component() {
 
   return (
     <ContentGroup group="bisection">
+      <Helmet>
+        <title>Bisection</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

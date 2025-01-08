@@ -14,6 +14,7 @@
 
 import { Box, CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet';
 import { useLocation, useParams } from 'react-router-dom';
 
 import { useTestVariantBranchesClient } from '@/analysis/hooks/prpc_clients';
@@ -22,7 +23,7 @@ import {
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
@@ -120,17 +121,17 @@ export function Component() {
   useProject(project);
 
   return (
-    <>
-      <PageMeta title="Blamelist" />
-      <TrackLeafRoutePageView contentGroup="blamelist">
-        <RecoverableErrorBoundary
-          // See the documentation in `<LoginPage />` to learn why we handle
-          // error this way
-          key="blamelist"
-        >
-          <BlamelistPage />
-        </RecoverableErrorBoundary>
-      </TrackLeafRoutePageView>
-    </>
+    <TrackLeafRoutePageView contentGroup="blamelist">
+      <Helmet>
+        <title>Blamelist</title>
+      </Helmet>
+      <RecoverableErrorBoundary
+        // See the documentation in `<LoginPage />` to learn why we handle
+        // error this way
+        key="blamelist"
+      >
+        <BlamelistPage />
+      </RecoverableErrorBoundary>
+    </TrackLeafRoutePageView>
   );
 }

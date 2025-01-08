@@ -15,12 +15,13 @@
 import { LinearProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
@@ -63,7 +64,9 @@ export function BuilderListPage() {
 
   return (
     <>
-      <PageMeta title={`${project} | Builders`} />
+      <Helmet>
+        <title>{project} | Builders</title>
+      </Helmet>
       <BuilderListIdBar project={project} />
       <LinearProgress
         value={100}

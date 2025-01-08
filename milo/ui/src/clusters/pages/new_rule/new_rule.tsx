@@ -22,6 +22,7 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, useContext, useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import BugPicker from '@/clusters/components/bug_picker/bug_picker';
@@ -36,7 +37,7 @@ import {
 import { useRulesService } from '@/clusters/services/services';
 import { linkToRule } from '@/clusters/tools/urlHandling/links';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -149,7 +150,6 @@ export const NewRulePage = () => {
           mx: 2,
         }}
       >
-        <PageMeta title="New Rule" />
         <PanelHeading>New Rule</PanelHeading>
         <Grid container direction="column" spacing={1}>
           <Grid size="grow">
@@ -199,6 +199,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="new-rule">
+      <Helmet>
+        <title>New Rule</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

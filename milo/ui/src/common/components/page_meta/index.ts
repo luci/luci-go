@@ -13,6 +13,4 @@
 // limitations under the License.
 
 export * from './page_meta_provider';
-export { PageMeta } from './page_meta';
-export type { PageMetaProps } from './page_meta';
 export * from './hooks';

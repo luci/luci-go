@@ -15,10 +15,10 @@
 import { Divider } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { MainMetrics } from '@/fleet/components/main_metrics';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
@@ -48,21 +48,18 @@ export const DeviceListPage = () => {
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
   return (
-    <>
-      <PageMeta title="Streamlined Fleet UI" favicon={bassFavicon} />
-      <div>
-        <MainMetrics />
-        <Divider flexItem color={colors.grey[300]} />
-        {dimensionsQuery.data && (
-          <MultiSelectFilter
-            filterOptions={toFilterOptions(dimensionsQuery.data)}
-            selectedOptions={selectedOptions}
-            setSelectedOptions={setSelectedOptions}
-          />
-        )}
-        <DeviceTable filter={selectedOptions} />
-      </div>
-    </>
+    <div>
+      <MainMetrics />
+      <Divider flexItem color={colors.grey[300]} />
+      {dimensionsQuery.data && (
+        <MultiSelectFilter
+          filterOptions={toFilterOptions(dimensionsQuery.data)}
+          selectedOptions={selectedOptions}
+          setSelectedOptions={setSelectedOptions}
+        />
+      )}
+      <DeviceTable filter={selectedOptions} />
+    </div>
   );
 };
 
@@ -95,6 +92,10 @@ const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
+      <Helmet>
+        <title>Streamlined Fleet UI</title>
+        <link rel="icon" type="image/x-icon" href={bassFavicon} />
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.

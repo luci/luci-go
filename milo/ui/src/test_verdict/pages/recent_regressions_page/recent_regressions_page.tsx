@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -28,12 +29,7 @@ export function RecentRegressionsPage() {
   }
   useProject(project);
 
-  return (
-    <>
-      <PageMeta title="recent regressions"></PageMeta>
-      <RecentRegressions project={project} />
-    </>
-  );
+  return <RecentRegressions project={project} />;
 }
 
 export function Component() {
@@ -41,6 +37,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="recent-regressions">
+      <Helmet>
+        <title>Recent regressions</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

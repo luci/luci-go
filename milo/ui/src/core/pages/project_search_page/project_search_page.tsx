@@ -14,11 +14,12 @@
 
 import { Alert, Link, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
+import { Helmet } from 'react-helmet';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId } from '@/common/components/page_meta';
+import { usePageId } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { getLoginUrl } from '@/common/tools/url_utils';
@@ -46,7 +47,6 @@ export function ProjectSearchPage() {
 
   return (
     <Box sx={{ px: 6, py: 5, maxWidth: '950px', margin: '0 auto' }}>
-      <PageMeta title="Projects" />
       <Box sx={{ mx: 20 }}>
         <SearchInput
           placeholder="Filter projects"
@@ -104,6 +104,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="project-search">
+      <Helmet>
+        <title>Projects</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

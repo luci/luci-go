@@ -14,9 +14,9 @@
 
 import { Typography, styled } from '@mui/material';
 import { useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
 import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { useMarkReleaseNotesRead } from '@/core/components/release_notes';
 import {
@@ -49,37 +49,37 @@ export function ReleaseNotesPage() {
   );
 
   return (
-    <>
-      <PageMeta title="What's new" />
-      <div
-        css={{
-          padding: '30px',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          maxWidth: '1000px',
-        }}
-      >
-        <Typography variant="h4">{"What's new?"}</Typography>
-        <ReleaseNotesContainer html={latestHtml} />
-        {/* Temporarily move the "Past releases" heading to RELEASE_NOTES.md
-         ** itself so we can create dummy release tag to divide summary and
-         ** details.
-         **
-         ** TODO: move the "Past releases" heading back once we have a formal
-         ** mechanism for annotating highlights.
-         **/}
-        {/* <Typography variant="h4" sx={{ mt: 15 }}>
+    <div
+      css={{
+        padding: '30px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        maxWidth: '1000px',
+      }}
+    >
+      <Typography variant="h4">{"What's new?"}</Typography>
+      <ReleaseNotesContainer html={latestHtml} />
+      {/* Temporarily move the "Past releases" heading to RELEASE_NOTES.md
+       ** itself so we can create dummy release tag to divide summary and
+       ** details.
+       **
+       ** TODO: move the "Past releases" heading back once we have a formal
+       ** mechanism for annotating highlights.
+       **/}
+      {/* <Typography variant="h4" sx={{ mt: 15 }}>
           {'Past releases'}
         </Typography> */}
-        <ReleaseNotesContainer html={pastHtml} />
-      </div>
-    </>
+      <ReleaseNotesContainer html={pastHtml} />
+    </div>
   );
 }
 
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="release-notes">
+      <Helmet>
+        <title>{"What's new"}</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

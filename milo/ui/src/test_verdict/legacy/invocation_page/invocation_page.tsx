@@ -15,10 +15,11 @@
 import { LinearProgress } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, useProject } from '@/common/components/page_meta';
+import { useProject } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { INVOCATION_STATE_DISPLAY_MAP } from '@/common/constants/legacy';
 import { useStore } from '@/common/store';
@@ -54,7 +55,9 @@ export const InvocationPage = observer(() => {
 
   return (
     <InvLitEnvProvider>
-      <PageMeta title={`inv: ${invId}`} />
+      <Helmet>
+        <title>inv: {invId}</title>
+      </Helmet>
       <div
         css={{
           backgroundColor: 'var(--block-background-color)',

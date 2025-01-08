@@ -16,11 +16,12 @@ import { GrpcError } from '@chopsui/prpc-client';
 import styled from '@emotion/styled';
 import { Alert, AlertTitle, Grid, LinearProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { parseLegacyBucketId } from '@/common/tools/build_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -92,7 +93,9 @@ export function BuilderPage() {
 
   return (
     <>
-      <PageMeta title={`${builderId.builder} | Builder`} />
+      <Helmet>
+        <title>{builderId.builder} | Builders</title>
+      </Helmet>
       <BuilderIdBar
         builderId={builderId}
         healthStatus={data?.metadata?.health}

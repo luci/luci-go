@@ -14,6 +14,7 @@
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import ClustersTable from '@/clusters/components/clusters_table/clusters_table';
@@ -22,7 +23,7 @@ import PageHeading from '@/clusters/components/headings/page_heading/page_headin
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -41,7 +42,6 @@ export const ClustersPage = () => {
 
   return (
     <Container maxWidth={false}>
-      <PageMeta title="Clusters" />
       <Grid container>
         <Grid size={8}>
           <PageHeading>
@@ -60,6 +60,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="clusters">
+      <Helmet>
+        <title>Clusters</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.

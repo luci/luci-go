@@ -11,11 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta } from '@/common/components/page_meta';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
@@ -42,7 +43,6 @@ const SandboxPage = () => {
 
   return (
     <>
-      <PageMeta title="Fleet Console" favicon={bassFavicon} />
       Welcome. This is a sandbox page with experiments and tools for developers
       of the Fleet Console to use for testing the functionality of the Fleet
       Console UI.
@@ -57,6 +57,10 @@ const SandboxPage = () => {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-sandbox">
+      <Helmet>
+        <title>Fleet Console</title>
+        <link rel="icon" type="image/x-icon" href={bassFavicon} />
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.

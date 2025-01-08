@@ -15,6 +15,7 @@
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid2';
 import LinearProgress from '@mui/material/LinearProgress';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import ClusterAnalysisSection from '@/clusters/components/cluster/cluster_analysis_section/cluster_analysis_section';
@@ -26,7 +27,7 @@ import RuleTopPanel from '@/clusters/components/rule/rule_top_panel/rule_top_pan
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId } from '@/common/components/page_meta';
+import { usePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -45,7 +46,9 @@ export const RulePage = () => {
 
   return (
     <Container className="mt-1" maxWidth={false}>
-      <PageMeta title={`Rule | ${id}`} />
+      <Helmet>
+        <title>Rule | {id}</title>
+      </Helmet>
       <Grid sx={{ mt: 1 }} container spacing={2}>
         {isLoading && <LinearProgress />}
         {error && <LoadErrorAlert entityName="rule" error={error} />}

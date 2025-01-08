@@ -15,11 +15,12 @@
 import { LinearProgress } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId, useProject } from '@/common/components/page_meta';
+import { usePageId, useProject } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -64,7 +65,11 @@ export function BuilderGroupPage() {
 
   return (
     <>
-      <PageMeta title={`${project} | ${group} | Builders`} />
+      <Helmet>
+        <title>
+          {project} | {group} | Builders
+        </title>
+      </Helmet>
       <BuilderGroupIdBar project={project} group={group} />
       <LinearProgress
         value={100}

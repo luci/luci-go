@@ -13,9 +13,10 @@
 // limitations under the License.
 
 import Box from '@mui/material/Box';
+import { Helmet } from 'react-helmet';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { PageMeta, usePageId } from '@/common/components/page_meta';
+import { usePageId } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -41,7 +42,6 @@ export function BuilderSearchPage() {
 
   return (
     <Box sx={{ px: 6, py: 2 }}>
-      <PageMeta title="Builder search" />
       <Box sx={{ mx: 20 }}>
         <SearchInput
           placeholder="Search builders"
@@ -62,6 +62,9 @@ export function Component() {
 
   return (
     <TrackLeafRoutePageView contentGroup="builder-search">
+      <Helmet>
+        <title>Builder search</title>
+      </Helmet>
       <RecoverableErrorBoundary
         // See the documentation in `<LoginPage />` to learn why we handle error
         // this way.
