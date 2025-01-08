@@ -41,6 +41,11 @@ function absUrlPath(base: string, path: string) {
  * updating a single file won't trigger cascading hash updates and therefore
  * cascading cache invalidation.
  *
+ * TODO: As of 2025-01-09, there's at least one case where updating a small
+ * number of files will trigger mass cache invalidation. Certain changes can
+ * change symbol assignment after minification in most (all?) files causing a
+ * wide spread cache invalidation. The exact trigger is unknown.
+ *
  * Use `HASH_TAG` instead of [hash] in the entry and chunk filenames to
  * ensure that the hash is not resolved by the bundler at build time (and
  * therefore prevent cascading hash updates).
