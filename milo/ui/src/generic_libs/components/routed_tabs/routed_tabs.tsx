@@ -38,9 +38,9 @@ export function RoutedTabs(props: Omit<TabsProps, 'value'>) {
   return (
     <ActiveTabUpdaterContextProvider value={dispatch}>
       <ActiveTabContextProvider
-        value={{ activeTabId: state.activeTab?.id ?? null }}
+        value={{ activeTabId: state.activeTab?.tabId ?? null }}
       >
-        <Tabs {...props} value={state.activeTab?.id ?? false} />
+        <Tabs {...props} value={state.activeTab?.tabId ?? false} />
         <Outlet />
       </ActiveTabContextProvider>
     </ActiveTabUpdaterContextProvider>

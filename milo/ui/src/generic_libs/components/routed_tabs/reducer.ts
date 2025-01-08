@@ -14,8 +14,8 @@
 
 export interface RoutedTabsState {
   readonly activeTab: {
-    readonly id: string;
-    readonly hookRef: unknown;
+    readonly tabId: string;
+    readonly hookId: unknown;
   } | null;
 }
 
@@ -25,14 +25,14 @@ export type Action = {
    * The ID of the tab. Used to inform `<RoutedTabs />` which tab should be
    * highlighted.
    */
-  readonly id: string;
+  readonly tabId: string;
   /**
-   * A reference that uniquely identifies a `useTabId` call in a component.
+   * An object that uniquely identifies a `useTabId` call in a component.
    *
    * For a given `<RoutedTabs />`, only one `useTabId` call can exist in its
    * descendants at any time.
    */
-  readonly hookRef: unknown;
+  readonly hookId: unknown;
 };
 
 export function reducer(
@@ -43,22 +43,22 @@ export function reducer(
     case 'activateTab': {
       if (
         state.activeTab !== null &&
-        state.activeTab.hookRef !== action.hookRef
+        state.activeTab.hookId !== action.hookId
       ) {
         throw new Error(
           `cannot activate a tab when there's already an active tab; ` +
-            `active: ${state.activeTab.id}}; ` +
-            `activating: ${action.id}`,
+            `active: ${state.activeTab.tabId}}; ` +
+            `activating: ${action.tabId}`,
         );
       }
-      return { activeTab: { id: action.id, hookRef: action.hookRef } };
+      return { activeTab: { tabId: action.tabId, hookId: action.hookId } };
     }
     case 'deactivateTab': {
-      if (state.activeTab?.hookRef !== action.hookRef) {
+      if (state.activeTab?.hookId !== action.hookId) {
         throw new Error(
           `cannot deactivate an inactive tab; ` +
-            `active: ${state.activeTab?.id ?? null}}; ` +
-            `deactivating: ${action.id}`,
+            `active: ${state.activeTab?.tabId ?? 'NO_ACTIVE_TAB'}; ` +
+            `deactivating: ${action.tabId}`,
         );
       }
       return { activeTab: null };

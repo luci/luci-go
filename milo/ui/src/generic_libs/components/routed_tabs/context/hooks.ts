@@ -35,26 +35,30 @@ export function useActiveTabId() {
  *
  * For each `<RoutedTabs />`, at most one tab can be activated at a time.
  */
-export function useTabId(id: string) {
-  const hookRef = useRef();
+export function useTabId(tabId: string) {
+  const hookId = useRef();
   const dispatch = useContext(ActiveTabUpdaterContext);
   if (dispatch === undefined) {
     throw new Error('useTabId can only be used in a RoutedTabs');
   }
 
   useEffect(() => {
-    dispatch({ type: 'activateTab', id, hookRef });
-  }, [dispatch, id]);
+    dispatch({ type: 'activateTab', tabId, hookId });
+  }, [dispatch, tabId]);
 
   // Wrap id in a ref so we don't need to declare it as a dependency.
   // We only need to deactivate tab when `dispatch` is changed (i.e. the
   // parent context is being switched), or when the component is being
   // unmounted.
-  const latestIdRef = useRef(id);
-  latestIdRef.current = id;
+  const hookIdRef = useRef(tabId);
+  hookIdRef.current = tabId;
   useEffect(
     () => () =>
-      dispatch({ type: 'deactivateTab', id: latestIdRef.current, hookRef }),
+      dispatch({
+        type: 'deactivateTab',
+        tabId: hookIdRef.current,
+        hookId: hookId,
+      }),
     [dispatch],
   );
 }
