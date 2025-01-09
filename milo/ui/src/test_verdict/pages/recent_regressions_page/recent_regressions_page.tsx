@@ -16,7 +16,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -27,13 +30,13 @@ export function RecentRegressionsPage() {
   if (!project) {
     throw new Error('project must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return <RecentRegressions project={project} />;
 }
 
 export function Component() {
-  usePageId(UiPage.RecentRegressions);
+  useDeclarePageId(UiPage.RecentRegressions);
 
   return (
     <TrackLeafRoutePageView contentGroup="recent-regressions">

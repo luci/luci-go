@@ -23,7 +23,10 @@ import ClusterTopPanel from '@/clusters/components/cluster/cluster_top_panel/clu
 import FeedbackSnackbar from '@/clusters/components/error_snackbar/feedback_snackbar';
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -32,7 +35,7 @@ export const ClusterPage = () => {
   if (!project || !algorithm || !id) {
     throw new Error('invariant violated: project, algorithm, id must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return (
     <ClusterContextProvider
@@ -60,7 +63,7 @@ export const ClusterPage = () => {
 };
 
 export function Component() {
-  usePageId(UiPage.Clusters);
+  useDeclarePageId(UiPage.Clusters);
 
   return (
     <TrackLeafRoutePageView contentGroup="cluster">

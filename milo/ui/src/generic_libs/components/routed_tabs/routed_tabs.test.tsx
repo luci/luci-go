@@ -16,17 +16,17 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { Link, RouterProvider, createMemoryRouter } from 'react-router-dom';
 
-import { useTabId } from './context';
+import { useDeclareTabId } from './context';
 import { RoutedTab } from './routed_tab';
 import { RoutedTabs } from './routed_tabs';
 
 function TabA() {
-  useTabId('tab-a');
+  useDeclareTabId('tab-a');
   return <>tab A content</>;
 }
 
 function TabB() {
-  useTabId('tab-b');
+  useDeclareTabId('tab-b');
   return <>tab B content</>;
 }
 

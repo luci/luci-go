@@ -16,7 +16,7 @@ import { Box, styled } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 
 import { AlertsSection } from '../infra_tab/alerts_section';
 import { FailedTestSection } from '../infra_tab/failed_tests_section';
@@ -45,7 +45,7 @@ export function OverviewTab() {
 }
 
 export function Component() {
-  useTabId('overview');
+  useDeclareTabId('overview');
 
   return (
     <TrackLeafRoutePageView contentGroup="overview">

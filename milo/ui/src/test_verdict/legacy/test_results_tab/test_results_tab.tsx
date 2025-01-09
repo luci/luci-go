@@ -33,7 +33,7 @@ import { commonStyles } from '@/common/styles/stylesheets';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { MobxExtLitElement } from '@/generic_libs/components/lit_mobx_ext';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import {
   errorHandler,
   forwardWithoutMsg,
@@ -256,7 +256,7 @@ export function TestResultsTab() {
 }
 
 export function Component() {
-  useTabId('test-results');
+  useDeclareTabId('test-results');
 
   return (
     <TrackLeafRoutePageView contentGroup="test-results">

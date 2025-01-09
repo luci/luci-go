@@ -16,7 +16,7 @@ import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useSearchFilter } from './context';
 import { TestLogDialog } from './log_list_dialog';
@@ -42,7 +42,7 @@ export function TestLogsTab() {
 }
 
 export function Component() {
-  useTabId('test-logs');
+  useDeclareTabId('test-logs');
 
   return (
     <TrackLeafRoutePageView contentGroup="test-logs">

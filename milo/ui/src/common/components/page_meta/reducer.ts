@@ -32,9 +32,10 @@ export interface PageAction {
    */
   readonly pageId: UiPage;
   /**
-   * An object that uniquely identifies a `usePageId` call in a component.
+   * An object that uniquely identifies a `useDeclarePageId` call in a
+   * component.
    *
-   * Only one `usePageId` call can exist at any time.
+   * Only one `useDeclarePageId` call can exist at any time.
    */
   readonly hookId: unknown;
 }

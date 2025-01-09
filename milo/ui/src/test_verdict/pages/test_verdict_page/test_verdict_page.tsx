@@ -21,7 +21,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { VERDICT_STATUS_DISPLAY_MAP } from '@/common/constants/test';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -42,7 +45,7 @@ export function TestVerdictPage() {
       'Invariant violated: project, invID, testID, and vHash should be set',
     );
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   const client = useResultDbClient();
   const {
@@ -114,7 +117,7 @@ export function TestVerdictPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.TestVerdict);
+  useDeclarePageId(UiPage.TestVerdict);
 
   return (
     <TrackLeafRoutePageView contentGroup="test-verdict">

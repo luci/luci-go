@@ -24,7 +24,7 @@ import {
   PropertyViewerConfigInstance,
 } from '@/common/store/user_config/build_config';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { invocation_StateToJSON } from '@/proto/go.chromium.org/luci/resultdb/proto/v1/invocation.pb';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
 
@@ -146,7 +146,7 @@ export function DetailsTab() {
 }
 
 export function Component() {
-  useTabId('invocation-details');
+  useDeclareTabId('invocation-details');
 
   return (
     <TrackLeafRoutePageView contentGroup="invocation-details">

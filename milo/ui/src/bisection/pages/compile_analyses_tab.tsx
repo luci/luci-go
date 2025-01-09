@@ -26,7 +26,7 @@ import {
 } from '@/bisection/components/analyses_tables';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 
 export const CompileAnalysesTab = () => {
   const [bbid, setBbid] = useState<string>('');
@@ -106,7 +106,7 @@ export const CompileAnalysesTab = () => {
 };
 
 export function Component() {
-  useTabId('compile-analysis');
+  useDeclareTabId('compile-analysis');
 
   return (
     <TrackLeafRoutePageView contentGroup="compile-analysis">

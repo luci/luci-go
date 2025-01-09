@@ -30,7 +30,10 @@ import {
 } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { Alerts } from '@/monitoring/components/alerts';
@@ -41,7 +44,7 @@ import { MonitoringProvider } from './context';
 export const MonitoringPage = () => {
   const { tree: treeName } = useParams();
   const tree = configuredTrees.filter((t) => t.name === treeName).at(0);
-  useProject(tree?.project);
+  useEstablishProjectCtx(tree?.project);
 
   return (
     <MonitoringProvider tree={tree} treeName={treeName}>
@@ -89,7 +92,7 @@ const Link = forwardRef<HTMLAnchorElement, RouterLinkProps>(
 );
 
 export function Component() {
-  usePageId(UiPage.Monitoring);
+  useDeclarePageId(UiPage.Monitoring);
 
   return (
     <TrackLeafRoutePageView contentGroup="monitoring">

@@ -29,10 +29,7 @@ import { Fragment, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuthState } from '@/common/components/auth_state_provider';
-import {
-  useActivePageId,
-  useLastSelectedProject,
-} from '@/common/components/page_meta';
+import { useActivePageId, useProjectCtx } from '@/common/components/page_meta';
 import { UiPage, CommonColors } from '@/common/constants/view';
 import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
@@ -62,7 +59,7 @@ interface Props {
 }
 
 export const Sidebar = ({ open }: Props) => {
-  const project = useLastSelectedProject();
+  const project = useProjectCtx();
   const activePage = useActivePageId();
   const { email } = useAuthState();
 

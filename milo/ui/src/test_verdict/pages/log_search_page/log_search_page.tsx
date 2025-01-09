@@ -16,7 +16,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
@@ -27,13 +30,13 @@ export function LogSearchPage() {
   if (!project) {
     throw new Error('invariant violated: project must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return <LogSearch />;
 }
 
 export function Component() {
-  usePageId(UiPage.LogSearch);
+  useDeclarePageId(UiPage.LogSearch);
 
   return (
     <ContentGroup group="log-search">

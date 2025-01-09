@@ -23,7 +23,10 @@ import {
   ParsedTestVariantBranchName,
 } from '@/analysis/types';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { BatchGetTestVariantBranchRequest } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_variant_branches.pb';
@@ -112,13 +115,13 @@ export function BlamelistPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.Blamelist);
+  useDeclarePageId(UiPage.Blamelist);
 
   const { project } = useParams();
   if (!project) {
     throw new Error('invariant violated: project must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return (
     <TrackLeafRoutePageView contentGroup="blamelist">

@@ -35,7 +35,10 @@ import tealFavicon from '@/common/assets/favicons/teal-32.png';
 import yellowFavicon from '@/common/assets/favicons/yellow-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePageSpecificConfig } from '@/common/components/page_config_state_provider';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { BUILD_STATUS_COLOR_THEME_MAP } from '@/common/constants/build';
 import { UiPage } from '@/common/constants/view';
@@ -76,7 +79,7 @@ export const BuildPage = observer(() => {
       'invariant violated: project, bucket, builder, buildNumOrId must be set',
     );
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
   const builderId = { project, bucket, builder };
 
   const [showConfigDialog, setShowConfigDialog] = usePageSpecificConfig();
@@ -209,7 +212,7 @@ export const BuildPage = observer(() => {
 });
 
 export function Component() {
-  usePageId(UiPage.Builders);
+  useDeclarePageId(UiPage.Builders);
 
   return (
     <ContentGroup group="build">

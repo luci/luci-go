@@ -20,7 +20,10 @@ import { useParams } from 'react-router-dom';
 
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -33,7 +36,7 @@ export function BuilderGroupPage() {
   if (!project || !group) {
     throw new Error('invariant violated: project, group must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   const client = useMiloInternalClient();
   const { data, isLoading, error, isError, fetchNextPage, hasNextPage } =
@@ -90,7 +93,7 @@ export function BuilderGroupPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.Builders);
+  useDeclarePageId(UiPage.Builders);
 
   return (
     <TrackLeafRoutePageView contentGroup="builder-group">

@@ -17,7 +17,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { DEFAULT_TEST_PROJECT } from '@/core/routes/search_loader/search_redirection_loader';
@@ -44,7 +47,7 @@ export const TestSearch = () => {
   };
 
   const selectedProject = project || DEFAULT_TEST_PROJECT;
-  useProject(selectedProject);
+  useEstablishProjectCtx(selectedProject);
 
   return (
     <Box sx={{ px: 6, py: 2 }}>
@@ -64,7 +67,7 @@ export const TestSearch = () => {
 };
 
 export function Component() {
-  usePageId(UiPage.TestHistory);
+  useDeclarePageId(UiPage.TestHistory);
 
   return (
     <TrackLeafRoutePageView contentGroup="test-search">

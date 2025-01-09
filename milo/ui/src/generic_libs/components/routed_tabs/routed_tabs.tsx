@@ -29,7 +29,7 @@ import { reducer } from './reducer';
  *  * `value` on `<RoutedTabs />` is managed automatically, and
  *  * its children must be `<RoutedTab />` instead of `<Tab />` from MUI, and
  *  * the tab content components must be mounted as child routes and should
- *    define its associated tab ID with `useTabId('tab-id')`, and
+ *    define its associated tab ID with `useDeclareTabId('tab-id')`, and
  *  * it contains an `<Outlet />`.
  */
 export function RoutedTabs(props: Omit<TabsProps, 'value'>) {

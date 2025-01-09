@@ -21,7 +21,10 @@ import { useParams } from 'react-router-dom';
 import { FilterableBuilderTable } from '@/build/components/filterable_builder_table';
 import { useBuildersClient } from '@/build/hooks/prpc_clients';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { ListBuildersRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builder_service.pb';
@@ -33,7 +36,7 @@ export function BuilderListPage() {
   if (!project) {
     throw new Error('invariant violated: project must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   const client = useBuildersClient();
   const { data, isLoading, error, isError, fetchNextPage, hasNextPage } =
@@ -87,7 +90,7 @@ export function BuilderListPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.Builders);
+  useDeclarePageId(UiPage.Builders);
 
   return (
     <TrackLeafRoutePageView contentGroup="builder-list">

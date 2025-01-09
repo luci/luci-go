@@ -16,7 +16,7 @@ import { Box, styled } from '@mui/material';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 
 import { useBuild } from '../context';
 
@@ -84,7 +84,7 @@ export function InfraTab() {
 }
 
 export function Component() {
-  useTabId('infra');
+  useDeclareTabId('infra');
 
   return (
     <TrackLeafRoutePageView contentGroup="infra">

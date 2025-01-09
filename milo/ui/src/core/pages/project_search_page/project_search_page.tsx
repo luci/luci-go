@@ -19,7 +19,7 @@ import { Helmet } from 'react-helmet';
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId } from '@/common/components/page_meta';
+import { useDeclarePageId } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { getLoginUrl } from '@/common/tools/url_utils';
@@ -100,7 +100,7 @@ export function ProjectSearchPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.ProjectSearch);
+  useDeclarePageId(UiPage.ProjectSearch);
 
   return (
     <TrackLeafRoutePageView contentGroup="project-search">

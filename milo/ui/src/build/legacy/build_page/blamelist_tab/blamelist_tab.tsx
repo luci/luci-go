@@ -24,7 +24,7 @@ import { useId, useState } from 'react';
 import { getBlamelistPins } from '@/build/tools/build_utils';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { getGitilesRepoURL } from '@/gitiles/tools/utils';
 
 import { useBuild } from '../context';
@@ -84,7 +84,7 @@ export function BlamelistTab() {
 }
 
 export function Component() {
-  useTabId('blamelist');
+  useDeclareTabId('blamelist');
 
   return (
     <TrackLeafRoutePageView contentGroup="blamelist">

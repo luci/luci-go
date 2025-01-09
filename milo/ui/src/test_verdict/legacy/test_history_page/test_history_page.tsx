@@ -21,7 +21,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { useStore } from '@/common/store';
 import { GraphType } from '@/common/store/test_history_page';
@@ -135,7 +138,7 @@ export const TestHistoryPage = observer(() => {
   const Graph = GRAPH_TYPE_COMPONENT_MAP[pageState.graphType];
 
   const project = extractProject(projectOrRealm);
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return (
     <PageContainer>
@@ -179,7 +182,7 @@ export const TestHistoryPage = observer(() => {
 });
 
 export function Component() {
-  usePageId(UiPage.TestHistory);
+  useDeclarePageId(UiPage.TestHistory);
 
   return (
     <TrackLeafRoutePageView contentGroup="test-history">

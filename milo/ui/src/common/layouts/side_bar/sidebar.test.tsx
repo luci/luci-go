@@ -14,7 +14,7 @@
 
 import { act, render, screen } from '@testing-library/react';
 
-import { useProject } from '@/common/components/page_meta';
+import { useEstablishProjectCtx } from '@/common/components/page_meta';
 import {
   QueryTreesResponse,
   TreesClientImpl,
@@ -29,7 +29,7 @@ interface ProjectSetterProps {
 
 // eslint-disable-next-line jest/no-export
 export function ProjectSetter({ project }: ProjectSetterProps) {
-  useProject(project);
+  useEstablishProjectCtx(project);
   return <></>;
 }
 

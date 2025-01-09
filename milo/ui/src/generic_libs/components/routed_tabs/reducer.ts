@@ -27,10 +27,11 @@ export type Action = {
    */
   readonly tabId: string;
   /**
-   * An object that uniquely identifies a `useTabId` call in a component.
+   * An object that uniquely identifies a `useDeclareTabId` call in a
+   * component.
    *
-   * For a given `<RoutedTabs />`, only one `useTabId` call can exist in its
-   * descendants at any time.
+   * For a given `<RoutedTabs />`, only one `useDeclareTabId` call can exist in
+   * its descendants at any time.
    */
   readonly hookId: unknown;
 };

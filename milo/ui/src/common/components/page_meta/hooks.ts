@@ -19,14 +19,15 @@ import { UiPage } from '@/common/constants/view';
 import { PageMetaStateCtx, PageMetaDispatcherCtx } from './context';
 
 /**
- * Mark the component with a page identifier.
+ * Mark the component with a page identifier. When the component is mounted,
+ * mark the page ID as activated.
  *
  * At most one page can be activated at a time.
  */
-export function usePageId(pageId: UiPage) {
+export function useDeclarePageId(pageId: UiPage) {
   const dispatch = useContext(PageMetaDispatcherCtx);
   if (dispatch === undefined) {
-    throw new Error('usePageId can only be used in a PageMetaProvider');
+    throw new Error('useDeclarePageId can only be used in a PageMetaProvider');
   }
 
   const hookId = useRef();
@@ -45,10 +46,17 @@ export function useActivePageId() {
   return state.activePage?.pageId;
 }
 
-export function useProject(project: string | undefined) {
+/**
+ * Set the project context to the specified value.
+ *
+ * Noop when `project` is undefined (i.e. the previous value is kept).
+ */
+export function useEstablishProjectCtx(project: string | undefined) {
   const dispatch = useContext(PageMetaDispatcherCtx);
   if (dispatch === undefined) {
-    throw new Error('useProject can only be used in a PageMetaProvider');
+    throw new Error(
+      'useEstablishProjectCtx can only be used in a PageMetaProvider',
+    );
   }
 
   useEffect(() => {
@@ -60,12 +68,10 @@ export function useProject(project: string | undefined) {
   }, [dispatch, project]);
 }
 
-export function useLastSelectedProject() {
+export function useProjectCtx() {
   const state = useContext(PageMetaStateCtx);
   if (state === undefined) {
-    throw new Error(
-      'useLastSelectedProject can only be used in a PageMetaProvider',
-    );
+    throw new Error('useProjectCtx can only be used in a PageMetaProvider');
   }
 
   return state.project;

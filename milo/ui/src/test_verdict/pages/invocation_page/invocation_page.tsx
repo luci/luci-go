@@ -18,7 +18,7 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useProject } from '@/common/components/page_meta';
+import { useEstablishProjectCtx } from '@/common/components/page_meta';
 import { AppRoutedTab, AppRoutedTabs } from '@/common/components/routed_tabs';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 import { useResultDbClient } from '@/test_verdict/hooks/prpc_clients';
@@ -46,7 +46,7 @@ export function InvocationPage() {
   }
 
   const project = data?.realm.split(':', 2)[0] || '';
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return (
     <>

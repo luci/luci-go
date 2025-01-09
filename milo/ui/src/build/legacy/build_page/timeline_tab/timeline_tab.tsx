@@ -29,7 +29,7 @@ import {
 } from '@/common/components/timeline';
 import { NUMERIC_TIME_FORMAT } from '@/common/tools/time_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 import { CategoryTree } from '@/generic_libs/tools/category_tree';
 import { NonNullableProps } from '@/generic_libs/types';
 
@@ -145,7 +145,7 @@ function TimelineTabImpl({ build }: TimelineTabImplProps) {
 }
 
 export function Component() {
-  useTabId('timeline');
+  useDeclareTabId('timeline');
 
   return (
     <TrackLeafRoutePageView contentGroup="timeline">

@@ -28,7 +28,7 @@ import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList } from '@/authdb/components/groups_list';
 import { GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId } from '@/common/components/page_meta';
+import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -117,7 +117,7 @@ export function GroupsPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.AuthService);
+  useDeclarePageId(UiPage.AuthService);
 
   return (
     <TrackLeafRoutePageView contentGroup="authdb-group">

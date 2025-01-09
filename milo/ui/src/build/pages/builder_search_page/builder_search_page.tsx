@@ -16,7 +16,7 @@ import Box from '@mui/material/Box';
 import { Helmet } from 'react-helmet';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId } from '@/common/components/page_meta';
+import { useDeclarePageId } from '@/common/components/page_meta';
 import { SearchInput } from '@/common/components/search_input';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -58,7 +58,7 @@ export function BuilderSearchPage() {
 }
 
 export function Component() {
-  usePageId(UiPage.BuilderSearch);
+  useDeclarePageId(UiPage.BuilderSearch);
 
   return (
     <TrackLeafRoutePageView contentGroup="builder-search">

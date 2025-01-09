@@ -30,16 +30,16 @@ export function useActiveTabId() {
 }
 
 /**
- * Mark the component with a tab ID. When the component is mounted, marked the
- * tab ID as activated.
+ * Declare the component with a tab ID. When the component is mounted, marked
+ * the tab ID as activated.
  *
  * For each `<RoutedTabs />`, at most one tab can be activated at a time.
  */
-export function useTabId(tabId: string) {
+export function useDeclareTabId(tabId: string) {
   const hookId = useRef();
   const dispatch = useContext(ActiveTabUpdaterContext);
   if (dispatch === undefined) {
-    throw new Error('useTabId can only be used in a RoutedTabs');
+    throw new Error('useDeclareTabId can only be used in a RoutedTabs');
   }
 
   useEffect(() => {

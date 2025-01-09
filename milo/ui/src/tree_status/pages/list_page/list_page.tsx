@@ -18,7 +18,10 @@ import { Helmet } from 'react-helmet';
 import { useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import {
   ParamsPager,
   getPageSize,
@@ -95,7 +98,7 @@ export const TreeStatusListPage = () => {
     (tree.data && tree.data.projects.length > 0
       ? tree.data.projects[0]
       : treeName);
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return (
     <div>
@@ -145,7 +148,7 @@ export const TreeStatusListPage = () => {
 };
 
 export function Component() {
-  usePageId(UiPage.TreeStatus);
+  useDeclarePageId(UiPage.TreeStatus);
 
   return (
     <TrackLeafRoutePageView contentGroup="tree-status-list">

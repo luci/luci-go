@@ -16,7 +16,10 @@ import { Helmet } from 'react-helmet';
 import { Outlet, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { ContentGroup } from '@/generic_libs/components/google_analytics';
 
@@ -25,13 +28,13 @@ export const BisectionLayout = () => {
   if (!project) {
     throw new Error('invariant violated: project must be set');
   }
-  useProject(project);
+  useEstablishProjectCtx(project);
 
   return <Outlet />;
 };
 
 export function Component() {
-  usePageId(UiPage.Bisection);
+  useDeclarePageId(UiPage.Bisection);
 
   return (
     <ContentGroup group="bisection">

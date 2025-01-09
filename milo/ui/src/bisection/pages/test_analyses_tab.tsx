@@ -20,7 +20,7 @@ import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { useTabId } from '@/generic_libs/components/routed_tabs';
+import { useDeclareTabId } from '@/generic_libs/components/routed_tabs';
 
 import {
   ListTestAnalysesTable,
@@ -105,7 +105,7 @@ export function TestAnalysesTab() {
 }
 
 export function Component() {
-  useTabId('test-analysis');
+  useDeclareTabId('test-analysis');
 
   return (
     <TrackLeafRoutePageView contentGroup="test-analysis">

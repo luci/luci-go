@@ -14,7 +14,10 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { usePageId, useProject } from '@/common/components/page_meta';
+import {
+  useDeclarePageId,
+  useEstablishProjectCtx,
+} from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -25,7 +28,7 @@ interface ProjectSetterProps {
 }
 
 function ProjectSetter({ project }: ProjectSetterProps) {
-  useProject(project);
+  useEstablishProjectCtx(project);
   return <></>;
 }
 
@@ -34,7 +37,7 @@ interface PageSetterProps {
 }
 
 function PageSetter({ pageId }: PageSetterProps) {
-  usePageId(pageId);
+  useDeclarePageId(pageId);
   return <></>;
 }
 

@@ -27,7 +27,7 @@ import RuleTopPanel from '@/clusters/components/rule/rule_top_panel/rule_top_pan
 import { SnackbarContextWrapper } from '@/clusters/context/snackbar_context';
 import useFetchRule from '@/clusters/hooks/use_fetch_rule';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { usePageId } from '@/common/components/page_meta';
+import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -78,7 +78,7 @@ export const RulePage = () => {
 };
 
 export function Component() {
-  usePageId(UiPage.Rules);
+  useDeclarePageId(UiPage.Rules);
 
   return (
     <TrackLeafRoutePageView contentGroup="rule">
