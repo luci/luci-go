@@ -51,9 +51,13 @@
 
   <meta charset="utf-8">
   <title>LUCI</title>
-  <link id="favicon" href="/src/common/assets/favicons/milo-32.png" rel="icon">
-  <link href="/src/common/styles/style.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+  <!--
+    data-react-helmet="true" is needed for this value to be overridden properly.
+    See https://github.com/nfl/react-helmet/issues/430#issuecomment-520364492.
+  -->
+  <link rel="icon" data-react-helmet="true" href="/src/common/assets/favicons/milo-32.png" >
+  <link rel="stylesheet" href="/src/common/styles/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&display=block">
 
   <script type="module" src="/src/main.tsx" defer></script>
 </head>

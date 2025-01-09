@@ -94,7 +94,7 @@ export function Component() {
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
       <Helmet>
         <title>Streamlined Fleet UI</title>
-        <link rel="icon" type="image/x-icon" href={bassFavicon} />
+        <link rel="icon" href={bassFavicon} />
       </Helmet>
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error

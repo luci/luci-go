@@ -152,7 +152,7 @@ export const BuildPage = observer(() => {
         <BuildLitEnvProvider>
           <Helmet>
             <title>{documentTitle}</title>
-            <link rel="icon" type="image/x-icon" href={faviconUrl} />
+            <link rel="icon" href={faviconUrl} />
           </Helmet>
           <ChangeConfigDialog
             open={showConfigDialog}

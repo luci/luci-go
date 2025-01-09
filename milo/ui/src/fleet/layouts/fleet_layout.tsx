@@ -13,9 +13,11 @@
 // limitations under the License.
 
 import { ThemeProvider } from '@mui/material';
+import { Helmet } from 'react-helmet';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
+import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
@@ -32,6 +34,9 @@ export const FleetLayout = () => {
 
   return (
     <ThemeProvider theme={theme}>
+      <Helmet titleTemplate="%s | Fleet" defaultTitle="Fleet">
+        <link rel="icon" href={bassFavicon} />
+      </Helmet>
       <div
         css={{
           minHeight: '100vh',

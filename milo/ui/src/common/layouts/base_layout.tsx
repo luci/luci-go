@@ -18,6 +18,7 @@ import { Helmet } from 'react-helmet';
 import { Outlet, UIMatch, useMatches } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
 
+import miloFavicon from '@/common/assets/favicons/milo-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   QueuedStickyScrollingBase,
@@ -64,7 +65,9 @@ export const BaseLayout = () => {
 
   return (
     <ScrollingBase>
-      <Helmet titleTemplate="%s | LUCI" />
+      <Helmet titleTemplate="%s | LUCI" defaultTitle="LUCI">
+        <link rel="icon" href={miloFavicon} />
+      </Helmet>
       <Box sx={{ gridArea: 'banner', zIndex: (theme) => theme.zIndex.appBar }}>
         <VersionBanner />
       </Box>
