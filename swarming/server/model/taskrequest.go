@@ -17,6 +17,7 @@ package model
 import (
 	"context"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"reflect"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
@@ -343,12 +345,38 @@ func (p *TaskSlice) ToProto() *apipb.TaskSlice {
 	return ts
 }
 
+// PrecalculatePropertiesHash calculates the hash of properties for this slice.
+//
+// Sets p.PropertiesHash in place if haven't done so.
+func (p *TaskSlice) PrecalculatePropertiesHash(sb *SecretBytes) error {
+	if len(p.PropertiesHash) != 0 {
+		return nil
+	}
+	if p.Properties.HasSecretBytes != (sb != nil) {
+		return errors.New("properties should have secret bytes but none is provided or vice versa")
+	}
+
+	serializer := &stringPairsSerializer{}
+	serialized, err := serializer.toBytes(p.Properties, sb)
+	if err != nil {
+		return err
+	}
+
+	hash := sha256.Sum256(serialized)
+	p.PropertiesHash = hash[:]
+	return nil
+}
+
 // TaskProperties defines where and how to run the task.
 //
 // This entity is not saved in the DB as a standalone entity, instead it is
 // embedded in a TaskSlice, unindexed.
 //
 // This entity is immutable.
+//
+// Note: everytime add a new property here, you'll also need to update
+// stringPairsSerializer to make sure the new property is included to calculate
+// the properties hash.
 type TaskProperties struct {
 	// Extra are entity properties that didn't match any declared ones below.
 	//

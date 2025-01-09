@@ -33,6 +33,78 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 )
 
+func createTaskSlice(val string, testTime, exp time.Time, pool, botID string) TaskSlice {
+	dims := TaskDimensions{
+		"d1": {"v1", "v2"},
+		"d2": {val},
+	}
+	if pool != "" {
+		dims["pool"] = []string{pool}
+	}
+	if botID != "" {
+		dims["id"] = []string{botID}
+	}
+	return TaskSlice{
+		Properties: TaskProperties{
+			Idempotent:           true,
+			Dimensions:           dims,
+			ExecutionTimeoutSecs: 123,
+			GracePeriodSecs:      456,
+			IOTimeoutSecs:        789,
+			Command:              []string{"run", val},
+			RelativeCwd:          "./rel/cwd",
+			Env: Env{
+				"k1": "v1",
+				"k2": val,
+			},
+			EnvPrefixes: EnvPrefixes{
+				"p1": {"v1", "v2"},
+				"p2": {val},
+			},
+			Caches: []CacheEntry{
+				{Name: "n1", Path: "p1"},
+				{Name: "n2", Path: "p2"},
+			},
+			CASInputRoot: CASReference{
+				CASInstance: "cas-inst",
+				Digest: CASDigest{
+					Hash:      "cas-hash",
+					SizeBytes: 1234,
+				},
+			},
+			CIPDInput: CIPDInput{
+				Server: "server",
+				ClientPackage: CIPDPackage{
+					PackageName: "client-package",
+					Version:     "client-version",
+				},
+				Packages: []CIPDPackage{
+					{
+						PackageName: "pkg1",
+						Version:     "ver1",
+						Path:        "path1",
+					},
+					{
+						PackageName: "pkg2",
+						Version:     "ver2",
+						Path:        "path2",
+					},
+				},
+			},
+			Outputs:        []string{"o1", "o2"},
+			HasSecretBytes: true,
+			Containment: Containment{
+				LowerPriority:             true,
+				ContainmentType:           123,
+				LimitProcesses:            456,
+				LimitTotalCommittedMemory: 789,
+			},
+		},
+		ExpirationSecs:  int64(exp.Sub(testTime).Seconds()),
+		WaitForCapacity: true,
+	}
+}
+
 func TestTaskRequest(t *testing.T) {
 	t.Parallel()
 
@@ -41,78 +113,6 @@ func TestTaskRequest(t *testing.T) {
 	ftt.Run("With datastore", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 
-		taskSlice := func(val string, exp time.Time, pool, botID string) TaskSlice {
-			dims := TaskDimensions{
-				"d1": {"v1", "v2"},
-				"d2": {val},
-			}
-			if pool != "" {
-				dims["pool"] = []string{pool}
-			}
-			if botID != "" {
-				dims["id"] = []string{botID}
-			}
-			return TaskSlice{
-				Properties: TaskProperties{
-					Idempotent:           true,
-					Dimensions:           dims,
-					ExecutionTimeoutSecs: 123,
-					GracePeriodSecs:      456,
-					IOTimeoutSecs:        789,
-					Command:              []string{"run", val},
-					RelativeCwd:          "./rel/cwd",
-					Env: Env{
-						"k1": "v1",
-						"k2": val,
-					},
-					EnvPrefixes: EnvPrefixes{
-						"p1": {"v1", "v2"},
-						"p2": {val},
-					},
-					Caches: []CacheEntry{
-						{Name: "n1", Path: "p1"},
-						{Name: "n2", Path: "p2"},
-					},
-					CASInputRoot: CASReference{
-						CASInstance: "cas-inst",
-						Digest: CASDigest{
-							Hash:      "cas-hash",
-							SizeBytes: 1234,
-						},
-					},
-					CIPDInput: CIPDInput{
-						Server: "server",
-						ClientPackage: CIPDPackage{
-							PackageName: "client-package",
-							Version:     "client-version",
-						},
-						Packages: []CIPDPackage{
-							{
-								PackageName: "pkg1",
-								Version:     "ver1",
-								Path:        "path1",
-							},
-							{
-								PackageName: "pkg2",
-								Version:     "ver2",
-								Path:        "path2",
-							},
-						},
-					},
-					Outputs:        []string{"o1", "o2"},
-					HasSecretBytes: true,
-					Containment: Containment{
-						LowerPriority:             true,
-						ContainmentType:           123,
-						LimitProcesses:            456,
-						LimitTotalCommittedMemory: 789,
-					},
-				},
-				ExpirationSecs:  int64(exp.Sub(testTime).Seconds()),
-				WaitForCapacity: true,
-			}
-		}
-
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
 		assert.Loosely(t, err, should.BeNil)
 
@@ -120,8 +120,8 @@ func TestTaskRequest(t *testing.T) {
 			Key:     key,
 			TxnUUID: "txn-uuid",
 			TaskSlices: []TaskSlice{
-				taskSlice("a", testTime.Add(10*time.Minute), "pool", "botID"),
-				taskSlice("b", testTime.Add(20*time.Minute), "pool", "botID"),
+				createTaskSlice("a", testTime, testTime.Add(10*time.Minute), "pool", "botID"),
+				createTaskSlice("b", testTime, testTime.Add(20*time.Minute), "pool", "botID"),
 			},
 			Created:              testTime,
 			Expiration:           testTime.Add(20 * time.Minute),
@@ -156,8 +156,8 @@ func TestTaskRequest(t *testing.T) {
 			Key:     key,
 			TxnUUID: "txn-uuid",
 			TaskSlices: []TaskSlice{
-				taskSlice("a", testTime.Add(10*time.Minute), "", ""),
-				taskSlice("b", testTime.Add(20*time.Minute), "", ""),
+				createTaskSlice("a", testTime, testTime.Add(10*time.Minute), "", ""),
+				createTaskSlice("b", testTime, testTime.Add(20*time.Minute), "", ""),
 			},
 			Created:              testTime,
 			Expiration:           testTime.Add(20 * time.Minute),
@@ -517,11 +517,78 @@ func TestTaskSlice(t *testing.T) {
 			t.Run("HasSecretBytes is true", func(t *ftt.Test) {
 				ts.Properties.HasSecretBytes = true
 				expected.Properties.SecretBytes = []byte("<REDACTED>")
-				assert.Loosely(t, ts.ToProto(), should.Resemble(expected))
+				assert.Loosely(t, ts.ToProto(), should.Match(expected))
 			})
 			t.Run("HasSecretBytes is false", func(t *ftt.Test) {
 				ts.Properties.HasSecretBytes = false
-				assert.Loosely(t, ts.ToProto(), should.Resemble(expected))
+				assert.Loosely(t, ts.ToProto(), should.Match(expected))
+			})
+		})
+	})
+
+	ftt.Run("PrecalculatePropertiesHash", t, func(t *ftt.Test) {
+		t.Run("return_exist", func(t *ftt.Test) {
+			ts := &TaskSlice{
+				PropertiesHash: []byte("hash_is_already_here"),
+			}
+			assert.That(t, ts.PrecalculatePropertiesHash(nil), should.ErrLike(nil))
+			assert.That(t, ts.PropertiesHash, should.Match([]byte("hash_is_already_here")))
+		})
+
+		t.Run("properties_has_secret_bytes_while_none_given", func(t *ftt.Test) {
+			ts := &TaskSlice{
+				Properties: TaskProperties{
+					HasSecretBytes: true,
+				},
+			}
+			assert.That(
+				t, ts.PrecalculatePropertiesHash(nil),
+				should.ErrLike("properties should have secret bytes but none is provided or vice versa"))
+		})
+
+		t.Run("properties_does_not_have_secret_bytes_while_one_given", func(t *ftt.Test) {
+			ts := &TaskSlice{}
+			assert.That(
+				t, ts.PrecalculatePropertiesHash(&SecretBytes{SecretBytes: []byte("secret")}),
+				should.ErrLike("properties should have secret bytes but none is provided or vice versa"))
+		})
+
+		t.Run("works", func(t *ftt.Test) {
+			t.Run("without_secret_bytes", func(t *ftt.Test) {
+				ts := &TaskSlice{
+					Properties: TaskProperties{
+						Dimensions: TaskDimensions{
+							"d1": {"v1"},
+							"d2": {"v2"},
+						},
+					},
+				}
+				assert.That(t, ts.PrecalculatePropertiesHash(nil), should.ErrLike(nil))
+				expected := []byte{
+					156, 160, 225, 44, 4, 131, 114, 250, 138, 222, 149, 121, 72,
+					46, 79, 59, 105, 26, 12, 145, 254, 65, 210, 207, 92, 149,
+					210, 42, 245, 158, 174, 27}
+				assert.That(t, ts.PropertiesHash, should.Match(expected))
+			})
+
+			t.Run("with_secret_bytes", func(t *ftt.Test) {
+				ts := &TaskSlice{
+					Properties: TaskProperties{
+						HasSecretBytes: true,
+						Dimensions: TaskDimensions{
+							"d1": {"v1"},
+							"d2": {"v2"},
+						},
+					},
+				}
+				sb := []byte("secret")
+				assert.That(t, ts.PrecalculatePropertiesHash(&SecretBytes{SecretBytes: sb}), should.ErrLike(nil))
+
+				expected := []byte{
+					155, 97, 10, 142, 232, 124, 57, 34, 27, 226, 133, 101, 72,
+					240, 190, 118, 67, 167, 26, 223, 250, 64, 248, 22, 113, 94,
+					225, 65, 250, 41, 17, 190}
+				assert.That(t, ts.PropertiesHash, should.Match(expected))
 			})
 		})
 	})
