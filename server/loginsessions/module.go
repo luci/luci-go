@@ -531,11 +531,11 @@ const (
 	// Overall limit on lifetime of a session.
 	sessionExpiry = 5 * time.Minute
 	// Lifetime of a new confirmation code.
-	confirmationCodeExpiryMax = 30 * time.Second
+	confirmationCodeExpiryMax = 90 * time.Second
 	// Minimal confirmation code expiry returned by the API.
-	confirmationCodeExpiryMin = 5 * time.Second
+	confirmationCodeExpiryMin = 30 * time.Second
 	// If all codes are older than this, make a new code.
-	confirmationCodeExpiryRefresh = 20 * time.Second
+	confirmationCodeExpiryRefresh = 60 * time.Second
 )
 
 type loginSessionsServer struct {
