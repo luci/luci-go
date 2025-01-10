@@ -52,7 +52,6 @@ const (
 	DryRunCronConfigEnvVar    = "DRY_RUN_CRON_CONFIG"
 	DryRunCronRealmsEnvVar    = "DRY_RUN_CRON_REALMS"
 	DryRunCronStaleAuthEnvVar = "DRY_RUN_CRON_STALE_AUTH"
-	DryRunTQChangelogEnvVar   = "DRY_RUN_TQ_CHANGELOG"
 	DryRunTQReplicationEnvVar = "DRY_RUN_TQ_REPLICATION"
 )
 
@@ -82,106 +81,7 @@ func CompareV2Entities(ctx context.Context) error {
 		return errors.Annotate(err, "error comparing snapshots").Err()
 	}
 
-	if err := compareChangelogs(ctx, latestRev); err != nil {
-		return errors.Annotate(err, "error comparing changelogs").Err()
-	}
-
 	return nil
-}
-
-func compareChangelogs(ctx context.Context, authDBRev int64) error {
-	// Check if both Auth Servicev1 and v2 have processed the changes for
-	// the given revision.
-	v1LogRev, err := getAuthDBLogRev(ctx, authDBRev, false)
-	if err != nil {
-		return errors.Annotate(err, "error checking v1 changelog was processed").Err()
-	}
-	v2LogRev, err := getAuthDBLogRev(ctx, authDBRev, true)
-	if err != nil {
-		return errors.Annotate(err, "error checking v2 changelog was processed").Err()
-	}
-	if v1LogRev == nil || v2LogRev == nil {
-		logging.Infof(ctx, "changelogs are not yet processed for Rev %d", authDBRev)
-		return nil
-	}
-
-	// Get the AuthDBChanges created by Auth Service v1 and v2 for the
-	// given revision.
-	v1Changes, err := getChangesForRevision(ctx, authDBRev, false)
-	if err != nil {
-		return errors.Annotate(err, "error getting all v1 AuthDBChanges").Err()
-	}
-	v2Changes, err := getChangesForRevision(ctx, authDBRev, true)
-	if err != nil {
-		return errors.Annotate(err, "error getting all v2 AuthDBChanges").Err()
-	}
-
-	// Compare the changes.
-	diffs := diffChangelogs(v1Changes, v2Changes)
-	if len(diffs) > 0 {
-		logging.Errorf(ctx, "AuthDBChange entities for Rev %d do not match", authDBRev)
-		// Log the differences for debugging.
-		for _, diff := range diffs {
-			logging.Debugf(ctx, diff)
-		}
-	} else {
-		logging.Infof(ctx, "AuthDBChange entities for Rev %d are equivalent", authDBRev)
-	}
-
-	return nil
-}
-
-func getChangesForRevision(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
-	query := datastore.NewQuery(entityKind("AuthDBChange", dryRun)).Ancestor(constructLogRevisionKey(ctx, authDBRev, dryRun)).Order("-__key__")
-	var changes []*AuthDBChange
-	if err := datastore.GetAll(ctx, query, &changes); err != nil {
-		return nil, err
-	}
-	return changes, nil
-}
-
-// diffChangelogs returns the "functional" differences between the given
-// slices of AuthDBChanges.
-//
-// Fields ignored include:
-// * Kind - there will be a V2 prefix; and
-// * Parent - there will be V2 prefixes.
-func diffChangelogs(changelogA, changelogB []*AuthDBChange) []string {
-	ignoredFields := cmpopts.IgnoreFields(AuthDBChange{},
-		"Kind", "Parent")
-
-	diffs := []string{}
-	changeCountA := len(changelogA)
-	changeCountB := len(changelogB)
-	for i := 0; i < changeCountA && i < changeCountB; i++ {
-		diff := cmp.Diff(changelogA[i], changelogB[i], ignoredFields)
-		if diff != "" {
-			diffs = append(diffs, diff)
-		}
-	}
-
-	// Record the missing changes.
-	if changeCountA != changeCountB {
-		diffs = append(diffs, fmt.Sprintf("Total changes count: %d vs %d",
-			changeCountA, changeCountB))
-
-		var longerChangelog []*AuthDBChange
-		var start, max int
-		if changeCountA > changeCountB {
-			longerChangelog = changelogA
-			start = changeCountB
-			max = changeCountA
-		} else {
-			longerChangelog = changelogB
-			start = changeCountA
-			max = changeCountB
-		}
-		for i := start; i < max; i++ {
-			diffs = append(diffs, fmt.Sprintf("missing AuthDBChange: %+v", longerChangelog[i]))
-		}
-	}
-
-	return diffs
 }
 
 func compareSnapshots(ctx context.Context, authDBRev int64) error {

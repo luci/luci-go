@@ -40,11 +40,11 @@ var replicationTC = tq.RegisterTaskClass(tq.TaskClass{
 })
 
 // RegisterChangeHandler registers the handler for changelog generation tasks.
-func RegisterChangeHandler(dryRun bool) {
+func RegisterChangeHandler() {
 	handler := func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 		task := payload.(*taskspb.ProcessChangeTask)
 		logging.Infof(ctx, "change queue got revision %d", task.AuthDbRev)
-		return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask), dryRun)
+		return handleProcessChangeTask(ctx, payload.(*taskspb.ProcessChangeTask))
 	}
 	changeTC.AttachHandler(handler)
 }

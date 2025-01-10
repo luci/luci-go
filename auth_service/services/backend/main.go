@@ -35,7 +35,6 @@ func main() {
 	}
 
 	// Parse flags from environment variables.
-	dryRunChangelog := model.ParseDryRunEnvVar(model.DryRunTQChangelogEnvVar)
 	dryRunReplication := model.ParseDryRunEnvVar(model.DryRunTQReplicationEnvVar)
 	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
@@ -48,7 +47,7 @@ func main() {
 	impl.Main(modules,
 		func(srv *server.Server) error {
 			// Register task queue handlers.
-			model.RegisterChangeHandler(dryRunChangelog)
+			model.RegisterChangeHandler()
 			model.RegisterReplicationHandler(dryRunReplication, useV1Perms)
 
 			// Register cron task handlers.

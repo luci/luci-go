@@ -44,7 +44,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:           "AuthDBChange",
 				ID:             "AuthIPWhitelist$a!3000",
-				Parent:         model.ChangeLogRevisionKey(ctx, 10000, false),
+				Parent:         model.ChangeLogRevisionKey(ctx, 10000),
 				Class:          []string{"AuthDBChange", "AuthDBIPWhitelistChange"},
 				ChangeType:     3000,
 				Comment:        "comment",
@@ -58,7 +58,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:              "AuthDBChange",
 				ID:                "AuthGlobalConfig$test!7000",
-				Parent:            model.ChangeLogRevisionKey(ctx, 10000, false),
+				Parent:            model.ChangeLogRevisionKey(ctx, 10000),
 				Class:             []string{"AuthDBChange", "AuthDBConfigChange"},
 				ChangeType:        7000,
 				Comment:           "comment",
@@ -72,7 +72,7 @@ func TestChangeLogsServer(t *testing.T) {
 			&model.AuthDBChange{
 				Kind:             "AuthDBChange",
 				ID:               "AuthRealmsGlobals$globals!9000",
-				Parent:           model.ChangeLogRevisionKey(ctx, 10020, false),
+				Parent:           model.ChangeLogRevisionKey(ctx, 10020),
 				Class:            []string{"AuthDBChange", "AuthRealmsGlobalsChange"},
 				ChangeType:       9000,
 				Comment:          "comment",
@@ -91,7 +91,7 @@ func TestChangeLogsServer(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
 			assert.Loosely(t, len(res.Changes), should.Equal(2))
-			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
+			assert.Loosely(t, res.Changes[0], should.Match(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},
@@ -100,7 +100,7 @@ func TestChangeLogsServer(t *testing.T) {
 				Who:              "user:test@example.com",
 				AppVersion:       "123-45abc",
 			}))
-			assert.Loosely(t, res.Changes[1], should.Resemble(&rpcpb.AuthDBChange{
+			assert.Loosely(t, res.Changes[1], should.Match(&rpcpb.AuthDBChange{
 				ChangeType:     "IPWL_CREATED",
 				Comment:        "comment",
 				Description:    "description",
@@ -118,7 +118,7 @@ func TestChangeLogsServer(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res.NextPageToken, should.BeEmpty)
 			assert.Loosely(t, len(res.Changes), should.Equal(1))
-			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
+			assert.Loosely(t, res.Changes[0], should.Match(&rpcpb.AuthDBChange{
 				ChangeType:        "CONF_OAUTH_CLIENT_CHANGED",
 				Comment:           "comment",
 				OauthClientId:     "123.test.example.com",
@@ -136,7 +136,7 @@ func TestChangeLogsServer(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(res.Changes), should.Equal(1))
-			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
+			assert.Loosely(t, res.Changes[0], should.Match(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},
@@ -153,7 +153,7 @@ func TestChangeLogsServer(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(res.Changes), should.Equal(1))
-			assert.Loosely(t, res.Changes[0], should.Resemble(&rpcpb.AuthDBChange{
+			assert.Loosely(t, res.Changes[0], should.Match(&rpcpb.AuthDBChange{
 				ChangeType:       "REALMS_GLOBALS_CHANGED",
 				Comment:          "comment",
 				PermissionsAdded: []string{"a.existInRealm"},

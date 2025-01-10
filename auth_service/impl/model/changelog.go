@@ -237,22 +237,22 @@ type AuthDBChange struct {
 }
 
 // ChangeLogRootKey returns the root key of an entity group with change log.
-func ChangeLogRootKey(ctx context.Context, dryRun bool) *datastore.Key {
-	return datastore.NewKey(ctx, entityKind("AuthDBLog", dryRun), "v1", 0, nil)
+func ChangeLogRootKey(ctx context.Context) *datastore.Key {
+	return datastore.NewKey(ctx, "AuthDBLog", "v1", 0, nil)
 }
 
 // ChangeLogRevisionKey returns the key of entity subgroup that keeps AuthDB
 // change log for a revision.
-func ChangeLogRevisionKey(ctx context.Context, authDBRev int64, dryRun bool) *datastore.Key {
-	return datastore.NewKey(ctx, entityKind("AuthDBLogRev", dryRun), "", authDBRev, ChangeLogRootKey(ctx, dryRun))
+func ChangeLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
+	return datastore.NewKey(ctx, "AuthDBLogRev", "", authDBRev, ChangeLogRootKey(ctx))
 }
 
-func constructLogRevisionKey(ctx context.Context, authDBRev int64, dryRun bool) *datastore.Key {
+func constructLogRevisionKey(ctx context.Context, authDBRev int64) *datastore.Key {
 	if authDBRev != 0 {
-		return ChangeLogRevisionKey(ctx, authDBRev, dryRun)
+		return ChangeLogRevisionKey(ctx, authDBRev)
 	}
 
-	return ChangeLogRootKey(ctx, dryRun)
+	return ChangeLogRootKey(ctx)
 }
 
 // ChangeID returns the ID of an AuthDBChange entity based on its properties.
@@ -287,7 +287,7 @@ func (*targetError) Unwrap() error {
 //
 // Returns an annotated error.
 func GetAllAuthDBChange(ctx context.Context, target string, authDBRev int64, pageSize int32, pageToken string) (changes []*AuthDBChange, nextPageToken string, err error) {
-	ancestor := constructLogRevisionKey(ctx, authDBRev, false)
+	ancestor := constructLogRevisionKey(ctx, authDBRev)
 	logging.Infof(ctx, "Ancestor: %v", ancestor)
 
 	query := datastore.NewQuery("AuthDBChange").Ancestor(ancestor).Order("-__key__")
@@ -386,19 +386,18 @@ func EnqueueProcessChangeTask(ctx context.Context, authdbrev int64) error {
 	})
 }
 
-func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask, dryRun bool) error {
+func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTask) error {
 	authDBRev := task.GetAuthDbRev()
-	logging.Infof(ctx, "processing changes for AuthDB rev %d (dry run: %v)", authDBRev, dryRun)
+	logging.Infof(ctx, "processing changes for AuthDB rev %d", authDBRev)
 
-	_, err := generateChanges(ctx, authDBRev, dryRun)
+	_, err := generateChanges(ctx, authDBRev)
 	if err != nil {
-		if !dryRun && transient.Tag.In(err) {
+		if transient.Tag.In(err) {
 			// Return the error to signal retry.
 			return err
 		}
 
-		// Either dryRun is enabled, or error is non-transient;
-		// do not retry.
+		// Error is non-transient; do not retry.
 		logging.Errorf(ctx, "error generating changes: %v", err)
 		return tq.Fatal.Apply(err)
 	}
@@ -407,8 +406,8 @@ func handleProcessChangeTask(ctx context.Context, task *taskspb.ProcessChangeTas
 }
 
 var knownHistoricalEntities = map[string]diffFunc{
-	"AuthGroupHistory":       diffGroups,
-	"AuthIPWhitelistHistory": diffIPAllowlists,
+	"AuthGroupHistory":         diffGroups,
+	"AuthIPWhitelistHistory":   diffIPAllowlists,
 	"AuthGlobalConfigHistory":  diffGlobalConfig,
 	"AuthRealmsGlobalsHistory": diffRealmsGlobals,
 	"AuthProjectRealmsHistory": diffProjectRealms,
@@ -420,9 +419,9 @@ type diffFunc = func(context.Context, string, datastore.PropertyMap, datastore.P
 // given AuthDB revision.
 //
 // Note: if the AuthDBLogRev is not found, this will return (nil, nil).
-func getAuthDBLogRev(ctx context.Context, authDBRev int64, dryRun bool) (*AuthDBLogRev, error) {
+func getAuthDBLogRev(ctx context.Context, authDBRev int64) (*AuthDBLogRev, error) {
 	logRev := &AuthDBLogRev{}
-	if populated := datastore.PopulateKey(logRev, ChangeLogRevisionKey(ctx, authDBRev, dryRun)); !populated {
+	if populated := datastore.PopulateKey(logRev, ChangeLogRevisionKey(ctx, authDBRev)); !populated {
 		return nil, errors.New("failed getting AuthDBLogRev; problem setting key")
 	}
 
@@ -443,8 +442,8 @@ func getAuthDBLogRev(ctx context.Context, authDBRev int64, dryRun bool) (*AuthDB
 // Note: if the changelog for the AuthDB revision already existed, and
 // thus no AuthDBChange's were added to the datastore, this will return
 // (nil, nil).
-func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*AuthDBChange, error) {
-	existingLogRev, err := getAuthDBLogRev(ctx, authDBRev, dryRun)
+func generateChanges(ctx context.Context, authDBRev int64) ([]*AuthDBChange, error) {
+	existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
 	if err != nil {
 		return nil, err
 	}
@@ -502,8 +501,8 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 			// Set the fields common to all of the changes for this entity.
 			common := &AuthDBChange{
-				Kind:       entityKind("AuthDBChange", dryRun),
-				Parent:     constructLogRevisionKey(ctx, authDBRev, dryRun),
+				Kind:       "AuthDBChange",
+				Parent:     constructLogRevisionKey(ctx, authDBRev),
 				AuthDBRev:  getInt64Prop(pm, "auth_db_rev"),
 				Who:        getStringProp(pm, "modified_by"),
 				When:       getTimeProp(pm, "modified_ts"),
@@ -533,7 +532,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Check if the changelog was processed concurrently.
-		existingLogRev, err := getAuthDBLogRev(ctx, authDBRev, dryRun)
+		existingLogRev, err := getAuthDBLogRev(ctx, authDBRev)
 		if err != nil {
 			return err
 		}
@@ -546,20 +545,14 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 
 		// Save the changelog and mark it as processed.
 		logRev := &AuthDBLogRev{
-			Kind:       entityKind("AuthDBLogRev", dryRun),
+			Kind:       "AuthDBLogRev",
 			ID:         authDBRev,
-			Parent:     ChangeLogRootKey(ctx, dryRun),
+			Parent:     ChangeLogRootKey(ctx),
 			When:       clock.Now(ctx).UTC(),
 			AppVersion: info.ImageVersion(ctx),
 		}
 		if err := datastore.Put(ctx, changes, logRev); err != nil {
 			return err
-		}
-
-		if dryRun {
-			// In dry run mode, skip attempting to trigger changelog
-			// generation for previous revision.
-			return nil
 		}
 
 		// Enqueue a task to process previous revision if not yet done.
@@ -568,7 +561,7 @@ func generateChanges(ctx context.Context, authDBRev int64, dryRun bool) ([]*Auth
 			return nil
 		}
 		prevAuthDBRev := authDBRev - 1
-		existingPrevLogRev, err := getAuthDBLogRev(ctx, prevAuthDBRev, dryRun)
+		existingPrevLogRev, err := getAuthDBLogRev(ctx, prevAuthDBRev)
 		if err != nil {
 			// Non-fatal, just log the error; this enqueuing is for redundancy.
 			logging.Errorf(
