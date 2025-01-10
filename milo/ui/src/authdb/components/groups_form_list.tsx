@@ -30,7 +30,13 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
+import {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+  useCallback,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
@@ -133,15 +139,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       setErrorMessage('');
     };
 
-    const hasValues = (value: string) => {
-      for (const item of items) {
-        if (item.value === value) {
-          return true;
-        }
-      }
-      return false;
-    };
-
     const addToItems = () => {
       if (validateItems()) {
         const updatedItems = [...items];
@@ -154,11 +151,19 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       }
     };
 
-    const validateItems = () => {
+    const validateItems = useCallback(() => {
       // Make sure item added is not a duplicate.
       const newItemsArray = newItems
         .split(/[\n ]+/)
         .filter((item) => item !== '');
+      const hasValues = (value: string) => {
+        for (const item of items) {
+          if (item.value === value) {
+            return true;
+          }
+        }
+        return false;
+      };
       const duplicateValues = newItemsArray.filter((value) => hasValues(value));
       let isValid: (item: string) => boolean;
       switch (name) {
@@ -187,7 +192,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setErrorMessage('');
         return true;
       }
-    };
+    }, [name, newItems, items]);
 
     useEffect(() => {
       // If any items have been added or removed, we submit.
@@ -195,7 +200,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       if (!valuesEqual(asString(items), savedValues)) {
         submitValues();
       }
-    }, [items]);
+    }, [items, savedValues, submitValues]);
 
     const handleChange = (index: number) => {
       const updatedItems = [...items];
@@ -247,7 +252,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     useEffect(() => {
       validateItems();
-    }, [newItems]);
+    }, [newItems, validateItems]);
 
     const navigateToGroup = (name: string) => {
       navigate(getURLPathFromAuthGroup(name));

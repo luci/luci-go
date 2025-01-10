@@ -32,7 +32,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useState, createRef, useEffect } from 'react';
+import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { addPrefixToItems, nameRe } from '@/authdb/common/helpers';
@@ -231,31 +231,31 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
     submitField(field);
   };
 
-  const validateDescription = () => {
+  const validateDescription = useCallback(() => {
     let message = '';
     if (!description) {
       message = 'Description is required.';
     }
     setDescriptionErrorMessage(message);
     return message === '';
-  };
+  }, [description]);
 
-  const validateOwners = () => {
+  const validateOwners = useCallback(() => {
     let message = '';
     if (owners && !nameRe.test(owners)) {
       message = 'Invalid owners name. Must be a group.';
     }
     setOwnersErrorMessage(message);
     return message === '';
-  };
+  }, [owners]);
 
   useEffect(() => {
     validateDescription();
-  }, [description]);
+  }, [description, validateDescription]);
 
   useEffect(() => {
     validateOwners();
-  }, [owners]);
+  }, [owners, validateOwners]);
 
   const submitField = (field: string) => {
     if (field === 'description') {
