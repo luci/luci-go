@@ -267,6 +267,16 @@ type BotInfo struct {
 	// In other words its the title of the task identified by BotCommon.TaskID.
 	// Empty if the bot is not executing any tasks now.
 	TaskName string `gae:"task_name,noindex"`
+
+	// LastEventDedupKey is a full deduplication key of the last recorded event.
+	//
+	// It is a string "<event_type>:<event_dedup_key>", where "<event_dedup_key>"
+	// is a string send by the bot when it was submitting the event (it is
+	// unrelated to the BotEvent entity key).
+	//
+	// This is used to skip recording the same event over and over if the bot
+	// retries the call.
+	LastEventDedupKey string `gae:"last_event_dedup_key,noindex"`
 }
 
 // BotInfoKey builds a BotInfo key given the bot ID.
