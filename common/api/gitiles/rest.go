@@ -348,11 +348,13 @@ func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (
 		if errors.Contains(err, context.DeadlineExceeded) {
 			return http.Header{}, nil, status.Errorf(codes.DeadlineExceeded, "%s", err)
 		}
+		logging.WithError(err).Errorf(ctx, "Gitiles: failed to send request")
 		return http.Header{}, nil, status.Errorf(codes.Unknown, "%s", err)
 	}
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		logging.WithError(err).Errorf(ctx, "Gitiles: failed to read response body")
 		return r.Header, nil, status.Errorf(codes.Internal, "could not read response body: %s", err)
 	}
 
