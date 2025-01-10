@@ -18,7 +18,7 @@
  * Some commands need to wait until the service worker finishes updating, which
  * can take a bit of time.
  */
-const SW_RELATED_TIMEOUT_MS = 100000;
+const SW_RELATED_TIMEOUT_MS = 100_000;
 
 describe('can switch between new and old version', () => {
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe('can switch between new and old version', () => {
     },
   ].forEach(({ title, path }) => {
     it(title, () => {
-      cy.visit(path);
+      cy.visit(path, { timeout: SW_RELATED_TIMEOUT_MS });
 
       // Switch to the old version.
       cy.get('[aria-label="Open menu"]').click();

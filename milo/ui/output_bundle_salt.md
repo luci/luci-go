@@ -6,7 +6,7 @@ trigger a deployment without a code change to the UI.
 You can simply update the version number below to trigger a new build.
 
 ```
-VERSION=8
+VERSION=9
 ```
 
 ## Why do we need this?
