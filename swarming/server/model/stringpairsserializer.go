@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -166,6 +167,9 @@ func (s *stringPairsSerializer) writeCacheEntries(caches []CacheEntry) {
 }
 
 func (s *stringPairsSerializer) writeCASReference(cas CASReference) {
+	if (cas == CASReference{}) {
+		return
+	}
 	s.enter("cas_input_root")
 	s.writeString("cas_instance", cas.CASInstance)
 	s.writeCASDigest(cas.Digest)
@@ -173,6 +177,9 @@ func (s *stringPairsSerializer) writeCASReference(cas CASReference) {
 }
 
 func (s *stringPairsSerializer) writeCASDigest(digest CASDigest) {
+	if (digest == CASDigest{}) {
+		return
+	}
 	s.enter("digest")
 	s.writeString("hash", digest.Hash)
 	s.writeInt64("size_bytes", digest.SizeBytes)
@@ -180,6 +187,9 @@ func (s *stringPairsSerializer) writeCASDigest(digest CASDigest) {
 }
 
 func (s *stringPairsSerializer) writeCIPDInput(cipd CIPDInput) {
+	if reflect.DeepEqual(cipd, CIPDInput{}) {
+		return
+	}
 	s.enter("cipd_input")
 	s.writeString("server", cipd.Server)
 	s.writeCIPDPackage("client_package", cipd.ClientPackage)
@@ -188,6 +198,9 @@ func (s *stringPairsSerializer) writeCIPDInput(cipd CIPDInput) {
 }
 
 func (s *stringPairsSerializer) writeCIPDPackage(key string, pkg CIPDPackage) {
+	if (pkg == CIPDPackage{}) {
+		return
+	}
 	s.enter(key)
 	s.writeString("package_name", pkg.PackageName)
 	s.writeString("version", pkg.Version)
@@ -214,6 +227,9 @@ func (s *stringPairsSerializer) writeCIPDPackages(key string, packages []CIPDPac
 }
 
 func (s *stringPairsSerializer) writeContainment(containment Containment) {
+	if (containment == Containment{}) {
+		return
+	}
 	s.enter("containment")
 	s.writeInt64("containment_type", int64(containment.ContainmentType))
 	s.writeBool("lower_priority", containment.LowerPriority)
@@ -223,6 +239,9 @@ func (s *stringPairsSerializer) writeContainment(containment Containment) {
 }
 
 func (s *stringPairsSerializer) writeTaskProperties(props TaskProperties) {
+	if reflect.DeepEqual(props, TaskProperties{}) {
+		return
+	}
 	// Handle basic types and struct fields
 	s.writeBool("idempotent", props.Idempotent)
 	s.writeString("relativeCwd", props.RelativeCwd)

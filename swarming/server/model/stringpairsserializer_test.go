@@ -82,4 +82,36 @@ func TestStringPairsSerializer(t *testing.T) {
 		assert.That(t, s.pairs, should.Match(expected))
 	})
 
+	t.Run("serialize_properties_empty", func(t *testing.T) {
+		s := &stringPairsSerializer{}
+		s.writeTaskProperties(TaskProperties{})
+		assert.Loosely(t, s.pairs, should.BeEmpty)
+	})
+
+	t.Run("serialize_properties_partial", func(t *testing.T) {
+		s := &stringPairsSerializer{}
+		s.writeTaskProperties(TaskProperties{
+			EnvPrefixes: EnvPrefixes{
+				"p1": {"v2", "v1"},
+			},
+			Dimensions: TaskDimensions{
+				"d1": {"v1", "v2"},
+			},
+		})
+		expected := []StringPair{
+			{Key: "idempotent", Value: "false"},
+			{Key: "relativeCwd", Value: ""},
+			{Key: "execution_timeout_secs", Value: "0"},
+			{Key: "grace_period_secs", Value: "0"},
+			{Key: "io_timeout_secs", Value: "0"},
+			{Key: "env_prefixes.0.key", Value: "p1"},
+			{Key: "env_prefixes.0.value.0", Value: "v2"},
+			{Key: "env_prefixes.0.value.1", Value: "v1"},
+			{Key: "dimensions.0.key", Value: "d1"},
+			{Key: "dimensions.0.value.0", Value: "v1"},
+			{Key: "dimensions.0.value.1", Value: "v2"},
+		}
+
+		assert.That(t, s.pairs, should.Match(expected))
+	})
 }

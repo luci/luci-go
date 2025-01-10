@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -557,38 +558,40 @@ func TestTaskSlice(t *testing.T) {
 			t.Run("without_secret_bytes", func(t *ftt.Test) {
 				ts := &TaskSlice{
 					Properties: TaskProperties{
+						GracePeriodSecs: 30,
+						EnvPrefixes: EnvPrefixes{
+							"p1": {"v2", "v1"},
+						},
 						Dimensions: TaskDimensions{
-							"d1": {"v1"},
-							"d2": {"v2"},
+							"d1":   {"v1", "v2"},
+							"pool": {"pool"},
 						},
 					},
 				}
 				assert.That(t, ts.PrecalculatePropertiesHash(nil), should.ErrLike(nil))
-				expected := []byte{
-					156, 160, 225, 44, 4, 131, 114, 250, 138, 222, 149, 121, 72,
-					46, 79, 59, 105, 26, 12, 145, 254, 65, 210, 207, 92, 149,
-					210, 42, 245, 158, 174, 27}
-				assert.That(t, ts.PropertiesHash, should.Match(expected))
+				expected := "079e5c6f0bb17d036cc3196c89d2d3ef15fea09d85e7a69a8ba7fe69cf5a7afd"
+				assert.That(t, hex.EncodeToString(ts.PropertiesHash[:]), should.Equal(expected))
 			})
 
 			t.Run("with_secret_bytes", func(t *ftt.Test) {
 				ts := &TaskSlice{
 					Properties: TaskProperties{
-						HasSecretBytes: true,
-						Dimensions: TaskDimensions{
-							"d1": {"v1"},
-							"d2": {"v2"},
+						GracePeriodSecs: 30,
+						EnvPrefixes: EnvPrefixes{
+							"p1": {"v2", "v1"},
 						},
+						Dimensions: TaskDimensions{
+							"d1":   {"v1", "v2"},
+							"pool": {"pool"},
+						},
+						HasSecretBytes: true,
 					},
 				}
 				sb := []byte("secret")
 				assert.That(t, ts.PrecalculatePropertiesHash(&SecretBytes{SecretBytes: sb}), should.ErrLike(nil))
 
-				expected := []byte{
-					155, 97, 10, 142, 232, 124, 57, 34, 27, 226, 133, 101, 72,
-					240, 190, 118, 67, 167, 26, 223, 250, 64, 248, 22, 113, 94,
-					225, 65, 250, 41, 17, 190}
-				assert.That(t, ts.PropertiesHash, should.Match(expected))
+				expected := "b114a396a92ef47203df9f2927e73a90b1bf6e4573daa4e714c10d1394c8da05"
+				assert.That(t, hex.EncodeToString(ts.PropertiesHash[:]), should.Equal(expected))
 			})
 		})
 	})
