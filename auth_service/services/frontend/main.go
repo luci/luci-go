@@ -81,7 +81,6 @@ func main() {
 
 	// Parse flags from environment variables.
 	dryRunAPIChange := model.ParseDryRunEnvVar(model.DryRunAPIChangesEnvVar)
-	enableGroupImports := model.ParseEnableEnvVar(model.EnableGroupImportsEnvVar)
 
 	impl.Main(modules, func(srv *server.Server) error {
 		// On GAE '/static' is served by GAE itself (see
@@ -212,13 +211,11 @@ func main() {
 		srv.Routes.GET("/auth/api/v1/memberships/check",
 			authServiceAccessMW, adaptGrpcErr(authdbServer.CheckLegacyMembership))
 
-		if enableGroupImports {
-			// Add endpoint for group imports.
-			// No group membership required, but the caller must be signed in.
-			requireAuthenticatedMW := makeAPIMW()
-			srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName",
-				requireAuthenticatedMW, adaptGrpcErr(imports.HandleTarballIngestHandler))
-		}
+		// Add endpoint for group imports.
+		// No group membership required, but the caller must be signed in.
+		requireAuthenticatedMW := makeAPIMW()
+		srv.Routes.PUT("/auth_service/api/v1/importer/ingest_tarball/:tarballName",
+			requireAuthenticatedMW, adaptGrpcErr(imports.HandleTarballIngestHandler))
 
 		// Allow anonymous access to the OAuth config.
 		srv.Routes.GET("/auth/api/v1/server/oauth_config", nil, adaptGrpcErr(oauth.HandleLegacyOAuthEndpoint))
