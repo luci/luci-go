@@ -79,9 +79,6 @@ func main() {
 		encryptedcookies.NewModuleFromFlags(), // for authenticating web UI calls
 	}
 
-	// Parse flags from environment variables.
-	dryRunAPIChange := model.ParseDryRunEnvVar(model.DryRunAPIChangesEnvVar)
-
 	impl.Main(modules, func(srv *server.Server) error {
 		// On GAE '/static' is served by GAE itself (see
 		// service-defaultv2.yaml). When running locally in dev mode we need to
@@ -119,7 +116,7 @@ func main() {
 		authdbServer := &authdb.Server{}
 
 		// Initialize groups server.
-		groupsServer := groups.NewServer(dryRunAPIChange)
+		groupsServer := groups.NewServer()
 		srv.RegisterWarmup(groupsServer.Warmup)
 		srv.RunInBackground("authdb.refresh-all-groups", groupsServer.RefreshPeriodically)
 

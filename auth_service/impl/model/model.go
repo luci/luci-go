@@ -836,7 +836,7 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 //
 // Note: creating external groups using this function is forbidden, as they are
 // handled by the importer. See importer.go in this package.
-func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment string, dryRun bool) (*AuthGroup, error) {
+func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment string) (*AuthGroup, error) {
 	// Check the supplied group name is valid, and not an external group.
 	if !auth.IsValidGroupName(group.ID) || IsExternalAuthGroupName(group.ID) {
 		return nil, ErrInvalidName
@@ -892,11 +892,6 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 		createdTS := clock.Now(ctx).UTC()
 		newGroup.CreatedTS = createdTS
 		newGroup.CreatedBy = string(creator)
-
-		if dryRun {
-			logging.Infof(ctx, "(dry run) creating AuthGroup:\n%+v", newGroup)
-			return nil
-		}
 
 		// Commit the group. This adds last-modified data on the group,
 		// increments the AuthDB revision, automatically creates a historical
@@ -966,7 +961,7 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 //	ErrPermissionDenied if the caller is not allowed to update the group.
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	Annotated error for other errors.
-func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag, historicalComment string, dryRun bool) (*AuthGroup, error) {
+func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag, historicalComment string) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
 	// If updateable fields are added to AuthGroup in future, they need to be
 	// added to the below list.
@@ -1107,11 +1102,6 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 			}
 		}
 
-		if dryRun {
-			logging.Infof(ctx, "(dry run) updating AuthGroup:\n%+v", authGroup)
-			return nil
-		}
-
 		// Commit the update.
 		return commitEntity(authGroup, clock.Now(ctx).UTC(), auth.CurrentIdentity(ctx), false)
 	})
@@ -1170,7 +1160,7 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 //	ErrConcurrentModification if the provided etag is not up-to-date.
 //	ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
-func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string, dryRun bool) error {
+func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
 		return ErrPermissionDenied
@@ -1210,11 +1200,6 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 		if len(referencingGroups) > 0 {
 			groupsStr := strings.Join(referencingGroups.ToSortedSlice(), ", ")
 			return errors.Annotate(ErrReferencedEntity, "this group is referenced by other groups: [%s]", groupsStr).Err()
-		}
-
-		if dryRun {
-			logging.Infof(ctx, "(dry run) deleting AuthGroup:\n%+v", authGroup)
-			return nil
 		}
 
 		// Delete the group.

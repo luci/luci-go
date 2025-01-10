@@ -14,11 +14,6 @@ luci_gae_vars:
     TS_MON_ACCOUNT: app-engine-metric-publishers@prodx-mon-chrome-infra.google.com.iam.gserviceaccount.com
     CONFIG_SERVICE_HOST: config.luci.app
 
-# Environment variables while transitioning from
-# Auth Service v1 (Python) to Auth Service v2 (Go).
-env_variables:
-  DRY_RUN_API_CHANGES: false
-
 inbound_services:
 - warmup
 

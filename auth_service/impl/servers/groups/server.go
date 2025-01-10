@@ -75,16 +75,11 @@ type Server struct {
 	rpcpb.UnimplementedGroupsServer
 
 	authGroupsProvider AuthGroupsProvider
-
-	// Whether modifications should be done in dry run mode (i.e. skip
-	// committing entity changes).
-	dryRun bool
 }
 
-func NewServer(dryRun bool) *Server {
+func NewServer() *Server {
 	return &Server{
 		authGroupsProvider: &CachingGroupsProvider{},
-		dryRun:             dryRun,
 	}
 }
 
@@ -149,7 +144,7 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 // CreateGroup implements the corresponding RPC method.
 func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRequest) (*rpcpb.AuthGroup, error) {
 	group := model.AuthGroupFromProto(ctx, request.GetGroup())
-	switch createdGroup, err := model.CreateAuthGroup(ctx, group, "Go pRPC API", srv.dryRun); {
+	switch createdGroup, err := model.CreateAuthGroup(ctx, group, "Go pRPC API"); {
 	case err == nil:
 		newGroup, err := createdGroup.ToProto(ctx, true)
 		if err != nil {
@@ -174,7 +169,7 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 // UpdateGroup implements the corresponding RPC method.
 func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRequest) (*rpcpb.AuthGroup, error) {
 	groupUpdate := model.AuthGroupFromProto(ctx, request.GetGroup())
-	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag(), "Go pRPC API", srv.dryRun); {
+	switch updatedGroup, err := model.UpdateAuthGroup(ctx, groupUpdate, request.GetUpdateMask(), request.GetGroup().GetEtag(), "Go pRPC API"); {
 	case err == nil:
 		updatedGroupProto, err := updatedGroup.ToProto(ctx, true)
 		if err != nil {
@@ -203,7 +198,7 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 // DeleteGroup implements the corresponding RPC method.
 func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRequest) (*emptypb.Empty, error) {
 	name := request.GetName()
-	switch err := model.DeleteAuthGroup(ctx, name, request.GetEtag(), "Go pRPC API", srv.dryRun); {
+	switch err := model.DeleteAuthGroup(ctx, name, request.GetEtag(), "Go pRPC API"); {
 	case err == nil:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
