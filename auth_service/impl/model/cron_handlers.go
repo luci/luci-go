@@ -125,29 +125,27 @@ func ReplicatedAuthDBRefresher(ctx context.Context) error {
 
 //////////////////// Handling of stale authorizations //////////////////////////
 
-func StaleAuthorizationCronHandler(dryRun bool) func(context.Context) error {
-	return func(ctx context.Context) error {
-		// Only members of the below trusted group are eligible to:
-		// * be authorized to subscribe to PubSub notifications of AuthDB changes
-		// * be authorized to read the AuthDB from Google Storage.
-		// This cron revokes all stale authorizations for accounts that are no
-		// longer in the trusted group.
-		trustedGroup := TrustedServicesGroup
+func StaleAuthorizationCronHandler(ctx context.Context) error {
+	// Only members of the below trusted group are eligible to:
+	// * be authorized to subscribe to PubSub notifications of AuthDB changes
+	// * be authorized to read the AuthDB from Google Storage.
+	// This cron revokes all stale authorizations for accounts that are no
+	// longer in the trusted group.
+	trustedGroup := TrustedServicesGroup
 
-		if err := pubsub.RevokeStaleAuthorization(ctx, trustedGroup, dryRun); err != nil {
-			err = errors.Annotate(err, "error revoking stale PubSub authorizations").Err()
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		if err := RevokeStaleReaderAccess(ctx, trustedGroup, dryRun); err != nil {
-			err = errors.Annotate(err, "error revoking stale AuthDB reader access").Err()
-			logging.Errorf(ctx, err.Error())
-			return err
-		}
-
-		return nil
+	if err := pubsub.RevokeStaleAuthorization(ctx, trustedGroup); err != nil {
+		err = errors.Annotate(err, "error revoking stale PubSub authorizations").Err()
+		logging.Errorf(ctx, err.Error())
+		return err
 	}
+
+	if err := RevokeStaleReaderAccess(ctx, trustedGroup); err != nil {
+		err = errors.Annotate(err, "error revoking stale AuthDB reader access").Err()
+		logging.Errorf(ctx, err.Error())
+		return err
+	}
+
+	return nil
 }
 
 /////////////////////// Handling of service configs ////////////////////////////

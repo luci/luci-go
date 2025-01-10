@@ -166,7 +166,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup), should.BeNil)
 		})
 
 		t.Run("revokes if deleted, even if trusted", func(t *ftt.Test) {
@@ -185,7 +185,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup), should.BeNil)
 		})
 
 		t.Run("skips policy update if no changes required", func(t *ftt.Test) {
@@ -203,7 +203,7 @@ func TestRevokeStaleAuthorization(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1),
 			)
 
-			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup, false), should.BeNil)
+			assert.Loosely(t, RevokeStaleAuthorization(ctx, trustedGroup), should.BeNil)
 		})
 	})
 }

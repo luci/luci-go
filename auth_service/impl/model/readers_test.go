@@ -153,7 +153,7 @@ func TestAuthorizeReader(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1))
 
 			assert.Loosely(t, AuthorizeReader(ctx, "someone@example.com"), should.BeNil)
-			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
+			assert.Loosely(t, getRawReaders(t, ctx), should.Match([]*AuthDBReader{
 				{
 					Kind:         "AuthDBReader",
 					Parent:       authDBReadersRootKey(ctx),
@@ -206,7 +206,7 @@ func TestDeauthorizeReader(t *testing.T) {
 				mockClient.Client.EXPECT().Close().Times(1))
 
 			assert.Loosely(t, DeauthorizeReader(ctx, "unknown@example.com"), should.BeNil)
-			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
+			assert.Loosely(t, getRawReaders(t, ctx), should.Match([]*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
 			}))
 		})
@@ -267,8 +267,8 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 					gomock.Any(), stringset.NewFromSlice("someone@example.com")).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup, false), should.BeNil)
-			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
+			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Match([]*AuthDBReader{
 				testReader(ctx, "someone@example.com"),
 			}))
 		})
@@ -291,8 +291,8 @@ func TestRevokeStaleReaderAccess(t *testing.T) {
 				).Times(2),
 				mockClient.Client.EXPECT().Close().Times(1))
 
-			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup, false), should.BeNil)
-			assert.Loosely(t, getRawReaders(t, ctx), should.Resemble([]*AuthDBReader{
+			assert.Loosely(t, RevokeStaleReaderAccess(ctx, trustedGroup), should.BeNil)
+			assert.Loosely(t, getRawReaders(t, ctx), should.Match([]*AuthDBReader{
 				testReader(ctx, "somebody@example.com"),
 				testReader(ctx, "someone@example.com"),
 			}))

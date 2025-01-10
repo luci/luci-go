@@ -34,9 +34,6 @@ func main() {
 		cron.NewModuleFromFlags(),
 	}
 
-	// Parse flag from environment variables.
-	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
-
 	impl.Main(modules,
 		func(srv *server.Server) error {
 			// Register task queue handlers.
@@ -47,7 +44,7 @@ func main() {
 			cron.RegisterHandler("refresh-replicated-authdb",
 				model.ReplicatedAuthDBRefresher)
 			cron.RegisterHandler("revoke-stale-authorization",
-				model.StaleAuthorizationCronHandler(dryRunCronStaleAuth))
+				model.StaleAuthorizationCronHandler)
 			cron.RegisterHandler("update-config",
 				model.ServiceConfigCronHandler)
 			cron.RegisterHandler("update-realms", model.RealmsConfigCronHandler)

@@ -136,7 +136,7 @@ func DeauthorizeSubscriber(ctx context.Context, email string) (retErr error) {
 
 // RevokeStaleAuthorization revokes the subscribing authorization for
 // all accounts that are no longer in the given trusted group.
-func RevokeStaleAuthorization(ctx context.Context, trustedGroup string, dryRun bool) (retErr error) {
+func RevokeStaleAuthorization(ctx context.Context, trustedGroup string) (retErr error) {
 	s := auth.GetState(ctx)
 	if s == nil {
 		return fmt.Errorf("error getting AuthDB")
@@ -194,11 +194,6 @@ func RevokeStaleAuthorization(ctx context.Context, trustedGroup string, dryRun b
 			policy.Remove(iamIdentity, subscriberRole)
 			updated = true
 		}
-	}
-
-	if dryRun {
-		logging.Debugf(ctx, "dry run only - exiting before policy update")
-		return nil
 	}
 
 	if updated {

@@ -14,7 +14,6 @@ luci_gae_vars:
 # Auth Service v1 (Python) to Auth Service v2 (Go).
 env_variables:
   DRY_RUN_API_CHANGES: false
-  DRY_RUN_CRON_STALE_AUTH: false
 
 inbound_services:
 - warmup

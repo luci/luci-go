@@ -34,7 +34,6 @@ import (
 // insensitive).
 const (
 	DryRunAPIChangesEnvVar    = "DRY_RUN_API_CHANGES"
-	DryRunCronStaleAuthEnvVar = "DRY_RUN_CRON_STALE_AUTH"
 )
 
 // ParseDryRunEnvVar parses the dry run flag from the given environment
