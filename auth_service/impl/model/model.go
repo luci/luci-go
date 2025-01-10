@@ -1255,9 +1255,7 @@ func GetAllAuthIPAllowlists(ctx context.Context) ([]*AuthIPAllowlist, error) {
 
 // updateAllAuthIPAllowlists updates all the entities in datastore from the
 // subnet map, which should be the result of parsing an ip_allowlist.cfg.
-//
-// TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]string, dryRun bool, historicalComment string) error {
+func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]string, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		oldAllowlists, err := GetAllAuthIPAllowlists(ctx)
 		if err != nil {
@@ -1290,11 +1288,6 @@ func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]strin
 			entity.CreatedBy = string(serviceIdentity)
 			entity.CreatedTS = now
 
-			if dryRun {
-				logging.Infof(ctx, "(dry run) creating IPAllowlist %s", id)
-				continue
-			}
-
 			if err := commitEntity(entity, now, serviceIdentity, false); err != nil {
 				return err
 			}
@@ -1318,11 +1311,6 @@ func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]strin
 				id, oldSubnets, newSubnets,
 			)
 
-			if dryRun {
-				logging.Infof(ctx, "(dry run) updating IPAllowlist %s", id)
-				continue
-			}
-
 			entity.Subnets = newSubnets
 			if err := commitEntity(entity, now, serviceIdentity, false); err != nil {
 				return err
@@ -1331,11 +1319,6 @@ func updateAllAuthIPAllowlists(ctx context.Context, subnetMap map[string][]strin
 
 		toDelete := oldAllowlistSet.Difference(updatedAllowlistSet)
 		for id := range toDelete {
-			if dryRun {
-				logging.Infof(ctx, "(dry run) deleting IPAllowlist %s", id)
-				continue
-			}
-
 			if err := commitEntity(oldAllowlistMap[id], now, serviceIdentity, true); err != nil {
 				return err
 			}
@@ -1393,9 +1376,7 @@ func hasSameSecurityCfg(authGlobalConfig *AuthGlobalConfig, securityCfg *protoco
 // updateAuthGlobalConfig updates the AuthGlobalConfig datastore entity.
 // If there is no AuthGlobalConfig entity present in the datastore, one will be
 // created.
-//
-// TODO(crbug/1336135): Remove dryrun checks when turning off Python Auth Service.
-func updateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig, securityCfg *protocol.SecurityConfig, dryRun bool, historicalComment string) error {
+func updateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig, securityCfg *protocol.SecurityConfig, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		shouldCreate := false
 
@@ -1436,11 +1417,6 @@ func updateAuthGlobalConfig(ctx context.Context, oauthCfg *configspb.OAuthConfig
 		serviceIdentity, err := getServiceIdentity(ctx)
 		if err != nil {
 			return err
-		}
-
-		if dryRun {
-			logging.Infof(ctx, "(dry run) updating AuthGlobalConfig")
-			return nil
 		}
 
 		if err := commitEntity(rootAuthGlobalCfg, clock.Now(ctx).UTC(), serviceIdentity, false); err != nil {

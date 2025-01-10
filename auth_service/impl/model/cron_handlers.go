@@ -152,47 +152,45 @@ func StaleAuthorizationCronHandler(dryRun bool) func(context.Context) error {
 
 /////////////////////// Handling of service configs ////////////////////////////
 
-func ServiceConfigCronHandler(dryRun bool) func(context.Context) error {
-	return func(ctx context.Context) error {
-		historicalComment := "Updated from update-config cron"
+func ServiceConfigCronHandler(ctx context.Context) error {
+	historicalComment := "Updated from update-config cron"
 
-		latestRevs, err := refreshServiceConfigs(ctx)
-		if err != nil {
-			return err
-		}
-
-		if err := applyGlobalConfigUpdate(ctx, historicalComment, dryRun); err != nil {
-			return err
-		}
-
-		if err := applyAllowlistUpdate(ctx, historicalComment, dryRun); err != nil {
-			return err
-		}
-
-		// Update GroupImporterConfig entity (which is not part of the AuthDB).
-		//
-		// TODO(b/302615672): Remove this once Auth Service has been fully
-		// migrated to Auth Service v2 because the GroupImporterConfig entity is
-		// redundant.
-		importsConfig, importsMeta, err := importscfg.GetWithMetadata(ctx)
-		if err != nil {
-			return err
-		}
-		if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta, dryRun); err != nil {
-			return err
-		}
-
-		// Update _ImportedConfigRevisions entity (which is not part of AuthDB).
-		//
-		// TODO(b/302615672): Remove this once Auth Service has been fully
-		// migrated to Auth Service v2 because the _ImportedConfigRevisions
-		// entity is redundant.
-		if err := updateImportedConfigRevisions(ctx, latestRevs, dryRun); err != nil {
-			return err
-		}
-
-		return nil
+	latestRevs, err := refreshServiceConfigs(ctx)
+	if err != nil {
+		return err
 	}
+
+	if err := applyGlobalConfigUpdate(ctx, historicalComment); err != nil {
+		return err
+	}
+
+	if err := applyAllowlistUpdate(ctx, historicalComment); err != nil {
+		return err
+	}
+
+	// Update GroupImporterConfig entity (which is not part of the AuthDB).
+	//
+	// TODO(b/302615672): Remove this once Auth Service has been fully
+	// migrated to Auth Service v2 because the GroupImporterConfig entity is
+	// redundant.
+	importsConfig, importsMeta, err := importscfg.GetWithMetadata(ctx)
+	if err != nil {
+		return err
+	}
+	if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta); err != nil {
+		return err
+	}
+
+	// Update _ImportedConfigRevisions entity (which is not part of AuthDB).
+	//
+	// TODO(b/302615672): Remove this once Auth Service has been fully
+	// migrated to Auth Service v2 because the _ImportedConfigRevisions
+	// entity is redundant.
+	if err := updateImportedConfigRevisions(ctx, latestRevs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // configRevisionInfo stores the info on a config's revision. Useful for configs
@@ -306,7 +304,7 @@ func getImportedConfigRevisions(ctx context.Context) (*ImportedConfigRevisions, 
 // migrated to Auth Service v2. In v2, the _ImportedConfigRevisions entity
 // is redundant; revision metadata for service configs is all handled by the
 // srvcfg/* packages.
-func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*configRevisionInfo, dryRun bool) error {
+func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*configRevisionInfo) error {
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		configRevs := map[string]*configRevisionInfo{}
 
@@ -347,11 +345,6 @@ func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*c
 			return nil
 		}
 
-		if dryRun {
-			logging.Debugf(ctx, "(dry run) updating ImportedConfigRevisions")
-			return nil
-		}
-
 		var jsonErr error
 		stored.Revisions, jsonErr = json.Marshal(configRevs)
 		if jsonErr != nil {
@@ -369,7 +362,7 @@ func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*c
 
 // applyAllowlistUpdate applies the current ip_allowlist.cfg to all
 // AuthIPAllowlist entities.
-func applyAllowlistUpdate(ctx context.Context, historicalComment string, dryRun bool) error {
+func applyAllowlistUpdate(ctx context.Context, historicalComment string) error {
 	cfg, err := allowlistcfg.Get(ctx)
 	if err != nil {
 		return err
@@ -380,7 +373,7 @@ func applyAllowlistUpdate(ctx context.Context, historicalComment string, dryRun 
 		return err
 	}
 
-	if err := updateAllAuthIPAllowlists(ctx, subnets, dryRun, historicalComment); err != nil {
+	if err := updateAllAuthIPAllowlists(ctx, subnets, historicalComment); err != nil {
 		return err
 	}
 
@@ -389,7 +382,7 @@ func applyAllowlistUpdate(ctx context.Context, historicalComment string, dryRun 
 
 // applyGlobalConfigUpdate applies the current oauth.cfg and security.cfg
 // to the AuthGlobalConfig entity.
-func applyGlobalConfigUpdate(ctx context.Context, historicalComment string, dryRun bool) error {
+func applyGlobalConfigUpdate(ctx context.Context, historicalComment string) error {
 	oauthConfig, err := oauthcfg.Get(ctx)
 	if err != nil {
 		return err
@@ -399,7 +392,7 @@ func applyGlobalConfigUpdate(ctx context.Context, historicalComment string, dryR
 		return err
 	}
 
-	if err := updateAuthGlobalConfig(ctx, oauthConfig, securityConfig, dryRun, historicalComment); err != nil {
+	if err := updateAuthGlobalConfig(ctx, oauthConfig, securityConfig, historicalComment); err != nil {
 		return err
 	}
 

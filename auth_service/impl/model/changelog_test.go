@@ -564,7 +564,7 @@ func TestGenerateChanges(t *testing.T) {
 				// Creation with no subnet
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -575,7 +575,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Deletion with no subnet
 				baseSubnetMap = map[string][]string{}
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
@@ -586,7 +586,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Creation with subnets
 				baseSubnetMap["test-allowlist-1"] = []string{"123.4.5.6"}
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3)
 				assert.Loosely(t, err, should.BeNil)
@@ -600,7 +600,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Add subnet
 				baseSubnetMap["test-allowlist-1"] = append(baseSubnetMap["test-allowlist-1"], "567.8.9.10")
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(8))
 				actualChanges, err = generateChanges(ctx, 4)
 				assert.Loosely(t, err, should.BeNil)
@@ -611,7 +611,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Remove subnet
 				baseSubnetMap["test-allowlist-1"] = baseSubnetMap["test-allowlist-1"][1:]
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(10))
 				actualChanges, err = generateChanges(ctx, 5)
 				assert.Loosely(t, err, should.BeNil)
@@ -622,7 +622,7 @@ func TestGenerateChanges(t *testing.T) {
 
 				// Delete allowlist with subnet
 				baseSubnetMap = map[string][]string{}
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(12))
 				actualChanges, err = generateChanges(ctx, 6)
 				assert.Loosely(t, err, should.BeNil)
@@ -638,7 +638,7 @@ func TestGenerateChanges(t *testing.T) {
 			t.Run("AuthIPAllowlist description changed", func(t *ftt.Test) {
 				baseSubnetMap := make(map[string][]string)
 				baseSubnetMap["test-allowlist-1"] = []string{}
-				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				_, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -667,7 +667,7 @@ func TestGenerateChanges(t *testing.T) {
 				}
 
 				// Old doesn't exist yet
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -680,7 +680,7 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					PrimaryClientId: "diff-client-id",
 				}
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
@@ -695,7 +695,7 @@ func TestGenerateChanges(t *testing.T) {
 					ClientIds: []string{"test.example.com"},
 				}
 
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -707,7 +707,7 @@ func TestGenerateChanges(t *testing.T) {
 				newCfg := &configspb.OAuthConfig{
 					ClientIds: []string{"not-test.example.com"},
 				}
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, newCfg, nil, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
@@ -726,7 +726,7 @@ func TestGenerateChanges(t *testing.T) {
 					TokenServerUrl: "test-token-server-url.example.com",
 				}
 
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, nil, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -741,7 +741,7 @@ func TestGenerateChanges(t *testing.T) {
 				secCfg := &protocol.SecurityConfig{
 					InternalServiceRegexp: []string{"abc"},
 				}
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -756,7 +756,7 @@ func TestGenerateChanges(t *testing.T) {
 				}
 				expectedOldConfig := expectedNewConfig
 				expectedNewConfig, _ = proto.Marshal(secCfg)
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
@@ -778,7 +778,7 @@ func TestGenerateChanges(t *testing.T) {
 					InternalServiceRegexp: []string{"test"},
 				}
 				expectedNewConfig, _ := proto.Marshal(secCfg)
-				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthGlobalConfig(ctx, baseCfg, secCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)

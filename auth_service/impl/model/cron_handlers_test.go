@@ -75,7 +75,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 
 			actual, err := getImportedConfigRevisions(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(testEntity))
+			assert.Loosely(t, actual, should.Match(testEntity))
 		})
 
 		t.Run("updateImportedConfigRevisions works", func(t *ftt.Test) {
@@ -105,11 +105,11 @@ func TestImportedConfigRevisions(t *testing.T) {
 			}
 
 			t.Run("creates if it doesn't exist", func(t *ftt.Test) {
-				assert.Loosely(t, updateImportedConfigRevisions(ctx, testRevs, false), should.BeNil)
+				assert.Loosely(t, updateImportedConfigRevisions(ctx, testRevs), should.BeNil)
 
 				actual, err := getImportedConfigRevisions(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, actual, should.Resemble(testImportedConfigRevisions(ctx, affectedRevs)))
+				assert.Loosely(t, actual, should.Match(testImportedConfigRevisions(ctx, affectedRevs)))
 
 				t.Run("updating existing works", func(t *ftt.Test) {
 					updatedRevs := map[string]*configRevisionInfo{
@@ -118,7 +118,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/oauth/10001b",
 						},
 					}
-					assert.Loosely(t, updateImportedConfigRevisions(ctx, updatedRevs, false), should.BeNil)
+					assert.Loosely(t, updateImportedConfigRevisions(ctx, updatedRevs), should.BeNil)
 
 					expectedRevs := map[string]*configRevisionInfo{
 						"oauth.cfg": {
@@ -132,7 +132,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 					}
 					actual, err := getImportedConfigRevisions(ctx)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, actual, should.Resemble(testImportedConfigRevisions(ctx, expectedRevs)))
+					assert.Loosely(t, actual, should.Match(testImportedConfigRevisions(ctx, expectedRevs)))
 				})
 
 				t.Run("revision info for excluded paths is maintained", func(t *ftt.Test) {
@@ -142,7 +142,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/allowlist/10001a",
 						},
 					}
-					assert.Loosely(t, updateImportedConfigRevisions(ctx, allowlistRev, false), should.BeNil)
+					assert.Loosely(t, updateImportedConfigRevisions(ctx, allowlistRev), should.BeNil)
 
 					expectedRevs := map[string]*configRevisionInfo{
 						"ip_allowlist.cfg": {
@@ -160,7 +160,7 @@ func TestImportedConfigRevisions(t *testing.T) {
 					}
 					actual, err := getImportedConfigRevisions(ctx)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, actual, should.Resemble(testImportedConfigRevisions(ctx, expectedRevs)))
+					assert.Loosely(t, actual, should.Match(testImportedConfigRevisions(ctx, expectedRevs)))
 				})
 
 				t.Run("config that doesn't affect the AuthDB is ignored", func(t *ftt.Test) {
@@ -170,11 +170,11 @@ func TestImportedConfigRevisions(t *testing.T) {
 							ViewURL:  "https://test.config.example.com/imports/10001a",
 						},
 					}
-					assert.Loosely(t, updateImportedConfigRevisions(ctx, trivialRev, false), should.BeNil)
+					assert.Loosely(t, updateImportedConfigRevisions(ctx, trivialRev), should.BeNil)
 
 					actual, err := getImportedConfigRevisions(ctx)
 					assert.Loosely(t, err, should.BeNil)
-					assert.Loosely(t, actual, should.Resemble(testImportedConfigRevisions(ctx, affectedRevs)))
+					assert.Loosely(t, actual, should.Match(testImportedConfigRevisions(ctx, affectedRevs)))
 				})
 			})
 		})
@@ -207,7 +207,7 @@ func TestGetStoredRealmsCfgRevs(t *testing.T) {
 
 			configRevs, err := getStoredRealmsCfgRevs(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, configRevs, should.Resemble([]*RealmsCfgRev{
+			assert.Loosely(t, configRevs, should.Match([]*RealmsCfgRev{
 				{
 					ProjectID:    "test",
 					ConfigRev:    "1234",
@@ -296,11 +296,11 @@ func TestUpdateRealms(t *testing.T) {
 
 				fetchedPRealms, err := GetAuthProjectRealms(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealms, should.Resemble(simpleProjectRealm(ctx, "a", expectedRealmsBody, 1)))
+				assert.Loosely(t, fetchedPRealms, should.Match(simpleProjectRealm(ctx, "a", expectedRealmsBody, 1)))
 
 				fetchedPRealmMeta, err := GetAuthProjectRealmsMeta(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmMeta, should.Resemble(simpleProjectRealmMeta(ctx, "a")))
+				assert.Loosely(t, fetchedPRealmMeta, should.Match(simpleProjectRealmMeta(ctx, "a")))
 			})
 
 			t.Run("updating project entry with config changes", func(t *ftt.Test) {
@@ -337,11 +337,11 @@ func TestUpdateRealms(t *testing.T) {
 
 				fetchedPRealms, err := GetAuthProjectRealms(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealms, should.Resemble(simpleProjectRealm(ctx, "a", expectedRealmsBody, 1)))
+				assert.Loosely(t, fetchedPRealms, should.Match(simpleProjectRealm(ctx, "a", expectedRealmsBody, 1)))
 
 				fetchedPRealmMeta, err := GetAuthProjectRealmsMeta(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmMeta, should.Resemble(simpleProjectRealmMeta(ctx, "a")))
+				assert.Loosely(t, fetchedPRealmMeta, should.Match(simpleProjectRealmMeta(ctx, "a")))
 
 				cfgBody, _ = prototext.Marshal(&realmsconf.RealmsCfg{
 					Realms: []*realmsconf.Realm{
@@ -382,11 +382,11 @@ func TestUpdateRealms(t *testing.T) {
 
 				fetchedPRealms, err = GetAuthProjectRealms(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealms, should.Resemble(simpleProjectRealm(ctx, "a", expectedRealmsBody, 2)))
+				assert.Loosely(t, fetchedPRealms, should.Match(simpleProjectRealm(ctx, "a", expectedRealmsBody, 2)))
 
 				fetchedPRealmMeta, err = GetAuthProjectRealmsMeta(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmMeta, should.Resemble(simpleProjectRealmMeta(ctx, "a")))
+				assert.Loosely(t, fetchedPRealmMeta, should.Match(simpleProjectRealmMeta(ctx, "a")))
 			})
 
 			t.Run("updating many projects", func(t *ftt.Test) {
@@ -461,19 +461,19 @@ func TestUpdateRealms(t *testing.T) {
 
 				fetchedPRealmsA, err := GetAuthProjectRealms(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmsA, should.Resemble(simpleProjectRealm(ctx, "a", expectedRealmsBodyA, 1)))
+				assert.Loosely(t, fetchedPRealmsA, should.Match(simpleProjectRealm(ctx, "a", expectedRealmsBodyA, 1)))
 
 				fetchedPRealmsB, err := GetAuthProjectRealms(ctx, "test-project-b")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmsB, should.Resemble(simpleProjectRealm(ctx, "b", expectedRealmsBodyB, 1)))
+				assert.Loosely(t, fetchedPRealmsB, should.Match(simpleProjectRealm(ctx, "b", expectedRealmsBodyB, 1)))
 
 				fetchedPRealmMetaA, err := GetAuthProjectRealmsMeta(ctx, "test-project-a")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmMetaA, should.Resemble(simpleProjectRealmMeta(ctx, "a")))
+				assert.Loosely(t, fetchedPRealmMetaA, should.Match(simpleProjectRealmMeta(ctx, "a")))
 
 				fetchedPRealmMetaB, err := GetAuthProjectRealmsMeta(ctx, "test-project-b")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, fetchedPRealmMetaB, should.Resemble(simpleProjectRealmMeta(ctx, "b")))
+				assert.Loosely(t, fetchedPRealmMetaB, should.Match(simpleProjectRealmMeta(ctx, "b")))
 			})
 		})
 	})

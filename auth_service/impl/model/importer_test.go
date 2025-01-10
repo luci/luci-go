@@ -117,7 +117,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 					Revision:    "10001a",
 					ViewURL:     "config-url.example.com/imports/10001a",
 				}
-				assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta, false), should.BeNil)
+				assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta), should.BeNil)
 
 				stored, err := GetGroupImporterConfig(ctx)
 				assert.Loosely(t, err, should.BeNil)
@@ -129,7 +129,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 					ctx = clock.Set(ctx, testclock.New(testModifiedTS))
 
 					t.Run("no-op for same revision", func(t *ftt.Test) {
-						assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta, false), should.BeNil)
+						assert.Loosely(t, updateGroupImporterConfig(ctx, testConfig, testMeta), should.BeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
 						assert.Loosely(t, err, should.BeNil)
@@ -156,7 +156,7 @@ func TestGroupImporterConfigModel(t *testing.T) {
 							Revision:    "10001b",
 							ViewURL:     "config-url.example.com/imports/10001b",
 						}
-						assert.Loosely(t, updateGroupImporterConfig(ctx, otherConfig, otherMeta, false), should.BeNil)
+						assert.Loosely(t, updateGroupImporterConfig(ctx, otherConfig, otherMeta), should.BeNil)
 
 						stored, err := GetGroupImporterConfig(ctx)
 						assert.Loosely(t, err, should.BeNil)
@@ -164,33 +164,6 @@ func TestGroupImporterConfigModel(t *testing.T) {
 						actual, err := stored.ToProto()
 						assert.Loosely(t, err, should.BeNil)
 						assert.Loosely(t, actual, should.Match(otherConfig))
-					})
-
-					t.Run("no-op when in dry run", func(t *ftt.Test) {
-						otherConfig := &configspb.GroupImporterConfig{
-							TarballUpload: []*configspb.GroupImporterConfig_TarballUploadEntry{
-								{
-									Name:               "other-tarball-upload-test",
-									AuthorizedUploader: []string{"test-uploader@example.com"},
-									Systems:            []string{"tarballtest"},
-								},
-							},
-						}
-						otherMeta := &config.Meta{
-							ConfigSet:   config.Set("service/chrome-infra-auth-test"),
-							Path:        "imports.cfg",
-							ContentHash: "a1b2c3",
-							Revision:    "10001b",
-							ViewURL:     "config-url.example.com/imports/10001b",
-						}
-						assert.Loosely(t, updateGroupImporterConfig(ctx, otherConfig, otherMeta, true), should.BeNil)
-
-						stored, err := GetGroupImporterConfig(ctx)
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, stored.ModifiedTS, should.Match(testCreatedTS))
-						actual, err := stored.ToProto()
-						assert.Loosely(t, err, should.BeNil)
-						assert.Loosely(t, actual, should.Match(testConfig))
 					})
 				})
 			})

@@ -1269,7 +1269,7 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 		}
 
 		t.Run("no-op for identical subnet map", func(t *ftt.Test) {
-			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, allowlists, should.Match(baseAllowlistSlice))
@@ -1279,7 +1279,7 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 
 		t.Run("Create allowlist entity", func(t *ftt.Test) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
-			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			expectedSlice := append(baseAllowlistSlice, allowlistToCreate)
@@ -1288,7 +1288,7 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 
 		t.Run("Update allowlist entity", func(t *ftt.Test) {
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
-			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			baseAllowlistSlice[0].AuthVersionedEntityMixin = AuthVersionedEntityMixin{
 				ModifiedTS:    testCreatedTS,
@@ -1303,7 +1303,7 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 
 		t.Run("Delete allowlist entity", func(t *ftt.Test) {
 			delete(baseSubnetMap, "test-allowlist-1")
-			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			expectedSlice := baseAllowlistSlice[1:]
 			assert.Loosely(t, err, should.BeNil)
@@ -1314,7 +1314,7 @@ func TestUpdateAllAuthIPAllowlists(t *testing.T) {
 			baseSubnetMap["test-allowlist-3"] = []string{"123.4.5.6"}
 			baseSubnetMap["test-allowlist-1"] = []string{"122.22.44.66"}
 			delete(baseSubnetMap, "test-allowlist-2")
-			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAllAuthIPAllowlists(ctx, baseSubnetMap, "Go pRPC API"), should.BeNil)
 			allowlists, err := GetAllAuthIPAllowlists(ctx)
 			allowlist0Copy := *baseAllowlistSlice[0]
 			allowlist0Copy.AuthVersionedEntityMixin = AuthVersionedEntityMixin{
@@ -1424,7 +1424,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 		seccfgpb := testSecurityConfig()
 
 		t.Run("Creating new AuthGlobalConfig", func(t *ftt.Test) {
-			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, "Go pRPC API"), should.BeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, updatedCfg, should.Match(&AuthGlobalConfig{
@@ -1474,7 +1474,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 
 		t.Run("Updating AuthGlobalConfig", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, testAuthGlobalConfig(ctx)), should.BeNil)
-			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, oauthcfgpb, seccfgpb, "Go pRPC API"), should.BeNil)
 			updatedCfg, err := GetAuthGlobalConfig(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, updatedCfg, should.Match(&AuthGlobalConfig{
@@ -1536,7 +1536,7 @@ func TestAuthGlobalConfig(t *testing.T) {
 				},
 				TokenServerUrl: "https://token-server.example.com",
 			}
-			assert.Loosely(t, updateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAuthGlobalConfig(ctx, sameOauthCfg, seccfgpb, "Go pRPC API"), should.BeNil)
 
 			// Check this is a no-op.
 			assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(0))
