@@ -360,6 +360,27 @@ type TaskResultSummary struct {
 	ExpirationDelay datastore.Optional[float64, datastore.Unindexed] `gae:"expiration_delay"`
 }
 
+// NewTaskResultSummary returns the new TaskResultSummary for a TaskRequest.
+func NewTaskResultSummary(ctx context.Context, req *TaskRequest, serverVersion string, now time.Time) *TaskResultSummary {
+	return &TaskResultSummary{
+		Key: TaskResultSummaryKey(ctx, req.Key),
+		TaskResultCommon: TaskResultCommon{
+			State:          apipb.TaskState_PENDING,
+			Modified:       now,
+			ServerVersions: []string{serverVersion},
+		},
+		Created:              req.Created,
+		Tags:                 req.Tags,
+		RequestName:          req.Name,
+		RequestUser:          req.User,
+		RequestPriority:      req.Priority,
+		RequestAuthenticated: req.Authenticated,
+		RequestRealm:         req.Realm,
+		RequestPool:          req.Pool(),
+		RequestBotID:         req.BotID(),
+	}
+}
+
 // ToProto converts the TaskResultSummary struct to an apipb.TaskResultResponse.
 //
 // Note: This function will not handle PerformanceStats due to the requirement

@@ -517,6 +517,57 @@ func TestTaskResultSummary(t *testing.T) {
 			assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
 		})
 	})
+
+	ftt.Run("NewTaskResultSummary", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
+		assert.That(t, err, should.ErrLike(nil))
+
+		created := testclock.TestRecentTimeUTC
+		now := created.Add(time.Minute)
+		req := &TaskRequest{
+			Key:           key,
+			Created:       created,
+			Name:          "name",
+			Authenticated: "authenticated",
+			User:          "user",
+			Tags:          []string{"tag1", "tag2"},
+			Realm:         "realm",
+			Priority:      123,
+			TaskSlices: []TaskSlice{
+				{
+					Properties: TaskProperties{
+						Dimensions: TaskDimensions{
+							"d1":   {"v1", "v2"},
+							"pool": {"pool"},
+							"id":   {"bot123"},
+						},
+					},
+				},
+			},
+		}
+		srvVer := "v1.0"
+
+		expected := &TaskResultSummary{
+			Key: TaskResultSummaryKey(ctx, key),
+			TaskResultCommon: TaskResultCommon{
+				State:          apipb.TaskState_PENDING,
+				Modified:       now,
+				ServerVersions: []string{srvVer},
+			},
+			Created:              created,
+			Tags:                 []string{"tag1", "tag2"},
+			RequestName:          "name",
+			RequestUser:          "user",
+			RequestPriority:      123,
+			RequestAuthenticated: "authenticated",
+			RequestRealm:         "realm",
+			RequestPool:          "pool",
+			RequestBotID:         "bot123",
+		}
+		res := NewTaskResultSummary(ctx, req, srvVer, now)
+		assert.That(t, res.ToProto(), should.Match(expected.ToProto()))
+	})
 }
 
 func TestTaskRunResult(t *testing.T) {
