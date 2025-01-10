@@ -101,7 +101,7 @@ func TakeSnapshot(ctx context.Context) (snap *Snapshot, err error) {
 }
 
 // ToAuthDBProto converts the snapshot to an AuthDB proto message.
-func (s *Snapshot) ToAuthDBProto(ctx context.Context, useV1Perms bool) (*protocol.AuthDB, error) {
+func (s *Snapshot) ToAuthDBProto(ctx context.Context) (*protocol.AuthDB, error) {
 	groups := make([]*protocol.AuthGroup, len(s.Groups))
 	for i, v := range s.Groups {
 		groups[i] = &protocol.AuthGroup{
@@ -131,7 +131,7 @@ func (s *Snapshot) ToAuthDBProto(ctx context.Context, useV1Perms bool) (*protoco
 		}
 	}
 
-	realms, err := MergeRealms(ctx, s.RealmsGlobals, s.ProjectRealms, useV1Perms)
+	realms, err := MergeRealms(ctx, s.RealmsGlobals, s.ProjectRealms)
 	if err != nil {
 		return nil, errors.Annotate(err, "error merging realms").Err()
 	}
@@ -160,8 +160,8 @@ func setStringField(value string) string {
 // ToAuthDB converts the snapshot to an authdb.SnapshotDB.
 //
 // It then can be used by the auth service itself to make ACL checks.
-func (s *Snapshot) ToAuthDB(ctx context.Context, useV1Perms bool) (*authdb.SnapshotDB, error) {
-	authDBProto, err := s.ToAuthDBProto(ctx, useV1Perms)
+func (s *Snapshot) ToAuthDB(ctx context.Context) (*authdb.SnapshotDB, error) {
+	authDBProto, err := s.ToAuthDBProto(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err,
 			"failed converting AuthDB snapshot to proto").Err()

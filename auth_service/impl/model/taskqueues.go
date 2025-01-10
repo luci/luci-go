@@ -50,11 +50,11 @@ func RegisterChangeHandler() {
 }
 
 // RegisterReplicationHandler registers the handler for replication tasks.
-func RegisterReplicationHandler(useV1Perms bool) {
+func RegisterReplicationHandler() {
 	handler := func(ctx context.Context, payload protoreflect.ProtoMessage) error {
 		task := payload.(*taskspb.ReplicationTask)
 		logging.Infof(ctx, "replication queue got revision %d", task.AuthDbRev)
-		return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask), useV1Perms)
+		return handleReplicationTask(ctx, payload.(*taskspb.ReplicationTask))
 	}
 	replicationTC.AttachHandler(handler)
 }

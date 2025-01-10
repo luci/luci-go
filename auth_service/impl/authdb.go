@@ -95,10 +95,7 @@ func (a *AuthDBProvider) GetAuthDB(ctx context.Context) (db authdb.DB, err error
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make AuthDB snapshot").Err()
 	}
-	// The permissions maintained by the Python version should be used
-	// instead if the update-realms cron is in dry run mode.
-	useV1Perms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
-	snapDB, err := snap.ToAuthDB(ctx, useV1Perms)
+	snapDB, err := snap.ToAuthDB(ctx)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to process AuthDB snapshot").Err()
 	}

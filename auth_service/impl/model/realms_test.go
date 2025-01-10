@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -55,71 +53,6 @@ func makeTestConditions(names ...string) []*protocol.Condition {
 	return conds
 }
 
-func TestGetGlobalPermissions(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("Global permissions extracted correctly", t, func(t *ftt.Test) {
-		ctx := context.Background()
-		// Approximate of how Python stores permissions.
-		testV1Perms := makeTestPermissions("perms.v1.a", "perms.v1.b", "perms.v1.c")
-		testV1StoredPerms := make([]string, len(testV1Perms))
-		for i, perm := range testV1Perms {
-			storedPerm, err := proto.Marshal(perm)
-			assert.Loosely(t, err, should.BeNil)
-			testV1StoredPerms[i] = string(storedPerm)
-		}
-
-		testV2Perms := makeTestPermissions("perms.v2.x", "perms.v2.y", "perms.v2.z")
-		realmsGlobals := &AuthRealmsGlobals{
-			Permissions: testV1StoredPerms,
-			PermissionsList: &permissions.PermissionsList{
-				Permissions: testV2Perms,
-			},
-		}
-
-		t.Run("gets v1 permissions", func(t *ftt.Test) {
-			actual, err := getGlobalPermissions(ctx, realmsGlobals, true)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(testV1Perms))
-		})
-
-		t.Run("gets v2 permissions", func(t *ftt.Test) {
-			actual, err := getGlobalPermissions(ctx, realmsGlobals, false)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(testV2Perms))
-		})
-
-		t.Run("falls back to v1 permissions when getting v2", func(t *ftt.Test) {
-			bareRealmsGlobals := &AuthRealmsGlobals{
-				Permissions: testV1StoredPerms,
-			}
-			actual, err := getGlobalPermissions(ctx, bareRealmsGlobals, false)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(testV1Perms))
-
-			emptyRealmsGlobals := &AuthRealmsGlobals{
-				Permissions: testV1StoredPerms,
-				PermissionsList: &permissions.PermissionsList{
-					Permissions: []*protocol.Permission{},
-				},
-			}
-			actual, err = getGlobalPermissions(ctx, emptyRealmsGlobals, false)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(testV1Perms))
-		})
-
-		t.Run("returns empty slice", func(t *ftt.Test) {
-			actual, err := getGlobalPermissions(ctx, &AuthRealmsGlobals{}, false)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.BeEmpty)
-
-			actual, err = getGlobalPermissions(ctx, &AuthRealmsGlobals{}, true)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actual, should.BeEmpty)
-		})
-	})
-}
-
 func TestMergeRealms(t *testing.T) {
 	t.Parallel()
 
@@ -133,9 +66,9 @@ func TestMergeRealms(t *testing.T) {
 				},
 			}
 			projectRealms := []*AuthProjectRealms{}
-			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, merged, should.Resemble(&protocol.Realms{
+			assert.Loosely(t, merged, should.Match(&protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
 				Permissions: []*protocol.Permission{},
 				Realms:      []*protocol.Realm{},
@@ -203,27 +136,9 @@ func TestMergeRealms(t *testing.T) {
 					},
 				}
 
-				merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
+				merged, err := MergeRealms(ctx, realmsGlobals, projectRealms)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, merged, should.Resemble(expectedRealms))
-			})
-
-			t.Run("when using Permissions", func(t *ftt.Test) {
-				luciDevP1, err := proto.Marshal(&protocol.Permission{
-					Name: "luci.dev.p1",
-				})
-				assert.Loosely(t, err, should.BeNil)
-				luciDevP2, err := proto.Marshal(&protocol.Permission{
-					Name: "luci.dev.p2",
-				})
-				assert.Loosely(t, err, should.BeNil)
-				realmsGlobals := &AuthRealmsGlobals{
-					Permissions: []string{string(luciDevP1), string(luciDevP2)},
-				}
-
-				merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, true)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, merged, should.Resemble(expectedRealms))
+				assert.Loosely(t, merged, should.Match(expectedRealms))
 			})
 		})
 
@@ -289,9 +204,9 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: blob2},
 			}
 
-			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, merged, should.Resemble(&protocol.Realms{
+			assert.Loosely(t, merged, should.Match(&protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
 				Permissions: makeTestPermissions("luci.dev.p1"),
 				Conditions:  makeTestConditions("a", "b", "c"),
@@ -383,9 +298,9 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj2", Realms: blob2},
 			}
 
-			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, merged, should.Resemble(&protocol.Realms{
+			assert.Loosely(t, merged, should.Match(&protocol.Realms{
 				ApiVersion:  RealmsAPIVersion,
 				Permissions: makeTestPermissions("luci.dev.p1", "luci.dev.p2", "luci.dev.p3"),
 				Realms: []*protocol.Realm{
@@ -436,7 +351,7 @@ func TestMergeRealms(t *testing.T) {
 				{ID: "proj1", Realms: blob},
 			}
 
-			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms, false)
+			merged, err := MergeRealms(ctx, realmsGlobals, projectRealms)
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, merged, should.BeNil)
 		})

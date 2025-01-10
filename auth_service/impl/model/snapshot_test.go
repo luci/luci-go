@@ -96,7 +96,7 @@ func TestTakeSnapshot(t *testing.T) {
 		snap, err := TakeSnapshot(ctx)
 		assert.Loosely(t, err, should.BeNil)
 
-		assert.Loosely(t, snap, should.Resemble(&Snapshot{
+		assert.Loosely(t, snap, should.Match(&Snapshot{
 			ReplicationState: testAuthReplicationState(ctx, 12345),
 			GlobalConfig:     testAuthGlobalConfig(ctx),
 			Groups: []*AuthGroup{
@@ -176,9 +176,9 @@ func TestTakeSnapshot(t *testing.T) {
 				},
 			}
 
-			authDBProto, err := snap.ToAuthDBProto(ctx, false)
+			authDBProto, err := snap.ToAuthDBProto(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, authDBProto, should.Resemble(&protocol.AuthDB{
+			assert.Loosely(t, authDBProto, should.Match(&protocol.AuthDB{
 				OauthClientId:     "test-client-id",
 				OauthClientSecret: "test-client-secret",
 				OauthAdditionalClientIds: []string{
@@ -217,9 +217,9 @@ func TestTakeSnapshot(t *testing.T) {
 
 				expectedGroup1 := groupProto("group-1")
 				expectedGroup1.Description = "empty"
-				authDBProto, err := sparseSnapshot.ToAuthDBProto(ctx, false)
+				authDBProto, err := sparseSnapshot.ToAuthDBProto(ctx)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, authDBProto, should.Resemble(&protocol.AuthDB{
+				assert.Loosely(t, authDBProto, should.Match(&protocol.AuthDB{
 					OauthClientId:     "empty",
 					OauthClientSecret: "empty",
 					TokenServerUrl:    "empty",
@@ -235,7 +235,7 @@ func TestTakeSnapshot(t *testing.T) {
 		})
 
 		t.Run("ToAuthDB", func(t *ftt.Test) {
-			db, err := snap.ToAuthDB(ctx, false)
+			db, err := snap.ToAuthDB(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, db.Rev, should.Equal(testAuthDBRev))
 		})

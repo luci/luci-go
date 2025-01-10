@@ -50,11 +50,11 @@ func EnqueueReplicationTask(ctx context.Context, authdbrev int64) error {
 	})
 }
 
-func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, useV1Perms bool) error {
+func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask) error {
 	authDBRev := task.GetAuthDbRev()
 	logging.Infof(ctx, "replicating AuthDB for Rev %d", authDBRev)
 
-	if err := replicate(ctx, authDBRev, useV1Perms); err != nil {
+	if err := replicate(ctx, authDBRev); err != nil {
 		if transient.Tag.In(err) {
 			// Return the error to signal retry.
 			return err
@@ -72,7 +72,7 @@ func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, u
 // Note: to avoid stale tasks, it will first check that the
 // AuthReplicationState.AuthDBRev is still equal to the
 // given authDBRev before doing anthing.
-func replicate(ctx context.Context, authDBRev int64, useV1Perms bool) error {
+func replicate(ctx context.Context, authDBRev int64) error {
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to get current replication state").Err()
@@ -87,7 +87,7 @@ func replicate(ctx context.Context, authDBRev int64, useV1Perms bool) error {
 
 	// Pack the entire AuthDB into a blob to be stored in the datastore,
 	// Google Storage and directly pushed to Replicas.
-	replicationState, revisionInfo, authDBBlob, err := packAuthDB(ctx, useV1Perms)
+	replicationState, revisionInfo, authDBBlob, err := packAuthDB(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to pack AuthDB").Err()
 	}
@@ -149,7 +149,7 @@ func replicate(ctx context.Context, authDBRev int64, useV1Perms bool) error {
 //     authDBBlob.
 //   - authDBBlob: serialized protocol.ReplicationPushRequest message
 //     (has AuthDB inside).
-func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *protocol.AuthDBRevision, []byte, error) {
+func packAuthDB(ctx context.Context) (*AuthReplicationState, *protocol.AuthDBRevision, []byte, error) {
 	// Get the replication state.
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
@@ -167,7 +167,7 @@ func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *p
 		return nil, nil, nil, err
 	}
 
-	authDBProto, err := snapshot.ToAuthDBProto(ctx, useV1Perms)
+	authDBProto, err := snapshot.ToAuthDBProto(ctx)
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -39,15 +39,11 @@ func main() {
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
 	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
 
-	// The permissions maintained by the Python version should be used
-	// instead if the update-realms cron is in dry run mode.
-	useV1Perms := dryRunCronRealms
-
 	impl.Main(modules,
 		func(srv *server.Server) error {
 			// Register task queue handlers.
 			model.RegisterChangeHandler()
-			model.RegisterReplicationHandler(useV1Perms)
+			model.RegisterReplicationHandler()
 
 			// Register cron task handlers.
 			cron.RegisterHandler("refresh-replicated-authdb",

@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth/service/protocol"
 )
 
@@ -109,35 +108,6 @@ func conditionKey(cond *protocol.Condition) (string, error) {
 	return string(key), nil
 }
 
-func getGlobalPermissions(ctx context.Context, realmsGlobals *AuthRealmsGlobals, useV1Perms bool) ([]*protocol.Permission, error) {
-	logging.Debugf(ctx, "getting global permissions (useV1Perms = %v)...", useV1Perms)
-	var permissions []*protocol.Permission
-	if !useV1Perms && realmsGlobals.PermissionsList != nil {
-		permissions = realmsGlobals.PermissionsList.GetPermissions()
-		if len(permissions) > 0 {
-			logging.Debugf(ctx, "using v2 permissions")
-			return permissions, nil
-		}
-	}
-
-	logging.Debugf(ctx, "using v1 permissions")
-	// If here, then either
-	// - useV1Perms is set to true; or
-	// - V2 permissions are empty due to the update-realm cron still being in
-	//   dry run mode, or not yet having been run since being enabled;
-	//   in this case, default to V1 permissions.
-	permissions = make([]*protocol.Permission, len(realmsGlobals.Permissions))
-	for i, rawPerm := range realmsGlobals.Permissions {
-		perm := &protocol.Permission{}
-		err := proto.Unmarshal([]byte(rawPerm), perm)
-		if err != nil {
-			return nil, errors.Annotate(err, "error while unmarshalling stored v1 permission proto").Err()
-		}
-		permissions[i] = perm
-	}
-	return permissions, nil
-}
-
 // MergeRealms merges all the project realms into one realms definition, using
 // the permissions in the given AuthRealmsGlobals as an authoritative source of
 // valid permissions.
@@ -159,19 +129,14 @@ func getGlobalPermissions(ctx context.Context, realmsGlobals *AuthRealmsGlobals,
 func MergeRealms(
 	ctx context.Context,
 	realmsGlobals *AuthRealmsGlobals,
-	allAuthProjectRealms []*AuthProjectRealms,
-	useV1Perms bool) (*protocol.Realms, error) {
+	allAuthProjectRealms []*AuthProjectRealms) (*protocol.Realms, error) {
 	result := &protocol.Realms{
 		ApiVersion: RealmsAPIVersion,
 	}
 
 	var permissions []*protocol.Permission
 	if realmsGlobals != nil {
-		var err error
-		permissions, err = getGlobalPermissions(ctx, realmsGlobals, useV1Perms)
-		if err != nil {
-			return nil, err
-		}
+		permissions = realmsGlobals.PermissionsList.GetPermissions()
 	}
 	result.Permissions = permissions
 
