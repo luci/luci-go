@@ -408,47 +408,45 @@ func applyGlobalConfigUpdate(ctx context.Context, historicalComment string, dryR
 
 /////////////////////// Handling of realms configs /////////////////////////////
 
-func RealmsConfigCronHandler(dryRun bool) func(context.Context) error {
-	return func(ctx context.Context) error {
-		historicalComment := "Updated from update-realms cron"
+func RealmsConfigCronHandler(ctx context.Context) error {
+	historicalComment := "Updated from update-realms cron"
 
-		// permissions.cfg handling.
-		if err := permissionscfg.Update(ctx); err != nil {
-			return err
-		}
-		permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
-		if err != nil {
-			return err
-		}
-		if err := updateAuthRealmsGlobals(ctx, permsCfg, dryRun, historicalComment); err != nil {
-			return err
-		}
-
-		// Make the PermissionsDB for realms expansion.
-		permsDB := permissions.NewPermissionsDB(permsCfg, permsMeta)
-
-		// realms.cfg handling.
-		latestRealms, err := getLatestRealmsCfgRev(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "aborting realms update - failed to fetch latest for all configs: %v", err)
-			return err
-		}
-		storedRealms, err := getStoredRealmsCfgRevs(ctx)
-		if err != nil {
-			logging.Errorf(ctx, "aborting realms update - failed to get stored configs: %v", err)
-			return err
-		}
-
-		jobs, err := processRealmsConfigChanges(ctx, permsDB, latestRealms, storedRealms, dryRun, historicalComment)
-		if err != nil {
-			return err
-		}
-		if !executeJobs(ctx, jobs, 2*time.Second) {
-			return fmt.Errorf("not all jobs succeeded when refreshing realms")
-		}
-
-		return nil
+	// permissions.cfg handling.
+	if err := permissionscfg.Update(ctx); err != nil {
+		return err
 	}
+	permsCfg, permsMeta, err := permissionscfg.GetWithMetadata(ctx)
+	if err != nil {
+		return err
+	}
+	if err := updateAuthRealmsGlobals(ctx, permsCfg, historicalComment); err != nil {
+		return err
+	}
+
+	// Make the PermissionsDB for realms expansion.
+	permsDB := permissions.NewPermissionsDB(permsCfg, permsMeta)
+
+	// realms.cfg handling.
+	latestRealms, err := getLatestRealmsCfgRev(ctx)
+	if err != nil {
+		logging.Errorf(ctx, "aborting realms update - failed to fetch latest for all configs: %v", err)
+		return err
+	}
+	storedRealms, err := getStoredRealmsCfgRevs(ctx)
+	if err != nil {
+		logging.Errorf(ctx, "aborting realms update - failed to get stored configs: %v", err)
+		return err
+	}
+
+	jobs, err := processRealmsConfigChanges(ctx, permsDB, latestRealms, storedRealms, historicalComment)
+	if err != nil {
+		return err
+	}
+	if !executeJobs(ctx, jobs, 2*time.Second) {
+		return fmt.Errorf("not all jobs succeeded when refreshing realms")
+	}
+
+	return nil
 }
 
 // processRealmsConfigChanges returns a slice of parameterless callbacks to
@@ -460,8 +458,6 @@ func RealmsConfigCronHandler(dryRun bool) func(context.Context) error {
 //   - latest: RealmsCfgRev's for the realms configs fetched from
 //     LUCI Config;
 //   - stored: RealmsCfgRev's for the last processed realms configs;
-//   - dryRun: whether this is a dry run (if yes, changes wil not be
-//     committed in the AuthDB);
 //   - historicalComment: the comment to use in entities' history if
 //     changes are committed.
 //
@@ -470,7 +466,7 @@ func RealmsConfigCronHandler(dryRun bool) func(context.Context) error {
 func processRealmsConfigChanges(
 	ctx context.Context, permissionsDB *permissions.PermissionsDB,
 	latest []*RealmsCfgRev, stored []*RealmsCfgRev,
-	dryRun bool, historicalComment string) ([]func() error, error) {
+	historicalComment string) ([]func() error, error) {
 	toMap := func(revisions []*RealmsCfgRev) (map[string]*RealmsCfgRev, error) {
 		result := make(map[string]*RealmsCfgRev, len(revisions))
 		for _, cfgRev := range revisions {
@@ -512,7 +508,7 @@ func processRealmsConfigChanges(
 			revs := []*RealmsCfgRev{latestCfgRev}
 			comment := fmt.Sprintf("%s - using realms config rev %s", historicalComment, latestCfgRev.ConfigRev)
 			jobs = append(jobs, func() error {
-				return updateRealms(ctx, permissionsDB, revs, dryRun, comment)
+				return updateRealms(ctx, permissionsDB, revs, comment)
 			})
 		} else if storedCfgRev.PermsRev != permissionsDB.Rev {
 			// This config needs to be reevaluated.
@@ -527,7 +523,7 @@ func processRealmsConfigChanges(
 			projID := storedCfgRev.ProjectID
 			comment := fmt.Sprintf("%s - config no longer exists", historicalComment)
 			jobs = append(jobs, func() error {
-				return deleteRealms(ctx, projID, dryRun, comment)
+				return deleteRealms(ctx, projID, comment)
 			})
 		}
 	}
@@ -552,7 +548,7 @@ func processRealmsConfigChanges(
 		comment := fmt.Sprintf("%s - generating realms with permissions rev %s",
 			historicalComment, permissionsDB.Rev)
 		jobs = append(jobs, func() error {
-			return updateRealms(ctx, permissionsDB, revs, dryRun, comment)
+			return updateRealms(ctx, permissionsDB, revs, comment)
 		})
 	}
 
@@ -619,7 +615,7 @@ func getLatestRealmsCfgRev(ctx context.Context) ([]*RealmsCfgRev, error) {
 // - failed to unmarshal to a proto;
 // - failed to expand realms; or
 // - failed to update datastore with realms changes.
-func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*RealmsCfgRev, dryRun bool, historicalComment string) error {
+func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*RealmsCfgRev, historicalComment string) error {
 	expanded := []*ExpandedRealms{}
 	for _, r := range revs {
 		logging.Infof(ctx, "expanding realms of project \"%s\"...", r.ProjectID)
@@ -647,7 +643,7 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 	}
 
 	logging.Infof(ctx, "entering transaction")
-	if err := updateAuthProjectRealms(ctx, expanded, db.Rev, dryRun, historicalComment); err != nil {
+	if err := updateAuthProjectRealms(ctx, expanded, db.Rev, historicalComment); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "transaction landed")
@@ -656,15 +652,15 @@ func updateRealms(ctx context.Context, db *permissions.PermissionsDB, revs []*Re
 
 // deleteRealms will try to delete the AuthProjectRealms & AuthProjectRealmsMeta
 // for a given projectID.
-func deleteRealms(ctx context.Context, projectID string, dryRun bool, historicalComment string) error {
-	switch err := deleteAuthProjectRealms(ctx, projectID, dryRun, historicalComment); {
+func deleteRealms(ctx context.Context, projectID string, historicalComment string) error {
+	switch err := deleteAuthProjectRealms(ctx, projectID, historicalComment); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Debugf(ctx, "realms for %s do not exist or have already been deleted", projectID)
 
 		// Attempt to delete the corresponding AuthProjectRealmsMeta, as an
 		// extra clean-up step. This ensures the meta realms mirror the
 		// project realms, in case deleting meta realms failed previously.
-		metaErr := deleteAuthProjectRealmsMeta(ctx, projectID, dryRun)
+		metaErr := deleteAuthProjectRealmsMeta(ctx, projectID)
 		if metaErr != nil && !errors.Is(metaErr, datastore.ErrNoSuchEntity) {
 			return metaErr
 		}

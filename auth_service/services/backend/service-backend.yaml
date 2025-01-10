@@ -15,7 +15,6 @@ luci_gae_vars:
 env_variables:
   DRY_RUN_API_CHANGES: false
   DRY_RUN_CRON_CONFIG: false
-  DRY_RUN_CRON_REALMS: false
   DRY_RUN_CRON_STALE_AUTH: false
 
 inbound_services:

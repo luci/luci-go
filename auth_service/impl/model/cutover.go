@@ -35,7 +35,6 @@ import (
 const (
 	DryRunAPIChangesEnvVar    = "DRY_RUN_API_CHANGES"
 	DryRunCronConfigEnvVar    = "DRY_RUN_CRON_CONFIG"
-	DryRunCronRealmsEnvVar    = "DRY_RUN_CRON_REALMS"
 	DryRunCronStaleAuthEnvVar = "DRY_RUN_CRON_STALE_AUTH"
 )
 

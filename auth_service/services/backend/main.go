@@ -36,7 +36,6 @@ func main() {
 
 	// Parse flags from environment variables.
 	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
-	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
 	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
 
 	impl.Main(modules,
@@ -52,8 +51,7 @@ func main() {
 				model.StaleAuthorizationCronHandler(dryRunCronStaleAuth))
 			cron.RegisterHandler("update-config",
 				model.ServiceConfigCronHandler(dryRunCronConfig))
-			cron.RegisterHandler("update-realms",
-				model.RealmsConfigCronHandler(dryRunCronRealms))
+			cron.RegisterHandler("update-realms", model.RealmsConfigCronHandler)
 
 			return nil
 		})

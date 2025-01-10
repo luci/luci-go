@@ -1654,7 +1654,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 			ctx, ts := getCtx()
 
 			// Check updating realms for a new project works.
-			err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
@@ -1684,7 +1684,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), should.BeNil)
 
 			// Check updating realms for an existing project works.
-			err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, false, "Go pRPC API")
+			err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 			// Check the newly added project realms are as expected.
@@ -1705,46 +1705,6 @@ func TestAuthRealmsConfig(t *testing.T) {
 				ModifiedTS:   testCreatedTS,
 			}))
 		})
-
-		t.Run("updating with dry run mode changes nothing", func(t *ftt.Test) {
-			t.Run("for a new project", func(t *ftt.Test) {
-				ctx, ts := getCtx()
-
-				// Check updating realms for a new project succeeds but doesn't
-				// create an AuthProjectRealms or AuthProjectRealmsMeta entity.
-				err := updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
-				authProjectRealms, err := GetAllAuthProjectRealms(ctx)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, authProjectRealms, should.BeEmpty)
-				authProjectRealmsMeta, err := GetAllAuthProjectRealmsMeta(ctx)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, authProjectRealmsMeta, should.BeEmpty)
-			})
-
-			t.Run("for an existing project", func(t *ftt.Test) {
-				ctx, ts := getCtx()
-
-				originalAuthProjectRealms := testAuthProjectRealms(ctx, "proj1")
-				originalAuthProjectRealmsMeta := testAuthProjectRealmsMeta(ctx, "proj1", "abc123")
-				assert.Loosely(t, datastore.Put(ctx, originalAuthProjectRealms, originalAuthProjectRealmsMeta), should.BeNil)
-
-				// Check updating realms for a new project succeeds but doesn't
-				// update the AuthProjectRealms or AuthProjectRealmsMeta entity.
-				err = updateAuthProjectRealms(ctx, expandedRealms, permissionsRev, true, "Go pRPC API")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
-
-				// Check the newly added project realms are unchanged.
-				authProjectRealms, err := GetAuthProjectRealms(ctx, "proj1")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, authProjectRealms, should.Match(originalAuthProjectRealms))
-				authProjectRealmsMeta, err := GetAuthProjectRealmsMeta(ctx, "proj1")
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, authProjectRealmsMeta, should.Match(originalAuthProjectRealmsMeta))
-			})
-		})
 	})
 
 	ftt.Run("Testing DeleteAuthProjectRealms", t, func(t *ftt.Test) {
@@ -1758,11 +1718,11 @@ func TestAuthRealmsConfig(t *testing.T) {
 		_, err = GetAuthProjectRealms(ctx, testProject)
 		assert.Loosely(t, err, should.BeNil)
 
-		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
+		err = deleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
-		err = deleteAuthProjectRealms(ctx, testProject, false, "Go pRPC API")
+		err = deleteAuthProjectRealms(ctx, testProject, "Go pRPC API")
 		assert.Loosely(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
 	})
 
@@ -1827,7 +1787,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			err := updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API")
+			err := updateAuthRealmsGlobals(ctx, permCfg, "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
@@ -1878,7 +1838,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, "Go pRPC API"), should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(2))
 
 			fetched, err := GetAuthRealmsGlobals(ctx)
@@ -1952,7 +1912,7 @@ func TestAuthRealmsConfig(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, false, "Go pRPC API"), should.BeNil)
+			assert.Loosely(t, updateAuthRealmsGlobals(ctx, permsCfg, "Go pRPC API"), should.BeNil)
 			assert.Loosely(t, ts.Tasks(), should.HaveLength(0))
 
 			fetched, err := GetAuthRealmsGlobals(ctx)

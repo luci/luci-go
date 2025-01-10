@@ -827,7 +827,7 @@ func TestGenerateChanges(t *testing.T) {
 					Realms: proj1Realms,
 				},
 			}
-			err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+			err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", "Go pRPC API")
 			assert.Loosely(t, err, should.BeNil)
 
 			t.Run("project realms created", func(t *ftt.Test) {
@@ -841,7 +841,7 @@ func TestGenerateChanges(t *testing.T) {
 					},
 				}
 
-				err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err := updateAuthProjectRealms(ctx, expandedRealms, "permissions.cfg:abc", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -854,7 +854,7 @@ func TestGenerateChanges(t *testing.T) {
 			})
 
 			t.Run("project realms deleted", func(t *ftt.Test) {
-				err = deleteAuthProjectRealms(ctx, "proj1", false, "Go pRPC API")
+				err = deleteAuthProjectRealms(ctx, "proj1", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -878,7 +878,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: proj1Realms,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -897,7 +897,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -920,7 +920,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: nil,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:abc", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -958,7 +958,7 @@ func TestGenerateChanges(t *testing.T) {
 						Realms: updatedProj1Realms,
 					},
 				}
-				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", false, "Go pRPC API")
+				err = updateAuthProjectRealms(ctx, updatedExpandedRealms, "permissions.cfg:def", "Go pRPC API")
 				assert.Loosely(t, err, should.BeNil)
 
 				actualChanges, err := generateChanges(ctx, 2)
@@ -1064,7 +1064,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.Loosely(t, err, should.BeNil)
@@ -1086,7 +1086,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(4))
 				actualChanges, err = generateChanges(ctx, 2)
 				assert.Loosely(t, err, should.BeNil)
@@ -1116,7 +1116,7 @@ func TestGenerateChanges(t *testing.T) {
 						},
 					},
 				}
-				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, false, "Go pRPC API"), should.BeNil)
+				assert.Loosely(t, updateAuthRealmsGlobals(ctx, permCfg, "Go pRPC API"), should.BeNil)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3)
 				assert.Loosely(t, err, should.BeNil)

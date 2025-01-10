@@ -1624,7 +1624,7 @@ func permsEqual(permsA, permsB []*protocol.Permission) bool {
 // datastore, creating the entity if necessary.
 //
 // Returns an annotated error if one occurs.
-func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, dryRun bool, historicalComment string) error {
+func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.PermissionsConfig, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		stored, err := GetAuthRealmsGlobals(ctx)
 		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
@@ -1675,12 +1675,6 @@ func updateAuthRealmsGlobals(ctx context.Context, permsCfg *configspb.Permission
 			return err
 		}
 
-		// Exit early if in dry run mode.
-		if dryRun {
-			logging.Infof(ctx, "(dry run) updating AuthRealmsGlobals entity")
-			return nil
-		}
-
 		stored.PermissionsList = &permissions.PermissionsList{
 			Permissions: orderedCfgPerms,
 		}
@@ -1724,7 +1718,7 @@ func GetAllAuthProjectRealms(ctx context.Context) ([]*AuthProjectRealms, error) 
 //
 // Returns error if Get from datastore failed
 // Returns error if transaction delete failed
-func deleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, historicalComment string) error {
+func deleteAuthProjectRealms(ctx context.Context, project string, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		authProjectRealms, err := GetAuthProjectRealms(ctx, project)
 		if err != nil {
@@ -1736,18 +1730,13 @@ func deleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, h
 			return err
 		}
 
-		if dryRun {
-			logging.Infof(ctx, "(dry run) deleting realms for project %s", project)
-			return nil
-		}
-
 		// Delete the AuthProjectRealms for this project.
 		if err := commitEntity(authProjectRealms, clock.Now(ctx).UTC(), serviceIdentity, true); err != nil {
 			return err
 		}
 
 		// Delete the corresponding AuthProjectRealmsMeta for this project.
-		if err := deleteAuthProjectRealmsMeta(ctx, project, dryRun); err != nil {
+		if err := deleteAuthProjectRealmsMeta(ctx, project); err != nil {
 			// Non-fatal - the AuthProjectRealms was successfully deleted.
 			// Just log the error.
 			logging.Errorf(
@@ -1763,15 +1752,10 @@ func deleteAuthProjectRealms(ctx context.Context, project string, dryRun bool, h
 //
 // Returns error if Get from datastore failed.
 // Returns error if the delete transaction failed.
-func deleteAuthProjectRealmsMeta(ctx context.Context, project string, dryRun bool) error {
+func deleteAuthProjectRealmsMeta(ctx context.Context, project string) error {
 	meta, err := GetAuthProjectRealmsMeta(ctx, project)
 	if err != nil {
 		return err
-	}
-
-	if dryRun {
-		logging.Infof(ctx, "(dry run) deleting meta realms for project %s", project)
-		return nil
 	}
 
 	if err := datastore.Delete(ctx, meta); err != nil {
@@ -1814,7 +1798,7 @@ type ExpandedRealms struct {
 //		Failed to create new AuthProjectRealm entity
 //		Failed to update AuthProjectRealm entity
 //		Failed to put AuthProjectRealmsMeta entity
-func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, dryRun bool, historicalComment string) error {
+func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, permsRev string, historicalComment string) error {
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
 		metas := []*AuthProjectRealmsMeta{}
 		existing := []*AuthProjectRealms{}
@@ -1843,24 +1827,16 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 				newRealm.Realms = realms
 				newRealm.ConfigRev = r.CfgRev.ConfigRev
 				newRealm.PermsRev = permsRev
-				if dryRun {
-					logging.Infof(ctx, "(dry run) creating realms for project %s", newRealm.ID)
-				} else {
-					if err := commitEntity(newRealm, now, serviceIdentity, false); err != nil {
-						return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
-					}
+				if err := commitEntity(newRealm, now, serviceIdentity, false); err != nil {
+					return errors.Annotate(err, "failed to create new AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
 				}
 			} else if !bytes.Equal(existing[idx].Realms, realms) {
 				// update
 				existing[idx].Realms = realms
 				existing[idx].ConfigRev = r.CfgRev.ConfigRev
 				existing[idx].PermsRev = permsRev
-				if dryRun {
-					logging.Infof(ctx, "(dry run) updating realms for project %s", existing[idx].ID)
-				} else {
-					if err := commitEntity(existing[idx], now, serviceIdentity, false); err != nil {
-						return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
-					}
+				if err := commitEntity(existing[idx], now, serviceIdentity, false); err != nil {
+					return errors.Annotate(err, "failed to update AuthProjectRealm %s", r.CfgRev.ProjectID).Err()
 				}
 			} else {
 				logging.Infof(ctx, "configs are fresh!")
@@ -1874,12 +1850,8 @@ func updateAuthProjectRealms(ctx context.Context, eRealms []*ExpandedRealms, per
 			metas = append(metas, currentMeta)
 		}
 
-		if dryRun {
-			logging.Infof(ctx, "(dry run) updating metadata for project realms")
-		} else {
-			if err := datastore.Put(ctx, metas); err != nil {
-				return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
-			}
+		if err := datastore.Put(ctx, metas); err != nil {
+			return errors.Annotate(err, "failed trying to put AuthProjectRealmsMeta").Err()
 		}
 
 		return nil

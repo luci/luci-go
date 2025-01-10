@@ -45,8 +45,6 @@ func makeTestPermissions(names ...string) []*protocol.Permission {
 }
 
 func TestAuthDBProvider(t *testing.T) {
-	t.Setenv(model.DryRunCronRealmsEnvVar, "false")
-
 	ftt.Run("AuthDBProvider works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		authDB := &AuthDBProvider{}
