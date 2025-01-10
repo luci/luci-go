@@ -98,7 +98,7 @@ func TestUploadAuthDB(t *testing.T) {
 			// Set up settings config with no GS path.
 			assert.Loosely(t, settingscfg.SetConfig(ctx, &configspb.SettingsCfg{}), should.BeNil)
 			// There should be no client calls.
-			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers, false), should.BeNil)
+			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers), should.BeNil)
 		})
 
 		t.Run("uploads AuthDB and revision", func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestUploadAuthDB(t *testing.T) {
 			mockClient.Client.EXPECT().Close().Times(1).After(dbWrite).After(revWrite)
 
 			// Upload the AuthDB to GS.
-			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers, false), should.BeNil)
+			assert.Loosely(t, UploadAuthDB(ctx, signedAuthDB, rev, readers), should.BeNil)
 		})
 	})
 }

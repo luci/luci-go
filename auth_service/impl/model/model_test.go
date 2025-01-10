@@ -28,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -1980,10 +1979,9 @@ func TestAuthRealmsConfig(t *testing.T) {
 func TestGetAuthDBSnapshot(t *testing.T) {
 	t.Parallel()
 	ctx := memory.Use(context.Background())
-	dryRun := false
 
 	ftt.Run("Testing GetAuthDBSnapshot", t, func(t *ftt.Test) {
-		_, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
+		_, err := GetAuthDBSnapshot(ctx, 42, false)
 		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
@@ -1991,20 +1989,20 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		err = datastore.Put(ctx, snapshot)
 		assert.Loosely(t, err, should.BeNil)
 
-		actual, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
+		actual, err := GetAuthDBSnapshot(ctx, 42, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(snapshot))
 
 		err = datastore.Put(ctx, snapshot)
 		assert.Loosely(t, err, should.BeNil)
 
-		actual, err = GetAuthDBSnapshot(ctx, 42, false, dryRun)
+		actual, err = GetAuthDBSnapshot(ctx, 42, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(snapshot))
 	})
 
 	ftt.Run("Testing GetAuthDBSnapshotLatest", t, func(t *ftt.Test) {
-		_, err := GetAuthDBSnapshotLatest(ctx, dryRun)
+		_, err := GetAuthDBSnapshotLatest(ctx)
 		assert.Loosely(t, err, should.Equal(datastore.ErrNoSuchEntity))
 
 		snapshot := testAuthDBSnapshot(ctx, 42)
@@ -2020,7 +2018,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 
 		assert.Loosely(t, err, should.BeNil)
 
-		actual, err := GetAuthDBSnapshotLatest(ctx, dryRun)
+		actual, err := GetAuthDBSnapshotLatest(ctx)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(authDBSnapshotLatest))
 	})
@@ -2042,7 +2040,7 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, authDBShard1), should.BeNil)
 		assert.Loosely(t, datastore.Put(ctx, authDBShard2), should.BeNil)
 
-		actualBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
+		actualBlob, err := unshardAuthDB(ctx, shardIDs)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualBlob, should.Match(expectedBlob))
 	})
@@ -2052,11 +2050,11 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, datastore.Put(ctx, snapshot), should.BeNil)
 
-		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false, dryRun)
+		actualSnapshot, err := GetAuthDBSnapshot(ctx, 42, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualSnapshot.AuthDBDeflated, should.Match(expectedAuthDB))
 
-		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true, dryRun)
+		actualSnapshot, err = GetAuthDBSnapshot(ctx, 42, true)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actualSnapshot.AuthDBDeflated, should.BeNil)
 	})
@@ -2064,7 +2062,6 @@ func TestGetAuthDBSnapshot(t *testing.T) {
 
 func TestStoreAuthDBSnapshot(t *testing.T) {
 	t.Parallel()
-	dryRun := false
 
 	ftt.Run("storing AuthDBSnapshot works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
@@ -2077,11 +2074,11 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
 
 		// Store the AuthDBSnapshot.
-		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob, dryRun)
+		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), authDBBlob)
 		assert.Loosely(t, err, should.BeNil)
 
 		// Check the AuthDBSnapshot stored data.
-		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
+		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, authDBSnapshot, should.Match(&AuthDBSnapshot{
 			Kind:           "AuthDBSnapshot",
@@ -2095,11 +2092,11 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 
 		t.Run("no overwriting for existing revision", func(t *ftt.Test) {
 			// Attempt to store the AuthDBSnapshot for an existing revision.
-			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"), dryRun)
+			err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 1), []byte("test-authdb-blob-changed"))
 			assert.Loosely(t, err, should.BeNil)
 
 			// Check the AuthDBSnapshot stored data was not actually changed.
-			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false, dryRun)
+			authDBSnapshot, err := GetAuthDBSnapshot(ctx, 1, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, authDBSnapshot, should.Match(&AuthDBSnapshot{
 				Kind:           "AuthDBSnapshot",
@@ -2123,19 +2120,19 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 		assert.Loosely(t, datastore.Put(ctx, latestSnapshot), should.BeNil)
 
 		t.Run("updated for later revision", func(t *ftt.Test) {
-			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil, dryRun), should.BeNil)
+			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 28), nil), should.BeNil)
 
 			// Check the latest AuthDBSnapshot pointer was updated.
-			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(28))
 		})
 
 		t.Run("not updated for earlier revision", func(t *ftt.Test) {
-			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil, dryRun), should.BeNil)
+			assert.Loosely(t, StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 23), nil), should.BeNil)
 
 			// Check the latest AuthDBSnapshot pointer was not updated.
-			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, dryRun)
+			latestSnapshot, err := GetAuthDBSnapshotLatest(ctx)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(24))
 		})
@@ -2146,52 +2143,13 @@ func TestStoreAuthDBSnapshot(t *testing.T) {
 
 		// Shard an AuthDB compressed blob.
 		authDBDeflatedBlob := []byte("this is test data")
-		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8, dryRun)
+		shardIDs, err := shardAuthDB(ctx, 32, authDBDeflatedBlob, 8)
 		assert.Loosely(t, err, should.BeNil)
 
 		// Check the blob is reconstructed given the same shard IDs.
-		unshardedBlob, err := unshardAuthDB(ctx, shardIDs, dryRun)
+		unshardedBlob, err := unshardAuthDB(ctx, shardIDs)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, unshardedBlob, should.Match(authDBDeflatedBlob))
-	})
-
-	ftt.Run("storing snapshot in dry run mode works", t, func(t *ftt.Test) {
-		ctx := memory.Use(context.Background())
-
-		// Set up the test data.
-		authDBBlob := []byte("test-authdb-blob")
-		expectedDeflated, err := zlib.Compress(authDBBlob)
-		assert.Loosely(t, err, should.BeNil)
-		blobChecksum := sha256.Sum256(authDBBlob)
-		expectedHexDigest := hex.EncodeToString(blobChecksum[:])
-
-		// Store the AuthDBSnapshot in dry run mode.
-		err = StoreAuthDBSnapshot(ctx, testAuthReplicationState(ctx, 12), authDBBlob, true)
-		assert.Loosely(t, err, should.BeNil)
-
-		// Check the AuthDBSnapshot was stored in dry run mode.
-		authDBSnapshot, err := GetAuthDBSnapshot(ctx, 12, false, true)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, authDBSnapshot, should.Match(&AuthDBSnapshot{
-			Kind:           "V2AuthDBSnapshot",
-			ID:             12,
-			AuthDBDeflated: expectedDeflated,
-			AuthDBSha256:   expectedHexDigest,
-			CreatedTS:      testModifiedTS,
-		}))
-		decompressedBlob, _ := zlib.Decompress(authDBSnapshot.AuthDBDeflated)
-		assert.Loosely(t, decompressedBlob, should.Match(authDBBlob))
-
-		// Check the AuthDBSnapshotLatest for dry run mode was updated.
-		latestSnapshot, err := GetAuthDBSnapshotLatest(ctx, true)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, latestSnapshot.AuthDBRev, should.Equal(12))
-
-		// Check no snapshot was written with dry run mode off.
-		_, err = GetAuthDBSnapshot(ctx, 12, false, false)
-		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
-		_, err = GetAuthDBSnapshotLatest(ctx, false)
-		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
 	})
 }
 

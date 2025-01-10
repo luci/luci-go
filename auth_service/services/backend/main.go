@@ -35,7 +35,6 @@ func main() {
 	}
 
 	// Parse flags from environment variables.
-	dryRunReplication := model.ParseDryRunEnvVar(model.DryRunTQReplicationEnvVar)
 	dryRunCronConfig := model.ParseDryRunEnvVar(model.DryRunCronConfigEnvVar)
 	dryRunCronRealms := model.ParseDryRunEnvVar(model.DryRunCronRealmsEnvVar)
 	dryRunCronStaleAuth := model.ParseDryRunEnvVar(model.DryRunCronStaleAuthEnvVar)
@@ -48,7 +47,7 @@ func main() {
 		func(srv *server.Server) error {
 			// Register task queue handlers.
 			model.RegisterChangeHandler()
-			model.RegisterReplicationHandler(dryRunReplication, useV1Perms)
+			model.RegisterReplicationHandler(useV1Perms)
 
 			// Register cron task handlers.
 			cron.RegisterHandler("refresh-replicated-authdb",

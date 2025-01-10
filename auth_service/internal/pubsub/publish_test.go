@@ -40,7 +40,7 @@ func TestPublishAuthDBRevision(t *testing.T) {
 
 		t.Run("returns error for invalid revision", func(t *ftt.Test) {
 			ctx := context.Background()
-			assert.Loosely(t, PublishAuthDBRevision(ctx, nil, false), should.ErrLike("invalid AuthDBRevision"))
+			assert.Loosely(t, PublishAuthDBRevision(ctx, nil), should.ErrLike("invalid AuthDBRevision"))
 		})
 
 		t.Run("skips publishing for local dev server", func(t *ftt.Test) {
@@ -52,7 +52,7 @@ func TestPublishAuthDBRevision(t *testing.T) {
 				AuthDbRev:  123,
 				ModifiedTs: testModifiedTS.UnixMicro(),
 			}
-			err := PublishAuthDBRevision(ctx, testRev, false)
+			err := PublishAuthDBRevision(ctx, testRev)
 			assert.Loosely(t, err, should.BeNil)
 		})
 	})
@@ -84,7 +84,7 @@ func TestPublishAuthDBRevision(t *testing.T) {
 			AuthDbRev:  123,
 			ModifiedTs: testModifiedTS.UnixMicro(),
 		}
-		err := publish(ctx, testRev, false)
+		err := publish(ctx, testRev)
 		assert.Loosely(t, err, should.BeNil)
 	})
 }

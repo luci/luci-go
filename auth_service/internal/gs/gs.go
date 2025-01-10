@@ -74,7 +74,7 @@ func IsValidPath(path string) bool {
 
 // UploadAuthDB uploads the signed AuthDB and AuthDBRevision to Google
 // Storage.
-func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revision *protocol.AuthDBRevision, readers stringset.Set, dryRun bool) (retErr error) {
+func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revision *protocol.AuthDBRevision, readers stringset.Set) (retErr error) {
 	// Skip if the GS path is invalid.
 	gsPath, err := GetPath(ctx)
 	if err != nil {
@@ -86,11 +86,6 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 			return nil
 		}
 		return fmt.Errorf("invalid GS path: %s", gsPath)
-	}
-
-	fileBaseName := "latest"
-	if dryRun {
-		fileBaseName = "V2latest"
 	}
 
 	acls := constructReadACLs(readers)
@@ -105,6 +100,8 @@ func UploadAuthDB(ctx context.Context, signedAuthDB *protocol.SignedAuthDB, revi
 			retErr = err
 		}
 	}()
+
+	fileBaseName := "latest"
 
 	// Upload signed AuthDB.
 	authDBData, err := proto.Marshal(signedAuthDB)

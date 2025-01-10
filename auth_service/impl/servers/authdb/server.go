@@ -53,13 +53,13 @@ func (srv *Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotRe
 		return nil, status.Errorf(codes.InvalidArgument, "Negative revision numbers are not valid")
 	} else if request.Revision == 0 {
 		var err error
-		if request.Revision, err = getLatestRevision(ctx, false); err != nil {
+		if request.Revision, err = getLatestRevision(ctx); err != nil {
 			logging.Errorf(ctx, err.Error())
 			return nil, err
 		}
 	}
 
-	switch snapshot, err := model.GetAuthDBSnapshot(ctx, request.Revision, request.SkipBody, false); {
+	switch snapshot, err := model.GetAuthDBSnapshot(ctx, request.Revision, request.SkipBody); {
 	case err == nil:
 		return snapshot.ToProto(), nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -73,8 +73,8 @@ func (srv *Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotRe
 
 // getLatestRevision is a helper function to get the latest revision number of
 // the AuthDB.
-func getLatestRevision(ctx context.Context, dryRun bool) (int64, error) {
-	switch latest, err := model.GetAuthDBSnapshotLatest(ctx, dryRun); {
+func getLatestRevision(ctx context.Context) (int64, error) {
+	switch latest, err := model.GetAuthDBSnapshotLatest(ctx); {
 	case err == nil:
 		return latest.AuthDBRev, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
@@ -100,7 +100,7 @@ func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 	revIDStr := ctx.Params.ByName("revID")
 	switch revIDStr {
 	case "", "latest":
-		revID, err = getLatestRevision(c, false)
+		revID, err = getLatestRevision(c)
 		if err != nil {
 			return err
 		}
@@ -123,7 +123,7 @@ func (srv *Server) HandleLegacyAuthDBServing(ctx *router.Context) error {
 		skipBody = requestURL.Query().Get("skip_body") == "1"
 	}
 
-	snapshot, err := model.GetAuthDBSnapshot(c, revID, skipBody, false)
+	snapshot, err := model.GetAuthDBSnapshot(c, revID, skipBody)
 	if err != nil {
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			return status.Errorf(codes.NotFound,

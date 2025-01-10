@@ -50,18 +50,17 @@ func EnqueueReplicationTask(ctx context.Context, authdbrev int64) error {
 	})
 }
 
-func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, dryRun, useV1Perms bool) error {
+func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, useV1Perms bool) error {
 	authDBRev := task.GetAuthDbRev()
-	logging.Infof(ctx, "replicating AuthDB for Rev %d (dry run: %v)", authDBRev, dryRun)
+	logging.Infof(ctx, "replicating AuthDB for Rev %d", authDBRev)
 
-	if err := replicate(ctx, authDBRev, dryRun, useV1Perms); err != nil {
-		if !dryRun && transient.Tag.In(err) {
+	if err := replicate(ctx, authDBRev, useV1Perms); err != nil {
+		if transient.Tag.In(err) {
 			// Return the error to signal retry.
 			return err
 		}
 
-		// Either dryRun is enabled, or error is non-transient;
-		// do not retry.
+		// Error is non-transient; do not retry.
 		logging.Errorf(ctx, "error replicating AuthDB: %s", err)
 		return tq.Fatal.Apply(err)
 	}
@@ -73,7 +72,7 @@ func handleReplicationTask(ctx context.Context, task *taskspb.ReplicationTask, d
 // Note: to avoid stale tasks, it will first check that the
 // AuthReplicationState.AuthDBRev is still equal to the
 // given authDBRev before doing anthing.
-func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) error {
+func replicate(ctx context.Context, authDBRev int64, useV1Perms bool) error {
 	replicationState, err := GetReplicationState(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to get current replication state").Err()
@@ -96,7 +95,7 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 	// Put the blob into datastore. Also updates pointer to the latest
 	// stored blob. This is used by the endpoint at
 	// /auth_service/api/v1/authdb/revisions/<rev|"latest">
-	if err := StoreAuthDBSnapshot(ctx, replicationState, authDBBlob, dryRun); err != nil {
+	if err := StoreAuthDBSnapshot(ctx, replicationState, authDBBlob); err != nil {
 		return errors.Annotate(err, "failed to store AuthDBSnapshot to datastore").Err()
 	}
 
@@ -117,7 +116,7 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 	gsPath, err := gs.GetPath(ctx)
 	if err == nil && gs.IsValidPath(gsPath) {
 		// Upload to GS.
-		err := uploadToGS(ctx, replicationState, authDBBlob, sig, keyName, dryRun)
+		err := uploadToGS(ctx, replicationState, authDBBlob, sig, keyName)
 		if err != nil {
 			logging.Errorf(ctx, "failed to upload AuthDB Rev %d to GS: %s", authDBRev, err)
 			return err
@@ -125,14 +124,14 @@ func replicate(ctx context.Context, authDBRev int64, dryRun, useV1Perms bool) er
 	}
 
 	// Notify PubSub subscribers that a new snapshot is available.
-	if err := pubsub.PublishAuthDBRevision(ctx, revisionInfo, dryRun); err != nil {
+	if err := pubsub.PublishAuthDBRevision(ctx, revisionInfo); err != nil {
 		logging.Errorf(ctx, "error publishing PubSub message for revision %d: %s",
 			revisionInfo.AuthDbRev, err)
 		return err
 	}
 
 	// Directly push the latest AuthDB to replicas.
-	if err := updateReplicas(ctx, revisionInfo.AuthDbRev, authDBBlob, sig, keyName, dryRun); err != nil {
+	if err := updateReplicas(ctx, revisionInfo.AuthDbRev, authDBBlob, sig, keyName); err != nil {
 		logging.Errorf(ctx, "error updating replicas for revision %d: %s",
 			revisionInfo.AuthDbRev, err)
 		return err
@@ -195,7 +194,7 @@ func packAuthDB(ctx context.Context, useV1Perms bool) (*AuthReplicationState, *p
 	return replicationState, authDBRevision, blob, nil
 }
 
-func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, authDBBlob, sig []byte, keyName string, dryRun bool) error {
+func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, authDBBlob, sig []byte, keyName string) error {
 	readers, err := GetAuthorizedEmails(ctx)
 	if err != nil {
 		return errors.Annotate(err, "error getting authorized reader emails").Err()
@@ -216,10 +215,10 @@ func uploadToGS(ctx context.Context, replicationState *AuthReplicationState, aut
 		AuthDbRev:  replicationState.AuthDBRev,
 		ModifiedTs: replicationState.ModifiedTS.UnixMicro(),
 	}
-	return gs.UploadAuthDB(ctx, signedAuthDB, authDBRevision, readers, dryRun)
+	return gs.UploadAuthDB(ctx, signedAuthDB, authDBRevision, readers)
 }
 
-func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte, keyName string, dryRun bool) error {
+func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte, keyName string) error {
 	// Get last known replica states.
 	staleReplicas, err := GetAllStaleReplicas(ctx, authDBRev)
 	if err != nil {
@@ -231,13 +230,7 @@ func updateReplicas(ctx context.Context, authDBRev int64, authDBBlob, sig []byte
 		logging.Infof(ctx, "all replicas are up-to-date")
 		return nil
 	}
-	logging.Debugf(ctx, "%d stale replicas need to be updated (dryRun: %v)",
-		len(staleReplicas), dryRun)
-
-	// Exit early for dry run to skip direct push to replicas.
-	if dryRun {
-		return nil
-	}
+	logging.Debugf(ctx, "%d stale replicas need to be updated", len(staleReplicas))
 
 	// Push the AuthDB to all replicas in parallel.
 	encodedSig := base64.StdEncoding.EncodeToString(sig)

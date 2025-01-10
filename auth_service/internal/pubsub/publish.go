@@ -34,9 +34,8 @@ import (
 //
 // Publishing is skipped if:
 // - the AuthDBRevision is invalid; or
-// - the app server is a local development server; or
-// - dryRun is true.
-func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) error {
+// - the app server is a local development server.
+func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision) error {
 	if rev == nil {
 		return fmt.Errorf("invalid AuthDBRevision - aborting")
 	}
@@ -48,12 +47,11 @@ func PublishAuthDBRevision(ctx context.Context, rev *protocol.AuthDBRevision, dr
 		return nil
 	}
 
-	return publish(ctx, rev, dryRun)
+	return publish(ctx, rev)
 }
 
-// publish constructs the pubsub.Message. If dryRun is false, the
-// message is then published.
-func publish(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) (retErr error) {
+// publish constructs the pubsub.Message.
+func publish(ctx context.Context, rev *protocol.AuthDBRevision) (retErr error) {
 	pushReq := &protocol.ReplicationPushRequest{
 		Revision: rev,
 	}
@@ -77,12 +75,6 @@ func publish(ctx context.Context, rev *protocol.AuthDBRevision, dryRun bool) (re
 			"X-AuthDB-SigKey-v1": keyName,
 			"X-AuthDB-SigVal-v1": base64.StdEncoding.EncodeToString(sig),
 		},
-	}
-
-	// Skip publishing if dryRun is enabled.
-	if dryRun {
-		logging.Debugf(ctx, "(dry run: %v) constructed PubSub message: %+v", dryRun, msg)
-		return nil
 	}
 
 	client, err := newClient(ctx)
