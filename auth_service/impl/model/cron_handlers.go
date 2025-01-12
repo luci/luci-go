@@ -16,9 +16,7 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -153,8 +151,7 @@ func StaleAuthorizationCronHandler(ctx context.Context) error {
 func ServiceConfigCronHandler(ctx context.Context) error {
 	historicalComment := "Updated from update-config cron"
 
-	latestRevs, err := refreshServiceConfigs(ctx)
-	if err != nil {
+	if err := refreshServiceConfigs(ctx); err != nil {
 		return err
 	}
 
@@ -166,81 +163,14 @@ func ServiceConfigCronHandler(ctx context.Context) error {
 		return err
 	}
 
-	// Update GroupImporterConfig entity (which is not part of the AuthDB).
-	//
-	// TODO(b/302615672): Remove this once Auth Service has been fully
-	// migrated to Auth Service v2 because the GroupImporterConfig entity is
-	// redundant.
-	importsConfig, importsMeta, err := importscfg.GetWithMetadata(ctx)
-	if err != nil {
-		return err
-	}
-	if err := updateGroupImporterConfig(ctx, importsConfig, importsMeta); err != nil {
-		return err
-	}
-
-	// Update _ImportedConfigRevisions entity (which is not part of AuthDB).
-	//
-	// TODO(b/302615672): Remove this once Auth Service has been fully
-	// migrated to Auth Service v2 because the _ImportedConfigRevisions
-	// entity is redundant.
-	if err := updateImportedConfigRevisions(ctx, latestRevs); err != nil {
-		return err
-	}
-
 	return nil
-}
-
-// configRevisionInfo stores the info on a config's revision. Useful for configs
-// fetched from the LUCI Config Service.
-type configRevisionInfo struct {
-	Revision string `json:"rev"`
-	ViewURL  string `json:"url"`
-}
-
-type configMetaMap struct {
-	mu      *sync.Mutex
-	cfgMeta map[string]*configRevisionInfo
-}
-
-func (c *configMetaMap) add(meta *config.Meta) {
-	if meta == nil {
-		return
-	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.cfgMeta[meta.Path] = &configRevisionInfo{
-		Revision: meta.Revision,
-		ViewURL:  meta.ViewURL,
-	}
-}
-
-func (c *configMetaMap) getConfigRevisions() map[string]*configRevisionInfo {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.cfgMeta
 }
 
 type configRefresher func(ctx context.Context) (*config.Meta, error)
 
-// ImportedConfigRevisions is the Datastore entity used by Auth Service v1 to
-// keep track of config revision info. It is not necessary in v2, but its data
-// should be updated so the the UI for v1 remains accurate.
-type ImportedConfigRevisions struct {
-	Kind string `gae:"$kind,_ImportedConfigRevisions"`
-	ID   string `gae:"$id,self"`
-
-	// Parent is RootKey().
-	Parent *datastore.Key `gae:"$parent"`
-
-	// Serialized mapping of config path -> {'rev': SHA1, 'url': URL}
-	Revisions []byte `gae:"revisions"`
-}
-
 // refreshServiceConfigs updates the cached service configs to be the latest
 // from LUCI Config.
-func refreshServiceConfigs(ctx context.Context) (map[string]*configRevisionInfo, error) {
+func refreshServiceConfigs(ctx context.Context) error {
 	configRefreshers := []configRefresher{
 		allowlistcfg.Update,
 		importscfg.Update,
@@ -249,110 +179,21 @@ func refreshServiceConfigs(ctx context.Context) (map[string]*configRevisionInfo,
 		settingscfg.Update,
 	}
 
-	// Set up to record the metadata for the latest service configs.
-	latest := &configMetaMap{
-		mu:      &sync.Mutex{},
-		cfgMeta: make(map[string]*configRevisionInfo, len(configRefreshers)),
-	}
-
 	eg, childCtx := errgroup.WithContext(ctx)
 	for _, refresher := range configRefreshers {
 		eg.Go(func() error {
-			meta, err := refresher(childCtx)
-			if err != nil {
+			if _, err := refresher(childCtx); err != nil {
 				// Log the error, so details aren't lost if there are multiple
 				// errors.
 				logging.Errorf(childCtx, err.Error())
 				return err
 			}
-			latest.add(meta)
 
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return nil, err
-	}
-
-	return latest.getConfigRevisions(), nil
-}
-
-func getImportedConfigRevisions(ctx context.Context) (*ImportedConfigRevisions, error) {
-	stored := &ImportedConfigRevisions{
-		Kind:   "_ImportedConfigRevisions",
-		ID:     "self",
-		Parent: RootKey(ctx),
-	}
-
-	switch err := datastore.Get(ctx, stored); {
-	case err == nil:
-		return stored, nil
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, err
-	default:
-		return nil, errors.Annotate(err, "error getting ImportedConfigRevisions").Err()
-	}
-}
-
-// updateImportedConfigRevisions updates the _ImportedConfigRevisions entity
-// with the latest config revision info for configs that affect the AuthDB.
-// If there is no _ImportedConfigRevisions entity, one will be created.
-//
-// TODO(b/302615672): Remove this once Auth Service has been fully
-// migrated to Auth Service v2. In v2, the _ImportedConfigRevisions entity
-// is redundant; revision metadata for service configs is all handled by the
-// srvcfg/* packages.
-func updateImportedConfigRevisions(ctx context.Context, latestRevs map[string]*configRevisionInfo) error {
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		configRevs := map[string]*configRevisionInfo{}
-
-		shouldUpdate := false
-		stored, err := getImportedConfigRevisions(ctx)
-		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-			return err
-		}
-		if stored != nil {
-			// Unmarshal the revision info.
-			if err := json.Unmarshal(stored.Revisions, &configRevs); err != nil {
-				return err
-			}
-		} else {
-			stored = &ImportedConfigRevisions{
-				Kind:   "_ImportedConfigRevisions",
-				ID:     "self",
-				Parent: RootKey(ctx),
-			}
-			shouldUpdate = true
-		}
-
-		for path, latestRev := range latestRevs {
-			if !authDBConfigPaths.Has(path) {
-				// Skip since this config doesn't affect the AuthDB.
-				continue
-			}
-
-			storedRev, ok := configRevs[path]
-			if !ok || !(*storedRev == *latestRev) {
-				configRevs[path] = latestRev
-				shouldUpdate = true
-			}
-		}
-
-		if !shouldUpdate {
-			// Already up to date.
-			return nil
-		}
-
-		var jsonErr error
-		stored.Revisions, jsonErr = json.Marshal(configRevs)
-		if jsonErr != nil {
-			return errors.Annotate(jsonErr, "error marshaling ImportedConfigRevisions").Err()
-		}
-
-		return datastore.Put(ctx, stored)
-	}, nil)
-	if err != nil {
-		return errors.Annotate(err, "error updating ImportedConfigRevisions").Err()
+		return err
 	}
 
 	return nil

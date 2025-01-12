@@ -18,21 +18,17 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"slices"
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/encoding/prototext"
-
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 
@@ -92,112 +88,8 @@ var (
 // fetching them). Fetched and uploaded tarballs are handled in the exact same way,
 // in particular all caveats related to external group system names apply.
 
-// GroupImporterConfig is a singleton entity that contains the contents of the imports.cfg file.
-type GroupImporterConfig struct {
-	Kind string `gae:"$kind,GroupImporterConfig"`
-	ID   string `gae:"$id,config"`
-
-	// ConfigProto is the plaintext copy of the config found at imports.cfg.
-	ConfigProto string `gae:"config_proto"`
-
-	// ConfigRevision is revision version of the config found at imports.cfg.
-	ConfigRevision []byte `gae:"config_revision"`
-
-	// ModifiedBy is the email of the user who modified the cfg.
-	ModifiedBy string `gae:"modified_by,noindex"`
-
-	// ModifiedTS is the time when this entity was last modified.
-	ModifiedTS time.Time `gae:"modified_ts,noindex"`
-}
-
 // GroupBundle is a map where k: groupName, v: list of identities belonging to group k.
 type GroupBundle = map[string][]identity.Identity
-
-// GetGroupImporterConfig fetches the GroupImporterConfig entity from the datastore.
-//
-//	Returns GroupImporterConfig entity if present.
-//	Returns datastore.ErrNoSuchEntity if the entity is not present.
-//	Returns annotated error for all other errors.
-func GetGroupImporterConfig(ctx context.Context) (*GroupImporterConfig, error) {
-	groupsCfg := &GroupImporterConfig{
-		Kind: "GroupImporterConfig",
-		ID:   "config",
-	}
-
-	switch err := datastore.Get(ctx, groupsCfg); {
-	case err == nil:
-		return groupsCfg, nil
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, err
-	default:
-		return nil, errors.Annotate(err, "error getting GroupImporterConfig").Err()
-	}
-}
-
-// updateGroupImporterConfig updates the GroupImporterConfig datastore entity.
-// If there is no GroupImporterConfig entity present in the datastore, one will
-// be created.
-//
-// TODO(b/302615672): Remove this once Auth Service has been fully migrated to
-// Auth Service v2. In v2, the GroupImporterConfig entity is redundant; the
-// config proto and revision metadata is all handled by the importscfg package.
-func updateGroupImporterConfig(ctx context.Context, importsCfg *configspb.GroupImporterConfig, meta *config.Meta) error {
-	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		storedCfg, err := GetGroupImporterConfig(ctx)
-		if err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-			return err
-		}
-		if storedCfg == nil {
-			storedCfg = &GroupImporterConfig{
-				Kind: "GroupImporterConfig",
-				ID:   "config",
-			}
-		}
-
-		latestRev := configRevisionInfo{
-			Revision: meta.Revision,
-			ViewURL:  meta.ViewURL,
-		}
-
-		// First, check if an update is necessary.
-		if storedCfg.ConfigRevision != nil {
-			var storedRev configRevisionInfo
-			if err := json.Unmarshal(storedCfg.ConfigRevision, &storedRev); err != nil {
-				return errors.Annotate(err,
-					"failed to unmarshal revision info for GroupImporterConfig").Err()
-			}
-
-			if storedRev == latestRev {
-				// Skip update since GroupImporterConfig is already up to date.
-				return nil
-			}
-		}
-
-		configContent, err := prototext.Marshal(importsCfg)
-		if err != nil {
-			return errors.Annotate(err, "failed to marshal imports.cfg content").Err()
-		}
-		configRev, err := json.Marshal(latestRev)
-		if err != nil {
-			return errors.Annotate(err, "failed to marshal revision info for GroupImporterConfig").Err()
-		}
-		serviceIdentity, err := getServiceIdentity(ctx)
-		if err != nil {
-			return err
-		}
-
-		storedCfg.ConfigProto = string(configContent)
-		storedCfg.ConfigRevision = configRev
-		storedCfg.ModifiedBy = string(serviceIdentity)
-		storedCfg.ModifiedTS = clock.Now(ctx).UTC()
-		return datastore.Put(ctx, storedCfg)
-	}, nil)
-	if err != nil {
-		return errors.Annotate(err, "failed to update GroupImporterConfig").Err()
-	}
-
-	return nil
-}
 
 // IngestTarball handles upload of tarball's specified in 'tarball_upload' config entries.
 // expected to be called in an auth context of the upload PUT request.
@@ -648,15 +540,6 @@ func extractTarArchive(r io.Reader) (map[string][]byte, error) {
 		return nil, err
 	}
 	return entries, nil
-}
-
-// ToProto converts the GroupImporterConfig entity to the proto equivalent.
-func (g *GroupImporterConfig) ToProto() (*configspb.GroupImporterConfig, error) {
-	gConfig := &configspb.GroupImporterConfig{}
-	if err := prototext.Unmarshal([]byte(g.ConfigProto), gConfig); err != nil {
-		return nil, err
-	}
-	return gConfig, nil
 }
 
 // makeNewExternalAuthGroup is a helper function for creating an external
