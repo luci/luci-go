@@ -798,25 +798,10 @@ func diffRealmsGlobals(ctx context.Context, target string, old, new datastore.Pr
 		return changes, err
 	}
 
-	// Get changes for permissions maintained by Auth Service v1.
-	oldNames, oldPermissions, err := extractV1Permissions(oldRealms)
-	if err != nil {
-		return []*AuthDBChange{}, err
-	}
-	newNames, newPermissions, err := extractV1Permissions(newRealms)
-	if err != nil {
-		return []*AuthDBChange{}, err
-	}
+	// Get changes for permissions maintained by Auth Service.
+	oldNames, oldPermissions := extractPermissions(oldRealms)
+	newNames, newPermissions := extractPermissions(newRealms)
 	authChange, isChanged := diffPermissions(ctx, oldNames, newNames, oldPermissions, newPermissions)
-	if isChanged {
-		setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class, authChange)
-		changes = append(changes, authChange)
-	}
-
-	// Get changes for permissions maintained by Auth Service v2.
-	oldNames, oldPermissions = extractV2Permissions(oldRealms)
-	newNames, newPermissions = extractV2Permissions(newRealms)
-	authChange, isChanged = diffPermissions(ctx, oldNames, newNames, oldPermissions, newPermissions)
 	if isChanged {
 		setTargetTypeFields(ctx, ChangeRealmsGlobalsChanged, target, class, authChange)
 		changes = append(changes, authChange)
@@ -892,40 +877,12 @@ func diffProjectRealms(ctx context.Context, target string, old, new datastore.Pr
 	return changes, nil
 }
 
-// extractV1Permissions returns the permissions maintained by
-// Auth Service v1 from the given AuthRealmsGlobals.
+// extractPermissions returns the permissions from the given AuthRealmsGlobals.
 //
 // Returns:
 // - permission names in their stored order; and
 // - a map of permissions, where the key is the permission name.
-func extractV1Permissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission, error) {
-	if a == nil {
-		return []string{}, map[string]*protocol.Permission{}, nil
-	}
-
-	names := make([]string, len(a.Permissions))
-	permissionsByName := make(map[string]*protocol.Permission, len(a.Permissions))
-	for i, p := range a.Permissions {
-		permission := &protocol.Permission{}
-		err := proto.Unmarshal([]byte(p), permission)
-		if err != nil {
-			err = errors.Annotate(err, "error while unmarshalling stored Permissions").Err()
-			return []string{}, map[string]*protocol.Permission{}, err
-		}
-		name := permission.GetName()
-		names[i] = name
-		permissionsByName[name] = permission
-	}
-	return names, permissionsByName, nil
-}
-
-// extractV2Permissions returns the permissions maintained by
-// Auth Service v2 from the given AuthRealmsGlobals.
-//
-// Returns:
-// - permission names in their stored order; and
-// - a map of permissions, where the key is the permission name.
-func extractV2Permissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission) {
+func extractPermissions(a *AuthRealmsGlobals) ([]string, map[string]*protocol.Permission) {
 	if a == nil || a.PermissionsList == nil {
 		return []string{}, map[string]*protocol.Permission{}
 	}
