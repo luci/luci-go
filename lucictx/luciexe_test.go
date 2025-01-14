@@ -25,20 +25,13 @@ import (
 
 func TestLUCIExe(t *testing.T) {
 	ftt.Run(`test luciexe`, t, func(t *ftt.Test) {
-		ctx := context.Background()
-
-		t.Run(`can get from empty ctx`, func(t *ftt.Test) {
-			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
-		})
-
-		t.Run(`can set in ctx`, func(t *ftt.Test) {
+		t.Run(`can set and clear in ctx`, func(t *ftt.Test) {
+			ctx := context.Background()
 			ctx = SetLUCIExe(ctx, &LUCIExe{CacheDir: "hello"})
 			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble(&LUCIExe{CacheDir: "hello"}))
 
-			t.Run(`setting nil clears it out`, func(t *ftt.Test) {
-				ctx = SetLUCIExe(ctx, nil)
-				assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
-			})
+			ctx = SetLUCIExe(ctx, nil)
+			assert.Loosely(t, GetLUCIExe(ctx), should.Resemble((*LUCIExe)(nil)))
 		})
 	})
 }
