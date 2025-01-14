@@ -153,7 +153,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
   }
 
   const bugs = useMemo(
-    () => bugData?.pages.flatMap((p) => p.issues).map((i) => bugFromJson(i)),
+    () =>
+      bugData?.pages.flatMap((p) => p.issues).map((i) => bugFromJson(i)) || [],
     [bugData],
   );
 
@@ -180,7 +181,8 @@ export function MonitoringProvider({ children, treeName, tree }: Props) {
             ? new Error(bugsQueryError.result.error.message)
             : null,
         isBugsError: isBugQueryError || bugIsRefetchError,
-        bugsLoading: bugIsLoading,
+        bugsLoading:
+          (linkedBugs.length > 0 || !!tree?.hotlistId) && bugIsLoading,
       }}
     >
       {children}

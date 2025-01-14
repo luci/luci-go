@@ -121,7 +121,7 @@ export function AlertTabs() {
           </Alert>
         ) : null}
         {/* TODO: Get hotlist name */}
-        {bugs?.length === 0 ? (
+        {!bugsLoading && bugs?.length === 0 ? (
           <Typography>
             {tree.hotlistId ? (
               <>
