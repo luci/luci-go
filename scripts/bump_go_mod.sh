@@ -106,8 +106,8 @@ deps=(
 )
 
 for mod in ${deps[@]}; do
-  echo go get -d ${mod}
-  go get -d ${mod}
+  echo go get ${mod}
+  go get ${mod}
 done
 
 echo go mod tidy
