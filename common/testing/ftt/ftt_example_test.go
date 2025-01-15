@@ -20,7 +20,51 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/testing/typed"
 )
+
+// TestFttTraversal shows you the traversal order. Note how many times "1" gets re-executed.
+func TestFttTraversal(t *testing.T) {
+	t.Parallel()
+
+	var items []int
+
+	expected := []int{
+		1,
+		1, 2,
+		1, 2, 3,
+		1, 2, 4,
+		1, 5,
+		1, 5, 6,
+		1, 5, 7,
+	}
+
+	ftt.Run("A", t, func(t *ftt.Test) {
+		items = append(items, 1)
+		t.Run("B", func(*ftt.Test) {
+			items = append(items, 2)
+			t.Run("C", func(*ftt.Test) {
+				items = append(items, 3)
+			})
+			t.Run("D", func(*ftt.Test) {
+				items = append(items, 4)
+			})
+		})
+		t.Run("E", func(*ftt.Test) {
+			items = append(items, 5)
+			t.Run("F", func(*ftt.Test) {
+				items = append(items, 6)
+			})
+			t.Run("G", func(*ftt.Test) {
+				items = append(items, 7)
+			})
+		})
+	})
+
+	if diff := typed.Got(items).Want(expected).Diff(); diff != "" {
+		t.Errorf("unexpected diff (-want +got): %s", diff)
+	}
+}
 
 func TestFtt(t *testing.T) {
 	t.Parallel()
