@@ -37,6 +37,8 @@ export function useSourceIndexClient() {
 const CORS_ENABLED_GITILES_HOSTS = Object.freeze([
   'chromium.googlesource.com',
   'chrome-internal.googlesource.com',
+  'fuchsia.googlesource.com',
+  'turquoise-internal.googlesource.com',
   'webrtc.googlesource.com',
 ]);
 
