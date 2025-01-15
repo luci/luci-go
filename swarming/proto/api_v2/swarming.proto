@@ -49,6 +49,11 @@ service Bots {
   // range) in the context of a single bot.
   //
   // The bot in question must still be 'known' to Swarming.
+  //
+  // Note: by default the `state` parameter has value 'QUERY_PENDING', which
+  // will always result in empty response, since pending tasks are not
+  // associated with bots. To get all tasks regardless of state, set
+  // 'state' to 'QUERY_ALL'.
   rpc ListBotTasks(BotTasksRequest) returns (TaskListResponse);
   // ListBots returns the state of a filtered (dimensions, state) list of known bots.
   rpc ListBots(BotsRequest) returns (BotInfoListResponse);
@@ -84,16 +89,25 @@ service Tasks {
   // ListTasks returns full task results based on the filters.
   // This endpoint is significantly slower than 'count'. Use 'count' when
   // possible. If you just want the state of tasks, use 'get_states'.
+  //
+  // Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+  // all tasks regardless of state, set 'state' to 'QUERY_ALL'.
   rpc ListTasks(TasksWithPerfRequest) returns (TaskListResponse);
-  // ListTaskStates returns task state for a specific set of tasks."""
+  // ListTaskStates returns task state for a specific set of tasks.
   rpc ListTaskStates(TaskStatesRequest) returns (TaskStates);
-  // GetTaskRequests returns the task request corresponding to a task ID.
+  // ListTaskRequests returns task requests based on the filters.
+  //
+  // Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+  // all tasks regardless of state, set 'state' to 'QUERY_ALL'.
   rpc ListTaskRequests(TasksRequest) returns (TaskRequestsResponse);
   // CancelTasks cancels a subset of pending tasks based on the tags.
   // Cancellation happens asynchronously, so when this call returns,
   // cancellations will not have completed yet.
   rpc CancelTasks(TasksCancelRequest) returns (TasksCancelResponse);
-  // CountTasks returns the number of tasks in a given state."""
+  // CountTasks returns the number of tasks in a given state.
+  //
+  // Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+  // all tasks regardless of state, set 'state' to 'QUERY_ALL'.
   rpc CountTasks(TasksCountRequest) returns (TasksCount);
 }
 

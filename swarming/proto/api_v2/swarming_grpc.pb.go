@@ -74,6 +74,11 @@ type BotsClient interface {
 	// range) in the context of a single bot.
 	//
 	// The bot in question must still be 'known' to Swarming.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING', which
+	// will always result in empty response, since pending tasks are not
+	// associated with bots. To get all tasks regardless of state, set
+	// 'state' to 'QUERY_ALL'.
 	ListBotTasks(ctx context.Context, in *BotTasksRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
 	// ListBots returns the state of a filtered (dimensions, state) list of known bots.
 	ListBots(ctx context.Context, in *BotsRequest, opts ...grpc.CallOption) (*BotInfoListResponse, error)
@@ -212,6 +217,11 @@ type BotsServer interface {
 	// range) in the context of a single bot.
 	//
 	// The bot in question must still be 'known' to Swarming.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING', which
+	// will always result in empty response, since pending tasks are not
+	// associated with bots. To get all tasks regardless of state, set
+	// 'state' to 'QUERY_ALL'.
 	ListBotTasks(context.Context, *BotTasksRequest) (*TaskListResponse, error)
 	// ListBots returns the state of a filtered (dimensions, state) list of known bots.
 	ListBots(context.Context, *BotsRequest) (*BotInfoListResponse, error)
@@ -505,16 +515,25 @@ type TasksClient interface {
 	// ListTasks returns full task results based on the filters.
 	// This endpoint is significantly slower than 'count'. Use 'count' when
 	// possible. If you just want the state of tasks, use 'get_states'.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	ListTasks(ctx context.Context, in *TasksWithPerfRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
-	// ListTaskStates returns task state for a specific set of tasks."""
+	// ListTaskStates returns task state for a specific set of tasks.
 	ListTaskStates(ctx context.Context, in *TaskStatesRequest, opts ...grpc.CallOption) (*TaskStates, error)
-	// GetTaskRequests returns the task request corresponding to a task ID.
+	// ListTaskRequests returns task requests based on the filters.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	ListTaskRequests(ctx context.Context, in *TasksRequest, opts ...grpc.CallOption) (*TaskRequestsResponse, error)
 	// CancelTasks cancels a subset of pending tasks based on the tags.
 	// Cancellation happens asynchronously, so when this call returns,
 	// cancellations will not have completed yet.
 	CancelTasks(ctx context.Context, in *TasksCancelRequest, opts ...grpc.CallOption) (*TasksCancelResponse, error)
-	// CountTasks returns the number of tasks in a given state."""
+	// CountTasks returns the number of tasks in a given state.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	CountTasks(ctx context.Context, in *TasksCountRequest, opts ...grpc.CallOption) (*TasksCount, error)
 }
 
@@ -664,16 +683,25 @@ type TasksServer interface {
 	// ListTasks returns full task results based on the filters.
 	// This endpoint is significantly slower than 'count'. Use 'count' when
 	// possible. If you just want the state of tasks, use 'get_states'.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	ListTasks(context.Context, *TasksWithPerfRequest) (*TaskListResponse, error)
-	// ListTaskStates returns task state for a specific set of tasks."""
+	// ListTaskStates returns task state for a specific set of tasks.
 	ListTaskStates(context.Context, *TaskStatesRequest) (*TaskStates, error)
-	// GetTaskRequests returns the task request corresponding to a task ID.
+	// ListTaskRequests returns task requests based on the filters.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	ListTaskRequests(context.Context, *TasksRequest) (*TaskRequestsResponse, error)
 	// CancelTasks cancels a subset of pending tasks based on the tags.
 	// Cancellation happens asynchronously, so when this call returns,
 	// cancellations will not have completed yet.
 	CancelTasks(context.Context, *TasksCancelRequest) (*TasksCancelResponse, error)
-	// CountTasks returns the number of tasks in a given state."""
+	// CountTasks returns the number of tasks in a given state.
+	//
+	// Note: by default the `state` parameter has value 'QUERY_PENDING'. To get
+	// all tasks regardless of state, set 'state' to 'QUERY_ALL'.
 	CountTasks(context.Context, *TasksCountRequest) (*TasksCount, error)
 	mustEmbedUnimplementedTasksServer()
 }
