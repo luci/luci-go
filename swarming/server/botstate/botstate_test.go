@@ -91,6 +91,43 @@ func TestDict(t *testing.T) {
 		assert.That(t, d.MustReadString("key"), should.Equal(""))
 		assert.That(t, d.MustReadBool("key"), should.BeFalse)
 	})
+
+	t.Run("Editing noop", func(t *testing.T) {
+		blob := []byte(`{"str": "val"}`)
+
+		d := Dict{JSON: blob}
+
+		out, err := Edit(d, func(d *EditableDict) error {
+			var str string
+			assert.That(t, d.Read("str", &str), should.ErrLike(nil))
+			assert.That(t, str, should.Equal("val"))
+			return nil
+		})
+
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, out.JSON, should.Match(blob))
+	})
+
+	t.Run("Editing for real", func(t *testing.T) {
+		blob := []byte(`{"str": "val"}`)
+
+		d := Dict{JSON: blob}
+
+		out, err := Edit(d, func(d *EditableDict) error {
+			assert.That(t, d.Write("str", "another val"), should.ErrLike(nil))
+			var str string
+			assert.That(t, d.Read("str", &str), should.ErrLike(nil))
+			assert.That(t, str, should.Equal("another val"))
+			return nil
+		})
+
+		assert.That(t, err, should.ErrLike(nil))
+		assert.That(t, out.JSON, should.Match([]byte(`{
+  "str": "another val"
+}`)))
+
+		assert.That(t, out.MustReadString("str"), should.Equal("another val"))
+	})
 }
 
 func runDatastoreTest(t *testing.T, d Dict, asBlob []byte) {

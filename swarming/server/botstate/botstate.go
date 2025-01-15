@@ -18,6 +18,7 @@ package botstate
 import (
 	"bytes"
 	"encoding/json"
+	"maps"
 
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -164,4 +165,70 @@ func (d *Dict) MustReadString(key string) string {
 		return ""
 	}
 	return val
+}
+
+// Edit allows to mutate the state dict inside the given callback.
+//
+// Returns the final mutated dict or an error if the dict could not be
+// serialized/deserialized or the callback returned an error.
+func Edit(d Dict, cb func(d *EditableDict) error) (Dict, error) {
+	var editable EditableDict
+
+	switch {
+	case d.broken != nil:
+		return Dict{}, d.broken
+	case d.dict != nil:
+		editable.inner.dict = maps.Clone(d.dict)
+	default:
+		editable.inner.dict = map[string]json.RawMessage{}
+		if len(d.JSON) != 0 {
+			if err := json.Unmarshal(d.JSON, &editable.inner.dict); err != nil {
+				return Dict{}, err
+			}
+		}
+	}
+
+	if err := cb(&editable); err != nil {
+		return Dict{}, err
+	}
+
+	var blob []byte
+
+	if editable.dirty {
+		var err error
+		if blob, err = json.MarshalIndent(editable.inner.dict, "", "  "); err != nil {
+			return Dict{}, err
+		}
+	} else {
+		blob = d.JSON // can reuse, nothing has changed
+	}
+
+	return Dict{JSON: blob, dict: editable.inner.dict}, nil
+}
+
+// EditableDict is an editable representation of a state dict.
+type EditableDict struct {
+	inner Dict
+	dirty bool
+}
+
+// Read reads a value of the given key if it is present.
+//
+// Doesn't change `val` and returns nil if the key is missing. Returns an error
+// if the key value can't be deserialized.
+func (d *EditableDict) Read(key string, val any) error {
+	return d.inner.Read(key, val)
+}
+
+// Write overwrites the value of the given key.
+//
+// Returns an error if the value can't be serialized.
+func (d *EditableDict) Write(key string, val any) error {
+	blob, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+	d.inner.dict[key] = json.RawMessage(blob)
+	d.dirty = true
+	return nil
 }
