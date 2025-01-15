@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Link } from '@mui/material';
-import { JSONPath as jsonpath } from 'jsonpath-plus';
 
 import { BuildStatusIcon } from '@/build/components/build_status_icon';
 import { OutputBuildInfra_Backend } from '@/build/types';
@@ -27,17 +26,9 @@ export function BackendRows({ backend }: BackendRowsProps) {
   const task = backend.task;
 
   const botId = backend.task.id.target.startsWith('swarming://')
-    ? jsonpath<string | undefined>({
-        json: task.details || {},
-        path: '$.bot_dimensions.id[0]@string()',
-        wrap: false,
-      })
+    ? task.details?.bot_dimensions?.id?.[0]
     : undefined;
-  const serviceAccount = jsonpath<string | undefined>({
-    json: backend.config || {},
-    path: '$.service_account@string()',
-    wrap: false,
-  });
+  const serviceAccount = backend.config?.service_account;
 
   return (
     <>

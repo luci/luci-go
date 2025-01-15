@@ -14,7 +14,6 @@
 
 import Link from '@mui/material/Link';
 import { useQuery } from '@tanstack/react-query';
-import { JSONPath as jsonpath } from 'jsonpath-plus';
 
 import { useMiloInternalClient } from '@/common/hooks/prpc_clients';
 import { StringPair } from '@/common/services/common';
@@ -54,16 +53,26 @@ function propertiesToDisplay(
   }
   const pairs: StringPair[] = [];
   for (const item of propertiesCfg.displayItems) {
-    const value = jsonpath<string | string[] | undefined>({
-      json: testMetadata.properties,
-      path: `$.${item.path}@string()`,
-      wrap: false,
-    });
-    if (value && typeof value === 'string') {
+    const value = extractProperty(testMetadata.properties, item.path);
+    if (value !== undefined && typeof value === 'string') {
       pairs.push({ key: item.displayName, value });
     }
   }
   return pairs;
+}
+
+type PropertyObject = { [key: string]: unknown };
+function extractProperty(
+  properties: PropertyObject | undefined,
+  path: string,
+): string | undefined {
+  if (!properties) return undefined;
+  let current: PropertyObject | undefined = properties;
+  for (const part of path.split('.')) {
+    current = current[part] as PropertyObject | undefined;
+    if (current === undefined) return undefined;
+  }
+  return current.toString();
 }
 
 export function TestIdLabel({ projectOrRealm, testId }: TestIdLabelProps) {
