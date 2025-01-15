@@ -72,50 +72,110 @@ export interface StructuredAlert {
   consecutivePasses: number;
 }
 
+export interface AlertOrganzerOptions {
+  showResolved: boolean;
+  showFlaky: boolean;
+  showChildrenHidden: boolean;
+}
+
+export type GroupedAlertKeys = { [groupId: string]: string[] };
+
+export class AlertOrganizer {
+  private options: AlertOrganzerOptions;
+  private groups: GroupedAlertKeys;
+  private structuredAlerts: StructuredAlert[];
+
+  constructor(
+    alerts: GenericAlert[],
+    groups: GroupedAlertKeys,
+    options: AlertOrganzerOptions,
+  ) {
+    this.options = options;
+    this.groups = groups;
+    this.structuredAlerts = buildStructuredAlerts(alerts);
+  }
+
+  allAlerts(kind: AlertKind): StructuredAlert[] {
+    const all = this.structuredAlerts.filter((a) => a.alert.kind === kind);
+    return cloneShownAlerts(all, {}, this.options);
+  }
+
+  ungroupedAlerts(kind: AlertKind): StructuredAlert[] {
+    const all = this.structuredAlerts.filter((a) => a.alert.kind === kind);
+    const alertKeys = Object.fromEntries(
+      Object.entries(this.groups)
+        .flatMap(([_, keys]) => keys)
+        .map((k) => [k, true]),
+    );
+    return cloneShownAlerts(all, alertKeys, this.options);
+  }
+
+  groupAlerts(groupId: string): StructuredAlert[] {
+    const groupAlertKeys = this.groups[groupId] || [];
+    const topLevel = this.structuredAlerts.filter((a) =>
+      groupAlertKeys.includes(a.alert.key),
+    );
+    return cloneShownAlerts(topLevel, {}, this.options);
+  }
+}
+
+const cloneShownAlerts = (
+  alerts: StructuredAlert[],
+  hiddenKeys: { [alertKey: string]: boolean },
+  options: AlertOrganzerOptions,
+): StructuredAlert[] => {
+  const cloned: StructuredAlert[] = [];
+  for (const alert of alerts) {
+    if (hiddenKeys[alert.alert.key]) {
+      continue;
+    }
+    if (alert.alert.consecutiveFailures === 0 && !options.showResolved) {
+      continue;
+    }
+    if (alert.alert.consecutiveFailures === 1 && !options.showFlaky) {
+      continue;
+    }
+    const clone = { ...alert };
+    clone.children = cloneShownAlerts(alert.children, hiddenKeys, options);
+    if (
+      clone.children.length === 0 &&
+      alert.children.length > 0 &&
+      !options.showChildrenHidden
+    ) {
+      continue;
+    }
+    cloned.push(clone);
+  }
+  return cloned;
+};
+
 export const filterResolved = (alerts: GenericAlert[]): GenericAlert[] =>
   alerts.filter((a) => a.consecutiveFailures > 0);
 
 export const buildStructuredAlerts = (
-  topLevelAlerts: GenericAlert[],
-  allAlerts: GenericAlert[],
+  alerts: GenericAlert[],
 ): StructuredAlert[] => {
-  const builderAlerts = allAlerts.filter((a) => a.kind === 'builder');
-  const stepAlerts = allAlerts.filter((a) => a.kind === 'step');
-  const testAlerts = allAlerts.filter((a) => a.kind === 'test');
+  const builderAlerts = alerts.filter((a) => a.kind === 'builder');
+  const stepAlerts = alerts.filter((a) => a.kind === 'step');
+  const testAlerts = alerts.filter((a) => a.kind === 'test');
 
-  return buildStructuredAlertsPreSorted(
-    topLevelAlerts,
-    builderAlerts as BuilderAlert[],
-    stepAlerts as StepAlert[],
-    testAlerts as TestAlert[],
-  );
-};
-
-export const buildStructuredAlertsPreSorted = (
-  topLevelAlerts: GenericAlert[],
-  childBuilderAlerts: BuilderAlert[],
-  childStepAlerts: StepAlert[],
-  childTestAlerts: TestAlert[],
-): StructuredAlert[] => {
   return [
-    ...organizeRelatedAlerts([
-      topLevelAlerts.filter((a) => a.kind === 'builder'),
-      childStepAlerts,
-      childTestAlerts,
-    ]),
-    ...organizeRelatedAlerts([
-      topLevelAlerts.filter((a) => a.kind === 'step'),
-      childBuilderAlerts,
-      childTestAlerts,
-    ]),
-    ...organizeRelatedAlerts([
-      topLevelAlerts.filter((a) => a.kind === 'test'),
-      childStepAlerts,
-      childBuilderAlerts,
-    ]),
+    ...organizeRelatedAlerts([builderAlerts, stepAlerts, testAlerts]),
+    ...organizeRelatedAlerts([stepAlerts, builderAlerts, testAlerts]),
+    ...organizeRelatedAlerts([testAlerts, stepAlerts, builderAlerts]),
   ];
 };
 
+/**
+ *
+ * organizeRelatedAlerts recursively organizes alerts into a tree structure based on their keys.
+ * The function takes an array of alert groups as input, where each group represents a different
+ * type of alert (builder, step, test). It iteratively organizes alerts from each group into a
+ * tree structure, ensuring that parent-child relationships are correctly represented.
+ *
+ * @param alertGroups An array of alert groups, each containing alerts of a specific type.
+ * @returns An array of StructuredAlert objects representing the organized alert tree.
+ */
 export const organizeRelatedAlerts = (
   alertGroups: GenericAlert[][],
 ): StructuredAlert[] => {
@@ -124,22 +184,30 @@ export const organizeRelatedAlerts = (
     return [];
   }
   const alerts = alertGroups[0].map(makeStructuredAlert);
-  if (alertGroups.length > 1) {
+  for (let level = 1; level < alertGroups.length; level++) {
     alerts.forEach((alert) => {
-      alert.children = sortAlertsByFailurePattern(
-        organizeRelatedAlerts([
-          alertGroups[1].filter((a) => isAlertRelated(a, alert.alert)),
-          ...alertGroups.slice(2),
-        ]),
-        alert.consecutiveFailures,
-      );
+      const childKeys = alert.children.map((a) => a.alert.key);
+      alert.children = [
+        ...alert.children,
+        ...sortAlertsByFailurePattern(
+          organizeRelatedAlerts([
+            alertGroups[level].filter(
+              (a) =>
+                isAlertKeyRelated(a.key, alert.alert.key) &&
+                !childKeys.find((k) => isAlertKeyRelated(k, a.key)),
+            ),
+            ...alertGroups.slice(level + 1),
+          ]),
+          alert.consecutiveFailures,
+        ),
+      ];
     });
   }
   return alerts;
 };
 
-export const isAlertRelated = (a: GenericAlert, b: GenericAlert): boolean => {
-  return a.key.startsWith(b.key) || b.key.startsWith(a.key);
+export const isAlertKeyRelated = (a: string, b: string): boolean => {
+  return a.startsWith(b) || b.startsWith(a);
 };
 
 export const makeStructuredAlert = (alert: GenericAlert): StructuredAlert => {

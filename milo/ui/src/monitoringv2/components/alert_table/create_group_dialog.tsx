@@ -24,24 +24,21 @@ import {
 import { useState } from 'react';
 
 import { getLongestCommonSubstring } from '@/generic_libs/tools/string_utils';
-import { StructuredAlert } from '@/monitoringv2/util/alerts';
 
 import { AlertGroup } from '../alerts';
 
 interface CreateGroupDialogProps {
   onClose: () => void;
-  alerts: StructuredAlert[];
+  alertKeys: string[];
   createGroup: (group: AlertGroup) => void;
 }
 
 export const CreateGroupDialog = ({
   onClose,
-  alerts,
+  alertKeys: alertKeys,
   createGroup,
 }: CreateGroupDialogProps) => {
-  const defaultTitleParts = getLongestCommonSubstring(
-    alerts.map((a) => a.alert.key),
-  )
+  const defaultTitleParts = getLongestCommonSubstring(alertKeys)
     .split('/')
     .filter((s) => s);
   const defaultTitle = defaultTitleParts[defaultTitleParts.length - 1]
@@ -54,13 +51,14 @@ export const CreateGroupDialog = ({
     id: new Date().toISOString(), // TODO(mwarton): replace with server generated id.
     name,
     statusMessage,
-    alertKeys: alerts.map((a) => a.alert.key),
     bugs: [],
+    alertKeys: alertKeys,
   };
   return (
     <Dialog open onClose={onClose}>
       <DialogTitle>
-        Create group from {alerts.length} alert{alerts.length > 1 ? 's' : ''}
+        Create group from {alertKeys.length} alert
+        {alertKeys.length > 1 ? 's' : ''}
       </DialogTitle>
       <DialogContent>
         <Box>

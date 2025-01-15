@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import {
   Box,
   Button,
   CircularProgress,
   ToggleButton,
   ToggleButtonGroup,
+  Menu,
   Tooltip,
   Typography,
+  MenuItem,
+  ListItemIcon,
+  Checkbox,
+  Divider,
 } from '@mui/material';
 import { useState } from 'react';
+import { useUpdateEffect } from 'react-use';
 
 import { SearchInput } from '@/common/components/search_input';
 import {
@@ -31,9 +37,9 @@ import {
 } from '@/monitoringv2/pages/monitoring_page/context';
 import {
   AlertKind,
-  buildStructuredAlertsPreSorted,
+  AlertOrganizer,
   filterAlerts,
-  GenericAlert,
+  StructuredAlert,
 } from '@/monitoringv2/util/alerts';
 
 import { AlertTable } from '../alert_table';
@@ -56,8 +62,8 @@ export interface AlertGroup {
 
 export const Alerts = () => {
   const tree = useTree();
-  const [filter] = useFilterQuery('');
-  let {
+  const [filter, setFilter] = useFilterQuery('');
+  const {
     builderAlerts,
     stepAlerts,
     testAlerts,
@@ -65,60 +71,69 @@ export const Alerts = () => {
     alertsLoadingStatus,
   } = useAlerts();
   const [organizeBy, setOrganizeBy] = useState<AlertKind>('builder');
-  const [showResolved, setShowResolved] = useState(false);
+  const [showOptions, setShowOptions] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useSelectedTab(DEFAULT_ALERT_TAB);
   const [alertGroups, setAlertGroups] = useState<AlertGroup[]>([]);
+
+  useUpdateEffect(() => {
+    setFilter('');
+    // Although we use setFilter here, we don't want to run this every time setFilter changes
+    // because otherwise we cannot actually enter a filter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTab]);
 
   if (!tree) {
     return <></>;
   }
 
-  // Filter out all alerts based on flaky/resolved status.
-  if (!showResolved) {
-    builderAlerts = builderAlerts.filter((a) => a.consecutiveFailures > 1);
-    stepAlerts = stepAlerts.filter((a) => a.consecutiveFailures > 1);
-    testAlerts = testAlerts.filter((a) => a.consecutiveFailures > 1);
-  }
+  const groupedAlertKeys = Object.fromEntries(
+    alertGroups.map((g) => [g.id, g.alertKeys]),
+  );
+  const organizer = new AlertOrganizer(
+    [...builderAlerts, ...stepAlerts, ...testAlerts],
+    groupedAlertKeys,
+    {
+      showResolved: showOptions.includes('resolved'),
+      showFlaky: showOptions.includes('flaky'),
+      showChildrenHidden: showOptions.includes('children_hidden'),
+    },
+  );
 
-  let topLevelAlerts: GenericAlert[] = builderAlerts;
-  if (organizeBy === 'step') {
-    topLevelAlerts = stepAlerts;
-  } else if (organizeBy === 'test') {
-    topLevelAlerts = testAlerts;
-  }
-  const ungroupedTopLevelAlerts = topLevelAlerts.filter(
-    (a) => !alertGroups.some((g) => g.alertKeys.includes(a.key)),
+  const allAlerts = organizer.allAlerts(organizeBy);
+  const ungroupedAlerts = organizer.ungroupedAlerts(organizeBy);
+  const groupedAlerts = Object.fromEntries(
+    alertGroups.map((g) => [g.id, organizer.groupAlerts(g.id)]),
   );
 
   let selectedGroup = undefined;
   let header = null;
-  let selectedTopLevelAlerts = topLevelAlerts;
+  let selectedAlerts: StructuredAlert[] = [];
   if (selectedTab === 'ungrouped') {
-    selectedTopLevelAlerts = ungroupedTopLevelAlerts;
+    selectedAlerts = ungroupedAlerts;
     header = <UngroupedHeader />;
   } else if (selectedTab === 'all') {
-    selectedTopLevelAlerts = topLevelAlerts;
+    selectedAlerts = allAlerts;
     header = <AllHeader />;
   } else if (selectedTab.startsWith('group:')) {
-    const groupIndex = alertGroups.findIndex(
-      (g) => g.id === selectedTab.slice(6),
-    );
+    const groupId = selectedTab.slice(6);
+    const groupIndex = alertGroups.findIndex((g) => g.id === groupId);
     const group = alertGroups[groupIndex];
     const setGroup = (group: AlertGroup) => {
-      alertGroups[groupIndex] = group;
-      setAlertGroups([...alertGroups]);
+      setAlertGroups([
+        ...alertGroups.slice(0, groupIndex),
+        group,
+        ...alertGroups.slice(groupIndex + 1),
+      ]);
     };
     const archiveGroup = () => {
-      alertGroups[groupIndex] = group;
       setAlertGroups([
         ...alertGroups.slice(0, groupIndex),
         ...alertGroups.slice(groupIndex + 1),
       ]);
     };
-    if (!group) {
-      selectedTopLevelAlerts = [];
-    } else {
+    if (group) {
       selectedGroup = group;
+      selectedAlerts = groupedAlerts[groupId];
       header = (
         <GroupHeader
           group={group}
@@ -126,25 +141,10 @@ export const Alerts = () => {
           archiveGroup={archiveGroup}
         />
       );
-      selectedTopLevelAlerts = group.alertKeys
-        .map(
-          (key) =>
-            builderAlerts.find((a) => a.key === key) ||
-            stepAlerts.find((a) => a.key === key) ||
-            testAlerts.find((a) => a.key === key),
-        )
-        .filter((a) => !!a);
     }
   }
 
-  const structuredAlerts = buildStructuredAlertsPreSorted(
-    selectedTopLevelAlerts,
-    builderAlerts,
-    stepAlerts,
-    testAlerts,
-  );
-  const selectedAlerts = filterAlerts(structuredAlerts, filter);
-
+  const filteredAlerts = filterAlerts(selectedAlerts, filter);
   return (
     <Box sx={{ display: 'flex' }}>
       <Box sx={{ minWidth: '256px', flexGrow: 1, flexShrink: 0 }}>
@@ -152,8 +152,8 @@ export const Alerts = () => {
           tree={tree}
           selectedTab={selectedTab}
           setSelectedTab={setSelectedTab}
-          topLevelAlerts={topLevelAlerts}
-          ungroupedTopLevelAlerts={ungroupedTopLevelAlerts}
+          topLevelAlerts={allAlerts}
+          ungroupedTopLevelAlerts={ungroupedAlerts}
           alertGroups={alertGroups}
         />
       </Box>
@@ -180,16 +180,11 @@ export const Alerts = () => {
               <ToggleButton value="test">Test</ToggleButton>
             </ToggleButtonGroup>
             <FilterAlertInput />
-            <Tooltip
-              title={`${showResolved ? 'Hide' : 'Show'} flaky and resolved alerts`}
-            >
-              <Button
-                variant="outlined"
-                color={showResolved ? 'primary' : 'inherit'}
-                onClick={() => setShowResolved(!showResolved)}
-              >
-                <VisibilityIcon />
-              </Button>
+            <Tooltip title={'Select alerts to show'}>
+              <ShowOptionsButton
+                showOptions={showOptions}
+                setShowOptions={setShowOptions}
+              />
             </Tooltip>
           </Box>
         </Box>
@@ -211,15 +206,95 @@ export const Alerts = () => {
           ) : null}
         </Box>
         <AlertTable
-          alerts={selectedAlerts}
+          alerts={filteredAlerts}
           group={selectedGroup}
           groups={alertGroups}
           setGroups={setAlertGroups}
+          selectedTab={selectedTab}
         />
       </Box>
     </Box>
   );
 };
+
+function ShowOptionsButton({
+  showOptions,
+  setShowOptions,
+}: {
+  showOptions: string[];
+  setShowOptions: (options: string[]) => void;
+}) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const toggleOption = (option: string) => {
+    if (showOptions.includes(option)) {
+      setShowOptions(showOptions.filter((o) => o !== option));
+    } else {
+      setShowOptions([...showOptions, option]);
+    }
+  };
+  return (
+    <>
+      <Button
+        variant="outlined"
+        color="inherit"
+        onClick={handleClick}
+        endIcon={<KeyboardArrowDownIcon />}
+      >
+        Show
+      </Button>
+      <Menu
+        id="show-options-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+      >
+        <MenuItem onClick={() => setShowOptions([])}>Reset to default</MenuItem>
+        <Divider />
+        <CheckedMenuItem
+          onCheck={() => toggleOption('children_hidden')}
+          checked={showOptions.includes('children_hidden')}
+          text="Alerts with all children hidden"
+        />
+        <CheckedMenuItem
+          onCheck={() => toggleOption('flaky')}
+          checked={showOptions.includes('flaky')}
+          text="Single occurrence alerts"
+        />
+        <CheckedMenuItem
+          onCheck={() => toggleOption('resolved')}
+          checked={showOptions.includes('resolved')}
+          text="Resolved alerts"
+        />
+      </Menu>
+    </>
+  );
+}
+
+function CheckedMenuItem({
+  checked,
+  onCheck,
+  text,
+}: {
+  checked: boolean;
+  onCheck: () => void;
+  text: string;
+}) {
+  return (
+    <MenuItem onClick={onCheck}>
+      <ListItemIcon>
+        <Checkbox checked={checked} sx={{ paddingLeft: 0 }} />
+      </ListItemIcon>
+      {text}
+    </MenuItem>
+  );
+}
 
 function FilterAlertInput() {
   const [filter, updateFilter] = useFilterQuery('');

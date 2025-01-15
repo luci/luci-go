@@ -142,7 +142,7 @@ export const ActionBar = ({
           {showCreateGroupDialog ? (
             <CreateGroupDialog
               onClose={() => setShowCreateGroupDialog(false)}
-              alerts={alerts.filter((a) => selectedAlertKeys[a.alert.key])}
+              alertKeys={Object.keys(selectedAlertKeys)}
               createGroup={createGroupAndUnselect}
             />
           ) : null}

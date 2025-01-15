@@ -69,9 +69,13 @@ export const BuildAlertRow = ({
       }}
     >
       <TableCell width="32px" padding="none">
-        {parentAlert === undefined ? (
-          <Checkbox checked={selected} onChange={toggleSelected} />
-        ) : null}
+        {/* {parentAlert === undefined ? ( */}
+        <Checkbox
+          sx={{ marginLeft: `${indent * 20}px` }}
+          checked={selected}
+          onChange={toggleSelected}
+        />
+        {/* ) : null} */}
         {selected}
       </TableCell>
       <TableCell

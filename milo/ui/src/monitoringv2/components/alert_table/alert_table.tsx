@@ -23,7 +23,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import {
   GenericAlert,
@@ -45,6 +45,7 @@ interface AlertTableProps {
   group?: AlertGroup;
   groups: AlertGroup[];
   setGroups: (group: AlertGroup[]) => void;
+  selectedTab: string;
 }
 
 /**
@@ -55,6 +56,7 @@ export const AlertTable = ({
   group,
   groups,
   setGroups,
+  selectedTab,
 }: AlertTableProps) => {
   const [expanded, setExpanded] = useState({} as { [alert: string]: boolean });
   const [expandAll, setExpandAll] = useState(false);
@@ -65,6 +67,12 @@ export const AlertTable = ({
   const [selectedAlertKeys, setSelectedAlertKeys] = useState(
     {} as { [key: string]: boolean },
   );
+
+  useEffect(() => {
+    setExpandAll(false);
+    setExpanded({});
+    setSelectedAlertKeys({});
+  }, [selectedTab]);
 
   if (!alerts) {
     return null;
@@ -102,7 +110,9 @@ export const AlertTable = ({
     }
   };
 
-  const allSelected = Object.keys(selectedAlertKeys).length === alerts.length;
+  const allSelected =
+    alerts.length > 0 &&
+    Object.keys(selectedAlertKeys).length === alerts.length;
   const atLeastOneSelected = Object.keys(selectedAlertKeys).length > 0;
   const handleSelectAllAlerts = () => {
     if (allSelected || atLeastOneSelected) {

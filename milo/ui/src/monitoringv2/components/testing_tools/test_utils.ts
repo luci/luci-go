@@ -14,7 +14,9 @@
 
 import {
   BuilderAlert,
-  buildStructuredAlertsPreSorted,
+  buildStructuredAlerts,
+  GenericAlert,
+  GroupedAlertKeys,
   OneBuildHistory,
   OneTestHistory,
   StepAlert,
@@ -37,7 +39,7 @@ export class BuilderAlertBuilder {
     kind: 'builder',
     key: '',
     builderID: defaultBuilderID,
-    consecutiveFailures: 0,
+    consecutiveFailures: 2,
     consecutivePasses: 0,
     history: [],
   };
@@ -121,8 +123,8 @@ export class StepAlertBuilder {
     kind: 'step',
     key: '',
     builderID: defaultBuilderID,
-    stepName: 'compile',
-    consecutiveFailures: 0,
+    stepName: 'unit_tests',
+    consecutiveFailures: 2,
     consecutivePasses: 0,
     history: [],
   };
@@ -182,7 +184,7 @@ export class TestAlertBuilder {
     testName: 'hello_world_test',
     testId: 'ninja://hello_world_test',
     variantHash: '1234',
-    consecutiveFailures: 0,
+    consecutiveFailures: 2,
     consecutivePasses: 0,
     history: [],
   };
@@ -292,6 +294,14 @@ export class OneTestHistoryBuilder {
   }
 }
 
+export const groupAlerts = (
+  alertGroups: GenericAlert[][],
+): GroupedAlertKeys => {
+  return Object.fromEntries(
+    alertGroups.map((alerts, i) => [i.toString(), alerts.map((a) => a.key)]),
+  );
+};
+
 // Legacy exports, prefer to use the builders above + buildStructuredAlerts
 export const testBuilderAlert: BuilderAlert = {
   kind: 'builder',
@@ -312,12 +322,10 @@ export const testStepAlert: StepAlert = {
   history: [],
 };
 
-export const testAlerts: StructuredAlert[] = buildStructuredAlertsPreSorted(
-  [testBuilderAlert],
-  [testBuilderAlert],
-  [testStepAlert],
-  [],
-);
+export const testAlerts: StructuredAlert[] = buildStructuredAlerts([
+  testBuilderAlert,
+  testStepAlert,
+]);
 
 const builderID2 = {
   project: 'chromium',
@@ -334,9 +342,6 @@ export const testBuilderAlert2: BuilderAlert = {
   history: [],
 };
 
-export const testAlerts2: StructuredAlert[] = buildStructuredAlertsPreSorted(
-  [testBuilderAlert2],
-  [testBuilderAlert2],
-  [],
-  [],
-);
+export const testAlerts2: StructuredAlert[] = buildStructuredAlerts([
+  testBuilderAlert2,
+]);

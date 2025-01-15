@@ -28,11 +28,16 @@ import { AlertTable } from './alert_table';
 describe('<AlertTable />', () => {
   it('displays an alert', async () => {
     const b = new BuilderAlertBuilder().withBuilder('linux-rel').build();
-    const alerts = buildStructuredAlerts([b], [b]);
+    const alerts = buildStructuredAlerts([b]);
 
     render(
       <FakeContextProvider>
-        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
+        <AlertTable
+          alerts={alerts}
+          groups={[]}
+          setGroups={() => {}}
+          selectedTab=""
+        />
       </FakeContextProvider>,
     );
 
@@ -42,11 +47,17 @@ describe('<AlertTable />', () => {
   it('expands an alert on click', async () => {
     const b = new BuilderAlertBuilder().withBuilder('linux-rel').build();
     const s = new StepAlertBuilder().withBuilder('linux-rel').build();
-    const alerts = buildStructuredAlerts([b], [b, s]);
+    const alerts = buildStructuredAlerts([b, s]);
+    const builderAlerts = alerts.filter((a) => a.alert.kind === 'builder');
 
     render(
       <FakeContextProvider>
-        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
+        <AlertTable
+          alerts={builderAlerts}
+          groups={[]}
+          setGroups={() => {}}
+          selectedTab=""
+        />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();
@@ -59,11 +70,16 @@ describe('<AlertTable />', () => {
   it('sorts alerts on header click', async () => {
     const b1 = new BuilderAlertBuilder().withBuilder('linux-rel').build();
     const b2 = new BuilderAlertBuilder().withBuilder('win-rel').build();
-    const alerts = buildStructuredAlerts([b1, b2], [b1, b2]);
+    const alerts = buildStructuredAlerts([b1, b2]);
 
     render(
       <FakeContextProvider>
-        <AlertTable alerts={alerts} groups={[]} setGroups={() => {}} />
+        <AlertTable
+          alerts={alerts}
+          groups={[]}
+          setGroups={() => {}}
+          selectedTab=""
+        />
       </FakeContextProvider>,
     );
     expect(screen.getByText('linux-rel')).toBeInTheDocument();

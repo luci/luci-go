@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 
 import { TreeJson } from '@/monitoring/util/server_json';
-import { GenericAlert } from '@/monitoringv2/util/alerts';
+import { StructuredAlert } from '@/monitoringv2/util/alerts';
 
 import { AlertGroup } from './alerts';
 
@@ -35,8 +35,8 @@ interface AlertsSideNavProps {
   tree: TreeJson;
   selectedTab: string | null;
   setSelectedTab: (tab: string) => void;
-  topLevelAlerts: GenericAlert[];
-  ungroupedTopLevelAlerts: GenericAlert[];
+  topLevelAlerts: StructuredAlert[];
+  ungroupedTopLevelAlerts: StructuredAlert[];
   alertGroups: AlertGroup[];
 }
 
