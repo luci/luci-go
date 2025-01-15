@@ -45,7 +45,7 @@ const RuleEditInput = ({
           REGEXP_CONTAINS
         </a>
         . Valid identifiers are <em>test</em> and <em>reason</em>.{' '}
-        <Link href="/help#rules" target="_blank">
+        <Link href="/ui/tests/help#rules" target="_blank">
           More information
         </Link>
         .
