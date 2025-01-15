@@ -16,7 +16,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/botstate"
 )
 
 // BotEventType identifies various known bot events.
@@ -132,7 +132,7 @@ type BotCommon struct {
 	// Swarming itself mostly ignores this information, but it is exposed via API
 	// and UI, allowing bots to report extended information about themselves to
 	// Swarming clients.
-	State []byte `gae:"state,noindex"`
+	State botstate.Dict `gae:"state,noindex"`
 
 	// SessionID is the current bot session ID reported when the bot connected.
 	SessionID string `gae:"session_id,noindex"`
@@ -340,7 +340,7 @@ func (b *BotInfo) ToProto() *apipb.BotInfo {
 		MaintenanceMsg:  b.Maintenance,
 		Dimensions:      DimensionsFlatToPb(b.Dimensions),
 		Version:         b.Version,
-		State:           string(b.State),
+		State:           string(b.State.JSON),
 		SessionId:       b.SessionID,
 	}
 	if !b.FirstSeen.IsZero() {
@@ -461,16 +461,11 @@ func (e *BotEvent) IsIdle() bool {
 //
 // Returns an empty string if the state doesn't contain "quarantined" field.
 func (e *BotEvent) QuarantineMessage() string {
-	if len(e.State) == 0 {
+	var quarantined any
+	if err := e.State.Read("quarantined", &quarantined); err != nil {
 		return ""
 	}
-	var state struct {
-		Quarantined any `json:"quarantined"`
-	}
-	if err := json.Unmarshal(e.State, &state); err != nil {
-		return ""
-	}
-	switch val := state.Quarantined.(type) {
+	switch val := quarantined.(type) {
 	case nil:
 		return ""
 	case string:
@@ -492,7 +487,7 @@ func (e *BotEvent) ToProto() *apipb.BotEventResponse {
 		EventType:       string(e.EventType),
 		Message:         e.Message,
 		Dimensions:      DimensionsFlatToPb(e.Dimensions),
-		State:           string(e.State),
+		State:           string(e.State.JSON),
 		SessionId:       e.SessionID,
 		ExternalIp:      e.ExternalIP,
 		AuthenticatedAs: string(e.AuthenticatedAs),

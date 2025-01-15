@@ -70,8 +70,12 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 			// These appear to be phantom GCE provider bots which are either being
 			// created or weren't fully deleted. They don't have `state` JSON dict
 			// populated, and they aren't really running.
-			if !bot.LastSeen.IsSet() || len(bot.State) == 0 {
+			if !bot.LastSeen.IsSet() || len(bot.State.JSON) == 0 {
 				return nil
+			}
+			// Log broken state in a central place. Visitors usually just ignore it.
+			if err := bot.State.Unseal(); err != nil {
+				logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
 			}
 			for _, v := range visitors {
 				v.Visit(ctx, shardIdx, bot)

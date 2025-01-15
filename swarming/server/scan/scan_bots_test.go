@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -184,7 +185,7 @@ func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
 			panic(err)
 		}
 	}
-	b.State = s
+	b.State = botstate.Dict{JSON: s}
 
 	var dims []string
 	for _, pool := range f.Pool {

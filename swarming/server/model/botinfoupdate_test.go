@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/cfg"
 )
 
@@ -67,7 +68,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				CallInfo: &BotEventCallInfo{
 					SessionID:       "session-id",
 					Version:         "version",
-					State:           []byte(`{"some-state": 1}`),
+					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					ExternalIP:      "external-ip",
 					AuthenticatedAs: "user:someone@example.com",
 				},
@@ -121,7 +122,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				FirstSeen:         testTime,
 				LastEventDedupKey: "bot_connected:event-id",
 				BotCommon: BotCommon{
-					State:           []byte(`{"some-state": 1}`),
+					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					SessionID:       "session-id",
 					ExternalIP:      "external-ip",
 					AuthenticatedAs: "user:someone@example.com",
@@ -143,7 +144,7 @@ func TestBotInfoUpdate(t *testing.T) {
 					"something:c",
 				},
 				BotCommon: BotCommon{
-					State:           []byte(`{"some-state": 1}`),
+					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					SessionID:       "session-id",
 					ExternalIP:      "external-ip",
 					AuthenticatedAs: "user:someone@example.com",

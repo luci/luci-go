@@ -31,6 +31,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -68,7 +69,7 @@ func TestDeleteBot(t *testing.T) {
 		FirstSeen: TestTime,
 		TaskName:  "task-name",
 		BotCommon: model.BotCommon{
-			State:           []byte(`{"state": "1"}`),
+			State:           botstate.Dict{JSON: []byte(`{"state": "1"}`)},
 			ExternalIP:      "1.2.3.4",
 			AuthenticatedAs: identity.Identity("bot:" + aliveBotID),
 			Version:         "some-version",

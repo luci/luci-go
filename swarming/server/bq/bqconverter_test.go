@@ -31,6 +31,7 @@ import (
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	bqpb "go.chromium.org/luci/swarming/proto/bq"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -642,7 +643,7 @@ func TestBotEventConversion(t *testing.T) {
 	event := func(typ model.BotEventType, quarantined bool, maintenance, state string) *model.BotEvent {
 		return &model.BotEvent{
 			BotCommon: model.BotCommon{
-				State:           []byte(state),
+				State:           botstate.Dict{JSON: []byte(state)},
 				SessionID:       "test-session",
 				ExternalIP:      "external-ip",
 				AuthenticatedAs: "authenticated-as",

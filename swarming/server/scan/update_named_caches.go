@@ -209,16 +209,25 @@ func (s *namedCachesAggregatorShardState) collect(ctx context.Context, bot *mode
 	// structure can't be represented by a Go type, we'll have to use `any`.
 	// To avoid losing precision, we also will have to ask JSON decoder to
 	// unmarshal numbers as json.Number (instead of a float).
-	var botState struct {
-		NamedCaches map[string]any `json:"named_caches"`
+	stateEntry, err := bot.State.ReadRaw("named_caches")
+	switch {
+	case err != nil:
+		logging.Warningf(ctx, "bad state for bot %q: %s", bot.BotID(), err)
+		return
+	case len(stateEntry) == 0:
+		return
 	}
-	dec := json.NewDecoder(bytes.NewReader(bot.State))
+
+	dec := json.NewDecoder(bytes.NewReader(stateEntry))
 	dec.UseNumber()
-	if err := dec.Decode(&botState); err != nil {
+
+	var namedCached map[string]any
+	if err := dec.Decode(&namedCached); err != nil {
 		logging.Warningf(ctx, "bad state for bot %q: %s", bot.BotID(), err)
 		return
 	}
-	for cache, entry := range botState.NamedCaches {
+
+	for cache, entry := range namedCached {
 		if size, ok := extractCacheSize(entry); ok {
 			for _, pool := range pools {
 				id := pool + ":" + cache

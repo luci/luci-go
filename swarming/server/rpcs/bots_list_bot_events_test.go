@@ -34,6 +34,7 @@ import (
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -66,7 +67,7 @@ func TestListBotEvents(t *testing.T) {
 			Message:    fmt.Sprintf("at %s", ts),
 			Dimensions: []string{"a:1", "b:2"},
 			BotCommon: model.BotCommon{
-				State:           []byte(`{"state": "1"}`),
+				State:           botstate.Dict{JSON: []byte(`{"state": "1"}`)},
 				SessionID:       "test-session",
 				ExternalIP:      "1.2.3.4",
 				AuthenticatedAs: identity.Identity("bot:" + botID),

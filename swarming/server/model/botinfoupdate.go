@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/cfg"
 )
 
@@ -178,8 +179,8 @@ type BotEventCallInfo struct {
 	SessionID string
 	// Version of the bot code the bot is running.
 	Version string
-	// State is a free form JSON dict with the bot state as reported by the bot.
-	State []byte
+	// State is a dict with the bot state as reported by the bot.
+	State botstate.Dict
 	// ExternalIP is the bot's IP address as seen by the server.
 	ExternalIP string
 	// AuthenticatedAs is the bot's credentials as seen by the server.

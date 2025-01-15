@@ -434,7 +434,7 @@ func botEvent(ev *model.BotEvent) *bqpb.BotEvent {
 		CurrentTaskId: ev.TaskID,
 		Dimensions:    make([]*bqpb.StringListPair, len(dims)),
 		Info: &bqpb.BotInfo{
-			Supplemental:    string(ev.State),
+			Supplemental:    string(ev.State.JSON),
 			Version:         ev.Version,
 			ExternalIp:      ev.ExternalIP,
 			AuthenticatedAs: string(ev.AuthenticatedAs),

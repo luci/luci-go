@@ -16,12 +16,10 @@ package scan
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"go.chromium.org/luci/common/data/stringset"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
@@ -61,7 +59,7 @@ func (r *BotsMetricsReporter) Prepare(ctx context.Context, shards int) {
 //
 // Part of BotVisitor interface.
 func (r *BotsMetricsReporter) Visit(ctx context.Context, shard int, bot *model.BotInfo) {
-	r.shards[shard].collect(ctx, bot)
+	r.shards[shard].collect(bot)
 	setExecutorMetrics(tsmon.WithState(ctx, r.state), bot, r.ServiceName)
 }
 
@@ -125,33 +123,27 @@ func newMetricsReporterShardState() *metricsReporterShardState {
 	}
 }
 
-func (s *metricsReporterShardState) collect(ctx context.Context, bot *model.BotInfo) {
-	migrationState := "UNKNOWN"
+func (s *metricsReporterShardState) collect(bot *model.BotInfo) {
+	var migrationState string
 
 	if bot.Quarantined {
 		migrationState = "QUARANTINED"
 	} else if bot.IsInMaintenance() {
 		migrationState = "MAINTENANCE"
 	} else {
-		var botState struct {
-			Handshaking   bool   `json:"handshaking,omitempty"`
-			RBEInstance   string `json:"rbe_instance,omitempty"`
-			RBEHybridMode bool   `json:"rbe_hybrid_mode,omitempty"`
+		if bot.State.MustReadBool("handshaking") {
+			// This is not a fully connected bot.
+			return
 		}
-		if err := json.Unmarshal(bot.State, &botState); err == nil {
-			switch {
-			case botState.Handshaking:
-				// This is not a fully connected bot.
-				return
-			case botState.RBEInstance == "":
-				migrationState = "SWARMING"
-			case botState.RBEHybridMode:
-				migrationState = "HYBRID"
-			case !botState.RBEHybridMode:
-				migrationState = "RBE"
-			}
-		} else {
-			logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
+		switch {
+		case bot.State.Err() != nil:
+			migrationState = "UNKNOWN"
+		case bot.State.MustReadString("rbe_instance") == "":
+			migrationState = "SWARMING"
+		case bot.State.MustReadBool("rbe_hybrid_mode"):
+			migrationState = "HYBRID"
+		default:
+			migrationState = "RBE"
 		}
 	}
 
@@ -178,17 +170,9 @@ func (s *metricsReporterShardState) mergeFrom(another *metricsReporterShardState
 
 // setExecutorMetrics sets metrics reported to the per-bot target.
 func setExecutorMetrics(ctx context.Context, bot *model.BotInfo, serviceName string) {
-	// TODO(vadimsh): Stop parsing bot.State multiple times.
 	rbeState := "none"
-	var botState struct {
-		RBEInstance string `json:"rbe_instance,omitempty"`
-	}
-	if err := json.Unmarshal(bot.State, &botState); err == nil {
-		if botState.RBEInstance != "" {
-			rbeState = botState.RBEInstance
-		}
-	} else {
-		logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
+	if rbeInstance := bot.State.MustReadString("rbe_instance"); rbeInstance != "" {
+		rbeState = rbeInstance
 	}
 
 	// Each bot has its own target.

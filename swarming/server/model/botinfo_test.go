@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/botstate"
 )
 
 func TestBotInfoQuery(t *testing.T) {
@@ -72,7 +73,7 @@ func TestBotEvent(t *testing.T) {
 		event := func(state string) *BotEvent {
 			return &BotEvent{
 				BotCommon: BotCommon{
-					State: []byte(state),
+					State: botstate.Dict{JSON: []byte(state)},
 				},
 			}
 		}
