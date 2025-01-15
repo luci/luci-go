@@ -50,6 +50,7 @@ export const BASE_DIMENSIONS: Dimension[] = [
             {props.value}
           </Link>
         }
+        tooltipTitle={props.value}
       />
     ),
   },

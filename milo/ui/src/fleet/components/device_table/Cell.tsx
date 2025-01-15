@@ -16,12 +16,16 @@ import { Tooltip } from '@mui/material';
 import { GridRenderCellParams } from '@mui/x-data-grid';
 import { useRef } from 'react';
 
-export const Cell = ({ value, colDef }: GridRenderCellParams) => {
+export const Cell = ({
+  value,
+  colDef,
+  tooltipTitle,
+}: GridRenderCellParams & { tooltipTitle?: string }) => {
   const ref = useRef<HTMLSpanElement>(null);
 
   return (
     <Tooltip
-      title={value}
+      title={tooltipTitle ?? value}
       disableHoverListener={
         !!ref.current && ref.current?.offsetWidth + 20 <= (colDef.width ?? 0)
       }
