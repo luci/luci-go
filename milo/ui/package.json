@@ -47,7 +47,7 @@
     "fast-json-stable-stringify": "^2.1.0",
     "hotkeys-js": "^3.13.7",
     "idb-keyval": "^6.2.1",
-    "jsonpath-plus": "^10.1.0",
+    "jsonpath-plus": "^10.2.0",
     "lit": "^2.8.0",
     "lodash-es": "^4.17.21",
     "long": "^5.2.3",
