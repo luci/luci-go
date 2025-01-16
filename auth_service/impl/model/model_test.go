@@ -2319,3 +2319,71 @@ func TestValidateAdminGroup(t *testing.T) {
 		})
 	})
 }
+
+func TestGetRealms(t *testing.T) {
+	t.Parallel()
+	ftt.Run("Returns realms object", t, func(t *ftt.Test) {
+		ctx := memory.Use(context.Background())
+		const testAuthDBRev = 12345
+
+		testRealms := &protocol.Realms{
+			Permissions: []*protocol.Permission{
+				{Name: "luci.dev.p1"},
+				{Name: "luci.dev.p2"},
+				{Name: "luci.dev.p3"},
+			},
+			Realms: []*protocol.Realm{
+				{
+					Name: "p:@root",
+				},
+				{
+					Name: "p:r",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0, 1},
+							Principals:  []string{"group:gr1"},
+						},
+						{
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr3", "group:gr4"},
+						},
+						{
+							Permissions: []uint32{1, 2},
+							Principals:  []string{"group:gr2"},
+						},
+					},
+				},
+			},
+		}
+		testRequest := &protocol.ReplicationPushRequest{
+			Revision: &protocol.AuthDBRevision{
+				AuthDbRev: testAuthDBRev,
+			},
+			AuthDb: &protocol.AuthDB{
+				Realms: testRealms,
+			},
+		}
+		blob, err := proto.Marshal(testRequest)
+		assert.Loosely(t, err, should.BeNil)
+
+		testReplicationState := &AuthReplicationState{
+			AuthDBRev: testAuthDBRev,
+		}
+		err = StoreAuthDBSnapshot(ctx, testReplicationState, blob)
+		assert.Loosely(t, err, should.BeNil)
+
+		authDBSnapshotLatest := &AuthDBSnapshotLatest{
+			Kind:         "AuthDBSnapshotLatest",
+			ID:           "latest",
+			AuthDBRev:    testAuthDBRev,
+			AuthDBSha256: "test-sha-256",
+			ModifiedTS:   testModifiedTS,
+		}
+		err = datastore.Put(ctx, authDBSnapshotLatest)
+		assert.Loosely(t, err, should.BeNil)
+
+		actual, err := GetRealms(ctx)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, actual, should.Match(testRealms))
+	})
+}
