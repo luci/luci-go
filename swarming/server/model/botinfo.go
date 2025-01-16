@@ -465,19 +465,7 @@ func (e *BotEvent) QuarantineMessage() string {
 	if err := e.State.Read("quarantined", &quarantined); err != nil {
 		return ""
 	}
-	switch val := quarantined.(type) {
-	case nil:
-		return ""
-	case string:
-		return val
-	case bool:
-		if val {
-			return "true"
-		}
-		return ""
-	default:
-		return "true"
-	}
+	return QuarantineMessage(quarantined)
 }
 
 // ToProto converts BotEvent to apipb.BotEventResponse.

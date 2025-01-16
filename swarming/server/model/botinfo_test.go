@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
@@ -69,23 +70,30 @@ func TestBotInfoQuery(t *testing.T) {
 func TestBotEvent(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("QuarantineMessage", t, func(t *ftt.Test) {
-		event := func(state string) *BotEvent {
-			return &BotEvent{
-				BotCommon: BotCommon{
-					State: botstate.Dict{JSON: []byte(state)},
-				},
-			}
+	cases := []struct {
+		state string
+		msg   string
+	}{
+		{`{"quarantined": "yes", "blah": 1}`, "yes"},
+		{`{"quarantined": "", "blah": 1}`, ""},
+		{`{"quarantined": true}`, GenericQuarantineMessage},
+		{`{"quarantined": false}`, ""},
+		{`{"quarantined": 1}`, GenericQuarantineMessage},
+		{`{"quarantined": 0}`, ""},
+		{`{"quarantined": [123]}`, GenericQuarantineMessage},
+		{`{"quarantined": []}`, ""},
+		{`{"quarantined": null}`, ""},
+		{`{}`, ""},
+		{``, ""},
+		{`broken`, ""},
+		{`[]`, ""},
+	}
+	for _, cs := range cases {
+		event := &BotEvent{
+			BotCommon: BotCommon{
+				State: botstate.Dict{JSON: []byte(cs.state)},
+			},
 		}
-
-		assert.Loosely(t, event(`{"quarantined": "yes", "blah": 1}`).QuarantineMessage(), should.Equal("yes"))
-		assert.Loosely(t, event(`{"quarantined": true}`).QuarantineMessage(), should.Equal("true"))
-		assert.Loosely(t, event(`{"quarantined": 0}`).QuarantineMessage(), should.Equal("true"))
-		assert.Loosely(t, event(`{"quarantined": false}`).QuarantineMessage(), should.BeEmpty)
-		assert.Loosely(t, event(`{"quarantined": null}`).QuarantineMessage(), should.BeEmpty)
-		assert.Loosely(t, event(`{}`).QuarantineMessage(), should.BeEmpty)
-		assert.Loosely(t, event(``).QuarantineMessage(), should.BeEmpty)
-		assert.Loosely(t, event(`broken`).QuarantineMessage(), should.BeEmpty)
-		assert.Loosely(t, event(`[]`).QuarantineMessage(), should.BeEmpty)
-	})
+		assert.That(t, event.QuarantineMessage(), should.Equal(cs.msg), truth.Explain("%s", cs.state))
+	}
 }
