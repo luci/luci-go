@@ -17,6 +17,7 @@ package validate
 
 import (
 	"fmt"
+	"maps"
 	"net/url"
 	"path"
 	"regexp"
@@ -454,4 +455,69 @@ func EnvVar(ev string) error {
 	default:
 		return nil
 	}
+}
+
+// BotDimensions validates dimensions as self-reported by a bot.
+//
+// Among other checks, verifies the bot reports "id" dimension with a single
+// value that will be used as the bot ID.
+func BotDimensions(dims map[string][]string) errors.MultiError {
+	var perKeyErrs map[string]errors.MultiError
+
+	recordErr := func(key string, err error) {
+		if perKeyErrs == nil {
+			perKeyErrs = make(map[string]errors.MultiError, 1)
+		}
+		perKeyErrs[key] = append(perKeyErrs[key], err)
+	}
+
+	seenID := false
+	for key, vals := range dims {
+		if err := DimensionKey(key); err != nil {
+			recordErr(key, err)
+		}
+		if len(vals) == 0 {
+			recordErr(key, errors.Reason("values list should not be empty").Err())
+		}
+		seen := stringset.New(len(vals))
+		for _, val := range vals {
+			if err := DimensionValue(val); err != nil {
+				recordErr(key, errors.Annotate(err, "bad value %q", trimLen(val, maxDimensionValLen+5)).Err())
+			} else if !seen.Add(val) {
+				recordErr(key, errors.Reason("duplicate value %q", val).Err())
+			}
+		}
+		if key == "id" {
+			seenID = true
+			if len(vals) > 1 {
+				recordErr(key, errors.Reason("must have only one value").Err())
+			}
+		}
+	}
+
+	if !seenID {
+		recordErr("id", errors.Reason("a value is missing").Err())
+	}
+
+	if len(perKeyErrs) == 0 {
+		return nil
+	}
+
+	// Make sure errors are reported in a deterministic order.
+	var merr errors.MultiError
+	for _, key := range slices.Sorted(maps.Keys(perKeyErrs)) {
+		for _, err := range perKeyErrs[key] {
+			merr = append(merr, errors.Annotate(err, "key %q", trimLen(key, maxDimensionKeyLen+5)).Err())
+		}
+	}
+
+	return merr
+}
+
+// trimLen cuts the string to make sure it is no longer than the given length.
+func trimLen(val string, max int) string {
+	if len(val) <= max {
+		return val
+	}
+	return val[:max-3] + "..."
 }

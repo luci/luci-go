@@ -463,5 +463,105 @@ func TestEnvVar(t *testing.T) {
 			assert.That(t, err, should.ErrLike(cs.err))
 		})
 	}
+}
 
+func TestBotDimensions(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		dims map[string][]string
+		errs []string
+	}{
+		{
+			"ok",
+			map[string][]string{
+				"id":  {"something"},
+				"key": {"a", "b", "c"},
+			},
+			nil,
+		},
+		{
+			"bad key",
+			map[string][]string{
+				"id":    {"something"},
+				"  bad": {"a"},
+			},
+			[]string{"the key should match"},
+		},
+		{
+			"empty vals",
+			map[string][]string{
+				"id":  {"something"},
+				"key": nil,
+			},
+			[]string{"should not be empty"},
+		},
+		{
+			"bad val",
+			map[string][]string{
+				"id":  {"something"},
+				"key": {"  bad"},
+			},
+			[]string{"should have no leading or trailing spaces"},
+		},
+		{
+			"dup val",
+			map[string][]string{
+				"id":  {"something"},
+				"key": {"a", "a"},
+			},
+			[]string{"duplicate value"},
+		},
+		{
+			"multiple ids",
+			map[string][]string{
+				"id": {"something", "else"},
+			},
+			[]string{"must have only one value"},
+		},
+		{
+			"missing id",
+			map[string][]string{
+				"key": {"a", "b"},
+			},
+			[]string{"a value is missing"},
+		},
+		{
+			"many errors",
+			map[string][]string{
+				"id": {"something"},
+				"a":  {},
+				"b":  {},
+				"c":  {},
+			},
+			[]string{`key "a"`, `key "b"`, `key "c"`},
+		},
+	}
+	for _, cs := range cases {
+		t.Run(cs.name, func(t *testing.T) {
+			errs := BotDimensions(cs.dims)
+			assert.Loosely(t, errs, should.HaveLength(len(cs.errs)))
+			for i, err := range errs {
+				assert.That(t, err, should.ErrLike(cs.errs[i]))
+			}
+		})
+	}
+}
+
+func TestTrimLen(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		in  string
+		out string
+	}{
+		{"", ""},
+		{"123456", "123456"},
+		{"12345", "12345"},
+		{"1234567", "123..."},
+	}
+	for _, cs := range cases {
+		assert.That(t, trimLen(cs.in, 6), should.Equal(cs.out))
+	}
 }
