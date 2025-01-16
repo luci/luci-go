@@ -50,7 +50,7 @@ func Read(ctx context.Context, b []byte) (n int, err error) {
 //
 // Must not be used outside of tests.
 func MockForTest(ctx context.Context, seed int64) context.Context {
-	return context.WithValue(ctx, &key, &notRandom{r: math.New(math.NewSource(seed))})
+	return MockForTestWithIOReader(ctx, &notRandom{r: math.New(math.NewSource(seed))})
 }
 
 // notRandom is io.Reader that uses math/rand generator.
@@ -67,4 +67,12 @@ func (r *notRandom) Read(p []byte) (n int, err error) {
 		p[i] = byte(r.r.Intn(256))
 	}
 	return len(p), nil
+}
+
+// MockForTestWithIOReader installs the provided io reader as the source of
+// 'randomness' in the context.
+//
+// Must not be used outside of tests.
+func MockForTestWithIOReader(ctx context.Context, r io.Reader) context.Context {
+	return context.WithValue(ctx, &key, r)
 }

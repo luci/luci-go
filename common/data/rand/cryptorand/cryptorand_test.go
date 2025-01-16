@@ -39,7 +39,33 @@ func TestCryptoRand(t *testing.T) {
 		n, err := Read(ctx, buf)
 		assert.Loosely(t, n, should.Equal(16))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, buf, should.Resemble([]byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf,
+		assert.Loosely(t, buf, should.Match([]byte{0xfa, 0x12, 0xf9, 0x2a, 0xfb, 0xe0, 0xf,
 			0x85, 0x8, 0xd0, 0xe8, 0x3b, 0xab, 0x9c, 0xf8, 0xce}))
 	})
+
+	ftt.Run("test mocked rand with reader", t, func(t *ftt.Test) {
+		ov := &oneValue{v: "always the same value"}
+		ctx := MockForTestWithIOReader(context.Background(), ov)
+		buf := make([]byte, 21)
+		n, err := Read(ctx, buf)
+		assert.That(t, n, should.Equal(len(ov.v)))
+		assert.NoErr(t, err)
+		assert.That(t, buf, should.Match([]byte("always the same value")))
+
+		newBuf := make([]byte, 21)
+		_, err = Read(ctx, newBuf)
+		assert.NoErr(t, err)
+		assert.That(t, newBuf, should.Match([]byte("always the same value")))
+	})
+}
+
+type oneValue struct {
+	v string
+}
+
+func (o *oneValue) Read(p []byte) (n int, err error) {
+	for i := range p {
+		p[i] = byte(o.v[i])
+	}
+	return len(p), nil
 }
