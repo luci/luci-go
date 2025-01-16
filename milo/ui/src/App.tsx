@@ -40,20 +40,20 @@ import {
 import { LitEnvProvider } from '@/common/components/lit_env_provider';
 import { PageConfigStateProvider } from '@/common/components/page_config_state_provider';
 import { PageMetaProvider } from '@/common/components/page_meta';
+import { VersionControlProvider } from '@/common/components/version_control/version_control_provider';
 import { NON_TRANSIENT_ERROR_CODES } from '@/common/constants/rpc';
+import { FeatureFlagsProvider } from '@/common/feature_flags/provider';
 import { BaseLayout } from '@/common/layouts/base_layout';
 import { Store, StoreProvider } from '@/common/store';
 import { theme } from '@/common/themes/base';
 import { ReleaseNotesProvider } from '@/core/components/release_notes';
+import { parseReleaseNotes } from '@/core/components/release_notes/common';
 import { routes } from '@/core/routes';
+import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
+import { useIsDevEnv } from '@/generic_libs/hooks/is_dev_env';
+import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
-
-import { VersionControlProvider } from './common/components/version_control/version_control_provider';
-import { FeatureFlagsProvider } from './common/feature_flags/provider';
-import { parseReleaseNotes } from './core/components/release_notes/common';
-import { useIsDevEnv } from './generic_libs/hooks/is_dev_env';
-import { SingletonStoreProvider } from './generic_libs/hooks/singleton';
 
 const isNonTransientError = (error: unknown) =>
   error instanceof GrpcError && NON_TRANSIENT_ERROR_CODES.includes(error.code);
@@ -152,7 +152,10 @@ export function App() {
           <AuthStateInitializer>
             <FeatureFlagsProvider>
               <RecoverableErrorBoundary>
-                <BaseLayout />
+                <ReactLitBridge>
+                  <milo-tooltip />
+                  <BaseLayout />
+                </ReactLitBridge>
               </RecoverableErrorBoundary>
             </FeatureFlagsProvider>
           </AuthStateInitializer>
@@ -197,7 +200,6 @@ export function App() {
                       initReleaseNotes={parseReleaseNotes(releaseNotes)}
                     >
                       <PageConfigStateProvider>
-                        <milo-tooltip />
                         <RouterProvider router={router} />
                       </PageConfigStateProvider>
                     </ReleaseNotesProvider>

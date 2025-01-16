@@ -11,7 +11,7 @@ class MyCustomElement extends ReactLitElement {
     return {
       myProp: {
         attribute: 'my-prop',
-        type: String;
+        type: String,
       }
     }
   }
