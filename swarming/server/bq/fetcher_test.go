@@ -53,10 +53,10 @@ func TestFetcher(t *testing.T) {
 			TS time.Time
 		}
 		for i := 1; i < 20; i++ {
-			assert.Loosely(t, datastore.Put(ctx, &entity{
+			assert.NoErr(t, datastore.Put(ctx, &entity{
 				ID: int64(i),
 				TS: testTime.Add(time.Duration(i) * time.Second),
-			}), should.BeNil)
+			}))
 		}
 		datastore.GetTestable(ctx).CatchupIndexes()
 
@@ -114,7 +114,7 @@ func TestFetcher(t *testing.T) {
 
 		t.Run("Visits correct time range", func(t *ftt.Test) {
 			err := fetcher.Fetch(ctx, testTime.Add(3*time.Second), 10*time.Second, []*Flusher{flusher})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, collected, should.Resemble([]int64{3, 4, 5, 6, 7, 8, 9, 10, 11, 12}))
 
 			// Respects queryBatchSize (== 3 entities).
@@ -165,14 +165,14 @@ func TestConvertTaskResults(t *testing.T) {
 
 		// TaskRunResult that has both TaskRequest and PerformanceStats.
 		req1, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00010")
-		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
+		assert.NoErr(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req1,
 			Name: "req-1",
-		}), should.BeNil)
-		assert.Loosely(t, datastore.Put(ctx, &model.PerformanceStats{
+		}))
+		assert.NoErr(t, datastore.Put(ctx, &model.PerformanceStats{
 			Key:             model.PerformanceStatsKey(ctx, req1),
 			BotOverheadSecs: 123,
-		}), should.BeNil)
+		}))
 		res1 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req1),
 			TaskResultCommon: model.TaskResultCommon{
@@ -191,10 +191,10 @@ func TestConvertTaskResults(t *testing.T) {
 
 		// TaskRunResult that has TaskRequest, but not PerformanceStats.
 		req3, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00030")
-		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
+		assert.NoErr(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req3,
 			Name: "req-3",
-		}), should.BeNil)
+		}))
 		res3 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req3),
 			TaskResultCommon: model.TaskResultCommon{
@@ -204,10 +204,10 @@ func TestConvertTaskResults(t *testing.T) {
 
 		// TaskRunResult with PerformanceStats entity missing.
 		req4, _ := model.TaskIDToRequestKey(ctx, "692b33d4feb00040")
-		assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
+		assert.NoErr(t, datastore.Put(ctx, &model.TaskRequest{
 			Key:  req4,
 			Name: "req-4",
-		}), should.BeNil)
+		}))
 		res4 := &model.TaskRunResult{
 			Key: model.TaskRunResultKey(ctx, req4),
 			TaskResultCommon: model.TaskResultCommon{
@@ -232,7 +232,7 @@ func TestConvertTaskResults(t *testing.T) {
 					}
 				},
 			)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			assert.Loosely(t, out, should.Resemble([]*bqpb.TaskResult{
 				{TaskId: "692b33d4feb00010", ServerVersions: []string{"req-1", "123"}},

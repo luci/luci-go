@@ -40,7 +40,7 @@ func TestCreation(t *testing.T) {
 					Key:    model.TaskRequestIDKey(ctx, "bad_task_id"),
 					TaskID: "not_a_task_id",
 				}
-				assert.That(t, datastore.Put(ctx, tri), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, tri))
 
 				s := &Creation{
 					RequestID: "bad_task_id",
@@ -51,7 +51,7 @@ func TestCreation(t *testing.T) {
 			t.Run("found_duplicate", func(t *ftt.Test) {
 				id := "65aba3a3e6b99310"
 				reqKey, err := model.TaskIDToRequestKey(ctx, id)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				tr := &model.TaskRequest{
 					Key: reqKey,
 				}
@@ -65,13 +65,13 @@ func TestCreation(t *testing.T) {
 					Key:    model.TaskRequestIDKey(ctx, "exist"),
 					TaskID: id,
 				}
-				assert.That(t, datastore.Put(ctx, tr, trs, tri), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
 
 				s := &Creation{
 					RequestID: "exist",
 				}
 				res, err := s.Run(ctx)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
 			})

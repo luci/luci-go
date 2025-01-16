@@ -59,7 +59,7 @@ func TestClient(t *testing.T) {
 			fs.NewTestFile("a/b/c", "abc", fs.TestFileOpts{Executable: true}),
 		},
 	})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	testPackage := out.Bytes()
 
 	// A fake CIPD backend.
@@ -97,7 +97,7 @@ func TestClient(t *testing.T) {
 
 	ftt.Run("ResolveVersion OK", t, func(t *ftt.Test) {
 		iid, err := cipd.ResolveVersion(ctx, cipdSrv, testPackageName, "latest")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.That(t, iid, should.Equal(testPin.InstanceID))
 	})
 
@@ -113,7 +113,7 @@ func TestClient(t *testing.T) {
 
 	ftt.Run("FetchInstance OK", t, func(t *ftt.Test) {
 		pkg, err := cipd.FetchInstance(ctx, cipdSrv, testPackageName, testPin.InstanceID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		defer func() { _ = pkg.Close(ctx, false) }()
 		var files []string
 		for _, f := range pkg.Files() {

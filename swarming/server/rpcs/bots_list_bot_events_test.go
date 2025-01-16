@@ -161,7 +161,7 @@ func TestListBotEvents(t *testing.T) {
 		resp, err := call(&apipb.BotEventsRequest{
 			BotId: "visible-bot",
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.Cursor, should.BeEmpty)
 		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 4*time.Hour),
@@ -177,7 +177,7 @@ func TestListBotEvents(t *testing.T) {
 			BotId: "visible-bot",
 			Limit: 3,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.Cursor, should.NotEqual(""))
 		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 4*time.Hour),
@@ -189,7 +189,7 @@ func TestListBotEvents(t *testing.T) {
 			Limit:  3,
 			Cursor: resp.Cursor,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.Cursor, should.BeEmpty)
 		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 1*time.Hour),
@@ -203,7 +203,7 @@ func TestListBotEvents(t *testing.T) {
 			Start: timestamppb.New(TestTime.Add(time.Hour)),     // inclusive range
 			End:   timestamppb.New(TestTime.Add(4 * time.Hour)), // exclusive range
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.Cursor, should.BeEmpty)
 		assert.Loosely(t, resp.Items, should.Resemble([]*apipb.BotEventResponse{
 			expectedEvent("visible-bot", 3*time.Hour),

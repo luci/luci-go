@@ -117,7 +117,7 @@ func TestTasksCleanup(t *testing.T) {
 			}))
 
 			err := tc.triggerCleanupTasks(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 			sched.Run(ctx, tqtesting.StopWhenDrained())
 
@@ -139,7 +139,7 @@ func TestTasksCleanup(t *testing.T) {
 
 			// Submits a bunch of cleanup tasks.
 			err := tc.triggerCleanupTasks(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			// All cleanup tasks eventually succeed and delete everything.
 			withBrokenDS(fb, func() {

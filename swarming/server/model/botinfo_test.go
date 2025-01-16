@@ -41,13 +41,13 @@ func TestBotInfoQuery(t *testing.T) {
 			{Key: "k2", Value: "v1|v2"},
 			{Key: "k3", Value: "v1"},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		qs := FilterBotsByDimensions(q, SplitOptimally, dims)
 		assert.Loosely(t, qs, should.HaveLength(2))
 
 		q1, err := qs[0].Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, q1.GQL(), should.Equal(
 			"SELECT * FROM `BotInfo` "+
 				"WHERE `composite` = 1 AND `composite` = 4 AND "+
@@ -56,7 +56,7 @@ func TestBotInfoQuery(t *testing.T) {
 				"`dimensions_flat` IN ARRAY(\"k2:v1\", \"k2:v2\") ORDER BY `__key__`"))
 
 		q2, err := qs[1].Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, q2.GQL(), should.Equal(
 			"SELECT * FROM `BotInfo` "+
 				"WHERE `composite` = 1 AND `composite` = 4 AND "+

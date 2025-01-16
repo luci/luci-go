@@ -470,7 +470,7 @@ func TestTaskRequestConversion(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
 		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		sampleRequest := createTaskRequest(key, testTime)
 		expected := createBQTaskRequest(taskID, testTime)
 		actual := taskRequest(sampleRequest)
@@ -481,7 +481,7 @@ func TestTaskRequestConversion(t *testing.T) {
 		ctx := memory.Use(context.Background())
 		taskID := "65aba3a3e6b99310"
 		key, err := model.TaskIDToRequestKey(ctx, taskID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		sampleRequest := createTaskRequest(key, testTime)
 		// Set this field to zero
 		sampleRequest.TaskSlices[0].Properties.EnvPrefixes = make(model.EnvPrefixes)
@@ -490,7 +490,7 @@ func TestTaskRequestConversion(t *testing.T) {
 		expected := createBQTaskRequest(taskID, testTime)
 		expected.TaskSlices[0].Properties.EnvPaths = make([]*bqpb.StringListPair, 0)
 		actual := taskRequest(sampleRequest)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, actual, should.Resemble(expected))
 	})
 }

@@ -897,14 +897,14 @@ func TestValidateNewTask(t *testing.T) {
 			t.Run("without_optional_fields", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				pool, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, pool, should.Equal("pool"))
 			})
 
 			t.Run("with_all_fields", func(t *ftt.Test) {
 				req := fullRequest()
 				pool, err := validateNewTask(ctx, req)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, pool, should.Equal("pool"))
 			})
 		})
@@ -961,20 +961,20 @@ func TestToTaskRequestEntities(t *testing.T) {
 			req.Priority = 10
 			t.Run("from_normal_user", func(t *ftt.Test) {
 				ents, err := toTaskRequestEntities(ctx, req, "pool")
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, ents.request.Priority, should.Equal(int64(20)))
 			})
 			t.Run("from_admin", func(t *ftt.Test) {
 				ctx := MockRequestState(ctx, state.SetCaller(AdminFakeCaller))
 				ents, err := toTaskRequestEntities(ctx, req, "pool")
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.That(t, ents.request.Priority, should.Equal(int64(10)))
 			})
 		})
 
 		taskRequest := func(id string) *model.TaskRequest {
 			key, err := model.TaskIDToRequestKey(ctx, id)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			return &model.TaskRequest{
 				Key:        key,
 				User:       "parent_user",
@@ -1012,7 +1012,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 				req := simpliestValidRequest("pool")
 				req.ParentTaskId = "60b2ed0a43067111"
 				key, err := model.TaskIDToRequestKey(ctx, req.ParentTaskId)
-				assert.That(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				pTR := &model.TaskRequest{
 					Key: key,
 					TaskSlices: []model.TaskSlice{
@@ -1026,7 +1026,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 					},
 				}
 				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_RUNNING)
-				assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 				_, err = toTaskRequestEntities(ctx, req, "pool")
 				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
@@ -1037,7 +1037,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 				req.ParentTaskId = "60b2ed0a43078111"
 				pTR := taskRequest(req.ParentTaskId)
 				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_COMPLETED)
-				assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+				assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 				_, err := toTaskRequestEntities(ctx, req, "pool")
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
@@ -1049,7 +1049,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 		t.Run("apply_default_values", func(t *ftt.Test) {
 			req := simpliestValidRequest("pool")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.ServiceAccount, should.Equal("none"))
 			assert.That(t, ents.request.BotPingToleranceSecs, should.Equal(int64(1200)))
 		})
@@ -1384,7 +1384,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 						req.PoolTaskTemplate = tc.poolTaskTemplate
 						req.ParentTaskId = ""
 						ents, err := toTaskRequestEntities(ctx, req, "pool")
-						assert.That(t, err, should.ErrLike(nil))
+						assert.NoErr(t, err)
 						res := ents.request.ToProto()
 						assert.That(t, res.Tags, should.Match(expectedTags(tc.template)))
 
@@ -1408,13 +1408,13 @@ func TestToTaskRequestEntities(t *testing.T) {
 			pID := "60b2ed0a43023111"
 			pTR := taskRequest(pID)
 			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
-			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 			req := fullRequest()
 			req.TaskSlices[0].Properties.CipdInput = nil
 
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.Server, should.Equal(cfgtest.MockedCIPDServer))
 			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.ClientPackage.PackageName, should.Equal("client/pkg"))
 			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.ClientPackage.Version, should.Equal("latest"))
@@ -1427,7 +1427,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 			pID := "60b2ed0a43023111"
 			pTR := taskRequest(pID)
 			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
-			assert.That(t, datastore.Put(ctx, pTR, pTRS), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 			req := fullRequest()
 			req.TaskSlices[0].Properties.Dimensions = append(req.TaskSlices[0].Properties.Dimensions, &apipb.StringPair{
@@ -1436,7 +1436,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 			})
 
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.secretBytes, should.Match(
 				&model.SecretBytes{SecretBytes: []byte("this is a secret")}))
 			expectedProps := func(hasSecretBytes bool, extraDims map[string][]string) model.TaskProperties {
@@ -1623,7 +1623,7 @@ func TestNewTask(t *testing.T) {
 		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
 		req.EvaluateOnly = true
 		res, err := srv.NewTask(ctx, req)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, res.TaskId, should.Equal(""))
 		var empty *apipb.TaskResultResponse
 		assert.That(t, res.TaskResult, should.Match(empty))
@@ -1682,7 +1682,7 @@ func TestNewTask(t *testing.T) {
 
 		id := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, id)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		tr := &model.TaskRequest{
 			Key: reqKey,
 		}
@@ -1696,14 +1696,14 @@ func TestNewTask(t *testing.T) {
 			Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
 			TaskID: id,
 		}
-		assert.That(t, datastore.Put(ctx, tr, trs, tri), should.ErrLike(nil))
+		assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
 
 		req := simpliestValidRequest("visible-pool")
 		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
 		req.RequestUuid = "request-id"
 
 		res, err := srv.NewTask(ctx, req)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, res.TaskId, should.Equal(id))
 		assert.That(t, res.TaskResult, should.Match(trs.ToProto()))
 	})
@@ -1744,7 +1744,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("", 0)
 			req := request("")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal(""))
 			assert.That(t, ents.request.Tags, should.NotContain("rbe:none"))
 		})
@@ -1753,7 +1753,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("rbe_instance", 50)
 			req := request("rbe:prevent")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal(""))
 			assert.That(t, ents.request.Tags, should.Contain("rbe:none"))
 		})
@@ -1762,7 +1762,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("rbe_instance", 50)
 			req := request("rbe:allow")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
 			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
 		})
@@ -1771,7 +1771,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("rbe_instance", 0)
 			req := request("")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal(""))
 			assert.That(t, ents.request.Tags, should.Contain("rbe:none"))
 		})
@@ -1780,7 +1780,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("rbe_instance", 100)
 			req := request("")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
 			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
 		})
@@ -1789,7 +1789,7 @@ func TestApplyRBE(t *testing.T) {
 			ctx := setRBEInConfig("rbe_instance", 50)
 			req := request("")
 			ents, err := toTaskRequestEntities(ctx, req, "pool")
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, ents.request.RBEInstance, should.Equal("rbe_instance"))
 			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
 		})

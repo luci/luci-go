@@ -254,7 +254,7 @@ func TestListBotTasks(t *testing.T) {
 				BotId: botID,
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
@@ -274,7 +274,7 @@ func TestListBotTasks(t *testing.T) {
 				BotId: botID,
 				State: apipb.StateQuery_QUERY_COMPLETED,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"COMPLETED-8s",
 				"COMPLETED-6s",
@@ -291,7 +291,7 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
@@ -309,7 +309,7 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
@@ -331,7 +331,7 @@ func TestListBotTasks(t *testing.T) {
 				Sort:  apipb.SortQuery_QUERY_STARTED_TS,
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-9s",
 				"COMPLETED-8s",
@@ -354,7 +354,7 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
@@ -373,7 +373,7 @@ func TestListBotTasks(t *testing.T) {
 				End:   timestamppb.New(TestTime.Add(8 * time.Second)), // non-inclusive
 				State: apipb.StateQuery_QUERY_ALL,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, payloads(resp), should.Resemble([]string{
 				"KILLED-7s",
 				"COMPLETED-6s",
@@ -402,7 +402,7 @@ func TestListBotTasks(t *testing.T) {
 			State:                   apipb.StateQuery_QUERY_ALL,
 			IncludePerformanceStats: true,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// All tasks have performance stats (since they ran on the bot).
 		assert.Loosely(t, countTasksWithPerf(resp.Items), should.Equal(len(resp.Items)))
 
@@ -411,7 +411,7 @@ func TestListBotTasks(t *testing.T) {
 			State:                   apipb.StateQuery_QUERY_ALL,
 			IncludePerformanceStats: false,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// All performance stats are omitted if IncludePerformanceStats is false.
 		assert.Loosely(t, countTasksWithPerf(resp.Items), should.BeZero)
 	})
@@ -421,7 +421,7 @@ func TestListBotTasks(t *testing.T) {
 			BotId: botID,
 			State: apipb.StateQuery_QUERY_ALL,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		var names []string
 		for _, task := range resp.Items {
 			names = append(names, task.Name)

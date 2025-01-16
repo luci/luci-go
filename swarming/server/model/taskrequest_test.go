@@ -115,7 +115,7 @@ func TestTaskRequest(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		fullyPopulated := TaskRequest{
 			Key:     key,
@@ -148,9 +148,9 @@ func TestTaskRequest(t *testing.T) {
 		}
 
 		// Can round-trip.
-		assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &fullyPopulated))
 		loaded := TaskRequest{Key: key}
-		assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+		assert.NoErr(t, datastore.Get(ctx, &loaded))
 		assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 
 		partiallyPopulated := TaskRequest{
@@ -216,7 +216,7 @@ func TestTaskRequestToProto(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		tr := &TaskRequest{
 			Key:     key,
@@ -532,7 +532,7 @@ func TestTaskSlice(t *testing.T) {
 			ts := &TaskSlice{
 				PropertiesHash: []byte("hash_is_already_here"),
 			}
-			assert.That(t, ts.PrecalculatePropertiesHash(nil), should.ErrLike(nil))
+			assert.NoErr(t, ts.PrecalculatePropertiesHash(nil))
 			assert.That(t, ts.PropertiesHash, should.Match([]byte("hash_is_already_here")))
 		})
 
@@ -568,7 +568,7 @@ func TestTaskSlice(t *testing.T) {
 						},
 					},
 				}
-				assert.That(t, ts.PrecalculatePropertiesHash(nil), should.ErrLike(nil))
+				assert.NoErr(t, ts.PrecalculatePropertiesHash(nil))
 				expected := "079e5c6f0bb17d036cc3196c89d2d3ef15fea09d85e7a69a8ba7fe69cf5a7afd"
 				assert.That(t, hex.EncodeToString(ts.PropertiesHash[:]), should.Equal(expected))
 			})
@@ -588,7 +588,7 @@ func TestTaskSlice(t *testing.T) {
 					},
 				}
 				sb := []byte("secret")
-				assert.That(t, ts.PrecalculatePropertiesHash(&SecretBytes{SecretBytes: sb}), should.ErrLike(nil))
+				assert.NoErr(t, ts.PrecalculatePropertiesHash(&SecretBytes{SecretBytes: sb}))
 
 				expected := "b114a396a92ef47203df9f2927e73a90b1bf6e4573daa4e714c10d1394c8da05"
 				assert.That(t, hex.EncodeToString(ts.PropertiesHash[:]), should.Equal(expected))

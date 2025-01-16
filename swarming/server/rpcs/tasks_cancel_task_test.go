@@ -47,7 +47,7 @@ func TestCancelTask(t *testing.T) {
 		srv := TasksServer{TaskLifecycleTasks: lt}
 		taskID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, taskID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		call := func(ctx context.Context, taskID string, killRunning bool) (*apipb.CancelResponse, error) {
 			ctx = MockRequestState(ctx, state)
@@ -130,7 +130,7 @@ func TestCancelTask(t *testing.T) {
 				}
 				_ = datastore.Put(ctx, trs, ttr)
 				rsp, err := call(ctx, taskID, false)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, rsp.Canceled, should.BeTrue)
 				assert.Loosely(t, rsp.WasRunning, should.BeFalse)
 				assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))

@@ -42,13 +42,13 @@ func TestTaskID(t *testing.T) {
 
 		t.Run("String to key: AsRequest", func(t *ftt.Test) {
 			key, err := TaskIDToRequestKey(ctx, "60b2ed0a43023110")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, key.IntID(), should.Equal(8787878774240697582))
 		})
 
 		t.Run("String to key: AsRunResult", func(t *ftt.Test) {
 			key, err := TaskIDToRequestKey(ctx, "60b2ed0a43023111")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, key.IntID(), should.Equal(8787878774240697582))
 		})
 
@@ -78,14 +78,14 @@ func TestTimestampToRequestKey(t *testing.T) {
 		t.Run("ok", func(t *ftt.Test) {
 			in := time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC)
 			resp, err := TimestampToRequestKey(ctx, in, 0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.IntID(), should.Equal(8756616465961975806))
 		})
 
 		t.Run("ok; use timestamppb", func(t *ftt.Test) {
 			in := timestamppb.New(time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC))
 			resp, err := TimestampToRequestKey(ctx, in.AsTime(), 0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.IntID(), should.Equal(8756616465961975806))
 		})
 
@@ -93,9 +93,9 @@ func TestTimestampToRequestKey(t *testing.T) {
 			ts1 := time.Date(2023, 2, 9, 0, 0, 0, 0, time.UTC)
 			ts2 := time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC)
 			key1, err := TimestampToRequestKey(ctx, ts1, 0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			key2, err := TimestampToRequestKey(ctx, ts2, 0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			// The keys are in reverse chronological order, so the inequality is
 			// the opposite of what we expect it to be.
 			assert.Loosely(t, key1.IntID(), should.BeGreaterThan(key2.IntID()))

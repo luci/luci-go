@@ -44,14 +44,14 @@ func TestGetToken(t *testing.T) {
 		Key:    model.LegacyBootstrapSecretKey(ctx),
 		Values: [][]byte{{0, 1, 2, 3, 4}},
 	})
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	srv := SwarmingServer{}
 
 	ftt.Run("Authorized", t, func(t *ftt.Test) {
 		state := NewMockedRequestState().SetCaller(AdminFakeCaller)
 		resp, err := srv.GetToken(MockRequestState(ctx, state), nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp, should.Match(&apipb.BootstrapToken{
 			BootstrapToken: "AXsiX2kiOiIxNjcyNTM4NTg0MDAwIiwiZm9yIjoidXNlcjphZG1pbkBleGFtcGxlLmNvbSJ9i3LA39OM5O41TJCkK4587wYA-_GUASEHqnIlCjZ7QGA",
 		}))

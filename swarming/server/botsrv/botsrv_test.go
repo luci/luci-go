@@ -134,7 +134,7 @@ func TestBotHandler(t *testing.T) {
 
 		call := func(uri string, body testRequest, mockedResp Response, mockedErr error) (b *testRequest, req *Request, status int, resp string) {
 			blob, err := json.Marshal(&body)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return callRaw(uri, blob, "application/json; charset=utf-8", mockedResp, mockedErr)
 		}
 

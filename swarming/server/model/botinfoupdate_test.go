@@ -76,15 +76,15 @@ func TestBotInfoUpdate(t *testing.T) {
 				TaskInfo:   taskInfo,
 			}
 			_, err := update.Submit(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 		}
 
 		check := func() (*BotInfo, []*BotEvent) {
 			info := &BotInfo{Key: BotInfoKey(ctx, "bot-id")}
 			events := []*BotEvent{}
 			q := datastore.NewQuery("BotEvent").Ancestor(info.Key.Root()).Order("ts")
-			assert.That(t, datastore.Get(ctx, info), should.ErrLike(nil))
-			assert.That(t, datastore.GetAll(ctx, q, &events), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Get(ctx, info))
+			assert.NoErr(t, datastore.GetAll(ctx, q, &events))
 			return info, events
 		}
 

@@ -74,9 +74,9 @@ func TestCancel(t *testing.T) {
 
 		tID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, tID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		tr, trs := generateEntities(ctx, reqKey, apipb.TaskState_PENDING, now)
-		assert.Loosely(t, datastore.Put(ctx, tr), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, tr))
 
 		t.Run("no task id specied", func(t *ftt.Test) {
 			c := &Cancellation{}
@@ -115,30 +115,30 @@ func TestCancel(t *testing.T) {
 
 		t.Run("cancel ended task", func(t *ftt.Test) {
 			trs.State = apipb.TaskState_COMPLETED
-			assert.Loosely(t, datastore.Put(ctx, trs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, trs))
 			canceled, wasRunning, err := c.Run(ctx)
 			assert.Loosely(t, canceled, should.BeFalse)
 			assert.Loosely(t, wasRunning, should.BeFalse)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("cancel pending task", func(t *ftt.Test) {
 			trs.State = apipb.TaskState_PENDING
 			toRunKey, err := model.TaskRequestToToRunKey(ctx, tr, 0)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			ttr := &model.TaskToRun{
 				Key:            toRunKey,
 				QueueNumber:    datastore.NewIndexedOptional(int64(2)),
 				Expiration:     datastore.NewIndexedOptional(now.Add(time.Hour)),
 				RBEReservation: "reservation",
 			}
-			assert.Loosely(t, datastore.Put(ctx, trs, ttr), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, trs, ttr))
 			canceled, wasRunning, err := c.Run(ctx)
 			assert.Loosely(t, canceled, should.BeTrue)
 			assert.Loosely(t, wasRunning, should.BeFalse)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
-			assert.Loosely(t, datastore.Get(ctx, trs, ttr), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, trs, ttr))
 			assert.Loosely(t, trs.Abandoned.Get(), should.Match(now))
 			assert.Loosely(t, trs.Modified, should.Match(now))
 			assert.Loosely(t, trs.State, should.Equal(apipb.TaskState_CANCELED))
@@ -151,13 +151,13 @@ func TestCancel(t *testing.T) {
 
 		t.Run("cancel running task", func(t *ftt.Test) {
 			trs.State = apipb.TaskState_RUNNING
-			assert.Loosely(t, datastore.Put(ctx, trs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, trs))
 			t.Run("don't kill running", func(t *ftt.Test) {
 				c.KillRunning = false
 				canceled, wasRunning, err := c.Run(ctx)
 				assert.Loosely(t, canceled, should.BeFalse)
 				assert.Loosely(t, wasRunning, should.BeTrue)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 			})
 
 			t.Run("wrong bot id", func(t *ftt.Test) {
@@ -165,8 +165,8 @@ func TestCancel(t *testing.T) {
 				canceled, wasRunning, err := c.Run(ctx)
 				assert.Loosely(t, canceled, should.BeFalse)
 				assert.Loosely(t, wasRunning, should.BeTrue)
-				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, datastore.Get(ctx, trs), should.BeNil)
+				assert.NoErr(t, err)
+				assert.NoErr(t, datastore.Get(ctx, trs))
 				assert.Loosely(t, trs.Modified, should.Match(now.Add(-time.Minute)))
 			})
 
@@ -177,13 +177,13 @@ func TestCancel(t *testing.T) {
 					},
 					Key: model.TaskRunResultKey(ctx, reqKey),
 				}
-				assert.Loosely(t, datastore.Put(ctx, trr), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, trr))
 				canceled, wasRunning, err := c.Run(ctx)
 				assert.Loosely(t, canceled, should.BeTrue)
 				assert.Loosely(t, wasRunning, should.BeTrue)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
-				assert.Loosely(t, datastore.Get(ctx, trr, trs), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, trr, trs))
 				assert.Loosely(t, trs.Abandoned.Get(), should.Match(trr.Abandoned.Get()))
 				assert.Loosely(t, trs.Abandoned.Get(), should.Match(now))
 				assert.Loosely(t, trs.Modified, should.Match(trr.Modified))
@@ -204,13 +204,13 @@ func TestCancel(t *testing.T) {
 					Killing: true,
 				}
 				trs.Modified = previousModified
-				assert.Loosely(t, datastore.Put(ctx, trr, trs), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, trr, trs))
 				canceled, wasRunning, err := c.Run(ctx)
 				assert.Loosely(t, canceled, should.BeFalse)
 				assert.Loosely(t, wasRunning, should.BeTrue)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
-				assert.Loosely(t, datastore.Get(ctx, trr, trs), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, trr, trs))
 				assert.Loosely(t, trs.Modified, should.Match(trr.Modified))
 				assert.Loosely(t, trs.Modified, should.Match(previousModified))
 			})
@@ -228,7 +228,7 @@ func TestCancelChildren(t *testing.T) {
 
 		pID := "65aba3a3e6b99310"
 		pReqKey, err := model.TaskIDToRequestKey(ctx, pID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		lt := MockTQTasks()
 		cc := &childCancellation{
@@ -238,14 +238,14 @@ func TestCancelChildren(t *testing.T) {
 		}
 
 		t.Run("task has no children", func(t *ftt.Test) {
-			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+			assert.NoErr(t, cc.queryToCancel(ctx))
 			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		t.Run("task has no active children to cancel", func(t *ftt.Test) {
 			cID := "65aba3a3e6b99100"
 			cReqKey, err := model.TaskIDToRequestKey(ctx, cID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			childReq := &model.TaskRequest{
 				Key:          cReqKey,
 				ParentTaskID: datastore.NewIndexedNullable(model.RequestKeyToTaskID(pReqKey, model.AsRunResult)),
@@ -256,8 +256,8 @@ func TestCancelChildren(t *testing.T) {
 					State: apipb.TaskState_COMPLETED,
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, childReq, childRes), should.BeNil)
-			assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, childReq, childRes))
+			assert.NoErr(t, cc.queryToCancel(ctx))
 			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
@@ -278,17 +278,17 @@ func TestCancelChildren(t *testing.T) {
 				if i == 1 {
 					childRes.State = apipb.TaskState_COMPLETED
 				}
-				assert.Loosely(t, datastore.Put(ctx, childReq, childRes), should.BeNil)
+				assert.NoErr(t, datastore.Put(ctx, childReq, childRes))
 			}
 
 			t.Run("one task for all children", func(t *ftt.Test) {
-				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+				assert.NoErr(t, cc.queryToCancel(ctx))
 				assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
 			})
 
 			t.Run("multiple tasks", func(t *ftt.Test) {
 				cc.batchSize = 2
-				assert.Loosely(t, cc.queryToCancel(ctx), should.BeNil)
+				assert.NoErr(t, cc.queryToCancel(ctx))
 				res := lt.PopNTasks("cancel-tasks-go", 2)
 				assert.Loosely(t, res, should.HaveLength(2))
 				assert.Loosely(t, res[0], should.Equal(`["65aba3a3e6b99300" "65aba3a3e6b99400"], purpose: cancel children for 65aba3a3e6b99310 batch 0, retry # 0`))
@@ -328,16 +328,16 @@ func TestBatchCancellation(t *testing.T) {
 		tr1, trs1 := generateEntities(ctx, reqKey1, apipb.TaskState_PENDING, now)
 		reqKey2, _ := model.TaskIDToRequestKey(ctx, tID2)
 		tr2, trs2 := generateEntities(ctx, reqKey2, apipb.TaskState_RUNNING, now)
-		assert.Loosely(t, datastore.Put(ctx, tr1, tr2, trs1, trs2), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, tr1, tr2, trs1, trs2))
 
 		t.Run("all fail for unknown tasks, no retry", func(t *ftt.Test) {
-			assert.Loosely(t, bc.run(ctx), should.BeNil)
+			assert.NoErr(t, bc.run(ctx))
 			// No new retry is enqueued.
 			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		toRunKey, err := model.TaskRequestToToRunKey(ctx, tr1, 0)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		ttr := &model.TaskToRun{
 			Key:            toRunKey,
 			QueueNumber:    datastore.NewIndexedOptional(int64(2)),
@@ -350,26 +350,26 @@ func TestBatchCancellation(t *testing.T) {
 			},
 			Key: model.TaskRunResultKey(ctx, reqKey2),
 		}
-		assert.Loosely(t, datastore.Put(ctx, ttr, trr), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, ttr, trr))
 
 		t.Run("all failures are retriable", func(t *ftt.Test) {
 			tr1.PubSubTopic = "fail-the-task"
 			tr2.PubSubTopic = "fail-the-task"
-			assert.Loosely(t, datastore.Put(ctx, tr1, tr2), should.BeNil)
-			assert.Loosely(t, bc.run(ctx), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tr1, tr2))
+			assert.NoErr(t, bc.run(ctx))
 			// A new task is enqueued to retry both tasks.
 			assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100" "65aba3a3e6b99200"], purpose: CancelTasks request, retry # 1`))
 		})
 
 		t.Run("partial fail", func(t *ftt.Test) {
 			tr1.PubSubTopic = "fail-the-task"
-			assert.Loosely(t, datastore.Put(ctx, tr1), should.BeNil)
-			assert.Loosely(t, bc.run(ctx), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tr1))
+			assert.NoErr(t, bc.run(ctx))
 			// A new task is enqueued to retry t1 only.
 			assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(`["65aba3a3e6b99100"], purpose: CancelTasks request, retry # 1`))
 			// t2 is fine.
 			assert.Loosely(t, lt.PopTask("cancel-children-tasks-go"), should.Equal(tID2))
-			assert.Loosely(t, datastore.Get(ctx, trr, trs2), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, trr, trs2))
 			assert.Loosely(t, trs2.Modified, should.Match(trr.Modified))
 			assert.Loosely(t, trs2.Modified, should.Match(now))
 			assert.Loosely(t, trr.Killing, should.BeTrue)
@@ -377,23 +377,23 @@ func TestBatchCancellation(t *testing.T) {
 
 		t.Run("give up after sufficient retries", func(t *ftt.Test) {
 			tr1.PubSubTopic = "fail-the-task"
-			assert.Loosely(t, datastore.Put(ctx, tr1), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, tr1))
 			bc.tasks = []string{tID1}
 			bc.retries = maxBatchCancellationRetries
-			assert.Loosely(t, bc.run(ctx), should.BeNil)
+			assert.NoErr(t, bc.run(ctx))
 			// No new retry is enqueued.
 			assert.Loosely(t, lt.PopNTasks("cancel-tasks-go", 10), should.HaveLength(0))
 		})
 
 		t.Run("success", func(t *ftt.Test) {
-			assert.Loosely(t, bc.run(ctx), should.BeNil)
+			assert.NoErr(t, bc.run(ctx))
 			assert.Loosely(t, lt.PopTask("rbe-cancel"), should.Equal("rbe-instance/reservation"))
 			res := lt.PopNTasks("pubsub-go", 2)
 			sort.Strings(res)
 			assert.Loosely(t, res, should.Match([]string{tID1, tID2}))
 			assert.Loosely(t, lt.PopTask("cancel-children-tasks-go"), should.Equal(tID2))
 
-			assert.Loosely(t, datastore.Get(ctx, ttr, trr, trs1, trs2), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, ttr, trr, trs1, trs2))
 			assert.Loosely(t, trs1.Modified, should.Match(now))
 			assert.Loosely(t, trs1.State, should.Equal(apipb.TaskState_CANCELED))
 			assert.Loosely(t, ttr.IsReapable(), should.BeFalse)

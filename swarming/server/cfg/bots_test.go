@@ -88,7 +88,7 @@ func TestNewBotGroups(t *testing.T) {
 		bg, err := newBotGroups(goodBotsCfg, map[string]string{
 			"script.py": "some-script",
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, bg.trustedDimensions, should.Match([]string{"a", "b", "pool"}))
 
 		group0 := bg.directMatches["bot-0"]

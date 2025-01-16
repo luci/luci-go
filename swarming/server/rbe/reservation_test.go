@@ -90,7 +90,7 @@ func TestReservationServer(t *testing.T) {
 		}
 
 		taskReqKey, err := model.TaskIDToRequestKey(ctx, enqueueTask.Payload.TaskId)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		taskToRun := &model.TaskToRun{
 			Key: model.TaskToRunKey(ctx, taskReqKey,
 				enqueueTask.Payload.TaskToRunShard,
@@ -98,11 +98,11 @@ func TestReservationServer(t *testing.T) {
 			),
 			Expiration: datastore.NewIndexedOptional(expiry),
 		}
-		assert.Loosely(t, datastore.Put(ctx, taskToRun), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, taskToRun))
 
 		t.Run("handleEnqueueRBETask ok", func(t *ftt.Test) {
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			expectedPayload, _ := anypb.New(&internalspb.TaskPayload{
 				ReservationId:  rbeReservation,
@@ -132,10 +132,10 @@ func TestReservationServer(t *testing.T) {
 		})
 
 		t.Run("handleEnqueueRBETask TaskToRun is gone", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Delete(ctx, datastore.KeyForObj(ctx, taskToRun)), should.BeNil)
+			assert.NoErr(t, datastore.Delete(ctx, datastore.KeyForObj(ctx, taskToRun)))
 
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			// Didn't call RBE.
 			assert.Loosely(t, rbe.reservation, should.BeNil)
@@ -143,10 +143,10 @@ func TestReservationServer(t *testing.T) {
 
 		t.Run("handleEnqueueRBETask TaskToRun is claimed", func(t *ftt.Test) {
 			taskToRun.Expiration.Unset()
-			assert.Loosely(t, datastore.Put(ctx, taskToRun), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, taskToRun))
 
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			// Didn't call RBE.
 			assert.Loosely(t, rbe.reservation, should.BeNil)
@@ -162,7 +162,7 @@ func TestReservationServer(t *testing.T) {
 		t.Run("handleEnqueueRBETask already exists", func(t *ftt.Test) {
 			rbe.errCreate = status.Errorf(codes.AlreadyExists, "boom")
 			err := srv.handleEnqueueRBETask(ctx, enqueueTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("handleEnqueueRBETask fatal error", func(t *ftt.Test) {
@@ -215,7 +215,7 @@ func TestReservationServer(t *testing.T) {
 				RbeInstance:   rbeInstance,
 				ReservationId: rbeReservation,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, rbe.lastCancel, should.Resemble(&remoteworkers.CancelReservationRequest{
 				Name:   fmt.Sprintf("%s/reservations/%s", rbeInstance, rbeReservation),
 				Intent: remoteworkers.CancelReservationIntent_ANY,
@@ -269,10 +269,10 @@ func TestReservationServer(t *testing.T) {
 					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}
 				taskReqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
-				assert.Loosely(t, datastore.Put(ctx, &model.TaskToRun{
+				assert.NoErr(t, datastore.Put(ctx, &model.TaskToRun{
 					Key:        model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
 					Expiration: exp,
-				}), should.BeNil)
+				}))
 			}
 
 			prepReapableTaskToRun := func() { prepTaskToRun(true) }
@@ -296,7 +296,7 @@ func TestReservationServer(t *testing.T) {
 				}
 				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
 				expireSliceDetails = ""
-				assert.Loosely(t, srv.ExpireSliceBasedOnReservation(ctx, reservationName), should.BeNil)
+				assert.NoErr(t, srv.ExpireSliceBasedOnReservation(ctx, reservationName))
 			}
 
 			expectNoExpireSlice := func() {
@@ -474,7 +474,7 @@ func TestEnqueueCancel(t *testing.T) {
 		txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 			return EnqueueCancel(ctx, tr, ttr)
 		}, nil)
-		assert.Loosely(t, txErr, should.BeNil)
+		assert.NoErr(t, txErr)
 		assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 
 		expected := &internalspb.CancelRBETask{

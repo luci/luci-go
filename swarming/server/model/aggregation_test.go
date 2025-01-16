@@ -128,7 +128,7 @@ func TestBotsDimensionsCache(t *testing.T) {
 					LastUpdate: lastUpdate,
 				},
 			)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		}
 
 		var cache BotsDimensionsCache
@@ -141,13 +141,13 @@ func TestBotsDimensionsCache(t *testing.T) {
 		expectedUpdate1 := testTime.Add(-5 * time.Hour)
 		updateDS(expectedUpdate1)
 		set1, err := cache.Get(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, set1.lastUpdate.Equal(expectedUpdate1), should.BeTrue)
 
 		// At a later time returns the exact same object since nothing has changed.
 		tc.Add(time.Hour)
 		set2, err := cache.Get(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, set2 == set1, should.BeTrue) // equal pointers
 
 		// Datastore is updated, but we are still using a cached copy since it
@@ -156,13 +156,13 @@ func TestBotsDimensionsCache(t *testing.T) {
 		expectedUpdate2 := clock.Now(ctx).UTC()
 		updateDS(expectedUpdate2)
 		set3, err := cache.Get(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, set3 == set1, should.BeTrue) // equal pointers
 
 		// Few seconds later the cached copy has expired and we got a new one.
 		tc.Add(11 * time.Second)
 		set4, err := cache.Get(ctx)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, set4 != set1, should.BeTrue)
 		assert.Loosely(t, set4.lastUpdate.Equal(expectedUpdate2), should.BeTrue)
 	})

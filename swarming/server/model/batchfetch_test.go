@@ -78,7 +78,7 @@ func TestBatchFetcher(t *testing.T) {
 			// Then correctly fetched ones.
 			for i := minID; i <= maxID; i++ {
 				e, err := f.Get(i)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.Loosely(t, e.Value, should.Equal(i))
 			}
 			// Then a bunch more of missing ones.

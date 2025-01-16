@@ -123,7 +123,7 @@ func TestNewPoolsConfig(t *testing.T) {
 
 	ftt.Run("Works", t, func(t *ftt.Test) {
 		pools, err := newPoolsConfig(goodPoolsCfg)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, pools, should.HaveLength(3))
 		assert.Loosely(t, pools["a"].Realm, should.Equal("test:1"))
 		assert.Loosely(t, pools["b"].Realm, should.Equal("test:2"))
@@ -1041,7 +1041,7 @@ func TestNewInclusionGraph(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *ftt.Test) {
 				graph, merr := newInclusionGraph(tc.cfg.TaskTemplate)
-				assert.That(t, merr.AsError(), should.ErrLike(nil))
+				assert.NoErr(t, merr.AsError())
 				assert.Loosely(t, inclusions(graph), should.Match(tc.res))
 			})
 		}
@@ -1075,9 +1075,9 @@ func TestResolveTemplates(t *testing.T) {
 				},
 			}
 			graph, merr := newInclusionGraph(cfg.TaskTemplate)
-			assert.That(t, merr.AsError(), should.ErrLike(nil))
+			assert.NoErr(t, merr.AsError())
 			err := graph.flattenTaskTemplates()
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tmpMap := graph.flattened
 			assert.That(t, tmpMap["a"].tmp.Cache, should.Match(goodTaskTemplate.Cache))
 			assert.That(t, tmpMap["a"].tmp.CipdPackage, should.Match(goodTaskTemplate.CipdPackage))
@@ -1148,9 +1148,9 @@ func TestResolveTemplates(t *testing.T) {
 				},
 			}
 			graph, merr := newInclusionGraph(cfg.TaskTemplate)
-			assert.That(t, merr.AsError(), should.ErrLike(nil))
+			assert.NoErr(t, merr.AsError())
 			err := graph.flattenTaskTemplates()
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tmpMap := graph.flattened
 			expected := &configpb.TaskTemplate{
 				Name: "a",
@@ -1276,9 +1276,9 @@ func TestResolveTemplates(t *testing.T) {
 				},
 			}
 			graph, merr := newInclusionGraph(cfg.TaskTemplate)
-			assert.That(t, merr.AsError(), should.ErrLike(nil))
+			assert.NoErr(t, merr.AsError())
 			err := graph.flattenTaskTemplates()
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tmpMap := graph.flattened
 			expected := &configpb.TaskTemplate{
 				Name: "a",
@@ -1370,9 +1370,9 @@ func TestResolveTemplates(t *testing.T) {
 				},
 			}
 			graph, merr := newInclusionGraph(cfg.TaskTemplate)
-			assert.That(t, merr.AsError(), should.ErrLike(nil))
+			assert.NoErr(t, merr.AsError())
 			err := graph.flattenTaskTemplates()
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			tmpMap := graph.flattened
 			expected := &configpb.TaskTemplate{
 				Name: "a",

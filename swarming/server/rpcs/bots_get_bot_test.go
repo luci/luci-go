@@ -128,7 +128,7 @@ func TestGetBot(t *testing.T) {
 
 	ftt.Run("Alive bot", t, func(t *ftt.Test) {
 		resp, err := call("alive-bot")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "alive-bot",
 			SessionId:       "test-session",
@@ -150,7 +150,7 @@ func TestGetBot(t *testing.T) {
 
 	ftt.Run("Deleted bot", t, func(t *ftt.Test) {
 		resp, err := call("deleted-bot")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp, should.Resemble(&apipb.BotInfo{
 			BotId:           "deleted-bot",
 			SessionId:       "test-session",

@@ -65,9 +65,9 @@ func TestEnsureBotArchiveBuilt(t *testing.T) {
 				&EmbeddedBotSettings{ServerURL: serverURL},
 				300, // small chunk size to test chunking
 			)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			_, err = fetchBotArchive(ctx, info.Chunks)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return info
 		}
 
@@ -77,13 +77,13 @@ func TestEnsureBotArchiveBuilt(t *testing.T) {
 				chunks = append(chunks, ent.Key.StringID())
 				return nil
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return
 		}
 
 		fetchState := func() []botArchive {
 			state := botArchiverState{Key: botArchiverStateKey(ctx)}
-			assert.Loosely(t, datastore.Get(ctx, &state), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &state))
 			return state.Archives
 		}
 
@@ -104,7 +104,7 @@ func TestEnsureBotArchiveBuilt(t *testing.T) {
 				PackageVersion:    "latest",
 			}))
 			blob, err := fetchBotArchive(ctx, info.Chunks)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, len(blob), should.Equal(760))
 			assert.Loosely(t, fetchState(), should.HaveLength(1))
 			assert.Loosely(t, allChunks(), should.HaveLength(3))
@@ -204,7 +204,7 @@ func TestBuildBotArchive(t *testing.T) {
 				BotCIPDInstanceID: "some-instance-id",
 			},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.That(t, digest, should.Equal("f852dc2a2380a3f96389883b5aa4157ec22fd00f8c262c95f8f960df9872f65a"))
 		assert.That(t, readZip(out), should.Match([]string{
 			"a/b/c:data 2",
@@ -229,7 +229,7 @@ func TestBuildBotArchive(t *testing.T) {
 				BotCIPDInstanceID: "some-instance-id",
 			},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.That(t, digest, should.Equal("9e7f4933c3939563e26f29f38c6fc26b13723bf4841debe42c94d52a12bb787a"))
 		assert.That(t, readZip(out), should.Match([]string{
 			"a/b/c:data 2",

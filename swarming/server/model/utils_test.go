@@ -32,33 +32,33 @@ func TestToJSONProperty(t *testing.T) {
 
 	ftt.Run("With a value", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(map[string]string{"a": "b"})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, p.Type(), should.Equal(datastore.PTString))
 		assert.Loosely(t, p.Value().(string), should.Equal(`{"a":"b"}`))
 	})
 
 	ftt.Run("With empty map", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(map[string]string{})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
 	ftt.Run("With empty list", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty([]string{})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
 	ftt.Run("With nil", t, func(t *ftt.Test) {
 		p, err := ToJSONProperty(nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 
 	ftt.Run("With typed nil", t, func(t *ftt.Test) {
 		var m map[string]string
 		p, err := ToJSONProperty(m)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, p.Type(), should.Equal(datastore.PTNull))
 	})
 }
@@ -68,37 +68,37 @@ func TestFromJSONProperty(t *testing.T) {
 
 	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(nil), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(nil), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
 	ftt.Run("Empty", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(""), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(""), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
 	ftt.Run("Null", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty("null"), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty("null"), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string(nil)))
 	})
 
 	ftt.Run("Bytes", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty([]byte(`{"a":"b"}`)), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty([]byte(`{"a":"b"}`)), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 
 	ftt.Run("String", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(`{"a":"b"}`), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(`{"a":"b"}`), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 
 	ftt.Run("Compressed", t, func(t *ftt.Test) {
 		var v map[string]string
-		assert.Loosely(t, FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v), should.BeNil)
+		assert.NoErr(t, FromJSONProperty(datastore.MkProperty(deflate([]byte(`{"a":"b"}`))), &v))
 		assert.Loosely(t, v, should.Resemble(map[string]string{"a": "b"}))
 	})
 }

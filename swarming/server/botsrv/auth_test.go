@@ -116,7 +116,7 @@ func TestAuthorizeBot(t *testing.T) {
 				{RequireServiceAccount: []string{"bad@example.com"}},
 				{RequireServiceAccount: []string{"good@example.com"}},
 			})
-			assert.Loosely(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, logs(), should.Match([]string{}))
 		})
 
@@ -129,7 +129,7 @@ func TestAuthorizeBot(t *testing.T) {
 				{RequireServiceAccount: []string{"bad@example.com"}, LogIfFailed: true},
 				{RequireServiceAccount: []string{"good@example.com"}},
 			})
-			assert.Loosely(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, logs(), should.Match([]string{
 				"Bot ID: bot-id",
 				`Preferred auth method {"logIfFailed":true,"requireServiceAccount":["bad@example.com"]}: the host "bot-id" is authenticated as "good@example.com" which is not the expected service account for this host`,
@@ -150,7 +150,7 @@ func TestAuthorizeBot(t *testing.T) {
 						IpWhitelist:           ipAllowlist,
 					},
 				})
-				assert.Loosely(t, err, should.ErrLike(nil))
+				assert.NoErr(t, err)
 				assert.Loosely(t, logs(), should.Match([]string{}))
 				assert.That(t, popMetric(), should.Equal("service_account:some@example.com"))
 			})
@@ -274,7 +274,7 @@ func TestAuthorizeBot(t *testing.T) {
 			err := AuthorizeBot(ctx, "bot-id", []*configpb.BotAuth{
 				{IpWhitelist: ipAllowlist},
 			})
-			assert.Loosely(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, logs(), should.Match([]string{}))
 			assert.That(t, popMetric(), should.Equal("ip_allowlist:ip-allowlist"))
 		})

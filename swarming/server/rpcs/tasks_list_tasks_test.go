@@ -126,7 +126,7 @@ func TestListTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|visible-pool2"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
@@ -144,7 +144,7 @@ func TestListTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
@@ -160,7 +160,7 @@ func TestListTasks(t *testing.T) {
 				Start: startTS,
 				End:   endTS,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 	})
 
@@ -182,7 +182,7 @@ func TestListTasks(t *testing.T) {
 			End:                     endTS,
 			IncludePerformanceStats: true,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// Only tasks that ran on the bot have perf stats.
 		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string{
 			"clienterror-2",
@@ -208,7 +208,7 @@ func TestListTasks(t *testing.T) {
 			End:                     endTS,
 			IncludePerformanceStats: false,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		// All performance stats are omitted if IncludePerformanceStats is false.
 		assert.Loosely(t, tasksWithPerf(resp.Items), should.Resemble([]string(nil)))
 	})
@@ -224,7 +224,7 @@ func TestListTasks(t *testing.T) {
 				End:   endRange,
 				Tags:  tags,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Now, should.NotBeNil)
 			var got []string
 			for _, t := range resp.Items {
@@ -244,7 +244,7 @@ func TestListTasks(t *testing.T) {
 					Cursor: cursor,
 					Limit:  2,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				for _, t := range resp.Items {
 					got = append(got, t.Name)
 				}

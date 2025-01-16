@@ -40,20 +40,20 @@ func TestBootstrapToken(t *testing.T) {
 			Key:    LegacyBootstrapSecretKey(ctx),
 			Values: [][]byte{{0, 1, 2, 3, 4}},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Legacy OK", func(t *ftt.Test) {
 			tok, err := GenerateBootstrapToken(ctx, testIdent)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			ident, err := ValidateBootstrapToken(ctx, tok)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, ident, should.Equal(testIdent))
 		})
 
 		t.Run("Legacy err", func(t *ftt.Test) {
 			tok, err := GenerateBootstrapToken(ctx, testIdent)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			modified := "AAAA" + tok[4:]
 

@@ -129,7 +129,7 @@ func TestSwarmingServer(t *testing.T) {
 
 		call := func(caller identity.Identity, botID, taskID string, tags []string) *apipb.ClientPermissions {
 			resp, err := callWithErr(caller, botID, taskID, tags)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return resp
 		}
 
@@ -237,8 +237,8 @@ func createFakeTask(ctx context.Context, t testing.TB, taskID, realm, pool strin
 	t.Helper()
 
 	key, err := model.TaskIDToRequestKey(ctx, taskID)
-	assert.Loosely(t, err, should.BeNil, truth.LineContext())
-	assert.Loosely(t, datastore.Put(ctx, &model.TaskRequest{
+	assert.NoErr(t, err, truth.LineContext())
+	assert.NoErr(t, datastore.Put(ctx, &model.TaskRequest{
 		Key:           key,
 		Realm:         realm,
 		Authenticated: submitterID,
@@ -251,5 +251,5 @@ func createFakeTask(ctx context.Context, t testing.TB, taskID, realm, pool strin
 				},
 			},
 		},
-	}), should.BeNil, truth.LineContext())
+	}), truth.LineContext())
 }

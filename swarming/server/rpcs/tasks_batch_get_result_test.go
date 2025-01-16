@@ -98,7 +98,7 @@ func TestBatchGetResult(t *testing.T) {
 				tasks["missing-2"],
 			},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
 			codes.NotFound,
 			codes.NotFound,
@@ -114,7 +114,7 @@ func TestBatchGetResult(t *testing.T) {
 				tasks["failure-1"],
 			},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, respCodes(resp), should.Resemble([]codes.Code{
 			codes.PermissionDenied,
 			codes.PermissionDenied,
@@ -137,7 +137,7 @@ func TestBatchGetResult(t *testing.T) {
 			},
 			IncludePerformanceStats: true,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Fetched correct data.
 		type result struct {

@@ -111,7 +111,7 @@ func TestConfigureMigration(t *testing.T) {
 		// Send a bunch to make sure it is not just unlucky random routing.
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.GetBot(ctx, &apipb.BotRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Resemble([]string{"py:GetBot"}))
 		}
 	})
@@ -120,7 +120,7 @@ func TestConfigureMigration(t *testing.T) {
 		// Send a bunch to make sure it is not just unlucky random routing.
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.DeleteBot(ctx, &apipb.BotRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Resemble([]string{"go:DeleteBot"}))
 		}
 	})
@@ -130,14 +130,14 @@ func TestConfigureMigration(t *testing.T) {
 			metadata.NewOutgoingContext(ctx, metadata.Pairs("x-route-to", "go")),
 			&apipb.BotRequest{},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, seen(), should.Resemble([]string{"go:GetBot"}))
 
 		_, err = botsClient.DeleteBot(
 			metadata.NewOutgoingContext(ctx, metadata.Pairs("x-route-to", "py")),
 			&apipb.BotRequest{},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, seen(), should.Resemble([]string{"py:DeleteBot"}))
 	})
 
@@ -146,14 +146,14 @@ func TestConfigureMigration(t *testing.T) {
 			metadata.NewOutgoingContext(ctx, metadata.Pairs("x-routed-from-go", "1")),
 			&apipb.BotRequest{},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, seen(), should.Resemble([]string{"go:GetBot"}))
 	})
 
 	ftt.Run("RouteToGoPercent == 20 => some requests are sent to Go, some to Python", t, func(t *ftt.Test) {
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		}
 		assert.Loosely(t, seen(), should.Resemble([]string{
 			"py:ListBots",
@@ -173,19 +173,19 @@ func TestConfigureMigration(t *testing.T) {
 		cur, err := cursor.Encode(ctx, cursorpb.RequestKind_LIST_BOTS, &cursorpb.BotsCursor{
 			LastBotId: "zzz",
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: cur})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Resemble([]string{"go:ListBots"}))
 		}
 	})
 
 	ftt.Run("Non-go pagination cursor => requests are sent to Python", t, func(t *ftt.Test) {
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		for i := 0; i < 10; i++ {
 			_, err := botsClient.ListBots(ctx, &apipb.BotsRequest{Cursor: "i-am-not-a-go-cursor"})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, seen(), should.Resemble([]string{"py:ListBots"}))
 		}
 	})

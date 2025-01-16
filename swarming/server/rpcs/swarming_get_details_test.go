@@ -45,7 +45,7 @@ func TestGetDetails(t *testing.T) {
 	ftt.Run("Authorized", t, func(t *ftt.Test) {
 		state := state.SetCaller(AdminFakeCaller)
 		resp, err := srv.GetDetails(MockRequestState(ctx, state), nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp, should.Resemble(&apipb.ServerDetails{
 			ServerVersion:            "server-version",
 			BotVersion:               "5a125a79c5acbb53caf1c88455a5142c86cca5fde92b61a7049f8dd9068d4ca4",

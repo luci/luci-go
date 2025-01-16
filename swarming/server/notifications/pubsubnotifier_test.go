@@ -55,7 +55,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 		now := time.Date(2024, time.January, 1, 1, 1, 1, 1, time.UTC)
 		ctx, _ = testclock.UseTime(ctx, now)
 		psServer, psClient, err := setupTestPubsub(ctx, "foo")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		defer func() {
 			_ = psClient.Close()
 			_ = psServer.Close()
@@ -65,7 +65,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 			client: psClient,
 		}
 		fooTopic, err := psClient.CreateTopic(ctx, "swarming-updates")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		psTask := &taskspb.PubSubNotifyTask{
 			TaskId:    "task_id_0",
@@ -83,7 +83,7 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 		})
 
 		t.Run("topic not exist", func(t *ftt.Test) {
-			assert.Loosely(t, fooTopic.Delete(ctx), should.BeNil)
+			assert.NoErr(t, fooTopic.Delete(ctx))
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
 			assert.Loosely(t, err, should.ErrLike(`failed to publish the msg to projects/foo/topics/swarming-updates`))
 			assert.Loosely(t, err, should.ErrLike("NotFound"))
@@ -94,13 +94,13 @@ func TestHandlePubSubNotifyTask(t *testing.T) {
 
 		t.Run("ok", func(t *ftt.Test) {
 			err := notifier.handlePubSubNotifyTask(ctx, psTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, psServer.Messages(), should.HaveLength(1))
 			publishedMsg := psServer.Messages()[0]
 			assert.Loosely(t, publishedMsg.Attributes["auth_token"], should.Equal("auth_token"))
 			data := &PubSubNotification{}
 			err = json.Unmarshal(publishedMsg.Data, data)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, data, should.Resemble(&PubSubNotification{
 				TaskID:   "task_id_0",
 				Userdata: "user_data",
@@ -134,7 +134,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 	ftt.Run("handleBBNotifyTask", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		psServer, psClient, err := setupTestPubsub(ctx, "bb")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		defer func() {
 			_ = psClient.Close()
 			_ = psServer.Close()
@@ -145,10 +145,10 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			cloudProject: "app",
 		}
 		bbTopic, err := psClient.CreateTopic(ctx, "bb-updates")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		buildTask := &model.BuildTask{
 			Key:              model.BuildTaskKey(ctx, reqKey),
@@ -165,7 +165,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 				BotDimensions: model.BotDimensions{"dim": []string{"a", "b"}},
 			},
 		}
-		assert.Loosely(t, datastore.Put(ctx, buildTask, resultSummary), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, buildTask, resultSummary))
 
 		t.Run("build task not exist", func(t *ftt.Test) {
 			psTask := &taskspb.BuildbucketNotifyTask{
@@ -184,9 +184,9 @@ func TestHandleBBNotifyTask(t *testing.T) {
 				State:    apipb.TaskState_RUNNING,
 				UpdateId: 99, // update id < prior update id
 			}
-			assert.Loosely(t, notifier.handleBBNotifyTask(ctx, psTask), should.BeNil)
+			assert.NoErr(t, notifier.handleBBNotifyTask(ctx, psTask))
 			psTask.UpdateId = 100 // update id == prior update id
-			assert.Loosely(t, notifier.handleBBNotifyTask(ctx, psTask), should.BeNil)
+			assert.NoErr(t, notifier.handleBBNotifyTask(ctx, psTask))
 			assert.Loosely(t, psServer.Messages(), should.HaveLength(0))
 		})
 
@@ -197,7 +197,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 				UpdateId: 101,
 			}
 			err := notifier.handleBBNotifyTask(ctx, psTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, psServer.Messages(), should.HaveLength(0))
 		})
 
@@ -210,13 +210,13 @@ func TestHandleBBNotifyTask(t *testing.T) {
 
 			err := notifier.handleBBNotifyTask(ctx, psTask)
 
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, psServer.Messages(), should.HaveLength(1))
 			bbTopic.Stop()
 			publishedMsg := psServer.Messages()[0]
 			sentBBUpdate := &bbpb.BuildTaskUpdate{}
 			err = proto.Unmarshal(publishedMsg.Data, sentBBUpdate)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, sentBBUpdate, should.Resemble(&bbpb.BuildTaskUpdate{
 				BuildId: "1",
 				Task: &bbpb.Task{
@@ -252,7 +252,7 @@ func TestHandleBBNotifyTask(t *testing.T) {
 			}))
 
 			updatedBuildTask := &model.BuildTask{Key: model.BuildTaskKey(ctx, reqKey)}
-			assert.Loosely(t, datastore.Get(ctx, updatedBuildTask), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, updatedBuildTask))
 			assert.Loosely(t, updatedBuildTask.LatestTaskStatus, should.Equal(apipb.TaskState_RUNNING))
 			assert.Loosely(t, updatedBuildTask.BotDimensions, should.Resemble(resultSummary.BotDimensions))
 		})
@@ -268,7 +268,7 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 	ctx, _ = testclock.UseTime(ctx, now)
 	ctx, sch := tq.TestingContext(ctx, nil)
 	psServer, psClient, err := setupTestPubsub(ctx, "bb")
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 	defer func() {
 		_ = psClient.Close()
 		_ = psServer.Close()
@@ -281,7 +281,7 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 	ftt.Run("SendOnTaskUpdate", t, func(t *ftt.Test) {
 		tID := "65aba3a3e6b99310"
 		reqKey, err := model.TaskIDToRequestKey(ctx, tID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		tr := &model.TaskRequest{
 			Key:             reqKey,
 			PubSubTopic:     "projects/bb/topics/swarming-updates",
@@ -301,7 +301,7 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return SendOnTaskUpdate(ctx, tr, trs)
 			}, nil)
-			assert.Loosely(t, txErr, should.BeNil)
+			assert.NoErr(t, txErr)
 			assert.Loosely(t, sch.Tasks(), should.BeEmpty)
 		})
 
@@ -309,7 +309,7 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return SendOnTaskUpdate(ctx, tr, trs)
 			}, nil)
-			assert.Loosely(t, txErr, should.BeNil)
+			assert.NoErr(t, txErr)
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
 		})
 
@@ -318,19 +318,19 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 			txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 				return SendOnTaskUpdate(ctx, tr, trs)
 			}, nil)
-			assert.Loosely(t, txErr, should.BeNil)
+			assert.NoErr(t, txErr)
 			// 1 from above test, 2 from this one.
 			assert.Loosely(t, sch.Tasks(), should.HaveLength(3))
 
 			// Test added tasks are what the handlers expect.
 			_, err := psClient.CreateTopic(ctx, "swarming-updates")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			task := sch.Tasks()[1].Payload.(*taskspb.PubSubNotifyTask)
 			err = notifier.handlePubSubNotifyTask(ctx, task)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			_, err = psClient.CreateTopic(ctx, "bb-updates")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			buildTask := &model.BuildTask{
 				Key:              model.BuildTaskKey(ctx, reqKey),
 				BuildID:          "1",
@@ -346,10 +346,10 @@ func TestEnqueueNotificationTasks(t *testing.T) {
 					BotDimensions: model.BotDimensions{"dim": []string{"a", "b"}},
 				},
 			}
-			assert.Loosely(t, datastore.Put(ctx, buildTask, resultSummary), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, buildTask, resultSummary))
 			bbTask := sch.Tasks()[0].Payload.(*taskspb.BuildbucketNotifyTask)
 			err = notifier.handleBBNotifyTask(ctx, bbTask)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 	})
 }

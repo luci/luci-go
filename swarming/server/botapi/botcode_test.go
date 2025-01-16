@@ -63,7 +63,7 @@ func TestBotCode(t *testing.T) {
 			Key:    model.LegacyBootstrapSecretKey(ctx),
 			Values: [][]byte{{0, 1, 2, 3, 4}},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		authDB := authtest.NewFakeDB(
 			authtest.MockMembership(bootstrapperIdent, botBootstrapGroup),
@@ -154,7 +154,7 @@ func TestBotCode(t *testing.T) {
 
 		t.Run("Redirect using token", func(t *ftt.Test) {
 			tok, err := model.GenerateBootstrapToken(ctx, bootstrapperIdent)
-			assert.Loosely(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			// Good.
 			rr := call(anonymous, unknownIP, "", url.Values{"tok": {tok}}, "")

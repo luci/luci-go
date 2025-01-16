@@ -428,7 +428,7 @@ func TestCIPDPackages(t *testing.T) {
 					},
 				}
 				err := CIPDPackages(pkgs, true, directoryocclusion.NewChecker(""), "task_cipd_packages")
-				assert.That(t, err.AsError(), should.ErrLike(nil))
+				assert.NoErr(t, err.AsError())
 			})
 			t.Run("pass_hash", func(t *ftt.Test) {
 				pkgs := []*apipb.CipdPackage{
@@ -439,7 +439,7 @@ func TestCIPDPackages(t *testing.T) {
 					},
 				}
 				err := CIPDPackages(pkgs, true, directoryocclusion.NewChecker(""), "task_cipd_packages")
-				assert.That(t, err.AsError(), should.ErrLike(nil))
+				assert.NoErr(t, err.AsError())
 			})
 		})
 	})

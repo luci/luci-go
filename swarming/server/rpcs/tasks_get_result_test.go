@@ -45,7 +45,7 @@ func TestGetResult(t *testing.T) {
 		ctx = MockRequestState(ctx, state)
 		srv := TasksServer{}
 		reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		var testTime = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
 		tr := &model.TaskRequest{
 			Key:     reqKey,
@@ -194,7 +194,7 @@ func TestGetResult(t *testing.T) {
 			ExpirationDelay:      datastore.NewUnindexedOptional(0.0),
 		}
 
-		assert.Loosely(t, datastore.Put(ctx, tr, trs), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, tr, trs))
 
 		t.Run("with performance stats", func(t *ftt.Test) {
 			ps := &model.PerformanceStats{
@@ -205,10 +205,10 @@ func TestGetResult(t *testing.T) {
 				NamedCachesInstall:   model.OperationStats{DurationSecs: float64(3)},
 				NamedCachesUninstall: model.OperationStats{DurationSecs: float64(4)},
 			}
-			assert.Loosely(t, datastore.Put(ctx, ps), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, ps))
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: true}
 			resp, err := srv.GetResult(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
@@ -263,7 +263,7 @@ func TestGetResult(t *testing.T) {
 		t.Run("no performance stats", func(t *ftt.Test) {
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99310", IncludePerformanceStats: false}
 			resp, err := srv.GetResult(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Resemble(&apipb.TaskResultResponse{
 				BotDimensions: []*apipb.StringListPair{
 					{Key: "cpu", Value: []string{"x86_64"}},
@@ -331,7 +331,7 @@ func TestGetResult(t *testing.T) {
 
 		t.Run("requestor does not have ACLs", func(t *ftt.Test) {
 			reqKey, err := model.TaskIDToRequestKey(ctx, "65aba3a3e6b99320")
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			trs := model.TaskResultSummary{
 				Key:                  model.TaskResultSummaryKey(ctx, reqKey),
 				RequestRealm:         "project:no-access-realm",
@@ -339,7 +339,7 @@ func TestGetResult(t *testing.T) {
 				RequestBotID:         "da bot",
 				RequestAuthenticated: "user:someone@notyou.com",
 			}
-			assert.Loosely(t, datastore.Put(ctx, &trs), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &trs))
 			req := &apipb.TaskIdWithPerfRequest{TaskId: "65aba3a3e6b99320", IncludePerformanceStats: false}
 			_, err = srv.GetResult(ctx, req)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))

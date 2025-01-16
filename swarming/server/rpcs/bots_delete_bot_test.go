@@ -106,7 +106,7 @@ func TestDeleteBot(t *testing.T) {
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
 		rps, err := call(aliveBotID)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, rps, should.Match(&apipb.DeleteResponse{Deleted: true}))
 		err = datastore.Get(ctx, aliveBot)
 		assert.Loosely(t, err, should.ErrLikeError(datastore.ErrNoSuchEntity))

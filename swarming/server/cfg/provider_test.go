@@ -67,10 +67,10 @@ func TestProvider(t *testing.T) {
 
 		t.Run("Empty config", func(t *ftt.Test) {
 			p, err := NewProvider(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			cfg, err := p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.That(t, cfg.Refreshed, should.Match(testTime))
 			assert.That(t, p.Cached(ctx), should.Equal(cfg))
@@ -78,14 +78,14 @@ func TestProvider(t *testing.T) {
 			// Few seconds later returns the exact same config.
 			tc.Add(4 * time.Second)
 			new1, err := p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, new1, should.Equal(cfg))
 
 			// Even later returns the same config semantically, just with updated
 			// refresh time.
 			tc.Add(10 * time.Second)
 			new2, err := p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, new2, should.NotEqual(cfg))
 			assert.That(t, new2.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.That(t, new2.Refreshed, should.Match(testTime.Add(14*time.Second)))
@@ -97,26 +97,26 @@ func TestProvider(t *testing.T) {
 		t.Run("Config changes", func(t *ftt.Test) {
 			// Start with the default empty config.
 			p, err := NewProvider(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, p.Cached(ctx).VersionInfo.Revision, should.Equal(emptyRev))
 
 			// A new config appears in the datastore.
-			assert.Loosely(t, updateConfig(configSet1), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet1))
 
 			// Latest returns it now.
 			cfg, err := p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("37053cd507f1def1ed78dc2b3103d62629fa1f44"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime))
 			assert.That(t, p.Cached(ctx), should.Equal(cfg))
 
 			// A new config revision appears, but it is semantically the same.
 			tc.Add(1 * time.Second)
-			assert.Loosely(t, updateConfig(configSet2), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet2))
 
 			// Latest ignores it at first.
 			cfg, err = p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("37053cd507f1def1ed78dc2b3103d62629fa1f44"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime))
 			assert.That(t, p.Cached(ctx), should.Equal(cfg))
@@ -124,18 +124,18 @@ func TestProvider(t *testing.T) {
 			// But at some later time updates the non-semantic info.
 			tc.Add(10 * time.Second)
 			cfg, err = p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("b016ee8be51456ec214affaa705fb45c30b29fb5"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime)) // no change! the actual config didn't change
 			assert.That(t, p.Cached(ctx), should.Equal(cfg))
 
 			// A real config change happens.
 			tc.Add(1 * time.Second)
-			assert.Loosely(t, updateConfig(configSet3), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet3))
 
 			// It is picked up right away.
 			cfg, err = p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("2b3ef3c422c800c9eef3ad58815912209b777945"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime.Add(12*time.Second)))
 			assert.That(t, p.Cached(ctx), should.Equal(cfg))
@@ -143,22 +143,22 @@ func TestProvider(t *testing.T) {
 
 		t.Run("Config rollback", func(t *ftt.Test) {
 			// Loaded the initial version of the config.
-			assert.Loosely(t, updateConfig(configSet1), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet1))
 			p, err := NewProvider(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			cfg := p.Cached(ctx)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("37053cd507f1def1ed78dc2b3103d62629fa1f44"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime))
 
 			// A new config lands and soon gets reverted.
 			tc.Add(1 * time.Second)
-			assert.Loosely(t, updateConfig(configSet3), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet3))
 			tc.Add(1 * time.Second)
-			assert.Loosely(t, updateConfig(configSet1), should.BeNil)
+			assert.NoErr(t, updateConfig(configSet1))
 
 			// This gets loads as a new config (with updated Fetched).
 			cfg, err = p.Latest(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("37053cd507f1def1ed78dc2b3103d62629fa1f44"))
 			assert.That(t, cfg.VersionInfo.Fetched, should.Match(testTime.Add(2*time.Second)))
 		})
@@ -178,7 +178,7 @@ func TestProviderConcurrencyStressTest(t *testing.T) {
 		err := UpdateConfigs(cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
 			"services/${appid}": files,
 		})), nil, nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 	}
 
 	loadedCounter := func(cfg *Config) int {
@@ -192,7 +192,7 @@ func TestProviderConcurrencyStressTest(t *testing.T) {
 	updateConfig(1)
 
 	provider, err := NewProvider(ctx)
-	assert.Loosely(t, err, should.BeNil)
+	assert.NoErr(t, err)
 
 	cfg := provider.Cached(ctx)
 	assert.That(t, loadedCounter(cfg), should.Equal(1))
@@ -233,7 +233,7 @@ func TestProviderConcurrencyStressTest(t *testing.T) {
 				rounds++
 
 				cfg, err := provider.Latest(ctx)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 
 				// The config content should only go forward in time.
 				latestCounter := loadedCounter(cfg)

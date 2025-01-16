@@ -66,7 +66,7 @@ func TestTaskResultSummary(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		fullyPopulated := TaskResultSummary{
 			TaskResultCommon: TaskResultCommon{
@@ -141,9 +141,9 @@ func TestTaskResultSummary(t *testing.T) {
 		}
 
 		t.Run("Can round trip", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &fullyPopulated))
 			loaded := TaskResultSummary{Key: fullyPopulated.Key}
-			assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &loaded))
 			assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 		})
 
@@ -239,7 +239,7 @@ func TestTaskResultSummary(t *testing.T) {
 	ftt.Run("PerformanceStats", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("ok", func(t *ftt.Test) {
 			trs := TaskResultSummary{
@@ -259,15 +259,15 @@ func TestTaskResultSummary(t *testing.T) {
 				IsolatedDownload:     CASOperationStats{DurationSecs: 7},
 				IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 			}
-			assert.Loosely(t, datastore.Put(ctx, &trs, &ps), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &trs, &ps))
 
 			statsKey := trs.PerformanceStatsKey(ctx)
 			assert.Loosely(t, statsKey, should.NotBeNil)
 			stats := &PerformanceStats{Key: statsKey}
-			assert.Loosely(t, datastore.Get(ctx, stats), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, stats))
 
 			resp, err := stats.ToProto()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Match(&apipb.PerformanceStats{
 				BotOverhead:          float32(1),
 				CacheTrim:            &apipb.OperationStats{Duration: float32(2)},
@@ -284,7 +284,7 @@ func TestTaskResultSummary(t *testing.T) {
 	ftt.Run("TaskAuthInfo", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("Fresh enough entity", func(t *ftt.Test) {
 			trs := TaskResultSummary{
@@ -296,7 +296,7 @@ func TestTaskResultSummary(t *testing.T) {
 			}
 
 			info, err := trs.TaskAuthInfo(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, info, should.Resemble(&acls.TaskAuthInfo{
 				TaskID:    "65aba3a3e6b99310",
 				Realm:     "example-realm",
@@ -311,7 +311,7 @@ func TestTaskResultSummary(t *testing.T) {
 				Key: TaskResultSummaryKey(ctx, reqKey),
 			}
 
-			assert.Loosely(t, datastore.Put(ctx, &TaskRequest{
+			assert.NoErr(t, datastore.Put(ctx, &TaskRequest{
 				Key:           reqKey,
 				Realm:         "request-realm",
 				Authenticated: "request-user@example.com",
@@ -324,10 +324,10 @@ func TestTaskResultSummary(t *testing.T) {
 						},
 					},
 				},
-			}), should.BeNil)
+			}))
 
 			info, err := trs.TaskAuthInfo(ctx)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, info, should.Resemble(&acls.TaskAuthInfo{
 				TaskID:    "65aba3a3e6b99310",
 				Realm:     "request-realm",
@@ -340,7 +340,7 @@ func TestTaskResultSummary(t *testing.T) {
 	ftt.Run("GetOutput", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		// Generate non-repeating text, to make sure that offsets are respected
 		// precisely (no off by one errors) when reading chunks.
@@ -404,7 +404,7 @@ func TestTaskResultSummary(t *testing.T) {
 			assert.Loosely(t, len(expected), should.Equal(expectedLen))
 
 			got, err := trs.GetOutput(ctx, int64(offset), int64(length))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, len(got), should.Equal(expectedLen))
 			assert.Loosely(t, got, should.Resemble(expected))
 		}
@@ -462,17 +462,17 @@ func TestTaskResultSummary(t *testing.T) {
 		t.Run("With offset outside of available range", func(t *ftt.Test) {
 			// Precisely after the last byte.
 			got, err := trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize, 10000)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, got, should.HaveLength(0))
 
 			// Pointing to an incomplete portion of the last chunk.
 			got, err = trs.GetOutput(ctx, 4*ChunkSize+unfinishedSize+100, 10000)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, got, should.HaveLength(0))
 
 			// Outside of the last chunk entirely.
 			got, err = trs.GetOutput(ctx, 5*ChunkSize+1, 10000)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, got, should.HaveLength(0))
 		})
 	})
@@ -501,7 +501,7 @@ func TestTaskResultSummary(t *testing.T) {
 		t.Run("ok", func(t *ftt.Test) {
 			taskID := "65aba3a3e6b99310"
 			reqKey, err := TaskIDToRequestKey(ctx, taskID)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			tr := &TaskRequest{
 				Key: reqKey,
 			}
@@ -511,9 +511,9 @@ func TestTaskResultSummary(t *testing.T) {
 					State: apipb.TaskState_COMPLETED,
 				},
 			}
-			assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Put(ctx, tr, trs))
 			res, err := TaskResultSummaryFromID(ctx, taskID)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
 		})
 	})
@@ -521,7 +521,7 @@ func TestTaskResultSummary(t *testing.T) {
 	ftt.Run("NewTaskResultSummary", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		created := testclock.TestRecentTimeUTC
 		now := created.Add(time.Minute)
@@ -578,7 +578,7 @@ func TestTaskRunResult(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		fullyPopulated := TaskRunResult{
 			TaskResultCommon: TaskResultCommon{
@@ -645,9 +645,9 @@ func TestTaskRunResult(t *testing.T) {
 		}
 
 		t.Run("Can round-trip", func(t *ftt.Test) {
-			assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
+			assert.NoErr(t, datastore.Put(ctx, &fullyPopulated))
 			loaded := TaskRunResult{Key: fullyPopulated.Key}
-			assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &loaded))
 			assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 		})
 
@@ -721,7 +721,7 @@ func TestPerformanceStats(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		fullyPopulated := PerformanceStats{
 			Key:                  PerformanceStatsKey(ctx, reqKey),
@@ -734,9 +734,9 @@ func TestPerformanceStats(t *testing.T) {
 			IsolatedDownload:     CASOperationStats{DurationSecs: 7},
 			IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 		}
-		assert.Loosely(t, datastore.Put(ctx, &fullyPopulated), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, &fullyPopulated))
 		loaded := PerformanceStats{Key: PerformanceStatsKey(ctx, reqKey)}
-		assert.Loosely(t, datastore.Get(ctx, &loaded), should.BeNil)
+		assert.NoErr(t, datastore.Get(ctx, &loaded))
 		assert.Loosely(t, loaded, should.Resemble(fullyPopulated))
 	})
 
@@ -744,7 +744,7 @@ func TestPerformanceStats(t *testing.T) {
 		ctx := memory.Use(context.Background())
 
 		reqKey, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		t.Run("ok", func(t *ftt.Test) {
 			ps := PerformanceStats{
@@ -759,7 +759,7 @@ func TestPerformanceStats(t *testing.T) {
 				IsolatedUpload:       CASOperationStats{DurationSecs: 7},
 			}
 			resp, err := ps.ToProto()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Match(&apipb.PerformanceStats{
 				BotOverhead:          float32(1),
 				CacheTrim:            &apipb.OperationStats{Duration: float32(2)},
@@ -818,7 +818,7 @@ func TestCASOperationStats(t *testing.T) {
 		t.Run("nil", func(t *ftt.Test) {
 			r := CASOperationStats{}
 			resp, err := r.ToProto()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.BeNil)
 		})
 
@@ -829,13 +829,13 @@ func TestCASOperationStats(t *testing.T) {
 				InitialSize:  3,
 			}
 			itemsColdBytes, err := packedintset.Pack([]int64{1, 2, 3})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			itemsHotBytes, err := packedintset.Pack([]int64{4, 5, 5, 6})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			r.ItemsCold = itemsColdBytes
 			r.ItemsHot = itemsHotBytes
 			resp, err := r.ToProto()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Resemble(&apipb.CASOperationStats{
 				Duration:            1,
 				InitialNumberItems:  2,
@@ -874,9 +874,9 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			testTime.Add(1*time.Hour),
 			nil,
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		fq, err := q.Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828791806, \"TaskResultSummary\", 1) AND "+
@@ -892,9 +892,9 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			time.Time{},
 			nil,
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		fq, err := q.Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` <= KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793209897702391806, \"TaskResultSummary\", 1) "+
@@ -921,9 +921,9 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				LastTaskRequestEntityId: 8793206122828796666, // larger than the original end age
 			},
 		)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		fq, err := q.Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE "+
 				"`__key__` > KEY(DATASET(\"dev~app\"), \"TaskRequest\", 8793206122828796666, \"TaskResultSummary\", 1) AND "+
@@ -947,11 +947,11 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 	ftt.Run("FilterTasksByCreationTime: many tasks in a millisecond", t, func(t *ftt.Test) {
 		put := func(when time.Time, sfx int64) {
 			reqKey, err := TimestampToRequestKey(ctx, when, sfx)
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, datastore.Put(ctx, &TaskResultSummary{
+			assert.NoErr(t, err)
+			assert.NoErr(t, datastore.Put(ctx, &TaskResultSummary{
 				Key:     TaskResultSummaryKey(ctx, reqKey),
 				Created: when,
-			}), should.BeNil)
+			}))
 		}
 
 		// Create a bunch of tasks, all within the same millisecond.
@@ -986,7 +986,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			if errors.Is(err, datastore.ErrNullQuery) {
 				return nil
 			}
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			var out []int64
 			err = datastore.Run(ctx, q, func(e *TaskResultSummary) error {
 				assert.Loosely(t, e.Created.Equal(testTime), should.BeTrue)
@@ -996,7 +996,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 				}
 				return nil
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return out
 		}
 
@@ -1035,7 +1035,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 		assert.Loosely(t, qs, should.HaveLength(1))
 		assert.Loosely(t, mode, should.Equal(SplitOptimally))
 		fq, err := qs[0].Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, fq.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`"))
 	})
@@ -1046,7 +1046,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			assert.Loosely(t, qs, should.HaveLength(1))
 			assert.Loosely(t, mode, should.Equal(SplitCompletely))
 			fq, err := qs[0].Finalize()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, fq.GQL(), should.Equal(
 				"SELECT * FROM `TaskResultSummary` WHERE `state` IN ARRAY(16, 32) ORDER BY `__key__`"))
 		})
@@ -1057,12 +1057,12 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			assert.Loosely(t, mode, should.Equal(SplitCompletely))
 
 			fq0, err := qs[0].Finalize()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, fq0.GQL(), should.Equal(
 				"SELECT * FROM `TaskResultSummary` WHERE `state` = 16 ORDER BY `__key__`"))
 
 			fq1, err := qs[1].Finalize()
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, fq1.GQL(), should.Equal(
 				"SELECT * FROM `TaskResultSummary` WHERE `state` = 32 ORDER BY `__key__`"))
 		})
@@ -1076,13 +1076,13 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 			{Key: "board", Value: "board1|board2"},
 		}
 		filter, err := NewFilter(tags)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		queries := FilterTasksByTags(TaskResultSummaryQuery(), SplitOptimally, filter)
 		assert.Loosely(t, len(queries), should.Equal(2))
 
 		q1, err := queries[0].Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, q1.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` "+
 				"WHERE "+
@@ -1094,7 +1094,7 @@ func TestTaskResultSummaryQueries(t *testing.T) {
 		))
 
 		q2, err := queries[1].Finalize()
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, q2.GQL(), should.Equal(
 			"SELECT * FROM `TaskResultSummary` "+
 				"WHERE "+

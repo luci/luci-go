@@ -147,25 +147,25 @@ func TestGetStdout(t *testing.T) {
 
 	ftt.Run("Read all", t, func(t *ftt.Test) {
 		res, err := call(visibleID, 0, 0)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(res.Output), should.Equal("visible log"))
 	})
 
 	ftt.Run("Read all from dedupped", t, func(t *ftt.Test) {
 		res, err := call(deduppedID, 0, 0)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(res.Output), should.Equal("dedupped log"))
 	})
 
 	ftt.Run("Read all from pending", t, func(t *ftt.Test) {
 		res, err := call(pendingID, 0, 0)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, res.Output, should.HaveLength(0))
 	})
 
 	ftt.Run("Respects offset and length", t, func(t *ftt.Test) {
 		res, err := call(visibleID, 1, len("visible log")-2)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(res.Output), should.Equal("isible lo"))
 	})
 }

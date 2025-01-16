@@ -107,7 +107,7 @@ func TestListTaskStates(t *testing.T) {
 			tasks["failure-0"],
 			tasks["pending-0"],
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp, should.Resemble([]apipb.TaskState{
 			apipb.TaskState_RUNNING,
 			apipb.TaskState_COMPLETED,

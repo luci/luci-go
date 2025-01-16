@@ -59,7 +59,7 @@ func TestTaskToRuns(t *testing.T) {
 		}
 
 		key, err := TaskIDToRequestKey(ctx, "65aba3a3e6b99310")
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 
 		taskSlices := buildTaskSlices([]string{"v3", "v4", "v5"}, key)
 		taskReq := &TaskRequest{
@@ -71,7 +71,7 @@ func TestTaskToRuns(t *testing.T) {
 		for _, toRun := range toRuns {
 			toPut = append(toPut, toRun)
 		}
-		assert.Loosely(t, datastore.Put(ctx, toPut...), should.BeNil)
+		assert.NoErr(t, datastore.Put(ctx, toPut...))
 
 		t.Run("Consume", func(t *ftt.Test) {
 			claimID := "claim_id"
@@ -90,9 +90,9 @@ func TestTaskToRuns(t *testing.T) {
 			})
 			t.Run("pass", func(t *ftt.Test) {
 				key, err := TaskRequestToToRunKey(ctx, taskReq, 0)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				toRun := &TaskToRun{Key: key}
-				assert.Loosely(t, datastore.Get(ctx, toRun), should.BeNil)
+				assert.NoErr(t, datastore.Get(ctx, toRun))
 				assert.Loosely(t, toRun.Dimensions["d2"], should.Match([]string{"v3"}))
 			})
 		})

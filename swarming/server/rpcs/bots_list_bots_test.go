@@ -97,7 +97,7 @@ func TestListBots(t *testing.T) {
 					{Key: "pool", Value: "visible-pool1|visible-pool2"},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
@@ -115,7 +115,7 @@ func TestListBots(t *testing.T) {
 					{Key: "pool", Value: "visible-pool1|hidden-pool1"},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
@@ -125,7 +125,7 @@ func TestListBots(t *testing.T) {
 
 		t.Run("Listing all pools as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.BotsRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 	})
 
@@ -133,7 +133,7 @@ func TestListBots(t *testing.T) {
 		checkQuery := func(req *apipb.BotsRequest, expected []string) {
 			// An unlimited query first.
 			resp, err := callAsAdmin(req)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, botIDs(resp.Items), should.Resemble(expected))
 
 			// A paginated one should return the same results.
@@ -143,7 +143,7 @@ func TestListBots(t *testing.T) {
 				req.Cursor = cursor
 				req.Limit = 2
 				resp, err := callAsAdmin(req)
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				assert.That(t, len(resp.Items), should.BeLessThanOrEqual(int(req.Limit)))
 				out = append(out, resp.Items...)
 				cursor = resp.Cursor
@@ -328,7 +328,7 @@ func TestListBots(t *testing.T) {
 
 	ftt.Run("DeathTimeout", t, func(t *ftt.Test) {
 		resp, err := callAsAdmin(&apipb.BotsRequest{})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.DeathTimeout, should.Equal(state.Configs.Settings.BotDeathTimeoutSecs))
 	})
 }

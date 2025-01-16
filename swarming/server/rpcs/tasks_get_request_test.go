@@ -100,13 +100,13 @@ func TestGetRequest(t *testing.T) {
 
 	ftt.Run("OK", t, func(t *ftt.Test) {
 		resp, err := call(model.RequestKeyToTaskID(visibleReq, model.AsRequest))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.TaskId, should.Equal(model.RequestKeyToTaskID(visibleReq, model.AsRequest)))
 	})
 
 	ftt.Run("OK via ID of RunResult", t, func(t *ftt.Test) {
 		resp, err := call(model.RequestKeyToTaskID(visibleReq, model.AsRunResult))
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.TaskId, should.Equal(model.RequestKeyToTaskID(visibleReq, model.AsRequest)))
 	})
 }

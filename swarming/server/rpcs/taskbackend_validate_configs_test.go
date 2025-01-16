@@ -53,7 +53,7 @@ func TestValidateConfigs(t *testing.T) {
 
 	ftt.Run("No configs", t, func(t *ftt.Test) {
 		resp, err := call(nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
 	})
 
@@ -68,7 +68,7 @@ func TestValidateConfigs(t *testing.T) {
 			},
 		}
 		resp, err := call([]map[string]any{cfgMap})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
 	})
 
@@ -96,7 +96,7 @@ func TestValidateConfigs(t *testing.T) {
 			},
 		}
 		resp, err := call([]map[string]any{cfgMap1, cfgMap2, cfgMap3})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(5))
 		for i, ed := range resp.ConfigErrors {
 			if i == 0 {

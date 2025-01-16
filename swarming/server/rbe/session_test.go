@@ -78,13 +78,13 @@ func TestSessionServer(t *testing.T) {
 
 		payload := func(taskID string) *anypb.Any {
 			msg, err := anypb.New(&internalspb.TaskPayload{TaskId: taskID})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			return msg
 		}
 
 		result := func() *anypb.Any {
 			msg, err := anypb.New(&internalspb.TaskResult{})
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			return msg
 		}
 
@@ -144,13 +144,13 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			msg := resp.(*CreateBotSessionResponse)
 			assert.Loosely(t, msg.SessionID, should.Equal(fakeRBESessionID))
 
 			session, err := botsession.Unmarshal(msg.Session, srv.hmacSecret)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, session, should.Match(&internalspb.Session{
 				BotId:     fakeBotID,
 				SessionId: fakeSessionID,
@@ -220,14 +220,14 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			msg := resp.(*UpdateBotSessionResponse)
 			assert.Loosely(t, msg.Status, should.Equal("OK"))
 			assert.Loosely(t, msg.Lease, should.BeNil)
 
 			session, err := botsession.Unmarshal(msg.Session, srv.hmacSecret)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, session, should.Match(&internalspb.Session{
 				BotId:     fakeBotID,
 				SessionId: fakeSessionID,
@@ -253,7 +253,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			msg := resp.(*UpdateBotSessionResponse)
 			assert.Loosely(t, msg.Status, should.Equal("OK"))
@@ -281,7 +281,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "BOT_TERMINATING",
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			msg := resp.(*UpdateBotSessionResponse)
 			assert.Loosely(t, msg.Status, should.Equal("OK"))
@@ -309,7 +309,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			msg := resp.(*UpdateBotSessionResponse)
 			assert.Loosely(t, msg.Status, should.Equal("BOT_TERMINATING"))
@@ -342,7 +342,7 @@ func TestSessionServer(t *testing.T) {
 				Status: "OK",
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
 			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
@@ -387,7 +387,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
 			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
@@ -430,7 +430,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
 			assert.Loosely(t, lease.ID, should.Equal(fakeFirstLeaseID))
@@ -464,7 +464,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.(*UpdateBotSessionResponse).Lease, should.BeNil)
 		})
 
@@ -501,7 +501,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 
 			lease := resp.(*UpdateBotSessionResponse).Lease
 			assert.Loosely(t, lease.ID, should.Equal(fakeSecondLeaseID))
@@ -597,7 +597,7 @@ func TestSessionServer(t *testing.T) {
 				},
 			}, fakeRequest)
 
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.(*UpdateBotSessionResponse).Lease, should.BeNil)
 		})
 

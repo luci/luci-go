@@ -228,7 +228,7 @@ func TestPoolLevel(t *testing.T) {
 		poolsWithListBots := func(caller identity.Identity) []string {
 			chk := Checker{cfg: cfg, db: db, caller: caller}
 			pools, err := chk.FilterPoolsByPerm(ctx, allPools, PermPoolsListBots)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return pools
 		}
 

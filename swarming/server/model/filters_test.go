@@ -37,7 +37,7 @@ func TestFilter(t *testing.T) {
 			{Key: "pool", Value: "P1"},
 			{Key: "pool", Value: "P1|P2|P3"},
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, f, should.Resemble(Filter{
 			filters: []perKeyFilter{
 				{key: "pool", values: []string{"P1"}},
@@ -64,14 +64,14 @@ func TestFilter(t *testing.T) {
 
 	ftt.Run("Empty", t, func(t *ftt.Test) {
 		f, err := NewFilter(nil)
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, f.IsEmpty(), should.BeTrue)
 	})
 
 	ftt.Run("SplitForQuery", t, func(t *ftt.Test) {
 		split := func(q string, mode SplitMode) []string {
 			in, err := NewFilterFromKV(strings.Split(q, " "))
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 
 			parts := in.SplitForQuery(mode)
 
@@ -88,7 +88,7 @@ func TestFilter(t *testing.T) {
 
 		t.Run("Empty", func(t *ftt.Test) {
 			f, err := NewFilter(nil)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			for _, mode := range []SplitMode{SplitCompletely, SplitOptimally} {
 				out := f.SplitForQuery(mode)
 				assert.Loosely(t, out, should.HaveLength(1))

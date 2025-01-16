@@ -376,7 +376,7 @@ func TestServerInterceptor(t *testing.T) {
 				state = State(ctx)
 				return nil
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, state, should.NotBeNil)
 			assert.Loosely(t, state.Config, should.NotBeNil)
 			assert.Loosely(t, state.ACL, should.NotBeNil)
@@ -390,7 +390,7 @@ func TestServerInterceptor(t *testing.T) {
 				State(ctx) // panics
 				return nil
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, called, should.BeTrue)
 		})
 	})

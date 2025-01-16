@@ -51,7 +51,7 @@ func TestUpdateConfigs(t *testing.T) {
 		fetchDS := func() *configBundle {
 			bundle := &configBundle{Key: configBundleKey(ctx)}
 			rev := &configBundleRev{Key: configBundleRevKey(ctx)}
-			assert.That(t, datastore.Get(ctx, bundle, rev), should.ErrLike(nil))
+			assert.NoErr(t, datastore.Get(ctx, bundle, rev))
 			assert.That(t, bundle.Revision, should.Equal(rev.Revision))
 			assert.That(t, bundle.Digest, should.Equal(rev.Digest))
 			assert.That(t, bundle.Fetched.Equal(rev.Fetched), should.BeTrue)
@@ -59,10 +59,10 @@ func TestUpdateConfigs(t *testing.T) {
 		}
 
 		// Start with no configs. Should store default empty config.
-		assert.That(t, call(nil), should.ErrLike(nil))
+		assert.NoErr(t, call(nil))
 		assert.That(t, fetchDS().Bundle, should.Match(defaultConfigs()))
 		// Call it again. Still no configs.
-		assert.That(t, call(nil), should.ErrLike(nil))
+		assert.NoErr(t, call(nil))
 		assert.That(t, fetchDS().Bundle, should.Match(defaultConfigs()))
 
 		configSet1 := cfgmem.Files{"bots.cfg": `
@@ -80,7 +80,7 @@ func TestUpdateConfigs(t *testing.T) {
 		}
 
 		// A config appears. It is stored.
-		assert.That(t, call(configSet1), should.ErrLike(nil))
+		assert.NoErr(t, call(configSet1))
 		assert.That(t, fetchDS().Bundle, should.Match(configBundle1))
 
 		t.Run("Updates good configs", func(t *ftt.Test) {
@@ -99,10 +99,10 @@ func TestUpdateConfigs(t *testing.T) {
 			}
 
 			// Another config appears. It is store.
-			assert.That(t, call(configSet2), should.ErrLike(nil))
+			assert.NoErr(t, call(configSet2))
 			assert.That(t, fetchDS().Bundle, should.Match(configBundle2))
 			// Call it again, the same config is there.
-			assert.That(t, call(configSet1), should.ErrLike(nil))
+			assert.NoErr(t, call(configSet1))
 			assert.That(t, fetchDS().Bundle, should.Match(configBundle1))
 		})
 
@@ -174,7 +174,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 			"scripts/script2.py":    "script2 body",
 			"scripts/ignored.py":    "ignored",
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, bundle, should.Match(&internalcfgpb.ConfigBundle{
 			Revision: "rev",
 			Digest:   "E9NO4r+ORh2B7LJlaQoTEGFy9cV9zKWGp4j8dATncDE",
@@ -226,7 +226,7 @@ func TestParseAndValidateConfigs(t *testing.T) {
 		empty := defaultConfigs()
 		empty.Revision = "rev"
 		bundle, err := call(nil)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, bundle, should.Match(empty))
 	})
 
@@ -275,7 +275,7 @@ func TestFetchFromDatastore(t *testing.T) {
 
 		t.Run("Empty datastore", func(t *ftt.Test) {
 			cfg, err := fetchFromDatastore(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.That(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.That(t, cfg.settings, should.Match(defaultConfigs().Settings))
@@ -283,21 +283,21 @@ func TestFetchFromDatastore(t *testing.T) {
 
 		t.Run("Default configs in datastore", func(t *ftt.Test) {
 			// A cron job runs and discovers no configs.
-			assert.That(t, update(nil), should.ErrLike(nil))
+			assert.NoErr(t, update(nil))
 
 			// Fetches initial copy of default config.
 			cfg, err := fetchFromDatastore(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal(emptyRev))
 			assert.That(t, cfg.VersionInfo.Digest, should.Equal(emptyDigest))
 			assert.That(t, cfg.settings, should.Match(defaultConfigs().Settings))
 
 			// A real config appears.
-			assert.That(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}), should.ErrLike(nil))
+			assert.NoErr(t, update(cfgmem.Files{"settings.cfg": `google_analytics: "boo"`}))
 
 			// It replaces the empty config when fetched (with defaults filled in).
 			cfg, err = fetchFromDatastore(ctx)
-			assert.That(t, err, should.ErrLike(nil))
+			assert.NoErr(t, err)
 			assert.That(t, cfg.VersionInfo.Revision, should.Equal("bcf7460a098890cc7efc8eda1c8279658ec25eb3"))
 			assert.That(t, cfg.VersionInfo.Digest, should.Equal("qGYmlgeHI+w+f9q08A5MDAt/eTXeK2uXNqyvCH5MoIg"))
 			assert.That(t, cfg.settings, should.Match(&configpb.SettingsCfg{
@@ -495,7 +495,7 @@ func TestBuildQueriableConfig(t *testing.T) {
 				"script.py": "some-script",
 			},
 		})
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		// Pools.cfg processed correctly.
 		assert.That(t, cfg.Pools(), should.Match([]string{"a", "b"}))

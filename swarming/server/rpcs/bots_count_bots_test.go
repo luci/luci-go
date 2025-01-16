@@ -70,7 +70,7 @@ func TestCountBots(t *testing.T) {
 					{Key: "pool", Value: "visible-pool1|visible-pool2"},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing visible and invisible pool: permission denied", func(t *ftt.Test) {
@@ -88,7 +88,7 @@ func TestCountBots(t *testing.T) {
 					{Key: "pool", Value: "visible-pool1|hidden-pool1"},
 				},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Listing all pools as non-admin: permission denied", func(t *ftt.Test) {
@@ -98,7 +98,7 @@ func TestCountBots(t *testing.T) {
 
 		t.Run("Listing all pools as admin: OK", func(t *ftt.Test) {
 			_, err := callAsAdmin(&apipb.BotsCountRequest{})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 	})
 
@@ -113,7 +113,7 @@ func TestCountBots(t *testing.T) {
 				})
 			}
 			resp, err := callAsAdmin(req)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Now, should.NotBeNil)
 			resp.Now = nil // for easier comparison
 			return resp

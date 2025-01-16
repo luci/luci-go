@@ -46,7 +46,7 @@ func TestExportToJSON(t *testing.T) {
 			Event:    bqpb.BotEventType_BOT_NEW_SESSION,
 			EventMsg: "hello",
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(out), should.Equal(`{
   "bot": {
     "bot_id": "bot-id",
@@ -101,7 +101,7 @@ func TestExportToJSON(t *testing.T) {
 			},
 			BotPingTolerance: 9.5,
 		})
-		assert.Loosely(t, err, should.BeNil)
+		assert.NoErr(t, err)
 		assert.Loosely(t, string(out), should.Equal(`{
   "bot_ping_tolerance": "9.500s",
   "task_slices": [

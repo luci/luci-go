@@ -92,7 +92,7 @@ func TestCancelTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|visible-pool2"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Cancelling visible and invisible pool: permission denied", func(t *ftt.Test) {
@@ -110,7 +110,7 @@ func TestCancelTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"pool:visible-pool1|hidden-pool1"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 
 		t.Run("Cancelling all pools as non-admin: permission denied", func(t *ftt.Test) {
@@ -128,7 +128,7 @@ func TestCancelTasks(t *testing.T) {
 				End:   endTS,
 				Tags:  []string{"k:v"},
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 		})
 	})
 
@@ -143,7 +143,7 @@ func TestCancelTasks(t *testing.T) {
 				End:         endRange,
 				Tags:        tags,
 			})
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp.Now, should.NotBeNil)
 			assert.Loosely(t, resp.Matched, should.Equal(len(expected)))
 			assert.Loosely(t, lt.PopTask("cancel-tasks-go"), should.Equal(fmt.Sprintf("%q, purpose: CancelTasks, retry # 0", expected)))
@@ -160,7 +160,7 @@ func TestCancelTasks(t *testing.T) {
 					Cursor:      cursor,
 					Limit:       2,
 				})
-				assert.Loosely(t, err, should.BeNil)
+				assert.NoErr(t, err)
 				cursor = resp.Cursor
 				got += resp.Matched
 				if cursor == "" {

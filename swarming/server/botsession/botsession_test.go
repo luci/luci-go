@@ -46,17 +46,17 @@ func TestMarshaling(t *testing.T) {
 
 	t.Run("Round trip", func(t *testing.T) {
 		blob, err := Marshal(session, secret)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		restored, err := Unmarshal(blob, secret)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		assert.That(t, session, should.Match(restored))
 	})
 
 	t.Run("Bad MAC", func(t *testing.T) {
 		blob, err := Marshal(session, secret)
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 
 		anotherSecret := hmactoken.NewStaticSecret(secrets.Secret{
 			Active: []byte("another-secret"),

@@ -33,7 +33,7 @@ func TestDict(t *testing.T) {
 
 		assert.That(t, d.String(), should.Equal("<empty>"))
 		assert.That(t, d.Equal(d), should.BeTrue)
-		assert.That(t, d.Unseal(), should.ErrLike(nil))
+		assert.NoErr(t, d.Unseal())
 
 		runDatastoreTest(t, d, nil)
 		runJSONTest(t, d)
@@ -46,35 +46,35 @@ func TestDict(t *testing.T) {
 
 		assert.That(t, d.String(), should.Equal(string(blob)))
 		assert.That(t, d.Equal(d), should.BeTrue)
-		assert.That(t, d.Unseal(), should.ErrLike(nil))
+		assert.NoErr(t, d.Unseal())
 
 		runDatastoreTest(t, d, blob)
 		runJSONTest(t, d)
 
 		raw, err := d.ReadRaw("str")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, string(raw), should.Equal(`"val"`))
 
 		raw, err = d.ReadRaw("missing")
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.Loosely(t, raw, should.BeNil)
 
 		str := ""
-		assert.That(t, d.Read("str", &str), should.ErrLike(nil))
+		assert.NoErr(t, d.Read("str", &str))
 		assert.That(t, str, should.Equal("val"))
 		assert.That(t, d.MustReadString("str"), should.Equal("val"))
 		assert.That(t, d.MustReadString("missing"), should.Equal(""))
 		assert.That(t, d.MustReadString("bool"), should.Equal(""))
 
 		bool := false
-		assert.That(t, d.Read("bool", &bool), should.ErrLike(nil))
+		assert.NoErr(t, d.Read("bool", &bool))
 		assert.That(t, bool, should.BeTrue)
 		assert.That(t, d.MustReadBool("bool"), should.BeTrue)
 		assert.That(t, d.MustReadBool("missing"), should.BeFalse)
 		assert.That(t, d.MustReadBool("str"), should.BeFalse)
 
 		var list []int64
-		assert.That(t, d.Read("any", &list), should.ErrLike(nil))
+		assert.NoErr(t, d.Read("any", &list))
 		assert.That(t, list, should.Match([]int64{1, 2, 3}))
 	})
 
@@ -99,12 +99,12 @@ func TestDict(t *testing.T) {
 
 		out, err := Edit(d, func(d *EditableDict) error {
 			var str string
-			assert.That(t, d.Read("str", &str), should.ErrLike(nil))
+			assert.NoErr(t, d.Read("str", &str))
 			assert.That(t, str, should.Equal("val"))
 			return nil
 		})
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out.JSON, should.Match(blob))
 	})
 
@@ -114,14 +114,14 @@ func TestDict(t *testing.T) {
 		d := Dict{JSON: blob}
 
 		out, err := Edit(d, func(d *EditableDict) error {
-			assert.That(t, d.Write("str", "another val"), should.ErrLike(nil))
+			assert.NoErr(t, d.Write("str", "another val"))
 			var str string
-			assert.That(t, d.Read("str", &str), should.ErrLike(nil))
+			assert.NoErr(t, d.Read("str", &str))
 			assert.That(t, str, should.Equal("another val"))
 			return nil
 		})
 
-		assert.That(t, err, should.ErrLike(nil))
+		assert.NoErr(t, err)
 		assert.That(t, out.JSON, should.Match([]byte(`{
   "str": "another val"
 }`)))
@@ -134,16 +134,16 @@ func runDatastoreTest(t *testing.T, d Dict, asBlob []byte) {
 	ctx := memory.Use(context.Background())
 
 	store := testEntityDict{ID: 1, State: d}
-	assert.That(t, datastore.Put(ctx, &store), should.ErrLike(nil))
+	assert.NoErr(t, datastore.Put(ctx, &store))
 
 	// Can be loaded back.
 	load := testEntityDict{ID: 1}
-	assert.That(t, datastore.Get(ctx, &load), should.ErrLike(nil))
+	assert.NoErr(t, datastore.Get(ctx, &load))
 	assert.That(t, store, should.Match(load))
 
 	// Serialized as PTBytes property.
 	loadBytes := testEntityBlob{ID: 1}
-	assert.That(t, datastore.Get(ctx, &loadBytes), should.ErrLike(nil))
+	assert.NoErr(t, datastore.Get(ctx, &loadBytes))
 	assert.That(t, loadBytes.State, should.Match(asBlob))
 }
 
@@ -151,10 +151,10 @@ func runJSONTest(t *testing.T, d Dict) {
 	store := testJSON{State: d}
 
 	blob, err := json.Marshal(&store)
-	assert.That(t, err, should.ErrLike(nil))
+	assert.NoErr(t, err)
 
 	load := testJSON{}
-	assert.That(t, json.Unmarshal(blob, &load), should.ErrLike(nil))
+	assert.NoErr(t, json.Unmarshal(blob, &load))
 	assert.That(t, store, should.Match(load))
 }
 
