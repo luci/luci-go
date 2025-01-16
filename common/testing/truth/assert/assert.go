@@ -61,10 +61,10 @@ func Loosely[T any](t truth.TestingTB, actual any, compare comparison.Func[T], o
 //	assert.That(t, err, should.ErrLike(nil))
 //
 // See [should.ErrLike].
-func NoErr(t testing.TB, err error) {
+func NoErr(t testing.TB, err error, opts ...truth.Option) {
 	if err != nil {
 		t.Helper()
-		/*assert*/ That(t, err, should.ErrLike(nil))
+		/*assert*/ That(t, err, should.ErrLike(nil), opts...)
 	}
 }
 
@@ -76,7 +76,7 @@ func NoErr(t testing.TB, err error) {
 //	assert.That(t, err, should.ErrLike(target))
 //
 // See [should.ErrLike].
-func ErrIsLike(t testing.TB, err error, target any) {
+func ErrIsLike(t testing.TB, err error, target any, opts ...truth.Option) {
 	t.Helper()
-	/*assert*/ That(t, err, should.ErrLike(target))
+	/*assert*/ That(t, err, should.ErrLike(target), opts...)
 }
