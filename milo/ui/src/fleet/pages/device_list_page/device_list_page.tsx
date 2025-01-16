@@ -14,6 +14,7 @@
 
 import { Divider } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import _ from 'lodash';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 
@@ -76,14 +77,22 @@ const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
     },
   );
 
-  const labels = Object.entries(response.labels).map(([key, value]) => {
-    return {
-      label: key,
-      value: 'labels.' + key,
-      options: value.values.map((value) => {
-        return { label: value, value: value };
-      }),
-    } as Option;
+  const labels = Object.entries(response.labels).flatMap(([key, value]) => {
+    // We need to avoid duplicate options
+    // E.g. `dut_id` is in both base dimensions and labels
+    if (response.baseDimensions[key]) {
+      return [];
+    }
+
+    return [
+      {
+        label: key,
+        value: 'labels.' + key,
+        options: value.values.map((value) => {
+          return { label: value, value: value };
+        }),
+      } as Option,
+    ];
   });
 
   return baseDimensions.concat(labels);

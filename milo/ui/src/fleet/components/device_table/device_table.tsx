@@ -16,6 +16,7 @@ import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
 import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
+import _ from 'lodash';
 import { useMemo, useState } from 'react';
 
 import {
@@ -117,8 +118,12 @@ export function DeviceTable({ filter }: DeviceTableProps) {
     () =>
       dimensionsQuery.data
         ? getColumns(
-            Object.keys(dimensionsQuery.data.baseDimensions).concat(
-              Object.keys(dimensionsQuery.data.labels),
+            // We need to avoid duplicates
+            // E.g. `dut_id` is in both base dimensions and labels
+            _.uniq(
+              Object.keys(dimensionsQuery.data.baseDimensions).concat(
+                Object.keys(dimensionsQuery.data.labels),
+              ),
             ),
           )
         : [],
