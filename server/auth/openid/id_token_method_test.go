@@ -23,13 +23,14 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/auth/signing/signingtest"
@@ -93,6 +94,29 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 		assert.Loosely(t, user, should.BeNil)
 	})
 
+	ftt.Run("Credential forwarding", t, func(t *ftt.Test) {
+		t.Run("Works with bearer token", func(t *ftt.Test) {
+			req := authtest.NewFakeRequestMetadata()
+			req.FakeHost = fakeHost
+			req.FakeHeader.Set("Authorization", "Bearer some_token")
+
+			creds, err := method.GetUserCredentials(ctx, req)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, creds, should.Resemble(&oauth2.Token{AccessToken: "some_token", TokenType: "Bearer"}))
+		})
+
+		t.Run("Doesn't work with non-bearer tokens", func(t *ftt.Test) {
+			req := authtest.NewFakeRequestMetadata()
+			req.FakeHost = fakeHost
+			req.FakeHeader.Set("Authorization", "some_token")
+
+			_, err := method.GetUserCredentials(ctx, req)
+
+			assert.Loosely(t, err, should.NotBeNil)
+		})
+	})
+
 	ftt.Run("Regular user", t, func(t *ftt.Test) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			user, err := call(fakeHost, "Bearer "+provider.mintIDToken(ctx, IDToken{
@@ -129,6 +153,17 @@ func TestGoogleIDTokenAuthMethod(t *testing.T) {
 				Exp:           clock.Now(ctx).Add(-1 * time.Hour).Unix(),
 			}))
 			assert.Loosely(t, err, should.ErrLike("bad ID token: expired"))
+		})
+
+		t.Run("Credentials are forwarded", func(t *ftt.Test) {
+			req := authtest.NewFakeRequestMetadata()
+			req.FakeHost = fakeHost
+			req.FakeHeader.Set("Authorization", "Bearer some_token")
+
+			creds, err := method.GetUserCredentials(ctx, req)
+
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, creds, should.Resemble(&oauth2.Token{AccessToken: "some_token", TokenType: "Bearer"}))
 		})
 	})
 

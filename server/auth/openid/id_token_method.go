@@ -19,6 +19,8 @@ import (
 	"net/url"
 	"strings"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/auth/jwt"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -78,9 +80,10 @@ type GoogleIDTokenAuthMethod struct {
 var _ interface {
 	auth.Method
 	auth.Warmable
+	auth.UserCredentialsGetter
 } = (*GoogleIDTokenAuthMethod)(nil)
 
-// AudienceMatchesHost can be used as a AudienceCheck callback.
+// AudienceMatchesHost can be used as an AudienceCheck callback.
 //
 // It verifies token's audience matches "Host" request header. Suitable for
 // environments where "Host" header can be trusted.
@@ -175,6 +178,20 @@ func (m *GoogleIDTokenAuthMethod) Authenticate(ctx context.Context, r auth.Reque
 
 	logging.Errorf(ctx, "openid: token from %s has unrecognized audience %q", user.Email, tok.Aud)
 	return nil, nil, auth.ErrBadAudience
+}
+
+// GetUserCredentials implements auth.UserCredentialsGetter.
+func (m *GoogleIDTokenAuthMethod) GetUserCredentials(ctx context.Context, r auth.RequestMetadata) (*oauth2.Token, error) {
+	typ, token := internal.SplitAuthHeader(r.Header("Authorization"))
+
+	if typ != "bearer" {
+		return nil, errors.New("openid: bad Authorization header")
+	}
+
+	return &oauth2.Token{
+		AccessToken: token,
+		TokenType:   "Bearer",
+	}, nil
 }
 
 // Warmup prepares local caches. It's optional.

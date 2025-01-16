@@ -71,7 +71,10 @@ func TestAuthenticate(t *testing.T) {
 
 		tok, extra, err := GetState(c).UserCredentials()
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{AccessToken: "token-abc@example.com"}))
+		assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
+			AccessToken: "token-abc@example.com",
+			TokenType:   "Bearer",
+		}))
 		assert.Loosely(t, extra, should.HaveLength(0))
 	})
 
@@ -208,7 +211,10 @@ func TestAuthenticate(t *testing.T) {
 
 			tok, extra, err := GetState(c).UserCredentials()
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, tok, should.Resemble(&oauth2.Token{AccessToken: "token-allowed@example.com"}))
+			assert.Loosely(t, tok, should.Resemble(&oauth2.Token{
+				AccessToken: "token-allowed@example.com",
+				TokenType:   "Bearer",
+			}))
 			assert.Loosely(t, extra, should.Resemble(map[string]string{XLUCIProjectHeader: "test-proj"}))
 		})
 
@@ -310,6 +316,11 @@ type fakeAuthMethod struct {
 	observe  func(RequestMetadata)
 }
 
+var _ interface {
+	Method
+	UserCredentialsGetter
+} = (*fakeAuthMethod)(nil)
+
 func (m fakeAuthMethod) Authenticate(_ context.Context, r RequestMetadata) (*User, Session, error) {
 	if m.observe != nil {
 		m.observe(r)
@@ -341,7 +352,10 @@ func (m fakeAuthMethod) GetUserCredentials(context.Context, RequestMetadata) (*o
 	if email == "" {
 		email = "abc@example.com"
 	}
-	return &oauth2.Token{AccessToken: "token-" + email}, nil
+	return &oauth2.Token{
+		AccessToken: "token-" + email,
+		TokenType:   "Bearer",
+	}, nil
 }
 
 func injectTestDB(ctx context.Context, d authdb.DB) context.Context {
