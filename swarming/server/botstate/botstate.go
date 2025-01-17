@@ -52,14 +52,30 @@ func (d *Dict) String() string {
 	return string(d.JSON)
 }
 
-// Equal returns true if both dicts serialize to the same JSON byte blob.
+// Equal returns true if both dicts serialize to the same JSON
+// (ignoring formatting).
 //
 // This method is used by github.com/google/go-cmp/cmp in assertions. For that
 // reason it has to have a non-pointer receiver.
 func (d Dict) Equal(another Dict) bool {
 	a, _ := d.MarshalJSON()
-	b, _ := d.MarshalJSON()
-	return bytes.Equal(a, b)
+	b, _ := another.MarshalJSON()
+
+	if bytes.Equal(a, b) {
+		return true
+	}
+
+	var abuf bytes.Buffer
+	if err := json.Indent(&abuf, a, "", ""); err != nil {
+		return false
+	}
+
+	var bbuf bytes.Buffer
+	if err := json.Indent(&bbuf, b, "", ""); err != nil {
+		return false
+	}
+
+	return bytes.Equal(abuf.Bytes(), bbuf.Bytes())
 }
 
 // Unseal deserializes the JSON blob if it hasn't been deserialized yet.

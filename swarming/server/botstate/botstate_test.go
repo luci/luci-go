@@ -92,6 +92,20 @@ func TestDict(t *testing.T) {
 		assert.That(t, d.MustReadBool("key"), should.BeFalse)
 	})
 
+	t.Run("Equal", func(t *testing.T) {
+		eq := func(a, b string) bool {
+			return (Dict{JSON: []byte(a)}).Equal(Dict{JSON: []byte(b)})
+		}
+
+		assert.That(t, eq(`not json`, `not json`), should.BeTrue)
+		assert.That(t, eq(`not json`, `another not json`), should.BeFalse)
+		assert.That(t, eq(``, `{}`), should.BeTrue)
+		assert.That(t, eq(``, `{"a": 123}`), should.BeFalse)
+		assert.That(t, eq(`{"a": 123}`, `{"a": 123}`), should.BeTrue)
+		assert.That(t, eq(`{"a":      123}`, `{"a": 123}`), should.BeTrue)
+		assert.That(t, eq(`{"a": 888}`, `{"a": 123}`), should.BeFalse)
+	})
+
 	t.Run("Editing noop", func(t *testing.T) {
 		blob := []byte(`{"str": "val"}`)
 
