@@ -89,7 +89,7 @@ func (n NoopGoogleStorage) CancelUpload(ctx context.Context, uploadURL string) e
 }
 
 // Reader is part of gs.GoogleStorage interface.
-func (n NoopGoogleStorage) Reader(ctx context.Context, path string, gen int64) (gs.Reader, error) {
+func (n NoopGoogleStorage) Reader(ctx context.Context, path string, gen, minSpeed int64) (gs.Reader, error) {
 	if n.Err == nil {
 		panic("must not be called")
 	}

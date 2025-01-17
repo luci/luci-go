@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -380,7 +382,7 @@ func TestImpl(t *testing.T) {
 					"size":       "1000",
 				},
 			})
-			r, err := gs.Reader(ctx, "/bucket/a/b/c", 0)
+			r, err := gs.Reader(ctx, "/bucket/a/b/c", 0, 0)
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, r, should.NotBeNil)
 
@@ -439,11 +441,82 @@ func TestImpl(t *testing.T) {
 					"size":       "1000",
 				},
 			})
-			r, err := gs.Reader(ctx, "/bucket/a/b/c", 123)
+			r, err := gs.Reader(ctx, "/bucket/a/b/c", 123, 0)
 			assert.Loosely(c, err, should.BeNil)
 			assert.Loosely(c, r, should.NotBeNil)
 			assert.Loosely(c, r.Generation(), should.Equal(123))
 			assert.Loosely(c, r.Size(), should.Equal(1000))
 		})
+
+		c.Run("Reader with speed limit", func(c *ftt.Test) {
+			expect(call{
+				Method: "GET",
+				Path:   "/b/bucket/o/a/b/c",
+				Query: url.Values{
+					"generation": {"123"},
+				},
+				Response: map[string]string{
+					"generation": "123",
+					"size":       "1000",
+				},
+			})
+			r, err := gs.Reader(ctx, "/bucket/a/b/c", 123, 100)
+			assert.Loosely(c, err, should.BeNil)
+			assert.Loosely(c, r, should.NotBeNil)
+
+			buf := make([]byte, 100)
+			expect(call{
+				Method: "GET",
+				Path:   "/b/bucket/o/a/b/c",
+				Query: url.Values{
+					"alt":        {"media"},
+					"generation": {"123"},
+				},
+				Range:    "bytes=899-998",
+				Response: strings.Repeat("A", 100),
+			})
+			n, err := r.ReadAt(buf, 899)
+			assert.NoErr(c, err)
+			assert.That(c, n, should.Equal(100))
+		})
 	})
+}
+
+func TestTimeoutForSize(t *testing.T) {
+	type tc struct {
+		minSpeed int64
+		size     int64
+		expect   time.Duration
+	}
+
+	doit := func(tc tc) func(t *testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+			assert.That(t, timeoutForSize(tc.minSpeed, tc.size), should.Equal(tc.expect), truth.LineContext())
+		}
+	}
+
+	t.Run("50b @ 100bps", doit(tc{
+		minSpeed: 100,
+		size:     50,
+		expect:   (500 * time.Millisecond) + timeoutConstantExtra,
+	}))
+
+	t.Run("100b @ 100bps", doit(tc{
+		minSpeed: 100,
+		size:     100,
+		expect:   time.Second + timeoutConstantExtra,
+	}))
+
+	t.Run("64MB @ 4MBps", doit(tc{
+		minSpeed: 4 * 1000 * 1000,
+		size:     64 * 1000 * 1000,
+		expect:   (16 * time.Second) + timeoutConstantExtra,
+	}))
+
+	t.Run("64MB @ 64MBps", doit(tc{
+		minSpeed: 64 * 1000 * 1000,
+		size:     64 * 1000 * 1000,
+		expect:   time.Second + timeoutConstantExtra,
+	}))
 }

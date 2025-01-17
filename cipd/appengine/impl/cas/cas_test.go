@@ -213,7 +213,7 @@ func (m *mockedGS) CancelUpload(ctx context.Context, uploadURL string) error {
 	return nil
 }
 
-func (m *mockedGS) Reader(ctx context.Context, path string, gen int64) (gs.Reader, error) {
+func (m *mockedGS) Reader(ctx context.Context, path string, gen, minSpeed int64) (gs.Reader, error) {
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}

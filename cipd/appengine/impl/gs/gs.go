@@ -98,7 +98,14 @@ type GoogleStorage interface {
 	// Reader returns an io.ReaderAt implementation to read contents of a file at
 	// a specific generation (if 'gen' is positive) or at the current live
 	// generation (if 'gen' is zero or negative).
-	Reader(ctx context.Context, path string, gen int64) (Reader, error)
+	//
+	// crbug.com/1261988 - `minSpeed` must be given in bytes-per-second. If > 0,
+	// the reader implementation may set an internal timeout to reconnect to GCS
+	// in the event that a particular object download RPC is unexpectedly slow. As
+	// of 2025Q1, good speeds from GAE to GCS are in the 50MB/s range, but we've
+	// seen slow transfer speeds as low as 0.05MB/s, which `minSpeed` is intended
+	// to guard against.
+	Reader(ctx context.Context, path string, gen, minSpeed int64) (Reader, error)
 }
 
 // Reader can read chunks of a Google Storage file.
@@ -354,7 +361,7 @@ func (gs *impl) CancelUpload(ctx context.Context, uploadURL string) error {
 // Reader returns an io.ReaderAt implementation to read contents of a file at
 // a specific generation (if 'gen' is positive) or at the current live
 // generation (if 'gen' is zero or negative).
-func (gs *impl) Reader(ctx context.Context, path string, gen int64) (Reader, error) {
+func (gs *impl) Reader(ctx context.Context, path string, gen, minSpeed int64) (Reader, error) {
 	logging.Infof(ctx, "gs: Reader(path=%q, gen=%d)", path, gen)
 	if err := gs.init(); err != nil {
 		return nil, err
@@ -376,11 +383,12 @@ func (gs *impl) Reader(ctx context.Context, path string, gen int64) (Reader, err
 	// concerned with concurrent changes that may be happening to the file while
 	// we are reading it.
 	return &readerImpl{
-		ctx:  ctx,
-		gs:   gs,
-		path: path,
-		size: int64(obj.Size),
-		gen:  obj.Generation,
+		ctx:      ctx,
+		gs:       gs,
+		path:     path,
+		size:     int64(obj.Size),
+		gen:      obj.Generation,
+		minSpeed: minSpeed,
 	}, nil
 }
 
@@ -388,11 +396,12 @@ func (gs *impl) Reader(ctx context.Context, path string, gen int64) (Reader, err
 
 // readerImpl implements Reader using real APIs.
 type readerImpl struct {
-	ctx  context.Context
-	gs   *impl
-	path string
-	size int64
-	gen  int64
+	ctx      context.Context
+	gs       *impl
+	path     string
+	size     int64
+	gen      int64
+	minSpeed int64
 
 	m     sync.Mutex
 	speed float64 // moving average, bytes per sec
@@ -400,6 +409,22 @@ type readerImpl struct {
 
 func (r *readerImpl) Size() int64       { return r.size }
 func (r *readerImpl) Generation() int64 { return r.gen }
+
+// We always add a base 2s to the timeout to help prevent flake for small reads.
+const timeoutConstantExtra = time.Second * 2
+
+func timeoutForSize(minSpeed, size int64) time.Duration {
+	if minSpeed <= 0 {
+		return 0
+	}
+
+	ret := timeoutConstantExtra
+
+	// Then we add the maximum amount of time that we're willing to transfer size.
+	ret += (time.Duration(size) * time.Second) / (time.Duration(minSpeed))
+
+	return ret
+}
 
 func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	toRead := int64(len(p))
@@ -409,8 +434,10 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	if toRead == 0 {
 		return 0, io.EOF
 	}
+	attemptTimeout := timeoutForSize(r.minSpeed, toRead)
 
-	logging.Debugf(r.ctx, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d)", r.path, off, toRead, r.gen)
+	logging.Debugf(r.ctx, "gs: ReadAt(path=%q, offset=%d, length=%d, gen=%d) - attemptTimeout=%s",
+		r.path, off, toRead, r.gen, attemptTimeout)
 	if err := r.gs.init(); err != nil {
 		return 0, err
 	}
@@ -420,9 +447,13 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	err = withRetry(r.ctx, func() error {
 		n = 0
 
-		// TODO(crbug.com/1261988): Add a context timeout derived from `toRead` and
-		// the tolerated download speed.
 		ctx := r.ctx
+		if attemptTimeout > 0 {
+			var cancel func()
+			ctx, cancel = context.WithTimeoutCause(
+				ctx, attemptTimeout, errors.Reason("gs: ReadAt too slow").Tag(transient.Tag).Err())
+			defer cancel()
+		}
 
 		// 'Download' is magic. Unlike regular call.Do(), it will append alt=media
 		// to the request string, thus asking GS to return the object body instead
@@ -431,6 +462,11 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		call.Header().Set("Range", fmt.Sprintf("bytes=%d-%d", off, off+toRead-1))
 		resp, err := call.Download()
 		if err != nil {
+			// if this RPC timed out at the beginning due to our timeout, catch it and
+			// return the transient error to allow this to retry.
+			if cause := context.Cause(ctx); transient.Tag.In(cause) {
+				return cause
+			}
 			return err
 		}
 		defer googleapi.CloseBody(resp)
@@ -472,5 +508,6 @@ func (r *readerImpl) trackSpeed(size int64, dt time.Duration) {
 	speed := r.speed
 	r.m.Unlock()
 
-	logging.Debugf(r.ctx, "gs: download speed %.2f MB/sec", speed/1e6)
+	logging.Debugf(r.ctx, "gs: download speed avg[%.2f MB/sec] last_chunk[%.2f MB/sec for %d MB]",
+		speed/1e6, v/1e6, size/(1024*1024))
 }

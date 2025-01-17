@@ -52,6 +52,12 @@ import (
 // Larger values mean fewer Google Storage RPC calls, but more memory usage.
 const readBufferSize = 64 * 1024 * 1024
 
+// minimumSpeedLimit is the minimum tolerable speed for GCS readers in
+// bytes/sec.
+//
+// In 25Q1 the typical good speed observed was 5 times this limit (50MB/s).
+const minimumSpeedLimit = 10 * 1024 * 1024
+
 // StorageServer extends StorageServer RPC interface with some methods used
 // internally by other CIPD server modules.
 type StorageServer interface {
@@ -140,7 +146,7 @@ func (s *storageImpl) GetReader(ctx context.Context, ref *api.ObjectRef) (r gs.R
 		return nil, errors.Annotate(err, "bad ref").Err()
 	}
 
-	r, err = s.getGS(ctx).Reader(ctx, s.settings.ObjectPath(ref), 0)
+	r, err = s.getGS(ctx).Reader(ctx, s.settings.ObjectPath(ref), 0, minimumSpeedLimit)
 	if err != nil {
 		ann := errors.Annotate(err, "can't read the object")
 		if gs.StatusCode(err) == http.StatusNotFound {
@@ -545,7 +551,7 @@ func (s *storageImpl) verifyUploadTask(ctx context.Context, task *tasks.VerifyUp
 	}
 
 	// Prepare reading the most recent generation of the uploaded temporary file.
-	r, err := gs.Reader(ctx, op.TempGSPath, 0)
+	r, err := gs.Reader(ctx, op.TempGSPath, 0, minimumSpeedLimit)
 	if err != nil {
 		return errors.Annotate(err, "failed to start reading Google Storage file").Err()
 	}
