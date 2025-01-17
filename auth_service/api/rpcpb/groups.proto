@@ -53,6 +53,9 @@ service Groups {
   // - `globs` will include direct and indirect globs; and
   // - `nested` will include direct and indirect subgroups.
   rpc GetExpandedGroup(GetGroupRequest) returns (AuthGroup);
+
+  // GetGroupPermissions returns all permissions the given group has within each realm.
+  rpc GetGroupPermissions(GetGroupPermissionsRequest) returns (GroupPermissions);
 }
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.
@@ -171,4 +174,20 @@ message Node {
   //
   // Each item is an index of a Node in Subgraph's `nodes` list.
   repeated int32 included_by = 2;
+}
+
+// GetGroupPermissionsRequest is to specify an individual group.
+message GetGroupPermissionsRequest {
+  string name = 1;
+}
+
+// Group permissions specifies a list of realm permissions.
+message GroupPermissions {
+  repeated RealmPermission realmPermissions = 1;
+}
+
+// Realm permissions specifies a realm name and the permissions an individual group has in it.
+message RealmPermission {
+  string name = 1;
+  repeated string permissions = 2;
 }
