@@ -95,7 +95,7 @@ const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
     ];
   });
 
-  return baseDimensions.concat(labels);
+  return baseDimensions.concat(labels).filter((o) => o.options.length > 0);
 };
 
 export function Component() {
