@@ -712,7 +712,7 @@ type TaskRequestID struct {
 	// TaskID is a packed TaskResultSummary key identifying TaskRequest matching
 	// this request ID.
 	//
-	// Use TaskRequestKey(...) to get the actual datastore key from it.
+	// Use TaskRequestIDKey(...) to get the actual datastore key from it.
 	TaskID string `gae:"task_id,noindex"`
 
 	// ExpireAt is when this entity should be removed from the datastore.

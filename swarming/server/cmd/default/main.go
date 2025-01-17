@@ -251,6 +251,7 @@ func main() {
 		tasksServer := &rpcs.TasksServer{
 			TaskQuerySplitMode: model.SplitOptimally,
 			TaskLifecycleTasks: taskLifeCycle,
+			ServerVersion:      srv.Options.ImageVersion(),
 		}
 		apipb.RegisterTasksServer(srv, tasksServer)
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{

@@ -89,6 +89,9 @@ type TasksServer struct {
 
 	// TaskLifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
 	TaskLifecycleTasks tasks.LifecycleTasks
+
+	// ServerVersion is the version of the executing binary.
+	ServerVersion string
 }
 
 // TaskBackend implements bbpb.TaskBackendServer.

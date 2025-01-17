@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -33,6 +35,8 @@ func TestCreation(t *testing.T) {
 
 	ftt.Run("Creation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+		ctx = cryptorand.MockForTest(ctx, 0)
 
 		t.Run("duplicate_with_request_id", func(t *ftt.Test) {
 			t.Run("error_fetching_result", func(t *ftt.Test) {
@@ -46,7 +50,7 @@ func TestCreation(t *testing.T) {
 					RequestID: "bad_task_id",
 				}
 				_, err := s.Run(ctx)
-				assert.That(t, err, should.ErrLike("datastore error fetching the task"))
+				assert.That(t, err, should.ErrLike("failed to get TaskResultSummary for request id bad_task_id"))
 			})
 			t.Run("found_duplicate", func(t *ftt.Test) {
 				id := "65aba3a3e6b99310"
@@ -67,15 +71,72 @@ func TestCreation(t *testing.T) {
 				}
 				assert.NoErr(t, datastore.Put(ctx, tr, trs, tri))
 
-				s := &Creation{
+				c := &Creation{
 					RequestID: "exist",
 				}
-				res, err := s.Run(ctx)
+				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
 			})
 		})
-	})
 
+		t.Run("id_collision", func(t *ftt.Test) {
+			ctx := cryptorand.MockForTestWithIOReader(ctx, &oneValue{v: "same_id"})
+			key := model.NewTaskRequestKey(ctx)
+			tr1 := &model.TaskRequest{
+				Key: key,
+			}
+			assert.That(t, datastore.Put(ctx, tr1), should.ErrLike(nil))
+
+			c := &Creation{
+				Request: &model.TaskRequest{
+					TaskSlices: []model.TaskSlice{
+						{
+							Properties: model.TaskProperties{
+								Dimensions: model.TaskDimensions{
+									"pool": {"pool"},
+								},
+							},
+						},
+					},
+				},
+			}
+			_, err := c.Run(ctx)
+			assert.That(t, err, should.ErrLike(ErrAlreadyExists))
+		})
+
+		t.Run("OK", func(t *ftt.Test) {
+			c := &Creation{
+				Request: &model.TaskRequest{
+					TaskSlices: []model.TaskSlice{
+						{
+							Properties: model.TaskProperties{
+								Dimensions: model.TaskDimensions{
+									"pool": {"pool"},
+								},
+							},
+						},
+					},
+				},
+			}
+			res, err := c.Run(ctx)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res, should.NotBeNil)
+			assert.That(
+				t, model.RequestKeyToTaskID(res.TaskRequestKey(), model.AsRequest),
+				should.Equal("2cbe1fa55012fa10"))
+		})
+	})
+}
+
+type oneValue struct {
+	v string
+}
+
+func (o *oneValue) Read(p []byte) (n int, err error) {
+	for i := range p {
+		p[i] = byte(o.v[i])
+	}
+	return len(p), nil
 }

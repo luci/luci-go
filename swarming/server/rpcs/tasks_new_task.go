@@ -125,15 +125,31 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	if req.RequestUuid != "" {
 		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
 	}
-	schedule := &tasks.Creation{
-		RequestID:   requestID,
-		Request:     ents.request,
-		SecretBytes: ents.secretBytes,
+	creation := &tasks.Creation{
+		RequestID:     requestID,
+		Request:       ents.request,
+		SecretBytes:   ents.secretBytes,
+		ServerVersion: srv.ServerVersion,
 	}
 
-	trs, err := schedule.Run(ctx)
+	// Create the task in a loop to retry on task ID collisions.
+	var trs *model.TaskResultSummary
+	attempts := 0
+	for {
+		attempts++
+		trs, err = creation.Run(ctx)
+		if !errors.Is(err, tasks.ErrAlreadyExists) {
+			break
+		}
+	}
+
 	if err != nil {
-		return nil, err
+		logging.Errorf(ctx, "Failed to create task: %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to create task")
+	}
+
+	if attempts > 1 {
+		logging.Infof(ctx, "Created the task after %d attempts", attempts)
 	}
 
 	return &apipb.TaskRequestMetadataResponse{

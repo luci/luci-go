@@ -27,6 +27,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
@@ -1706,6 +1707,69 @@ func TestNewTask(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, res.TaskId, should.Equal(id))
 		assert.That(t, res.TaskResult, should.Match(trs.ToProto()))
+	})
+
+	ftt.Run("retry_on_id_collision", t, func(t *ftt.Test) {
+		ctx, _ := testclock.UseTime(ctx, time.Date(2020, time.January, 1, 2, 3, 4, 0, time.UTC))
+		ctx = MockRequestState(ctx, state)
+		ctx = cryptorand.MockForTest(ctx, 0)
+		ctx = memlogger.Use(ctx)
+		logs := logging.Get(ctx).(*memlogger.MemLogger)
+
+		id := "4977a91bc012fa10"
+		reqKey, err := model.TaskIDToRequestKey(ctx, id)
+		assert.NoErr(t, err)
+		tr := &model.TaskRequest{
+			Key: reqKey,
+		}
+		trs := &model.TaskResultSummary{
+			Key: model.TaskResultSummaryKey(ctx, reqKey),
+			TaskResultCommon: model.TaskResultCommon{
+				State: apipb.TaskState_COMPLETED,
+			},
+		}
+		assert.NoErr(t, datastore.Put(ctx, tr, trs))
+
+		req := simpliestValidRequest("visible-pool")
+		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+
+		res, err := srv.NewTask(ctx, req)
+		assert.NoErr(t, err)
+		assert.That(t, res.TaskId, should.NotEqual(id))
+		assert.Loosely(t, logs, convey.Adapt(memlogger.ShouldHaveLog)(
+			logging.Info, "Created the task after 2 attempts"))
+	})
+
+	ftt.Run("OK", t, func(t *ftt.Test) {
+		ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
+		ctx = MockRequestState(ctx, state)
+		ctx = cryptorand.MockForTest(ctx, 0)
+
+		req := simpliestValidRequest("visible-pool")
+		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+
+		_, err := srv.NewTask(ctx, req)
+		assert.NoErr(t, err)
+	})
+
+	ftt.Run("Fail", t, func(t *ftt.Test) {
+		ctx = MockRequestState(ctx, state)
+
+		// TaskRequestID exists without TaskResultSummary.
+		id := "65aba3a3e6b00000"
+		tri := &model.TaskRequestID{
+			Key:    model.TaskRequestIDKey(ctx, "user:test@example.com:request-id"),
+			TaskID: id,
+		}
+		assert.NoErr(t, datastore.Put(ctx, tri))
+
+		req := simpliestValidRequest("visible-pool")
+		req.PoolTaskTemplate = apipb.NewTaskRequest_SKIP
+		req.RequestUuid = "request-id"
+
+		res, err := srv.NewTask(ctx, req)
+		assert.That(t, err, grpccode.ShouldBe(codes.Internal))
+		assert.Loosely(t, res, should.BeNil)
 	})
 }
 
