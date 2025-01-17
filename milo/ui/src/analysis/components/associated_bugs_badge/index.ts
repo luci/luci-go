@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import './lit_binding';
+
 export * from './associated_bugs_badge';

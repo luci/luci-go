@@ -14,7 +14,7 @@
 
 import '@material/mwc-icon';
 
-import '@/analysis/components/associated_bugs_badge/milo_associated_bugs_badge';
+import '@/analysis/components/associated_bugs_badge';
 import '@/common/components/instruction_hint';
 import '@/common/components/sanitized_html';
 import '@/generic_libs/components/expandable_entry';
