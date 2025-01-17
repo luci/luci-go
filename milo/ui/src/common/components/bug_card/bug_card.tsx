@@ -22,11 +22,20 @@ import {
   useGetComponentQuery,
   useGetIssueQuery,
 } from '@/common/hooks/gapi_query/corp_issuetracker';
+import { ClusterId } from '@/proto/go.chromium.org/luci/analysis/proto/v1/common.pb';
 
-interface BugCardProps {
+export interface BugCardProps {
   bugId: string;
+  /** If clusterId and project are both provided a link to the failure cluster will be shown in the bug card. */
+  clusterId?: ClusterId;
+  /** LUCI project used for creating some optional links. */
+  project?: string;
 }
-export const BugCard = ({ bugId }: BugCardProps) => {
+export const BugCard = ({
+  bugId,
+  clusterId,
+  project,
+}: BugCardProps & { clusterId?: { id: string } }) => {
   const {
     data: bug,
     isLoading,
@@ -79,7 +88,11 @@ export const BugCard = ({ bugId }: BugCardProps) => {
           <InfoOutlinedIcon sx={rowIconCss} />
         </span>
         <span style={subtleCss}>Assignee</span>
-        <span>{bug.issueState.assignee.emailAddress}</span>
+        {bug.issueState.assignee ? (
+          <span>{bug.issueState.assignee.emailAddress}</span>
+        ) : (
+          <span style={subtleCss}>None</span>
+        )}
       </div>
       <div style={rowCss}>
         <span style={{ width: '18px' }}></span>
@@ -93,7 +106,25 @@ export const BugCard = ({ bugId }: BugCardProps) => {
           <LinkIcon sx={rowIconCss} />
         </span>
         <span>
-          <a href={`https://issuetracker.google.com/${bugId}`}>Buganizer</a>
+          <a
+            href={`https://issuetracker.google.com/${bugId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Buganizer
+          </a>{' '}
+          {clusterId && project && (
+            <>
+              -{' '}
+              <a
+                href={makeRuleLink(project, clusterId.id)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Cluster
+              </a>
+            </>
+          )}
           {/* More links can be added here */}
         </span>
       </div>
@@ -102,7 +133,11 @@ export const BugCard = ({ bugId }: BugCardProps) => {
 };
 
 // Styles used in the bug card.
-const titleCss: CSSProperties = { fontWeight: 700 };
+const titleCss: CSSProperties = {
+  fontWeight: 700,
+  wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
+};
 const subtleCss: CSSProperties = { opacity: 0.8 };
 const rowCss: CSSProperties = {
   display: 'flex',
@@ -110,3 +145,7 @@ const rowCss: CSSProperties = {
   alignItems: 'center',
 };
 const rowIconCss: CSSProperties = { fontSize: '18px' };
+
+const makeRuleLink = (project: string, clusterId: string): string => {
+  return `/ui/tests/p/${project}/rules/${clusterId}`;
+};

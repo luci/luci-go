@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import createCache, { EmotionCache } from '@emotion/cache';
+import { CacheProvider } from '@emotion/react';
 import { styled } from '@mui/material';
 
 import { getUniqueBugs } from '@/analysis/tools/cluster_utils';
 import { OutputClusterEntry } from '@/analysis/types';
+import { BugCard } from '@/common/components/bug_card';
 import { HtmlTooltip } from '@/common/components/html_tooltip';
-
-import { AssociatedBugsBadgeTooltip } from './tooltip';
 
 const Badge = styled('span')`
   margin: 0;
@@ -41,11 +42,16 @@ const Badge = styled('span')`
 export interface AssociatedBugsBadgeProps {
   readonly project: string;
   readonly clusters: readonly OutputClusterEntry[];
+  readonly cache?: EmotionCache;
 }
 
 export function AssociatedBugsBadge({
   project,
   clusters,
+  cache = createCache({
+    key: 'milo-associated-bugs-badge-react',
+    container: document.body,
+  }),
 }: AssociatedBugsBadgeProps) {
   const uniqueBugs = getUniqueBugs(
     clusters.flatMap((c) => (c.bug ? [c.bug] : [])),
@@ -55,14 +61,25 @@ export function AssociatedBugsBadge({
   }
 
   return (
-    <HtmlTooltip
-      title={
-        <AssociatedBugsBadgeTooltip project={project} clusters={clusters} />
-      }
-    >
-      <Badge data-testid="associated-bugs-badge">
-        {uniqueBugs.map((b) => b.linkText).join(', ')}
-      </Badge>
-    </HtmlTooltip>
+    <>
+      {uniqueBugs.map((b) => (
+        <HtmlTooltip
+          key={b.id}
+          title={
+            <BugCard
+              bugId={b.id}
+              project={project}
+              clusterId={clusters.find((c) => c.bug?.id === b.id)?.clusterId}
+            />
+          }
+        >
+          <span>
+            <CacheProvider value={cache}>
+              <Badge data-testid="associated-bugs-badge">{b.linkText}</Badge>
+            </CacheProvider>
+          </span>
+        </HtmlTooltip>
+      ))}
+    </>
   );
 }

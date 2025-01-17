@@ -245,7 +245,7 @@ export interface IssueStateJson {
   /**
    * The user that the issue is assigned to.
    */
-  assignee: IssueUserJson;
+  assignee?: IssueUserJson;
 }
 
 export interface IssueUserJson {

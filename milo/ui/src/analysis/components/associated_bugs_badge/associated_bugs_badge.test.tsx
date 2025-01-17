@@ -70,8 +70,9 @@ describe('<AssociatedBugsBadge />', () => {
       />,
     );
 
-    expect(screen.getByTestId('associated-bugs-badge')).toHaveTextContent(
-      'b/1234, b/5678',
-    );
+    const badges = screen.getAllByTestId('associated-bugs-badge');
+    expect(badges).toHaveLength(2);
+    expect(badges[0]).toHaveTextContent('b/1234');
+    expect(badges[1]).toHaveTextContent('b/5678');
   });
 });
