@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { useGetIdToken } from '@/common/components/auth_state_provider';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { FleetConsoleClientImpl } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 export function useFleetConsoleClient() {
   return usePrpcServiceClient({
     host: SETTINGS.fleetConsole.host,
+    initUseGetAuthToken: useGetIdToken,
     insecure: SETTINGS.fleetConsole.host.startsWith('localhost'), // use http for local development
     ClientImpl: FleetConsoleClientImpl,
   });
