@@ -252,12 +252,13 @@ func (op *PostStartMessageOp) makeSetReviewReq(rcl *run.RunCL) (*gerritpb.SetRev
 		return nil, errors.Annotate(err, "failed to generate the starting message").Err()
 	}
 	return &gerritpb.SetReviewRequest{
-		Project:    rcl.Detail.GetGerrit().GetInfo().GetProject(),
-		Number:     rcl.Detail.GetGerrit().GetInfo().GetNumber(),
-		RevisionId: rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
-		Tag:        op.Run.Mode.GerritMessageTag(),
-		Notify:     gerritpb.Notify_NOTIFY_NONE,
-		Message:    msg,
+		Project:                          rcl.Detail.GetGerrit().GetInfo().GetProject(),
+		Number:                           rcl.Detail.GetGerrit().GetInfo().GetNumber(),
+		RevisionId:                       rcl.Detail.GetGerrit().GetInfo().GetCurrentRevision(),
+		Tag:                              op.Run.Mode.GerritMessageTag(),
+		Notify:                           gerritpb.Notify_NOTIFY_NONE,
+		Message:                          msg,
+		IgnoreAutomaticAttentionSetRules: true,
 	}, nil
 }
 
