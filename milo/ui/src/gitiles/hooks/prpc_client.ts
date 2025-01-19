@@ -35,9 +35,12 @@ export function useSourceIndexClient() {
  * to allow LUCI UI to send cross-origin requests to more gitiles hosts.
  */
 const CORS_ENABLED_GITILES_HOSTS = Object.freeze([
+  'bluetooth.googlesource.com',
   'chromium.googlesource.com',
   'chrome-internal.googlesource.com',
   'fuchsia.googlesource.com',
+  'pigweed.googlesource.com',
+  'pigweed-internal.googlesource.com',
   'turquoise-internal.googlesource.com',
   'webrtc.googlesource.com',
 ]);
