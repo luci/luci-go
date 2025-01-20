@@ -16,9 +16,9 @@ import Typography from '@mui/material/Typography';
 import { DateTime } from 'luxon';
 
 import HelpTooltip from '@/clusters/components/help_tooltip/help_tooltip';
-import { SanitizedHtml } from '@/clusters/components/sanitized_html/sanitized_html';
 import { Problem } from '@/clusters/tools/problems';
 import { RelativeTimestamp } from '@/common/components/relative_timestamp';
+import { SanitizedHtml } from '@/common/components/sanitized_html';
 import { displayApproxDuartion } from '@/common/tools/time_utils';
 
 import { PriorityChip } from '../priority_chip/priority_chip';
