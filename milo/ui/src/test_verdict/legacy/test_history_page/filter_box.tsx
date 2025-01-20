@@ -20,9 +20,9 @@ import { customElement } from 'lit/decorators.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { computed, makeObservable, observable } from 'mobx';
 
-import '@/common/components/auto_complete';
+import '@/common/components/lit_auto_complete';
 import '@/generic_libs/components/hotkey';
-import { SuggestionEntry } from '@/common/components/auto_complete';
+import { SuggestionEntry } from '@/common/components/lit_auto_complete';
 import { suggestTestHistoryFilterQuery } from '@/common/queries/th_filter_query';
 import { consumeStore, StoreInstance } from '@/common/store';
 import { consumer } from '@/generic_libs/tools/lit_context';

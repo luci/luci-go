@@ -16,7 +16,7 @@
 
 import { html } from 'lit';
 
-import { Suggestion } from '@/common/components/auto_complete';
+import { Suggestion } from '@/common/components/lit_auto_complete';
 import { VariantPredicate } from '@/common/services/luci_analysis';
 import { Variant } from '@/common/services/resultdb';
 import { highlight } from '@/generic_libs/tools/lit_utils';

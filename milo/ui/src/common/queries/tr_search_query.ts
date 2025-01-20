@@ -14,7 +14,7 @@
 
 import { html } from 'lit';
 
-import { Suggestion } from '@/common/components/auto_complete';
+import { Suggestion } from '@/common/components/lit_auto_complete';
 import { TestVariant } from '@/common/services/resultdb';
 import { parseProtoDurationStr } from '@/common/tools/time_utils';
 import { highlight } from '@/generic_libs/tools/lit_utils';
