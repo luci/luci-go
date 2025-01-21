@@ -28,7 +28,7 @@ npm run dev
 
 The local dev server only serves the SPA assets. It sends pRPC and HTTP REST
 requests to staging servers (typically hosted on GCP). Check
-[.env.development](.env.development) for instructions to configure the target
+[.env.development](../../.env.development) for instructions to configure the target
 servers and other local development settings.
 
 
