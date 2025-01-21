@@ -25,6 +25,8 @@ import (
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/botsrv"
 	"go.chromium.org/luci/swarming/server/cfg"
+	"go.chromium.org/luci/swarming/server/hmactoken"
+	"go.chromium.org/luci/swarming/server/model"
 )
 
 // BotAPIServer implements core Bot API handlers.
@@ -34,21 +36,33 @@ import (
 type BotAPIServer struct {
 	// cfg is the server config.
 	cfg *cfg.Provider
+	// hmacSecret is used to generate new session tokens.
+	hmacSecret *hmactoken.Secret
 	// project is the Swarming Cloud Project name.
 	project string
+	// version is the server's version
+	version string
 	// botCodeCache is the cache of the bot code blobs to avoid hitting datastore.
 	botCodeCache *lru.Cache[string, []byte]
 	// authorizeBot is botsrv.AuthorizeBot, but it can be mocked in tests.
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
+	// submitUpdate calls u.Submit, but it can be mocked in tests.
+	submitUpdate func(ctx context.Context, u *model.BotInfoUpdate) error
 }
 
 // NewBotAPIServer constructs a new BotAPIServer.
-func NewBotAPIServer(cfg *cfg.Provider, project string) *BotAPIServer {
+func NewBotAPIServer(cfg *cfg.Provider, secret *hmactoken.Secret, project, version string) *BotAPIServer {
 	return &BotAPIServer{
 		cfg:          cfg,
+		hmacSecret:   secret,
 		project:      project,
+		version:      version,
 		botCodeCache: lru.New[string, []byte](2), // two versions: canary + stable
 		authorizeBot: botsrv.AuthorizeBot,
+		submitUpdate: func(ctx context.Context, u *model.BotInfoUpdate) error {
+			_, err := u.Submit(ctx)
+			return err
+		},
 	}
 }
 

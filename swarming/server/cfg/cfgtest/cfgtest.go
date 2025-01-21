@@ -205,7 +205,7 @@ func MockConfigs(ctx context.Context, configs *MockedConfigs) *cfg.Provider {
 	putPb("pools.cfg", configs.Pools)
 	putPb("bots.cfg", configs.Bots)
 	for path, body := range configs.Scripts {
-		files[path] = body
+		files["scripts/"+path] = body
 	}
 
 	// Put new configs into the datastore.

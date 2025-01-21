@@ -462,7 +462,7 @@ func (e *BotEvent) IsIdle() bool {
 // Returns an empty string if the state doesn't contain "quarantined" field.
 func (e *BotEvent) QuarantineMessage() string {
 	var quarantined any
-	if err := e.State.Read("quarantined", &quarantined); err != nil {
+	if err := e.State.Read(botstate.QuarantinedKey, &quarantined); err != nil {
 		return ""
 	}
 	return QuarantineMessage(quarantined)

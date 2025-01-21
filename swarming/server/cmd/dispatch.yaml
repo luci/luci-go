@@ -36,3 +36,5 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/bot_code*"
     service: default-go
+  - url: "*/swarming/api/v1/bot/handshake"
+    service: default-go

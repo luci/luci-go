@@ -80,7 +80,7 @@ func TestBotCode(t *testing.T) {
 		stableDigest := cfg.Cached(ctx).VersionInfo.StableBot.Digest
 		canaryDigest := cfg.Cached(ctx).VersionInfo.CanaryBot.Digest
 
-		srv := NewBotAPIServer(cfg, "test-project")
+		srv := NewBotAPIServer(cfg, nil, "test-project", "server-version")
 		srv.authorizeBot = func(ctx context.Context, botID string, methods []*configpb.BotAuth) error {
 			if botID == goodBot {
 				return nil

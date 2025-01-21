@@ -23,6 +23,18 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 )
 
+// Some known bot state keys.
+const (
+	// HandshakingKey is set to true when the bot is connecting.
+	HandshakingKey = "handshaking"
+	// InitialDimensionsKey carries dimensions reported when the bot is connecting.
+	InitialDimensionsKey = "initial_dimensions"
+	// QuarantinedKey carries a self-quarantine message or a boolean.
+	QuarantinedKey = "quarantined"
+	// MaintenanceKey carries a bot maintenance message.
+	MaintenanceKey = "maintenance"
+)
+
 // Dict is a lazily deserialized read-only bot state JSON dict.
 //
 // It can be in three state internally:

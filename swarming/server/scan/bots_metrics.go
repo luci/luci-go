@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 
+	"go.chromium.org/luci/swarming/server/botstate"
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 )
@@ -131,7 +132,7 @@ func (s *metricsReporterShardState) collect(bot *model.BotInfo) {
 	} else if bot.IsInMaintenance() {
 		migrationState = "MAINTENANCE"
 	} else {
-		if bot.State.MustReadBool("handshaking") {
+		if bot.State.MustReadBool(botstate.HandshakingKey) {
 			// This is not a fully connected bot.
 			return
 		}

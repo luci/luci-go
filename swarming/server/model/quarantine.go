@@ -15,7 +15,7 @@
 package model
 
 // GenericQuarantineMessage is returned by QuarantineMessage in case the
-// bot sets "quarantine" value to a generic truthy value (instead of a string
+// bot sets "quarantined" value to a generic truthy value (instead of a string
 // with a detailed explanation).
 const GenericQuarantineMessage = "Bot self-quarantined."
 
