@@ -444,7 +444,10 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 
 	started := time.Now()
 
+	attempts := 0
 	err = withRetry(r.ctx, func() error {
+		defer func() { attempts++ }()
+
 		n = 0
 
 		ctx := r.ctx
@@ -484,13 +487,13 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	}
 
 	if err == nil {
-		r.trackSpeed(toRead, time.Since(started))
+		r.trackSpeed(toRead, time.Since(started), attempts)
 	}
 
 	return
 }
 
-func (r *readerImpl) trackSpeed(size int64, dt time.Duration) {
+func (r *readerImpl) trackSpeed(size int64, dt time.Duration, attempts int) {
 	// Ignore small reads, their speed is dominated by noise.
 	if size < 64*1024 {
 		return
@@ -508,6 +511,6 @@ func (r *readerImpl) trackSpeed(size int64, dt time.Duration) {
 	speed := r.speed
 	r.m.Unlock()
 
-	logging.Debugf(r.ctx, "gs: download speed avg[%.2f MB/sec] last_chunk[%.2f MB/sec for %d MB]",
-		speed/1e6, v/1e6, size/(1024*1024))
+	logging.Debugf(r.ctx, "gs: download speed avg[%.2f MB/sec] last_chunk[%.2f MB/sec for %d MB] attempts[%d]",
+		speed/1e6, v/1e6, size/(1024*1024), attempts)
 }
