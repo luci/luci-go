@@ -130,6 +130,7 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		Request:       ents.request,
 		SecretBytes:   ents.secretBytes,
 		ServerVersion: srv.ServerVersion,
+		Config:        state.Config,
 	}
 
 	// Create the task in a loop to retry on task ID collisions.

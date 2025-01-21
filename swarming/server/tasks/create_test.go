@@ -16,7 +16,9 @@ package tasks
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
+	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -27,6 +29,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -35,6 +39,8 @@ func TestCreation(t *testing.T) {
 
 	ftt.Run("Creation", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		datastore.GetTestable(ctx).AutoIndex(true)
+		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = cryptorand.MockForTest(ctx, 0)
 
@@ -78,6 +84,131 @@ func TestCreation(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
+			})
+		})
+
+		t.Run("duplicate_with_properties_hash", func(t *ftt.Test) {
+			now := testclock.TestRecentTimeUTC
+			ctx, _ = testclock.UseTime(ctx, now)
+
+			mockCfg := &cfgtest.MockedConfigs{
+				Settings: &configpb.SettingsCfg{
+					ReusableTaskAgeSecs: 3600,
+				},
+			}
+			p := cfgtest.MockConfigs(ctx, mockCfg)
+			cfg := p.Cached(ctx)
+
+			t.Run("found_duplicate", func(t *ftt.Test) {
+				hash, err := hex.DecodeString("d4a3d498ade525d956d71b2356117647741e5618c31763a7d4323e46df9d5390")
+				assert.NoErr(t, err)
+
+				id := "65aba3a3e6b99310"
+				reqKey, err := model.TaskIDToRequestKey(ctx, id)
+				assert.NoErr(t, err)
+				tr := &model.TaskRequest{
+					Key: reqKey,
+				}
+				trs := &model.TaskResultSummary{
+					Key: model.TaskResultSummaryKey(ctx, reqKey),
+					TaskResultCommon: model.TaskResultCommon{
+						State: apipb.TaskState_COMPLETED,
+						ServerVersions: []string{
+							"v1",
+						},
+						ResultDBInfo: model.ResultDBInfo{
+							Hostname:   "resultdb.example.com",
+							Invocation: "invocations/task-65aba3a3e6b99310",
+						},
+					},
+					PropertiesHash: datastore.NewIndexedOptional(hash),
+					Created:        now.Add(-30 * time.Minute),
+					CostUSD:        10.0,
+				}
+				secrets := &model.SecretBytes{
+					Key:         model.SecretBytesKey(ctx, reqKey),
+					SecretBytes: []byte("secret"),
+				}
+				assert.That(t, datastore.Put(ctx, tr, trs, secrets), should.ErrLike(nil))
+
+				c := Creation{
+					Request: &model.TaskRequest{
+						TaskSlices: []model.TaskSlice{
+							{
+								Properties: model.TaskProperties{
+									HasSecretBytes: true,
+								},
+							},
+							{
+								Properties: model.TaskProperties{
+									Idempotent:     true,
+									HasSecretBytes: true,
+								},
+							},
+						},
+					},
+					SecretBytes: &model.SecretBytes{
+						SecretBytes: []byte("secret"),
+					},
+					ServerVersion: "v2",
+					Config:        cfg,
+				}
+
+				trs, err = c.Run(ctx)
+				assert.NoErr(t, err)
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
+				assert.That(t, trs.ResultDBInfo, should.Match(trs.ResultDBInfo))
+				assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(1)))
+				assert.That(t, trs.TryNumber.Get(), should.Equal(datastore.NewIndexedNullable(int64(0)).Get()))
+				assert.That(t, trs.CostSavedUSD, should.Equal(10.0))
+				assert.That(t, trs.CostUSD, should.Equal(0.0))
+				assert.That(t, trs.ServerVersions, should.Match([]string{"v1", "v2"}))
+				assert.That(t, trs.PropertiesHash.Get(), should.Match(datastore.Optional[[]byte, datastore.Indexed]{}.Get()))
+
+				newSecret := &model.SecretBytes{
+					Key: model.SecretBytesKey(ctx, trs.TaskRequestKey()),
+				}
+				err = datastore.Get(ctx, newSecret)
+				assert.That(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+			})
+
+			t.Run("found_duplicate_too_old", func(t *ftt.Test) {
+				hash, err := hex.DecodeString("d2140bb8e09568358051857a22fb59c7f31ca1170be12ec407e3a3501d738516")
+				assert.NoErr(t, err)
+
+				id := "65aba3a3e6b99310"
+				reqKey, err := model.TaskIDToRequestKey(ctx, id)
+				assert.NoErr(t, err)
+				tr := &model.TaskRequest{
+					Key: reqKey,
+				}
+				trs := &model.TaskResultSummary{
+					Key: model.TaskResultSummaryKey(ctx, reqKey),
+					TaskResultCommon: model.TaskResultCommon{
+						State: apipb.TaskState_COMPLETED,
+					},
+					PropertiesHash: datastore.NewIndexedOptional(hash),
+					Created:        now.Add(-10 * time.Hour),
+				}
+				assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
+
+				c := Creation{
+					Request: &model.TaskRequest{
+						TaskSlices: []model.TaskSlice{
+							{
+								Properties: model.TaskProperties{
+									Idempotent: true,
+								},
+							},
+						},
+					},
+					ServerVersion: "v1",
+					Config:        cfg,
+				}
+
+				trs, err = c.Run(ctx)
+				assert.NoErr(t, err)
+				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
 			})
 		})
 
