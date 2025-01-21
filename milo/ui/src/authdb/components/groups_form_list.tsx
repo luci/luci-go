@@ -192,7 +192,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
         setErrorMessage('');
         return true;
       }
-    }, [name, newItems, items]);
+    }, [items, name, newItems]);
 
     useEffect(() => {
       // If any items have been added or removed, we submit.
@@ -200,7 +200,8 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
       if (!valuesEqual(asString(items), savedValues)) {
         submitValues();
       }
-    }, [items, savedValues, submitValues]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items, savedValues]);
 
     const handleChange = (index: number) => {
       const updatedItems = [...items];

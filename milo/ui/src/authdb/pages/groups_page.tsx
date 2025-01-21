@@ -45,7 +45,7 @@ export function GroupsPage() {
     if (groupName) {
       listRef.current?.scrollToGroup(groupName);
     }
-  }, [navigate, groupName]);
+  }, [navigate, groupName, listRef]);
 
   if (!groupName) {
     return <></>;
