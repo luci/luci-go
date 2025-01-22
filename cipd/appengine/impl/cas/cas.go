@@ -42,7 +42,6 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
-	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -172,11 +171,10 @@ func (s *storageImpl) GetObjectURL(ctx context.Context, r *api.GetObjectURLReque
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'download_filename' field, contains one of %q", "\"\r\n")
 	}
 
-	url, size, err := s.getSignedURL(ctx, s.settings.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
+	url, _, err := s.getSignedURL(ctx, s.settings.ObjectPath(r.Object), r.DownloadFilename, defaultSigner, s.getGS(ctx))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get signed URL").Err()
 	}
-	monitoring.FileSize(ctx, size)
 	return &api.ObjectURL{SignedUrl: url}, nil
 }
 

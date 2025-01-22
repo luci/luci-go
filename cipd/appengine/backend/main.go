@@ -16,11 +16,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
@@ -30,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/cipd/appengine/impl"
 	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
-	"go.chromium.org/luci/cipd/appengine/impl/monitoring"
 
 	// Using transactional datastore TQ tasks.
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
@@ -47,12 +44,7 @@ func main() {
 		})
 
 		// Periodically refresh the global service config in the datastore.
-		cron.RegisterHandler("import-config", func(ctx context.Context) error {
-			merr := errors.NewLazyMultiError(2)
-			merr.Assign(0, bootstrap.ImportConfig(ctx))
-			merr.Assign(1, monitoring.ImportConfig(ctx))
-			return merr.Get()
-		})
+		cron.RegisterHandler("import-config", bootstrap.ImportConfig)
 
 		// PubSub push handler processing messages produced by events.go.
 		oidcMW := router.NewMiddlewareChain(
