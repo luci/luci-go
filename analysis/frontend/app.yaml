@@ -70,10 +70,6 @@ luci_gae_vars:
 
 # IMPORTANT: Except for /static, keep in sync between app.yaml, service-api.yaml and service-result-ingestion.yaml.
 handlers:
-- url: /static
-  static_dir: ui/dist
-  secure: always
-
 - url: /_ah/push-handlers/.*
   script: auto
   login: admin

@@ -30,13 +30,6 @@ Authenticate in LUCI and in CIPD:
    cipd auth-login
    ```
 
-Once the GCP project is authorized, in one terminal start esbuild to rebuild the UI code after any changes:
-
-```
-cd frontend/ui
-npm run watch
-```
-
 To run the server, in another terminal use:
 ```
 cd frontend
@@ -70,13 +63,11 @@ You may also be able to use an arbitrary cloud project (e.g. 'dev') if you
 setup Cloud Datastore emulator and setup a config for that project under
 configs.
 
-## Running UI tests
+## Validating your changes in the LUCI UI
 
-You can run the UI tests by:
-```
-cd frontend/ui
-npm run test
-```
+* If you need to validate your changes in LUCI UI please refer to
+  [Milo's documentation](../milo/ui/docs/guides/local_development_workflows.md) on how to set it up to point to a locally running
+  LUCI Analysis service.
 
 ## Run Spanner integration tests using Cloud Spanner Emulator
 
@@ -106,30 +97,6 @@ Then run go test as usual. For example:
 
 ```
 go test go.chromium.org/luci/analysis/...
-```
-
-## Run UI linter
-
-To run the UI code linter (note: this will also try to auto-fix issues), run:
-
-```
-cd frontend/ui
-npm run lint
-```
-
-To additionally auto-fix issues, run:
-
-```
-cd frontend/ui
-npm run lint-fix
-```
-
-## Regenerating UI proto bindings
-
-You can regenerate typescript bindings for proto files by running:
-```
-cd frontend/ui
-npm run gen_proto
 ```
 
 ## Deployment
