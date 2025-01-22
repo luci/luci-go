@@ -23,23 +23,22 @@ import (
 )
 
 // NamedCacheStats contains cache size hints for some (pool, cache) pair.
-// Datastore automatically deletes expired NamedCacheStats entities as per the TTL policy.
 type NamedCacheStats struct {
 	// Key identifies the pool and the cache, see NamedCacheStatsKey(...).
 	Key *datastore.Key `gae:"$key"`
 	// OS is per-OS entries with cache size hint for that OS.
 	OS []PerOSEntry `gae:"os,noindex"`
-	// ExpireAt is when this entity can be deleted.
-	ExpireAt time.Time `gae:"expiry,noindex"`
 	// LastUpdate is when this entity was updated the last time.
 	LastUpdate time.Time `gae:"updated,noindex"`
+	// ExpireAt is when this entity can be deleted, used in the TTL policy.
+	ExpireAt time.Time `gae:"expiry,noindex"`
 	// Extra are entity properties that didn't match any declared ones above.
 	Extra datastore.PropertyMap `gae:"-,extra"`
 }
 
 // PerOSEntry contains the cache size hint for some concrete OS family.
 type PerOSEntry struct {
-	// Name is the OS family name, e.g. "Windows". See DetermineOSFamily(...).
+	// Name is the OS family name, e.g. "Windows". See OSFamily(...).
 	Name string `gae:"name,noindex"`
 	// Size is the current estimate of the cache size for this OS in bytes.
 	Size int64 `gae:"size,noindex"`
@@ -54,8 +53,8 @@ func NamedCacheStatsKey(ctx context.Context, pool, cache string) *datastore.Key 
 	return datastore.NewKey(ctx, "NamedCacheStats", pool+":"+cache, 0, nil)
 }
 
-// DetermineOSFamily returns the OS family given "os" dimension values.
-func DetermineOSFamily(oses []string) string {
+// OSFamily returns the OS family given "os" dimension values.
+func OSFamily(oses []string) string {
 	if len(oses) == 0 {
 		return "Unknown"
 	}

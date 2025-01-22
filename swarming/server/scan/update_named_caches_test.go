@@ -99,7 +99,7 @@ func TestNamedCachesAggregator(t *testing.T) {
 					OS: []model.PerOSEntry{
 						{
 							Name:       "os-1",
-							Size:       35737653490,
+							Size:       38128764601,
 							LastUpdate: testTime.Add(time.Hour),
 							ExpireAt:   testTime.Add(8*time.Hour*24 + time.Hour),
 						},
@@ -370,7 +370,7 @@ func TestNamedCachesAggregator(t *testing.T) {
 					OS: []model.PerOSEntry{
 						{
 							Name:       "os-1",
-							Size:       26182097935,
+							Size:       26848764602,
 							LastUpdate: testTime.Add(1 * time.Hour),
 							ExpireAt:   testTime.Add(8*time.Hour*24 + 1*time.Hour),
 						},
@@ -419,40 +419,25 @@ func TestNamedCachesAggregator(t *testing.T) {
 
 func TestEMACompute(t *testing.T) {
 	t.Parallel()
-	cases := []struct {
-		name     string
-		current  int64
-		previous int64
-		want     int64
-	}{
-		{
-			name:     "first value",
-			current:  100,
-			previous: 0,
-			want:     100,
-		},
-		{
-			name:     "second value",
-			current:  110,
-			previous: 100,
-			want:     103,
-		},
-		{
-			name:     "third value",
-			current:  120,
-			previous: 103,
-			want:     108,
-		},
+
+	// See https://en.wikipedia.org/wiki/Exponential_smoothing#Time_constant for
+	// where 0.632 comes from.
+	const impulse = 100_000_000
+	const threshold = int64(float64(impulse * 0.632))
+
+	ema := int64(1)
+	time := 0
+
+	for {
+		time++
+		ema = computeEMA(impulse, ema)
+		if ema > threshold {
+			break
+		}
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-			// modifying smoothingPeriod will affect this test.
-			got := computeEMA(c.current, c.previous)
-			if got != c.want {
-				t.Errorf("emaCompute(%d, %d) = %d; want %d", c.current, c.previous, got, c.want)
-			}
-		})
+
+	if expect := 6; time != expect {
+		t.Fatalf("expect time %d, got %d", expect, time)
 	}
 }
 

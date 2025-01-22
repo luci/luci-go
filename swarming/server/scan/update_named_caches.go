@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -31,18 +32,13 @@ import (
 )
 
 const (
-	// smoothingPeriod can be adjusted to influence the EMA.
-	// Shorter period reacts more quickly to recent size changes,
-	// while longer periods provide smoother trends.
-	smoothingPeriod = 5
 	// namedCachesExpiryTime is how long NamedCacheStats are kept in datastore.
-	// Both NamedCacheStats entities and perOSEntries share the same expiry delay.
-	// Datastore automatically cleans up expired entities in accordance its TTL policy.
 	namedCachesExpiryTime = 8 * 24 * time.Hour
+	// namedCachesUpdateFrequency is how often NamedCachesAggregator runs.
+	namedCachesUpdateFrequency = 10 * time.Minute
 	// percentileThreshold is the percentile of the cache sizes to use as a hint.
-	// 0.95 is a direct copy of the Python implementation.
 	percentileThreshold = 0.95
-	// batchSize represents the number of entities to process in a single datastore batch.
+	// batchSize is the number of entities to process in a single batch.
 	batchSize = 500
 )
 
@@ -65,7 +61,7 @@ func (*NamedCachesAggregator) ID() string {
 //
 // Part of BotVisitor interface.
 func (*NamedCachesAggregator) Frequency() time.Duration {
-	return 10 * time.Minute
+	return namedCachesUpdateFrequency
 }
 
 // Prepare prepares the visitor to use `shards` parallel queries.
@@ -89,7 +85,8 @@ func (a *NamedCachesAggregator) Visit(ctx context.Context, shard int, bot *model
 //
 // Part of BotVisitor interface.
 func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) error {
-	// Skip updating NamedCacheStats if the scan did not finish properly.
+	// Skip updating NamedCacheStats if the scan did not finish properly. The
+	// error was already reported, so just skip the update silently.
 	if scanErr != nil {
 		return nil
 	}
@@ -100,85 +97,83 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 		merged.mergeFrom(shard)
 	}
 
-	// This cron job processes entities independently.
-	// An error impacting 1 entity or 1 batch should not terminate the run.
-	// Instead, collect the errors and return them as a MultiError at the end of the run.
-	var gmerr errors.MultiError
-	// Batch get all the relevant NamedCacheStats entities.
-	toGet := make([]*model.NamedCacheStats, 0, len(merged.namedCacheMap))
-	for id := range merged.namedCacheMap {
-		if key := namedCacheStatsKeyFromStringID(ctx, id); key != nil {
-			toGet = append(toGet, &model.NamedCacheStats{Key: key})
+	now := clock.Now(ctx).UTC()
+	expireAt := now.Add(namedCachesExpiryTime)
+
+	// Calculate stats that would need to be stored, as (pool, cache) => entity.
+	stats := map[namedCacheKey]*model.NamedCacheStats{}
+	for key, sizes := range merged.namedCacheMap {
+		ent := stats[key.withoutOS()]
+		if ent == nil {
+			ent = &model.NamedCacheStats{
+				Key:        model.NamedCacheStatsKey(ctx, key.pool, key.cache),
+				LastUpdate: now,
+				ExpireAt:   expireAt,
+			}
+			stats[key.withoutOS()] = ent
 		}
+
+		// Calculate the up-to-date cache sizes hint as a percentile.
+		slices.Sort(sizes)
+		sizeHint := sizes[int(float32(len(sizes))*percentileThreshold)]
+
+		// Note: these entries will be sorted when storing the entity.
+		ent.OS = append(ent.OS, model.PerOSEntry{
+			Name:       key.os,
+			Size:       sizeHint,
+			LastUpdate: now,
+			ExpireAt:   expireAt,
+		})
 	}
 
-	// Process entities in batches sequentially to avoid
-	// exceeding datastore limits and prevent out-of-memory errors.
-	for len(toGet) > 0 {
-		var dsmerr errors.MultiError
-		var batch []*model.NamedCacheStats
-		size := min(len(toGet), batchSize)
-		batch, toGet = toGet[:size], toGet[size:]
-		if err := datastore.Get(ctx, batch); err != nil && !errors.As(err, &dsmerr) {
-			// `err` is not a MultiError in the case of an overall datastore failure (e.g. timed out).
-			// Skip the problematic batch and store the error in a global MultiError.
+	logging.Infof(ctx, "Calculating named cache size percentiles took %s", clock.Since(ctx, now))
+
+	// Apply new values to the existing datastore state in batches to avoid
+	// exceeding datastore limits or out-of-memory errors. All updates are
+	// independent, we can apply as much of them as possible, collecting all
+	// errors and reporting them in the end.
+	var gmerr errors.MultiError
+	for batch := range slices.Chunk(slices.Collect(maps.Values(stats)), batchSize) {
+		// Fetch corresponding existing entities. Some may be missing.
+		existing := make([]*model.NamedCacheStats, len(batch))
+		for i, ent := range batch {
+			existing[i] = &model.NamedCacheStats{Key: ent.Key}
+		}
+		var merr errors.MultiError
+		if err := datastore.Get(ctx, existing); err != nil && !errors.As(err, &merr) {
+			// `err` is not a MultiError in the case of an overall datastore failure
+			// (e.g. a time out). Skip the problematic batch and store the error in
+			// the global MultiError.
 			gmerr = append(gmerr, errors.Annotate(err, "fetching %d NamedCacheStats entities", len(batch)).Err())
 			continue
 		}
 
-		// Save the updated NamedCacheStats entities from this batch.
-		// Result is pushed to Datastore.
-		toPut := make([]*model.NamedCacheStats, 0, len(batch))
-		for index, ncs := range batch {
-			// New NamedCacheStats are not yet stored in datastore. Ignore the `ErrNoSuchEntity` error in this case.
-			if len(dsmerr) != 0 {
-				if err := dsmerr[index]; err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
-					gmerr = append(gmerr, errors.Annotate(err, "fetching NamedCacheStats entity: %s", ncs.Key.StringID()).Err())
+		// "Merge" values of existing entities and entities we want to store.
+		var updated []*model.NamedCacheStats
+		for i, existingEnt := range existing {
+			if len(merr) != 0 {
+				if err := merr[i]; err != nil && !errors.Is(err, datastore.ErrNoSuchEntity) {
+					gmerr = append(gmerr, errors.Annotate(err, "fetching NamedCacheStats entity: %s", existingEnt.Key.StringID()).Err())
 					continue
 				}
 			}
-
-			now := clock.Now(ctx)
-			expiry := now.Add(namedCachesExpiryTime)
-			// The key will always exist.
-			osToSizesMap := merged.namedCacheMap[ncs.Key.StringID()]
-			// Store all non-expired PerOSEntries for this entity.
-			perOSEntryMap := make(map[string]model.PerOSEntry, len(osToSizesMap))
-
-			for os, sizes := range osToSizesMap {
-				// Calculate the cache sizes hint based on a percentile.
-				slices.Sort(sizes)
-				hint := sizes[int(float32(len(sizes))*percentileThreshold)]
-
-				// Compute EMA only if there is a previous average.
-				if index := perOSEntryIndex(os, ncs.OS); index != -1 {
-					hint = computeEMA(hint, ncs.OS[index].Size)
-				}
-
-				perOSEntryMap[os] = model.PerOSEntry{
-					Name:       os,
-					Size:       hint,
-					LastUpdate: now,
-					ExpireAt:   expiry,
-				}
+			// Note that existingEnt.OS is empty for missing entities.
+			if len(existingEnt.OS) != 0 {
+				batch[i].OS = updatePerOSEntries(now, batch[i].OS, existingEnt.OS)
 			}
-
-			// Add any non-expired PerOSEntries that were not updated by this cron run.
-			for _, entry := range ncs.OS {
-				if _, ok := perOSEntryMap[entry.Name]; !ok && entry.ExpireAt.After(now) {
-					perOSEntryMap[entry.Name] = entry
-				}
-			}
-
-			ncs.LastUpdate = now
-			ncs.ExpireAt = expiry
-			ncs.OS = perOSMapToSlice(perOSEntryMap)
-
-			toPut = append(toPut, ncs)
+			// Sort by OS name to make sure datastore entities all look neat.
+			slices.SortFunc(batch[i].OS, func(a, b model.PerOSEntry) int {
+				return strings.Compare(a.Name, b.Name)
+			})
+			updated = append(updated, batch[i])
 		}
 
-		if err := datastore.Put(ctx, toPut); err != nil {
-			errors.Append(gmerr, errors.Annotate(err, "updating NamedCacheStats entities").Err())
+		// Store updated values.
+		if len(updated) > 0 {
+			logging.Infof(ctx, "Storing a batch with %d NamedCacheStats entities", len(updated))
+			if err := datastore.Put(ctx, updated); err != nil {
+				gmerr = append(gmerr, errors.Annotate(err, "updating NamedCacheStats entities").Err())
+			}
 		}
 	}
 
@@ -188,20 +183,29 @@ func (a *NamedCachesAggregator) Finalize(ctx context.Context, scanErr error) err
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 type namedCachesAggregatorShardState struct {
-	// The list of all observed cache sizes grouped by ("pool:cache") -> ("os") -> []size.
-	namedCacheMap map[string]map[string][]int64
+	// The list of all observed cache sizes grouped by (pool, cache, os).
+	namedCacheMap map[namedCacheKey][]int64
+}
+
+type namedCacheKey struct {
+	pool  string
+	cache string
+	os    string
+}
+
+func (n namedCacheKey) withoutOS() namedCacheKey {
+	return namedCacheKey{pool: n.pool, cache: n.cache}
 }
 
 func newNamedCachesAggregatorShardState() *namedCachesAggregatorShardState {
 	return &namedCachesAggregatorShardState{
-		namedCacheMap: map[string]map[string][]int64{},
+		namedCacheMap: map[namedCacheKey][]int64{},
 	}
 }
 
 func (s *namedCachesAggregatorShardState) collect(ctx context.Context, bot *model.BotInfo) {
-	os := model.DetermineOSFamily(bot.DimensionsByKey("os"))
+	os := model.OSFamily(bot.DimensionsByKey("os"))
 	pools := bot.DimensionsByKey("pool")
-	// Discard bots unassigned to pools to be consistent with Python implementation.
 	if len(pools) == 0 {
 		return
 	}
@@ -226,7 +230,7 @@ func (s *namedCachesAggregatorShardState) collect(ctx context.Context, bot *mode
 	stateEntry, err := bot.State.ReadRaw("named_caches")
 	switch {
 	case err != nil:
-		logging.Warningf(ctx, "bad state for bot %q: %s", bot.BotID(), err)
+		logging.Warningf(ctx, "Bad named_caches for bot %q: %s", bot.BotID(), err)
 		return
 	case len(stateEntry) == 0:
 		return
@@ -237,22 +241,22 @@ func (s *namedCachesAggregatorShardState) collect(ctx context.Context, bot *mode
 
 	var namedCached map[string]any
 	if err := dec.Decode(&namedCached); err != nil {
-		logging.Warningf(ctx, "bad state for bot %q: %s", bot.BotID(), err)
+		logging.Warningf(ctx, "Bad named_caches for bot %q: %s", bot.BotID(), err)
 		return
 	}
 
 	for cache, entry := range namedCached {
 		if size, ok := extractCacheSize(entry); ok {
 			for _, pool := range pools {
-				id := pool + ":" + cache
-				if _, ok := s.namedCacheMap[id]; !ok {
-					s.namedCacheMap[id] = map[string][]int64{}
+				key := namedCacheKey{
+					pool:  pool,
+					cache: cache,
+					os:    os,
 				}
-				oses := s.namedCacheMap[id]
-				oses[os] = append(oses[os], size)
+				s.namedCacheMap[key] = append(s.namedCacheMap[key], size)
 			}
 		} else {
-			logging.Warningf(ctx, "bad cache entry for bot %q: %s", bot.BotID(), cache)
+			logging.Warningf(ctx, "Bad named_caches entry for bot %q: %s", bot.BotID(), cache)
 		}
 	}
 }
@@ -280,51 +284,56 @@ func extractCacheSize(entry any) (int64, bool) {
 	return 0, false
 }
 
+// mergeFrom copies entries from `another` into `s`.
 func (s *namedCachesAggregatorShardState) mergeFrom(another *namedCachesAggregatorShardState) {
-	for key, oses := range another.namedCacheMap {
-		for os, sizes := range oses {
-			if _, ok := s.namedCacheMap[key]; !ok {
-				s.namedCacheMap[key] = map[string][]int64{}
-			}
-			s.namedCacheMap[key][os] = append(s.namedCacheMap[key][os], sizes...)
+	for key, sizes := range another.namedCacheMap {
+		s.namedCacheMap[key] = append(s.namedCacheMap[key], sizes...)
+	}
+}
+
+// updatePerOSEntries applies current values of per-OS cache size hints to
+// an existing stored state `historic` and returns the resulting up-to-date
+// state.
+func updatePerOSEntries(now time.Time, current, historic []model.PerOSEntry) []model.PerOSEntry {
+	// Throw away expired entries. Build a lookup map from what remains.
+	remaining := make(map[string]model.PerOSEntry, len(historic))
+	for _, entry := range historic {
+		if entry.ExpireAt.After(now) {
+			remaining[entry.Name] = entry
 		}
 	}
-}
 
-// perOSMapToSlice returns the values of osMap as a slice.
-func perOSMapToSlice(osMap map[string]model.PerOSEntry) []model.PerOSEntry {
-	entries := make([]model.PerOSEntry, 0, len(osMap))
-	for _, entry := range osMap {
-		entries = append(entries, entry)
+	// Calculate exponential moving average using existing entries as a baseline.
+	for i := range current {
+		if historic, ok := remaining[current[i].Name]; ok {
+			current[i].Size = computeEMA(current[i].Size, historic.Size)
+			delete(remaining, current[i].Name)
+		}
 	}
-	return entries
-}
 
-// perOSEntryIndex returns the index of the perOSEntry with the given OS name.
-// Returns -1 if not found.
-func perOSEntryIndex(os string, entries []model.PerOSEntry) int {
-	return slices.IndexFunc(entries, func(e model.PerOSEntry) bool {
-		return e.Name == os
-	})
+	// Carry over non-expired historic entries not present in `current`.
+	for _, entry := range remaining {
+		current = append(current, entry)
+	}
+	return current
 }
 
 // computeEMA computes the exponential moving average (EMA) of the current and
-// previous EMA values. It uses a smoothing factor derived from smoothingPeriod.
-func computeEMA(current int64, previousEMA int64) int64 {
+// previous EMA values.
+//
+// The NamedCachesAggregator runs every 10 min (see namedCachesUpdateFrequency).
+// The smoothing factor is picked so that if an instantaneous named cache size
+// measurement suddenly increases from 0% to 100%, the smoothed average will be
+// at %63 after 1h. This matches the time scale of how fast we want to react to
+// organic named cache size changes.
+//
+// See https://en.wikipedia.org/wiki/Exponential_smoothing#Time_constant.
+//
+//	periods = 1h / 10m = 6.0
+//	alpha = 1.0 - math.exp(-1.0/periods) ~= 0.154
+func computeEMA(current, previousEMA int64) int64 {
 	if previousEMA == 0 {
 		return current
 	}
-	// Smoothing factor.
-	alpha := 2 / (float64(smoothingPeriod + 1))
-	return int64(float64((current-previousEMA))*alpha + float64(previousEMA))
-}
-
-// namedCacheStatsKeyFromStringID returns a NamedCacheStats key given its StringID.
-// The format of id should be of the form "pool:cache".
-func namedCacheStatsKeyFromStringID(ctx context.Context, id string) *datastore.Key {
-	pool, cache, ok := strings.Cut(id, ":")
-	if !ok {
-		return nil
-	}
-	return model.NamedCacheStatsKey(ctx, pool, cache)
+	return int64(float64(current-previousEMA)*0.154 + float64(previousEMA))
 }
