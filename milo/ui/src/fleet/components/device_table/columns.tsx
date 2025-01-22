@@ -98,6 +98,7 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
     editable: false,
     minWidth: 70,
     maxWidth: 700,
+    flex: 1,
     renderCell: (props) =>
       BASE_DIMENSIONS.find((dim) => dim.id === id)?.renderCell?.(props) || (
         <Cell {...props}></Cell>
