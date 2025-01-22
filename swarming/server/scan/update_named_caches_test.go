@@ -99,7 +99,7 @@ func TestNamedCachesAggregator(t *testing.T) {
 					OS: []model.PerOSEntry{
 						{
 							Name:       "os-1",
-							Size:       38128764601,
+							Size:       26848764602,
 							LastUpdate: testTime.Add(time.Hour),
 							ExpireAt:   testTime.Add(8*time.Hour*24 + time.Hour),
 						},

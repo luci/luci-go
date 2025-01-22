@@ -306,7 +306,21 @@ func updatePerOSEntries(now time.Time, current, historic []model.PerOSEntry) []m
 	// Calculate exponential moving average using existing entries as a baseline.
 	for i := range current {
 		if historic, ok := remaining[current[i].Name]; ok {
-			current[i].Size = computeEMA(current[i].Size, historic.Size)
+			// If the cache size changed by more than 10% since the last scan, bypass
+			// the averaging process. That way we can react to "expected" cache size
+			// changes quicker. The logic here is that we assume the organic changes
+			// are never that sudden. Therefore if the cache size changed by more than
+			// 10% since the last scan (~10 min ago), then something must have changed
+			// in how this cache is populated on bots and we need to adjust to this
+			// change ASAP.
+			//
+			// This "if" condition literally means "apply averaging only if the
+			// current value is within (90%, 110%) of the historic value and otherwise
+			// use the current value as is".
+			if current[i].Size > int64(float64(historic.Size)*0.9) &&
+				current[i].Size < int64(float64(historic.Size)*1.1) {
+				current[i].Size = computeEMA(current[i].Size, historic.Size)
+			}
 			delete(remaining, current[i].Name)
 		}
 	}
