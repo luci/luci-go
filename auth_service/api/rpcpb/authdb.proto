@@ -20,11 +20,16 @@ option go_package = "go.chromium.org/luci/auth_service/api/rpcpb";
 
 import "google/protobuf/timestamp.proto";
 
+import "go.chromium.org/luci/auth_service/api/rpcpb/groups.proto";
+
 // AuthDB contains methods to work with AuthDB.
 service AuthDB {
   // GetSnapshot serves the deflated AuthDB proto
   // message with snapshot of all groups.
   rpc GetSnapshot(GetSnapshotRequest) returns (Snapshot);
+
+  // GetPermissions returns all permissions the given principal has within each realm.
+  rpc GetPrincipalPermissions(GetPrincipalPermissionsRequest) returns (PrincipalPermissions);
 }
 
 // GetSnapshotRequest is passed to GetSnapshot rpc.
@@ -49,4 +54,21 @@ message Snapshot {
   bytes auth_db_deflated = 3;
   // Time that this Snapshot was created.
   google.protobuf.Timestamp created_ts = 4;
+}
+
+// GetPrincipalPermissionsRequest is to specify any principal (group, user, blob) for
+// which permissions should be fetched.
+message GetPrincipalPermissionsRequest {
+  auth.service.Principal principal = 1;
+}
+
+// PrincipalPermissions specifies a list of realm permissions for a single principal.
+message PrincipalPermissions {
+  repeated RealmPermissions realmPermissions = 1;
+}
+
+// RealmPermissions specifies a realm name and the permissions a principal has in it.
+message RealmPermissions {
+  string name = 1;
+  repeated string permissions = 2;
 }

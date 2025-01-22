@@ -33,7 +33,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthDB_GetSnapshot_FullMethodName = "/auth.service.AuthDB/GetSnapshot"
+	AuthDB_GetSnapshot_FullMethodName             = "/auth.service.AuthDB/GetSnapshot"
+	AuthDB_GetPrincipalPermissions_FullMethodName = "/auth.service.AuthDB/GetPrincipalPermissions"
 )
 
 // AuthDBClient is the client API for AuthDB service.
@@ -45,6 +46,8 @@ type AuthDBClient interface {
 	// GetSnapshot serves the deflated AuthDB proto
 	// message with snapshot of all groups.
 	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*Snapshot, error)
+	// GetPermissions returns all permissions the given principal has within each realm.
+	GetPrincipalPermissions(ctx context.Context, in *GetPrincipalPermissionsRequest, opts ...grpc.CallOption) (*PrincipalPermissions, error)
 }
 
 type authDBClient struct {
@@ -65,6 +68,16 @@ func (c *authDBClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, 
 	return out, nil
 }
 
+func (c *authDBClient) GetPrincipalPermissions(ctx context.Context, in *GetPrincipalPermissionsRequest, opts ...grpc.CallOption) (*PrincipalPermissions, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PrincipalPermissions)
+	err := c.cc.Invoke(ctx, AuthDB_GetPrincipalPermissions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthDBServer is the server API for AuthDB service.
 // All implementations must embed UnimplementedAuthDBServer
 // for forward compatibility.
@@ -74,6 +87,8 @@ type AuthDBServer interface {
 	// GetSnapshot serves the deflated AuthDB proto
 	// message with snapshot of all groups.
 	GetSnapshot(context.Context, *GetSnapshotRequest) (*Snapshot, error)
+	// GetPermissions returns all permissions the given principal has within each realm.
+	GetPrincipalPermissions(context.Context, *GetPrincipalPermissionsRequest) (*PrincipalPermissions, error)
 	mustEmbedUnimplementedAuthDBServer()
 }
 
@@ -86,6 +101,9 @@ type UnimplementedAuthDBServer struct{}
 
 func (UnimplementedAuthDBServer) GetSnapshot(context.Context, *GetSnapshotRequest) (*Snapshot, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSnapshot not implemented")
+}
+func (UnimplementedAuthDBServer) GetPrincipalPermissions(context.Context, *GetPrincipalPermissionsRequest) (*PrincipalPermissions, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPrincipalPermissions not implemented")
 }
 func (UnimplementedAuthDBServer) mustEmbedUnimplementedAuthDBServer() {}
 func (UnimplementedAuthDBServer) testEmbeddedByValue()                {}
@@ -126,6 +144,24 @@ func _AuthDB_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthDB_GetPrincipalPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPrincipalPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthDBServer).GetPrincipalPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthDB_GetPrincipalPermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthDBServer).GetPrincipalPermissions(ctx, req.(*GetPrincipalPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthDB_ServiceDesc is the grpc.ServiceDesc for AuthDB service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +172,10 @@ var AuthDB_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSnapshot",
 			Handler:    _AuthDB_GetSnapshot_Handler,
+		},
+		{
+			MethodName: "GetPrincipalPermissions",
+			Handler:    _AuthDB_GetPrincipalPermissions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

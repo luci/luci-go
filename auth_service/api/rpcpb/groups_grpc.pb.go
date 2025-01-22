@@ -34,14 +34,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Groups_ListGroups_FullMethodName          = "/auth.service.Groups/ListGroups"
-	Groups_GetGroup_FullMethodName            = "/auth.service.Groups/GetGroup"
-	Groups_CreateGroup_FullMethodName         = "/auth.service.Groups/CreateGroup"
-	Groups_UpdateGroup_FullMethodName         = "/auth.service.Groups/UpdateGroup"
-	Groups_DeleteGroup_FullMethodName         = "/auth.service.Groups/DeleteGroup"
-	Groups_GetSubgraph_FullMethodName         = "/auth.service.Groups/GetSubgraph"
-	Groups_GetExpandedGroup_FullMethodName    = "/auth.service.Groups/GetExpandedGroup"
-	Groups_GetGroupPermissions_FullMethodName = "/auth.service.Groups/GetGroupPermissions"
+	Groups_ListGroups_FullMethodName       = "/auth.service.Groups/ListGroups"
+	Groups_GetGroup_FullMethodName         = "/auth.service.Groups/GetGroup"
+	Groups_CreateGroup_FullMethodName      = "/auth.service.Groups/CreateGroup"
+	Groups_UpdateGroup_FullMethodName      = "/auth.service.Groups/UpdateGroup"
+	Groups_DeleteGroup_FullMethodName      = "/auth.service.Groups/DeleteGroup"
+	Groups_GetSubgraph_FullMethodName      = "/auth.service.Groups/GetSubgraph"
+	Groups_GetExpandedGroup_FullMethodName = "/auth.service.Groups/GetExpandedGroup"
 )
 
 // GroupsClient is the client API for Groups service.
@@ -72,8 +71,6 @@ type GroupsClient interface {
 	// - `globs` will include direct and indirect globs; and
 	// - `nested` will include direct and indirect subgroups.
 	GetExpandedGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
-	// GetGroupPermissions returns all permissions the given group has within each realm.
-	GetGroupPermissions(ctx context.Context, in *GetGroupPermissionsRequest, opts ...grpc.CallOption) (*GroupPermissions, error)
 }
 
 type groupsClient struct {
@@ -154,16 +151,6 @@ func (c *groupsClient) GetExpandedGroup(ctx context.Context, in *GetGroupRequest
 	return out, nil
 }
 
-func (c *groupsClient) GetGroupPermissions(ctx context.Context, in *GetGroupPermissionsRequest, opts ...grpc.CallOption) (*GroupPermissions, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GroupPermissions)
-	err := c.cc.Invoke(ctx, Groups_GetGroupPermissions_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // GroupsServer is the server API for Groups service.
 // All implementations must embed UnimplementedGroupsServer
 // for forward compatibility.
@@ -192,8 +179,6 @@ type GroupsServer interface {
 	// - `globs` will include direct and indirect globs; and
 	// - `nested` will include direct and indirect subgroups.
 	GetExpandedGroup(context.Context, *GetGroupRequest) (*AuthGroup, error)
-	// GetGroupPermissions returns all permissions the given group has within each realm.
-	GetGroupPermissions(context.Context, *GetGroupPermissionsRequest) (*GroupPermissions, error)
 	mustEmbedUnimplementedGroupsServer()
 }
 
@@ -224,9 +209,6 @@ func (UnimplementedGroupsServer) GetSubgraph(context.Context, *GetSubgraphReques
 }
 func (UnimplementedGroupsServer) GetExpandedGroup(context.Context, *GetGroupRequest) (*AuthGroup, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExpandedGroup not implemented")
-}
-func (UnimplementedGroupsServer) GetGroupPermissions(context.Context, *GetGroupPermissionsRequest) (*GroupPermissions, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetGroupPermissions not implemented")
 }
 func (UnimplementedGroupsServer) mustEmbedUnimplementedGroupsServer() {}
 func (UnimplementedGroupsServer) testEmbeddedByValue()                {}
@@ -375,24 +357,6 @@ func _Groups_GetExpandedGroup_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Groups_GetGroupPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetGroupPermissionsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GroupsServer).GetGroupPermissions(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Groups_GetGroupPermissions_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GroupsServer).GetGroupPermissions(ctx, req.(*GetGroupPermissionsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Groups_ServiceDesc is the grpc.ServiceDesc for Groups service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -427,10 +391,6 @@ var Groups_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetExpandedGroup",
 			Handler:    _Groups_GetExpandedGroup_Handler,
-		},
-		{
-			MethodName: "GetGroupPermissions",
-			Handler:    _Groups_GetGroupPermissions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
