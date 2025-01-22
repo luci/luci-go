@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/tsmon"
@@ -45,10 +46,24 @@ type BotsMetricsReporter struct {
 
 var _ BotVisitor = (*BotsMetricsReporter)(nil)
 
+// ID returns an unique identifier of this visitor used for storing its state.
+//
+// Part of BotVisitor interface.
+func (*BotsMetricsReporter) ID() string {
+	return "BotsMetricsReporter"
+}
+
+// Frequency returns how frequently this visitor should run.
+//
+// Part of BotVisitor interface.
+func (*BotsMetricsReporter) Frequency() time.Duration {
+	return 0
+}
+
 // Prepare prepares the visitor to use `shards` parallel queries.
 //
 // Part of BotVisitor interface.
-func (r *BotsMetricsReporter) Prepare(ctx context.Context, shards int) {
+func (r *BotsMetricsReporter) Prepare(ctx context.Context, shards int, lastRun time.Time) {
 	r.state = newTSMonState(r.ServiceName, r.JobName, r.Monitor)
 	r.shards = make([]*metricsReporterShardState, shards)
 	for i := range r.shards {

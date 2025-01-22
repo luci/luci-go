@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"sync"
 	"testing"
@@ -71,13 +72,134 @@ func TestBots(t *testing.T) {
 	}
 }
 
-type testBotVisitor struct {
-	t       *testing.T
-	shards  [][]string
-	visited stringset.Set
+func TestBotScannerState(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.Use(context.Background())
+
+	state, err := fetchState(ctx)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+	if state == nil || len(state) != 0 {
+		t.Fatalf("should be non-nil empty dict")
+	}
+
+	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+
+	state.bumpLastScan("a", testTime)
+	state.bumpLastScan("b", testTime)
+
+	if err := storeState(ctx, state); err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	state, err = fetchState(ctx)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	if !testTime.Equal(state.lastScan("a")) {
+		t.Errorf("%v", state)
+	}
+	if !testTime.Equal(state.lastScan("b")) {
+		t.Errorf("%v", state)
+	}
+
+	updatedTime := testTime.Add(time.Hour)
+	state.bumpLastScan("a", updatedTime)
+	if err := storeState(ctx, state); err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	state, err = fetchState(ctx)
+	if err != nil {
+		t.Fatalf("%s", err)
+	}
+
+	if !updatedTime.Equal(state.lastScan("a")) {
+		t.Errorf("%v", state)
+	}
+	if !testTime.Equal(state.lastScan("b")) {
+		t.Errorf("%v", state)
+	}
 }
 
-func (v *testBotVisitor) Prepare(ctx context.Context, shards int) {
+func TestVisitorsToRun(t *testing.T) {
+	t.Parallel()
+
+	all := []BotVisitor{
+		&testBotVisitor{id: "always", frequency: 0},
+		&testBotVisitor{id: "1h", frequency: time.Hour},
+		&testBotVisitor{id: "2h", frequency: 2 * time.Hour},
+	}
+
+	var testTime = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+	tick := func(dt time.Duration) {
+		testTime = testTime.Add(dt)
+	}
+
+	state := botScannerState{}
+
+	run := func() []string {
+		var ran []string
+		for _, v := range visitorsToRun(context.Background(), state, all, testTime) {
+			state.bumpLastScan(v.ID(), testTime)
+			ran = append(ran, v.ID())
+		}
+		return ran
+	}
+
+	// First runs all of them.
+	if got := run(); !slices.Equal(got, []string{"always", "1h", "2h"}) {
+		t.Fatalf("run = %v", got)
+	}
+
+	// A bit later runs only the one that always runs.
+	tick(10 * time.Minute)
+	if got := run(); !slices.Equal(got, []string{"always"}) {
+		t.Fatalf("run = %v", got)
+	}
+
+	// 1h since the initial start time, runs the 1h one.
+	tick(50 * time.Minute)
+	if got := run(); !slices.Equal(got, []string{"always", "1h"}) {
+		t.Fatalf("run = %v", got)
+	}
+
+	// Finally runs the 2h one.
+	tick(time.Hour)
+	if got := run(); !slices.Equal(got, []string{"always", "1h", "2h"}) {
+		t.Fatalf("run = %v", got)
+	}
+
+	// Now waiting again.
+	tick(59 * time.Minute)
+	if got := run(); !slices.Equal(got, []string{"always"}) {
+		t.Fatalf("run = %v", got)
+	}
+}
+
+type testBotVisitor struct {
+	t         *testing.T
+	id        string
+	frequency time.Duration
+	shards    [][]string
+	visited   stringset.Set
+}
+
+func (v *testBotVisitor) ID() string {
+	if v.id != "" {
+		return v.id
+	}
+	return "testBotVisitor"
+}
+
+func (v *testBotVisitor) Frequency() time.Duration {
+	return v.frequency
+}
+
+func (v *testBotVisitor) Prepare(ctx context.Context, shards int, lastTime time.Time) {
 	if v.shards != nil {
 		v.t.Error("Prepare called twice")
 	}
@@ -113,7 +235,7 @@ func RunBotVisitor(ctx context.Context, v BotVisitor, b []FakeBot) error {
 		shards = append(shards, b[i:i+min(shardSize, len(b)-i)])
 	}
 
-	v.Prepare(ctx, max(len(shards), 1))
+	v.Prepare(ctx, max(len(shards), 1), time.Time{})
 
 	var wg sync.WaitGroup
 	wg.Add(len(shards))

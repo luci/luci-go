@@ -54,10 +54,24 @@ type NamedCachesAggregator struct {
 
 var _ BotVisitor = (*NamedCachesAggregator)(nil)
 
+// ID returns an unique identifier of this visitor used for storing its state.
+//
+// Part of BotVisitor interface.
+func (*NamedCachesAggregator) ID() string {
+	return "NamedCachesAggregator"
+}
+
+// Frequency returns how frequently this visitor should run.
+//
+// Part of BotVisitor interface.
+func (*NamedCachesAggregator) Frequency() time.Duration {
+	return 10 * time.Minute
+}
+
 // Prepare prepares the visitor to use `shards` parallel queries.
 //
 // Part of BotVisitor interface.
-func (a *NamedCachesAggregator) Prepare(ctx context.Context, shards int) {
+func (a *NamedCachesAggregator) Prepare(ctx context.Context, shards int, lastRun time.Time) {
 	a.shards = make([]*namedCachesAggregatorShardState, shards)
 	for i := range a.shards {
 		a.shards[i] = newNamedCachesAggregatorShardState()

@@ -19,6 +19,7 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -48,10 +49,24 @@ type entityOrErr struct {
 
 var _ BotVisitor = (*BotsDimensionsAggregator)(nil)
 
+// ID returns an unique identifier of this visitor used for storing its state.
+//
+// Part of BotVisitor interface.
+func (*BotsDimensionsAggregator) ID() string {
+	return "BotsDimensionsAggregator"
+}
+
+// Frequency returns how frequently this visitor should run.
+//
+// Part of BotVisitor interface.
+func (*BotsDimensionsAggregator) Frequency() time.Duration {
+	return 0
+}
+
 // Prepare prepares the visitor to use `shards` parallel queries.
 //
 // Part of BotVisitor interface.
-func (a *BotsDimensionsAggregator) Prepare(ctx context.Context, shards int) {
+func (a *BotsDimensionsAggregator) Prepare(ctx context.Context, shards int, lastRun time.Time) {
 	a.shards = make([]*botDimsAggregatorShardState, shards)
 	for i := range a.shards {
 		a.shards[i] = newBotDimsAggregatorShardState()
