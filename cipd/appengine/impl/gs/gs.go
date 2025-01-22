@@ -447,6 +447,7 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	attempts := 0
 	err = withRetry(r.ctx, func() error {
 		defer func() { attempts++ }()
+		attemptStarted := time.Now()
 
 		n = 0
 
@@ -475,6 +476,7 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		defer googleapi.CloseBody(resp)
 
 		n, err = io.ReadFull(resp.Body, p[:int(toRead)])
+		reportDownloadChunkSpeed(r.ctx, n, time.Since(attemptStarted), err == nil)
 		if err != nil {
 			return errors.Annotate(err, "failed to read the response").Tag(transient.Tag).Err()
 		}
@@ -482,12 +484,15 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		return nil
 	})
 
-	if err == nil && off+toRead == r.size {
-		err = io.EOF
-	}
+	// record the number of retries we took and if we were ultimately successful.
+	downloadRetries.Add(r.ctx, float64(attempts-1), err == nil)
 
 	if err == nil {
 		r.trackSpeed(toRead, time.Since(started), attempts)
+	}
+
+	if err == nil && off+toRead == r.size {
+		err = io.EOF
 	}
 
 	return
@@ -511,6 +516,13 @@ func (r *readerImpl) trackSpeed(size int64, dt time.Duration, attempts int) {
 	speed := r.speed
 	r.m.Unlock()
 
-	logging.Debugf(r.ctx, "gs: download speed avg[%.2f MB/sec] last_chunk[%.2f MB/sec for %d MB] attempts[%d]",
-		speed/1e6, v/1e6, size/(1024*1024), attempts)
+	// Only log attempts if we had more than one - this should make it easier to
+	// grep for retries in the logs.
+	attemptsText := ""
+	if attempts > 1 {
+		attemptsText = fmt.Sprintf(" attempts[%d]", attempts)
+	}
+
+	logging.Debugf(r.ctx, "gs: download speed avg[%.2f MB/sec] last_chunk[%.2f MB/sec for %d MB]%s",
+		speed/1e6, v/1e6, size/(1024*1024), attemptsText)
 }

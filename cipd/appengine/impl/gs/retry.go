@@ -50,6 +50,18 @@ func StatusCodeTag(code int) errors.TagValue {
 	return errors.TagValue{Key: statusCodeTagKey, Value: code}
 }
 
+// retryPolicy is a copy of the iterator returned by retry.Default as of 25Q1
+// - but we want to make the downloadAttempts metric harmonize with
+// retryPolicy.Limited.Retries so we had to duplicate it here.
+var retryPolicy = retry.ExponentialBackoff{
+	Limited: retry.Limited{
+		Delay:   200 * time.Millisecond,
+		Retries: 10,
+	},
+	MaxDelay:   10 * time.Second,
+	Multiplier: 2,
+}
+
 // withRetry executes a Google Storage API call, retrying on transient errors.
 //
 // If request reached GS, but the service replied with an error, the
@@ -60,7 +72,10 @@ func StatusCodeTag(code int) errors.TagValue {
 // If the request never reached GS, StatusCode(err) would return 0 and the error
 // will be tagged as transient.
 func withRetry(ctx context.Context, call func() error) error {
-	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+	return retry.Retry(ctx, transient.Only(func() retry.Iterator {
+		it := retryPolicy
+		return &it
+	}), func() error {
 		err := call()
 		if err == nil {
 			return nil
