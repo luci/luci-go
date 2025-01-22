@@ -41,21 +41,11 @@ var downloadChunkSpeed = metric.NewCumulativeDistribution(
 	"cipd/gs/chunks/speed",
 	"Distribution of speeds of gs.readerImpl.ReadAt attempts.",
 	&types.MetricMetadata{Units: "MBy/s"},
-	// This bucketer gets us a lower end which looks like:
-	// lowerBounds[0] - -Inf
-	// lowerBounds[1] - 0.19999999999997797
-	// lowerBounds[2] - 0.4001999999999395
-	// lowerBounds[3] - 0.6006001999999455
-	// lowerBounds[4] - 0.8012008001998971
-	// lowerBounds[5] - 1.0020020010000685
-	// lowerBounds[6] - 1.2030040030010625
-	// lowerBounds[7] - 1.4042070070040324
-	// lowerBounds[8] - 1.605611214011038
-	//
-	// And an upper end which tops out around 98MBps (over 400 buckets).
+	// This bucketer gets us a lower end of 0.05 MBps and scales to ~160MBps
+	// over 400 buckets.
 	//
 	// As of 25Q1 the fastest observed speeds were in the 70-80MBps range.
-	distribution.GeometricBucketerWithScale(1.001, 400, 200),
+	distribution.GeometricBucketerWithScale(1.0205, 400, 0.05),
 	// True iff this chunk finished without errors (including timeout)
 	field.Bool("success"),
 	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
