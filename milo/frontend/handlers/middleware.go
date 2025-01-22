@@ -147,7 +147,7 @@ func localTimeCommon(ifZero string, t time.Time, tooltipClass string, innerText 
 // logdogLink generates a link with URL pointing to logdog host and a label
 // corresponding to the log name. In case `raw` is true, the link points to the
 // raw version of the log (without UI) and the label becomes "raw".
-func logdogLink(log buildbucketpb.Log, raw bool) template.HTML {
+func logdogLink(log *buildbucketpb.Log, raw bool) template.HTML {
 	rawURL := "#invalid-logdog-link"
 	if sa, err := types.ParseURL(log.Url); err == nil {
 		u := url.URL{

@@ -199,15 +199,15 @@ func TestFuncs(t *testing.T) {
 
 		t.Run("Convert LogDog URLs", func(t *ftt.Test) {
 			assert.Loosely(t,
-				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
+				logdogLink(&buildbucketpb.Log{Name: "foo", Url: "logdog://www.example.com:1234/foo/bar/+/baz"}, true),
 				should.Equal(
 					template.HTML(`<a href="https://www.example.com:1234/logs/foo/bar/&#43;/baz?format=raw" aria-label="raw log foo">raw</a>`)))
 			assert.Loosely(t,
-				logdogLink(buildbucketpb.Log{Name: "foo", Url: "%zzzzz"}, true),
+				logdogLink(&buildbucketpb.Log{Name: "foo", Url: "%zzzzz"}, true),
 				should.Equal(
 					template.HTML(`<a href="#invalid-logdog-link" aria-label="raw log foo">raw</a>`)))
 			assert.Loosely(t,
-				logdogLink(buildbucketpb.Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
+				logdogLink(&buildbucketpb.Log{Name: "foo", Url: "logdog://logs.chromium.org/foo/bar/+/baz"}, false),
 				should.Equal(
 					template.HTML(`<a href="https://logs.chromium.org/logs/foo/bar/&#43;/baz" aria-label="raw log foo">foo</a>`)))
 		})
