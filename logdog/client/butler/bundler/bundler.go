@@ -213,7 +213,7 @@ func (b *Bundler) makeBundles() {
 	for {
 		bb = &builder{
 			size: b.c.MaxBundleSize,
-			template: logpb.ButlerLogBundle{
+			template: &logpb.ButlerLogBundle{
 				Timestamp: timestamppb.New(b.getClock().Now()),
 			},
 		}

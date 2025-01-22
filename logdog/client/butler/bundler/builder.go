@@ -35,7 +35,7 @@ type builder struct {
 	size int
 
 	// template is the base bundle template.
-	template logpb.ButlerLogBundle
+	template *logpb.ButlerLogBundle
 	// templateCachedSize is the cached size of the ButlerLogBundle template.
 	templateCachedSize int
 
@@ -54,7 +54,7 @@ func (b *builder) ready() bool {
 
 func (b *builder) bundleSize() int {
 	if b.templateCachedSize == 0 {
-		b.templateCachedSize = protoSize(&b.template)
+		b.templateCachedSize = protoSize(b.template)
 	}
 
 	size := b.templateCachedSize
@@ -98,6 +98,9 @@ func (b *builder) setStreamTerminal(template *logpb.ButlerLogBundle_Entry, tidx 
 
 func (b *builder) bundle() *logpb.ButlerLogBundle {
 	bundle := b.template
+	if b.template == nil {
+		bundle = &logpb.ButlerLogBundle{}
+	}
 
 	names := make([]string, 0, len(b.streams))
 	for k := range b.streams {
@@ -110,7 +113,7 @@ func (b *builder) bundle() *logpb.ButlerLogBundle {
 		bundle.Entries[idx] = &b.streams[name].ButlerLogBundle_Entry
 	}
 
-	return &bundle
+	return bundle
 }
 
 func (b *builder) getCreateBuilderStream(template *logpb.ButlerLogBundle_Entry) *builderStream {

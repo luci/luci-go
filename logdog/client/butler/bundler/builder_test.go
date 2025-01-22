@@ -176,11 +176,11 @@ func TestBuilder(t *testing.T) {
 	ftt.Run(`A builder`, t, func(t *ftt.Test) {
 		tc := testclock.New(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 		b := &builder{
-			template: logpb.ButlerLogBundle{
+			template: &logpb.ButlerLogBundle{
 				Timestamp: timestamppb.New(tc.Now()),
 			},
 		}
-		templateSize := protoSize(&b.template)
+		templateSize := protoSize(b.template)
 
 		t.Run(`Is not ready by default, and has no content.`, func(t *ftt.Test) {
 			b.size = templateSize + 1
