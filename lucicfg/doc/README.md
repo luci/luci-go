@@ -2814,9 +2814,7 @@ Similarly some roles can be assigned to individual users, other only to groups.
 | acl.SCHEDULER_OWNER |project, bucket |groups, users |Full access to Scheduler jobs, including ability to abort them. |
 | acl.CQ_COMMITTER |project, cq_group |groups |Committing approved CLs via CQ. |
 | acl.CQ_DRY_RUNNER |project, cq_group |groups |Executing presubmit tests for CLs via CQ. |
-| acl.CQ_NEW_PATCHSET_RUN_TRIGGERER |project, cq_group |groups |Having CV automatically run certain tryjobs (e.g. static analyzers) when
-a member uploads a new patchset to a CL monitored by CV and the feature
-is enabled. |
+| acl.CQ_NEW_PATCHSET_RUN_TRIGGERER |project, cq_group |groups |Having LUCI CV run tryjobs (e.g. static analyzers) on new patchset upload. |
 
 
 

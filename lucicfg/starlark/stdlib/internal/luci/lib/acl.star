@@ -364,9 +364,7 @@ acl = struct(
         realms_role = "role/cq.dryRunner",
     ),
 
-    # Having CV automatically run certain tryjobs (e.g. static analyzers) when
-    # a member uploads a new patchset to a CL monitored by CV and the feature
-    # is enabled.
+    # Having LUCI CV run tryjobs (e.g. static analyzers) on new patchset upload.
     #
     # DocTags:
     #  cq_role, groups_only.
