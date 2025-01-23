@@ -19,29 +19,6 @@ package cipd.config;
 option go_package = "go.chromium.org/luci/cipd/api/config/v1;api";
 
 
-// Defines a client whose requests should be monitored.
-message ClientMonitoringConfig {
-  // Name of an IP whitelist in the auth service. If a request is received from
-  // an IP matching this whitelist, it will be reported.
-  string ip_whitelist = 1;
-
-  // Monitoring label to apply when reporting metrics for this client.
-  string label = 2;
-}
-
-
-// A schema for the monitoring.cfg config file.
-//
-// It defines a list of clients whose requests should be monitored.
-message ClientMonitoringWhitelist {
-  // A list of configurations for clients to monitor. When a request is
-  // received, the list is traversed in order and the first match is the
-  // monitoring config to use. If none of the configs match the request is
-  // unmonitored.
-  repeated ClientMonitoringConfig client_monitoring_config = 1;
-}
-
-
 // A schema for the bootstrap.cfg config file.
 //
 // It defines a list of packages that contain executables that should be
