@@ -55,7 +55,10 @@ func StatusCodeTag(code int) errors.TagValue {
 // retryPolicy.Limited.Retries so we had to duplicate it here.
 var retryPolicy = retry.ExponentialBackoff{
 	Limited: retry.Limited{
-		Delay:   200 * time.Millisecond,
+		Delay: 200 * time.Millisecond,
+		// NOTE: This retry counter shows up as a metric field in downloadCallCount;
+		// If you adjust this upwards, keep this in mind, or put a cap on the field
+		// at lower value.
 		Retries: 10,
 	},
 	MaxDelay:   10 * time.Second,

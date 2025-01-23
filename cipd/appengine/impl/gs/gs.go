@@ -447,6 +447,9 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 	attempts := 0
 	err = withRetry(r.ctx, func() error {
 		defer func() { attempts++ }()
+		if attempts > 0 {
+			downloadRetryCount.Add(r.ctx, 1, int((toRead/1e6)/8))
+		}
 		attemptStarted := time.Now()
 
 		n = 0
@@ -484,8 +487,10 @@ func (r *readerImpl) ReadAt(p []byte, off int64) (n int, err error) {
 		return nil
 	})
 
-	// record the number of retries we took and if we were ultimately successful.
-	downloadRetries.Add(r.ctx, float64(attempts-1), err == nil)
+	// Increment our call counter, recording success, # retries and what our
+	// target chunk size was.
+	downloadCallCount.Add(r.ctx, 1, err == nil, min(attempts-1,
+		retryPolicy.Retries), int((toRead/1e6)/8))
 
 	if err == nil {
 		r.trackSpeed(toRead, time.Since(started), attempts)

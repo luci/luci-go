@@ -24,22 +24,29 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 )
 
-var downloadRetries = metric.NewCumulativeDistribution(
-	"cipd/gs/chunks/retries",
-	"Distribution of number of attempts gs.readerImpl.ReadAt had to retry a chunk. An entry in bucket[0] indicates no retries (i.e. 1 attempt).",
+var downloadRetryCount = metric.NewCounter(
+	"cipd/gs/chunks/dl/retry_count",
+	"Counter for number of retries of readerImpl.ReadAt GSC calls. Increments 1/retry.",
 	&types.MetricMetadata{},
-	// Each bucket is just 1 value wide, and we have the same number of buckets as
-	// our maximum number of retries.
-	distribution.FixedWidthBucketer(1, retryPolicy.Retries),
-	// True iff this operation ultimately succeeded after the given number of
-	// retries. This distinguishes between retries == max (failure) and retries ==
-	// max (success), as well as retries < max (failure for some other reason).
+	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
+	field.Int("chunk_size_div_8_MB"),
+)
+
+var downloadCallCount = metric.NewCounter(
+	"cipd/gs/chunks/dl/call_count",
+	"Counter for number of calls of readerImpl.ReadAt calls. One call may retry multiple times internally.",
+	&types.MetricMetadata{},
+	// True iff this chunk finished without errors (including timeout)
 	field.Bool("success"),
+	// The number of retries in this call.
+	field.Int("retries"),
+	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
+	field.Int("chunk_size_div_8_MB"),
 )
 
 var downloadChunkSpeed = metric.NewCumulativeDistribution(
-	"cipd/gs/chunks/speed",
-	"Distribution of speeds of gs.readerImpl.ReadAt attempts.",
+	"cipd/gs/chunks/dl/speed",
+	"Distribution of speeds of gs.readerImpl.ReadAt tries.",
 	&types.MetricMetadata{Units: "MBy/s"},
 	// This bucketer gets us a lower end of 0.05 MBps and scales to ~160MBps
 	// over 400 buckets.
@@ -55,5 +62,5 @@ var downloadChunkSpeed = metric.NewCumulativeDistribution(
 func reportDownloadChunkSpeed(ctx context.Context, size int, dt time.Duration, success bool) {
 	speedBps := float64(size) / dt.Seconds()
 	speedMBps := speedBps / 1e6
-	downloadChunkSpeed.Add(ctx, speedMBps, success, (size/1e6)/8)
+	downloadChunkSpeed.Add(ctx, speedMBps, success, int((size/1e6)/8))
 }
