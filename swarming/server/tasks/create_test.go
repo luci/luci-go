@@ -251,12 +251,25 @@ func TestCreation(t *testing.T) {
 					},
 				},
 			}
-			res, err := c.Run(ctx)
+			trs, err := c.Run(ctx)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res, should.NotBeNil)
+			assert.Loosely(t, trs, should.NotBeNil)
 			assert.That(
-				t, model.RequestKeyToTaskID(res.TaskRequestKey(), model.AsRequest),
+				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
 				should.Equal("2cbe1fa55012fa10"))
+
+			tr := &model.TaskRequest{
+				Key: trs.TaskRequestKey(),
+			}
+			assert.NoErr(t, datastore.Get(ctx, tr))
+
+			ttrKey, err := model.TaskRequestToToRunKey(ctx, tr, 0)
+			assert.NoErr(t, err)
+			ttr := &model.TaskToRun{
+				Key: ttrKey,
+			}
+			assert.NoErr(t, datastore.Get(ctx, ttr))
+			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
 		})
 	})
 }

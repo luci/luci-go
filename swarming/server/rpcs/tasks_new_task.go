@@ -126,11 +126,12 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
 	}
 	creation := &tasks.Creation{
-		RequestID:     requestID,
-		Request:       ents.request,
-		SecretBytes:   ents.secretBytes,
-		ServerVersion: srv.ServerVersion,
-		Config:        state.Config,
+		RequestID:       requestID,
+		Request:         ents.request,
+		SecretBytes:     ents.secretBytes,
+		ServerVersion:   srv.ServerVersion,
+		Config:          state.Config,
+		SwarmingProject: srv.SwarmingProject,
 	}
 
 	// Create the task in a loop to retry on task ID collisions.

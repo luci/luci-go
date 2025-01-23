@@ -16,8 +16,11 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -30,6 +33,8 @@ func TestTaskToRuns(t *testing.T) {
 
 	ftt.Run("TestTaskToRuns", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
+		now := testclock.TestRecentTimeUTC
+		ctx, _ = testclock.UseTime(ctx, now)
 
 		buildTaskSlices := func(vals []string, taskReq *datastore.Key) []TaskSlice {
 			res := make([]TaskSlice, len(vals))
@@ -41,6 +46,7 @@ func TestTaskToRuns(t *testing.T) {
 							"d2": {val},
 						},
 					},
+					ExpirationSecs: 60,
 				}
 			}
 			return res
@@ -48,12 +54,8 @@ func TestTaskToRuns(t *testing.T) {
 
 		buildToRuns := func(taskReq *TaskRequest) []*TaskToRun {
 			res := make([]*TaskToRun, len(taskReq.TaskSlices))
-			for i, slice := range taskReq.TaskSlices {
-				key, _ := TaskRequestToToRunKey(ctx, taskReq, i)
-				res[i] = &TaskToRun{
-					Key:        key,
-					Dimensions: slice.Properties.Dimensions,
-				}
+			for i := range len(taskReq.TaskSlices) {
+				res[i], _ = NewTaskToRun(ctx, "swarming", taskReq, i)
 			}
 			return res
 		}
@@ -65,11 +67,23 @@ func TestTaskToRuns(t *testing.T) {
 		taskReq := &TaskRequest{
 			Key:        key,
 			TaskSlices: taskSlices,
+			Created:    now.Add(-time.Hour),
 		}
+		expirations := []int{60, 120, 180}
 		toRuns := buildToRuns(taskReq)
 		toPut := []any{taskReq}
-		for _, toRun := range toRuns {
+		for i, toRun := range toRuns {
 			toPut = append(toPut, toRun)
+			if i == 0 {
+				assert.That(t, toRun.Created, should.Match(taskReq.Created))
+			} else {
+				assert.That(t, toRun.Created, should.Match(now))
+			}
+			assert.That(t, toRun.RBEReservation,
+				should.Equal(fmt.Sprintf("swarming-65aba3a3e6b99310-%d", i)))
+			assert.That(t, toRun.Expiration.Get(),
+				should.Match(taskReq.Created.Add(time.Duration(expirations[i])*time.Second)))
+			assert.That(t, toRun.Dimensions, should.Match(taskSlices[i].Properties.Dimensions))
 		}
 		assert.NoErr(t, datastore.Put(ctx, toPut...))
 
@@ -79,6 +93,12 @@ func TestTaskToRuns(t *testing.T) {
 			assert.Loosely(t, toRuns[0].ClaimID.Get(), should.Equal(claimID))
 			assert.Loosely(t, toRuns[0].Expiration.Get().IsZero(), should.BeTrue)
 			assert.Loosely(t, toRuns[0].QueueNumber.Get(), should.BeZero)
+		})
+
+		t.Run("TaskSliceIndex", func(t *ftt.Test) {
+			for i := range len(toRuns) {
+				assert.That(t, toRuns[i].TaskSliceIndex(), should.Equal(i))
+			}
 		})
 
 		t.Run("TaskRequestToToRunKey errors", func(t *ftt.Test) {

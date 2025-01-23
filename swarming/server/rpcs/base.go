@@ -92,6 +92,9 @@ type TasksServer struct {
 
 	// ServerVersion is the version of the executing binary.
 	ServerVersion string
+
+	// SwarmingProject is the Cloud project of the Swarming service, e.g. "chromium-swarm".
+	SwarmingProject string
 }
 
 // TaskBackend implements bbpb.TaskBackendServer.

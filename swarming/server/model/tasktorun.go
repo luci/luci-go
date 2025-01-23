@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 )
@@ -156,6 +157,11 @@ func (t *TaskToRun) Consume(claimID string) {
 	t.QueueNumber = datastore.Optional[int64, datastore.Indexed]{}
 }
 
+// TaskSliceIndex returns the entity's task slice index.
+func (t *TaskToRun) TaskSliceIndex() int {
+	return int(t.Key.IntID() >> 4)
+}
+
 // TaskToRunKey builds a TaskToRun key given the task request key, the entity
 // kind shard index and the task to run ID.
 func TaskToRunKey(ctx context.Context, taskReq *datastore.Key, shardIdx int32, ttrID int64) *datastore.Key {
@@ -181,4 +187,48 @@ func TaskRequestToToRunKey(ctx context.Context, taskReq *TaskRequest, sliceIndex
 func sliceToToRunShardIndex(slice TaskSlice) int32 {
 	hash := slice.Properties.Dimensions.Hash()
 	return int32(hash % TaskToRunShards)
+}
+
+// NewTaskToRun creates a new TaskToRun entity.
+func NewTaskToRun(ctx context.Context, swarmingProject string, tr *TaskRequest, sliceIndex int) (*TaskToRun, error) {
+	ttrKey, err := TaskRequestToToRunKey(ctx, tr, sliceIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	created := tr.Created
+	if sliceIndex > 0 {
+		created = clock.Now(ctx).UTC()
+	}
+
+	// TODO(vadimsh): These expiration timestamps may end up significantly larger
+	// than expected if slices are skipped quickly without waiting due to
+	// "no capacity" condition. For example, if 4 slices with 1h expiration all
+	// were skipped quickly, the fifth one ends up with effectively +4h of extra
+	// expiration time.
+	offset := 0
+	for i := 0; i <= sliceIndex; i++ {
+		offset += int(tr.TaskSlices[i].ExpirationSecs)
+	}
+	exp := datastore.NewIndexedOptional(tr.Created.Add(time.Duration(offset) * time.Second))
+
+	ttr := &TaskToRun{
+		Key:            ttrKey,
+		Created:        created,
+		Dimensions:     tr.TaskSlices[sliceIndex].Properties.Dimensions,
+		Expiration:     exp,
+		RBEReservation: NewReservationID(swarmingProject, tr.Key, sliceIndex),
+	}
+	return ttr, nil
+}
+
+// NewReservationID generates an RBE reservation ID representing a particular slice.
+//
+// It needs to globally (potentially across Swarming instances) identify
+// a particular task slice. Used to idempotently submit RBE reservations.
+//
+// Placing this function in rbe package would cause an import loop, so putting
+// it here instead.
+func NewReservationID(swarmingProject string, reqKey *datastore.Key, sliceIndex int) string {
+	return fmt.Sprintf("%s-%s-%d", swarmingProject, RequestKeyToTaskID(reqKey, AsRequest), sliceIndex)
 }

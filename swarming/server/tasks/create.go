@@ -47,6 +47,9 @@ type Creation struct {
 	// BuildTask is the BuildTask entity.
 	BuildTask *model.BuildTask
 
+	// SwarmingProject is the Cloud project of the Swarming service, e.g. "chromium-swarm".
+	SwarmingProject string
+
 	// ServerVersion is the version of the executing binary.
 	ServerVersion string
 
@@ -139,8 +142,19 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		}
 	}
 
+	var ttr *model.TaskToRun
+	if dupResult == nil {
+		// The task has to run.
+		// Start with zeroth slice. If there are slices that can't execute due
+		// to missing bots, there will be a ping pong game between Swarming and
+		// RBE skipping them.
+		trs.CurrentTaskSlice = 0
+		ttr, err = model.NewTaskToRun(ctx, c.SwarmingProject, tr, int(trs.CurrentTaskSlice))
+		if err != nil {
+			return nil, err
+		}
+	}
 	// TODO(b/355013250): Create ResultDB invocation.
-	// TODO(b/355013251): Create TaskToRun.
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Recheck TaskRequestID in transaction in case it has just been
@@ -191,6 +205,10 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 				ExpireAt: now.Add(time.Hour * 24 * 7),
 			}
 			toPut = append(toPut, tri)
+		}
+
+		if ttr != nil {
+			toPut = append(toPut, ttr)
 		}
 
 		// TODO(b/355013251): submit to RBE
