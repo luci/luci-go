@@ -273,10 +273,10 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	// a restart, its dimensions won't be changed. To help in debugging issues,
 	// these initial dimensions are placed into the state instead (see above).
 	update := &model.BotInfoUpdate{
-		BotID:         botID,
-		BotGroup:      botGroup,
-		EventType:     model.BotEventConnected,
-		EventDedupKey: sessionID,
+		BotID:              botID,
+		BotGroupDimensions: botGroup.Dimensions,
+		EventType:          model.BotEventConnected,
+		EventDedupKey:      sessionID,
 		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
 			SessionID: sessionID,
 			Version:   body.Version,

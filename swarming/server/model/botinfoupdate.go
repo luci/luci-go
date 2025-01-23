@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/botstate"
-	"go.chromium.org/luci/swarming/server/cfg"
 )
 
 const (
@@ -106,11 +105,6 @@ type BotInfoUpdate struct {
 	// Required.
 	BotID string
 
-	// BotGroup is the bot group configuration for this bot per bots.cfg.
-	//
-	// Required.
-	BotGroup *cfg.BotGroup
-
 	// Current is an existing BotInfo entity to use when in a transaction.
 	//
 	// If set, the update must be prepared via Prepare and submitted as a part of
@@ -138,10 +132,22 @@ type BotInfoUpdate struct {
 	// Dimensions is a sorted list of dimensions to assign to the bot.
 	//
 	// This is derived from the dimensions passed by the bot when it polls for
-	// tasks (in particular with events BotEventPolling and BotEventIdle).
+	// tasks (in particular with events BotEventPolling and BotEventIdle). Must
+	// have at least "id:<BotID>" dimension present.
 	//
 	// If empty, the current dimensions will be left unchanged.
 	Dimensions []string
+
+	// BotGroupDimensions are extra dimension associated with the bot in the
+	// bot group config in bots.cfg.
+	//
+	// These are used only if Dimensions are unset and this update is the first
+	// update ever that registers the BotInfo. We need to associate some
+	// dimensions with a new bot, and dimensions in the config is all we have at
+	// this point. The type matches cfg.BotGroup(...).Dimensions.
+	//
+	// Can be omitted if Dimensions are set.
+	BotGroupDimensions map[string][]string
 
 	// CallInfo is information about the current bot API call, if any.
 	//
@@ -280,8 +286,13 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 	if datastore.CurrentTransaction(ctx) == nil {
 		panic("Prepare must be used in a transaction")
 	}
-	if !slices.IsSorted(u.Dimensions) {
-		panic("Dimensions must be sorted")
+	if len(u.Dimensions) != 0 {
+		if !slices.IsSorted(u.Dimensions) {
+			panic("Dimensions must be sorted")
+		}
+		if _, found := slices.BinarySearch(u.Dimensions, "id:"+u.BotID); !found {
+			panic(fmt.Sprintf("id:<BotID> dimension is missing or incorrect in %v", u.Dimensions))
+		}
 	}
 
 	now := clock.Now(ctx).UTC()
@@ -474,9 +485,9 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 
 // connectingBotDims is a list of dimensions for a bot seen for the first time.
 func (u *BotInfoUpdate) connectingBotDims() []string {
-	dims := make([]string, 0, 1+len(u.BotGroup.Dimensions))
+	dims := make([]string, 0, 1+len(u.BotGroupDimensions))
 	dims = append(dims, "id:"+u.BotID)
-	for key, vals := range u.BotGroup.Dimensions {
+	for key, vals := range u.BotGroupDimensions {
 		for _, val := range vals {
 			dims = append(dims, fmt.Sprintf("%s:%s", key, val))
 		}

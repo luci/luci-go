@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/botstate"
-	"go.chromium.org/luci/swarming/server/cfg"
 )
 
 func init() {
@@ -56,11 +55,9 @@ func TestBotInfoUpdate(t *testing.T) {
 		submit := func(ev BotEventType, dedupKey string, dims []string, healthInfo *BotHealthInfo, taskInfo *BotEventTaskInfo) {
 			update := BotInfoUpdate{
 				BotID: "bot-id",
-				BotGroup: &cfg.BotGroup{
-					Dimensions: map[string][]string{
-						"pool":      {"a", "b"},
-						"something": {"c"},
-					},
+				BotGroupDimensions: map[string][]string{
+					"pool":      {"a", "b"},
+					"something": {"c"},
 				},
 				EventType:     ev,
 				EventDedupKey: dedupKey,
@@ -158,11 +155,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		t.Run("Connect => Idle", func(t *ftt.Test) {
 			submit(BotEventConnected, "connect", nil, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1"}, nil, nil)
+			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1"}, nil, nil) // not recorded as "not interesting"
+			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, nil, nil) // not recorded as "not interesting"
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1"}, nil, nil) // complete ignored as a dup
+			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, nil, nil) // complete ignored as a dup
 
 			botInfo, events := check()
 
@@ -171,7 +168,7 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle",
 			}))
 
-			assert.That(t, botInfo.Dimensions, should.Match([]string{"dim:1"}))
+			assert.That(t, botInfo.Dimensions, should.Match([]string{"dim:1", "id:bot-id"}))
 			assert.That(t, botInfo.FirstSeen, should.Match(testTime))
 			assert.That(t, botInfo.LastSeen, should.Match(datastore.NewUnindexedOptional(testTime.Add(2*time.Second))))
 			assert.That(t, botInfo.IdleSince, should.Match(datastore.NewUnindexedOptional(testTime.Add(time.Second))))
@@ -190,9 +187,9 @@ func TestBotInfoUpdate(t *testing.T) {
 		t.Run("Connect => Idle => Dimension change", func(t *ftt.Test) {
 			submit(BotEventConnected, "connect", nil, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1"}, nil, nil)
+			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:2"}, nil, nil)
+			submit(BotEventIdle, "idle-2", []string{"dim:2", "id:bot-id"}, nil, nil)
 
 			botInfo, events := check()
 
@@ -202,9 +199,9 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle",
 			}))
 
-			assert.That(t, botInfo.Dimensions, should.Match([]string{"dim:2"}))
-			assert.That(t, events[1].Dimensions, should.Match([]string{"dim:1"}))
-			assert.That(t, events[2].Dimensions, should.Match([]string{"dim:2"}))
+			assert.That(t, botInfo.Dimensions, should.Match([]string{"dim:2", "id:bot-id"}))
+			assert.That(t, events[1].Dimensions, should.Match([]string{"dim:1", "id:bot-id"}))
+			assert.That(t, events[2].Dimensions, should.Match([]string{"dim:2", "id:bot-id"}))
 		})
 
 		t.Run("Connect => Idle => Maintenance", func(t *ftt.Test) {

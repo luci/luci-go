@@ -161,8 +161,11 @@ func TestHandshake(t *testing.T) {
 			}))
 
 			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
-				BotID:         botID,
-				BotGroup:      conf.Cached(ctx).BotGroup(botID),
+				BotID: botID,
+				BotGroupDimensions: map[string][]string{
+					"pool":  {botPool},
+					"extra": {"1", "2"},
+				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "reported-session-id",
 				CallInfo: &model.BotEventCallInfo{
@@ -213,8 +216,11 @@ func TestHandshake(t *testing.T) {
 			}))
 
 			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
-				BotID:         botID,
-				BotGroup:      conf.Cached(ctx).BotGroup(botID),
+				BotID: botID,
+				BotGroupDimensions: map[string][]string{
+					"pool":  {botPool},
+					"extra": {"1", "2"},
+				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "autogen-2338085100000-7828158075477027098",
 				CallInfo: &model.BotEventCallInfo{
@@ -252,8 +258,11 @@ func TestHandshake(t *testing.T) {
 			assert.NoErr(t, err)
 
 			assert.That(t, latestUpdate, should.Match(&model.BotInfoUpdate{
-				BotID:         botID,
-				BotGroup:      conf.Cached(ctx).BotGroup(botID),
+				BotID: botID,
+				BotGroupDimensions: map[string][]string{
+					"pool":  {botPool},
+					"extra": {"1", "2"},
+				},
 				EventType:     model.BotEventConnected,
 				EventDedupKey: "reported-session-id",
 				CallInfo: &model.BotEventCallInfo{
