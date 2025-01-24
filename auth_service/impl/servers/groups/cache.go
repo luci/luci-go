@@ -16,7 +16,6 @@ package groups
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -24,12 +23,17 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/caching/breadbox"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/impl/model"
 )
+
+// The maximum amount of time since a groups snapshot was taken before it is
+// considered too stale and should be refreshed.
+const maxStaleness = 30 * time.Second
 
 var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 
@@ -39,80 +43,61 @@ type AuthGroupsSnapshot struct {
 }
 
 type CachingGroupsProvider struct {
-	m      sync.RWMutex
-	cached *AuthGroupsSnapshot
+	cached breadbox.Breadbox
 }
 
-func (cgp *CachingGroupsProvider) GetAllAuthGroups(ctx context.Context) (groups []*model.AuthGroup, err error) {
+// GetAllAuthGroups gets all AuthGroups. The result may be slightly stale if
+// allowStale is true.
+func (cgp *CachingGroupsProvider) GetAllAuthGroups(ctx context.Context, allowStale bool) ([]*model.AuthGroup, error) {
+	var val any
+	var err error
+	if allowStale {
+		val, err = cgp.cached.Get(ctx, maxStaleness, groupsRefresher)
+	} else {
+		val, err = cgp.cached.GetFresh(ctx, groupsRefresher)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return val.(*AuthGroupsSnapshot).groups, nil
+}
+
+func groupsRefresher(ctx context.Context, prev any) (updated any, err error) {
+	var fresh *AuthGroupsSnapshot
+	if prev == nil {
+		fresh, err = fetch(ctx)
+	} else {
+		fresh, err = refetch(ctx, prev.(*AuthGroupsSnapshot))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return fresh, nil
+}
+
+// refetch fetches all AuthGroups only if outdated; otherwise, returns `prev`.
+func refetch(ctx context.Context, prev *AuthGroupsSnapshot) (*AuthGroupsSnapshot, error) {
 	// Grab the latest AuthDB revision number.
 	latestState, err := model.GetReplicationState(ctx)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to check the latest AuthDB revision").Err()
+		return nil, errors.Annotate(err,
+			"failed to check the latest AuthDB revision").Err()
 	}
 
-	// Use the cached snapshot if it's up-to-date.
-	cgp.m.RLock()
-	cached := cgp.cached
-	cgp.m.RUnlock()
-	if cached != nil && cached.authDBRev == latestState.AuthDBRev {
-		logging.Debugf(ctx, "Using cached AuthGroups from rev %d", cached.authDBRev)
-		return cached.groups, nil
+	if latestState.AuthDBRev == prev.authDBRev {
+		logging.Debugf(ctx, "Using cached AuthGroups from rev %d", prev.authDBRev)
+		return prev, nil
 	}
 
-	if cached == nil {
-		logging.Infof(ctx, "Initializing AuthGroups cache")
-	} else {
-		logging.Infof(ctx,
-			"Refreshing AuthGroups (have groups from rev %d, want rev >= %d)",
-			cached.authDBRev, latestState.AuthDBRev)
-	}
-
-	// Fetch all groups from Datastore. Make all other callers of GetAllAuthGroups
-	// wait to avoid all of them hitting the Datastore at once when the cached
-	// groups become stale.
-	cgp.m.Lock()
-	defer cgp.m.Unlock()
-
-	// Maybe the groups were already fetched while we were waiting on the lock.
-	if cgp.cached != nil && cgp.cached.authDBRev >= latestState.AuthDBRev {
-		logging.Infof(ctx, "Other goroutine fetched AuthGroups for rev %d already",
-			cgp.cached.authDBRev)
-		return cgp.cached.groups, nil
-	}
-
-	logging.Infof(ctx, "Fetching AuthGroups from Datastore")
-
-	// Transactionally fetch all groups.
-	snap, err := takeGroupsSnapshot(ctx)
-	if err != nil {
-		logging.Errorf(ctx, err.Error())
-		return []*model.AuthGroup{}, err
-	}
-
-	cgp.cached = snap
-	logging.Infof(ctx, "Refreshed AuthGroups (rev %d)", cgp.cached.authDBRev)
-	return cgp.cached.groups, nil
+	// Fetch all groups.
+	return fetch(ctx)
 }
 
-// RefreshPeriodically runs a loop that periodically refreshes the cached
-// snapshot of AuthGroups.
-func (cgp *CachingGroupsProvider) RefreshPeriodically(ctx context.Context) {
-	for {
-		if r := <-clock.After(ctx, 30*time.Second); r.Err != nil {
-			return // the context is canceled
-		}
-		if _, err := cgp.GetAllAuthGroups(ctx); err != nil {
-			logging.Errorf(ctx, "Failed to refresh AuthGroups: %s", err)
-		}
-	}
-}
-
-// takeGroupsSnapshot takes a snapshot of all the AuthGroups.
-//
-// Runs a read-only transaction internally.
-func takeGroupsSnapshot(ctx context.Context) (snap *AuthGroupsSnapshot, err error) {
+func fetch(ctx context.Context) (snap *AuthGroupsSnapshot, err error) {
 	// This is a potentially slow operation. Capture it in the trace.
-	ctx, span := tracer.Start(ctx, "go.chromium.org/luci/auth_service/impl/servers/groups/takeGroupsSnapshot")
+	ctx, span := tracer.Start(ctx, "go.chromium.org/luci/auth_service/impl/servers/groups/fetch")
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
@@ -121,6 +106,8 @@ func takeGroupsSnapshot(ctx context.Context) (snap *AuthGroupsSnapshot, err erro
 		span.End()
 	}()
 
+	// Transactionally fetch all groups.
+	logging.Debugf(ctx, "Fetching AuthGroups from Datastore...")
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		snap = &AuthGroupsSnapshot{}
 
@@ -146,8 +133,22 @@ func takeGroupsSnapshot(ctx context.Context) (snap *AuthGroupsSnapshot, err erro
 	}, &datastore.TransactionOptions{ReadOnly: true})
 
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to take a snapshot of all AuthGroups").Err()
+		return nil, errors.Annotate(err, "failed to fetch all AuthGroups").Err()
 	}
 
+	logging.Debugf(ctx, "Fetched AuthGroups (rev %d)", snap.authDBRev)
 	return snap, nil
+}
+
+// RefreshPeriodically runs a loop that periodically refreshes the cached copy
+// of AuthGroups snapshot.
+func (cgp *CachingGroupsProvider) RefreshPeriodically(ctx context.Context) {
+	for {
+		if r := <-clock.After(ctx, maxStaleness); r.Err != nil {
+			return // the context is canceled
+		}
+		if _, err := cgp.GetAllAuthGroups(ctx, false); err != nil {
+			logging.Errorf(ctx, "Failed to refresh AuthGroups: %s", err)
+		}
+	}
 }

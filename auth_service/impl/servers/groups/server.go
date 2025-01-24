@@ -66,7 +66,7 @@ type ListingJSON struct {
 
 // AuthGroupsProvider is the interface to get all AuthGroup entities.
 type AuthGroupsProvider interface {
-	GetAllAuthGroups(ctx context.Context) ([]*model.AuthGroup, error)
+	GetAllAuthGroups(ctx context.Context, allowStale bool) ([]*model.AuthGroup, error)
 	RefreshPeriodically(ctx context.Context)
 }
 
@@ -83,11 +83,11 @@ func NewServer() *Server {
 	}
 }
 
-// Warmup does the setup for the groups server; it should be called before the
+// WarmUp does the setup for the groups server; it should be called before the
 // main serving loop.
-func (srv *Server) Warmup(ctx context.Context) {
+func (srv *Server) WarmUp(ctx context.Context) {
 	if srv.authGroupsProvider != nil {
-		_, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+		_, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, false)
 		if err != nil {
 			logging.Errorf(ctx, "error warming up AuthGroups provider")
 		}
@@ -104,7 +104,7 @@ func (srv *Server) RefreshPeriodically(ctx context.Context) {
 // ListGroups implements the corresponding RPC method.
 func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGroupsResponse, error) {
 	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, true)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch groups: %s", err)
 	}
@@ -225,7 +225,7 @@ func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRe
 //	NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
 func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
 	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"Failed to fetch groups: %s", err)
@@ -260,7 +260,7 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 //	Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
 func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
 	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx)
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
 			"Failed to fetch groups: %s", err)
@@ -375,7 +375,7 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 	}
 
 	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(c)
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(c, false)
 	if err != nil {
 		return status.Error(codes.Internal, "failed to fetch all groups")
 	}

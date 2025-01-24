@@ -117,7 +117,7 @@ func main() {
 
 		// Initialize groups server.
 		groupsServer := groups.NewServer()
-		srv.RegisterWarmup(groupsServer.Warmup)
+		srv.RegisterWarmup(groupsServer.WarmUp)
 		srv.RunInBackground("authdb.refresh-all-groups", groupsServer.RefreshPeriodically)
 
 		// Register all RPC servers.

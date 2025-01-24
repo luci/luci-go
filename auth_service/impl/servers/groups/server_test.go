@@ -28,6 +28,7 @@ import (
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -67,6 +68,8 @@ func TestGroupsServer(t *testing.T) {
 			Identity:       "user:someone@example.com",
 			IdentityGroups: []string{"testers"},
 		})
+		testTime := time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)
+		ctx, tc := testclock.UseTime(ctx, testTime)
 
 		// Groups built from model.AuthGroup definition.
 		assert.Loosely(t, datastore.Put(ctx,
@@ -187,6 +190,13 @@ func TestGroupsServer(t *testing.T) {
 		resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, resp.Groups, should.Match(expectedResp.Groups))
+
+		t.Run("returns cached groups", func(t *ftt.Test) {
+			tc.Add(maxStaleness - 1)
+			resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.Groups, should.Match(expectedResp.Groups))
+		})
 	})
 
 	ftt.Run("GetGroup RPC call", t, func(t *ftt.Test) {
