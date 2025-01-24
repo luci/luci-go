@@ -15,8 +15,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { StrictMode, useState } from 'react';
 
-import { IsDevEnvProvider } from '@/generic_libs/hooks/is_dev_env';
-
 import { SingletonStoreProvider } from './context';
 import { useSingleton } from './use_singleton';
 
@@ -486,18 +484,16 @@ describe('useSingleton', () => {
   it('can handle updates in strict mode', () => {
     const callback = jest.fn();
     render(
-      <IsDevEnvProvider value={true}>
-        <StrictMode>
-          <SingletonStoreProvider>
-            <TestComponent
-              factory={factory}
-              numParam1={2}
-              strParam="string"
-              callback={callback}
-            />
-          </SingletonStoreProvider>
-        </StrictMode>
-      </IsDevEnvProvider>,
+      <StrictMode>
+        <SingletonStoreProvider>
+          <TestComponent
+            factory={factory}
+            numParam1={2}
+            strParam="string"
+            callback={callback}
+          />
+        </SingletonStoreProvider>
+      </StrictMode>,
       {},
     );
     expect(factory).toHaveBeenCalledTimes(1);

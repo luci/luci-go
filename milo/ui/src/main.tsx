@@ -22,7 +22,7 @@ import { createRoot } from 'react-dom/client';
 
 import { App } from '@/App';
 import { initDefaultTrustedTypesPolicy } from '@/common/tools/sanitize_html';
-import { IsDevEnvProvider } from '@/generic_libs/hooks/is_dev_env';
+import { IsDevBuildProvider } from '@/generic_libs/hooks/is_dev_build';
 import { assertNonNullable } from '@/generic_libs/tools/utils';
 import { initUiSW } from '@/sw/init_sw';
 
@@ -44,9 +44,9 @@ configure({ enforceActions: 'never' });
 const container = assertNonNullable(document.getElementById('app-root'));
 const root = createRoot(container);
 root.render(
-  <IsDevEnvProvider value={import.meta.env.DEV}>
+  <IsDevBuildProvider value={import.meta.env.DEV}>
     <App />
-  </IsDevEnvProvider>,
+  </IsDevBuildProvider>,
 );
 
 Settings.throwOnInvalid = true;

@@ -16,7 +16,7 @@ import { ReactNode, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { logging } from '@/common/tools/logging';
-import { useIsDevEnv } from '@/generic_libs/hooks/is_dev_env';
+import { useIsDevBuild } from '@/generic_libs/hooks/is_dev_build';
 
 import { useContentGroup } from '../content_group';
 import { useTrackedSearchParamKeys } from '../track_search_param_keys';
@@ -41,11 +41,11 @@ export interface PageViewTrackerProps {
  */
 export function PageViewTracker({ children }: PageViewTrackerProps) {
   const isTracked = useIsTracked();
-  const isDev = useIsDevEnv();
+  const isDevBuild = useIsDevBuild();
   const loggedError = useRef(false);
   if (isTracked) {
-    // Throw the error in when dev so it gets noticed and fixed.
-    if (isDev) {
+    // Throw the error in during local development so it gets noticed and fixed.
+    if (isDevBuild) {
       throw new Error(NESTED_TRACKER_ERR_MEG);
     }
 

@@ -50,7 +50,7 @@ import { ReleaseNotesProvider } from '@/core/components/release_notes';
 import { parseReleaseNotes } from '@/core/components/release_notes/common';
 import { routes } from '@/core/routes';
 import { ReactLitBridge } from '@/generic_libs/components/react_lit_element';
-import { useIsDevEnv } from '@/generic_libs/hooks/is_dev_env';
+import { useIsDevBuild } from '@/generic_libs/hooks/is_dev_build';
 import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { createStaticTrustedURL } from '@/generic_libs/tools/utils';
@@ -92,7 +92,7 @@ const QUERY_CLIENT_CONFIG: QueryClientConfig = {
 };
 
 export function App() {
-  const isDevEnv = useIsDevEnv();
+  const isDevBuild = useIsDevBuild();
   const [store] = useState(() => Store.create({}));
   const [queryClient] = useState(() => new QueryClient(QUERY_CLIENT_CONFIG));
 
@@ -118,13 +118,13 @@ export function App() {
               'root-sw-js-static',
               '/root_sw.js',
             ) as string,
-            // During development, the service worker script can only be an ES
-            // module, because it runs through the same pipeline as the rest of
-            // the scripts.
-            // In production, the service worker script cannot be an ES module
-            // due to limited browser support [1].
+            // During local development, the service worker script can only be
+            // an ES module, because it runs through the same pipeline as the
+            // rest of the scripts.
+            // In a production/deployed build, the service worker script cannot
+            // be an ES module due to limited browser support [1].
             // [1]: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorker#browser_compatibility
-            { type: isDevEnv ? 'module' : 'classic' },
+            { type: isDevBuild ? 'module' : 'classic' },
           )
           .then((registration) => {
             store.setRedirectSw(registration);
@@ -137,7 +137,7 @@ export function App() {
     },
     // None of them will ever change. But list them as dependencies to make
     // ESLint happy.
-    [store, isDevEnv],
+    [store, isDevBuild],
   );
 
   const router = createBrowserRouter([
