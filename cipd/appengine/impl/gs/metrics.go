@@ -28,8 +28,8 @@ var downloadRetryCount = metric.NewCounter(
 	"cipd/gs/chunks/dl/retry_count",
 	"Counter for number of retries of readerImpl.ReadAt GSC calls. Increments 1/retry.",
 	&types.MetricMetadata{},
-	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
-	field.Int("chunk_size_div_8_MB"),
+	// The size of the chunk in MB, bucketed by 8MB (to reduce cardinality).
+	field.Int("chunk_size"),
 )
 
 var downloadCallCount = metric.NewCounter(
@@ -40,8 +40,8 @@ var downloadCallCount = metric.NewCounter(
 	field.Bool("success"),
 	// The number of retries in this call.
 	field.Int("retries"),
-	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
-	field.Int("chunk_size_div_8_MB"),
+	// The size of the chunk in MB, bucketed by 8MB (to reduce cardinality).
+	field.Int("chunk_size"),
 )
 
 var downloadChunkSpeed = metric.NewCumulativeDistribution(
@@ -55,12 +55,22 @@ var downloadChunkSpeed = metric.NewCumulativeDistribution(
 	distribution.GeometricBucketerWithScale(1.0205, 400, 0.05),
 	// True iff this chunk finished without errors (including timeout)
 	field.Bool("success"),
-	// The size of the chunk in MB, divided by 8 (to reduce cardinality).
-	field.Int("chunk_size_div_8_MB"),
+	// The size of the chunk in MB, bucketed by 8MB (to reduce cardinality).
+	field.Int("chunk_size"),
 )
+
+// Converts a size in bytes to a size in megabytes, rounded down to the nearest
+// 8MB.
+func toChunkSize(sizeBytes int) int {
+	// e.g. 39284592 sizeBytes
+	// / 1e6 => 39
+	// / 8 => 4
+	// * 8 => 32
+	return ((sizeBytes / 1e6) / 8) * 8
+}
 
 func reportDownloadChunkSpeed(ctx context.Context, size int, dt time.Duration, success bool) {
 	speedBps := float64(size) / dt.Seconds()
 	speedMBps := speedBps / 1e6
-	downloadChunkSpeed.Add(ctx, speedMBps, success, int((size/1e6)/8))
+	downloadChunkSpeed.Add(ctx, speedMBps, success, toChunkSize(size))
 }
