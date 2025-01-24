@@ -166,13 +166,8 @@ func TestHandshake(t *testing.T) {
 					"pool":  {botPool},
 					"extra": {"1", "2"},
 				},
-				EventType:     model.BotEventConnected,
-				EventDedupKey: "reported-session-id",
-				CallInfo: &model.BotEventCallInfo{
-					SessionID: "reported-session-id",
-					Version:   "reported-bot-version",
-					State: botstate.Dict{
-						JSON: []byte(`{
+				State: &botstate.Dict{
+					JSON: []byte(`{
 							"handshaking": true,
 							"initial_dimensions": {
 								"id": ["good-bot"],
@@ -180,7 +175,12 @@ func TestHandshake(t *testing.T) {
 							},
 							"state_key": "state_val"
 						}`),
-					},
+				},
+				EventType:     model.BotEventConnected,
+				EventDedupKey: "reported-session-id",
+				CallInfo: &model.BotEventCallInfo{
+					SessionID:       "reported-session-id",
+					Version:         "reported-bot-version",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
@@ -221,18 +221,18 @@ func TestHandshake(t *testing.T) {
 					"pool":  {botPool},
 					"extra": {"1", "2"},
 				},
-				EventType:     model.BotEventConnected,
-				EventDedupKey: "autogen-2338085100000-7828158075477027098",
-				CallInfo: &model.BotEventCallInfo{
-					SessionID: "autogen-2338085100000-7828158075477027098",
-					State: botstate.Dict{
-						JSON: []byte(`{
+				State: &botstate.Dict{
+					JSON: []byte(`{
 							"handshaking": true,
 							"initial_dimensions": {
 								"id": ["good-bot"]
 							}
 						}`),
-					},
+				},
+				EventType:     model.BotEventConnected,
+				EventDedupKey: "autogen-2338085100000-7828158075477027098",
+				CallInfo: &model.BotEventCallInfo{
+					SessionID:       "autogen-2338085100000-7828158075477027098",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},
@@ -263,12 +263,8 @@ func TestHandshake(t *testing.T) {
 					"pool":  {botPool},
 					"extra": {"1", "2"},
 				},
-				EventType:     model.BotEventConnected,
-				EventDedupKey: "reported-session-id",
-				CallInfo: &model.BotEventCallInfo{
-					SessionID: "reported-session-id",
-					State: botstate.Dict{
-						JSON: []byte(`{
+				State: &botstate.Dict{
+					JSON: []byte(`{
 							"handshaking": true,
 							"initial_dimensions": {
 								"id": ["good-bot"],
@@ -277,7 +273,11 @@ func TestHandshake(t *testing.T) {
 							"quarantined": "Boom",
 							"state_key": "state_val"
 						}`),
-					},
+				},
+				EventType:     model.BotEventConnected,
+				EventDedupKey: "reported-session-id",
+				CallInfo: &model.BotEventCallInfo{
+					SessionID:       "reported-session-id",
 					ExternalIP:      botIP,
 					AuthenticatedAs: botIdent,
 				},

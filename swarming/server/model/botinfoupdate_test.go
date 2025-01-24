@@ -52,7 +52,7 @@ func TestBotInfoUpdate(t *testing.T) {
 
 		tickOneSec := func() { tc.Add(time.Second) }
 
-		submit := func(ev BotEventType, dedupKey string, dims []string, healthInfo *BotHealthInfo, taskInfo *BotEventTaskInfo) {
+		submit := func(ev BotEventType, dedupKey string, dims []string, state *botstate.Dict, healthInfo *BotHealthInfo, taskInfo *BotEventTaskInfo) {
 			update := BotInfoUpdate{
 				BotID: "bot-id",
 				BotGroupDimensions: map[string][]string{
@@ -62,10 +62,10 @@ func TestBotInfoUpdate(t *testing.T) {
 				EventType:     ev,
 				EventDedupKey: dedupKey,
 				Dimensions:    dims,
+				State:         state,
 				CallInfo: &BotEventCallInfo{
 					SessionID:       "session-id",
 					Version:         "version",
-					State:           botstate.Dict{JSON: []byte(`{"some-state": 1}`)},
 					ExternalIP:      "external-ip",
 					AuthenticatedAs: "user:someone@example.com",
 				},
@@ -97,8 +97,11 @@ func TestBotInfoUpdate(t *testing.T) {
 			return out
 		}
 
+		testState1 := &botstate.Dict{JSON: []byte(`{"some-state": 1}`)}
+		testState2 := &botstate.Dict{JSON: []byte(`{"some-state": 2}`)}
+
 		t.Run("New BotInfo entity", func(t *ftt.Test) {
-			submit(BotEventConnected, "event-id", nil, nil, nil)
+			submit(BotEventConnected, "event-id", nil, testState1, nil, nil)
 
 			botInfo, events := check()
 
@@ -153,13 +156,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, nil, nil)
+			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, nil, nil) // not recorded as "not interesting"
+			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2, nil, nil) // not recorded as "not interesting"
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, nil, nil) // complete ignored as a dup
+			submit(BotEventIdle, "idle-2", []string{"dim:1", "id:bot-id"}, testState2, nil, nil) // complete ignored as a dup
 
 			botInfo, events := check()
 
@@ -172,6 +175,7 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, botInfo.FirstSeen, should.Match(testTime))
 			assert.That(t, botInfo.LastSeen, should.Match(datastore.NewUnindexedOptional(testTime.Add(2*time.Second))))
 			assert.That(t, botInfo.IdleSince, should.Match(datastore.NewUnindexedOptional(testTime.Add(time.Second))))
+			assert.That(t, botInfo.State, should.Match(*testState2))
 			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
 				BotStateNotInMaintenance,
 				BotStateAlive,
@@ -184,12 +188,26 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, botInfo.LastEventDedupKey, should.Equal("bot_idle:idle-2"))
 		})
 
+		t.Run("Connect => Idle (no state)", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
+			tickOneSec()
+			submit(BotEventIdle, "idle", nil, nil, nil, nil) // do not pass state
+
+			botInfo, events := check()
+
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"bot_idle",
+			}))
+			assert.That(t, botInfo.State, should.Match(*testState1))
+		})
+
 		t.Run("Connect => Idle => Dimension change", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, nil, nil)
+			submit(BotEventIdle, "idle-1", []string{"dim:1", "id:bot-id"}, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", []string{"dim:2", "id:bot-id"}, nil, nil)
+			submit(BotEventIdle, "idle-2", []string{"dim:2", "id:bot-id"}, testState1, nil, nil)
 
 			botInfo, events := check()
 
@@ -205,11 +223,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Maintenance", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", nil, nil, nil)
+			submit(BotEventIdle, "idle-1", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", nil, &BotHealthInfo{Maintenance: "boom"}, nil)
+			submit(BotEventIdle, "idle-2", nil, testState1, &BotHealthInfo{Maintenance: "boom"}, nil)
 
 			botInfo, events := check()
 
@@ -228,11 +246,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Quarantine", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-1", nil, nil, nil)
+			submit(BotEventIdle, "idle-1", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle-2", nil, &BotHealthInfo{Quarantined: "boom"}, nil)
+			submit(BotEventIdle, "idle-2", nil, testState1, &BotHealthInfo{Quarantined: "boom"}, nil)
 
 			botInfo, events := check()
 
@@ -251,11 +269,11 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Dead", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, nil, nil)
+			submit(BotEventIdle, "idle", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventMissing, "missing", nil, nil, nil)
+			submit(BotEventMissing, "missing", nil, testState1, nil, nil)
 
 			botInfo, events := check()
 
@@ -274,13 +292,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Idle => Dead => Logging", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, nil, nil)
+			submit(BotEventIdle, "idle", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventMissing, "missing", nil, nil, nil)
+			submit(BotEventMissing, "missing", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventError, "error", nil, nil, nil)
+			submit(BotEventError, "error", nil, testState1, nil, nil)
 
 			botInfo, events := check()
 
@@ -300,13 +318,13 @@ func TestBotInfoUpdate(t *testing.T) {
 		})
 
 		t.Run("Connect => Task => Task update => Idle", func(t *ftt.Test) {
-			submit(BotEventConnected, "connect", nil, nil, nil)
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventTask, "task", nil, nil, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
+			submit(BotEventTask, "task", nil, testState1, nil, &BotEventTaskInfo{TaskID: "task-id", TaskName: "task-name"})
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-1", nil, nil, nil)
+			submit(BotEventTaskUpdate, "update-1", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventTaskUpdate, "update-2", nil, nil, nil)
+			submit(BotEventTaskUpdate, "update-2", nil, testState1, nil, nil)
 			tickOneSec()
 
 			botInfo, events := check()
@@ -327,9 +345,9 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, events[1].TaskID, should.Equal("task-id"))
 
 			// Finishes the task and becomes idle.
-			submit(BotEventTaskCompleted, "completed", nil, nil, nil)
+			submit(BotEventTaskCompleted, "completed", nil, testState1, nil, nil)
 			tickOneSec()
-			submit(BotEventIdle, "idle", nil, nil, &BotEventTaskInfo{})
+			submit(BotEventIdle, "idle", nil, testState1, nil, &BotEventTaskInfo{})
 
 			botInfo, events = check()
 

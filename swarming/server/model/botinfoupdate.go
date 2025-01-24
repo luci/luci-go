@@ -149,6 +149,11 @@ type BotInfoUpdate struct {
 	// Can be omitted if Dimensions are set.
 	BotGroupDimensions map[string][]string
 
+	// State is a JSON dict with the bot state as reported by the bot itself.
+	//
+	// If nil, the current recorded bot state won't be changed.
+	State *botstate.Dict
+
 	// CallInfo is information about the current bot API call, if any.
 	//
 	// It is absent when BotInfo is updated by the server itself (e.g. from
@@ -183,10 +188,8 @@ type BotInfoUpdate struct {
 type BotEventCallInfo struct {
 	// SessionID is the ID of the current bot session.
 	SessionID string
-	// Version of the bot code the bot is running.
+	// Version of the bot code the bot is running, if known.
 	Version string
-	// State is a dict with the bot state as reported by the bot.
-	State botstate.Dict
 	// ExternalIP is the bot's IP address as seen by the server.
 	ExternalIP string
 	// AuthenticatedAs is the bot's credentials as seen by the server.
@@ -366,16 +369,24 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 		current.Dimensions = u.Dimensions
 	}
 
+	// Unlike dimension changes, state changes do not trigger recording of the
+	// event, since state is updated on every bot call and we don't want to
+	// emit an event for every bot call. We just update the state inside BotInfo.
+	if u.State != nil {
+		current.State = *u.State
+	}
+
 	// Update LastSeen only if the event was originated on the bot. LastSeen is
 	// scanned by a cron job to detect dead bots. It is specifically not indexed
 	// to avoid hotspotting the datastore.
 	if u.CallInfo != nil {
 		current.LastSeen = datastore.NewUnindexedOptional(now)
 		current.SessionID = u.CallInfo.SessionID
-		current.Version = u.CallInfo.Version
-		current.State = u.CallInfo.State
 		current.ExternalIP = u.CallInfo.ExternalIP
 		current.AuthenticatedAs = u.CallInfo.AuthenticatedAs
+		if u.CallInfo.Version != "" {
+			current.Version = u.CallInfo.Version
+		}
 	}
 
 	// Update the health status of the bot. This is used below to calculate

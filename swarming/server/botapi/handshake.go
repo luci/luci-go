@@ -271,12 +271,12 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	update := &model.BotInfoUpdate{
 		BotID:              botID,
 		BotGroupDimensions: botGroup.Dimensions,
+		State:              &body.State,
 		EventType:          model.BotEventConnected,
 		EventDedupKey:      sessionID,
 		CallInfo: botCallInfo(ctx, &model.BotEventCallInfo{
 			SessionID: sessionID,
 			Version:   body.Version,
-			State:     body.State,
 		}),
 		HealthInfo: &healthInfo,
 		TaskInfo:   &model.BotEventTaskInfo{}, // intentionally empty, not running a task
