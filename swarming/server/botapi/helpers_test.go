@@ -21,62 +21,27 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/swarming/server/botstate"
-	"go.chromium.org/luci/swarming/server/model"
 )
 
-func TestBotHealthInfo(t *testing.T) {
+func TestCheckBotHealthInfo(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		state  any    // quarantine message in the state
-		dims   string // quarantine message in the dimensions
-		expect string // the expected message
+		before string   // initial state dict
+		dim    []string // quarantine message in the dimensions
+		msg    string   // the expected quarantine message
+		after  string   // the expected state dict after
 	}{
-		{},
-		{"Boo", "", "Boo"},
-		{"", "Boo", "Boo"},
-		{true, "", model.GenericQuarantineMessage},
-		{"", "True", model.GenericQuarantineMessage},
-		{"Boo", "True", "Boo"},
-		{true, "Boo", "Boo"},
+		{"{}", nil, "", "{}"},
+		{"{}", []string{"Boo"}, "Boo", "{\n  \"quarantined\": \"Boo\"\n}"},
+		{"{\"quarantined\": true}", []string{"Boo"}, "Boo", "{\n  \"quarantined\": \"Boo\"\n}"},
+		{"{\"quarantined\": \"Blah\"}", []string{"Boo"}, "Blah", "{\"quarantined\": \"Blah\"}"},
 	}
 
 	for _, cs := range cases {
-		state, err := botstate.Edit(botstate.Dict{}, func(d *botstate.EditableDict) error {
-			if cs.state != nil {
-				return d.Write(botstate.QuarantinedKey, cs.state)
-			}
-			return nil
-		})
+		info, out, err := checkBotHealthInfo(botstate.Dict{JSON: []byte(cs.before)}, cs.dim)
 		assert.NoErr(t, err)
-
-		dims := map[string][]string{}
-		if cs.dims != "" {
-			dims[botstate.QuarantinedKey] = []string{cs.dims}
-		}
-
-		info := botHealthInfo(&state, dims)
-		assert.That(t, info.Quarantined, should.Equal(cs.expect))
-	}
-}
-
-func TestUpdateQuarantineInState(t *testing.T) {
-	t.Parallel()
-
-	cases := []struct {
-		before  string
-		message string
-		after   string
-	}{
-		{"{}", "", "{}"},
-		{"{}", "Boo", "{\n  \"quarantined\": \"Boo\"\n}"},
-		{"{\"quarantined\": true}", "Boo", "{\n  \"quarantined\": \"Boo\"\n}"},
-		{"{\"quarantined\": \"Blah\"}", "Boo", "{\"quarantined\": \"Blah\"}"},
-	}
-
-	for _, cs := range cases {
-		out, err := updateQuarantineInState(botstate.Dict{JSON: []byte(cs.before)}, cs.message)
-		assert.NoErr(t, err)
+		assert.That(t, info.Quarantined, should.Equal(cs.msg))
 		assert.That(t, string(out.JSON), should.Equal(cs.after))
 	}
 }

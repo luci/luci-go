@@ -217,15 +217,11 @@ func (srv *BotAPIServer) Handshake(ctx context.Context, body *HandshakeRequest, 
 	}
 
 	// See if the bot self-quarantined, in maintenance or sent invalid handshake
-	// request. Update the quarantine message in the state accordingly (this is
-	// useful when the quarantine status is communicated through dimensions, not
-	// the state).
-	healthInfo := botHealthInfo(&body.State, body.Dimensions)
-	if healthInfo.Quarantined != "" {
-		body.State, err = updateQuarantineInState(body.State, healthInfo.Quarantined)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
-		}
+	// request. This also update the quarantine message in the state if necessary.
+	var healthInfo model.BotHealthInfo
+	healthInfo, body.State, err = checkBotHealthInfo(body.State, body.Dimensions[botstate.QuarantinedKey])
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update the bot state dict: %s", err)
 	}
 
 	// Figure out what bot version the bot should be running.

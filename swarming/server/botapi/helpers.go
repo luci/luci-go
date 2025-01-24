@@ -35,8 +35,12 @@ func botCallInfo(ctx context.Context, info *model.BotEventCallInfo) *model.BotEv
 	return info
 }
 
-// botHealthInfo extract quarantine and maintenance status of the bot.
-func botHealthInfo(state *botstate.Dict, dims map[string][]string) model.BotHealthInfo {
+// checkBotHealthInfo extract quarantine and maintenance status of the bot from
+// the state and the "quarantined" dimension values, and (if the bot is indeed
+// quarantined) updates the state dict to indicate that.
+//
+// Returns the extracted health info and the updated state dict.
+func checkBotHealthInfo(state botstate.Dict, quarantinedDim []string) (model.BotHealthInfo, botstate.Dict, error) {
 	// First read the quarantine message from the state.
 	var msg string
 	var val any
@@ -48,42 +52,41 @@ func botHealthInfo(state *botstate.Dict, dims map[string][]string) model.BotHeal
 
 	// If it is not there or trivial, try to find it in dimensions instead.
 	if msg == "" || msg == model.GenericQuarantineMessage {
-		if vals := dims[botstate.QuarantinedKey]; len(vals) > 0 {
-			switch strings.ToLower(vals[0]) {
+		if len(quarantinedDim) > 0 {
+			switch strings.ToLower(quarantinedDim[0]) {
 			case "true", "1":
 				msg = model.GenericQuarantineMessage
 			case "":
 				// Do nothing.
 			default:
-				msg = vals[0]
+				msg = quarantinedDim[0]
 			}
 		}
 	}
 
-	return model.BotHealthInfo{
+	healthInfo := model.BotHealthInfo{
 		Quarantined: msg,
 		Maintenance: state.MustReadString(botstate.MaintenanceKey),
 	}
-}
 
-// updateQuarantineInState puts the given quarantine message into the state.
-//
-// Only replaces a missing or trivial message. Does not overwrite any existing
-// message (it can theoretically be more informative).
-func updateQuarantineInState(state botstate.Dict, quarantineMsg string) (botstate.Dict, error) {
-	if quarantineMsg == "" {
-		return state, nil
-	}
-	return botstate.Edit(state, func(state *botstate.EditableDict) error {
-		var cur any
-		if err := state.Read(botstate.QuarantinedKey, &cur); err != nil {
-			return errors.Annotate(err, "reading %s", botstate.QuarantinedKey).Err()
-		}
-		if msg := model.QuarantineMessage(cur); msg == "" || msg == model.GenericQuarantineMessage {
-			if err := state.Write(botstate.QuarantinedKey, quarantineMsg); err != nil {
-				return errors.Annotate(err, "writing %s", botstate.QuarantinedKey).Err()
+	// Put the quarantine message into the state as well to have it there
+	// consistently, regardless of how it was reported by the bot initially.
+	// Only replace a missing or trivial message. Do not overwrite any existing
+	// message (it can theoretically be more informative).
+	var err error
+	if healthInfo.Quarantined != "" {
+		state, err = botstate.Edit(state, func(state *botstate.EditableDict) error {
+			var cur any
+			if err := state.Read(botstate.QuarantinedKey, &cur); err != nil {
+				return errors.Annotate(err, "reading %s", botstate.QuarantinedKey).Err()
 			}
-		}
-		return nil
-	})
+			if msg := model.QuarantineMessage(cur); msg == "" || msg == model.GenericQuarantineMessage {
+				if err := state.Write(botstate.QuarantinedKey, healthInfo.Quarantined); err != nil {
+					return errors.Annotate(err, "writing %s", botstate.QuarantinedKey).Err()
+				}
+			}
+			return nil
+		})
+	}
+	return healthInfo, state, err
 }

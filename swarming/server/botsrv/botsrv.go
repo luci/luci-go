@@ -53,7 +53,21 @@ type RequestBody interface {
 // Request is extracted from an authenticated request from a bot.
 type Request struct {
 	Session    *internalspb.Session // the bot session from the session token
-	Dimensions []string             // bot's "k:v" dimensions as stored in the datastore
+	Dimensions BotDimensions        // bot's "k:v" dimensions as stored in the datastore
+}
+
+// BotDimensions is a sorted list of bot's "k:v" dimensions.
+type BotDimensions []string
+
+// DimensionValues extracts dimension values from a list of flat dimensions.
+func (dims BotDimensions) DimensionValues(key string) []string {
+	var out []string
+	for _, kv := range dims {
+		if k, v, ok := strings.Cut(kv, ":"); ok && k == key {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 // Response is serialized as JSON and sent to the bot.
@@ -73,7 +87,7 @@ type KnownBotInfo struct {
 	// SessionID is the current bot session ID of this bot.
 	SessionID string
 	// Dimensions is "k:v" dimensions registered by this bot in the last poll.
-	Dimensions []string
+	Dimensions BotDimensions
 }
 
 // KnownBotProvider knows how to return information about existing bots.
@@ -243,11 +257,11 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 		// Verify that required dimensions are present. This is enforced when the
 		// bot is registered. This check is here to avoid panics up the stack if
 		// something in the datastore is wrong for some reason.
-		if !slices.Equal(extractDim(knownBot.Dimensions, "id"), []string{session.BotId}) {
+		if !slices.Equal(knownBot.Dimensions.DimensionValues("id"), []string{session.BotId}) {
 			writeErr(status.Errorf(codes.Internal, `wrong stored "id" dimension`), req, wrt, RB(body), session)
 			return
 		}
-		if len(extractDim(knownBot.Dimensions, "pool")) == 0 {
+		if len(knownBot.Dimensions.DimensionValues("pool")) == 0 {
 			writeErr(status.Errorf(codes.Internal, `no stored "pool" dimension`), req, wrt, RB(body), session)
 			return
 		}
@@ -367,15 +381,4 @@ func writeErr(err error, req *http.Request, rw http.ResponseWriter, body Request
 	}
 
 	http.Error(rw, err.Error(), httpCode)
-}
-
-// extractDim extracts dimension values from a list of flat dimensions.
-func extractDim(dims []string, key string) []string {
-	var out []string
-	for _, kv := range dims {
-		if k, v, ok := strings.Cut(kv, ":"); ok && k == key {
-			out = append(out, v)
-		}
-	}
-	return out
 }
