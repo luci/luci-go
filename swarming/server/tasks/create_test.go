@@ -43,6 +43,7 @@ func TestCreation(t *testing.T) {
 		datastore.GetTestable(ctx).Consistent(true)
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = cryptorand.MockForTest(ctx, 0)
+		lt := MockTQTasks()
 
 		t.Run("duplicate_with_request_id", func(t *ftt.Test) {
 			t.Run("error_fetching_result", func(t *ftt.Test) {
@@ -191,7 +192,6 @@ func TestCreation(t *testing.T) {
 					Created:        now.Add(-10 * time.Hour),
 				}
 				assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
-
 				c := Creation{
 					Request: &model.TaskRequest{
 						TaskSlices: []model.TaskSlice{
@@ -201,14 +201,18 @@ func TestCreation(t *testing.T) {
 								},
 							},
 						},
+						RBEInstance: "rbe-instance",
 					},
-					ServerVersion: "v1",
-					Config:        cfg,
+					ServerVersion:   "v1",
+					Config:          cfg,
+					LifecycleTasks:  lt,
+					SwarmingProject: "swarming",
 				}
 
 				trs, err = c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
+				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
 			})
 		})
 
@@ -249,7 +253,10 @@ func TestCreation(t *testing.T) {
 							},
 						},
 					},
+					RBEInstance: "rbe-instance",
 				},
+				LifecycleTasks:  lt,
+				SwarmingProject: "swarming",
 			}
 			trs, err := c.Run(ctx)
 			assert.NoErr(t, err)
@@ -270,6 +277,7 @@ func TestCreation(t *testing.T) {
 			}
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
+			assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
 		})
 	})
 }

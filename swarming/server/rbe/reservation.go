@@ -17,6 +17,8 @@ package rbe
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -488,4 +490,71 @@ func EnqueueCancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskTo
 			},
 		},
 	})
+}
+
+// EnqueueNew enqueues a `rbe-enqueue` task to create RBE reservation for
+// a task.
+func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
+	sliceIndex := ttr.TaskSliceIndex()
+	s := tr.TaskSlices[sliceIndex]
+	botID, constrains, err := dimsToBotIDAndConstraints(s.Properties.Dimensions)
+	if err != nil {
+		return err
+	}
+
+	// Add extra 30 seconds to compensate for bot's own overhead.
+	timeout := s.Properties.ExecutionTimeoutSecs + s.Properties.GracePeriodSecs + 30
+
+	logging.Infof(ctx, "RBE: enqueuing task to launch %s", ttr.RBEReservation)
+	return tq.AddTask(ctx, &tq.Task{
+		Title: fmt.Sprintf("%s-%d", taskID, sliceIndex),
+		Payload: &internalspb.EnqueueRBETask{
+			Payload: &internalspb.TaskPayload{
+				ReservationId:  ttr.RBEReservation,
+				TaskId:         taskID,
+				SliceIndex:     int32(sliceIndex),
+				TaskToRunShard: ttr.MustShardIndex(),
+				TaskToRunId:    ttr.Key.IntID(),
+				DebugInfo: &internalspb.TaskPayload_DebugInfo{
+					Created:  timestamppb.New(clock.Now(ctx)),
+					TaskName: tr.Name,
+				},
+			},
+			RbeInstance:         tr.RBEInstance,
+			Expiry:              timestamppb.New(ttr.Expiration.Get()),
+			RequestedBotId:      botID,
+			Constraints:         constrains,
+			Priority:            int32(tr.Priority),
+			SchedulingAlgorithm: tr.SchedulingAlgorithm,
+			ExecutionTimeout:    durationpb.New(time.Duration(timeout) * time.Second),
+		},
+	})
+}
+
+func dimsToBotIDAndConstraints(dims model.TaskDimensions) (botID string, constraints []*internalspb.EnqueueRBETask_Constraint, err error) {
+	// TODO(chanli): handle the special ChromeOS case where Scheduke schedules
+	// tasks targeting specific duts.
+	// The short-term workaround would be using `dut_id` as bot id when
+	// communicating with RBE, since bots and duts are 1-1 mapped as of now.
+	// In the long term after bots and duts are decoupled (bots become generic
+	// and can talk to any duts), we could remove it.
+	for key, values := range dims {
+		switch key {
+		case "id":
+			if len(values) != 1 || strings.Contains(values[0], "|") {
+				return "", nil, errors.Reason("invalid id dimension: %q", values).Err()
+			}
+			botID = values[0]
+		default:
+			for _, v := range values {
+				constraints = append(constraints, &internalspb.EnqueueRBETask_Constraint{
+					Key:           key,
+					AllowedValues: strings.Split(v, "|"),
+				})
+			}
+		}
+	}
+
+	return botID, constraints, nil
 }

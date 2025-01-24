@@ -132,6 +132,7 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		ServerVersion:   srv.ServerVersion,
 		Config:          state.Config,
 		SwarmingProject: srv.SwarmingProject,
+		LifecycleTasks:  srv.TaskLifecycleTasks,
 	}
 
 	// Create the task in a loop to retry on task ID collisions.

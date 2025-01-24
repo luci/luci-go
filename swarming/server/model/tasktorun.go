@@ -17,6 +17,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -160,6 +161,25 @@ func (t *TaskToRun) Consume(claimID string) {
 // TaskSliceIndex returns the entity's task slice index.
 func (t *TaskToRun) TaskSliceIndex() int {
 	return int(t.Key.IntID() >> 4)
+}
+
+// ShardIndex returns the entity's TaskToRun shard index.
+func (t *TaskToRun) ShardIndex() (int32, error) {
+	kind := t.Key.Kind()
+	idx, err := strconv.ParseInt(kind[len("TaskToRunShard"):], 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int32(idx), nil
+}
+
+// MustShardIndex is like ShardIndex, but panics when encounters error.
+func (t *TaskToRun) MustShardIndex() int32 {
+	idx, err := t.ShardIndex()
+	if err != nil {
+		panic(err)
+	}
+	return idx
 }
 
 // TaskToRunKey builds a TaskToRun key given the task request key, the entity

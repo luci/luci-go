@@ -101,6 +101,13 @@ func TestTaskToRuns(t *testing.T) {
 			}
 		})
 
+		t.Run("MustShardIndex", func(t *ftt.Test) {
+			for i := range len(toRuns) {
+				assert.That(t, toRuns[i].MustShardIndex(),
+					should.Equal(sliceToToRunShardIndex(taskSlices[i])))
+			}
+		})
+
 		t.Run("TaskRequestToToRunKey errors", func(t *ftt.Test) {
 			t.Run("fail", func(t *ftt.Test) {
 				_, err := TaskRequestToToRunKey(ctx, taskReq, -1)

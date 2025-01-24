@@ -54,6 +54,13 @@ func (lt *LifecycleTasksForTests) enqueueRBECancel(ctx context.Context, tr *mode
 	return nil
 }
 
+func (lt *LifecycleTasksForTests) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	lt.m.Lock()
+	defer lt.m.Unlock()
+	lt.fakeTaskQueue["rbe-new"] = append(lt.fakeTaskQueue["rbe-new"], fmt.Sprintf("%s/%s", tr.RBEInstance, ttr.RBEReservation))
+	return nil
+}
+
 func (lt *LifecycleTasksForTests) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	if tr.PubSubTopic == "fail-the-task" {
@@ -106,6 +113,6 @@ func (lt *LifecycleTasksForTests) PopNTasks(qName string, n int) (res []string) 
 // MockTQTasks returns TestTQTasks with mocked tq functions for managing a task's lifecycle.
 func MockTQTasks() *LifecycleTasksForTests {
 	return &LifecycleTasksForTests{
-		fakeTaskQueue: make(map[string][]string, 4),
+		fakeTaskQueue: make(map[string][]string, 5),
 	}
 }

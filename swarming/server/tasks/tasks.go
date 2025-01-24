@@ -32,6 +32,7 @@ type LifecycleTasks interface {
 	EnqueueBatchCancel(ctx context.Context, batch []string, killRunning bool, purpose string, retries int32) error
 	enqueueChildCancellation(ctx context.Context, taskID string) error
 	enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
+	enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error
 	sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error
 }
 
@@ -87,6 +88,10 @@ func (l *LifecycleTasksViaTQ) enqueueChildCancellation(ctx context.Context, task
 
 func (l *LifecycleTasksViaTQ) enqueueRBECancel(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
 	return rbe.EnqueueCancel(ctx, tr, ttr)
+}
+
+func (l *LifecycleTasksViaTQ) enqueueRBENew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+	return rbe.EnqueueNew(ctx, tr, ttr)
 }
 
 func (l *LifecycleTasksViaTQ) sendOnTaskUpdate(ctx context.Context, tr *model.TaskRequest, trs *model.TaskResultSummary) error {

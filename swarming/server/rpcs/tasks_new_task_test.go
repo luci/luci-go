@@ -44,6 +44,7 @@ import (
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 	"go.chromium.org/luci/swarming/server/validate"
 )
 
@@ -1563,7 +1564,10 @@ func TestNewTask(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.Use(context.Background())
-	srv := TasksServer{}
+	srv := TasksServer{
+		SwarmingProject:    "swarming",
+		TaskLifecycleTasks: tasks.MockTQTasks(),
+	}
 	state := mockNewTaskRequestState()
 	ftt.Run("perm_check_failures", t, func(t *ftt.Test) {
 		t.Run("pool_not_exist", func(t *ftt.Test) {

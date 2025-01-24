@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/swarming/internal/remoteworkers"
+	configpb "go.chromium.org/luci/swarming/proto/config"
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
 	"go.chromium.org/luci/swarming/server/model"
 )
@@ -430,14 +431,13 @@ func TestReservationServer(t *testing.T) {
 	})
 }
 
-func TestEnqueueCancel(t *testing.T) {
+func TestEnqueueTasks(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.Use(context.Background())
 	ctx = txndefer.FilterRDS(ctx)
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
-	ctx, sch := tq.TestingContext(ctx, nil)
 	rbe := mockedReservationClient{
 		newState: remoteworkers.ReservationState_RESERVATION_PENDING,
 	}
@@ -450,6 +450,7 @@ func TestEnqueueCancel(t *testing.T) {
 	srv.RegisterTQTasks(&tq.Default)
 
 	ftt.Run("EnqueueCancel", t, func(t *ftt.Test) {
+		ctx, sch := tq.TestingContext(ctx, nil)
 		tID := "65aba3a3e6b99310"
 		reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
 		tr := &model.TaskRequest{
@@ -488,6 +489,115 @@ func TestEnqueueCancel(t *testing.T) {
 		actual := sch.Tasks()[0].Payload.(*internalspb.CancelRBETask)
 		assert.Loosely(t, actual, should.Match(expected))
 	})
+
+	ftt.Run("EnqueueNew", t, func(t *ftt.Test) {
+		ctx, sch := tq.TestingContext(ctx, nil)
+		tID := "65aba3a3e6b69310"
+		reqKey, _ := model.TaskIDToRequestKey(ctx, tID)
+		tr := &model.TaskRequest{
+			Key:         reqKey,
+			RBEInstance: "rbe-instance",
+			TaskSlices: []model.TaskSlice{
+				{
+					Properties: model.TaskProperties{
+						Dimensions: model.TaskDimensions{
+							"d1": {"v1", "v2|v3"},
+							"id": {"bot1"},
+						},
+						ExecutionTimeoutSecs: 3600,
+						GracePeriodSecs:      300,
+					},
+				},
+			},
+			Name:                "task",
+			Priority:            30,
+			SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+		}
+		ttrKey, _ := model.TaskRequestToToRunKey(ctx, tr, 0)
+		ttr := &model.TaskToRun{
+			Key:            ttrKey,
+			RBEReservation: "rbe-reservation",
+		}
+		txErr := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+			return EnqueueNew(ctx, tr, ttr)
+		}, nil)
+		assert.NoErr(t, txErr)
+		assert.Loosely(t, sch.Tasks(), should.HaveLength(1))
+
+		expected := &internalspb.EnqueueRBETask{
+			Payload: &internalspb.TaskPayload{
+				ReservationId:  "rbe-reservation",
+				TaskId:         tID,
+				SliceIndex:     0,
+				TaskToRunShard: 5,
+				TaskToRunId:    1,
+				DebugInfo: &internalspb.TaskPayload_DebugInfo{
+					Created:  timestamppb.New(now),
+					TaskName: "task",
+				},
+			},
+			RbeInstance:    "rbe-instance",
+			Expiry:         timestamppb.New(ttr.Expiration.Get()),
+			RequestedBotId: "bot1",
+			Constraints: []*internalspb.EnqueueRBETask_Constraint{
+				{Key: "d1", AllowedValues: []string{"v1"}},
+				{Key: "d1", AllowedValues: []string{"v2", "v3"}},
+			},
+			Priority:            30,
+			SchedulingAlgorithm: configpb.Pool_SCHEDULING_ALGORITHM_FIFO,
+			ExecutionTimeout:    durationpb.New(time.Duration(3930) * time.Second),
+		}
+		actual := sch.Tasks()[0].Payload.(*internalspb.EnqueueRBETask)
+		assert.Loosely(t, actual, should.Match(expected))
+	})
+}
+
+func TestDimsToBotIDAndConstraints(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name        string
+		dims        model.TaskDimensions
+		botID       string
+		constraints []*internalspb.EnqueueRBETask_Constraint
+		err         string
+	}{
+		{
+			name: "ok_with_bot_id",
+			dims: model.TaskDimensions{
+				"id":  {"bot1"},
+				"key": {"value"},
+			},
+			botID: "bot1",
+			constraints: []*internalspb.EnqueueRBETask_Constraint{
+				{Key: "key", AllowedValues: []string{"value"}},
+			},
+		},
+		{
+			name: "ok_with_no_id",
+			dims: model.TaskDimensions{
+				"key": {"value"},
+			},
+			botID: "",
+			constraints: []*internalspb.EnqueueRBETask_Constraint{
+				{Key: "key", AllowedValues: []string{"value"}},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			botID, constraints, err := dimsToBotIDAndConstraints(tc.dims)
+			assert.That(t, botID, should.Equal(tc.botID))
+			assert.That(t, constraints, should.Match(tc.constraints))
+			if tc.err == "" {
+				assert.NoErr(t, err)
+			} else {
+				assert.That(t, err, should.ErrLike(tc.err))
+			}
+		})
+	}
+
 }
 
 type mockedReservationClient struct {

@@ -55,6 +55,9 @@ type Creation struct {
 
 	// Config is a snapshot of the server configuration.
 	Config *cfg.Config
+
+	// LifecycleTasks is used to emit TQ tasks related to Swarming task lifecycle.
+	LifecycleTasks LifecycleTasks
 }
 
 // Run creates and stores all the entities to create a new task.
@@ -209,9 +212,11 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 
 		if ttr != nil {
 			toPut = append(toPut, ttr)
+			if err := c.LifecycleTasks.enqueueRBENew(ctx, tr, ttr); err != nil {
+				return err
+			}
 		}
 
-		// TODO(b/355013251): submit to RBE
 		// TODO(b/355013510): handle BuildTask
 		// TODO(b/355012874): Pubsub notification
 
