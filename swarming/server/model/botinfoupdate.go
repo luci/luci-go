@@ -24,9 +24,24 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/swarming/server/botstate"
+)
+
+var botInfoTxnCount = metric.NewCounter(
+	"swarming/botinfo/txn",
+	"Counter of BotInfo transactions",
+	&types.MetricMetadata{},
+	// The BotEventType that caused the transaction.
+	field.String("event"),
+	// One of: ok, timeout, canceled, conflict, other.
+	field.String("outcome"),
+	// The number of attempts used (can be 0 if the first BeginTransaction RPC fails).
+	field.Int("attempts"),
 )
 
 const (
@@ -34,6 +49,8 @@ const (
 	oldBotEventsCutOff = 24 * 4 * 7 * time.Hour
 	// oldBotInfoCutoff defines age of BotInfo entities for the TTL policy.
 	oldBotInfoCutoff = oldBotEventsCutOff + 4*time.Hour
+	// maxTxnAttempts is how many times to retry BotInfo transaction.
+	maxTxnAttempts = 10
 )
 
 // Events that happen very often and which are not worth to record every time.
@@ -260,7 +277,9 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*PreparedBotInfoUpdate, err
 		panic("Current can only be used when reusing an existing transaction")
 	}
 	var prepared *PreparedBotInfoUpdate
+	var attempt int
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		attempt++
 		var err error
 		if prepared, err = u.Prepare(ctx); err != nil {
 			return err
@@ -272,7 +291,10 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*PreparedBotInfoUpdate, err
 			prepared.EntitiesToPut = nil // dealt with them already
 		}
 		return err
-	}, nil)
+	}, &datastore.TransactionOptions{
+		Attempts: maxTxnAttempts,
+	})
+	u.reportBotInfoTxn(ctx, attempt, err)
 	if err != nil {
 		return nil, err
 	}
@@ -526,5 +548,30 @@ func (u *BotInfoUpdate) eventMessage() string {
 		return u.HealthInfo.Quarantined
 	default:
 		return ""
+	}
+}
+
+// reportBotInfoTxn updates botInfoTxnCount metric.
+//
+// Also logs errors or excessive retries.
+func (u *BotInfoUpdate) reportBotInfoTxn(ctx context.Context, attempt int, err error) {
+	var outcome string
+	switch {
+	case err == nil:
+		outcome = "ok"
+	case errors.Is(err, datastore.ErrConcurrentTransaction):
+		outcome = "conflict"
+	case errors.Is(err, context.DeadlineExceeded):
+		outcome = "timeout"
+	case errors.Is(err, context.Canceled):
+		outcome = "canceled"
+	default:
+		outcome = "other"
+	}
+	botInfoTxnCount.Add(ctx, 1, string(u.EventType), outcome, min(attempt, maxTxnAttempts))
+	if err != nil {
+		logging.Errorf(ctx, "Failed to submit %s after %d attempt(s): %s", u.EventType, attempt, err)
+	} else if attempt > 3 {
+		logging.Warningf(ctx, "Submitted %s after %d attempt(s)", u.EventType, attempt)
 	}
 }
