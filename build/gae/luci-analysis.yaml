@@ -4,14 +4,8 @@ extends: ../gae.yaml
 inputsdir: ../../analysis
 
 build:
-  # This builds the frontend code, updating ${inputsdir}/frontend/ui/dist.
-  - run: ['make', 'release']
-    cwd: ${inputsdir}/frontend/ui
-
   - copy: ${inputsdir}/dispatch.yaml
     dest: ${contextdir}/dispatch.yaml
-  # This packages all Go code, including the frontend code from
-  # frontend/ui/dist.
   - go_gae_bundle: ${inputsdir}/frontend/app.yaml
     go_gae_bundle_as_module: True
     dest: ${contextdir}/frontend
