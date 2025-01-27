@@ -18,19 +18,19 @@ import { colors } from '@/fleet/theme/colors';
 
 export const HighlightCharacter = ({
   children,
-  highlights,
+  highlightIndexes,
   ...typographyProps
 }: TypographyProps & {
   children: string;
-  highlights?: number[];
+  highlightIndexes?: number[];
 }) => (
   <Typography {...typographyProps}>
-    {highlights && highlights.length > 0
+    {highlightIndexes && highlightIndexes.length > 0
       ? children.split('').map((letter, i) => (
           <span
             key={`item-${children}-letter-${i}`}
             css={{
-              color: highlights.includes(i) ? colors.blue[600] : '',
+              color: highlightIndexes.includes(i) ? colors.blue[600] : '',
             }}
           >
             {letter}

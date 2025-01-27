@@ -23,22 +23,29 @@ export function Footer({ onCancelClick, onApplyClick }: FooterProps) {
   return (
     <div>
       <Divider
-        component="li"
         sx={{
           paddingTop: '6px',
+          backgroundColor: 'transparent',
         }}
       />
       <div
         css={{
           display: 'flex',
           gap: 12,
-          padding: '6px 15px 0 30px',
+          padding: '6px 30px 6px 30px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
-        <Button disableElevation onClick={onCancelClick}>
+        <Button disableElevation onClick={onCancelClick} tabIndex={-1}>
           Cancel
         </Button>
-        <Button disableElevation variant="contained" onClick={onApplyClick}>
+        <Button
+          disableElevation
+          variant="contained"
+          onClick={onApplyClick}
+          tabIndex={-1}
+        >
           Apply
         </Button>
       </div>

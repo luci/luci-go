@@ -210,7 +210,7 @@ export function OptionsDropdown({
             />
             <HighlightCharacter
               variant="body2"
-              highlights={highlightedCharactersWrapper?.[o2.value]}
+              highlightIndexes={highlightedCharactersWrapper?.[o2.value]}
             >
               {o2.label}
             </HighlightCharacter>

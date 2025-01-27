@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import React from 'react';
+
 function isStringArray(x: unknown): x is string[] {
   return Array.isArray(x) && x.every((element) => typeof element === 'string');
 }
@@ -61,6 +63,14 @@ function fuzzySubstring(query: string, target: string): [number, number[]] {
   return [score, matchesIdx];
 }
 
+interface FuzzySortedElement<ChildrenElementType, ParentElementType> {
+  el: ChildrenElementType;
+  parent?: ParentElementType;
+  label: string;
+  score: number;
+  matches: number[];
+}
+
 /**
  * @param searchString the string to search in the list
  * * @param minScore the minimum score an elements needs to have to be included in
@@ -91,7 +101,7 @@ export const fuzzySort =
       el: ParentElementType,
     ) => ChildrenElementType[] = () => [],
     getLabel?: (el: ParentElementType | ChildrenElementType) => string,
-  ) => {
+  ): FuzzySortedElement<ParentElementType, ChildrenElementType>[] => {
     if (!isStringArray(list) && getLabel === undefined) {
       throw Error(
         'If the list is not of type strings[] you need to provide a getter function',
@@ -114,13 +124,17 @@ export const fuzzySort =
           ...obj,
           score,
           matches,
-        };
+        } as FuzzySortedElement<ParentElementType, ChildrenElementType>;
       })
       .filter(({ score }) => score >= minScore)
       .sort(({ score: score1 }, { score: score2 }) => score2 - score1);
   };
 
-export function hasAnyModifier(e: React.KeyboardEvent<HTMLDivElement>) {
+export function hasAnyModifier(
+  e:
+    | React.KeyboardEvent<HTMLDivElement>
+    | React.KeyboardEvent<HTMLUListElement>,
+) {
   return e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
 }
 
@@ -146,6 +160,7 @@ export function keyboardUpDownHandler(e: React.KeyboardEvent) {
         | HTMLElement
         | undefined;
       nextSibling?.focus();
+      e.preventDefault();
       e.stopPropagation();
       break;
     case e.ctrlKey && 'k':
@@ -154,10 +169,12 @@ export function keyboardUpDownHandler(e: React.KeyboardEvent) {
         (currentIndex - 1 + siblings.length) % siblings.length
       ] as HTMLElement | undefined;
       prevSibling?.focus();
+      e.preventDefault();
       e.stopPropagation();
       break;
     case ' ':
       target.click();
+      e.preventDefault();
       e.stopPropagation();
       break;
   }

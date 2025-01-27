@@ -79,7 +79,7 @@ export function ColumnsButton() {
         disableFooter={true}
         enableSearchInput={true}
         onFlipOption={toggleColumn}
-        maxHeight={700}
+        maxHeight={500}
       />
     </div>
   );
