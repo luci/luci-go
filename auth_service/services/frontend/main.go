@@ -133,8 +133,6 @@ func main() {
 		srv.ConfigurePRPC(func(s *prpc.Server) {
 			// Allow cross-origin calls.
 			s.AccessControl = prpc.AllowOriginAll
-			// TODO(crbug/1082369): Remove this once it is default.
-			s.UseProtobufV2 = true
 		})
 
 		// The middleware chain applied to all UI routes.

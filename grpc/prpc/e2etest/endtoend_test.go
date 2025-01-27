@@ -111,7 +111,6 @@ func (s *service) getIncomingFields() []string {
 
 func newTestClient(ctx context.Context, svc *service, opts *prpc.Options) (*prpctest.Server, *prpc.Client, testpb.GreeterClient) {
 	ts := prpctest.Server{}
-	ts.UseProtobufV2 = true
 	testpb.RegisterGreeterServer(&ts, svc)
 	ts.Start(ctx)
 
@@ -324,7 +323,6 @@ func testJSONFieldMask(t *testing.T, testAdvanced bool, cfg func(srv *prpc.Serve
 	svc := service{R: &testpb.HelloReply{Message: "sup"}}
 
 	ts := prpctest.Server{}
-	ts.UseProtobufV2 = true
 	testpb.RegisterGreeterServer(&ts, &svc)
 
 	if cfg != nil {

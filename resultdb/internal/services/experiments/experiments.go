@@ -43,7 +43,8 @@ type experimentsServer struct {
 func InitServer(srv *server.Server) error {
 	pb.RegisterExperimentsServer(srv, NewExperimentsServer())
 
-	// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+	// TODO(crbug/1082369): Remove this workaround once non-standard field masks
+	// are no longer used in the API.
 	srv.ConfigurePRPC(func(p *prpc.Server) {
 		p.EnableNonStandardFieldMasks = true
 	})

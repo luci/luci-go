@@ -146,7 +146,8 @@ func main() {
 		srv.ConfigurePRPC(func(s *prpc.Server) {
 			// Allow cross-origin calls.
 			s.AccessControl = prpc.AllowOriginAll
-			// TODO(crbug/1082369): Remove this workaround once field masks can be decoded.
+			// TODO(crbug/1082369): Remove this workaround once non-standard field
+			// masks are no longer used in the API.
 			s.EnableNonStandardFieldMasks = true
 		})
 

@@ -250,10 +250,6 @@ type Server struct {
 	// disable the limit (with the risk of OOMing the server).
 	MaxRequestSize int
 
-	// UseProtobufV2 is a temporary flag to opt in into using protobuf v2
-	// serialization rules before them become default.
-	UseProtobufV2 bool
-
 	// EnableNonStandardFieldMasks enables support for non-standard values of
 	// google.protobuf.FieldMask in requests.
 	//
@@ -363,23 +359,14 @@ func (s *Server) InstallHandlers(r *router.Router, base router.MiddlewareChain) 
 func (s *Server) requestCodec(f Format) protoCodec {
 	switch f {
 	case FormatBinary:
-		if s.UseProtobufV2 {
-			return codecWireV2
-		}
-		return codecWireV1
+		return codecWireV2
 	case FormatJSONPB:
 		if s.EnableNonStandardFieldMasks {
 			return codecJSONV1WithHack // the only codec that supports advanced field masks
 		}
-		if s.UseProtobufV2 {
-			return codecJSONV2
-		}
-		return codecJSONV1
+		return codecJSONV2
 	case FormatText:
-		if s.UseProtobufV2 {
-			return codecTextV2
-		}
-		return codecTextV1
+		return codecTextV2
 	default:
 		panic(fmt.Sprintf("impossible invalid format %v", f))
 	}
@@ -389,20 +376,11 @@ func (s *Server) requestCodec(f Format) protoCodec {
 func (s *Server) responseCodec(f Format) protoCodec {
 	switch f {
 	case FormatBinary:
-		if s.UseProtobufV2 {
-			return codecWireV2
-		}
-		return codecWireV1
+		return codecWireV2
 	case FormatJSONPB:
-		if s.UseProtobufV2 {
-			return codecJSONV2
-		}
-		return codecJSONV1
+		return codecJSONV2
 	case FormatText:
-		if s.UseProtobufV2 {
-			return codecTextV2
-		}
-		return codecTextV1
+		return codecTextV2
 	default:
 		panic(fmt.Sprintf("impossible invalid format %v", f))
 	}

@@ -200,11 +200,9 @@ func main() {
 					AllowHeaders:             []string{gerritauth.Method.Header},
 				}
 			}
-			// TODO(crbug/1082369): Remove this workaround once field masks can be
-			// decoded.
+			// TODO(crbug/1082369): Remove this workaround once non-standard field
+			// masks are no longer used in the API.
 			p.EnableNonStandardFieldMasks = true
-			// Opt-in into experimental protobuf v2 serialization.
-			p.UseProtobufV2 = true
 		})
 
 		pb.RegisterBuildsServer(srv, rpc.NewBuilds())
