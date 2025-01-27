@@ -49,10 +49,10 @@ const (
 //
 // Groups service contains methods to examine groups.
 type GroupsClient interface {
-	// ListGroups returns all the groups currently stored in LUCI Auth service
-	// datastore. The groups will be returned in alphabetical order based on their
+	// ListGroups returns all the groups in the AuthDB.
+	// The groups will be returned in alphabetical order based on their
 	// ID.
-	ListGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListGroupsResponse, error)
+	ListGroups(ctx context.Context, in *ListGroupsRequest, opts ...grpc.CallOption) (*ListGroupsResponse, error)
 	// GetGroup returns information about an individual group, given the name.
 	GetGroup(ctx context.Context, in *GetGroupRequest, opts ...grpc.CallOption) (*AuthGroup, error)
 	// CreateGroup creates a new group.
@@ -81,7 +81,7 @@ func NewGroupsClient(cc grpc.ClientConnInterface) GroupsClient {
 	return &groupsClient{cc}
 }
 
-func (c *groupsClient) ListGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListGroupsResponse, error) {
+func (c *groupsClient) ListGroups(ctx context.Context, in *ListGroupsRequest, opts ...grpc.CallOption) (*ListGroupsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListGroupsResponse)
 	err := c.cc.Invoke(ctx, Groups_ListGroups_FullMethodName, in, out, cOpts...)
@@ -157,10 +157,10 @@ func (c *groupsClient) GetExpandedGroup(ctx context.Context, in *GetGroupRequest
 //
 // Groups service contains methods to examine groups.
 type GroupsServer interface {
-	// ListGroups returns all the groups currently stored in LUCI Auth service
-	// datastore. The groups will be returned in alphabetical order based on their
+	// ListGroups returns all the groups in the AuthDB.
+	// The groups will be returned in alphabetical order based on their
 	// ID.
-	ListGroups(context.Context, *emptypb.Empty) (*ListGroupsResponse, error)
+	ListGroups(context.Context, *ListGroupsRequest) (*ListGroupsResponse, error)
 	// GetGroup returns information about an individual group, given the name.
 	GetGroup(context.Context, *GetGroupRequest) (*AuthGroup, error)
 	// CreateGroup creates a new group.
@@ -189,7 +189,7 @@ type GroupsServer interface {
 // pointer dereference when methods are called.
 type UnimplementedGroupsServer struct{}
 
-func (UnimplementedGroupsServer) ListGroups(context.Context, *emptypb.Empty) (*ListGroupsResponse, error) {
+func (UnimplementedGroupsServer) ListGroups(context.Context, *ListGroupsRequest) (*ListGroupsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListGroups not implemented")
 }
 func (UnimplementedGroupsServer) GetGroup(context.Context, *GetGroupRequest) (*AuthGroup, error) {
@@ -232,7 +232,7 @@ func RegisterGroupsServer(s grpc.ServiceRegistrar, srv GroupsServer) {
 }
 
 func _Groups_ListGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ListGroupsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func _Groups_ListGroups_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: Groups_ListGroups_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GroupsServer).ListGroups(ctx, req.(*emptypb.Empty))
+		return srv.(GroupsServer).ListGroups(ctx, req.(*ListGroupsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

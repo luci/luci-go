@@ -102,9 +102,10 @@ func (srv *Server) RefreshPeriodically(ctx context.Context) {
 }
 
 // ListGroups implements the corresponding RPC method.
-func (srv *Server) ListGroups(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListGroupsResponse, error) {
+func (srv *Server) ListGroups(ctx context.Context, request *rpcpb.ListGroupsRequest) (*rpcpb.ListGroupsResponse, error) {
 	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, true)
+	allowStale := !request.GetFresh()
+	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, allowStale)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch groups: %s", err)
 	}

@@ -25,10 +25,10 @@ import "google/protobuf/timestamp.proto";
 
 // Groups service contains methods to examine groups.
 service Groups {
-  // ListGroups returns all the groups currently stored in LUCI Auth service
-  // datastore. The groups will be returned in alphabetical order based on their
+  // ListGroups returns all the groups in the AuthDB.
+  // The groups will be returned in alphabetical order based on their
   // ID.
-  rpc ListGroups(google.protobuf.Empty) returns (ListGroupsResponse);
+  rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
 
   // GetGroup returns information about an individual group, given the name.
   rpc GetGroup(GetGroupRequest) returns (AuthGroup);
@@ -53,6 +53,12 @@ service Groups {
   // - `globs` will include direct and indirect globs; and
   // - `nested` will include direct and indirect subgroups.
   rpc GetExpandedGroup(GetGroupRequest) returns (AuthGroup);
+}
+
+message ListGroupsRequest {
+  // Setting this flag will ensure the returned groups will be from a fresh
+  // snapshot of all groups. Otherwise, a cached result may be returned.
+  bool fresh = 1;
 }
 
 // ListGroupsResponse is all the groups listed in LUCI Auth Service.

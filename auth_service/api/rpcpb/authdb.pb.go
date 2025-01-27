@@ -213,7 +213,7 @@ func (x *GetPrincipalPermissionsRequest) GetPrincipal() *Principal {
 	return nil
 }
 
-// PrincipalPermissions specifies a list of realm permissions.
+// PrincipalPermissions specifies a list of realm permissions for a single principal.
 type PrincipalPermissions struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	RealmPermissions []*RealmPermissions    `protobuf:"bytes,1,rep,name=realmPermissions,proto3" json:"realmPermissions,omitempty"`

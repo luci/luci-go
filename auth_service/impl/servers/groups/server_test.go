@@ -24,7 +24,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/types/known/emptypb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -141,8 +140,8 @@ func TestGroupsServer(t *testing.T) {
 		), should.BeNil)
 		assert.Loosely(t, putRev(ctx, 123), should.BeNil)
 
-		// What expected response should be, built with pb.
-		expectedResp := &rpcpb.ListGroupsResponse{
+		// What the initial expected response should be, built with pb.
+		initialExpected := &rpcpb.ListGroupsResponse{
 			Groups: []*rpcpb.AuthGroup{
 				{
 					Name:                 "google/test-google-group",
@@ -187,15 +186,70 @@ func TestGroupsServer(t *testing.T) {
 			},
 		}
 
-		resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
+		initialResp, err := srv.ListGroups(ctx, &rpcpb.ListGroupsRequest{})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp.Groups, should.Match(expectedResp.Groups))
+		assert.Loosely(t, initialResp, should.Match(initialExpected))
+
+		// Remove a group from Datastore and update the AuthDB revision.
+		toRemove, err := model.GetAuthGroup(ctx, "z-test-group")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, datastore.Delete(ctx, toRemove), should.BeNil)
+		assert.Loosely(t, putRev(ctx, 124), should.BeNil)
+
+		// What the fresh expected response should be, built with pb.
+		freshExpected := &rpcpb.ListGroupsResponse{
+			Groups: []*rpcpb.AuthGroup{
+				{
+					Name:                 "google/test-google-group",
+					Description:          "This is a test google group.",
+					Owners:               "test-group",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-2@example.com",
+					CallerCanModify:      false,
+					CallerCanViewMembers: false,
+					Etag:                 etag,
+				},
+				{
+					Name:                 "test-group-2",
+					Description:          "This is another test group.",
+					Owners:               "test-group",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-2@example.com",
+					CallerCanModify:      false,
+					CallerCanViewMembers: true,
+					Etag:                 etag,
+				},
+				{
+					Name:                 "test-group-3",
+					Description:          "This is yet another test group.",
+					Owners:               "testers",
+					CreatedTs:            timestamppb.New(createdTime),
+					CreatedBy:            "user:test-user-1@example.com",
+					CallerCanModify:      true,
+					CallerCanViewMembers: true,
+					Etag:                 etag,
+				},
+			},
+		}
 
 		t.Run("returns cached groups", func(t *ftt.Test) {
 			tc.Add(maxStaleness - 1)
-			resp, err := srv.ListGroups(ctx, &emptypb.Empty{})
+			resp, err := srv.ListGroups(ctx, &rpcpb.ListGroupsRequest{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp.Groups, should.Match(expectedResp.Groups))
+			assert.Loosely(t, resp, should.Match(initialExpected))
+		})
+
+		t.Run("refreshes when cached groups are stale", func(t *ftt.Test) {
+			tc.Add(maxStaleness)
+			resp, err := srv.ListGroups(ctx, &rpcpb.ListGroupsRequest{})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match(freshExpected))
+		})
+
+		t.Run("returns fresh groups if requested", func(t *ftt.Test) {
+			resp, err := srv.ListGroups(ctx, &rpcpb.ListGroupsRequest{Fresh: true})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match(freshExpected))
 		})
 	})
 
