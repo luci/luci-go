@@ -257,8 +257,8 @@ class GroupChooser {
     return this.getGroupSet().has(groupName);
   }
 
-  refetchGroups() {
-    return api.groups().then((response) => {
+  refetchGroups(requireFresh) {
+    return api.groups(requireFresh).then((response) => {
       this.setGroupList(response.groups);
     });
   }
@@ -885,7 +885,7 @@ class NewGroupForm extends GroupForm {
 // Wrapper around an RPC call that originated from some form.
 // Locks UI while call is running, then refreshes the list of groups once it
 // resolves.
-const waitForResult = (cb, groupChooser, form, listErrorBox) => {
+const waitForResult = (cb, groupChooser, form, listErrorBox, requireFresh) => {
   let done = new Promise((resolve, reject) => {
     // Lock the group chooser while running the request.
     groupChooser.disableInteraction();
@@ -903,7 +903,7 @@ const waitForResult = (cb, groupChooser, form, listErrorBox) => {
     cb
       .then((response) => {
         // Call succeeded. Refetch the list of groups.
-        groupChooser.refetchGroups()
+        groupChooser.refetchGroups(requireFresh)
           .then(() => {
             // Groups list updated - trigger resolve.
             resolve(response);
@@ -954,7 +954,7 @@ window.onload = () => {
     // Called when the 'Create' button is clicked.
     form.onCreate = (group) => {
       const request = api.groupCreate(group);
-      waitForResult(request, groupChooser, form, listErrorBox)
+      waitForResult(request, groupChooser, form, listErrorBox, true)
         .then((response) => {
           groupChooser.setSelection(response.name, 'Group created.');
           // If the creation was done in dry-run mode, the group won't exist.
@@ -972,7 +972,7 @@ window.onload = () => {
     // Called when the 'Update group' button is clicked.
     form.onUpdate = (group) => {
       const request = api.groupUpdate(group);
-      waitForResult(request, groupChooser, form, listErrorBox)
+      waitForResult(request, groupChooser, form, listErrorBox, false)
         .then((response) => {
           groupChooser.setSelection(response.name, 'Group updated.');
         });
@@ -981,7 +981,7 @@ window.onload = () => {
     // Called when the 'Delete group' button is clicked.
     form.onDelete = (group) => {
       const request = api.groupDelete(group.name, group.etag);
-      waitForResult(request, groupChooser, form, listErrorBox)
+      waitForResult(request, groupChooser, form, listErrorBox, true)
         .then(() => {
           groupChooser.selectDefault();
         });
@@ -1059,7 +1059,7 @@ window.onload = () => {
   loadingBox.setLoadStatus(true);
   mainContent.hide();
 
-  groupChooser.refetchGroups()
+  groupChooser.refetchGroups(false)
     .then(() => {
       jumpToCurrentGroup(true);
       onCurrentGroupInURLChange(() => {

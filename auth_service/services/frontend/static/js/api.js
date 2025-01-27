@@ -138,8 +138,8 @@ var api = (function () {
   //// API calls.
 
   // Get all groups.
-  exports.groups = function () {
-    return call('auth.service.Groups', 'ListGroups');
+  exports.groups = function (requireFresh) {
+    return call('auth.service.Groups', 'ListGroups', { 'fresh': requireFresh });
   };
 
   // Get individual group.
