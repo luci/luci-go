@@ -113,6 +113,17 @@ func (d *Dict) Err() error {
 	return d.Unseal()
 }
 
+// IsEmpty returns true if the dict is empty, unsealing it first if necessary.
+//
+// A broken dict is considered non-empty. Use Err() to check for that separately
+// before or after calling IsEmpty().
+func (d *Dict) IsEmpty() bool {
+	if err := d.Unseal(); err != nil {
+		return false
+	}
+	return len(d.dict) == 0
+}
+
 // ToProperty is a part of datastore.PropertyConverter interface.
 func (d *Dict) ToProperty() (datastore.Property, error) {
 	var prop datastore.Property

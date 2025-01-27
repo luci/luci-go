@@ -28,14 +28,39 @@ import (
 func TestDict(t *testing.T) {
 	t.Parallel()
 
-	t.Run("Empty", func(t *testing.T) {
+	t.Run("Absent", func(t *testing.T) {
 		d := Dict{}
 
 		assert.That(t, d.String(), should.Equal("<empty>"))
 		assert.That(t, d.Equal(d), should.BeTrue)
 		assert.NoErr(t, d.Unseal())
+		assert.That(t, d.IsEmpty(), should.BeTrue)
 
 		runDatastoreTest(t, d, nil)
+		runJSONTest(t, d)
+	})
+
+	t.Run("Null", func(t *testing.T) {
+		d := Dict{JSON: []byte("null")}
+
+		assert.That(t, d.String(), should.Equal("null"))
+		assert.That(t, d.Equal(d), should.BeTrue)
+		assert.NoErr(t, d.Unseal())
+		assert.That(t, d.IsEmpty(), should.BeTrue)
+
+		runDatastoreTest(t, d, []byte("null"))
+		runJSONTest(t, d)
+	})
+
+	t.Run("Empty", func(t *testing.T) {
+		d := Dict{JSON: []byte("{  }")}
+
+		assert.That(t, d.String(), should.Equal("{  }"))
+		assert.That(t, d.Equal(d), should.BeTrue)
+		assert.NoErr(t, d.Unseal())
+		assert.That(t, d.IsEmpty(), should.BeTrue)
+
+		runDatastoreTest(t, d, []byte("{  }"))
 		runJSONTest(t, d)
 	})
 
@@ -47,6 +72,7 @@ func TestDict(t *testing.T) {
 		assert.That(t, d.String(), should.Equal(string(blob)))
 		assert.That(t, d.Equal(d), should.BeTrue)
 		assert.NoErr(t, d.Unseal())
+		assert.That(t, d.IsEmpty(), should.BeFalse)
 
 		runDatastoreTest(t, d, blob)
 		runJSONTest(t, d)
@@ -82,6 +108,9 @@ func TestDict(t *testing.T) {
 		blob := []byte(`not JSON`)
 
 		d := Dict{JSON: blob}
+
+		// Considered non-empty.
+		assert.That(t, d.IsEmpty(), should.BeFalse)
 
 		// Still can be round-tripped through datastore.
 		runDatastoreTest(t, d, blob)

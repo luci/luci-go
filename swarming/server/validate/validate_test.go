@@ -91,6 +91,27 @@ func TestSessionID(t *testing.T) {
 	}
 }
 
+func TestBotRequestUUID(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		val string
+		err any
+	}{
+		{"good-value_/09AZ", nil},
+		{"", nil},
+		{strings.Repeat("a", 50), nil},
+		{strings.Repeat("a", 51), "should match"},
+		{"   ", "should match"},
+	}
+
+	for _, cs := range cases {
+		t.Run(cs.val, func(t *testing.T) {
+			assert.That(t, BotRequestUUID(cs.val), should.ErrLike(cs.err))
+		})
+	}
+}
+
 func TestTag(t *testing.T) {
 	t.Parallel()
 	cases := []struct {

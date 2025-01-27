@@ -65,9 +65,10 @@ const (
 )
 
 var (
-	dimensionKeyRe = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
-	sessionIDRe    = regexp.MustCompile(`^[a-z0-9\-_/]{1,50}$`)
-	reservedTags   = stringset.NewFromSlice([]string{"swarming.terminate"}...)
+	dimensionKeyRe    = regexp.MustCompile(`^[a-zA-Z\-\_\.][0-9a-zA-Z\-\_\.]*$`)
+	sessionIDRe       = regexp.MustCompile(`^[a-z0-9\-_/]{1,50}$`)
+	botRequestUUDIDRe = regexp.MustCompile(`^[a-zA-Z0-9\-_/]{0,50}$`)
+	reservedTags      = stringset.NewFromSlice([]string{"swarming.terminate"}...)
 
 	// cloudProjectIDRE is the cloud project identifier regex derived from
 	// https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin
@@ -119,6 +120,16 @@ func DimensionValue(val string) error {
 func SessionID(val string) error {
 	if !sessionIDRe.MatchString(val) {
 		return errors.Reason("should match %s", sessionIDRe).Err()
+	}
+	return nil
+}
+
+// BotRequestUUID checks if `val` is a valid bot request UUID.
+//
+// An empty string is considered valid as well.
+func BotRequestUUID(val string) error {
+	if !botRequestUUDIDRe.MatchString(val) {
+		return errors.Reason("should match %s", botRequestUUDIDRe).Err()
 	}
 	return nil
 }
