@@ -101,6 +101,14 @@ export interface PingDeviceManagerRequest {
 export interface PingDeviceManagerResponse {
 }
 
+/** PingUfsRequest intentionally contains nothing. */
+export interface PingUfsRequest {
+}
+
+/** PingUfsResponse intentionally contains nothing. */
+export interface PingUfsResponse {
+}
+
 export interface Device {
   /**
    * In the case of VMs, device id could be the GCE instance name. For physical
@@ -181,6 +189,32 @@ export interface GetDeviceDimensionsResponse_LabelsEntry {
 
 export interface LabelValues {
   readonly values: readonly string[];
+}
+
+export interface CountDevicesRequest {
+  /**
+   * See: AIP-160 (https://google.aip.dev/160) for the syntax
+   * Same filter format as ListDevicesRequest
+   */
+  readonly filter: string;
+}
+
+export interface CountDevicesResponse {
+  readonly total: number;
+  readonly taskState: TaskStateCounts | undefined;
+  readonly deviceState: DeviceStateCounts | undefined;
+}
+
+export interface TaskStateCounts {
+  readonly busy: number;
+  readonly idle: number;
+}
+
+export interface DeviceStateCounts {
+  readonly ready: number;
+  readonly needManualRepair: number;
+  readonly needRepair: number;
+  readonly repairFailed: number;
 }
 
 function createBasePingRequest(): PingRequest {
@@ -351,6 +385,92 @@ export const PingDeviceManagerResponse: MessageFns<PingDeviceManagerResponse> = 
   },
   fromPartial(_: DeepPartial<PingDeviceManagerResponse>): PingDeviceManagerResponse {
     const message = createBasePingDeviceManagerResponse() as any;
+    return message;
+  },
+};
+
+function createBasePingUfsRequest(): PingUfsRequest {
+  return {};
+}
+
+export const PingUfsRequest: MessageFns<PingUfsRequest> = {
+  encode(_: PingUfsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PingUfsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePingUfsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PingUfsRequest {
+    return {};
+  },
+
+  toJSON(_: PingUfsRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<PingUfsRequest>): PingUfsRequest {
+    return PingUfsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<PingUfsRequest>): PingUfsRequest {
+    const message = createBasePingUfsRequest() as any;
+    return message;
+  },
+};
+
+function createBasePingUfsResponse(): PingUfsResponse {
+  return {};
+}
+
+export const PingUfsResponse: MessageFns<PingUfsResponse> = {
+  encode(_: PingUfsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PingUfsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePingUfsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PingUfsResponse {
+    return {};
+  },
+
+  toJSON(_: PingUfsResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<PingUfsResponse>): PingUfsResponse {
+    return PingUfsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<PingUfsResponse>): PingUfsResponse {
+    const message = createBasePingUfsResponse() as any;
     return message;
   },
 };
@@ -1259,15 +1379,357 @@ export const LabelValues: MessageFns<LabelValues> = {
   },
 };
 
+function createBaseCountDevicesRequest(): CountDevicesRequest {
+  return { filter: "" };
+}
+
+export const CountDevicesRequest: MessageFns<CountDevicesRequest> = {
+  encode(message: CountDevicesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.filter !== "") {
+      writer.uint32(10).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountDevicesRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountDevicesRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountDevicesRequest {
+    return { filter: isSet(object.filter) ? globalThis.String(object.filter) : "" };
+  },
+
+  toJSON(message: CountDevicesRequest): unknown {
+    const obj: any = {};
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountDevicesRequest>): CountDevicesRequest {
+    return CountDevicesRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountDevicesRequest>): CountDevicesRequest {
+    const message = createBaseCountDevicesRequest() as any;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseCountDevicesResponse(): CountDevicesResponse {
+  return { total: 0, taskState: undefined, deviceState: undefined };
+}
+
+export const CountDevicesResponse: MessageFns<CountDevicesResponse> = {
+  encode(message: CountDevicesResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.total !== 0) {
+      writer.uint32(8).int32(message.total);
+    }
+    if (message.taskState !== undefined) {
+      TaskStateCounts.encode(message.taskState, writer.uint32(18).fork()).join();
+    }
+    if (message.deviceState !== undefined) {
+      DeviceStateCounts.encode(message.deviceState, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CountDevicesResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCountDevicesResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.total = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.taskState = TaskStateCounts.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.deviceState = DeviceStateCounts.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CountDevicesResponse {
+    return {
+      total: isSet(object.total) ? globalThis.Number(object.total) : 0,
+      taskState: isSet(object.taskState) ? TaskStateCounts.fromJSON(object.taskState) : undefined,
+      deviceState: isSet(object.deviceState) ? DeviceStateCounts.fromJSON(object.deviceState) : undefined,
+    };
+  },
+
+  toJSON(message: CountDevicesResponse): unknown {
+    const obj: any = {};
+    if (message.total !== 0) {
+      obj.total = Math.round(message.total);
+    }
+    if (message.taskState !== undefined) {
+      obj.taskState = TaskStateCounts.toJSON(message.taskState);
+    }
+    if (message.deviceState !== undefined) {
+      obj.deviceState = DeviceStateCounts.toJSON(message.deviceState);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<CountDevicesResponse>): CountDevicesResponse {
+    return CountDevicesResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<CountDevicesResponse>): CountDevicesResponse {
+    const message = createBaseCountDevicesResponse() as any;
+    message.total = object.total ?? 0;
+    message.taskState = (object.taskState !== undefined && object.taskState !== null)
+      ? TaskStateCounts.fromPartial(object.taskState)
+      : undefined;
+    message.deviceState = (object.deviceState !== undefined && object.deviceState !== null)
+      ? DeviceStateCounts.fromPartial(object.deviceState)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseTaskStateCounts(): TaskStateCounts {
+  return { busy: 0, idle: 0 };
+}
+
+export const TaskStateCounts: MessageFns<TaskStateCounts> = {
+  encode(message: TaskStateCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.busy !== 0) {
+      writer.uint32(8).int32(message.busy);
+    }
+    if (message.idle !== 0) {
+      writer.uint32(16).int32(message.idle);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): TaskStateCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTaskStateCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.busy = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.idle = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TaskStateCounts {
+    return {
+      busy: isSet(object.busy) ? globalThis.Number(object.busy) : 0,
+      idle: isSet(object.idle) ? globalThis.Number(object.idle) : 0,
+    };
+  },
+
+  toJSON(message: TaskStateCounts): unknown {
+    const obj: any = {};
+    if (message.busy !== 0) {
+      obj.busy = Math.round(message.busy);
+    }
+    if (message.idle !== 0) {
+      obj.idle = Math.round(message.idle);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<TaskStateCounts>): TaskStateCounts {
+    return TaskStateCounts.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<TaskStateCounts>): TaskStateCounts {
+    const message = createBaseTaskStateCounts() as any;
+    message.busy = object.busy ?? 0;
+    message.idle = object.idle ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeviceStateCounts(): DeviceStateCounts {
+  return { ready: 0, needManualRepair: 0, needRepair: 0, repairFailed: 0 };
+}
+
+export const DeviceStateCounts: MessageFns<DeviceStateCounts> = {
+  encode(message: DeviceStateCounts, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.ready !== 0) {
+      writer.uint32(8).int32(message.ready);
+    }
+    if (message.needManualRepair !== 0) {
+      writer.uint32(16).int32(message.needManualRepair);
+    }
+    if (message.needRepair !== 0) {
+      writer.uint32(24).int32(message.needRepair);
+    }
+    if (message.repairFailed !== 0) {
+      writer.uint32(32).int32(message.repairFailed);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeviceStateCounts {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeviceStateCounts() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.ready = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.needManualRepair = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.needRepair = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.repairFailed = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeviceStateCounts {
+    return {
+      ready: isSet(object.ready) ? globalThis.Number(object.ready) : 0,
+      needManualRepair: isSet(object.needManualRepair) ? globalThis.Number(object.needManualRepair) : 0,
+      needRepair: isSet(object.needRepair) ? globalThis.Number(object.needRepair) : 0,
+      repairFailed: isSet(object.repairFailed) ? globalThis.Number(object.repairFailed) : 0,
+    };
+  },
+
+  toJSON(message: DeviceStateCounts): unknown {
+    const obj: any = {};
+    if (message.ready !== 0) {
+      obj.ready = Math.round(message.ready);
+    }
+    if (message.needManualRepair !== 0) {
+      obj.needManualRepair = Math.round(message.needManualRepair);
+    }
+    if (message.needRepair !== 0) {
+      obj.needRepair = Math.round(message.needRepair);
+    }
+    if (message.repairFailed !== 0) {
+      obj.repairFailed = Math.round(message.repairFailed);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<DeviceStateCounts>): DeviceStateCounts {
+    return DeviceStateCounts.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<DeviceStateCounts>): DeviceStateCounts {
+    const message = createBaseDeviceStateCounts() as any;
+    message.ready = object.ready ?? 0;
+    message.needManualRepair = object.needManualRepair ?? 0;
+    message.needRepair = object.needRepair ?? 0;
+    message.repairFailed = object.repairFailed ?? 0;
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /** Ping does not send or receive any information. It just checks that the service is there. */
   Ping(request: PingRequest): Promise<PingResponse>;
   /** PingDeviceManager attempts to contact DeviceManager through Fleet Console. Useful for debugging. */
   PingDeviceManager(request: PingDeviceManagerRequest): Promise<PingDeviceManagerResponse>;
+  /** PingUfs attempts to contact UFS through Fleet Console. Useful for debugging. */
+  PingUfs(request: PingUfsRequest): Promise<PingUfsResponse>;
   /** ListDevices managed by Device Manager. */
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse>;
   /** GetDeviceDimensions provides overview of devices dimensions and their values */
   GetDeviceDimensions(request: Empty): Promise<GetDeviceDimensionsResponse>;
+  /** CountDevices provides a count of the total devices present and */
+  CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -1280,8 +1742,10 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.rpc = rpc;
     this.Ping = this.Ping.bind(this);
     this.PingDeviceManager = this.PingDeviceManager.bind(this);
+    this.PingUfs = this.PingUfs.bind(this);
     this.ListDevices = this.ListDevices.bind(this);
     this.GetDeviceDimensions = this.GetDeviceDimensions.bind(this);
+    this.CountDevices = this.CountDevices.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -1295,6 +1759,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     return promise.then((data) => PingDeviceManagerResponse.fromJSON(data));
   }
 
+  PingUfs(request: PingUfsRequest): Promise<PingUfsResponse> {
+    const data = PingUfsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "PingUfs", data);
+    return promise.then((data) => PingUfsResponse.fromJSON(data));
+  }
+
   ListDevices(request: ListDevicesRequest): Promise<ListDevicesResponse> {
     const data = ListDevicesRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "ListDevices", data);
@@ -1305,6 +1775,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = Empty.toJSON(request);
     const promise = this.rpc.request(this.service, "GetDeviceDimensions", data);
     return promise.then((data) => GetDeviceDimensionsResponse.fromJSON(data));
+  }
+
+  CountDevices(request: CountDevicesRequest): Promise<CountDevicesResponse> {
+    const data = CountDevicesRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CountDevices", data);
+    return promise.then((data) => CountDevicesResponse.fromJSON(data));
   }
 }
 

@@ -50,7 +50,7 @@ export const DeviceListPage = () => {
 
   return (
     <div>
-      <MainMetrics />
+      <MainMetrics filter={selectedOptions} />
       <Divider flexItem color={colors.grey[300]} />
       {dimensionsQuery.data && (
         <MultiSelectFilter

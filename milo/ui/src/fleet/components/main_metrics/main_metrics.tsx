@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { GrpcError } from '@chopsui/prpc-client';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
-import { Typography } from '@mui/material';
+import { Alert, Skeleton, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { ReactElement } from 'react';
 
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
+import { SelectedOptions } from '@/fleet/types';
+import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
 
 type CountDevicesResponse = {
   total: number;
@@ -49,7 +56,42 @@ const fakeData: CountDevicesResponse = {
   },
 };
 
-export function MainMetrics() {
+function getErrorMessage(error: unknown): string {
+  if (error instanceof GrpcError) {
+    if (error.code === 7) {
+      return 'You dont have permission to get the main metrics';
+    }
+
+    return error.description;
+  }
+  return 'Unknown error';
+}
+
+export function MainMetrics({ filter }: { filter: SelectedOptions }) {
+  const client = useFleetConsoleClient();
+  const countQuery = useQuery(
+    client.CountDevices.query(
+      CountDevicesRequest.fromPartial({
+        filter: stringifyFilters(filter),
+      }),
+    ),
+  );
+
+  if (countQuery.isError)
+    return (
+      <div
+        css={{
+          height: 194,
+          margin: '24px 26px',
+          border: `solid ${colors.grey[300]}`,
+          padding: '16px 21px',
+        }}
+      >
+        <Typography variant="h4">Main metrics</Typography>
+        <Alert severity="error">{getErrorMessage(countQuery.error)}</Alert>
+      </div>
+    );
+
   return (
     <div
       css={{
@@ -84,13 +126,21 @@ export function MainMetrics() {
           >
             <SingleMetric
               name="Busy"
-              value={fakeData.taskState.busy}
-              percentage={fakeData.taskState.busy / fakeData.total}
+              value={countQuery.data?.taskState?.busy}
+              percentage={
+                countQuery.data?.taskState?.busy &&
+                countQuery.data.taskState.busy / fakeData.total
+              }
+              loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Idle"
-              value={fakeData.taskState.idle}
-              percentage={fakeData.taskState.idle / fakeData.total}
+              value={countQuery.data?.taskState?.idle}
+              percentage={
+                countQuery.data?.taskState?.idle &&
+                countQuery.data.taskState.idle / fakeData.total
+              }
+              loading={countQuery.isLoading}
             />
           </div>
         </div>
@@ -105,32 +155,46 @@ export function MainMetrics() {
           >
             <SingleMetric
               name="Ready"
-              value={fakeData.deviceState.ready}
-              percentage={fakeData.deviceState.ready / fakeData.total}
+              value={countQuery.data?.deviceState?.ready}
+              percentage={
+                countQuery.data?.deviceState?.ready &&
+                countQuery.data.deviceState.ready / fakeData.total
+              }
+              loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need repair"
-              value={fakeData.deviceState.needRepair}
-              percentage={fakeData.deviceState.needRepair / fakeData.total}
+              value={countQuery.data?.deviceState?.needRepair}
+              percentage={
+                countQuery.data?.deviceState?.needRepair &&
+                countQuery.data.deviceState.needRepair / fakeData.total
+              }
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
                 />
               }
+              loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Repair failed"
-              value={fakeData.deviceState.repairFailed}
-              percentage={fakeData.deviceState.repairFailed / fakeData.total}
+              value={countQuery.data?.deviceState?.repairFailed}
+              percentage={
+                countQuery.data?.deviceState?.repairFailed &&
+                countQuery.data.deviceState.repairFailed / fakeData.total
+              }
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need manual repair"
-              value={fakeData.deviceState.needManualRepair}
+              value={countQuery.data?.deviceState?.needManualRepair}
               percentage={
-                fakeData.deviceState.needManualRepair / fakeData.total
+                countQuery.data?.deviceState?.needManualRepair &&
+                countQuery.data.deviceState.needManualRepair / fakeData.total
               }
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              loading={countQuery.isLoading}
             />
           </div>
         </div>
@@ -139,27 +203,39 @@ export function MainMetrics() {
   );
 }
 
+type SingleMetricProps = {
+  name: string;
+  value?: number;
+  percentage?: number;
+  Icon?: ReactElement;
+  loading?: boolean;
+};
+
 function SingleMetric({
   name,
   value,
   percentage,
   Icon,
-}: {
-  name: string;
-  value: number;
-  percentage: number;
-  Icon?: ReactElement;
-}) {
+  loading,
+}: SingleMetricProps) {
   return (
     <div css={{ marginRight: 'auto' }}>
       <Typography variant="body2">{name}</Typography>
       <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {Icon && Icon}
-        <Typography variant="h3">{value}</Typography>
+        {!value || loading ? (
+          <Skeleton variant="text" width={34} height={36} />
+        ) : (
+          <Typography variant="h3">{value}</Typography>
+        )}
       </div>
-      <Typography variant="caption" color={colors.grey[700]}>
-        {percentage.toLocaleString(undefined, { style: 'percent' })}
-      </Typography>
+      {!percentage || loading ? (
+        <Skeleton width={16} height={18} />
+      ) : (
+        <Typography variant="caption" color={colors.grey[700]}>
+          {percentage.toLocaleString(undefined, { style: 'percent' })}
+        </Typography>
+      )}
     </div>
   );
 }
