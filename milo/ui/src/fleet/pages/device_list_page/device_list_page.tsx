@@ -21,6 +21,7 @@ import { Helmet } from 'react-helmet';
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { DeviceTable } from '@/fleet/components/device_table';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { MainMetrics } from '@/fleet/components/main_metrics';
 import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
@@ -110,7 +111,9 @@ export function Component() {
         // this way.
         key="fleet-device-list-page"
       >
-        <DeviceListPage />
+        <LoggedInBoundary>
+          <DeviceListPage />
+        </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );

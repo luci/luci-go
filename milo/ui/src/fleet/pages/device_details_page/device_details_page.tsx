@@ -25,6 +25,7 @@ import GridLabel from '@/clusters/components/grid_label/grid_label';
 import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -158,7 +159,9 @@ export function Component() {
           <title>Streamlined Fleet UI</title>
           <link rel="icon" type="image/x-icon" href={bassFavicon} />
         </Helmet>
-        <DeviceDetailsPage />
+        <LoggedInBoundary>
+          <DeviceDetailsPage />
+        </LoggedInBoundary>
       </RecoverableErrorBoundary>
     </TrackLeafRoutePageView>
   );
