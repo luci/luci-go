@@ -17,17 +17,20 @@ import {
   gridColumnDefinitionsSelector,
   GridColumnIcon,
   gridColumnVisibilityModelSelector,
-  useGridApiContext,
   useGridSelector,
 } from '@mui/x-data-grid';
+import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useState } from 'react';
 
 import { Option, SelectedOptions } from '@/fleet/types';
 
 import { OptionsDropdown } from '../options_dropdown';
 
-export function ColumnsButton() {
-  const apiRef = useGridApiContext();
+interface ColumnsButtonProps {
+  gridRef: React.MutableRefObject<GridApiCommunity>;
+}
+
+export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
   const columnVisibilityModel = useGridSelector(
     apiRef,
     gridColumnVisibilityModelSelector,

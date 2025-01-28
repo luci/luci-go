@@ -17,14 +17,15 @@ import {
   GridColumnVisibilityModel,
   GridSortModel,
 } from '@mui/x-data-grid';
+import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import {
-  screen,
-  render,
-  cleanup,
   act,
+  cleanup,
   fireEvent,
+  render,
+  screen,
 } from '@testing-library/react';
-import { useState } from 'react';
+import { MutableRefObject, useState } from 'react';
 
 import {
   getPageSize,
@@ -88,6 +89,7 @@ function TestComponent() {
     currentRowCount < totalRowCount ? String(currentRowCount) : '';
   return (
     <DataTable
+      gridRef={{} as MutableRefObject<GridApiCommunity>}
       defaultColumnVisibilityModel={COLUMNS.reduce(
         (visibilityModel, column) => ({
           ...visibilityModel,

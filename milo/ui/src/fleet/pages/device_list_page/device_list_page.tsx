@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Divider } from '@mui/material';
+import { useGridApiRef } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import _ from 'lodash';
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { ColumnsButton } from '@/fleet/components/data_table/columns_button';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { MainMetrics } from '@/fleet/components/main_metrics';
@@ -29,7 +29,6 @@ import {
   getFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors } from '@/fleet/theme/colors';
 import { Option, SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -37,6 +36,7 @@ import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/flee
 
 export const DeviceListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const gridRef = useGridApiRef();
 
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
     getFilters(searchParams),
@@ -50,17 +50,40 @@ export const DeviceListPage = () => {
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
   return (
-    <div>
+    <div
+      css={{
+        margin: '24px',
+      }}
+    >
       <MainMetrics filter={selectedOptions} />
-      <Divider flexItem color={colors.grey[300]} />
       {dimensionsQuery.data && (
-        <MultiSelectFilter
-          filterOptions={toFilterOptions(dimensionsQuery.data)}
-          selectedOptions={selectedOptions}
-          setSelectedOptions={setSelectedOptions}
-        />
+        <div
+          css={{
+            marginTop: 24,
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 28,
+            borderRadius: 4,
+          }}
+        >
+          <MultiSelectFilter
+            filterOptions={toFilterOptions(dimensionsQuery.data)}
+            selectedOptions={selectedOptions}
+            setSelectedOptions={setSelectedOptions}
+          />
+          <ColumnsButton gridRef={gridRef} />
+        </div>
       )}
-      <DeviceTable filter={selectedOptions} />
+      <div
+        css={{
+          borderRadius: 4,
+          marginTop: 24,
+        }}
+      >
+        <DeviceTable gridRef={gridRef} filter={selectedOptions} />
+      </div>
     </div>
   );
 };

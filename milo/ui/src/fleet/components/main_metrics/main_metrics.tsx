@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { GrpcError } from '@chopsui/prpc-client';
+import styled from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Skeleton, Typography } from '@mui/material';
@@ -67,6 +68,13 @@ function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
+const Container = styled.div`
+  padding: 16px 21px;
+  gap: 28;
+  border: 1px solid ${colors.grey[300]};
+  border-radius: 4;
+`;
+
 export function MainMetrics({ filter }: { filter: SelectedOptions }) {
   const client = useFleetConsoleClient();
   const countQuery = useQuery(
@@ -77,35 +85,16 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
     ),
   );
 
-  if (countQuery.isError)
+  const getContent = () => {
+    if (countQuery.isError) {
+      return (
+        <Alert severity="error">{getErrorMessage(countQuery.error)}</Alert>
+      );
+    }
+
     return (
       <div
         css={{
-          height: 194,
-          margin: '24px 26px',
-          border: `solid ${colors.grey[300]}`,
-          padding: '16px 21px',
-        }}
-      >
-        <Typography variant="h4">Main metrics</Typography>
-        <Alert severity="error">{getErrorMessage(countQuery.error)}</Alert>
-      </div>
-    );
-
-  return (
-    <div
-      css={{
-        padding: '16px 21px',
-        margin: '24px 26px',
-        gap: 28,
-        border: `solid ${colors.grey[300]}`,
-        borderRadius: 4,
-      }}
-    >
-      <Typography variant="h4">Main metrics</Typography>
-      <div
-        css={{
-          marginTop: 24,
           display: 'flex',
           maxWidth: 1100,
         }}
@@ -199,7 +188,14 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
           </div>
         </div>
       </div>
-    </div>
+    );
+  };
+
+  return (
+    <Container>
+      <Typography variant="h4">Main metrics</Typography>
+      <div css={{ marginTop: 24 }}>{getContent()}</div>
+    </Container>
   );
 }
 

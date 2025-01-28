@@ -15,6 +15,7 @@
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
 import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
+import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useMemo, useState } from 'react';
@@ -72,9 +73,10 @@ function getRow(device: Device): Record<string, string> {
 
 interface DeviceTableProps {
   filter: SelectedOptions;
+  gridRef: React.MutableRefObject<GridApiCommunity>;
 }
 
-export function DeviceTable({ filter }: DeviceTableProps) {
+export function DeviceTable({ filter, gridRef }: DeviceTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
@@ -139,6 +141,7 @@ export function DeviceTable({ filter }: DeviceTableProps) {
         </Alert>
       ) : (
         <DataTable
+          gridRef={gridRef}
           nextPageToken={nextPageToken}
           isLoading={devicesQuery.isLoading || dimensionsQuery.isLoading}
           pagerCtx={pagerCtx}

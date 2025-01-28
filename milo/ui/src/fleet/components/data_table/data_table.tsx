@@ -20,8 +20,8 @@ import {
   GridColDef,
   GridColumnVisibilityModel,
   GridSortModel,
-  useGridApiRef,
 } from '@mui/x-data-grid';
+import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import _ from 'lodash';
 import * as React from 'react';
 
@@ -34,8 +34,7 @@ import { colors } from '@/fleet/theme/colors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { Pagination } from './pagination';
-import { visibleColumnsUpdater, getVisibleColumns } from './search_param_utils';
-import { Toolbar } from './toolbar';
+import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -46,6 +45,7 @@ const autosizeOptions: GridAutosizeOptions = {
 };
 
 interface DataTableProps {
+  gridRef: React.MutableRefObject<GridApiCommunity>;
   defaultColumnVisibilityModel: GridColumnVisibilityModel;
   columns: GridColDef[];
   rows: {
@@ -59,6 +59,7 @@ interface DataTableProps {
 }
 
 export const DataTable = ({
+  gridRef: apiRef,
   defaultColumnVisibilityModel,
   columns,
   rows,
@@ -68,7 +69,6 @@ export const DataTable = ({
   sortModel,
   onSortModelChange,
 }: DataTableProps) => {
-  const apiRef = useGridApiRef();
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
   const onColumnVisibilityModelChange = (
@@ -133,7 +133,6 @@ export const DataTable = ({
         },
       }}
       slots={{
-        toolbar: Toolbar,
         pagination: Pagination,
       }}
       slotProps={{
