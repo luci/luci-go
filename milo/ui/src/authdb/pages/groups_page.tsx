@@ -19,14 +19,13 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
-import { useEffect, createRef } from 'react';
+import { createRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { GroupsForm } from '@/authdb/components/groups_form';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
-import { GroupsList } from '@/authdb/components/groups_list';
-import { GroupsListElement } from '@/authdb/components/groups_list';
+import { GroupsList, GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useDeclarePageId } from '@/common/components/page_meta';
 import { UiPage } from '@/common/constants/view';
@@ -63,7 +62,7 @@ export function GroupsPage() {
         </AlertTitle>
         Only group editing is supported. Please visit{' '}
         <a
-          href="https://chrome-infra-auth.appspot.com/auth/groups/"
+          href={`https://${SETTINGS.authService.host}/auth/groups`}
           target="_blank"
           rel="noreferrer"
         >
