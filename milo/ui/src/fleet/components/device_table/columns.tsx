@@ -30,11 +30,23 @@ interface Dimension {
   renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
 }
 
+// this is loosely defining default columns based on b/391621656
+// technically we should avoid hardcoding labels anywhere, as we should treat them as a black box,
+// but we should be safe in this case
 export const DEFAULT_COLUMNS: string[] = [
   'id',
   'dut_id',
   'state',
   'board-name',
+  'dut_name',
+  'dut_state',
+  'label-board',
+  'label-model',
+  'label-phase',
+  'label-pool',
+  'label-servo_component',
+  'label-servo_state',
+  'label-servo_usb_state',
 ];
 
 export const BASE_DIMENSIONS: Dimension[] = [
@@ -79,7 +91,7 @@ export const BASE_DIMENSIONS: Dimension[] = [
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
   },
-];
+] as const;
 
 export const getColumns = (columnIds: string[]): GridColDef[] => {
   // order columns as in BASE_DIMENSIONS and put labels at the end
