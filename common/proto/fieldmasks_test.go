@@ -15,7 +15,6 @@
 package proto
 
 import (
-	"reflect"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -64,6 +63,33 @@ func TestFixFieldMasks(t *testing.T) {
 				}}},
 			},
 			{
+				"JSONPB field names in the message itself",
+				`{"otherSome": {"i": 1}, "customJSON": {"i": 2}, "otherFields": "id,someField"}`,
+				&testingpb.Simple{
+					OtherSome:     &testingpb.Some{I: 1},
+					OtherSomeJson: &testingpb.Some{I: 2},
+					OtherFields: &fieldmaskpb.FieldMask{Paths: []string{
+						"id", "some_field",
+					}},
+				},
+			},
+			{
+				"proto field names in the message itself",
+				`{"other_some": {"i": 1}, "other_some_json": {"i": 2}, "other_fields": "id,someField"}`,
+				&testingpb.Simple{
+					OtherSome:     &testingpb.Some{I: 1},
+					OtherSomeJson: &testingpb.Some{I: 2},
+					OtherFields: &fieldmaskpb.FieldMask{Paths: []string{
+						"id", "some_field",
+					}},
+				},
+			},
+			{
+				"unknown field in the message itself",
+				`{"this_field_isnt_defined": 1}`,
+				&testingpb.Simple{},
+			},
+			{
 				"structpb",
 				`{"properties": {"foo": "bar"}}`,
 				&testingpb.Props{
@@ -102,22 +128,6 @@ func TestFixFieldMasks(t *testing.T) {
 	})
 
 	ftt.Run("Fails", t, func(t *ftt.Test) {
-		t.Run("invalid field", func(t *ftt.Test) {
-			input := `{
-				"a": 1
-			}`
-			_, err := fixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			assert.Loosely(t, err, should.ErrLike(`unexpected field path "a"`))
-		})
-
-		t.Run("invalid field nested", func(t *ftt.Test) {
-			input := `{
-				"some": {"a": 1}
-			}`
-			_, err := fixFieldMasksBeforeUnmarshal([]byte(input), reflect.TypeOf(testingpb.Simple{}))
-			assert.Loosely(t, err, should.ErrLike(`unexpected field path "some.a"`))
-		})
-
 		t.Run("quotes", func(t *ftt.Test) {
 			assert.That(t, parseFieldMaskString("`a,b`,c"), should.Match([]string{"`a,b`", "c"}))
 		})

@@ -17,10 +17,7 @@ package proto
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 	"sync"
 	"unicode"
 
@@ -81,20 +78,19 @@ func fixFieldMasksBeforeUnmarshal(jsonMessage []byte, messageType reflect.Type) 
 		return nil, err
 	}
 
-	if err := fixFieldMasks(make([]string, 0, 10), msg, messageType); err != nil {
+	if err := fixFieldMasks(msg, messageType); err != nil {
 		return nil, err
 	}
 
 	return json.Marshal(msg)
 }
 
-func fixFieldMasks(fieldPath []string, msg map[string]any, messageType reflect.Type) error {
+func fixFieldMasks(msg map[string]any, messageType reflect.Type) error {
 	fieldTypes := getFieldTypes(messageType)
 	for name, val := range msg {
-		localPath := append(fieldPath, name)
 		typ := fieldTypes[name]
 		if typ == nil {
-			return fmt.Errorf("unexpected field path %q", strings.Join(localPath, "."))
+			continue // no such field, this is fine, since we decode with `AllowUnknownFields: true`
 		}
 
 		switch val := val.(type) {
@@ -107,7 +103,7 @@ func fixFieldMasks(fieldPath []string, msg map[string]any, messageType reflect.T
 			if typ == fieldMaskType {
 				convertObjectFieldMask(val)
 			} else if typ != structType && typ.Implements(protoMessageType) {
-				if err := fixFieldMasks(localPath, val, typ.Elem()); err != nil {
+				if err := fixFieldMasks(val, typ.Elem()); err != nil {
 					return err
 				}
 			}
@@ -115,10 +111,9 @@ func fixFieldMasks(fieldPath []string, msg map[string]any, messageType reflect.T
 		case []any:
 			if typ.Kind() == reflect.Slice && typ.Elem().Implements(protoMessageType) {
 				subMsgType := typ.Elem().Elem()
-				for i, el := range val {
+				for _, el := range val {
 					if subMsg, ok := el.(map[string]any); ok {
-						elPath := append(localPath, strconv.Itoa(i))
-						if err := fixFieldMasks(elPath, subMsg, subMsgType); err != nil {
+						if err := fixFieldMasks(subMsg, subMsgType); err != nil {
 							return err
 						}
 					}
@@ -235,12 +230,11 @@ func getFieldTypes(t reflect.Type) map[string]reflect.Type {
 	ret = map[string]reflect.Type{}
 
 	addFieldType := func(p *protov1.Properties, fieldType reflect.Type) {
-		jsonName := p.JSONName
-		if jsonName == "" {
+		ret[p.OrigName] = fieldType
+		if p.JSONName != "" {
 			// it set only for fields where the JSON name is different.
-			jsonName = p.OrigName
+			ret[p.JSONName] = fieldType
 		}
-		ret[jsonName] = fieldType
 	}
 
 	n := t.NumField()

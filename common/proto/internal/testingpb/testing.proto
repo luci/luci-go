@@ -18,7 +18,10 @@ message Some {
 message Simple {
   int64 id = 1;
   Some some = 2;
+  Some other_some = 3;
+  Some other_some_json = 4 [json_name="customJSON"];
   google.protobuf.FieldMask fields = 100;
+  google.protobuf.FieldMask other_fields = 101;
 }
 
 message Props {
