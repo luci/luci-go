@@ -287,6 +287,13 @@ func (cmd *triggerImpl) Execute(ctx context.Context, svc swarming.Client, sink *
 	logging.Infof(ctx, "The task status:\n"+
 		"  %s/task?id=%s\n", extra.ServerURL, result.TaskId)
 
+	if request.Resultdb.Enable {
+		baseURL := "https://ci.chromium.org/ui/inv"
+		invocationPrefix := "invocations/"
+		invocation := result.TaskResult.ResultdbInfo.Invocation[len(invocationPrefix):]
+		logging.Infof(ctx, "ResultDB invocation:\n  %s/%s", baseURL, invocation)
+	}
+
 	return output.Proto(sink, &clipb.SpawnTasksOutput{
 		Tasks: []*swarmingv2.TaskRequestMetadataResponse{result},
 	})
