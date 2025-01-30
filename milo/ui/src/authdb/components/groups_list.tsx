@@ -27,7 +27,10 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
 import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
-import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+import {
+  AuthGroup,
+  ListGroupsRequest,
+} from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
 interface GroupsListProps {
   selectedGroup: string;
@@ -55,7 +58,11 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
       error,
       refetch,
     } = useQuery({
-      ...client.ListGroups.query({}),
+      ...client.ListGroups.query(
+        ListGroupsRequest.fromPartial({
+          fresh: false,
+        }),
+      ),
       refetchOnWindowFocus: false,
     });
     const allGroups: readonly AuthGroup[] = response?.groups || [];
