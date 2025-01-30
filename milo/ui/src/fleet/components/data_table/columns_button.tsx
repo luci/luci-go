@@ -16,6 +16,7 @@ import Button from '@mui/material/Button';
 import {
   gridColumnDefinitionsSelector,
   GridColumnIcon,
+  GridColumnVisibilityModel,
   gridColumnVisibilityModelSelector,
   useGridSelector,
 } from '@mui/x-data-grid';
@@ -31,10 +32,12 @@ interface ColumnsButtonProps {
 }
 
 export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
+  // seems like types underneath might be messed up and don't signal that undefined is a possible value
+  // We specify it explicitely to avoid bugs, as they happened when reloading the page
   const columnVisibilityModel = useGridSelector(
     apiRef,
     gridColumnVisibilityModelSelector,
-  );
+  ) as GridColumnVisibilityModel | undefined;
   const columnDefinitions = useGridSelector(
     apiRef,
     gridColumnDefinitionsSelector,
@@ -42,6 +45,10 @@ export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   const toggleColumn = (field: string) => {
+    if (!columnVisibilityModel) {
+      return;
+    }
+
     apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
   };
 
@@ -55,9 +62,11 @@ export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
   };
 
   const selectedColumns: SelectedOptions = {
-    column: Object.keys(columnVisibilityModel).filter(
-      (key) => columnVisibilityModel[key],
-    ),
+    column: columnVisibilityModel
+      ? Object.keys(columnVisibilityModel).filter(
+          (key) => columnVisibilityModel[key],
+        )
+      : [],
   };
 
   return (
