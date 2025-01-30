@@ -208,7 +208,7 @@ func reportMaxAge(ctx context.Context, project, bucket, legacyBucket, builder st
 	return nil
 }
 
-// reportBuildCount computes and reports # of builds with SCHEDULED and STARTED.
+// reportBuildCount computes and reports # and age of builds with SCHEDULED and STARTED.
 func reportBuildCount(ctx context.Context, project, bucket, legacyBucket, builder string, bldrDefinedMetrics []string) error {
 	var nScheduled, nStarted int64
 	agesScheduled := distribution.New(V2.Age.Bucketer())
