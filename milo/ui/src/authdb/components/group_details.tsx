@@ -20,6 +20,11 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 
 import { GroupForm } from '@/authdb/components/group_form';
+import {
+  FullListingTabFlag,
+  RealmsTabFlag,
+} from '@/authdb/hooks/feature_flags';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 interface GroupDetailsProps {
@@ -29,6 +34,9 @@ interface GroupDetailsProps {
 
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const realmsFlag = useFeatureFlag(RealmsTabFlag);
+  const listingFlag = useFeatureFlag(FullListingTabFlag);
 
   const handleTabChange = (newValue: string) => {
     setSearchParams(
@@ -40,7 +48,14 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
     );
   };
 
-  const validValues = ['overview', 'permissions', 'listing'];
+  const validValues = ['overview'];
+  if (realmsFlag) {
+    validValues.push('permissions');
+  }
+  if (listingFlag) {
+    validValues.push('listing');
+  }
+
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
     value = 'overview';
@@ -64,23 +79,31 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
               <Tab label="Overview" {...a11yProps('overview')} />
-              <Tab label="Realms Permissions" {...a11yProps('permissions')} />
-              <Tab label="Full Listing" {...a11yProps('listing')} />
+              {realmsFlag && (
+                <Tab label="Realms Permissions" {...a11yProps('permissions')} />
+              )}
+              {listingFlag && (
+                <Tab label="Full Listing" {...a11yProps('listing')} />
+              )}
             </TabList>
           </Box>
           <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
             <GroupForm name={name} refetchList={refetchList} />
           </TabPanel>
-          <TabPanel
-            value="permissions"
-            role="tabpanel"
-            id="tabpanel-permissions"
-          >
-            <span> WIP Permissions Tab</span>
-          </TabPanel>
-          <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
-            <span> WIP Full Listing Tab</span>
-          </TabPanel>
+          {realmsFlag && (
+            <TabPanel
+              value="permissions"
+              role="tabpanel"
+              id="tabpanel-permissions"
+            >
+              <span> WIP Permissions Tab</span>
+            </TabPanel>
+          )}
+          {listingFlag && (
+            <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
+              <span> WIP Full Listing Tab</span>
+            </TabPanel>
+          )}
         </Box>
       </TabContext>
     </>
