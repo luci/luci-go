@@ -37,12 +37,13 @@ interface GroupsListProps {
 }
 
 export interface GroupsListElement {
-  refetchList: () => void;
+  refetchList: (fresh: boolean) => void;
   scrollToGroup: (name: string) => void;
 }
 
 export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
   function GroupList({ selectedGroup }, ref) {
+    const [forceFresh, setForceFresh] = useState(false);
     const [filteredGroups, setFilteredGroups] = useState<AuthGroup[]>();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [visibleRange, setVisibleRange] = useState({
@@ -60,7 +61,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     } = useQuery({
       ...client.ListGroups.query(
         ListGroupsRequest.fromPartial({
-          fresh: false,
+          fresh: forceFresh,
         }),
       ),
       refetchOnWindowFocus: false,
@@ -68,7 +69,14 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
     const allGroups: readonly AuthGroup[] = response?.groups || [];
 
     useImperativeHandle(ref, () => ({
-      refetchList: () => {
+      refetchList: (fresh: boolean) => {
+        if (fresh !== forceFresh) {
+          setForceFresh(fresh);
+          // The change in the state will cause a re-render. No need to call
+          // refetch anymore.
+          return;
+        }
+
         if (refetch) {
           refetch();
         }

@@ -24,7 +24,7 @@ import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params
 
 interface GroupDetailsProps {
   name: string;
-  refetchList: () => void;
+  refetchList: (fresh: boolean) => void;
 }
 
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {

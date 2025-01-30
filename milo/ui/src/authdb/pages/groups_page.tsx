@@ -50,8 +50,8 @@ export function GroupsPage() {
     return <></>;
   }
 
-  const refetchGroups = () => {
-    listRef.current?.refetchList();
+  const refetchGroups = (fresh: boolean) => {
+    listRef.current?.refetchList(fresh);
   };
 
   return (
@@ -98,7 +98,9 @@ export function GroupsPage() {
         >
           <Box className="groups-details-container">
             {groupName === 'new!' ? (
-              <GroupsFormNew onCreate={refetchGroups} />
+              // The list of groups must be the latest, to ensure the group that
+              // was just created is included.
+              <GroupsFormNew onCreate={() => refetchGroups(true)} />
             ) : (
               <>
                 <GroupDetails

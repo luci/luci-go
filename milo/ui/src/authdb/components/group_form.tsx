@@ -96,7 +96,7 @@ function isExternalGroupName(name: string) {
 
 interface GroupFormProps {
   name: string;
-  refetchList: () => void;
+  refetchList: (fresh: boolean) => void;
 }
 
 export function GroupForm({ name, refetchList }: GroupFormProps) {
@@ -160,7 +160,8 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
       refetch().then(() => {
         setIsUpdating(false);
         setSuccessEditedGroup(true);
-        refetchList();
+        // Group updates don't strictly need the latest list of groups.
+        refetchList(false);
       });
     },
     onError: () => {
@@ -175,7 +176,9 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
     },
     onSuccess: () => {
       navigate(getURLPathFromAuthGroup('administrators'), { replace: true });
-      refetchList();
+      // The list of groups must be the latest, to ensure the group that
+      // was just deleted is removed.
+      refetchList(true);
     },
     onError: () => {
       setErrorMessage('Error deleting group');
