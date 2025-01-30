@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import { createRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { GroupsForm } from '@/authdb/components/groups_form';
+import { GroupDetails } from '@/authdb/components/group_details';
 import { GroupsFormNew } from '@/authdb/components/groups_form_new';
 import { GroupsList, GroupsListElement } from '@/authdb/components/groups_list';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
@@ -101,7 +101,7 @@ export function GroupsPage() {
               <GroupsFormNew onCreate={refetchGroups} />
             ) : (
               <>
-                <GroupsForm
+                <GroupDetails
                   key={groupName}
                   name={groupName}
                   refetchList={refetchGroups}

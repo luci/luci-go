@@ -30,9 +30,9 @@ import {
   mockErrorUpdateGroup,
 } from '../testing_tools/mocks/update_group_mock';
 
-import { GroupsForm } from './groups_form';
+import { GroupForm } from './group_form';
 
-describe('<GroupsForm />', () => {
+describe('<GroupForm />', () => {
   test('if group name, desciption, owners, members, subgroups are displayed', async () => {
     const mockGroup = createMockGroupIndividual('123', true, true);
     mockFetchGetGroup(mockGroup);
@@ -45,14 +45,13 @@ describe('<GroupsForm />', () => {
         }}
       >
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
-    expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.description)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.owners)).toBeInTheDocument();
     expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
@@ -66,13 +65,13 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="123" refetchList={() => {}} />
+        <GroupForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form-error');
+    await screen.findByTestId('group-form-error');
 
     expect(screen.getByText('Failed to load groups form')).toBeInTheDocument();
-    expect(screen.queryByTestId('groups-form')).toBeNull();
+    expect(screen.queryByTestId('group-form')).toBeNull();
   });
 
   test('if external group shows only members', async () => {
@@ -87,13 +86,12 @@ describe('<GroupsForm />', () => {
         }}
       >
         <List>
-          <GroupsForm name="external/123" refetchList={() => {}} />
+          <GroupForm name="external/123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
-    expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
     expect(screen.queryByText(mockGroup.description)).toBeNull();
     expect(screen.queryByText(mockGroup.owners)).toBeNull();
     expect(screen.getByText(mockGroup.members[0])).toBeInTheDocument();
@@ -112,14 +110,14 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     // Change something so updated button is not disabled.
-    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    fireEvent.mouseEnter(screen.getByTestId('description-row'));
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
@@ -146,13 +144,13 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="123" refetchList={() => {}} />
+        <GroupForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     // Change something so updated button is not disabled.
-    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    fireEvent.mouseEnter(screen.getByTestId('description-row'));
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
@@ -181,11 +179,11 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     const deleteButton = screen.getByTestId('delete-button');
     act(() => deleteButton.click());
@@ -200,10 +198,10 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="123" refetchList={() => {}} />
+        <GroupForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     const deleteButton = screen.getByTestId('delete-button');
     act(() => deleteButton.click());
@@ -220,10 +218,10 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="123" refetchList={() => {}} />
+        <GroupForm name="123" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     const deleteButton = screen.queryByTestId('delete-button');
     expect(deleteButton).toBeNull();
@@ -246,10 +244,10 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="google/testGoogleGroup" refetchList={() => {}} />
+        <GroupForm name="google/testGoogleGroup" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     expect(screen.getByText('2 members redacted')).toBeInTheDocument();
   });
@@ -260,10 +258,10 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="test-group" refetchList={() => {}} />
+        <GroupForm name="test-group" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     expect(screen.getByText('2 members redacted')).toBeInTheDocument();
   });
@@ -274,10 +272,10 @@ describe('<GroupsForm />', () => {
 
     render(
       <FakeContextProvider>
-        <GroupsForm name="test-group" refetchList={() => {}} />
+        <GroupForm name="test-group" refetchList={() => {}} />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     expect(screen.getByText('2 members redacted')).toBeInTheDocument();
   });
@@ -289,14 +287,14 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
-    fireEvent.mouseEnter(screen.getByTestId('description-table'));
+    fireEvent.mouseEnter(screen.getByTestId('description-row'));
     await screen.findByTestId('edit-description-icon');
     const editButton = screen.getByTestId('edit-description-icon');
     act(() => editButton.click());
@@ -320,12 +318,12 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
 
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     fireEvent.mouseEnter(screen.getByTestId('owners-table'));
     await screen.findByTestId('edit-owners-icon');
@@ -344,11 +342,11 @@ describe('<GroupsForm />', () => {
     render(
       <FakeContextProvider>
         <List>
-          <GroupsForm name="123" refetchList={() => {}} />
+          <GroupForm name="123" refetchList={() => {}} />
         </List>
       </FakeContextProvider>,
     );
-    await screen.findByTestId('groups-form');
+    await screen.findByTestId('group-form');
 
     fireEvent.mouseEnter(screen.getByTestId('owners-table'));
     await screen.findByTestId('edit-owners-icon');

@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,12 +94,12 @@ function isExternalGroupName(name: string) {
   return name.indexOf('/') > 0;
 }
 
-interface GroupsFormProps {
+interface GroupFormProps {
   name: string;
   refetchList: () => void;
 }
 
-export function GroupsForm({ name, refetchList }: GroupsFormProps) {
+export function GroupForm({ name, refetchList }: GroupFormProps) {
   const navigate = useNavigate();
   const [descriptionMode, setDescriptionMode] = useState<boolean>(false);
   const [ownersMode, setOwnersMode] = useState<boolean>(false);
@@ -121,7 +121,6 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
-
   const client = useAuthServiceClient();
   const {
     isLoading,
@@ -212,6 +211,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
       'user',
       globsRef.current?.getItems() || [],
     );
+
     const editedGroup = AuthGroup.fromPartial({
       name: name,
       description: description || '',
@@ -221,6 +221,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
       members: editedMembers,
       globs: editedGlobs,
     });
+
     updateMutation.mutate({ group: editedGroup, updateMask: updateMask });
   };
 
@@ -297,7 +298,7 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
 
   if (isError) {
     return (
-      <div className="section" data-testid="groups-form-error">
+      <div className="section" data-testid="group-form-error">
         <Alert severity="error">
           <AlertTitle>Failed to load groups form </AlertTitle>
           <Box sx={{ padding: '1rem' }}>{`${error}`}</Box>
@@ -330,25 +331,25 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
   const numRedacted: number = response?.numRedacted || 0;
 
   return (
-    <Box sx={{ p: '20px', ml: '5px' }}>
+    <>
       <ThemeProvider theme={theme}>
-        <FormControl data-testid="groups-form" style={{ width: '100%' }}>
-          <Typography variant="h5">{name}</Typography>
+        <FormControl data-testid="group-form" style={{ width: '100%' }}>
           {!isExternal && (
             <TableContainer sx={{ p: 0, width: '100%' }}>
-              <Table
-                onMouseEnter={() => setShowDescriptionEdit(true)}
-                onMouseLeave={() => setShowDescriptionEdit(false)}
-                data-testid="description-table"
-              >
+              <Table data-testid="description-table">
                 <TableBody>
-                  <TableRow>
+                  <TableRow
+                    data-testid="description-row"
+                    onMouseEnter={() => setShowDescriptionEdit(true)}
+                    onMouseLeave={() => setShowDescriptionEdit(false)}
+                  >
                     <TableCell
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
                         alignItems: 'center',
                         minHeight: '45px',
+                        paddingTop: '0px',
                       }}
                     >
                       <Typography variant="h6">Description</Typography>
@@ -374,7 +375,10 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
                       {descriptionMode ? (
                         <TextField
                           value={description}
-                          style={{ width: '100%', whiteSpace: 'pre-wrap' }}
+                          style={{
+                            width: '100%',
+                            whiteSpace: 'pre-wrap',
+                          }}
                           onChange={(e) => setDescription(e.target.value)}
                           onKeyDown={(e) =>
                             checkFieldSubmit(e.key, 'description')
@@ -509,7 +513,10 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
                   {isUpdating && <CircularProgress></CircularProgress>}
                   {name !== 'administrators' && (
                     <div
-                      style={{ display: 'flex', flexDirection: 'row-reverse' }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row-reverse',
+                      }}
                     >
                       <Button
                         variant="contained"
@@ -583,6 +590,6 @@ export function GroupsForm({ name, refetchList }: GroupsFormProps) {
           </DialogActions>
         </Dialog>
       </ThemeProvider>
-    </Box>
+    </>
   );
 }
