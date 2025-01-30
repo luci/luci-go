@@ -37,7 +37,6 @@ export const DEFAULT_COLUMNS: string[] = [
   'id',
   'dut_id',
   'state',
-  'board-name',
   'dut_name',
   'dut_state',
   'label-board',
