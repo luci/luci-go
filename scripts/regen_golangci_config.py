@@ -55,7 +55,7 @@ exposes a client package that "some-project-2" is importing).
 We could keep the root config and introduce per-project configs. But this end up
 being dangerous, since golangci-lint searches for config in the *current
 working directory* first, and only if not found, looks at Go package
-directories under test. Tricium suggests to run e.g:
+directories under test. golangci-lint builder suggests to run e.g:
     golangci-lint run --fix swarming/server/cfg/...
 This already assumes luci-go repo root is the current working directory. This
 invocation always picks up the root config, ignoring swarming/.golangci.yaml.

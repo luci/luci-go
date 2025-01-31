@@ -1,2 +1,0 @@
-# Skip Tricium for generated proto files.
-*.pb.go -tricium
