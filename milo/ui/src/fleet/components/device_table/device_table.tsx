@@ -25,6 +25,7 @@ import {
   getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { SelectedOptions } from '@/fleet/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -36,7 +37,7 @@ import {
 import { DataTable } from '../data_table';
 import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
 
-import { BASE_DIMENSIONS, DEFAULT_COLUMNS, getColumns } from './columns';
+import { BASE_DIMENSIONS, getColumns } from './columns';
 import { useDevices } from './use_devices';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
@@ -150,7 +151,7 @@ export function DeviceTable({ filter, gridRef }: DeviceTableProps) {
           defaultColumnVisibilityModel={columns.reduce(
             (visibilityModel, column) => ({
               ...visibilityModel,
-              [column.field]: DEFAULT_COLUMNS.includes(column.field),
+              [column.field]: DEFAULT_DEVICE_COLUMNS.includes(column.field),
             }),
             {} as GridColumnVisibilityModel,
           )}
