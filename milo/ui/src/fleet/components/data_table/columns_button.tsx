@@ -16,9 +16,7 @@ import Button from '@mui/material/Button';
 import {
   gridColumnDefinitionsSelector,
   GridColumnIcon,
-  GridColumnVisibilityModel,
   gridColumnVisibilityModelSelector,
-  useGridSelector,
 } from '@mui/x-data-grid';
 import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useState } from 'react';
@@ -31,17 +29,9 @@ interface ColumnsButtonProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
 }
 
-export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
-  // seems like types underneath might be messed up and don't signal that undefined is a possible value
-  // We specify it explicitely to avoid bugs, as they happened when reloading the page
-  const columnVisibilityModel = useGridSelector(
-    apiRef,
-    gridColumnVisibilityModelSelector,
-  ) as GridColumnVisibilityModel | undefined;
-  const columnDefinitions = useGridSelector(
-    apiRef,
-    gridColumnDefinitionsSelector,
-  );
+export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
+  const columnVisibilityModel = gridColumnVisibilityModelSelector(gridRef);
+  const columnDefinitions = gridColumnDefinitionsSelector(gridRef);
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   const toggleColumn = (field: string) => {
@@ -49,7 +39,7 @@ export function ColumnsButton({ gridRef: apiRef }: ColumnsButtonProps) {
       return;
     }
 
-    apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+    gridRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
   };
 
   const columns: Option = {

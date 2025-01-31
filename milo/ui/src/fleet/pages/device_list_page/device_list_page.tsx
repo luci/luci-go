@@ -49,6 +49,12 @@ export const DeviceListPage = () => {
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
+  // Turns out gridRef.current object might be initialized, but underneath the functions may be undefined.
+  // Whenever some component (like column picker) relies on the gridRef before it's fully initialized it will break.
+  // There probably is a better way for checking if the grid is initialized, here we are just checking for one of the functions
+  // that should be there
+  const isGridInitialized = gridRef.current?.getVisibleColumns !== undefined;
+
   return (
     <div
       css={{
@@ -73,7 +79,7 @@ export const DeviceListPage = () => {
             selectedOptions={selectedOptions}
             setSelectedOptions={setSelectedOptions}
           />
-          <ColumnsButton gridRef={gridRef} />
+          {isGridInitialized && <ColumnsButton gridRef={gridRef} />}
         </div>
       )}
       <div

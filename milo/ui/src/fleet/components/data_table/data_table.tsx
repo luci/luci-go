@@ -14,9 +14,7 @@
 
 import { CircularProgress } from '@mui/material';
 import {
-  DataGrid,
   GridAutosizeOptions,
-  gridClasses,
   GridColDef,
   GridColumnVisibilityModel,
   GridSortModel,
@@ -30,11 +28,11 @@ import {
   getPageSize,
   PagerContext,
 } from '@/common/components/params_pager';
-import { colors } from '@/fleet/theme/colors';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
+import { StyledGrid } from './styled_data_grid';
 
 const UNKNOWN_ROW_COUNT = -1;
 
@@ -108,30 +106,10 @@ export const DataTable = ({
   }
 
   return (
-    <DataGrid
+    <StyledGrid
       apiRef={apiRef}
       autosizeOnMount
       autosizeOptions={autosizeOptions}
-      sx={{
-        border: 'none',
-        [`& .${gridClasses.columnHeader}`]: {
-          backgroundColor: colors.grey[100],
-          height: 'unset !important',
-          minHeight: 56,
-        },
-        [`& .${gridClasses.columnSeparator}`]: {
-          color: colors.grey[100],
-        },
-        [`& .${gridClasses.filler}`]: {
-          background: colors.grey[100],
-        },
-        [`& .${gridClasses.cell}`]: {
-          py: 2,
-        },
-        [`& .${gridClasses.columnHeaderTitle}`]: {
-          whiteSpace: 'normal',
-        },
-      }}
       slots={{
         pagination: Pagination,
       }}

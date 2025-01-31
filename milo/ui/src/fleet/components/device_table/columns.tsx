@@ -48,6 +48,10 @@ export const DEFAULT_COLUMNS: string[] = [
   'label-servo_usb_state',
 ];
 
+const getPathnameWithParams = () => {
+  return window.location.href.toString().split(window.location.host)[1];
+};
+
 export const BASE_DIMENSIONS: Dimension[] = [
   {
     id: 'id',
@@ -57,7 +61,12 @@ export const BASE_DIMENSIONS: Dimension[] = [
       <Cell
         {...props}
         value={
-          <Link to={`/ui/fleet/labs/devices/${props.value}`}>
+          <Link
+            to={`/ui/fleet/labs/devices/${props.value}`}
+            state={{
+              navigatedFromLink: getPathnameWithParams(),
+            }}
+          >
             {props.value}
           </Link>
         }

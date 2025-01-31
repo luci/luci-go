@@ -12,138 +12,141 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Box, Container, Paper } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, IconButton, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab';
+import { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import GridLabel from '@/clusters/components/grid_label/grid_label';
-import PanelHeading from '@/clusters/components/headings/panel_heading/panel_heading';
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
-interface Device {
-  id: string;
+import { SchedulingData } from './scheduling_data_table';
+import { Tasks } from './tasks_table';
+
+enum TabValue {
+  TASKS = 'tasks',
+  SCHEDULING = 'scheduling',
 }
 
-interface DeviceDetailsHeaderProps {
-  device: Device;
-}
-
-export const DeviceDetailsHeader = ({ device }: DeviceDetailsHeaderProps) => {
-  return (
-    <Paper
-      data-cy="device-details-header"
-      elevation={3}
-      sx={{ pt: 2, pb: 2, mt: 1, mx: 3 }}
-    >
-      <Container maxWidth={false}>
-        <PanelHeading>Device details: __DEVICE_NAME__</PanelHeading>
-        <Grid container rowGap={1}>
-          <GridLabel text="Device ID" />
-          <Grid alignItems="center" columnGap={1} size={10}>
-            <Box
-              sx={{ display: 'inline-block' }}
-              paddingTop={1}
-              paddingRight={1}
-            >
-              {device.id}
-            </Box>
-          </Grid>
-          <GridLabel text="Param1" />
-          <Grid alignItems="center" columnGap={1} size={10}>
-            <Box
-              sx={{ display: 'inline-block' }}
-              paddingTop={1}
-              paddingRight={1}
-            >
-              __VALUE 1__
-            </Box>
-          </Grid>
-          <GridLabel text="Param2" />
-          <Grid alignItems="center" columnGap={1} size={10}>
-            <Box
-              sx={{ display: 'inline-block' }}
-              paddingTop={1}
-              paddingRight={1}
-            >
-              __VALUE 2__
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Paper>
-  );
+const parseTabValue = (tabString: string | null): TabValue | undefined => {
+  if (!tabString) {
+    return undefined;
+  }
+  const val = tabString as TabValue;
+  if (Object.values(TabValue).includes(val)) {
+    return val;
+  }
+  return undefined;
 };
 
-export const DeviceDetails = () => {
+const useTabs = (): [TabValue | undefined, (newValue: TabValue) => void] => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
-  const handleTabChange = (newValue: string) => {
-    setSearchParams(
-      (params) => {
-        params.set('tab', newValue);
-        return params;
-      },
-      { replace: true },
-    );
-  };
-
-  const validValues = ['tasks', 'events', 'scheduling'];
-  let selectedTab = searchParams.get('tab');
-  if (!selectedTab || validValues.indexOf(selectedTab) === -1) {
-    selectedTab = 'overview';
-  }
-
-  return (
-    <Paper
-      data-cy="device-details"
-      elevation={3}
-      sx={{ pt: 2, pb: 2, mt: 3, mx: 3 }}
-    >
-      <Container maxWidth={false}>
-        <TabContext value={selectedTab}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
-              <Tab label="Tasks" value="tasks" />
-              <Tab label="Events" value="events" />
-              <Tab label="Scheduling data" value="scheduling" />
-            </TabList>
-          </Box>
-          <TabPanel value="tasks">
-            <span>__TASKS__</span>
-          </TabPanel>
-          <TabPanel value="events">
-            <span>__EVENTS__</span>
-          </TabPanel>
-          <TabPanel value="scheduling">
-            <span>__SCHEDULING DATA__</span>
-          </TabPanel>
-        </TabContext>
-      </Container>
-    </Paper>
+  const setSelectedTab = useCallback(
+    (newValue: TabValue) => {
+      setSearchParams(
+        (params) => {
+          params.set('tab', newValue);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
+
+  const selectedTab = parseTabValue(searchParams.get('tab'));
+
+  useEffect(() => {
+    if (!selectedTab) {
+      setSelectedTab(TabValue.TASKS);
+    }
+  }, [selectedTab, setSelectedTab]);
+
+  return [selectedTab, setSelectedTab];
+};
+
+const useNavigatedFromLink = () => {
+  const { state } = useLocation();
+
+  const [navigatedFromLink, setNavigatedFromLink] = useState<
+    string | undefined
+  >(undefined);
+
+  // state from useLocation is lost on rerenders so we need to save it in a react state
+  useEffect(() => {
+    if (state) {
+      setNavigatedFromLink(state.navigatedFromLink);
+    }
+  }, [state]);
+
+  return navigatedFromLink;
 };
 
 export const DeviceDetailsPage = () => {
   const { id } = useParams();
+  const navigatedFromLink = useNavigatedFromLink();
+  const [selectedTab, setSelectedTab] = useTabs();
 
-  const device: Device = {
-    id: id || '',
-  };
+  const navigate = useNavigate();
+
+  if (!id || !selectedTab) {
+    return <></>;
+  }
 
   return (
-    <>
-      <DeviceDetailsHeader device={device} />
-      <DeviceDetails />
-    </>
+    <div
+      css={{
+        margin: '24px 0px',
+      }}
+    >
+      <div css={{ width: '100%' }}>
+        <div
+          css={{
+            margin: '0px 24px 16px 24px',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <IconButton
+            onClick={() => {
+              if (navigatedFromLink) {
+                navigate(navigatedFromLink);
+              } else {
+                navigate('/ui/fleet/labs/devices');
+              }
+            }}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4">Device details: {id}</Typography>
+        </div>
+        <TabContext value={selectedTab}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
+              <Tab label="Tasks" value={TabValue.TASKS} />
+              <Tab label="Scheduling data" value={TabValue.SCHEDULING} />
+            </TabList>
+          </Box>
+          <TabPanel value={TabValue.TASKS}>
+            <Tasks />
+          </TabPanel>
+          <TabPanel value={TabValue.SCHEDULING}>
+            <SchedulingData id={id} />
+          </TabPanel>
+        </TabContext>
+      </div>
+    </div>
   );
 };
 

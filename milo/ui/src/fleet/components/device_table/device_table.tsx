@@ -36,7 +36,8 @@ import {
 import { DataTable } from '../data_table';
 import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
 
-import { BASE_DIMENSIONS, getColumns, DEFAULT_COLUMNS } from './columns';
+import { BASE_DIMENSIONS, DEFAULT_COLUMNS, getColumns } from './columns';
+import { useDevices } from './use_devices';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -101,17 +102,14 @@ export function DeviceTable({ filter, gridRef }: DeviceTableProps) {
   };
 
   const client = useFleetConsoleClient();
-  const devicesQuery = useQuery({
-    ...client.ListDevices.query(
-      ListDevicesRequest.fromPartial({
-        pageSize: getPageSize(pagerCtx, searchParams),
-        pageToken: getPageToken(pagerCtx, searchParams),
-        orderBy: getOrderByFromSortModel(),
-        filter: stringifyFilters(filter),
-      }),
-    ),
-    keepPreviousData: true, // avoid loading while switching page
+  const request = ListDevicesRequest.fromPartial({
+    pageSize: getPageSize(pagerCtx, searchParams),
+    pageToken: getPageToken(pagerCtx, searchParams),
+    orderBy: getOrderByFromSortModel(),
+    filter: stringifyFilters(filter),
   });
+
+  const devicesQuery = useDevices(request);
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
   const { devices = [], nextPageToken = '' } = devicesQuery.data || {};
