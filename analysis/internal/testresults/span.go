@@ -709,9 +709,10 @@ func ReadVariants(ctx context.Context, project, testID string, opts ReadVariants
 
 // QueryTestsOptions specifies options for QueryTests().
 type QueryTestsOptions struct {
-	SubRealms []string
-	PageSize  int
-	PageToken string
+	CaseSensitive bool
+	SubRealms     []string
+	PageSize      int
+	PageToken     string
 }
 
 // parseQueryTestsPageToken parses the positions from the page token.
@@ -749,8 +750,9 @@ func QueryTests(ctx context.Context, project, testIDSubstring string, opts Query
 		"paginationTestId": paginationTestID,
 	}
 	input := map[string]any{
-		"hasLimit": opts.PageSize > 0,
-		"params":   params,
+		"hasLimit":      opts.PageSize > 0,
+		"params":        params,
+		"caseSensitive": opts.CaseSensitive,
 	}
 
 	stmt, err := spanutil.GenerateStatement(QueryTestsQueryTmpl, QueryTestsQueryTmpl.Name(), input)
@@ -933,7 +935,11 @@ var QueryTestsQueryTmpl = template.Must(template.New("QueryTestsQuery").Parse(`
 		WHERE
 			Project = @project
 				AND TestId > @paginationTestId
-				AND TestId LIKE @testIdPattern
+				{{if .caseSensitive}}
+					AND TestId LIKE @testIdPattern
+				{{else}}
+					AND LOWER(TestId) LIKE LOWER(@testIdPattern)
+				{{end}}
 	)
 	SELECT TestId FROM Tests
 	WHERE HasAccess

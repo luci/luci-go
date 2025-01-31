@@ -1077,6 +1077,8 @@ func TestQueryTests(t *testing.T) {
 			insertTest("realm1", "special%_characters")
 			insertTest("realm1", "specialxxcharacters")
 
+			insertTest("realm1", "caseSensitive")
+
 			return nil
 		})
 		assert.Loosely(t, err, should.BeNil)
@@ -1134,6 +1136,23 @@ func TestQueryTests(t *testing.T) {
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, testIDs, should.Resemble([]string{
 				"special%_characters",
+			}))
+		})
+
+		t.Run("case sensitive works", func(t *ftt.Test) {
+			opts := QueryTestsOptions{SubRealms: []string{"realm1", "realm2", "realm3"}, CaseSensitive: true}
+			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "CaSeSeNsItIvE", opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.BeEmpty)
+		})
+		t.Run("case insensitive works", func(t *ftt.Test) {
+			opts := QueryTestsOptions{SubRealms: []string{"realm1", "realm2", "realm3"}, CaseSensitive: false}
+			testIDs, nextPageToken, err := QueryTests(span.Single(ctx), "project", "CaSeSeNsItIvE", opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, testIDs, should.Resemble([]string{
+				"caseSensitive",
 			}))
 		})
 	})

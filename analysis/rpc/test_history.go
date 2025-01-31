@@ -238,9 +238,10 @@ func (*testHistoryServer) QueryTests(ctx context.Context, req *pb.QueryTestsRequ
 
 	pageSize := int(pageSizeLimiter.Adjust(req.PageSize))
 	opts := testresults.QueryTestsOptions{
-		SubRealms: subRealms,
-		PageSize:  pageSize,
-		PageToken: req.GetPageToken(),
+		CaseSensitive: !req.CaseInsensitive,
+		SubRealms:     subRealms,
+		PageSize:      pageSize,
+		PageToken:     req.GetPageToken(),
 	}
 
 	testIDs, nextPageToken, err := testresults.QueryTests(span.Single(ctx), req.Project, req.TestIdSubstring, opts)

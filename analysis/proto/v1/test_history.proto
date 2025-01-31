@@ -249,6 +249,10 @@ message QueryTestsRequest {
   // When paginating, all other parameters provided to `QueryTests` MUST
   // match the call that provided the page token.
   string page_token = 5;
+
+  // If true then the test_id_substring match will be case insensitive.  If false
+  // the match will be case sensitive.
+  bool case_insensitive = 6;
 }
 
 // A response message for the `QueryTests` RPC.
