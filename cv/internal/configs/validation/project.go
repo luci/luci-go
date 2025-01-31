@@ -168,9 +168,7 @@ func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
 var (
 	configGroupNameRegexp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
 	modeNameRegexp        = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,39}$")
-	analyzerRun           = "ANALYZER_RUN"
-	standardModes         = stringset.NewFromSlice(analyzerRun, "DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN")
-	analyzerPathReRegexp  = regexp.MustCompile(`^\.\+(\\\.[a-z]+)?$`)
+	standardModes         = stringset.NewFromSlice("DRY_RUN", "FULL_RUN", "NEW_PATCHSET_RUN")
 )
 
 func (vd *projectConfigValidator) validateConfigGroup(group *cfgpb.ConfigGroup, knownNames stringset.Set) {
@@ -545,7 +543,6 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			}
 		}
 
-		var isAnalyzer bool
 		if len(b.ModeAllowlist) > 0 {
 			for i, m := range b.ModeAllowlist {
 				switch {
@@ -556,25 +553,6 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 				case m == "NEW_PATCHSET_RUN" && len(v.GetGerritCqAbility().GetNewPatchsetRunAccessList()) == 0:
 					vd.ctx.Enter("mode_allowlist #%d", i+1)
 					vd.ctx.Errorf("mode NEW_PATCHSET_RUN cannot be used unless a new_patchset_run_access_list is set")
-					vd.ctx.Exit()
-				case m == analyzerRun:
-					isAnalyzer = true
-				}
-			}
-			if isAnalyzer {
-				// TODO(crbug/1202952): Remove the following check after Tricium is folded into CV.
-				for i, f := range b.LocationFilters {
-					vd.ctx.Enter("location_filters #%d", i+1)
-					if !analyzerPathReRegexp.MatchString(f.PathRegexp) {
-						vd.ctx.Errorf(`analyzer location filter path pattern must match %q.`, analyzerPathReRegexp)
-					}
-					if (!matchAll(f.GerritProjectRegexp) && matchAll(f.GerritHostRegexp)) ||
-						(matchAll(f.GerritProjectRegexp) && !matchAll(f.GerritHostRegexp)) {
-						vd.ctx.Errorf(`analyzer location filter must include both host and project or neither.`)
-					}
-					if f.Exclude {
-						vd.ctx.Errorf(`location_filters exclude filters are not combinable with analyzer mode`)
-					}
 					vd.ctx.Exit()
 				}
 			}
