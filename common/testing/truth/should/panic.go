@@ -39,7 +39,7 @@ func NotPanic(fn func()) *failure.Summary {
 	if caught != nil {
 		return comparison.NewSummaryBuilder("should.NotPanic").
 			Actual(caught.Reason).
-			AddFindingf("stack", caught.Stack).
+			AddFindingf("stack", "%s", caught.Stack).
 			WarnIfLong().
 			Summary
 	}
@@ -78,7 +78,7 @@ func PanicLikeString(substring string) comparison.Func[func()] {
 		return comparison.NewSummaryBuilder(cmpName).
 			Because("Actual is missing substring.").
 			Actual(str).
-			AddFindingf("Substring", substring).
+			AddFindingf("Substring", "%s", substring).
 			Summary
 	}
 }
@@ -105,7 +105,7 @@ func PanicLikeError(target error) comparison.Func[func()] {
 				Because("caught panic is not an error").
 				Actual(e).
 				Expected(target).
-				AddFindingf("stack", thing.Stack).
+				AddFindingf("stack", "%s", thing.Stack).
 				WarnIfLong().
 				Summary
 		}

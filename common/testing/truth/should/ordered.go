@@ -15,7 +15,6 @@
 package should
 
 import (
-	"fmt"
 	"slices"
 
 	"golang.org/x/exp/constraints"
@@ -104,7 +103,7 @@ func BeLessThan[T constraints.Ordered](upper T) comparison.Func[T] {
 		return comparison.NewSummaryBuilder("should.BeLessThan", upper).
 			Because("Actual value was too high.").
 			Actual(actual).
-			AddFindingf("Expected", fmt.Sprintf("< %#v", upper)).
+			AddFindingf("Expected", "< %#v", upper).
 			Summary
 	}
 }
@@ -120,7 +119,7 @@ func BeLessThanOrEqual[T constraints.Ordered](upper T) comparison.Func[T] {
 		return comparison.NewSummaryBuilder("should.BeLessThanOrEqual", upper).
 			Because("Actual value was too high.").
 			Actual(actual).
-			AddFindingf("Expected", fmt.Sprintf("<= %#v", upper)).
+			AddFindingf("Expected", "<= %#v", upper).
 			Summary
 	}
 }
@@ -136,7 +135,7 @@ func BeGreaterThan[T constraints.Ordered](lower T) comparison.Func[T] {
 		return comparison.NewSummaryBuilder("should.BeGreaterThan", lower).
 			Because("Actual value was too low.").
 			Actual(actual).
-			AddFindingf("Expected", fmt.Sprintf("> %#v", lower)).
+			AddFindingf("Expected", "> %#v", lower).
 			Summary
 	}
 }
@@ -152,7 +151,7 @@ func BeGreaterThanOrEqual[T constraints.Ordered](lower T) comparison.Func[T] {
 		return comparison.NewSummaryBuilder("should.BeGreaterThanOrEqual", lower).
 			Because("Actual value was too low.").
 			Actual(actual).
-			AddFindingf("Expected", fmt.Sprintf(">= %#v", lower)).
+			AddFindingf("Expected", ">= %#v", lower).
 			Summary
 	}
 }

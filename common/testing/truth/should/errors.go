@@ -42,7 +42,7 @@ func ErrLikeString(substring string) comparison.Func[error] {
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("actual is nil and therefore doesn't contain any non-empty substrings").
 				Actual(substring).
-				AddFindingf("substring", substring).
+				AddFindingf("substring", "%s", substring).
 				Summary
 		}
 		a := actual.Error()
@@ -124,7 +124,7 @@ func UnwrapToErrStringLike(substring string) comparison.Func[error] {
 		return comparison.NewSummaryBuilder(cmpName).
 			Because("`$unwrapped.Error()` is missing substring after unwrapping %d errors.", count).
 			Actual(actual).
-			AddFindingf("$unwrapped values", strings.Join(strReprs, "\n")).
+			AddFindingf("$unwrapped values", "%s", strings.Join(strReprs, "\n")).
 			AddFindingf("Substring", "%q", substring).
 			Summary
 	}
@@ -143,7 +143,7 @@ func ErrLikeError(target error) comparison.Func[error] {
 			return comparison.NewSummaryBuilder(cmpName).
 				AddComparisonArgs("nil").
 				Actual(actual).
-				AddFindingf("actual.Error()", actual.Error()).
+				AddFindingf("actual.Error()", "%s", actual.Error()).
 				Summary
 		}
 	}
@@ -153,7 +153,7 @@ func ErrLikeError(target error) comparison.Func[error] {
 			return comparison.NewSummaryBuilder(cmpName, target).
 				Because("Actual is nil but target is not").
 				Expected(target).
-				AddFindingf("target.Error()", target.Error()).
+				AddFindingf("target.Error()", "%s", target.Error()).
 				Summary
 		}
 		if errors.Is(actual, target) {

@@ -47,7 +47,7 @@ func shouldHaveLogPaths(expected ...string) comparison.Func[any] {
 		switch t := actual.(type) {
 		case error:
 			return ret.
-				AddFindingf("Error", t.Error()).
+				AddFindingf("Error", "%s", t.Error()).
 				Because("Encountered Error").
 				Summary
 

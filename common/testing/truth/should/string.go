@@ -164,7 +164,7 @@ func MatchRegexp(re string) comparison.Func[string] {
 
 		return comparison.NewSummaryBuilder(cmpName).
 			Actual(actual).
-			AddFindingf("Regexp", re).
+			AddFindingf("Regexp", "%s", re).
 			Because("Regexp did not match Actual").
 			Summary
 	}

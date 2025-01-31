@@ -49,7 +49,8 @@ func Adapt(oldComparison func(actual any, expected ...any) string) func(expected
 				return nil
 			}
 			name := runtime.FuncForPC(reflect.ValueOf(oldComparison).Pointer()).Name()
-			return comparison.NewSummaryBuilder(fmt.Sprintf("adapt.Convey(%s)", name)).Because(text).Summary
+			return comparison.NewSummaryBuilder(fmt.Sprintf("adapt.Convey(%s)", name)).
+				Because("%s", text).Summary
 		}
 	}
 }

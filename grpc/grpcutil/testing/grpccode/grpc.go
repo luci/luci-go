@@ -34,7 +34,7 @@ func ShouldBe(code codes.Code) comparison.Func[error] {
 			Because("Error had incorrect gRPC code").
 			Actual(actual).
 			Expected(code).
-			AddFindingf("err.Error()", err.Error()).
+			AddFindingf("err.Error()", "%s", err.Error()).
 			Summary
 	}
 }

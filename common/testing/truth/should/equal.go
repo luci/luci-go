@@ -17,7 +17,6 @@ package should
 import (
 	"math"
 	"reflect"
-	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/testing/truth/comparison"
@@ -45,11 +44,9 @@ func timeEqual[T any](cmpName string) comparison.Func[T] {
 	return func(actual T) *failure.Summary {
 		return comparison.NewSummaryBuilder(cmpName, actual).
 			AddFindingf("Error", "should.Equal[time.Time] is always incorrect. Use should.Match instead.").
-			Because(strings.Join([]string{
-				"time.Time has internal fields due to support for monotonic time.",
-				"Comparing time.Time with struct equivalence leads to baffling results where ",
-				"two time.Time objects with the same wallclock time end up being unequal.",
-			}, "\n")).
+			Because("time.Time has internal fields due to support for monotonic time.\n" +
+				"Comparing time.Time with struct equivalence leads to baffling results where \n" +
+				"two time.Time objects with the same wallclock time end up being unequal.").
 			Summary
 	}
 }
