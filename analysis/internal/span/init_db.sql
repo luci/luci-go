@@ -679,6 +679,11 @@ CREATE TABLE TestRealms (
   -- This has the same value as luci.resultdb.v1.TestResult.test_id.
   TestId STRING(MAX) NOT NULL,
 
+  -- Lowercase test ID to assist case-insensitive test search. Test search
+  -- queries typically scan all test IDs for a project as they perform substring
+  -- matching, so it doesn't matter this is not a primary key field.
+  TestIdLower STRING(MAX) NOT NULL AS (LOWER(TestId)) STORED,
+
   -- The realm of the test result from which the variant was observed, excluding
   -- project. 62 as ResultDB allows at most 64 characters for the construction
   -- "<project>:<realm>" and project must be at least one character.

@@ -938,7 +938,7 @@ var QueryTestsQueryTmpl = template.Must(template.New("QueryTestsQuery").Parse(`
 				{{if .caseSensitive}}
 					AND TestId LIKE @testIdPattern
 				{{else}}
-					AND LOWER(TestId) LIKE LOWER(@testIdPattern)
+					AND TestIdLower LIKE LOWER(@testIdPattern)
 				{{end}}
 	)
 	SELECT TestId FROM Tests
