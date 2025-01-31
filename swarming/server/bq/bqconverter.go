@@ -407,6 +407,7 @@ var botEventMapping = map[model.BotEventType]bqpb.BotEventType{
 	model.BotEventLog:       bqpb.BotEventType_BOT_HOOK_LOG,
 
 	model.BotEventMissing:   bqpb.BotEventType_BOT_MISSING,
+	model.BotEventDeleted:   bqpb.BotEventType_BOT_DELETED,
 	model.BotEventRebooting: bqpb.BotEventType_BOT_REBOOTING_HOST,
 	model.BotEventShutdown:  bqpb.BotEventType_BOT_SHUTDOWN,
 	model.BotEventTerminate: bqpb.BotEventType_INSTRUCT_TERMINATE_BOT,

@@ -20,10 +20,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/gae/service/datastore"
-
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/model"
@@ -38,22 +34,16 @@ func (*BotsServer) DeleteBot(ctx context.Context, req *apipb.BotRequest) (*apipb
 	if !res.Permitted {
 		return nil, res.ToGrpcErr()
 	}
-
-	// See if the bot exists right now.
-	info := &model.BotInfo{Key: model.BotInfoKey(ctx, req.BotId)}
-	switch err := datastore.Get(ctx, info); {
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, status.Errorf(codes.NotFound, "%q not found", req.BotId)
+	update := &model.BotInfoUpdate{
+		BotID:     req.BotId,
+		EventType: model.BotEventDeleted,
+	}
+	switch info, err := update.Submit(ctx); {
 	case err != nil:
-		logging.Errorf(ctx, "Error fetching BotInfo for %q: %s", req.BotId, err)
-		return nil, status.Errorf(codes.Internal, "datastore error fetching the bot")
-	}
-
-	// delete the bot.
-	err := datastore.Delete(ctx, info)
-	if err != nil {
-		logging.Errorf(ctx, "Error deleting BotInfo for %q: %s", req.BotId, err)
 		return nil, status.Errorf(codes.Internal, "datastore error deleting the bot")
+	case info.BotInfo == nil:
+		return nil, status.Errorf(codes.NotFound, "%q not found", req.BotId)
+	default:
+		return &apipb.DeleteResponse{Deleted: true}, nil
 	}
-	return &apipb.DeleteResponse{Deleted: true}, nil
 }

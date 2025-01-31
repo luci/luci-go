@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -52,7 +53,7 @@ func TestBotInfoUpdate(t *testing.T) {
 
 		tickOneSec := func() { tc.Add(time.Second) }
 
-		submit := func(ev BotEventType, dedupKey string, dims []string, state *botstate.Dict, healthInfo *BotHealthInfo, taskInfo *BotEventTaskInfo) {
+		submit := func(ev BotEventType, dedupKey string, dims []string, state *botstate.Dict, healthInfo *BotHealthInfo, taskInfo *BotEventTaskInfo) *SubmittedBotInfoUpdate {
 			update := BotInfoUpdate{
 				BotID: "bot-id",
 				BotGroupDimensions: map[string][]string{
@@ -72,15 +73,21 @@ func TestBotInfoUpdate(t *testing.T) {
 				HealthInfo: healthInfo,
 				TaskInfo:   taskInfo,
 			}
-			_, err := update.Submit(ctx)
+			submitted, err := update.Submit(ctx)
 			assert.NoErr(t, err)
+			return submitted
 		}
 
 		check := func() (*BotInfo, []*BotEvent) {
 			info := &BotInfo{Key: BotInfoKey(ctx, "bot-id")}
 			events := []*BotEvent{}
 			q := datastore.NewQuery("BotEvent").Ancestor(info.Key.Root()).Order("ts")
-			assert.NoErr(t, datastore.Get(ctx, info))
+			err := datastore.Get(ctx, info)
+			if errors.Is(err, datastore.ErrNoSuchEntity) {
+				info = nil
+			} else {
+				assert.NoErr(t, err)
+			}
 			assert.NoErr(t, datastore.GetAll(ctx, q, &events))
 			return info, events
 		}
@@ -200,6 +207,29 @@ func TestBotInfoUpdate(t *testing.T) {
 				"bot_idle",
 			}))
 			assert.That(t, botInfo.State, should.Match(*testState1))
+		})
+
+		t.Run("Connect => delete => delete", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
+			submitted := submit(BotEventDeleted, "deleted-1", nil, nil, nil, nil)
+			assert.Loosely(t, submitted.BotInfo, should.NotBeNil)
+
+			botInfo, events := check()
+			assert.Loosely(t, botInfo, should.BeNil)
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"bot_deleted",
+			}))
+
+			submitted = submit(BotEventDeleted, "deleted-2", nil, nil, nil, nil)
+			assert.Loosely(t, submitted.BotInfo, should.BeNil)
+
+			botInfo, events = check()
+			assert.Loosely(t, botInfo, should.BeNil)
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"bot_deleted", // still only one
+			}))
 		})
 
 		t.Run("Connect => Idle => Dimension change", func(t *ftt.Test) {

@@ -39,6 +39,7 @@ const (
 	BotEventIdle      BotEventType = "bot_idle"
 	BotEventLog       BotEventType = "bot_log"
 	BotEventMissing   BotEventType = "bot_missing"
+	BotEventDeleted   BotEventType = "bot_deleted"
 	BotEventPolling   BotEventType = "bot_polling"
 	BotEventRebooting BotEventType = "bot_rebooting"
 	BotEventShutdown  BotEventType = "bot_shutdown"

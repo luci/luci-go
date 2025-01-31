@@ -105,6 +105,7 @@ var idleBotEvents = map[BotEventType]bool{
 var stoppedBotEvents = map[BotEventType]bool{
 	BotEventShutdown: true,
 	BotEventMissing:  true,
+	BotEventDeleted:  true,
 }
 
 // Events that happen when the bot just wants to log some information.
@@ -118,7 +119,11 @@ var loggingBotEvents = map[BotEventType]bool{
 
 // BotInfoUpdate is a change to BotInfo that may also create a BotEvent.
 //
-// Submitting BotInfoUpdate is the only valid way to change BotInfo entities.
+// Submitting BotInfoUpdate is the only valid way to change or delete BotInfo
+// entities.
+//
+// All events other than BotEventDeleted may create BotInfo, if it is missing.
+// BotEventDeleted will delete it (if it is present).
 type BotInfoUpdate struct {
 	// BotID is the ID of the bot being updated.
 	//
@@ -257,10 +262,15 @@ type BotEventTaskInfo struct {
 
 // SubmittedBotInfoUpdate is details about a submitted bot info update.
 type SubmittedBotInfoUpdate struct {
-	// BotInfo is the BotInfo entity stored in the datastore after the update.
+	// BotInfo is the BotInfo entity with an update applied to it.
 	//
 	// It either an updated BotInfo or an existing one if the update is not
-	// necessary. Always set.
+	// necessary.
+	//
+	// For all events other than BotEventDeleted, it is what ends up stored in
+	// the datastore after the update. For BotEventDeleted, there's no BotInfo in
+	// the datastore anymore and this is just a snapshot of the just deleted
+	// BotInfo. It can be nil if there were no BotInfo to begin with.
 	BotInfo *BotInfo
 
 	// BotEvent is the BotEvent entity stored in the datastore.
@@ -270,6 +280,8 @@ type SubmittedBotInfoUpdate struct {
 
 	// entitiesToPut is a list of entities to put in the transaction.
 	entitiesToPut []any
+	// entitiesToDelete is a list of entities to delete in the transaction.
+	entitiesToDelete []any
 }
 
 // Submit runs a transaction that applies this update to the BotInfo entity
@@ -290,6 +302,11 @@ func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, er
 		}
 		if len(submitted.entitiesToPut) != 0 {
 			if err := datastore.Put(ctx, submitted.entitiesToPut...); err != nil {
+				return err
+			}
+		}
+		if len(submitted.entitiesToDelete) != 0 {
+			if err := datastore.Delete(ctx, submitted.entitiesToDelete...); err != nil {
 				return err
 			}
 		}
@@ -341,6 +358,13 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 		case !proceed:
 			return nil, errSkippedUpdate
 		}
+	}
+
+	// Do nothing if deleting an already absent BotInfo.
+	if u.EventType == BotEventDeleted && current == nil {
+		return &SubmittedBotInfoUpdate{
+			BotInfo: nil, // indication that the bot was already gone
+		}, nil
 	}
 
 	// If this is a first update ever, prepopulate dimensions based on the config.
@@ -474,10 +498,16 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	compositeChanged := !slices.Equal(current.Composite, composite)
 	current.Composite = composite
 
-	// See comment above regarding storeBotInfo.
 	var toPut []any
-	if storeBotInfo {
-		toPut = append(toPut, current)
+	var toDelete []any
+
+	if u.EventType == BotEventDeleted {
+		toDelete = append(toDelete, current)
+	} else {
+		// See comment above regarding storeBotInfo.
+		if storeBotInfo {
+			toPut = append(toPut, current)
+		}
 	}
 
 	// Store BotEvent only if it looks interesting enough. Otherwise we'll have
@@ -510,9 +540,10 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	}
 
 	return &SubmittedBotInfoUpdate{
-		BotInfo:       current,
-		BotEvent:      eventToPut,
-		entitiesToPut: toPut,
+		BotInfo:          current,
+		BotEvent:         eventToPut,
+		entitiesToPut:    toPut,
+		entitiesToDelete: toDelete,
 	}, nil
 }
 
