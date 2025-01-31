@@ -23,19 +23,36 @@ import { Store, StoreInstance, StoreProvider } from '@/common/store';
 import { timeout } from '@/generic_libs/tools/utils';
 
 import { AuthStateProvider } from './auth_state_provider';
-import { useAuthState, useGetAccessToken, useGetIdToken } from './hooks';
+import { TokenType, useAuthState, useGetAuthToken } from './hooks';
 
 interface TokenConsumerProps {
   readonly renderCallback: (
-    getIdToken: ReturnType<typeof useGetIdToken>,
-    getAccessToken: ReturnType<typeof useGetAccessToken>,
+    getToken: ReturnType<typeof useGetAuthToken>,
+    getAccessToken: ReturnType<typeof useGetAuthToken>,
   ) => void;
 }
 
 function TokenConsumer({ renderCallback }: TokenConsumerProps) {
-  const getIdToken = useGetIdToken();
-  const getAccessToken = useGetAccessToken();
+  const getIdToken = useGetAuthToken(TokenType.Id);
+  const getAccessToken = useGetAuthToken(TokenType.Access);
   renderCallback(getIdToken, getAccessToken);
+
+  return <></>;
+}
+
+interface SingleTokenConsumerProps {
+  readonly tokenType: TokenType;
+  readonly renderCallback: (
+    getAuthToken: ReturnType<typeof useGetAuthToken>,
+  ) => void;
+}
+
+function SingleTokenConsumer({
+  tokenType,
+  renderCallback,
+}: SingleTokenConsumerProps) {
+  const getAuthToken = useGetAuthToken(tokenType);
+  renderCallback(getAuthToken);
 
   return <></>;
 }
@@ -78,8 +95,8 @@ describe('<AuthStateProvider />', () => {
   it('should refresh auth state correctly', async () => {
     const tokenConsumerCBSpy = jest.fn(
       (
-        _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+        _getIdToken: ReturnType<typeof useGetAuthToken>,
+        _getAccessToken: ReturnType<typeof useGetAuthToken>,
       ) => {},
     );
     const identityConsumerCBSpy = jest.fn((_identity: string) => {});
@@ -229,8 +246,8 @@ describe('<AuthStateProvider />', () => {
   it('should not return expired tokens', async () => {
     const tokenConsumerCBSpy = jest.fn(
       (
-        _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+        _getIdToken: ReturnType<typeof useGetAuthToken>,
+        _getAccessToken: ReturnType<typeof useGetAuthToken>,
       ) => {},
     );
     const initialAuthState = {
@@ -279,8 +296,8 @@ describe('<AuthStateProvider />', () => {
   it('should not return tokens for another identity', async () => {
     const tokenConsumerCBSpy = jest.fn(
       (
-        _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+        _getIdToken: ReturnType<typeof useGetAuthToken>,
+        _getAccessToken: ReturnType<typeof useGetAuthToken>,
       ) => {},
     );
     const initialAuthState = {
@@ -440,8 +457,8 @@ describe('<AuthStateProvider />', () => {
     });
     const tokenConsumerCBSpy = jest.fn(
       (
-        _getIdToken: ReturnType<typeof useGetIdToken>,
-        _getAccessToken: ReturnType<typeof useGetAccessToken>,
+        _getIdToken: ReturnType<typeof useGetAuthToken>,
+        _getAccessToken: ReturnType<typeof useGetAuthToken>,
       ) => {},
     );
     const initialAuthState = {
@@ -555,6 +572,92 @@ describe('<AuthStateProvider />', () => {
     );
     expect(tokenConsumerCBSpy.mock.calls[3][1]).toStrictEqual(
       tokenConsumerCBSpy.mock.calls[4][1],
+    );
+  });
+
+  it('token getters should be referentially stable after changing token type', async () => {
+    // Set up mocks.
+    let callCount = 0;
+    queryAuthStateSpy.mockImplementation(async () => {
+      callCount += 1;
+      return {
+        identity: 'identity',
+        idToken: `id-token-${callCount}`,
+        accessToken: `access-token-${callCount}`,
+        accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+      };
+    });
+    const tokenConsumerCBSpy = jest.fn(
+      (_getAuthToken: ReturnType<typeof useGetAuthToken>) => {},
+    );
+    const initialAuthState = {
+      identity: 'identity',
+      idToken: 'id-token-0',
+      accessToken: 'access-token-0',
+      accessTokenExpiry: DateTime.now().plus({ minute: 60 }).toSeconds(),
+    };
+
+    // Switch back and forth between different token types.
+    const { rerender } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <SingleTokenConsumer
+              tokenType={TokenType.Access}
+              renderCallback={tokenConsumerCBSpy}
+            />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <SingleTokenConsumer
+              tokenType={TokenType.Id}
+              renderCallback={tokenConsumerCBSpy}
+            />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <SingleTokenConsumer
+              tokenType={TokenType.Access}
+              renderCallback={tokenConsumerCBSpy}
+            />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreProvider value={store}>
+          <AuthStateProvider initialValue={initialAuthState}>
+            <SingleTokenConsumer
+              tokenType={TokenType.Id}
+              renderCallback={tokenConsumerCBSpy}
+            />
+          </AuthStateProvider>
+        </StoreProvider>
+      </QueryClientProvider>,
+    );
+
+    // getAccessToken is referentially stable.
+    expect(tokenConsumerCBSpy.mock.calls[0][0]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[2][0],
+    );
+    // getIdToken is referentially stable.
+    expect(tokenConsumerCBSpy.mock.calls[1][0]).toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[3][0],
+    );
+    // getAccessToken and getIdToken are not the same.
+    expect(tokenConsumerCBSpy.mock.calls[0][0]).not.toStrictEqual(
+      tokenConsumerCBSpy.mock.calls[1][0],
     );
   });
 });

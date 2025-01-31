@@ -20,7 +20,7 @@ import { AuthStateContext } from './auth_state_provider';
 
 /**
  * Returns the latest auth state. For ephemeral properties (e.g. ID/access
- * tokens, use the `useGet...Token` hooks instead.
+ * tokens), use the `useGetAuthToken` hook instead.
  *
  * Context update happens WHEN AND ONLY WHEN the user identity changes (which
  * can happen if the user logged into a different account via a browser tab
@@ -39,46 +39,28 @@ export function useAuthState(): Pick<
   return value.getAuthState();
 }
 
-/**
- * Returns a function that resolves the latest non-expired access token of the
- * current user when invoked.
- *
- * Context update happens WHEN AND ONLY WHEN the user identity changes (which
- * can happen if the user logged into a different account via a browser tab
- * between auth state refreshes).
- *
- * The getter is referentially stable as long as the user identity remains the
- * same (memorized by a `useMemo` hook).
- */
-export function useGetAccessToken(): () => Promise<string> {
-  const value = useContext(AuthStateContext);
-
-  if (value === undefined) {
-    throw new Error(
-      'useGetAccessToken can only be used in a AuthStateProvider',
-    );
-  }
-
-  return value.getAccessToken;
+export enum TokenType {
+  Id = 'id',
+  Access = 'access',
 }
 
 /**
- * Returns a function that resolves the latest non-expired ID token of the
- * current user when invoked.
+ * Returns a function that resolves the latest non-expired ID or access token of
+ * the current user when invoked.
  *
  * Context update happens WHEN AND ONLY WHEN the user identity changes (which
  * can happen if the user logged into a different account via a browser tab
  * between auth state refreshes).
  *
- * The getter is referentially stable as long as the user identity remains the
- * same (memorized by a `useMemo` hook).
+ * The getter is referentially stable for each token type as long as the user
+ * identity remains the same (memorized by a `useMemo` hook).
  */
-export function useGetIdToken(): () => Promise<string> {
+export function useGetAuthToken(tokenType: TokenType): () => Promise<string> {
   const value = useContext(AuthStateContext);
 
   if (value === undefined) {
-    throw new Error('useGetIdToken can only be used in a AuthStateProvider');
+    throw new Error('useGetAuthToken can only be used in a AuthStateProvider');
   }
 
-  return value.getIdToken;
+  return tokenType === TokenType.Id ? value.getIdToken : value.getAccessToken;
 }

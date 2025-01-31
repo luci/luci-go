@@ -16,7 +16,7 @@ export * from './auth_state_initializer';
 export { AuthStateProvider } from './auth_state_provider';
 export type { AuthStateProviderProps } from './auth_state_provider';
 export * from './constants';
-export { useAuthState, useGetAccessToken, useGetIdToken } from './hooks';
+export { TokenType, useAuthState, useGetAuthToken } from './hooks';
 
 import { AuthStateContext } from './auth_state_provider';
 

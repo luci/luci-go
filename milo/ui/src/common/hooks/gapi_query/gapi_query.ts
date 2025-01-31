@@ -20,13 +20,16 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 
-import { useGetAccessToken } from '@/common/components/auth_state_provider';
+import {
+  TokenType,
+  useGetAuthToken,
+} from '@/common/components/auth_state_provider';
 
 export const useGapiQuery = <Response>(
   args: gapi.client.RequestOptions,
   queryOptions?: UseQueryOptions<Response>,
 ): UseQueryResult<Response> => {
-  const getAccessToken = useGetAccessToken();
+  const getAccessToken = useGetAuthToken(TokenType.Access);
   const options: UseQueryOptions<Response> = {
     ...queryOptions,
     queryKey: ['gapi', args.method, args.path, args.params, args.body],
@@ -50,7 +53,7 @@ export function useInfiniteGapiQuery<
   args: gapi.client.RequestOptions,
   queryOptions?: UseInfiniteQueryOptions<Response>,
 ) {
-  const getAccessToken = useGetAccessToken();
+  const getAccessToken = useGetAuthToken(TokenType.Access);
   const options: UseInfiniteQueryOptions<Response> = {
     ...queryOptions,
     queryKey: ['gapi', args.method, args.path, args.params, args.body],
