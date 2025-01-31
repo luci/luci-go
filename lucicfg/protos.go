@@ -35,7 +35,6 @@ import (
 	_ "go.chromium.org/luci/buildbucket/proto"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/common/proto/realms"
-	_ "go.chromium.org/luci/cv/api/config/legacy"
 	_ "go.chromium.org/luci/cv/api/config/v2"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
 	_ "go.chromium.org/luci/luci_notify/api/config"
@@ -140,7 +139,6 @@ func init() {
 			"go.chromium.org/luci/buildbucket/proto/project_config.proto",
 			"go.chromium.org/luci/common/proto/config/project_config.proto",
 			"go.chromium.org/luci/common/proto/realms/realms_config.proto",
-			"go.chromium.org/luci/cv/api/config/legacy/tricium.proto",
 			"go.chromium.org/luci/cv/api/config/v2/config.proto",
 			"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
 			"go.chromium.org/luci/luci_notify/api/config/notify.proto",

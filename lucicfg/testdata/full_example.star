@@ -10,7 +10,6 @@ luci.project(
     notify = "luci-notify.appspot.com",
     scheduler = "luci-scheduler.appspot.com",
     swarming = "chromium-swarm.appspot.com",
-    tricium = "tricium-prod.appspot.com",
     acls = [
         acl.entry(
             roles = [
@@ -530,12 +529,6 @@ luci.cq_group(
             owner_whitelist = ["project-contributor"],
             mode_allowlist = [cq.MODE_NEW_PATCHSET_RUN],
         ),
-        luci.cq_tryjob_verifier(
-            builder = "spell-checker",
-            owner_whitelist = ["project-contributor"],
-            mode_allowlist = [cq.MODE_ANALYZER_RUN],
-            disable_reuse = True,
-        ),
     ],
     additional_modes = cq.run_mode(
         name = "TEST_RUN",
@@ -587,18 +580,6 @@ luci.cq_tryjob_verifier(
     cq_group = "main-cq",
 )
 
-luci.cq_tryjob_verifier(
-    builder = "another-project:analyzer/format checker",
-    cq_group = "main-cq",
-    location_filters = [
-        cq.location_filter(path_regexp = ".+\\.py"),
-        cq.location_filter(path_regexp = ".+\\.go"),
-        cq.location_filter(path_regexp = ".+\\.X4"),
-    ],
-    owner_whitelist = ["project-contributor"],
-    mode_allowlist = [cq.MODE_ANALYZER_RUN, cq.MODE_FULL_RUN],
-)
-
 # Emitting arbitrary configs,
 
 lucicfg.emit(
@@ -647,30 +628,6 @@ lucicfg.emit(
 #     }
 #     tryjob {
 #       builders {
-#         name: "another-project/analyzer/format checker"
-#         location_filters {
-#           gerrit_host_regexp: ".*"
-#           gerrit_project_regexp: ".*"
-#           gerrit_ref_regexp: ".*"
-#           path_regexp: ".+\\.py"
-#         }
-#         location_filters {
-#           gerrit_host_regexp: ".*"
-#           gerrit_project_regexp: ".*"
-#           gerrit_ref_regexp: ".*"
-#           path_regexp: ".+\\.go"
-#         }
-#         location_filters {
-#           gerrit_host_regexp: ".*"
-#           gerrit_project_regexp: ".*"
-#           gerrit_ref_regexp: ".*"
-#           path_regexp: ".+\\.X4"
-#         }
-#         owner_whitelist_group: "project-contributor"
-#         mode_allowlist: "ANALYZER_RUN"
-#         mode_allowlist: "FULL_RUN"
-#       }
-#       builders {
 #         name: "another-project/try/yyy"
 #       }
 #       builders {
@@ -718,12 +675,6 @@ lucicfg.emit(
 #           percentage: 60
 #           owner_whitelist_group: "owners"
 #         }
-#       }
-#       builders {
-#         name: "infra/try/spell-checker"
-#         disable_reuse: true
-#         owner_whitelist_group: "project-contributor"
-#         mode_allowlist: "ANALYZER_RUN"
 #       }
 #       builders {
 #         name: "infra/try/website-preview"
@@ -1658,67 +1609,4 @@ lucicfg.emit(
 #     principals: "group:devs"
 #   }
 # }
-# ===
-#
-# === tricium-prod.cfg
-# functions {
-#   type: ANALYZER
-#   name: "AnotherProjectAnalyzerFormatChecker"
-#   needs: GIT_FILE_DETAILS
-#   provides: RESULTS
-#   path_filters: "*.X4"
-#   path_filters: "*.go"
-#   path_filters: "*.py"
-#   impls {
-#     provides_for_platform: LINUX
-#     runtime_platform: LINUX
-#     recipe {
-#       project: "another-project"
-#       bucket: "analyzer"
-#       builder: "format checker"
-#     }
-#   }
-# }
-# functions {
-#   type: ANALYZER
-#   name: "InfraTrySpellChecker"
-#   needs: GIT_FILE_DETAILS
-#   provides: RESULTS
-#   impls {
-#     provides_for_platform: LINUX
-#     runtime_platform: LINUX
-#     recipe {
-#       project: "infra"
-#       bucket: "try"
-#       builder: "spell-checker"
-#     }
-#   }
-# }
-# selections {
-#   function: "AnotherProjectAnalyzerFormatChecker"
-#   platform: LINUX
-# }
-# selections {
-#   function: "InfraTrySpellChecker"
-#   platform: LINUX
-# }
-# repos {
-#   gerrit_project {
-#     host: "example-review.googlesource.com"
-#     project: "another/repo"
-#     git_url: "https://example.googlesource.com/another/repo"
-#   }
-#   whitelisted_group: "project-contributor"
-#   check_all_revision_kinds: true
-# }
-# repos {
-#   gerrit_project {
-#     host: "example-review.googlesource.com"
-#     project: "repo"
-#     git_url: "https://example.googlesource.com/repo"
-#   }
-#   whitelisted_group: "project-contributor"
-#   check_all_revision_kinds: true
-# }
-# service_account: "tricium-prod@appspot.gserviceaccount.com"
 # ===

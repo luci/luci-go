@@ -549,9 +549,6 @@ def _validate_tryjob_experiment(attr, val, *, default = None, required = False):
 #   * **cq.MODE_DRY_RUN**: Run all tests but do not submit.
 #   * **cq.MODE_FULL_RUN**: Run all tests and potentially submit.
 #   * **cq.MODE_NEW_PATCHSET_RUN**: Run tryjobs on patchset upload.
-#   * **cq.MODE_ANALYZER_RUN**: Run code analyzers on patchset upload.
-#     As of April 2021, all such runs are launched by Tricium. Eventually,
-#     Change Verifier(CV) will launch and manage all analyzer runs.
 #
 # `cq.STATUS_*` constants define possible values for cq run statuses.
 #
@@ -609,7 +606,6 @@ cq = struct(
     COMMENT_LEVEL_RESTRICTED = cq_pb.COMMENT_LEVEL_RESTRICTED,
     MODE_DRY_RUN = "DRY_RUN",
     MODE_FULL_RUN = "FULL_RUN",
-    MODE_ANALYZER_RUN = "ANALYZER_RUN",
     MODE_NEW_PATCHSET_RUN = "NEW_PATCHSET_RUN",
     STATUS_CANCELLED = cv_v1pb.Run.CANCELLED,
     STATUS_FAILED = cv_v1pb.Run.FAILED,

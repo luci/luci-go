@@ -36,7 +36,7 @@ def _project(
         scheduler = None,
         swarming = None,
         change_verifier = None,
-        tricium = None,
+        tricium = None,  # @unused
         acls = None,
         bindings = None,
         enforce_realms_in = None,
@@ -67,8 +67,8 @@ def _project(
         (if any).
       change_verifier: appspot hostname of a LUCI Change Verifier (LUCI CV)
         service to use by default (if any).
-      tricium: appspot hostname of a Tricium service to use by default
-        (if any).
+      tricium: Deprecated. appspot hostname of a Tricium service to use by
+        default (if any).
       acls: list of acl.entry(...) objects, will be inherited by all buckets.
         Being gradually replaced by luci.binding(...) in `bindings`.
       bindings: a list of luci.binding(...) to add to the root realm. They will
@@ -102,7 +102,6 @@ def _project(
         "scheduler": service.from_host("scheduler", scheduler),
         "swarming": service.from_host("swarming", swarming),
         "change_verifier": service.from_host("change_verifier", change_verifier),
-        "tricium": service.from_host("tricium", tricium),
         "acls": aclimpl.validate_acls(acls, project_level = True),
         "omit_lucicfg_metadata": validate.bool("omit_lucicfg_metadata", omit_lucicfg_metadata, required = False, default = False),
     })

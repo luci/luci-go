@@ -16,7 +16,6 @@
 
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
-load("@stdlib//internal/re.star", "re")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/cq.star", "cq", "cqimpl")
@@ -176,69 +175,6 @@ def _cq_tryjob_verifier(
             luci.builder(name = name, ...)
             luci.cq_tryjob_verifier(builder = name, cq_group = 'Main CQ')
 
-    #### Declaring a Tricium analyzer
-
-    `cq_tryjob_verifier` can be used to declare a [Tricium] analyzer by
-    providing the builder and `mode_allowlist=[cq.MODE_ANALYZER_RUN]`. It will
-    generate the Tricium config as well as CQ config, so that no additional
-    changes should be required as Tricium is merged into CV.
-
-    However, the following restrictions apply until CV takes on Tricium:
-
-    * Most CQ features are not supported except for `location_filters` and
-      `owner_whitelist`. If provided, they must meet the following conditions:
-        * `location_filters` must specify either both host_regexp and
-          project_regexp or neither. For path_regexp, it must match file
-          extension only (e.g. `.+\\.py`) or everything. Note that, the exact
-          same set of Gerrit repos should be specified across all analyzers in
-          this cq_group and across each unique file extension.
-        * `owner_whitelist` must be the same for all analyzers declared
-          in this cq_group.
-    * Analyzers will run on changes targeting **all refs** of the Gerrit repos
-      watched by the containing cq_group (or repos derived from
-      location_filters, see above) even though refs or refs_exclude may be
-      provided.
-    * All analyzers must be declared in a single luci.cq_group(...).
-
-    For example:
-
-        luci.project(tricium="tricium-prod.appspot.com")
-
-        luci.cq_group(
-            name = 'Main CQ',
-            ...
-            verifiers = [
-                luci.cq_tryjob_verifier(
-                    builder = "spell-checker",
-                    owner_whitelist = ["project-committer"],
-                    mode_allowlist = [cq.MODE_ANALYZER_RUN],
-                ),
-                luci.cq_tryjob_verifier(
-                    builder = "go-linter",
-                    location_filters = [cq.location_filter(path_regexp = ".+\\.go")]
-                    owner_whitelist = ["project-committer"],
-                    mode_allowlist = [cq.MODE_ANALYZER_RUN],
-                ),
-                luci.cq_tryjob_verifier(builder = "Presubmit"),
-                ...
-            ],
-        )
-
-    Note for migrating to lucicfg for LUCI Projects whose sole purpose is
-    to host a single Tricium config today
-    ([Example](https://fuchsia.googlesource.com/infra/config/+/HEAD/repositories/infra/recipes/tricium-prod.cfg)):
-
-    Due to the restrictions mentioned above, it is not possible to merge those
-    auxiliary Projects back to the main LUCI Project. It will be unblocked
-    after Tricium is folded into CV. To migrate, users can declare new
-    luci.cq_group(...)s in those Projects to host Tricium analyzers. However,
-    CQ config should not be generated because the config groups will overlap
-    with the config group in the main LUCI Project (i.e. watch same refs) and
-    break CQ. This can be done by asking lucicfg to track only Tricium config:
-    `lucicfg.config(tracked_files=["tricium-prod.cfg"])`.
-
-    [Tricium]: https://chromium.googlesource.com/infra/infra/+/HEAD/go/src/infra/tricium
-
     Args:
       ctx: the implicit rule context, see lucicfg.rule(...).
       builder: a builder to launch when verifying a CL, see luci.builder(...).
@@ -342,12 +278,6 @@ def _cq_tryjob_verifier(
     for m in mode_allowlist:
         validate.string("mode_allowlist", m)
 
-    # Validate location_filters used by analyzers.
-    # TODO(crbug/1202952): Remove these restrictions after Tricium is
-    # folded into CV.
-    if cq.MODE_ANALYZER_RUN in mode_allowlist:
-        _validate_analyzer_location(location_filters)
-
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
             fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
@@ -415,94 +345,5 @@ def _cq_tryjob_verifier(
     graph.add_edge(parent = keys.cq_verifiers_root(), child = key)
 
     return graph.keyset(key)
-
-def _validate_analyzer_location(location_filters):
-    """Validates location_filters for analyzers.
-
-    Some parts of Tricium config are generated from location_filters. But
-    because of the way that Tricium watches one set of repos per config and
-    uses glob path filters which (in practice) are used for file extensions,
-    not all location filters are valid for analyzers.
-
-    Specifically: Since all analyzers in a Tricium config are watching the same
-    set of Gerrit repos, we need to make sure that for each extension this
-    analyzer is watching, it MUST specify the same set of Gerrit repos it is
-    watching. This allows lucicfg to derive a homogeneous set of watching
-    Gerrit repos when generating Tricium config later.
-
-    For example, location_filters values that match repo1 and repo2 with path
-    filter *.go; and only repo1 with path filter .*.py would not be allowed,
-    because the generated Tricium config has to watch both repo1 and repo2. If
-    we allow it, Tricium will implicitly run for Python files in repo2 which is
-    not what user intended.
-    """
-    if not location_filters:
-        return
-
-    re_for_ext_re = r"\.\+\\\.\w+"
-    ext_prefix = r".+\."
-
-    def matches_ext(s):
-        return re.submatches(re_for_ext_re, s) and s.startswith(ext_prefix)
-
-    re_for_gerrit_host_re = r"[a-z\-]+\-review\.googlesource\.com"
-    re_for_gerrit_project_re = r"[a-z0-9\.\-/]+"
-
-    ext_to_gerrit_urls = {}
-    all_gerrit_urls = []
-
-    for f in location_filters:
-        if f.exclude:
-            fail('"analyzer currently can not be used together with exclude filters')
-
-        # Path filter must be empty (matching everything) or match only an extension.
-        empty_path = f.path_regexp in ("", ".*", ".+")
-        if not empty_path and not matches_ext(f.path_regexp):
-            fail('"location_filter" of an analyzer MUST have a path_regexp ' +
-                 'that matches everything, OR a path_regexp like ".+\\.py"; ' +
-                 'got "%s", expecting pattern "%s"' % (f.path_regexp, re_for_ext_re))
-        ext = ""
-        if matches_ext(f.path_regexp):
-            ext = f.path_regexp[len(ext_prefix):]
-
-        empty_host = f.gerrit_host_regexp in ("", ".*", ".+")
-        empty_project = f.gerrit_project_regexp in ("", ".*", ".+")
-        if (not empty_host and empty_project) or (empty_host and not empty_project):
-            # Only host or project specified, not both.
-            fail('"location_filter" of an analyzer MUST have either both Gerrit host and project ' +
-                 'or neither. Got "%s", "%s"' % (f.gerrit_host_regexp, f.gerrit_project_regexp))
-
-        # gerrit_url below is a combination of host and project; both must be
-        # specified and match the expected formats.
-        gerrit_url = ""
-        if not empty_host and not empty_project:
-            gerrit_url = f.gerrit_host_regexp + "/" + f.gerrit_project_regexp
-            if not re.submatches(re_for_gerrit_host_re, f.gerrit_host_regexp):
-                fail("Gerrit host in location filter did not match expected format, " +
-                     'got "%s", expecting pattern "%s"' % (f.gerrit_host_regexp, re_for_gerrit_host_re))
-            if not re.submatches(re_for_gerrit_project_re, f.gerrit_project_regexp):
-                fail("Gerrit project in location filter did not match expected format, " +
-                     'got "%s", expecting pattern "%s"' % (f.gerrit_project_regexp, re_for_gerrit_project_re))
-
-        if ext not in ext_to_gerrit_urls:
-            ext_to_gerrit_urls[ext] = []
-        if ((gerrit_url and "" in all_gerrit_urls) or (gerrit_url == "" and any(all_gerrit_urls))):
-            fail(r'"location_filters" of an analyzer MUST NOT mix two different formats ' +
-                 r'(i.e. only extension, and extension plus gerrit host/project."')
-        ext_to_gerrit_urls[ext].append(gerrit_url)
-        all_gerrit_urls.append(gerrit_url)
-
-    ref_ext, ref_gerrit_urls = ext_to_gerrit_urls.popitem()
-    ref_gerrit_urls = sorted(ref_gerrit_urls)
-    for ext, gerrit_urls in ext_to_gerrit_urls.items():
-        if sorted(gerrit_urls) != ref_gerrit_urls:
-            fail('each extension specified in "location_filters" of an analyzer ' +
-                 "MUST have the same set of gerrit URLs; " +
-                 "got %s for extension %s, but %s for extension %s." % (
-                     sorted(gerrit_urls),
-                     ext,
-                     ref_gerrit_urls,
-                     ref_ext,
-                 ))
 
 cq_tryjob_verifier = lucicfg.rule(impl = _cq_tryjob_verifier)
