@@ -30,6 +30,7 @@ import {
 } from '@/common/components/params_pager';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
+import { ColumnMenu } from './column_menu';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
 import { StyledGrid } from './styled_data_grid';
@@ -56,6 +57,7 @@ interface DataTableProps {
   onSortModelChange: (newSortModel: GridSortModel) => void;
 }
 
+// TODO: b/393601163 - Consider combining this directly into Device Table.
 export const DataTable = ({
   gridRef: apiRef,
   defaultColumnVisibilityModel,
@@ -112,6 +114,7 @@ export const DataTable = ({
       autosizeOptions={autosizeOptions}
       slots={{
         pagination: Pagination,
+        columnMenu: ColumnMenu,
       }}
       slotProps={{
         pagination: {
@@ -121,7 +124,6 @@ export const DataTable = ({
       }}
       getRowHeight={() => 'auto'}
       disableRowSelectionOnClick
-      disableColumnMenu
       sortModel={sortModel}
       onSortModelChange={onSortModelChange}
       rowCount={UNKNOWN_ROW_COUNT}
