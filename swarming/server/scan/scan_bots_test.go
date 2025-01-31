@@ -272,6 +272,8 @@ type FakeBot struct {
 	Quarantined bool
 	Busy        bool
 
+	LastSeen time.Time
+
 	Handshaking   bool
 	RBEInstance   string
 	RBEHybridMode bool
@@ -285,7 +287,11 @@ func (f *FakeBot) BotInfo(ctx context.Context) *model.BotInfo {
 		},
 	}
 	if !f.NoLastSeen {
-		b.LastSeen = datastore.NewUnindexedOptional(time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC))
+		lastSeen := f.LastSeen
+		if lastSeen.IsZero() {
+			lastSeen = time.Date(2023, time.January, 1, 2, 3, 4, 0, time.UTC)
+		}
+		b.LastSeen = datastore.NewUnindexedOptional(lastSeen)
 	}
 
 	var s []byte

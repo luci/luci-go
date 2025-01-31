@@ -16,7 +16,9 @@ package main
 
 import (
 	"context"
+	"time"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/cron"
@@ -24,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/module"
 	tsmonsrv "go.chromium.org/luci/server/tsmon"
 
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/scan"
 )
 
@@ -48,12 +51,24 @@ func main() {
 			mon = monitor.NewNilMonitor()
 		}
 
+		cfg, err := cfg.NewProvider(srv.Context)
+		if err != nil {
+			return err
+		}
+
 		cron.RegisterHandler("report-bots", func(ctx context.Context) error {
+			conf, err := cfg.Latest(ctx)
+			if err != nil {
+				return errors.Annotate(err, "failed to fetch the service config").Err()
+			}
 			return scan.Bots(ctx, []scan.BotVisitor{
 				&scan.BotsMetricsReporter{
 					ServiceName: srv.Options.TsMonServiceName,
 					JobName:     srv.Options.TsMonJobName,
 					Monitor:     mon,
+				},
+				&scan.DeadBotDetector{
+					BotDeathTimeout: time.Duration(conf.Settings().BotDeathTimeoutSecs) * time.Second,
 				},
 				&scan.BotsDimensionsAggregator{},
 				&scan.NamedCachesAggregator{},
