@@ -38,11 +38,14 @@ var botInfoTxnCount = metric.NewCounter(
 	&types.MetricMetadata{},
 	// The BotEventType that caused the transaction.
 	field.String("event"),
-	// One of: ok, timeout, canceled, conflict, other.
+	// One of: ok, timeout, canceled, conflict, skipped, other.
 	field.String("outcome"),
 	// The number of attempts used (can be 0 if the first BeginTransaction RPC fails).
 	field.Int("attempts"),
 )
+
+// errSkippedUpdate is used to signal the transaction that it should rollback.
+var errSkippedUpdate = errors.Reason("update is skipped by Prepare callback").Err()
 
 const (
 	// oldBotEventsCutOff defines age of BotEvent entities for the TTL policy.
@@ -122,13 +125,6 @@ type BotInfoUpdate struct {
 	// Required.
 	BotID string
 
-	// Current is an existing BotInfo entity to use when in a transaction.
-	//
-	// If set, the update must be prepared via Prepare and submitted as a part of
-	// a transaction. Must not be set when not in a transaction (i.e. when using
-	// Submit).
-	Current *BotInfo
-
 	// EventType is what event is causing this BotInfo update to be recorded.
 	//
 	// Required.
@@ -145,6 +141,21 @@ type BotInfoUpdate struct {
 	//
 	// It will show up in the UI as the description of the event.
 	EventMessage string
+
+	// Prepare is an optional callback called in the transaction after fetching
+	// the BotInfo entity, but before applying the update.
+	//
+	// It can do any additional transactional work that touches entities other
+	// than BotInfo, and/or decide if the update should be skipped. The callback
+	// must not modify BotInfo itself.
+	//
+	// If this is the first update for this bot, `bot` will be nil.
+	//
+	// If the callback returns false, this update will be silently skipped and
+	// all transactional work done by the callback (if any) rolled back.
+	//
+	// Returning an error aborts the update as well, with the error propagated.
+	Prepare func(ctx context.Context, bot *BotInfo) (proceed bool, err error)
 
 	// Dimensions is a sorted list of dimensions to assign to the bot.
 	//
@@ -244,8 +255,8 @@ type BotEventTaskInfo struct {
 	TaskName string
 }
 
-// PreparedBotInfoUpdate is details about a bot info update.
-type PreparedBotInfoUpdate struct {
+// SubmittedBotInfoUpdate is details about a submitted bot info update.
+type SubmittedBotInfoUpdate struct {
 	// BotInfo is the BotInfo entity stored in the datastore after the update.
 	//
 	// It either an updated BotInfo or an existing one if the update is not
@@ -257,60 +268,50 @@ type PreparedBotInfoUpdate struct {
 	// Set only if the event was actually recorded.
 	BotEvent *BotEvent
 
-	// EntitiesToPut is a list of entities to put as a part of the transaction.
-	//
-	// It contains BotInfo and/or BotEvent, or nothing if the update is not
-	// necessary. For convenience of calling datastore.Put(...).
-	EntitiesToPut []any
+	// entitiesToPut is a list of entities to put in the transaction.
+	entitiesToPut []any
 }
 
 // Submit runs a transaction that applies this update to the BotInfo entity
 // currently stored in the datastore, potentially also recording it as a new
 // BotEvent entity.
 //
+// If the update was skipped by the Prepare callback, returns (nil, nil).
+//
 // Returns datastore errors. All such errors are transient.
-func (u *BotInfoUpdate) Submit(ctx context.Context) (*PreparedBotInfoUpdate, error) {
-	if datastore.CurrentTransaction(ctx) != nil {
-		panic("Submit must not be used in a transaction, use Prepare instead")
-	}
-	if u.Current != nil {
-		panic("Current can only be used when reusing an existing transaction")
-	}
-	var prepared *PreparedBotInfoUpdate
+func (u *BotInfoUpdate) Submit(ctx context.Context) (*SubmittedBotInfoUpdate, error) {
+	var submitted *SubmittedBotInfoUpdate
 	var attempt int
 	err := datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		attempt++
 		var err error
-		if prepared, err = u.Prepare(ctx); err != nil {
+		if submitted, err = u.execute(ctx); err != nil {
 			return err
 		}
-		if len(prepared.EntitiesToPut) != 0 {
-			if err := datastore.Put(ctx, prepared.EntitiesToPut...); err != nil {
+		if len(submitted.entitiesToPut) != 0 {
+			if err := datastore.Put(ctx, submitted.entitiesToPut...); err != nil {
 				return err
 			}
-			prepared.EntitiesToPut = nil // dealt with them already
 		}
 		return err
 	}, &datastore.TransactionOptions{
 		Attempts: maxTxnAttempts,
 	})
 	u.reportBotInfoTxn(ctx, attempt, err)
-	if err != nil {
+	switch {
+	case err == nil:
+		return submitted, nil
+	case errors.Is(err, errSkippedUpdate):
+		return nil, nil
+	default:
 		return nil, err
 	}
-	return prepared, nil
 }
 
-// Prepare prepares entities to apply this update.
-//
-// It must be called in a transaction. This method is useful if there's already
-// a transaction open that makes some other changes.
+// execute prepares entities to apply this update.
 //
 // Returns datastore errors. All errors are transient.
-func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, error) {
-	if datastore.CurrentTransaction(ctx) == nil {
-		panic("Prepare must be used in a transaction")
-	}
+func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, error) {
 	if len(u.Dimensions) != 0 {
 		if !slices.IsSorted(u.Dimensions) {
 			panic("Dimensions must be sorted")
@@ -324,22 +325,21 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 	key := BotInfoKey(ctx, u.BotID)
 
 	// Get the current BotInfo (if any) to update it.
-	var current *BotInfo
-	if u.Current != nil {
-		if !u.Current.Key.Equal(key) {
-			panic(fmt.Sprintf("unexpected key %s for bot ID %s", u.Current.Key, u.BotID))
-		}
-		// Make a shallow copy since we are going to modify this entity. Modifying
-		// it in-place will cause bugs in case Prepare transaction is retried.
-		cpy := *u.Current
-		current = &cpy
-	} else {
-		current = &BotInfo{Key: key}
-		switch err := datastore.Get(ctx, current); {
-		case errors.Is(err, datastore.ErrNoSuchEntity):
-			current = nil
+	current := &BotInfo{Key: key}
+	switch err := datastore.Get(ctx, current); {
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		current = nil
+	case err != nil:
+		return nil, errors.Annotate(err, "fetching current BotInfo").Err()
+	}
+
+	// Do any extra transactional work and detect if we should proceed.
+	if u.Prepare != nil {
+		switch proceed, err := u.Prepare(ctx, current); {
 		case err != nil:
-			return nil, errors.Annotate(err, "fetching current BotInfo").Err()
+			return nil, errors.Annotate(err, "in Prepare callback").Err()
+		case !proceed:
+			return nil, errSkippedUpdate
 		}
 	}
 
@@ -371,7 +371,7 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 	eventDedupKey := u.fullEventDedupKey()
 	if eventDedupKey != "" && current.LastEventDedupKey == eventDedupKey {
 		logging.Warningf(ctx, "Skipping BotInfo update, event has been recorded already: %s", eventDedupKey)
-		return &PreparedBotInfoUpdate{
+		return &SubmittedBotInfoUpdate{
 			BotInfo: current,
 		}, nil
 	}
@@ -509,10 +509,10 @@ func (u *BotInfoUpdate) Prepare(ctx context.Context) (*PreparedBotInfoUpdate, er
 		toPut = append(toPut, eventToPut)
 	}
 
-	return &PreparedBotInfoUpdate{
+	return &SubmittedBotInfoUpdate{
 		BotInfo:       current,
 		BotEvent:      eventToPut,
-		EntitiesToPut: toPut,
+		entitiesToPut: toPut,
 	}, nil
 }
 
@@ -565,12 +565,16 @@ func (u *BotInfoUpdate) reportBotInfoTxn(ctx context.Context, attempt int, err e
 		outcome = "timeout"
 	case errors.Is(err, context.Canceled):
 		outcome = "canceled"
+	case errors.Is(err, errSkippedUpdate):
+		outcome = "skipped"
 	default:
 		outcome = "other"
 	}
 	botInfoTxnCount.Add(ctx, 1, string(u.EventType), outcome, min(attempt, maxTxnAttempts))
 	if err != nil {
-		logging.Errorf(ctx, "Failed to submit %s after %d attempt(s): %s", u.EventType, attempt, err)
+		if !errors.Is(err, errSkippedUpdate) {
+			logging.Errorf(ctx, "Failed to submit %s after %d attempt(s): %s", u.EventType, attempt, err)
+		}
 	} else if attempt > 3 {
 		logging.Warningf(ctx, "Submitted %s after %d attempt(s)", u.EventType, attempt)
 	}

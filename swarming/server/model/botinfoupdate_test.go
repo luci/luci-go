@@ -368,5 +368,51 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, events[2].TaskID, should.Equal("task-id")) // task_completed
 			assert.That(t, events[3].TaskID, should.Equal(""))        // bot_idle
 		})
+
+		t.Run("Prepare + initial update", func(t *ftt.Test) {
+			// The callback sees `nil` if there's no BotInfo yet.
+			var saw []*BotInfo
+			update := BotInfoUpdate{
+				BotID:     "bot-id",
+				EventType: BotEventConnected,
+				Prepare: func(ctx context.Context, bot *BotInfo) (proceed bool, err error) {
+					saw = append(saw, bot)
+					return false, nil
+				},
+			}
+			submitted, err := update.Submit(ctx)
+			assert.NoErr(t, err)
+			assert.Loosely(t, submitted, should.BeNil)
+			assert.That(t, saw, should.Match([]*BotInfo{nil}))
+
+			// The entity is still actually missing.
+			info := &BotInfo{Key: BotInfoKey(ctx, "bot-id")}
+			assert.That(t, datastore.Get(ctx, info), should.Equal(datastore.ErrNoSuchEntity))
+		})
+
+		t.Run("Prepare + normal update", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect", nil, testState1, nil, nil)
+
+			var saw []*BotInfo
+			update := BotInfoUpdate{
+				BotID:     "bot-id",
+				EventType: BotEventIdle,
+				Prepare: func(ctx context.Context, bot *BotInfo) (proceed bool, err error) {
+					saw = append(saw, bot)
+					return false, nil
+				},
+			}
+			submitted, err := update.Submit(ctx)
+			assert.NoErr(t, err)
+			assert.Loosely(t, submitted, should.BeNil)
+			assert.Loosely(t, saw, should.HaveLength(1))
+			assert.Loosely(t, saw[0], should.NotBeNil)
+
+			// Have only one event recorded.
+			_, events := check()
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+			}))
+		})
 	})
 }
