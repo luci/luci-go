@@ -29,9 +29,13 @@ interface ColumnsButtonProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
 }
 
+/**
+ * Component for displaying a menu to customize the columns on a table.
+ */
 export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
   const columnVisibilityModel = gridColumnVisibilityModelSelector(gridRef);
   const columnDefinitions = gridColumnDefinitionsSelector(gridRef);
+
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
   const toggleColumn = (field: string) => {
@@ -60,7 +64,7 @@ export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
   };
 
   return (
-    <div>
+    <>
       <Button
         onClick={(event) => setAnchorEL(event.currentTarget)}
         size="small"
@@ -83,6 +87,6 @@ export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
         onFlipOption={toggleColumn}
         maxHeight={500}
       />
-    </div>
+    </>
   );
 }

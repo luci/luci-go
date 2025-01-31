@@ -31,6 +31,7 @@ import {
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { ColumnMenu } from './column_menu';
+import { FleetToolbar, FleetToolbarProps } from './fleet_toolbar';
 import { Pagination } from './pagination';
 import { getVisibleColumns, visibleColumnsUpdater } from './search_param_utils';
 import { StyledGrid } from './styled_data_grid';
@@ -55,6 +56,12 @@ interface DataTableProps {
   pagerCtx: PagerContext;
   sortModel: GridSortModel;
   onSortModelChange: (newSortModel: GridSortModel) => void;
+}
+
+// Used to get around TypeScript issues with custom toolbars.
+// See: https://mui.com/x/react-data-grid/components/?srsltid=AfmBOoqlDTexbfxLLrstTWIEaJ97nrqXGVqhaMHF3Q2yIujjoMRTtTvF#custom-slot-props-with-typescript
+declare module '@mui/x-data-grid' {
+  interface ToolbarPropsOverrides extends FleetToolbarProps {}
 }
 
 // TODO: b/393601163 - Consider combining this directly into Device Table.
@@ -115,11 +122,15 @@ export const DataTable = ({
       slots={{
         pagination: Pagination,
         columnMenu: ColumnMenu,
+        toolbar: FleetToolbar,
       }}
       slotProps={{
         pagination: {
           pagerCtx: pagerCtx,
           nextPageToken: nextPageToken,
+        },
+        toolbar: {
+          gridRef: apiRef,
         },
       }}
       getRowHeight={() => 'auto'}

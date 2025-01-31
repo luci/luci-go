@@ -19,7 +19,6 @@ import { Helmet } from 'react-helmet';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { ColumnsButton } from '@/fleet/components/data_table/columns_button';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { MainMetrics } from '@/fleet/components/main_metrics';
@@ -49,12 +48,6 @@ export const DeviceListPage = () => {
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
 
-  // Turns out gridRef.current object might be initialized, but underneath the functions may be undefined.
-  // Whenever some component (like column picker) relies on the gridRef before it's fully initialized it will break.
-  // There probably is a better way for checking if the grid is initialized, here we are just checking for one of the functions
-  // that should be there
-  const isGridInitialized = gridRef.current?.getVisibleColumns !== undefined;
-
   return (
     <div
       css={{
@@ -79,7 +72,6 @@ export const DeviceListPage = () => {
             selectedOptions={selectedOptions}
             setSelectedOptions={setSelectedOptions}
           />
-          {isGridInitialized && <ColumnsButton gridRef={gridRef} />}
         </div>
       )}
       <div
