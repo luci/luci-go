@@ -75,6 +75,12 @@ const Container = styled.div`
   border-radius: 4;
 `;
 
+const HAS_RIGHT_SIBLING_STYLES = {
+  borderRight: `1px solid ${colors.grey[300]}`,
+  marginRight: 32,
+};
+
+// TODO: b/393624377 - Refactor this component to make it easier to test.
 export function MainMetrics({ filter }: { filter: SelectedOptions }) {
   const client = useFleetConsoleClient();
   const countQuery = useQuery(
@@ -101,7 +107,28 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
       >
         <div
           css={{
-            borderRight: `1px solid ${colors.grey[300]}`,
+            ...HAS_RIGHT_SIBLING_STYLES,
+            flexGrow: 0.2,
+          }}
+        >
+          <Typography variant="subhead1">Total</Typography>
+          <div
+            css={{
+              display: 'flex',
+              justifyContent: 'space-around',
+              marginTop: 5,
+            }}
+          >
+            <SingleMetric
+              name="Devices"
+              value={fakeData.total}
+              loading={countQuery.isLoading}
+            />
+          </div>
+        </div>
+        <div
+          css={{
+            ...HAS_RIGHT_SIBLING_STYLES,
             flexGrow: 0.4,
           }}
         >
@@ -116,24 +143,18 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Busy"
               value={countQuery.data?.taskState?.busy}
-              percentage={
-                countQuery.data?.taskState?.busy &&
-                countQuery.data.taskState.busy / fakeData.total
-              }
+              total={fakeData.total}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Idle"
               value={countQuery.data?.taskState?.idle}
-              percentage={
-                countQuery.data?.taskState?.idle &&
-                countQuery.data.taskState.idle / fakeData.total
-              }
+              total={fakeData.total}
               loading={countQuery.isLoading}
             />
           </div>
         </div>
-        <div css={{ paddingLeft: 32, flexGrow: 1 }}>
+        <div css={{ flexGrow: 1 }}>
           <Typography variant="subhead1">Device state</Typography>
           <div
             css={{
@@ -145,19 +166,13 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Ready"
               value={countQuery.data?.deviceState?.ready}
-              percentage={
-                countQuery.data?.deviceState?.ready &&
-                countQuery.data.deviceState.ready / fakeData.total
-              }
+              total={fakeData.total}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need repair"
               value={countQuery.data?.deviceState?.needRepair}
-              percentage={
-                countQuery.data?.deviceState?.needRepair &&
-                countQuery.data.deviceState.needRepair / fakeData.total
-              }
+              total={fakeData.total}
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
@@ -168,20 +183,14 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Repair failed"
               value={countQuery.data?.deviceState?.repairFailed}
-              percentage={
-                countQuery.data?.deviceState?.repairFailed &&
-                countQuery.data.deviceState.repairFailed / fakeData.total
-              }
+              total={fakeData.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need manual repair"
               value={countQuery.data?.deviceState?.needManualRepair}
-              percentage={
-                countQuery.data?.deviceState?.needManualRepair &&
-                countQuery.data.deviceState.needManualRepair / fakeData.total
-              }
+              total={fakeData.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
             />
@@ -202,18 +211,31 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
 type SingleMetricProps = {
   name: string;
   value?: number;
-  percentage?: number;
+  total?: number;
   Icon?: ReactElement;
   loading?: boolean;
 };
 
-function SingleMetric({
+export function SingleMetric({
   name,
   value,
-  percentage,
+  total,
   Icon,
   loading,
 }: SingleMetricProps) {
+  const percentage = total && value ? value / total : -1;
+
+  const renderPercent = () => {
+    if (percentage < 0) return <></>;
+    return loading ? (
+      <Skeleton width={16} height={18} />
+    ) : (
+      <Typography variant="caption" color={colors.grey[700]}>
+        {percentage.toLocaleString(undefined, { style: 'percent' })}
+      </Typography>
+    );
+  };
+
   return (
     <div css={{ marginRight: 'auto' }}>
       <Typography variant="body2">{name}</Typography>
@@ -222,16 +244,17 @@ function SingleMetric({
         {!value || loading ? (
           <Skeleton variant="text" width={34} height={36} />
         ) : (
-          <Typography variant="h3">{value}</Typography>
+          <>
+            <Typography variant="h3">{value}</Typography>
+            {total ? (
+              <Typography variant="caption">{` / ${total}`}</Typography>
+            ) : (
+              <></>
+            )}
+          </>
         )}
       </div>
-      {!percentage || loading ? (
-        <Skeleton width={16} height={18} />
-      ) : (
-        <Typography variant="caption" color={colors.grey[700]}>
-          {percentage.toLocaleString(undefined, { style: 'percent' })}
-        </Typography>
-      )}
+      {renderPercent()}
     </div>
   );
 }
