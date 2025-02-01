@@ -26,8 +26,13 @@ message CustomExt {
   string must_equal = 1;
 }
 
+message Custom2Ext {
+  bool is_set = 1;
+}
+
 extend google.protobuf.FieldOptions {
   CustomExt custom = 50002;
+  Custom2Ext custom2 = 50003;
 }
 
 message Inner {
@@ -52,6 +57,8 @@ message Inner {
   string output = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
   string req = 4 [(google.api.field_behavior) = REQUIRED];
   string custom = 5 [(protowalk.custom).must_equal = "hello"];
+
+  string custom2 = 500 [(protowalk.custom2).is_set = true];
 
   Embedded single_embed = 6;
   repeated Embedded multi_embed = 7;

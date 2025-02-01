@@ -33,8 +33,10 @@ import (
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
 
+var cmprWalker = protowalk.NewWalker[*pb.CustomMetricPreviewRequest](protowalk.RequiredProcessor{})
+
 func validateCustomMetricPreviewRequest(ctx context.Context, req *pb.CustomMetricPreviewRequest) error {
-	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}); procRes != nil {
+	if procRes := cmprWalker.Execute(req); !procRes.Empty() {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
 		}

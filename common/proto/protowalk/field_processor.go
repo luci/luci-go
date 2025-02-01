@@ -15,56 +15,30 @@
 package protowalk
 
 import (
-	"fmt"
-	"reflect"
-
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-// FieldSelector is called once per field per message type per process and
-// the result is cached by the type name of this FieldProcessor (i.e.
-// reflect.TypeOf to observe the package and local type name of the processor)
-// and the full proto message name.
-//
-// Returns an enum of how this processor wants to handle the provided field.
-//
-// This function is registered with a corresponding FieldProcessor in
-// RegisterFieldProcessor.
-type FieldSelector func(field protoreflect.FieldDescriptor) ProcessAttr
-
-// RegisterFieldProcessor registers a new FieldProcessor to allow it to be used
-// with protowalk.Fields.
-//
-// This should be called once per FieldProcessor, per process like:
-//
-//	func init() {
-//	  protowalk.RegisterFieldProcessor(&MyFP{}, MyFPFieldSelector)
-//	}
-//
-// Calling RegisterFieldProcessor twice for the same FieldProcessor will panic.
-func RegisterFieldProcessor(fp FieldProcessor, selector FieldSelector) {
-	fieldProcessorSelectorsMu.Lock()
-	defer fieldProcessorSelectorsMu.Unlock()
-
-	t := reflect.TypeOf(fp)
-	if fieldProcessorSelectors == nil {
-		fieldProcessorSelectors = make(map[reflect.Type]FieldSelector, 10)
-	}
-	if fieldProcessorSelectors[t] != nil {
-		panic(fmt.Sprintf("FieldProcessor %T already registered", fp))
-	}
-	fieldProcessorSelectors[t] = selector
-}
-
 // FieldProcessor allows processing a set of proto message fields in conjunction
-// with the package-level Fields() function.
+// with [NewWalker].
 //
 // Typically FieldProcessor implementations will apply to fields with particular
 // annotations, but a FieldProcessor can technically react to any field(s) that
 // it wants to.
 type FieldProcessor interface {
-	// Process will only be called on fields where the registered FieldSelector
-	// function already returned a non-zero ProcessAttr value.
+	// ShouldProcess is called once per field descriptor in
+	// [NewWalker]/[NewDynamicWalker].
+	//
+	// Note that this is NOT called in [Walker.Execute]/[DynamicWalker.Execute].
+	// The return value of this is cached in the [Walker]/[DynamicWalker].
+	//
+	// Returns an enum of how this processor wants to handle the provided field.
+	ShouldProcess(field protoreflect.FieldDescriptor) ProcessAttr
+
+	// Process is called when examining a message with [Walker.Execute] or
+	// [DynamicWalker.Execute].
+	//
+	// It will only be called on fields where ShouldProcess returned
+	// a [ProcessAttr] value other than [ProcessNever].
 	//
 	// Process will never be invoked for a field on a nil message. That is,
 	// technically, someMessage.someField is 'unset', even if someMessage is nil.
@@ -88,7 +62,7 @@ type FieldProcessor interface {
 	//   * B.Process(3)
 	//
 	// If two processors apply to the same field in a message, they'll be called
-	// in the order specified to Fields (i.e. Fields(..., A{}, B{}) would call AS
-	// then B, and Fields(..., B{}, A{}) would call B then A).
+	// in the order specified to Fields (i.e. NewWalker(..., A{}, B{}) would call A
+	// then B, and NewWalker(..., B{}, A{}) would call B then A).
 	Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool)
 }

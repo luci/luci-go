@@ -16,42 +16,31 @@ package protowalk
 
 import (
 	"fmt"
-	"reflect"
-	"sync"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go.chromium.org/luci/common/data/stringset"
 )
 
-// fieldProcessorSelectors maps from all the registered processors to an
-// id, which can be used with registeredFieldProcessorsID to find the callback
-// function and data type, and will be used internally in caches.
-var (
-	fieldProcessorSelectors   map[reflect.Type]FieldSelector
-	fieldProcessorSelectorsMu sync.RWMutex
-)
-
-// fieldProcessorCacheKey is the key for the global field processor cache
-type fieldProcessorCacheKey struct {
-	message    protoreflect.FullName
-	processorT reflect.Type
-}
-
-// fieldProcessorCacheValue is a single cache value for the global field
-// processor cache.
-type fieldProcessorCacheValue struct {
+// tempCacheField is a single cache value for tempCache which indicates what
+// behavior we need for a single field in a proto message for a single
+// processor.
+type tempCacheField struct {
 	// fieldNum is the field 'tag number' in the proto message for the
 	// corresponding field. We store this instead of the FieldDescriptor because
 	// it's only 4 bytes, rather than a 16+byte interface.
 	fieldNum protoreflect.FieldNumber
 
-	// All cacheable attributes
+	// ProcessAttr will be set if this field needs to be processed by the
+	// FieldProcessor.
 	ProcessAttr
+
+	// recurseAttr will be set if we need to descend into this field in order to
+	// see if any of the values it contains need processing.
 	recurseAttr
 }
 
-// fieldProcessorCacheEntry corresponds to a single Message+FieldProcessor
+// tempCacheEntry corresponds to a single Message+FieldProcessor
 // combination.
 //
 // Each value is the combined result of asking FieldProcessor.ShouldProcess on the
@@ -60,36 +49,39 @@ type fieldProcessorCacheValue struct {
 // processed by this FieldProcessor.
 //
 // This is always kept ordered by field number, and is immutable.
-type fieldProcessorCacheEntry []fieldProcessorCacheValue
+type tempCacheEntry []tempCacheField
 
-// globalFieldProcessorCache maps (Message+FieldProcessor) combinations to
-// a (possibly empty) slice which indicates which fields need to be processed
-// and/or recursed by the FieldProcessor.
-var globalFieldProcessorCache = map[fieldProcessorCacheKey]fieldProcessorCacheEntry{}
-var globalFieldProcessorCacheMu sync.RWMutex
+type tempCacheEntryBuilder struct {
+	ret tempCacheEntry
+	tmp map[protoreflect.FieldNumber]tempCacheField
+}
 
-// resetGlobalFieldProcessorCache is only used in tests.
-func resetGlobalFieldProcessorCache() {
-	globalFieldProcessorCacheMu.Lock()
-	defer globalFieldProcessorCacheMu.Unlock()
-	for k := range globalFieldProcessorCache {
-		delete(globalFieldProcessorCache, k)
+func newTempCacheEntryBuilder() *tempCacheEntryBuilder {
+	return &tempCacheEntryBuilder{
+		ret: make(tempCacheEntry, 0),
+		tmp: map[protoreflect.FieldNumber]tempCacheField{},
 	}
 }
 
-type cacheEntryBuilder struct {
-	ret fieldProcessorCacheEntry
-	tmp map[protoreflect.FieldNumber]fieldProcessorCacheValue
-}
+type tempCache map[protoreflect.MessageDescriptor]map[FieldProcessor]tempCacheEntry
 
-func newCacheEntryBuilder() *cacheEntryBuilder {
-	return &cacheEntryBuilder{
-		ret: make(fieldProcessorCacheEntry, 0),
-		tmp: map[protoreflect.FieldNumber]fieldProcessorCacheValue{},
+func (t tempCache) populate(msgD protoreflect.MessageDescriptor, processors []FieldProcessor) {
+	// TODO - setCacheEntry/generateCacheEntry/makePlan can be collapsed into
+	// a single walk of msgD which directly outputs a plan. The current code
+	// structure is because the previous iteration of this library allowed
+	// dynamically mixing and matching {msg x processors} - we would
+	// walk each {msg x processor} once (code in this file) and then we would
+	// quickly merge them (makePlan) to actually execute.
+	//
+	// The current version of this library fully cooks the {msg x processors} plan
+	// directly into the Walker instances - there is now no need to separate the
+	// {msg x processor} computation.
+	for _, proc := range processors {
+		t.setCacheEntry(msgD, proc, stringset.New(1), map[protoreflect.MessageDescriptor]*tempCacheEntryBuilder{})
 	}
 }
 
-// generateCacheEntry returns the fieldProcessorCacheEntry for this
+// generateCacheEntry returns the tempCacheEntry for this
 // message/processor combination.
 //
 // This will calculate and return the cache entry.
@@ -97,15 +89,15 @@ func newCacheEntryBuilder() *cacheEntryBuilder {
 // If msg has recursive fields, we may not be able to get the final cache values
 // for those fields until we get up one level, so use tmpRet to keep the temporary
 // cache values for them.
-func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundle, visitedSubMsgs stringset.Set, tmp map[string]*cacheEntryBuilder) *cacheEntryBuilder {
+func (t tempCache) generateCacheEntry(msg protoreflect.MessageDescriptor, processor FieldProcessor, visitedSubMsgs stringset.Set, tmp map[protoreflect.MessageDescriptor]*tempCacheEntryBuilder) *tempCacheEntryBuilder {
 	fields := msg.Fields()
-	msgName := string(msg.FullName())
+
 	for f := 0; f < fields.Len(); f++ {
 		finalRet := true
 		field := fields.Get(f)
-		value := fieldProcessorCacheValue{
+		value := tempCacheField{
 			fieldNum:    field.Number(),
-			ProcessAttr: processor.sel(field),
+			ProcessAttr: processor.ShouldProcess(field),
 		}
 
 		if !value.ProcessAttr.Valid() {
@@ -115,7 +107,7 @@ func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundl
 
 		if field.IsMap() {
 			if mapVal := field.MapValue(); mapVal.Kind() == protoreflect.MessageKind {
-				if len(setCacheEntry(mapVal.Message(), processor, visitedSubMsgs, tmp)) > 0 {
+				if len(t.setCacheEntry(mapVal.Message(), processor, visitedSubMsgs, tmp)) > 0 {
 					switch field.MapKey().Kind() {
 					case protoreflect.BoolKind:
 						value.recurseAttr = recurseMapBool
@@ -129,10 +121,8 @@ func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundl
 				}
 			}
 		} else if field.Kind() == protoreflect.MessageKind {
-			fldName := string(field.FullName())
-			subMsgName := string(field.Message().FullName())
-			if visitedSubMsgs.Add(fldName) {
-				if len(setCacheEntry(field.Message(), processor, visitedSubMsgs, tmp)) > 0 {
+			if visitedSubMsgs.Add(string(field.FullName())) {
+				if len(t.setCacheEntry(field.Message(), processor, visitedSubMsgs, tmp)) > 0 {
 					if field.IsList() {
 						value.recurseAttr = recurseRepeated
 					} else {
@@ -160,7 +150,7 @@ func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundl
 					value.recurseAttr = recurseOne
 				}
 
-				for _, v := range tmp[subMsgName].ret {
+				for _, v := range tmp[field.Message()].ret {
 					if v.ProcessAttr != ProcessNever {
 						finalRet = true
 						break
@@ -175,7 +165,7 @@ func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundl
 		//     message contains a field (or another recursion) that we
 		//     must follow).
 		if value.ProcessAttr != ProcessNever || value.recurseAttr != recurseNone {
-			if bdr, ok := tmp[msgName]; ok {
+			if bdr, ok := tmp[msg]; ok {
 				bdr.tmp[value.fieldNum] = value
 				if finalRet {
 					bdr.ret = append(bdr.ret, value)
@@ -184,30 +174,30 @@ func generateCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundl
 			}
 		}
 	}
-	return tmp[msgName]
+	return tmp[msg]
 }
 
-// setCacheEntry will ensure that globalFieldProcessorCache is populated for
+// setCacheEntry will ensure that the walker cache is populated for
 // `msg` for the given `processor`.
 //
 // Returns the entry for this message/processor combination.
-func setCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundle, visitedSubMsgs stringset.Set, tmp map[string]*cacheEntryBuilder) (ret fieldProcessorCacheEntry) {
-	key := fieldProcessorCacheKey{
-		message:    msg.FullName(),
-		processorT: processor.proc,
+func (t tempCache) setCacheEntry(msg protoreflect.MessageDescriptor, processor FieldProcessor, visitedSubMsgs stringset.Set, tmp map[protoreflect.MessageDescriptor]*tempCacheEntryBuilder) (ret tempCacheEntry) {
+	msgMap := t[msg]
+	if msgMap == nil {
+		msgMap = map[FieldProcessor]tempCacheEntry{}
+		t[msg] = msgMap
+	} else {
+		var ok bool
+		ret, ok = msgMap[processor]
+		if ok {
+			return
+		}
 	}
 
-	globalFieldProcessorCacheMu.RLock()
-	ret, ok := globalFieldProcessorCache[key]
-	globalFieldProcessorCacheMu.RUnlock()
-	if ok {
-		return
+	if _, ok := tmp[msg]; !ok {
+		tmp[msg] = newTempCacheEntryBuilder()
 	}
-
-	if _, ok := tmp[string(msg.FullName())]; !ok {
-		tmp[string(msg.FullName())] = newCacheEntryBuilder()
-	}
-	ceb := generateCacheEntry(msg, processor, visitedSubMsgs, tmp)
+	ceb := t.generateCacheEntry(msg, processor, visitedSubMsgs, tmp)
 	if len(ceb.tmp) > 0 {
 		// We haven't got the final values for some fields.
 		// Do not set cache for now.
@@ -220,13 +210,13 @@ func setCacheEntry(msg protoreflect.MessageDescriptor, processor *procBundle, vi
 	}
 
 	ret = ceb.ret
-	globalFieldProcessorCacheMu.Lock()
-	if ce, ok := globalFieldProcessorCache[key]; !ok {
-		globalFieldProcessorCache[key] = ret
+	// for mutually recursive messages, we may actually have already processed
+	// this combination by this point - prefer the previous computation.
+	if ce, ok := t[msg][processor]; !ok {
+		t[msg][processor] = ret
 	} else {
 		ret = ce
 	}
-	globalFieldProcessorCacheMu.Unlock()
 
 	return
 }

@@ -39,15 +39,13 @@ func (RequiredProcessor) Process(field protoreflect.FieldDescriptor, msg protore
 	return ResultData{Message: "required", IsErr: true}, true
 }
 
-func init() {
-	RegisterFieldProcessor(&RequiredProcessor{}, func(field protoreflect.FieldDescriptor) ProcessAttr {
-		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			for _, fb := range proto.GetExtension(fo, annotations.E_FieldBehavior).([]annotations.FieldBehavior) {
-				if fb == annotations.FieldBehavior_REQUIRED {
-					return ProcessIfUnset
-				}
+func (RequiredProcessor) ShouldProcess(field protoreflect.FieldDescriptor) ProcessAttr {
+	if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+		for _, fb := range proto.GetExtension(fo, annotations.E_FieldBehavior).([]annotations.FieldBehavior) {
+			if fb == annotations.FieldBehavior_REQUIRED {
+				return ProcessIfUnset
 			}
 		}
-		return ProcessNever
-	})
+	}
+	return ProcessNever
 }

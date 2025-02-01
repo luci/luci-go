@@ -39,8 +39,10 @@ import (
 	"go.chromium.org/luci/buildbucket/protoutil"
 )
 
+var sbrWalker = protowalk.NewWalker[*pb.StartBuildRequest](protowalk.RequiredProcessor{})
+
 func validateStartBuildRequest(ctx context.Context, req *pb.StartBuildRequest) error {
-	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}); procRes != nil {
+	if procRes := sbrWalker.Execute(req); !procRes.Empty() {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
 		}

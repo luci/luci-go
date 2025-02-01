@@ -63,7 +63,7 @@ type CreateBuildChecker struct{}
 
 var _ protowalk.FieldProcessor = (*CreateBuildChecker)(nil)
 
-func (*CreateBuildChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
+func (CreateBuildChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
 	cbfb := proto.GetExtension(field.Options().(*descriptorpb.FieldOptions), pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption)
 	switch cbfb.FieldBehavior {
 	case annotations.FieldBehavior_OUTPUT_ONLY:
@@ -76,22 +76,20 @@ func (*CreateBuildChecker) Process(field protoreflect.FieldDescriptor, msg proto
 	}
 }
 
-func init() {
-	protowalk.RegisterFieldProcessor(&CreateBuildChecker{}, func(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
-		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			if cbfb := proto.GetExtension(fo, pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption); cbfb != nil {
-				switch cbfb.FieldBehavior {
-				case annotations.FieldBehavior_OUTPUT_ONLY:
-					return protowalk.ProcessIfSet
-				case annotations.FieldBehavior_REQUIRED:
-					return protowalk.ProcessIfUnset
-				default:
-					panic("unsupported field behavior")
-				}
+func (CreateBuildChecker) ShouldProcess(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
+	if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+		if cbfb := proto.GetExtension(fo, pb.E_CreateBuildFieldOption).(*pb.CreateBuildFieldOption); cbfb != nil {
+			switch cbfb.FieldBehavior {
+			case annotations.FieldBehavior_OUTPUT_ONLY:
+				return protowalk.ProcessIfSet
+			case annotations.FieldBehavior_REQUIRED:
+				return protowalk.ProcessIfUnset
+			default:
+				panic("unsupported field behavior")
 			}
 		}
-		return protowalk.ProcessNever
-	})
+	}
+	return protowalk.ProcessNever
 }
 
 func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
@@ -495,8 +493,15 @@ func validateBuild(ctx context.Context, wellKnownExperiments stringset.Set, b *p
 	}
 }
 
+var cbrWalker = protowalk.NewWalker[*pb.CreateBuildRequest](
+	protowalk.DeprecatedProcessor{},
+	protowalk.OutputOnlyProcessor{},
+	protowalk.RequiredProcessor{},
+	CreateBuildChecker{},
+)
+
 func validateCreateBuildRequest(ctx context.Context, wellKnownExperiments stringset.Set, req *pb.CreateBuildRequest) (*model.BuildMask, error) {
-	if procRes := protowalk.Fields(req, &protowalk.DeprecatedProcessor{}, &protowalk.OutputOnlyProcessor{}, &protowalk.RequiredProcessor{}, &CreateBuildChecker{}); procRes != nil {
+	if procRes := cbrWalker.Execute(req); !procRes.Empty() {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
 		}

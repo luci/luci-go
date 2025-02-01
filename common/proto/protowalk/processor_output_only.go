@@ -40,15 +40,13 @@ func (OutputOnlyProcessor) Process(field protoreflect.FieldDescriptor, msg proto
 	return ResultData{Message: "cleared OUTPUT_ONLY field"}, true
 }
 
-func init() {
-	RegisterFieldProcessor(&OutputOnlyProcessor{}, func(field protoreflect.FieldDescriptor) ProcessAttr {
-		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			for _, fb := range proto.GetExtension(fo, annotations.E_FieldBehavior).([]annotations.FieldBehavior) {
-				if fb == annotations.FieldBehavior_OUTPUT_ONLY {
-					return ProcessIfSet
-				}
+func (OutputOnlyProcessor) ShouldProcess(field protoreflect.FieldDescriptor) ProcessAttr {
+	if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+		for _, fb := range proto.GetExtension(fo, annotations.E_FieldBehavior).([]annotations.FieldBehavior) {
+			if fb == annotations.FieldBehavior_OUTPUT_ONLY {
+				return ProcessIfSet
 			}
 		}
-		return ProcessNever
-	})
+	}
+	return ProcessNever
 }

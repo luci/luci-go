@@ -19,7 +19,6 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -27,150 +26,149 @@ import (
 func TestOutputOnly(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`Output-only field check`, t, func(t *ftt.Test) {
-		msg := &Outer{
-			Output: "stuff",
-			OutputInner: &Inner{
-				Regular: "a bunch of stuff",
-				Output:  "ignored because output_inner is cleared",
-				Struct: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"input": {
-							Kind: &structpb.Value_StringValue{
-								StringValue: "inner struct",
-							},
+	msg := &Outer{
+		Output: "stuff",
+		OutputInner: &Inner{
+			Regular: "a bunch of stuff",
+			Output:  "ignored because output_inner is cleared",
+			Struct: &structpb.Struct{
+				Fields: map[string]*structpb.Value{
+					"input": {
+						Kind: &structpb.Value_StringValue{
+							StringValue: "inner struct",
 						},
 					},
 				},
+			},
+			Recursive: &Inner_Recursive{
+				OutputOnly: 1,
+				Regular:    1,
+				Next: &Inner_Recursive{
+					OutputOnly: 2,
+					Regular:    2,
+				},
+			},
+		},
+		IntMapInner: map[int32]*Inner{
+			1: {
 				Recursive: &Inner_Recursive{
 					OutputOnly: 1,
 					Regular:    1,
 					Next: &Inner_Recursive{
 						OutputOnly: 2,
 						Regular:    2,
-					},
-				},
-			},
-			IntMapInner: map[int32]*Inner{
-				1: {
-					Recursive: &Inner_Recursive{
-						OutputOnly: 1,
-						Regular:    1,
 						Next: &Inner_Recursive{
-							OutputOnly: 2,
-							Regular:    2,
-							Next: &Inner_Recursive{
-								OutputOnly: 3,
-								Regular:    3,
-							},
+							OutputOnly: 3,
+							Regular:    3,
 						},
 					},
 				},
 			},
-			Struct: &structpb.Struct{
-				Fields: map[string]*structpb.Value{
-					"input": {
-						Kind: &structpb.Value_StringValue{
-							StringValue: "outer struct",
+		},
+		Struct: &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"input": {
+					Kind: &structpb.Value_StringValue{
+						StringValue: "outer struct",
+					},
+				},
+			},
+		},
+		A: &A{
+			AValue: "a_value_1",
+			B: &B{
+				BValue: "b_value_2",
+				A: &A{
+					AValue: "a_value_3",
+					B: &B{
+						BValue: "b_value_4",
+					},
+				},
+			},
+			C: &Chh{
+				AMap: map[string]*A{
+					"key": {
+						AValue: "a_value_1",
+						B: &B{
+							BValue: "b_value_2",
 						},
 					},
 				},
+			},
+		},
+		B: &B{
+			BValue: "b_value_1",
+			A: &A{
+				AValue: "a_value_2",
+				B: &B{
+					BValue: "b_value_3",
+					A: &A{
+						AValue: "a_value_4",
+						B: &B{
+							BValue: "b_value_5",
+						},
+					},
+				},
+			},
+		},
+	}
+	walker := NewWalker[*Outer](&OutputOnlyProcessor{})
+	assert.That(t, walker.Execute(msg).Strings(), should.Match([]string{
+		`.output: cleared OUTPUT_ONLY field`,
+		`.int_map_inner[1].recursive.output_only: cleared OUTPUT_ONLY field`,
+		`.int_map_inner[1].recursive.next.output_only: cleared OUTPUT_ONLY field`,
+		`.int_map_inner[1].recursive.next.next.output_only: cleared OUTPUT_ONLY field`,
+		`.output_inner: cleared OUTPUT_ONLY field`,
+		`.struct: cleared OUTPUT_ONLY field`,
+		`.a.b.b_value: cleared OUTPUT_ONLY field`,
+		`.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
+		`.a.c.a_map["key"].b.b_value: cleared OUTPUT_ONLY field`,
+		`.b.b_value: cleared OUTPUT_ONLY field`,
+		`.b.a.b.b_value: cleared OUTPUT_ONLY field`,
+		`.b.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
+	}))
+
+	assert.That(t, msg, should.Match(
+		&Outer{
+			IntMapInner: map[int32]*Inner{
+				1: {Recursive: &Inner_Recursive{
+					Regular: 1,
+					Next: &Inner_Recursive{
+						Regular: 2,
+						Next: &Inner_Recursive{
+							Regular: 3,
+						},
+					},
+				}},
 			},
 			A: &A{
 				AValue: "a_value_1",
 				B: &B{
-					BValue: "b_value_2",
 					A: &A{
 						AValue: "a_value_3",
-						B: &B{
-							BValue: "b_value_4",
-						},
+						B:      &B{},
 					},
 				},
 				C: &Chh{
 					AMap: map[string]*A{
 						"key": {
 							AValue: "a_value_1",
-							B: &B{
-								BValue: "b_value_2",
-							},
+							B:      &B{},
 						},
 					},
 				},
 			},
 			B: &B{
-				BValue: "b_value_1",
 				A: &A{
 					AValue: "a_value_2",
 					B: &B{
-						BValue: "b_value_3",
 						A: &A{
 							AValue: "a_value_4",
-							B: &B{
-								BValue: "b_value_5",
-							},
-						},
-					},
-				},
-			},
-		}
-		assert.Loosely(t, Fields(msg, &OutputOnlyProcessor{}).Strings(), should.Resemble([]string{
-			`.output: cleared OUTPUT_ONLY field`,
-			`.int_map_inner[1].recursive.output_only: cleared OUTPUT_ONLY field`,
-			`.int_map_inner[1].recursive.next.output_only: cleared OUTPUT_ONLY field`,
-			`.int_map_inner[1].recursive.next.next.output_only: cleared OUTPUT_ONLY field`,
-			`.output_inner: cleared OUTPUT_ONLY field`,
-			`.struct: cleared OUTPUT_ONLY field`,
-			`.a.b.b_value: cleared OUTPUT_ONLY field`,
-			`.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
-			`.a.c.a_map["key"].b.b_value: cleared OUTPUT_ONLY field`,
-			`.b.b_value: cleared OUTPUT_ONLY field`,
-			`.b.a.b.b_value: cleared OUTPUT_ONLY field`,
-			`.b.a.b.a.b.b_value: cleared OUTPUT_ONLY field`,
-		}))
-
-		assert.Loosely(t, msg, should.Resemble(
-			&Outer{
-				IntMapInner: map[int32]*Inner{
-					1: {Recursive: &Inner_Recursive{
-						Regular: 1,
-						Next: &Inner_Recursive{
-							Regular: 2,
-							Next: &Inner_Recursive{
-								Regular: 3,
-							},
-						},
-					}},
-				},
-				A: &A{
-					AValue: "a_value_1",
-					B: &B{
-						A: &A{
-							AValue: "a_value_3",
 							B:      &B{},
 						},
 					},
-					C: &Chh{
-						AMap: map[string]*A{
-							"key": {
-								AValue: "a_value_1",
-								B:      &B{},
-							},
-						},
-					},
-				},
-				B: &B{
-					A: &A{
-						AValue: "a_value_2",
-						B: &B{
-							A: &A{
-								AValue: "a_value_4",
-								B:      &B{},
-							},
-						},
-					},
 				},
 			},
-		))
-	})
+		},
+	))
 }

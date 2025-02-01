@@ -91,3 +91,29 @@ func (r Results) Err() error {
 	}
 	return merr.AsError()
 }
+
+// Empty returns true iff this Results contains no data or errors.
+func (r Results) Empty() bool {
+	if len(r) == 0 {
+		return true
+	}
+	for _, item := range r {
+		if len(item) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// Clone returns a deep copy of Results.
+func (r Results) Clone() Results {
+	if len(r) == 0 {
+		return nil
+	}
+	ret := make(Results, len(r))
+	for i, items := range r {
+		ret[i] = make([]Result, len(items))
+		copy(ret[i], items)
+	}
+	return ret
+}

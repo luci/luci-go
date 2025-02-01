@@ -15,24 +15,25 @@
 package protowalk
 
 import (
-	"reflect"
 	"sort"
 
 	"google.golang.org/protobuf/reflect/protoreflect"
-
-	"go.chromium.org/luci/common/data/stringset"
 )
 
 type planItem struct {
-	processorIdx int
+	processor FieldProcessor
 	ProcessAttr
 	recurseAttr
 }
 
+// plan is a specific list of fields to process and/or recurse into.
+//
+// It is computed by `makePlan(msg, processors)`.
 type plan struct {
 	desc       protoreflect.MessageDescriptor
 	fieldOrder []protoreflect.FieldNumber
 	items      map[protoreflect.FieldNumber][]planItem
+	numProcs   int
 }
 
 func (p plan) each(cb func(protoreflect.FieldDescriptor, []planItem)) {
@@ -42,12 +43,6 @@ func (p plan) each(cb func(protoreflect.FieldDescriptor, []planItem)) {
 	}
 }
 
-type procBundle struct {
-	proc reflect.Type
-	sel  FieldSelector
-	fp   FieldProcessor
-}
-
 // makePlan generates a plan from msg+processors.
 //
 // The returned plan is traversable in a deterministic order (using the sorted
@@ -55,16 +50,19 @@ type procBundle struct {
 //
 // For each affected field, one or more processors will either need to directly
 // process the field, or will need to recurse deeper.
-func makePlan(desc protoreflect.MessageDescriptor, processors []*procBundle) (ret plan) {
+func makePlan(desc protoreflect.MessageDescriptor, processors []FieldProcessor, t tempCache) plan {
 	size := desc.Fields().Len()
-	ret.fieldOrder = make([]protoreflect.FieldNumber, 0, size)
-	ret.desc = desc
-	ret.items = make(map[protoreflect.FieldNumber][]planItem, size)
+	ret := plan{
+		fieldOrder: make([]protoreflect.FieldNumber, 0, size),
+		desc:       desc,
+		items:      make(map[protoreflect.FieldNumber][]planItem, size),
+	}
 
-	// Now for each processor, go over its cached (msg+processor) data, and merge
-	// it into the overall plan.
-	for procIdx, proc := range processors {
-		for _, entry := range setCacheEntry(desc, proc, stringset.New(0), map[string]*cacheEntryBuilder{}) {
+	// Now for each processor's cache entry, go over its msg+processor data, and
+	// merge it into the overall plan.
+	for i, proc := range processors {
+		added := false
+		for _, entry := range t[desc][proc] {
 			curPlan, ok := ret.items[entry.fieldNum]
 			if !ok { // need to add entry.field to ret.fieldOrder
 				foIdx := sort.Search(
@@ -81,12 +79,16 @@ func makePlan(desc protoreflect.MessageDescriptor, processors []*procBundle) (re
 
 			// and fold the entry into the overall plan.
 			ret.items[entry.fieldNum] = append(curPlan, planItem{
-				processorIdx: procIdx,
-				ProcessAttr:  entry.ProcessAttr,
-				recurseAttr:  entry.recurseAttr,
+				processor:   processors[i],
+				ProcessAttr: entry.ProcessAttr,
+				recurseAttr: entry.recurseAttr,
 			})
+			if !added {
+				ret.numProcs += 1
+				added = true
+			}
 		}
 	}
 
-	return
+	return ret
 }

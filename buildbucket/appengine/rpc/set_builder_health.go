@@ -44,22 +44,20 @@ type SetBuilderHealthChecker struct{}
 
 var _ protowalk.FieldProcessor = (*SetBuilderHealthChecker)(nil)
 
-func (*SetBuilderHealthChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
+func (SetBuilderHealthChecker) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data protowalk.ResultData, applied bool) {
 	return protowalk.ResultData{Message: "required", IsErr: true}, true
 }
 
-func init() {
-	protowalk.RegisterFieldProcessor(&SetBuilderHealthChecker{}, func(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
-		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			required := proto.GetExtension(fo, pb.E_RequiredByRpc).([]string)
-			for _, r := range required {
-				if r == "SetBuilderHealth" {
-					return protowalk.ProcessIfUnset
-				}
+func (SetBuilderHealthChecker) ShouldProcess(field protoreflect.FieldDescriptor) protowalk.ProcessAttr {
+	if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+		required := proto.GetExtension(fo, pb.E_RequiredByRpc).([]string)
+		for _, r := range required {
+			if r == "SetBuilderHealth" {
+				return protowalk.ProcessIfUnset
 			}
 		}
-		return protowalk.ProcessNever
-	})
+	}
+	return protowalk.ProcessNever
 }
 
 // createErrorResponse creates an errored response entry based on the error and code.
@@ -78,10 +76,15 @@ func annotateErrorWithBuilder(err error, builder *pb.BuilderID) error {
 	return errors.Annotate(err, "Builder: %s/%s/%s", builder.Project, builder.Bucket, builder.Builder).Err()
 }
 
+var sbhrWalker = protowalk.NewWalker[*pb.SetBuilderHealthRequest](
+	protowalk.RequiredProcessor{},
+	SetBuilderHealthChecker{},
+)
+
 // validateRequest validates if the given request is valid or not. It also modifies
 // resp to add any new errors that arise from the request validation.
 func validateRequest(ctx context.Context, req *pb.SetBuilderHealthRequest, errs map[int]error, resp []*pb.SetBuilderHealthResponse_Response) error {
-	if procRes := protowalk.Fields(req, &protowalk.RequiredProcessor{}, &SetBuilderHealthChecker{}); procRes != nil {
+	if procRes := sbhrWalker.Execute(req); !procRes.Empty() {
 		if resStrs := procRes.Strings(); len(resStrs) > 0 {
 			logging.Infof(ctx, strings.Join(resStrs, ". "))
 		}

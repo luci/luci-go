@@ -24,32 +24,35 @@ import (
 //
 //	type name = <tag> [deprecated = true];
 //
-// You may also optionally clear the data in deprecated fields.
+// You may also optionally clear the data in deprecated fields by setting
+// ClearField=true.
 type DeprecatedProcessor struct {
 	// If true, clear the data out of all deprecated fields.
 	ClearField bool
 }
 
-var _ FieldProcessor = &DeprecatedProcessor{}
+var _ FieldProcessor = DeprecatedProcessor{}
 
-// Process implements FieldProcessor.
+// Process implements [FieldProcessor].
 //
 // This will optionally clear (zero) the field in `msg` to avoid accidental
 // usage of deprecated fields
-func (d *DeprecatedProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
+func (d DeprecatedProcessor) Process(field protoreflect.FieldDescriptor, msg protoreflect.Message) (data ResultData, applied bool) {
 	if d.ClearField {
 		msg.Clear(field)
 	}
 	return ResultData{Message: "deprecated"}, true
 }
 
-func init() {
-	RegisterFieldProcessor(&DeprecatedProcessor{}, func(field protoreflect.FieldDescriptor) ProcessAttr {
-		if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
-			if fo.Deprecated != nil && *fo.Deprecated {
-				return ProcessIfSet
-			}
+// ShouldProcess implements [FieldProcessor].
+//
+// This flags all fields which have `[deprecated = true]` and ignores all other
+// fields.
+func (d DeprecatedProcessor) ShouldProcess(field protoreflect.FieldDescriptor) ProcessAttr {
+	if fo := field.Options().(*descriptorpb.FieldOptions); fo != nil {
+		if fo.Deprecated != nil && *fo.Deprecated {
+			return ProcessIfSet
 		}
-		return ProcessNever
-	})
+	}
+	return ProcessNever
 }

@@ -17,7 +17,6 @@ package protowalk
 import (
 	"testing"
 
-	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -25,45 +24,44 @@ import (
 func TestDeprecated(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`Deprecated field check`, t, func(t *ftt.Test) {
-		msg := &Outer{
-			Deprecated: "hey",
-			SingleInner: &Inner{
-				Regular:    "things",
-				Deprecated: "yo",
-			},
-			MapInner: map[string]*Inner{
-				"schwoot": {
-					Deprecated: "thing",
-					SingleEmbed: &Inner_Embedded{
-						Deprecated: "yarp",
-					},
-					MultiEmbed: []*Inner_Embedded{
-						{Deprecated: "yay"},
-						{Regular: "ignore"},
-					},
-					Recursive: &Inner_Recursive{
-						Regular: 1,
-						Next: &Inner_Recursive{
-							Regular: 2,
-						},
+	msg := &Outer{
+		Deprecated: "hey",
+		SingleInner: &Inner{
+			Regular:    "things",
+			Deprecated: "yo",
+		},
+		MapInner: map[string]*Inner{
+			"schwoot": {
+				Deprecated: "thing",
+				SingleEmbed: &Inner_Embedded{
+					Deprecated: "yarp",
+				},
+				MultiEmbed: []*Inner_Embedded{
+					{Deprecated: "yay"},
+					{Regular: "ignore"},
+				},
+				Recursive: &Inner_Recursive{
+					Regular: 1,
+					Next: &Inner_Recursive{
+						Regular: 2,
 					},
 				},
 			},
-			MultiDeprecated: []*Inner{
-				{Regular: "something"},
-				{Deprecated: "something else"},
-			},
-		}
-		assert.Loosely(t, Fields(msg, &DeprecatedProcessor{}).Strings(), should.Resemble([]string{
-			`.deprecated: deprecated`,
-			`.single_inner.deprecated: deprecated`,
-			`.map_inner["schwoot"].deprecated: deprecated`,
-			`.map_inner["schwoot"].single_embed.deprecated: deprecated`,
-			`.map_inner["schwoot"].multi_embed[0].deprecated: deprecated`,
-			`.map_inner["schwoot"].recursive: deprecated`,
-			`.multi_deprecated: deprecated`,
-			`.multi_deprecated[1].deprecated: deprecated`,
-		}))
-	})
+		},
+		MultiDeprecated: []*Inner{
+			{Regular: "something"},
+			{Deprecated: "something else"},
+		},
+	}
+	walker := NewWalker[*Outer](&DeprecatedProcessor{})
+	assert.That(t, walker.Execute(msg).Strings(), should.Match([]string{
+		`.deprecated: deprecated`,
+		`.single_inner.deprecated: deprecated`,
+		`.map_inner["schwoot"].deprecated: deprecated`,
+		`.map_inner["schwoot"].single_embed.deprecated: deprecated`,
+		`.map_inner["schwoot"].multi_embed[0].deprecated: deprecated`,
+		`.map_inner["schwoot"].recursive: deprecated`,
+		`.multi_deprecated: deprecated`,
+		`.multi_deprecated[1].deprecated: deprecated`,
+	}))
 }

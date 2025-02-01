@@ -42,8 +42,9 @@ func TestRequired(t *testing.T) {
 			},
 		}
 
-		res := Fields(msg, &RequiredProcessor{})
-		assert.Loosely(t, res.Strings(), should.Resemble([]string{
+		walker := NewWalker[*Outer](&RequiredProcessor{})
+		res := walker.Execute(msg)
+		assert.That(t, res.Strings(), should.Match([]string{
 			`.req: required`,
 			`.single_inner.req: required`,
 			`.map_inner["schwoot"].req: required`,
