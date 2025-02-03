@@ -105,9 +105,7 @@ func (s *Server) Start(ctx context.Context) (string, error) {
 		srv := http.Server{
 			Handler: http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-					logging.Fields{
-						"panic.error": p.Reason,
-					}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", req.RequestURI, p.Reason, p.Stack)
+					p.Log(ctx, "Caught panic during handling of %q: %s", req.RequestURI, p.Reason)
 					http.Error(rw, "Internal Server Error. See logs.", http.StatusInternalServerError)
 				})
 				wg.Add(1)

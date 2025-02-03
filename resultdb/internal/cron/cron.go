@@ -54,7 +54,7 @@ func Run(ctx context.Context, minInterval time.Duration, f func(context.Context)
 	// call calls f with a timeout and catches a panic.
 	call := func(ctx context.Context) error {
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-			logging.Errorf(ctx, "Caught panic: %s\n%s", p.Reason, p.Stack)
+			p.Log(ctx, "Caught panic: %s", p.Reason)
 		})
 		return f(ctx)
 	}

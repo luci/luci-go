@@ -158,7 +158,7 @@ func needsTriage(c *prjpb.Component, now time.Time) bool {
 
 func (h *Handler) triageOneComponent(ctx context.Context, s *State, oldC *prjpb.Component, sup itriager.PMState) (res itriager.Result, err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Errorf(ctx, "caught panic %s:\n\n%s", p.Reason, p.Stack)
+		p.Log(ctx, "caught panic %s", p.Reason)
 		// Log as a separate message under debug level to avoid sending it to Cloud
 		// Error.
 		logging.Debugf(ctx, "caught panic current state:\n%s", protojson.Format(s.PB))
@@ -300,7 +300,7 @@ func (h *Handler) actOnComponents(ctx context.Context, s *State, actions []*cAct
 
 func (h *Handler) createOneRun(ctx context.Context, rc *runcreator.Creator, c *prjpb.Component) (err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Errorf(ctx, "caught panic while creating a Run %s\n\n%s", p.Reason, p.Stack)
+		p.Log(ctx, "caught panic while creating a Run %s", p.Reason)
 		err = errCaughtPanic
 	})
 

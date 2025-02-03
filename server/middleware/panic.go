@@ -17,7 +17,6 @@ package middleware
 import (
 	"net/http"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 
 	"go.chromium.org/luci/server/router"
@@ -33,11 +32,7 @@ func WithPanicCatcher(c *router.Context, next router.Handler) {
 		// ErrAbortHandler is explicitly used by net/http to signal that the panic
 		// is "expected" and it should not be logged.
 		if p.Reason != http.ErrAbortHandler {
-			// Log the reason before the stack in case appengine cuts entire log
-			// message due to size limitations.
-			logging.Fields{
-				"panic.error": p.Reason,
-			}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", uri, p.Reason, p.Stack)
+			p.Log(ctx, "Panic handling %q: %s", uri, p.Reason)
 		}
 		// Note: it may be too late to send HTTP 500 if `next` already sent
 		// headers. But there's nothing else we can do at this point anyway.

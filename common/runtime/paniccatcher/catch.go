@@ -15,20 +15,27 @@
 package paniccatcher
 
 import (
-	"runtime"
-)
+	"context"
+	"runtime/debug"
 
-// The maximum stack buffer size (64K). This is the same value used by
-// net.Conn's serve() method.
-const maxStackBufferSize = (64 << 10)
+	"go.chromium.org/luci/common/logging"
+)
 
 // Panic is a snapshot of a panic, containing both the panic's reason and the
 // system stack.
 type Panic struct {
 	// Reason is the value supplied to the recover function.
 	Reason any
-	// Stack is a stack dump at the time of the panic.
+	// Stack is a stack trace of where the panic happened.
 	Stack string
+}
+
+// Log logs the given message at error severity with the panic stack trace.
+//
+// The stack trace will be attached via a new line. The reason is not implicitly
+// logged. You can pass it via args.
+func (p *Panic) Log(ctx context.Context, fmt string, args ...any) {
+	logging.Errorf(ctx, fmt+"\n%s", append(args, p.Stack)...)
 }
 
 // Catch recovers from panic. It should be used as a deferred call.
@@ -37,11 +44,9 @@ type Panic struct {
 // Otherwise, the callback will be invoked with the panic's information.
 func Catch(cb func(p *Panic)) {
 	if reason := recover(); reason != nil && cb != nil {
-		stack := make([]byte, maxStackBufferSize)
-		count := runtime.Stack(stack, true)
 		cb(&Panic{
 			Reason: reason,
-			Stack:  string(stack[:count]),
+			Stack:  string(debug.Stack()),
 		})
 	}
 }
@@ -53,13 +58,4 @@ func Catch(cb func(p *Panic)) {
 func Do(f func(), cb func(p *Panic)) {
 	defer Catch(cb)
 	f()
-}
-
-// PCall calls a nullary function and returns the panic if there was one.
-func PCall(fn func()) (ret *Panic) {
-	defer Catch(func(thePanic *Panic) {
-		ret = thePanic
-	})
-	fn()
-	return
 }

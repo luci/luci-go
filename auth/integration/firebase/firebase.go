@@ -144,9 +144,7 @@ func (h *handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	defer h.wg.Done()
 
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(h.ctx, "Caught panic during handling of %q: %s\n%s", r.RequestURI, p.Reason, p.Stack)
+		p.Log(h.ctx, "Caught panic during handling of %q: %s", r.RequestURI, p.Reason)
 		http.Error(rw, "Internal Server Error. See logs.", http.StatusInternalServerError)
 	})
 

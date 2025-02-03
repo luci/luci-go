@@ -574,7 +574,7 @@ func TestRPCServers(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 
 					// Logged the panic.
-					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))
+					assert.That(t, srv.stdout.Last(2)[0].Message, should.MatchRegexp(`BOOM`))
 				})
 
 				t.Run("Unary interceptors", func(t *ftt.Test) {
@@ -664,7 +664,7 @@ func TestRPCServers(t *testing.T) {
 					assert.Loosely(t, err, grpccode.ShouldBe(codes.Internal))
 
 					// Logged the panic.
-					assert.Loosely(t, srv.stdout.Last(2)[0].Fields["panic.error"], should.Equal("BOOM"))
+					assert.That(t, srv.stdout.Last(2)[0].Message, should.MatchRegexp(`BOOM`))
 				})
 
 				t.Run("Stream interceptors", func(t *ftt.Test) {

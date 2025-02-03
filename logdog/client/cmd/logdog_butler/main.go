@@ -322,9 +322,7 @@ func main() {
 	paniccatcher.Do(func() {
 		rc = mainImpl(ctx, chromeinfra.DefaultAuthOptions(), os.Args[1:])
 	}, func(p *paniccatcher.Panic) {
-		log.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(ctx, "Panic caught in main:\n%s", p.Stack)
+		p.Log(ctx, "Panic caught in main: %s", p.Reason)
 		rc = runtimeErrorReturnCode
 	})
 }

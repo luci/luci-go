@@ -99,9 +99,7 @@ func (s *Server) serve(ctx context.Context, l net.Listener, wg *sync.WaitGroup) 
 					}.Errorf(client.ctx, "failed to handle client request")
 				}
 			}, func(p *paniccatcher.Panic) {
-				logging.Fields{
-					"panicReason": p.Reason,
-				}.Errorf(client.ctx, "panic during client handshake:\n%s", p.Stack)
+				p.Log(client.ctx, "panic during client handshake: %s", p.Reason)
 			})
 		}()
 	}

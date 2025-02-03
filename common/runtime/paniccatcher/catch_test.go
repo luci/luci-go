@@ -54,14 +54,6 @@ func TestCatch(t *testing.T) {
 	})
 }
 
-// TestPCall tests catching a nil panic.
-func TestPCall(t *testing.T) {
-	thePanic := PCall(func() { panic("hi") })
-	if exn := thePanic.Reason.(string); exn != "hi" {
-		t.Errorf("unexpected panic value: %s", exn)
-	}
-}
-
 // Example is a very simple example of how to use Catch to recover from a panic
 // and log its stack trace.
 func Example() {

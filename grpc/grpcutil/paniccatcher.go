@@ -20,7 +20,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 )
 
@@ -29,9 +28,7 @@ import (
 // instead.
 func PanicCatcherInterceptor(ctx context.Context, fullMethod string, handler func(ctx context.Context) error) (err error) {
 	defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-		logging.Fields{
-			"panic.error": p.Reason,
-		}.Errorf(ctx, "Caught panic during handling of %q: %s\n%s", fullMethod, p.Reason, p.Stack)
+		p.Log(ctx, "Panic handling %q: %s", fullMethod, p.Reason)
 		err = status.Error(codes.Internal, "panic in the request handler")
 	})
 	return handler(ctx)

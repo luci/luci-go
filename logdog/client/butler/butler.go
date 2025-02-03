@@ -315,9 +315,7 @@ func (b *Butler) AddStreamServer(streamServer StreamServer) {
 		defer close(streamServerFinishedC)
 
 		defer paniccatcher.Catch(func(p *paniccatcher.Panic) {
-			log.Fields{
-				"panic.error": p.Reason,
-			}.Errorf(b.ctx, "Panic while running StreamServer:\n%s", p.Stack)
+			p.Log(b.ctx, "Panic while running StreamServer: %s", p.Reason)
 			b.shutdown(fmt.Errorf("butler: panic while running StreamServer: %v", p.Reason))
 		})
 

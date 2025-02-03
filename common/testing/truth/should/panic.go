@@ -17,16 +17,16 @@ package should
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 
-	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/testing/truth/comparison"
 	"go.chromium.org/luci/common/testing/truth/failure"
 )
 
 // Panic checks whether a function panics.
 func Panic(fn func()) *failure.Summary {
-	caught := paniccatcher.PCall(fn)
+	caught := pcall(fn)
 	if caught == nil {
 		return comparison.NewSummaryBuilder("should.Panic").Summary
 	}
@@ -35,11 +35,11 @@ func Panic(fn func()) *failure.Summary {
 
 // NotPanic checks whether a function doesn't panic.
 func NotPanic(fn func()) *failure.Summary {
-	caught := paniccatcher.PCall(fn)
+	caught := pcall(fn)
 	if caught != nil {
 		return comparison.NewSummaryBuilder("should.NotPanic").
-			Actual(caught.Reason).
-			AddFindingf("stack", "%s", caught.Stack).
+			Actual(caught.reason).
+			AddFindingf("stack", "%s", caught.stack).
 			WarnIfLong().
 			Summary
 	}
@@ -52,13 +52,13 @@ func NotPanic(fn func()) *failure.Summary {
 func PanicLikeString(substring string) comparison.Func[func()] {
 	const cmpName = "should.PanicLikeString"
 	return func(fn func()) *failure.Summary {
-		caught := paniccatcher.PCall(fn)
+		caught := pcall(fn)
 		if caught == nil {
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("function did not panic").
 				Summary
 		}
-		exn := caught.Reason
+		exn := caught.reason
 		var str string
 		switch v := exn.(type) {
 		case string:
@@ -92,20 +92,20 @@ func PanicLikeError(target error) comparison.Func[func()] {
 				Because("nil as expected panic is not allowed; use runtime.PanicNilError instead").
 				Summary
 		}
-		thing := paniccatcher.PCall(fn)
+		thing := pcall(fn)
 		if thing == nil {
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("function did not panic").
 				Summary
 		}
-		exn := thing.Reason
+		exn := thing.reason
 		e, ok := exn.(error)
 		if !ok {
 			return comparison.NewSummaryBuilder(cmpName).
 				Because("caught panic is not an error").
 				Actual(e).
 				Expected(target).
-				AddFindingf("stack", "%s", thing.Stack).
+				AddFindingf("stack", "%s", thing.stack).
 				WarnIfLong().
 				Summary
 		}
@@ -132,4 +132,23 @@ func PanicLike(target any) comparison.Func[func()] {
 	default:
 		panic(fmt.Errorf("PanicLike expects a string or an error, got %T", target))
 	}
+}
+
+type panicInfo struct {
+	reason any
+	stack  string
+}
+
+// pcall calls a nullary function and returns the panic if there was one.
+func pcall(fn func()) (ret *panicInfo) {
+	defer func() {
+		if reason := recover(); reason != nil {
+			ret = &panicInfo{
+				reason: reason,
+				stack:  string(debug.Stack()),
+			}
+		}
+	}()
+	fn()
+	return
 }
