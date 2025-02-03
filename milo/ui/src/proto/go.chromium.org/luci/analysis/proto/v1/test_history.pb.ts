@@ -223,6 +223,11 @@ export interface QueryTestsRequest {
    * match the call that provided the page token.
    */
   readonly pageToken: string;
+  /**
+   * If true then the test_id_substring match will be case insensitive.  If false
+   * the match will be case sensitive.
+   */
+  readonly caseInsensitive: boolean;
 }
 
 /** A response message for the `QueryTests` RPC. */
@@ -1129,7 +1134,7 @@ export const QueryVariantsResponse_VariantInfo: MessageFns<QueryVariantsResponse
 };
 
 function createBaseQueryTestsRequest(): QueryTestsRequest {
-  return { project: "", testIdSubstring: "", subRealm: "", pageSize: 0, pageToken: "" };
+  return { project: "", testIdSubstring: "", subRealm: "", pageSize: 0, pageToken: "", caseInsensitive: false };
 }
 
 export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
@@ -1148,6 +1153,9 @@ export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
     }
     if (message.pageToken !== "") {
       writer.uint32(42).string(message.pageToken);
+    }
+    if (message.caseInsensitive !== false) {
+      writer.uint32(48).bool(message.caseInsensitive);
     }
     return writer;
   },
@@ -1199,6 +1207,14 @@ export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
           message.pageToken = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.caseInsensitive = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1215,6 +1231,7 @@ export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
       subRealm: isSet(object.subRealm) ? globalThis.String(object.subRealm) : "",
       pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
       pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      caseInsensitive: isSet(object.caseInsensitive) ? globalThis.Boolean(object.caseInsensitive) : false,
     };
   },
 
@@ -1235,6 +1252,9 @@ export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
     }
+    if (message.caseInsensitive !== false) {
+      obj.caseInsensitive = message.caseInsensitive;
+    }
     return obj;
   },
 
@@ -1248,6 +1268,7 @@ export const QueryTestsRequest: MessageFns<QueryTestsRequest> = {
     message.subRealm = object.subRealm ?? "";
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
+    message.caseInsensitive = object.caseInsensitive ?? false;
     return message;
   },
 };

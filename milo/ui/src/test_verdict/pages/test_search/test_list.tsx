@@ -14,7 +14,7 @@
 
 import { Link, Typography } from '@mui/material';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Fragment } from 'react';
+import { useMemo } from 'react';
 
 import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { DotSpinner } from '@/generic_libs/components/dot_spinner';
@@ -27,59 +27,104 @@ interface Props {
 
 export function TestList({ project, searchQuery }: Props) {
   const client = useTestHistoryClient();
-  const { data, isError, error, isLoading, fetchNextPage, hasNextPage } =
-    useInfiniteQuery({
-      ...client.QueryTests.queryPaged(
-        QueryTestsRequest.fromPartial({
-          project: project,
-          testIdSubstring: searchQuery,
-        }),
-      ),
-      enabled: searchQuery !== '',
-    });
+  const sensitive = useInfiniteQuery({
+    ...client.QueryTests.queryPaged(
+      QueryTestsRequest.fromPartial({
+        project: project,
+        testIdSubstring: searchQuery,
+      }),
+    ),
+    enabled: searchQuery !== '',
+  });
 
-  if (isError) {
-    throw error;
+  const insensitive = useInfiniteQuery({
+    ...client.QueryTests.queryPaged(
+      QueryTestsRequest.fromPartial({
+        project: project,
+        testIdSubstring: searchQuery,
+        caseInsensitive: true,
+      }),
+    ),
+    enabled: searchQuery !== '' && !sensitive.hasNextPage,
+  });
+
+  const testIds = useMemo(() => {
+    const testIds = sensitive.data?.pages.flatMap((p) => p.testIds) || [];
+    const lookupSet = new Set(testIds);
+    for (const page of insensitive.data?.pages || []) {
+      page.testIds
+        .filter((id) => !lookupSet.has(id))
+        .forEach((id) => {
+          testIds.push(id);
+        });
+    }
+    return testIds;
+  }, [sensitive.data, insensitive.data]);
+
+  if (sensitive.isError || insensitive.isError) {
+    throw sensitive.error ?? insensitive.error;
   }
 
   return (
     <>
       <ul>
-        {data?.pages.map((p, i) => (
-          <Fragment key={i}>
-            {p.testIds?.map((testId) => (
-              <li key={testId}>
-                <Link
-                  href={`/ui/test/${encodeURIComponent(
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    project!,
-                  )}/${encodeURIComponent(testId)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {testId}
-                </Link>
-              </li>
-            ))}
-          </Fragment>
+        {testIds.map((testId) => (
+          <TestRow key={testId} project={project} testId={testId} />
         ))}
       </ul>
-      {isLoading && searchQuery !== '' ? (
+      {(sensitive.isLoading || insensitive.isLoading) && searchQuery !== '' ? (
         <Typography component="span">
           Loading
+          {!sensitive.isLoading &&
+            insensitive.isLoading &&
+            ' case insensitive results'}
           <DotSpinner />
         </Typography>
       ) : (
-        hasNextPage && (
+        (sensitive.hasNextPage || insensitive.hasNextPage) && (
           <Typography
             component="span"
             className="active-text"
-            onClick={() => fetchNextPage()}
+            onClick={() =>
+              sensitive.hasNextPage
+                ? sensitive.fetchNextPage()
+                : insensitive.fetchNextPage()
+            }
           >
             [load more]
           </Typography>
         )
       )}
+      {testIds.length === 0 &&
+        searchQuery !== '' &&
+        !sensitive.isLoading &&
+        !insensitive.isLoading && (
+          <Typography component="span">
+            No tests found with case insensitive substring search.
+          </Typography>
+        )}
     </>
   );
 }
+
+interface TestRowProps {
+  project: string;
+  testId: string;
+}
+
+const TestRow = ({ project, testId }: TestRowProps) => {
+  return (
+    <li key={testId}>
+      <Link
+        href={`/ui/test/${encodeURIComponent(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          project!,
+        )}/${encodeURIComponent(testId)}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {testId}
+      </Link>
+    </li>
+  );
+};

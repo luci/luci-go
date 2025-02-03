@@ -64,7 +64,8 @@ describe('TestList', () => {
 
     await act(() => jest.runAllTimersAsync());
 
-    expect(queryTestsMock).toHaveBeenCalledTimes(1);
+    // This will be called twice, once for case sensitive and one for insensitive.
+    expect(queryTestsMock).toHaveBeenCalledTimes(2);
     expect(queryTestsMock).toHaveBeenCalledWith(
       QueryTestsRequest.fromPartial({
         project: 'chromium',
