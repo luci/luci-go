@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/cron"
@@ -43,6 +44,11 @@ const (
 	// Should be lower than the cron frequency.
 	maxCronRunTime = 5 * time.Minute
 
+	// Upper bound on randomized delay for deletion tasks.
+	//
+	// Should be lower than the cron frequency.
+	maxDelay = 8 * time.Minute
+
 	// Maximum number of tasks to delete in a single CleanupOldTasks TQ task.
 	cleanupTaskBatchSize = 500
 )
@@ -55,6 +61,7 @@ func RegisterCleanupHandlers(crondisp *cron.Dispatcher, tqdisp *tq.Dispatcher) {
 		tq:                   tqdisp,
 		maxTaskAge:           maxTaskAge,
 		maxCronRunTime:       maxCronRunTime,
+		maxDelay:             maxDelay,
 		cleanupTaskBatchSize: cleanupTaskBatchSize,
 	}).register()
 }
@@ -64,6 +71,7 @@ type tasksCleaner struct {
 	tq                   *tq.Dispatcher
 	maxTaskAge           time.Duration
 	maxCronRunTime       time.Duration
+	maxDelay             time.Duration
 	cleanupTaskBatchSize int
 }
 
@@ -91,16 +99,23 @@ func (tc *tasksCleaner) register() {
 // existing tasks will just make the situation worse). We can keep track of
 // the last processed timestamp and scan only unprocessed range.
 func (tc *tasksCleaner) triggerCleanupTasks(ctx context.Context) error {
-	// Enqueues a TQ task to delete a bunch of Swarming tasks.
+	// Enqueues a TQ task to delete a bunch of Swarming tasks. Stagger their
+	// execution by randomizing delay to avoid hammering the datastore index all
+	// at once. Note that we could do the same by setting a rate limit on the
+	// Cloud Tasks queue, but such a rate limit would need a periodic tuning to
+	// make sure we don't grow the queue length indefinitely. Randomized delay
+	// doesn't need such tuning.
 	var batch []string
 	flushBatch := func() error {
 		if len(batch) != 0 {
 			tasks := batch
 			batch = nil
-			logging.Infof(ctx, "Enqueuing deletion of %d entity groups", len(tasks))
+			delay := randomizeDelay(ctx, tc.maxDelay)
+			logging.Infof(ctx, "Enqueuing deletion of %d entity groups after %.1f sec", len(tasks), delay.Seconds())
 			return tc.tq.AddTask(ctx, &tq.Task{
 				Payload: &taskspb.CleanupOldTasks{TaskIds: tasks},
 				Title:   fmt.Sprintf("%s-%s", tasks[0], tasks[len(tasks)-1]),
+				Delay:   delay,
 			})
 		}
 		return nil
@@ -243,4 +258,12 @@ func cleanupEntityGroup(ctx context.Context, reqKey *datastore.Key, batchSize in
 		logging.Infof(ctx, "Deleted %d entities", deleted)
 	}
 	return failed == 0 && err == nil
+}
+
+// randomizeDelay returns a random duration up to `max`.
+func randomizeDelay(ctx context.Context, max time.Duration) time.Duration {
+	if max == 0 {
+		return 0
+	}
+	return time.Duration(mathrand.Int63n(ctx, int64(max)))
 }
