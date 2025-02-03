@@ -76,14 +76,11 @@ func (l Level) String() string {
 //
 // It can be retrieved with GetLevel(context).
 func SetLevel(ctx context.Context, l Level) context.Context {
-	return context.WithValue(ctx, levelKey, l)
+	return modifyCtx(ctx, func(lc *LogContext) { lc.Level = l })
 }
 
 // GetLevel returns the Level for this context. It will return DefaultLevel if
 // none is defined.
 func GetLevel(ctx context.Context) Level {
-	if l, ok := ctx.Value(levelKey).(Level); ok {
-		return l
-	}
-	return DefaultLevel
+	return readCtx(ctx).Level
 }

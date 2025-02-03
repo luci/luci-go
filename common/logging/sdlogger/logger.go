@@ -279,10 +279,11 @@ func cleanupStack(s []byte) []byte {
 // OperationID in all log entries emitted by logging.Logger.
 //
 // Such factory can be installed in the context via logging.SetFactory.
-func Factory(w LogEntryWriter, prototype LogEntry, mut LogEntryMutator) func(context.Context) logging.Logger {
-	return func(ctx context.Context) logging.Logger {
+func Factory(w LogEntryWriter, prototype LogEntry, mut LogEntryMutator) func(context.Context, *logging.LogContext) logging.Logger {
+	return func(ctx context.Context, lc *logging.LogContext) logging.Logger {
 		return &jsonLogger{
 			ctx:       ctx,
+			lc:        lc,
 			w:         w,
 			prototype: prototype,
 			mut:       mut,
@@ -292,13 +293,10 @@ func Factory(w LogEntryWriter, prototype LogEntry, mut LogEntryMutator) func(con
 
 type jsonLogger struct {
 	ctx       context.Context
+	lc        *logging.LogContext
 	w         LogEntryWriter
 	prototype LogEntry
 	mut       LogEntryMutator
-
-	once      sync.Once      // used to initializes fields from 'ctx' on demand
-	fields    logging.Fields // in a structured form for LogEntry.Fields
-	fieldsStr string         // in a string form for LogEntry.Message
 }
 
 func (l *jsonLogger) Debugf(format string, args ...any) {
@@ -318,18 +316,13 @@ func (l *jsonLogger) Errorf(format string, args ...any) {
 }
 
 func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, args []any) {
-	if !logging.IsLogging(l.ctx, lvl) {
+	if lvl < l.lc.Level {
 		return
 	}
 
-	// Within a single context.Context fields are static and we can strinfigy them
-	// once when really necessary.
-	l.once.Do(func() {
-		fields := logging.GetFields(l.ctx)
-		if len(fields) == 0 {
-			return
-		}
-
+	fields := l.lc.Fields
+	var fieldsStr string
+	if len(fields) > 0 {
 		// logging.ErrorKey usually points to a value that implements 'error'
 		// interface, which is not JSON-serializable. Convert it to a string. Note
 		// that mutating the result of logging.GetFields in place is not allowed, so
@@ -338,16 +331,14 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 			fields = logging.NewFields(fields)
 			fields[logging.ErrorKey] = err.Error()
 		}
-
-		l.fields = fields
-		l.fieldsStr = " :: " + fields.String()
-	})
+		fieldsStr = " :: " + fields.String()
+	}
 
 	e := l.prototype
 	e.Severity = LevelToSeverity(lvl)
-	e.Message = fmt.Sprintf(format, args...) + l.fieldsStr
+	e.Message = fmt.Sprintf(format, args...) + fieldsStr
 	e.Timestamp = ToTimestamp(clock.Now(l.ctx))
-	e.Fields = l.fields
+	e.Fields = fields
 
 	if l.mut != nil {
 		l.mut(l.ctx, &e)

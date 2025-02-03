@@ -45,7 +45,7 @@ func TestGoLogger(t *testing.T) {
 
 		buf := bytes.Buffer{}
 		cfg := LoggerConfig{Out: &buf}
-		l := cfg.NewLogger(nil)
+		l := cfg.NewLogger(context.Background(), &logging.LogContext{})
 
 		for _, entry := range []struct {
 			L logging.Level

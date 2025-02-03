@@ -274,7 +274,7 @@ func (a *fancyActivity) Progress(ctx context.Context, title string, units Units,
 	})
 }
 
-func (a *fancyActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []any) {
+func (a *fancyActivity) Log(ctx context.Context, lc *logging.LogContext, level logging.Level, calldepth int, f string, args []any) {
 	if level <= logging.Debug {
 		return
 	}

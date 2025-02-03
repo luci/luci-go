@@ -79,18 +79,18 @@ type LoggerConfig struct {
 	w        *goLoggerWrapper
 }
 
-// NewLogger returns new go-logging based logger bound to the given context.
+// NewLogger returns new go-logging based logger bound to the given logging
+// context.
 //
-// It will use logging level and fields specified in the context. Pass 'nil' as
-// a context to completely disable context-related checks. Note that default
-// context (e.g. context.Background()) is configured for Info logging level, not
-// Debug.
+// It will use the logging level and fields specified in LogContext.
 //
-// lc.NewLogger is in fact logging.Factory and can be used in SetFactory.
+// lc.NewLogger is in fact logging.Factory and can be used in SetFactory. That's
+// the reason it also takes context.Context, even though it isn't currently
+// using it.
 //
 // All loggers produced by LoggerConfig share single underlying go-logging
 // Logger instance.
-func (lc *LoggerConfig) NewLogger(ctx context.Context) logging.Logger {
+func (lc *LoggerConfig) NewLogger(_ context.Context, lctx *logging.LogContext) logging.Logger {
 	lc.initOnce.Do(func() {
 		logger := lc.Logger
 		if logger == nil {
@@ -110,11 +110,9 @@ func (lc *LoggerConfig) NewLogger(ctx context.Context) logging.Logger {
 		lc.w = &goLoggerWrapper{l: logger}
 	})
 	ret := &loggerImpl{goLoggerWrapper: lc.w}
-	if ctx != nil {
-		ret.level = logging.GetLevel(ctx)
-		if fields := logging.GetFields(ctx); len(fields) > 0 {
-			ret.fields = fields.String()
-		}
+	ret.level = lctx.Level
+	if len(lctx.Fields) > 0 {
+		ret.fields = lctx.Fields.String()
 	}
 	return ret
 }

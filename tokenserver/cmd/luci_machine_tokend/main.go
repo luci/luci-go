@@ -149,7 +149,7 @@ func realMain(ctx context.Context, args []string) int {
 	log := &memlogger.MemLogger{}
 
 	// Write Debug log to both memlogger and gologger.
-	memLogFactory := func(context.Context) logging.Logger {
+	memLogFactory := func(context.Context, *logging.LogContext) logging.Logger {
 		return log
 	}
 	root := teelogger.Use(ctx, memLogFactory, gologger.StdConfig.NewLogger)

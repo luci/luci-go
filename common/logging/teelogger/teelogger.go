@@ -63,13 +63,13 @@ func Use(ctx context.Context, factories ...logging.Factory) context.Context {
 	if cur := logging.GetFactory(ctx); cur != nil {
 		factories = append([]logging.Factory{cur}, factories...)
 	}
-	return logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
+	return logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
 		ll := make([]leveledLogger, len(factories))
 		for i, f := range factories {
-			logger := f(ctx)
+			logger := f(ctx, lc)
 			ll[i] = leveledLogger{
 				logger:   logger,
-				minLevel: logging.GetLevel(ctx),
+				minLevel: lc.Level,
 			}
 		}
 		return &teeImpl{ll}
@@ -97,18 +97,18 @@ func UseFiltered(ctx context.Context, filtereds ...Filtered) context.Context {
 	if cur != nil {
 		count += 1
 	}
-	return logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
+	return logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
 		ll := make([]leveledLogger, count)
 		for i, f := range filtereds {
 			ll[i] = leveledLogger{
-				logger:   f.Factory(ctx),
+				logger:   f.Factory(ctx, lc),
 				minLevel: f.Level,
 			}
 		}
 		if cur != nil {
 			ll[count-1] = leveledLogger{
-				logger:   cur(ctx),
-				minLevel: logging.GetLevel(ctx),
+				logger:   cur(ctx, lc),
+				minLevel: lc.Level,
 			}
 		}
 		return &teeImpl{ll}

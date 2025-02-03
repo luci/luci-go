@@ -35,9 +35,9 @@ func TestTeeLogger(t *testing.T) {
 		l3 := logging.Get(
 			memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		factories := []logging.Factory{
-			func(_ context.Context) logging.Logger { return l1 },
-			func(_ context.Context) logging.Logger { return l2 },
-			func(_ context.Context) logging.Logger { return l3 },
+			func(context.Context, *logging.LogContext) logging.Logger { return l1 },
+			func(context.Context, *logging.LogContext) logging.Logger { return l2 },
+			func(context.Context, *logging.LogContext) logging.Logger { return l3 },
 		}
 		t.Run("Set level Debug", func(t *ftt.Test) {
 			ctx := Use(context.Background(), factories...)
@@ -118,7 +118,7 @@ func TestTeeFilteredLogger(t *testing.T) {
 		lW := logging.Get(memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		lE := logging.Get(memlogger.Use(context.Background())).(*memlogger.MemLogger)
 		makeFactory := func(l logging.Logger) logging.Factory {
-			return func(_ context.Context) logging.Logger { return l }
+			return func(context.Context, *logging.LogContext) logging.Logger { return l }
 		}
 		filtereds := []Filtered{
 			{makeFactory(lD), logging.Debug},

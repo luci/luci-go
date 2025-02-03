@@ -44,7 +44,7 @@ type Activity interface {
 	// Progress updates the activity progress.
 	Progress(ctx context.Context, title string, units Units, cur, total int64)
 	// Log is called by the logging system when the activity is installed into the context.
-	Log(ctx context.Context, level logging.Level, calldepth int, f string, args []any)
+	Log(ctx context.Context, lc *logging.LogContext, level logging.Level, calldepth int, f string, args []any)
 	// Done is called when the activity finishes.
 	Done(ctx context.Context)
 }
@@ -131,8 +131,8 @@ func NewActivity(ctx context.Context, group *ActivityGroup, kind string) (contex
 	}
 
 	ctx = context.WithValue(ctx, &activityCtxKey, activity)
-	ctx = logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
-		return &activityLogger{activity: activity, callCtx: ctx}
+	ctx = logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
+		return &activityLogger{activity: activity, callCtx: ctx, lc: lc}
 	})
 
 	ctx, done := context.WithCancel(ctx)
@@ -156,7 +156,8 @@ func CurrentActivity(ctx context.Context) Activity {
 // activityLogger forwards messages to the given activity.
 type activityLogger struct {
 	activity Activity
-	callCtx  context.Context // a context of a particular logging call
+	callCtx  context.Context     // a context of a particular logging call
+	lc       *logging.LogContext // a logging context at the logging call
 }
 
 func (l *activityLogger) Debugf(fmt string, args ...any) {
@@ -176,7 +177,7 @@ func (l *activityLogger) Errorf(fmt string, args ...any) {
 }
 
 func (l *activityLogger) LogCall(level logging.Level, calldepth int, f string, args []any) {
-	l.activity.Log(l.callCtx, level, calldepth+1, f, args)
+	l.activity.Log(l.callCtx, l.lc, level, calldepth+1, f, args)
 }
 
 // padLeft pads an ASCII string with spaces on the left to make it l bytes long.

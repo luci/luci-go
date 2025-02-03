@@ -100,10 +100,10 @@ func Run(ctx context.Context, stdin io.ReadCloser, run RunLoop) error {
 	defer conn.Close()
 
 	// A context that sends logging messages to the host's log.
-	logCtx := logging.SetFactory(ctx, func(lctx context.Context) logging.Logger {
+	logCtx := logging.SetFactory(ctx, func(_ context.Context, lc *logging.LogContext) logging.Logger {
 		return &hostLogger{
-			lctx: lctx,
-			rctx: ctx,
+			ctx:  ctx,
+			lc:   lc,
 			host: protocol.NewHostClient(conn),
 		}
 	})
@@ -153,8 +153,8 @@ func (c *pluginPerRPCCredentials) GetRequestMetadata(ctx context.Context, uri ..
 
 // hostLogger sends log messages to the plugin host.
 type hostLogger struct {
-	lctx context.Context // a context at the logging site
-	rctx context.Context // a context for making RPCs
+	ctx  context.Context     // a context for making RPCs
+	lc   *logging.LogContext // a context at the logging site
 	host protocol.HostClient
 }
 
@@ -175,12 +175,12 @@ func (l *hostLogger) Errorf(format string, args ...any) {
 }
 
 func (l *hostLogger) LogCall(lvl logging.Level, calldepth int, format string, args []any) {
-	if logging.IsLogging(l.lctx, lvl) {
+	if lvl >= l.lc.Level {
 		msg := fmt.Sprintf(format, args...)
-		if fields := logging.GetFields(l.lctx); len(fields) != 0 {
-			msg += " :: " + fields.String()
+		if len(l.lc.Fields) != 0 {
+			msg += " :: " + l.lc.Fields.String()
 		}
-		l.host.Log(l.rctx, &protocol.LogRequest{
+		_, _ = l.host.Log(l.ctx, &protocol.LogRequest{
 			Severity: lvl.String(),
 			Message:  msg,
 		})

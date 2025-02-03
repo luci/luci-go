@@ -174,8 +174,12 @@ func (m *MemLogger) Dump(w io.Writer) (n int, err error) {
 func Use(ctx context.Context) context.Context {
 	lock := sync.Mutex{}
 	data := []LogEntry{}
-	return logging.SetFactory(ctx, func(ctx context.Context) logging.Logger {
-		return &MemLogger{&lock, &data, logging.GetFields(ctx)}
+	return logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
+		return &MemLogger{
+			lock:   &lock,
+			data:   &data,
+			fields: lc.Fields,
+		}
 	})
 }
 

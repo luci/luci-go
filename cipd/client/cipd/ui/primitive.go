@@ -113,13 +113,13 @@ func (a *primitiveActivity) Progress(ctx context.Context, title string, units Un
 	)
 }
 
-func (a *primitiveActivity) Log(ctx context.Context, level logging.Level, calldepth int, f string, args []any) {
-	if a.logger != nil {
+func (a *primitiveActivity) Log(ctx context.Context, lc *logging.LogContext, level logging.Level, calldepth int, f string, args []any) {
+	if a.logger != nil && level >= lc.Level {
 		prefix := ""
 		if a.group != nil && a.kind != "" {
 			prefix = "[" + a.group.activityTitle(a.kind, a.id) + "] "
 		}
-		a.logger(ctx).LogCall(level, calldepth+1, prefix+f, args)
+		a.logger(ctx, lc).LogCall(level, calldepth+1, prefix+f, args)
 	}
 }
 

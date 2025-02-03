@@ -174,10 +174,11 @@ func (s fieldEntrySlice) Len() int {
 // SetFields adds the additional fields as context for the current Logger. The
 // display of these fields depends on the implementation of the Logger. The
 // new context will contain the combination of its current Fields, updated with
-// the new ones (see Fields.Copy). Specifying the new fields as nil will
-// clear the currently set fields.
+// the new ones (see Fields.Copy).
 func SetFields(ctx context.Context, fields Fields) context.Context {
-	return context.WithValue(ctx, fieldsKey, GetFields(ctx).Copy(fields))
+	return modifyCtx(ctx, func(lc *LogContext) {
+		lc.Fields = lc.Fields.Copy(fields)
+	})
 }
 
 // SetField is a convenience method for SetFields for a single key/value
@@ -191,8 +192,5 @@ func SetField(ctx context.Context, key string, value any) context.Context {
 // This method is used for logger implementations with the understanding that
 // the returned fields must not be mutated.
 func GetFields(ctx context.Context) Fields {
-	if ret, ok := ctx.Value(fieldsKey).(Fields); ok {
-		return ret
-	}
-	return nil
+	return readCtx(ctx).Fields
 }
