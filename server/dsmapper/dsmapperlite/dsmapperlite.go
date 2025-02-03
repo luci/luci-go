@@ -50,7 +50,9 @@ import (
 //
 // If the callback returns an error, Map aborts the entire operation ASAP (but
 // it may take some time to wind down). When this happens, the context passed
-// to the callback is canceled.
+// to the callback is canceled. This context is also canceled once the mapping
+// is done. If the callback wants to run some operations asynchronously, it
+// needs to use another context (e.g. the context passed to Map).
 func Map[E any](ctx context.Context, q *datastore.Query, shards, batchSize int, cb func(ctx context.Context, shard int, entity E) error) error {
 	logging.Infof(ctx, "Calculating ranges...")
 	ranges, err := splitter.SplitIntoRanges(ctx, q, splitter.Params{

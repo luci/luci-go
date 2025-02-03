@@ -94,7 +94,7 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 	}
 
 	scanErr := dsmapperlite.Map(ctx, model.BotInfoQuery(), shardCount, 1200,
-		func(ctx context.Context, shardIdx int, bot *model.BotInfo) error {
+		func(_ context.Context, shardIdx int, bot *model.BotInfo) error {
 			// These appear to be phantom GCE provider bots which are either being
 			// created or weren't fully deleted. They don't have `state` JSON dict
 			// populated, and they aren't really running.
@@ -106,7 +106,7 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 				logging.Warningf(ctx, "Bot %s: bad state:\n:%s", bot.BotID(), bot.State)
 			}
 			for _, v := range visitors {
-				v.Visit(ctx, shardIdx, bot)
+				v.Visit(logging.SetField(ctx, "visitor", v.ID()), shardIdx, bot)
 			}
 			total.Add(1)
 			return nil
@@ -123,7 +123,9 @@ func Bots(ctx context.Context, visitors []BotVisitor) error {
 	errs := make(chan error, len(visitors))
 	for _, v := range visitors {
 		v := v
-		go func() { errs <- v.Finalize(ctx, scanErr) }()
+		go func() {
+			errs <- v.Finalize(logging.SetField(ctx, "visitor", v.ID()), scanErr)
+		}()
 	}
 	var merr errors.MultiError
 	merr.MaybeAdd(scanErr)
