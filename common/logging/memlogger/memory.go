@@ -168,6 +168,33 @@ func (m *MemLogger) Dump(w io.Writer) (n int, err error) {
 	return
 }
 
+// LogTo writes each contained log to the given interface.
+//
+// Designed to be used with a `testing.TB` implementation:
+//
+//	if !check.Loosely(t, ml.Messages(), should.BeEmpty) {
+//		ml.LogTo(t)
+//		t.Fail()
+//	}
+//
+// This will also detect and call the `Helper()` method, if `log` defines it.
+func (m *MemLogger) LogTo(log interface{ Logf(fmt string, args ...any) }) {
+	if h, ok := log.(interface{ Helper() }); ok {
+		h.Helper()
+	}
+
+	for i, msg := range m.Messages() {
+		if i == 0 {
+			log.Logf("DUMP LOG:")
+		}
+		if msg.Data == nil {
+			log.Logf("  %s: %s", msg.Level, msg.Msg)
+		} else {
+			log.Logf("  %s: %s: %s", msg.Level, msg.Msg, logging.Fields(msg.Data))
+		}
+	}
+}
+
 // Use adds a memory backed Logger to Context, with concrete type
 // *MemLogger. Casting to the concrete type can be used to inspect the
 // log output after running a test case, for example.

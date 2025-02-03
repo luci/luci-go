@@ -29,6 +29,8 @@
 //     register warmup callbacks that run before the server starts handling
 //     requests.
 //   - go.chromium.org/luci/server/experiments: simple feature flags support.
+//   - go.chromium.org/luci/grpc/logging/requestcheck: automatic
+//     field-annotation-driven logging of requests.
 //   - go.chromium.org/luci/grpc/prpc: pRPC server and RPC Explorer UI.
 //   - Error reporting via Google Cloud Error Reporting.
 //   - Continuous profiling via Google Cloud Profiler.
@@ -229,6 +231,7 @@ import (
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/grpc/logging/requestcheck"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/hardcoded/chromeinfra" // should be used ONLY in Main()
 	"go.chromium.org/luci/web/rpcexplorer"
@@ -910,9 +913,10 @@ type Server struct {
 	done    chan struct{} // closed when Serve exits after running the cleanup
 
 	// gRPC/pRPC configuration.
-	unaryInterceptors  []grpc.UnaryServerInterceptor
-	streamInterceptors []grpc.StreamServerInterceptor
-	rpcAuthMethods     []auth.Method
+	registeredServiceDesc []*grpc.ServiceDesc
+	unaryInterceptors     []grpc.UnaryServerInterceptor
+	streamInterceptors    []grpc.StreamServerInterceptor
+	rpcAuthMethods        []auth.Method
 
 	rndM sync.Mutex // protects rnd
 	rnd  *rand.Rand // used to generate trace and operation IDs
@@ -1426,6 +1430,7 @@ func (s *Server) RegisterService(desc *grpc.ServiceDesc, impl any) {
 	if s.grpcPort != nil {
 		s.grpcPort.registerService(desc, impl)
 	}
+	s.registeredServiceDesc = append(s.registeredServiceDesc, desc)
 }
 
 // RegisterUnaryServerInterceptors registers grpc.UnaryServerInterceptor's
@@ -1592,15 +1597,21 @@ func (s *Server) Serve() error {
 	// before the panic catcher to make sure panics are actually reported to
 	// the monitoring. grpcmon is also before the authentication to make sure
 	// auth errors are reported as well.
+
+	requestcheckUnary, requestcheckStream := requestcheck.DeprecationLoggerInterceptors(
+		s.Context, s.registeredServiceDesc)
+
 	unaryInterceptors := append([]grpc.UnaryServerInterceptor{
 		grpcmon.UnaryServerInterceptor,
 		grpcutil.UnaryServerPanicCatcherInterceptor,
 		authInterceptor.Unary(),
+		requestcheckUnary,
 	}, s.unaryInterceptors...)
 	streamInterceptors := append([]grpc.StreamServerInterceptor{
 		grpcmon.StreamServerInterceptor,
 		grpcutil.StreamServerPanicCatcherInterceptor,
 		authInterceptor.Stream(),
+		requestcheckStream,
 	}, s.streamInterceptors...)
 
 	// Finish setting the pRPC server. It supports only unary RPCs. The root

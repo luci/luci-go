@@ -1,0 +1,26 @@
+// Copyright 2020 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package go.chromium.org.luci.grpc.logging.requestcheck.testproto;
+
+option go_package = "go.chromium.org/luci/grpc/logging/requestcheck/testproto";
+
+import 'google/protobuf/empty.proto';
+
+service ExampleService {
+  rpc BidirectionalStream(stream BidirectionalStreamRequest) returns (stream google.protobuf.Empty) {};
+  rpc ClientStream(stream ClientStreamRequest) returns (google.protobuf.Empty) {};
+  rpc ServerStream(ServerStreamRequest) returns (stream google.protobuf.Empty) {};
+  rpc Unary(UnaryRequest) returns (google.protobuf.Empty) {};
+}
+
+message BidirectionalStreamRequest {}
+message ClientStreamRequest {}
+message ServerStreamRequest {}
+message UnaryRequest {
+  bool bad_field = 1 [deprecated = true];
+  string ignore = 2;
+}
