@@ -91,3 +91,8 @@ func modifyCtx(ctx context.Context, cb func(*LogContext)) context.Context {
 	cb(&cur)
 	return context.WithValue(ctx, &ctxKey, &cur)
 }
+
+// CurrentLogContext returns a copy of the current LogContext in its entirety.
+func CurrentLogContext(ctx context.Context) LogContext {
+	return *readCtx(ctx)
+}
