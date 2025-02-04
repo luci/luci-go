@@ -22,6 +22,7 @@ import (
 	"io"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 
@@ -440,6 +441,44 @@ func (r *renderedError) toLines(excludePkgs ...string) lines {
 	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
 }
 
+func (r *renderedError) toGoStack(onlyInner bool, excludePkgs ...string) string {
+	if len(r.stacks) == 0 {
+		return ""
+	}
+
+	excludeSet := stringset.NewFromSlice(excludePkgs...)
+
+	buf := strings.Builder{}
+	f := func(fmtStr string, args ...any) {
+		fmt.Fprintf(&buf, fmtStr, args...)
+	}
+
+	for sIdx, stack := range slices.Backward(r.stacks) {
+		if sIdx == len(r.stacks)-1 {
+			f("goroutine %d [running]:\n", stack.goID)
+		}
+		for _, frame := range stack.frames {
+			if excludeSet.Has(dropVersionSuffix(frame.pkg)) {
+				continue
+			}
+
+			// funcName will be e.g. `pkgName.Function`, trim off the first bit.
+			fnName := frame.funcName
+			if i := strings.Index(fnName, "."); i >= 0 {
+				fnName = fnName[i+1:]
+			}
+
+			f("%s.%s()\n", frame.pkg, fnName)
+			f("\t%s:%d\n", frame.file, frame.lineNum)
+		}
+		if onlyInner {
+			break
+		}
+	}
+
+	return buf.String()
+}
+
 // dumpTo writes the full-information stack trace to the writer.
 func (r *renderedError) dumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
 	if r.originalError != "" && len(r.stacks) == 0 {
@@ -488,6 +527,19 @@ func frameHeaderDetails(frm uintptr) (pkg, filename, funcName string, lineno int
 // RenderStack renders the error to a list of lines.
 func RenderStack(err error, excludePkgs ...string) []string {
 	return renderStack(err).toLines(excludePkgs...)
+}
+
+// RenderGoStack renders the error to a Go-style stacktrace.
+//
+// If `onlyInner` is true, this will only return the inner-most stack in case
+// this error was annotated by multiple goroutines.
+//
+// If it's false, then all goroutines which annotated this error will have their
+// stacks combined into a single trace.
+//
+// If `err` is not annotated, returns the empty string.
+func RenderGoStack(err error, onlyInner bool, excludePkgs ...string) string {
+	return renderStack(err).toGoStack(onlyInner, excludePkgs...)
 }
 
 func renderStack(err error) *renderedError {

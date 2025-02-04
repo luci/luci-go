@@ -24,7 +24,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/check"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
@@ -183,4 +185,52 @@ func TestAnnotation(t *testing.T) {
 			assert.Loosely(t, lines, should.Resemble(expectedLines))
 		})
 	})
+}
+
+func inner(fn func(chan<- error)) error {
+	if fn == nil {
+		return Reason("hello").Err()
+	}
+
+	errCh := make(chan error)
+	go fn(errCh)
+	return Annotate(<-errCh, "wrapped").Err()
+}
+
+func outer(fn func(chan<- error)) error {
+	return inner(fn)
+}
+
+func TestAnnotateGoStack(t *testing.T) {
+	err := outer(func(c chan<- error) {
+		c <- outer(nil)
+	})
+
+	stack := RenderGoStack(err, false, "runtime")
+	lines := strings.Split(stack, "\n")
+	assert.Loosely(t, lines, should.HaveLength(16))
+
+	toFind := []string{
+		"inner()",
+		"outer()",
+		"TestAnnotateGoStack.func1()",
+		"inner()",
+		"outer()",
+		"TestAnnotateGoStack()",
+		"testing.tRunner()",
+	}
+	for _, line := range lines {
+		if strings.Contains(line, toFind[0]) {
+			toFind = toFind[1:]
+		}
+
+		if len(toFind) == 0 {
+			break
+		}
+	}
+
+	if !check.Loosely(t, toFind, should.BeEmpty, truth.Explain(
+		"Stack trace order seems to be incorrect.")) {
+		t.Log(stack)
+	}
 }
