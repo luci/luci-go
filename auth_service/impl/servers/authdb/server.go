@@ -67,7 +67,7 @@ func (srv *Server) GetSnapshot(ctx context.Context, request *rpcpb.GetSnapshotRe
 	default:
 		errStr := "unknown error while calling GetAuthDBSnapshot"
 		logging.Errorf(ctx, errStr)
-		return nil, status.Errorf(codes.Internal, errStr)
+		return nil, status.Error(codes.Internal, errStr)
 	}
 }
 

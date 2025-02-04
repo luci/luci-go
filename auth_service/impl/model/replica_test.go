@@ -271,7 +271,7 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 		oldReplicaRev := int64(1000)
 		errMsg := "replica returned transient error"
 		pushErr := &ReplicaUpdateError{
-			RootErr: fmt.Errorf(errMsg),
+			RootErr: fmt.Errorf("%s", errMsg),
 			IsFatal: false,
 		}
 

@@ -56,7 +56,7 @@ func (*Server) ListReplicas(ctx context.Context, _ *emptypb.Empty) (*rpcpb.ListR
 		return nil
 	}, &datastore.TransactionOptions{ReadOnly: true})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	replicaStates := make([]*rpcpb.ReplicaState, len(replicas))

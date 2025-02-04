@@ -39,7 +39,7 @@ func (*Server) ListChangeLogs(ctx context.Context, req *rpcpb.ListChangeLogsRequ
 	if err != nil {
 		switch {
 		case errors.Is(err, model.ErrInvalidTarget):
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		case errors.Is(err, pagination.ErrInvalidPageToken):
 			return nil, status.Errorf(codes.InvalidArgument, "Invalid page token")
 		default:

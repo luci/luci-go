@@ -184,7 +184,7 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 	case errors.Is(err, model.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
 	case errors.Is(err, model.ErrInvalidReference):
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidArgument):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, model.ErrInvalidIdentity):

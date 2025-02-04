@@ -114,7 +114,7 @@ func validateSecurityCfg(ctx *validation.Context, configSet, path string, conten
 
 	ctx.Enter("internal_service_regexp")
 	for i, re := range cfg.GetInternalServiceRegexp() {
-		ctx.Enter(fmt.Sprintf("# %d", i))
+		ctx.Enter("# %d", i)
 		if _, err := regexp.Compile(fmt.Sprintf("^%s$", re)); err != nil {
 			ctx.Error(err)
 		}
@@ -252,7 +252,7 @@ func validatePermissionsCfg(ctx *validation.Context, configSet, path string, con
 			}
 			if cycle != nil {
 				cycleStr := strings.Join(cycle, " -> ")
-				ctx.Errorf(fmt.Sprintf("cycle found: %s", cycleStr))
+				ctx.Errorf("cycle found: %s", cycleStr)
 			}
 			seen.AddAll(visited)
 		}

@@ -75,7 +75,7 @@ func validateProjectRealmsCfg(ctx *validation.Context, configSet, path string, c
 
 func validateRealmsCfg(ctx *validation.Context, path string, content []byte, allowInternal bool) error {
 	ctx.SetFile(path)
-	ctx.Enter(fmt.Sprintf("validating %s", path))
+	ctx.Enter("validating %s", path)
 	defer ctx.Exit()
 
 	cfg := &realmsconf.RealmsCfg{}

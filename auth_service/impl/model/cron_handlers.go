@@ -24,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	realmsconf "go.chromium.org/luci/common/proto/realms"
@@ -51,9 +50,6 @@ const (
 	// change and realms need to be reevaluated.
 	maxReevaluationRevisions int = 10
 )
-
-// Set of config paths for configs that affect the AuthDB.
-var authDBConfigPaths = stringset.NewFromSlice("ip_allowlist.cfg", "oauth.cfg", "security.cfg")
 
 //////////////// Handling of stale replicated AuthDB //////////////////////
 
