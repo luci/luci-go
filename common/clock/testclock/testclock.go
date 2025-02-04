@@ -17,6 +17,7 @@ package testclock
 import (
 	"container/heap"
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -141,14 +142,7 @@ func (c *testClock) clearPendingTimer(t *timer) {
 	c.Lock()
 	defer c.Unlock()
 
-	for i := 0; i < len(c.pendingTimers); {
-		if e := c.pendingTimers[0]; e.timer == t {
-			heap.Remove(&c.pendingTimers, i)
-			close(e.triggerC)
-		} else {
-			i++
-		}
-	}
+	c.pendingTimers.cancelAndRemoveTimer(t)
 }
 
 func (c *testClock) SetTimerCallback(callback TimerCallback) {
@@ -180,4 +174,22 @@ func (h *pendingTimerHeap) Pop() (v any) {
 	idx := len(*h) - 1
 	v, *h = (*h)[idx], (*h)[:idx]
 	return
+}
+
+// cancelAndRemoveTimer scans the heap for all *pendingTimers using `t`, closes
+// their triggerC, and removes them from the heap.
+//
+// This preserves the heap invariant.
+func (h *pendingTimerHeap) cancelAndRemoveTimer(t *timer) {
+	// Remove all pendingTimers which have `t` as their timer.
+	*h = slices.DeleteFunc(*h, func(el *pendingTimer) bool {
+		if el.timer == t {
+			close(el.triggerC)
+			return true
+		}
+		return false
+	})
+
+	// Re-heapify the slice.
+	heap.Init(h)
 }

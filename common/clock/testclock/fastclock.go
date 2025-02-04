@@ -215,13 +215,7 @@ func (f *FastClock) clearPendingTimer(t *timer) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	for i := 0; i < len(f.pendingTimers); {
-		if e := f.pendingTimers[0]; e.timer == t {
-			heap.Remove(&f.pendingTimers, i)
-			close(e.triggerC)
-		} else {
-			i++
-		}
-	}
+	f.pendingTimers.cancelAndRemoveTimer(t)
+
 	f.onTimersChangedLocked()
 }
