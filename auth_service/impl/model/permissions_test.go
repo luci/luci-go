@@ -141,7 +141,7 @@ func TestAnalyzePrincipalPermissions(t *testing.T) {
 			},
 		}
 		expectedResult := map[string][]*rpcpb.RealmPermissions{
-			"group:gr1": []*rpcpb.RealmPermissions{
+			"group:gr1": {
 				{
 					Name:        "p:r",
 					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
@@ -151,19 +151,19 @@ func TestAnalyzePrincipalPermissions(t *testing.T) {
 					Permissions: []string{"luci.dev.p3"},
 				},
 			},
-			"group:gr2": []*rpcpb.RealmPermissions{
+			"group:gr2": {
 				{
 					Name:        "p:r",
 					Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
 				},
 			},
-			"group:gr3": []*rpcpb.RealmPermissions{
+			"group:gr3": {
 				{
 					Name:        "p:r",
 					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
 				},
 			},
-			"group:gr4": []*rpcpb.RealmPermissions{
+			"group:gr4": {
 				{
 					Name:        "p:r",
 					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
