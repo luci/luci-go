@@ -62,8 +62,9 @@ func testAuthGroup(name string, items ...string) *model.AuthGroup {
 func TestGraphBuilding(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Testing basic Graph Building.", t, func(t *ftt.Test) {
+	graphComp := cmp.AllowUnexported(Graph{}, groupNode{})
 
+	ftt.Run("Testing basic Graph Building.", t, func(t *ftt.Test) {
 		authGroups := []*model.AuthGroup{
 			testAuthGroup("group-0", "user:m1@example.com", "user:*@example.com"),
 			testAuthGroup("group-1", "user:m1@example.com", "user:m2@example.com"),
@@ -96,7 +97,7 @@ func TestGraphBuilding(t *testing.T) {
 			},
 		}
 
-		assert.Loosely(t, actualGraph, should.Resemble(expectedGraph))
+		assert.Loosely(t, actualGraph, should.Match(expectedGraph, graphComp))
 	})
 
 	ftt.Run("Testing group nesting.", t, func(t *ftt.Test) {
@@ -108,10 +109,14 @@ func TestGraphBuilding(t *testing.T) {
 
 		actualGraph := NewGraph(authGroups)
 
-		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group, should.Resemble(authGroups[1]))
-		assert.Loosely(t, actualGraph.groups["group-1"].included[0].group, should.Resemble(authGroups[2]))
-		assert.Loosely(t, actualGraph.groups["group-1"].includes[0].group, should.Resemble(authGroups[0]))
-		assert.Loosely(t, actualGraph.groups["group-2"].includes[0].group, should.Resemble(authGroups[1]))
+		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group,
+			should.Match(authGroups[1], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-1"].included[0].group,
+			should.Match(authGroups[2], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-1"].includes[0].group,
+			should.Match(authGroups[0], graphComp))
+		assert.Loosely(t, actualGraph.groups["group-2"].includes[0].group,
+			should.Match(authGroups[1], graphComp))
 	})
 }
 
@@ -229,6 +234,8 @@ func TestGetExpandedGroup(t *testing.T) {
 func TestGetRelevantSubgraph(t *testing.T) {
 	t.Parallel()
 
+	subgraphComp := cmp.AllowUnexported(Subgraph{})
+
 	ftt.Run("Testing GetRelevantSubgraph", t, func(t *ftt.Test) {
 		testGroup0 := "group-0"
 		testGroup1 := "group-1"
@@ -267,7 +274,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 		})
 
 		t.Run("Testing Identity Principal.", func(t *ftt.Test) {
@@ -321,7 +328,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 
 			t.Run("equivalent Identity principal", func(t *ftt.Test) {
 				principal := NodeKey{Identity, testUser0MatchingGlob}
@@ -374,8 +381,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 					},
 				}
 
-				assert.Loosely(t, subgraph,
-					should.Match(expectedSubgraph, cmp.AllowUnexported(Subgraph{})))
+				assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 			})
 		})
 
@@ -414,8 +420,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, subgraph,
-				should.Match(expectedSubgraph, cmp.AllowUnexported(Subgraph{})))
+			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 		})
 
 		t.Run("Testing Glob principal.", func(t *ftt.Test) {
@@ -461,7 +466,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 		})
 
 		t.Run("Testing Stability", func(t *ftt.Test) {
@@ -543,7 +548,7 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				},
 			}
 
-			assert.Loosely(t, subgraph, should.Resemble(expectedSubgraph))
+			assert.Loosely(t, subgraph, should.Match(expectedSubgraph, subgraphComp))
 		})
 	})
 }

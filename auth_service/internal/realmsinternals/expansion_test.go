@@ -16,6 +16,8 @@ package realmsinternals
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	realmsconf "go.chromium.org/luci/common/proto/realms"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -125,6 +127,9 @@ func TestConditionsSet(t *testing.T) {
 }
 func TestRolesExpander(t *testing.T) {
 	t.Parallel()
+
+	indexSetComp := cmp.AllowUnexported(indexSet{})
+
 	ftt.Run("errors", t, func(t *ftt.Test) {
 		permDB := testsupport.PermissionsDB(false)
 		r := &RolesExpander{
@@ -149,10 +154,10 @@ func TestRolesExpander(t *testing.T) {
 		}
 		actual, err := r.role("role/dev.a")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{0, 1})))
+		assert.Loosely(t, actual, should.Match(IndexSetFromSlice([]uint32{0, 1}), indexSetComp))
 		actual, err = r.role("role/dev.b")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{1, 2})))
+		assert.Loosely(t, actual, should.Match(IndexSetFromSlice([]uint32{1, 2}), indexSetComp))
 		perms, mapping := r.sortedPermissions()
 		assert.Loosely(t, perms, should.Match([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"}))
 		assert.Loosely(t, mapping, should.Match([]uint32{0, 1, 2}))
@@ -183,16 +188,21 @@ func TestRolesExpander(t *testing.T) {
 		}
 		actual, err := r.role("customRole/custom1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{0, 1, 2, 3, 4})))
+		assert.Loosely(t, actual,
+			should.Match(IndexSetFromSlice([]uint32{0, 1, 2, 3, 4}), indexSetComp))
 		actual, err = r.role("customRole/custom2")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{1, 2, 3, 4})))
+		assert.Loosely(t, actual,
+			should.Match(IndexSetFromSlice([]uint32{1, 2, 3, 4}), indexSetComp))
 		actual, err = r.role("customRole/custom3")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{2, 3, 4})))
+		assert.Loosely(t, actual,
+			should.Match(IndexSetFromSlice([]uint32{2, 3, 4}), indexSetComp))
 		perms, mapping := r.sortedPermissions()
-		assert.Loosely(t, perms, should.Match([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"}))
-		assert.Loosely(t, mapping, should.Match([]uint32{0, 3, 1, 4, 2}))
+		assert.Loosely(t, perms,
+			should.Match([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"}))
+		assert.Loosely(t, mapping,
+			should.Match([]uint32{0, 3, 1, 4, 2}))
 		reMap := func(perms []string, mapping []uint32, permSet []uint32) []string {
 			res := make([]string, 0, len(permSet))
 			for _, idx := range permSet {
