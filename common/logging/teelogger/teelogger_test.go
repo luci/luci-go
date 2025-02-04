@@ -98,7 +98,7 @@ func TestTeeLogger(t *testing.T) {
 			ctx := memlogger.Use(context.Background())
 			logger := logging.Get(ctx).(*memlogger.MemLogger)
 
-			teeCtx := Use(ctx)
+			teeCtx := Use(ctx, factories[0])
 			logging.Get(teeCtx).Infof("Testing 1 2")
 			messages := logger.Messages()
 
@@ -173,7 +173,6 @@ func TestTeeFilteredLogger(t *testing.T) {
 			teeCtx := UseFiltered(ctx)
 			teeCtx = logging.SetLevel(teeCtx, logging.Debug)
 			l := logging.Get(teeCtx)
-			assert.Loosely(t, l, should.NotBeNil)
 			l.Infof("Info testing 1 2")
 			messages := logger.Messages()
 

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package teelogger implements a logger that splits messages across multiple
+// different loggers.
 package teelogger
 
 import (
@@ -29,27 +31,46 @@ type teeImpl struct {
 	l []leveledLogger
 }
 
-func (t *teeImpl) Debugf(fmt string, args ...any) {
+func (t teeImpl) Debugf(fmt string, args ...any) {
 	t.LogCall(logging.Debug, 1, fmt, args)
 }
 
-func (t *teeImpl) Infof(fmt string, args ...any) {
+func (t teeImpl) Infof(fmt string, args ...any) {
 	t.LogCall(logging.Info, 1, fmt, args)
 }
 
-func (t *teeImpl) Warningf(fmt string, args ...any) {
+func (t teeImpl) Warningf(fmt string, args ...any) {
 	t.LogCall(logging.Warning, 1, fmt, args)
 }
 
-func (t *teeImpl) Errorf(fmt string, args ...any) {
+func (t teeImpl) Errorf(fmt string, args ...any) {
 	t.LogCall(logging.Error, 1, fmt, args)
 }
 
-func (t *teeImpl) LogCall(level logging.Level, calldepth int, f string, args []any) {
+func (t teeImpl) LogCall(level logging.Level, calldepth int, f string, args []any) {
 	for _, l := range t.l {
 		if level >= l.minLevel {
 			l.logger.LogCall(level, calldepth+1, f, args)
 		}
+	}
+}
+
+// Factory is a logger factory that produces teeing loggers.
+func Factory(factories ...logging.Factory) logging.Factory {
+	if len(factories) == 1 {
+		return factories[0]
+	}
+	// Note if factories is empty, the below function will effective produce
+	// null loggers.
+	return func(ctx context.Context, lc *logging.LogContext) logging.Logger {
+		ll := make([]leveledLogger, len(factories))
+		for i, f := range factories {
+			ll[i] = leveledLogger{
+				logger:   f(ctx, lc),
+				minLevel: lc.Level,
+			}
+		}
+		return teeImpl{ll}
 	}
 }
 
@@ -63,17 +84,7 @@ func Use(ctx context.Context, factories ...logging.Factory) context.Context {
 	if cur := logging.GetFactory(ctx); cur != nil {
 		factories = append([]logging.Factory{cur}, factories...)
 	}
-	return logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
-		ll := make([]leveledLogger, len(factories))
-		for i, f := range factories {
-			logger := f(ctx, lc)
-			ll[i] = leveledLogger{
-				logger:   logger,
-				minLevel: lc.Level,
-			}
-		}
-		return &teeImpl{ll}
-	})
+	return logging.SetFactory(ctx, Factory(factories...))
 }
 
 // Filtered is a static representation of a single entry to filter messages to
@@ -91,6 +102,10 @@ type Filtered struct {
 // to produce logging.Logger instances bound to contexts to be able to use
 // logging levels are fields (they are part of the context state).
 // The logger instance bound to context is used with level provided by context.
+//
+// TODO: Individual leaf loggers still filter messages based on the level in
+// the context, so this can be used only to limit the logging level (not to
+// relax it).
 func UseFiltered(ctx context.Context, filtereds ...Filtered) context.Context {
 	cur := logging.GetFactory(ctx)
 	count := len(filtereds)
@@ -111,6 +126,6 @@ func UseFiltered(ctx context.Context, filtereds ...Filtered) context.Context {
 				minLevel: lc.Level,
 			}
 		}
-		return &teeImpl{ll}
+		return teeImpl{ll}
 	})
 }
