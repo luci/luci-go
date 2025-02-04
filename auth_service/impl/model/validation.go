@@ -52,12 +52,12 @@ func validateAuthGroup(ctx context.Context, group *protocol.AuthGroup) error {
 	}
 
 	if _, err := identity.MakeIdentity(group.CreatedBy); err != nil {
-		return fmt.Errorf("%w %q in AuthGroup %q's CreatedBy - %s",
+		return fmt.Errorf("%w %q in AuthGroup %q's CreatedBy - %w",
 			ErrInvalidIdentity, group.CreatedBy, group.Name, err)
 	}
 
 	if _, err := identity.MakeIdentity(group.ModifiedBy); err != nil {
-		return fmt.Errorf("%w %q in AuthGroup %q's ModifiedBy - %s",
+		return fmt.Errorf("%w %q in AuthGroup %q's ModifiedBy - %w",
 			ErrInvalidIdentity, group.ModifiedBy, group.Name, err)
 	}
 

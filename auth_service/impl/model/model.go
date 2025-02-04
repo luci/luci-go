@@ -832,10 +832,10 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 
 	// Check that the supplied members and globs are well-formed.
 	if err := validateIdentities(group.Members); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
 	}
 	if err := validateGlobs(group.Globs); err != nil {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
 	}
 
 	// Construct a new group so that we don't modify the input.
@@ -976,12 +976,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		case "members":
 			// Check that the supplied members are well-formed.
 			if err := validateIdentities(groupUpdate.Members); err != nil {
-				return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
+				return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
 			}
 		case "globs":
 			// Check that the supplied globs are well-formed.
 			if err := validateGlobs(groupUpdate.Globs); err != nil {
-				return nil, fmt.Errorf("%w: %s", ErrInvalidIdentity, err)
+				return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
 			}
 		case "owners":
 			// Admin group must always be owned by itself.
