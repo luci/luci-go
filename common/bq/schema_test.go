@@ -20,10 +20,11 @@ import (
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/protobuf/types/descriptorpb"
+
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestAddMissingFields(t *testing.T) {

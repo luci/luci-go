@@ -22,12 +22,11 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/bigquery"
+	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/pmezard/go-difflib/difflib"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 
-	"github.com/pmezard/go-difflib/difflib"
-
-	desc "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	bqpb "go.chromium.org/luci/common/bq/pb"
 	"go.chromium.org/luci/common/data/text/indented"
 	"go.chromium.org/luci/common/errors"

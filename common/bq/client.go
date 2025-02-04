@@ -19,9 +19,10 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/option"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth"
-	"google.golang.org/api/option"
 )
 
 // NewClient returns a new BigQuery client for use with the given GCP project,
