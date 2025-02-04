@@ -80,7 +80,7 @@ func TestAllowlistsServer(t *testing.T) {
 
 		actualResponse, err := srv.GetAllowlist(ctx, request)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actualResponse, should.Resemble(expectedResponse))
+		assert.Loosely(t, actualResponse, should.Match(expectedResponse))
 	})
 
 	ftt.Run("ListAllowlists RPC call", t, func(t *ftt.Test) {
@@ -169,6 +169,6 @@ func TestAllowlistsServer(t *testing.T) {
 
 		actualResponse, err := srv.ListAllowlists(ctx, &emptypb.Empty{})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, expectedAllowlists.Allowlists, should.Resemble(actualResponse.Allowlists))
+		assert.Loosely(t, expectedAllowlists.Allowlists, should.Match(actualResponse.Allowlists))
 	})
 }

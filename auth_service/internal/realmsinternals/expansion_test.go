@@ -114,13 +114,13 @@ func TestConditionsSet(t *testing.T) {
 				},
 			},
 		}
-		assert.Loosely(t, out, should.Resemble(expected))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r1}), should.Resemble([]uint32{2}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r2}), should.Resemble([]uint32{0}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r3}), should.Resemble([]uint32{0}))
-		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r4}), should.Resemble([]uint32{1}))
+		assert.Loosely(t, out, should.Match(expected))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r1}), should.Match([]uint32{2}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r2}), should.Match([]uint32{0}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r3}), should.Match([]uint32{0}))
+		assert.Loosely(t, cs.indexes([]*realmsconf.Condition{r4}), should.Match([]uint32{1}))
 		inds := cs.indexes([]*realmsconf.Condition{r1, r2, r3, r4})
-		assert.Loosely(t, inds, should.Resemble([]uint32{0, 1, 2}))
+		assert.Loosely(t, inds, should.Match([]uint32{0, 1, 2}))
 	})
 }
 func TestRolesExpander(t *testing.T) {
@@ -154,8 +154,8 @@ func TestRolesExpander(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{1, 2})))
 		perms, mapping := r.sortedPermissions()
-		assert.Loosely(t, perms, should.Resemble([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"}))
-		assert.Loosely(t, mapping, should.Resemble([]uint32{0, 1, 2}))
+		assert.Loosely(t, perms, should.Match([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"}))
+		assert.Loosely(t, mapping, should.Match([]uint32{0, 1, 2}))
 	})
 	ftt.Run("test custom roles works", t, func(t *ftt.Test) {
 		permDB := testsupport.PermissionsDB(false)
@@ -191,8 +191,8 @@ func TestRolesExpander(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Resemble(IndexSetFromSlice([]uint32{2, 3, 4})))
 		perms, mapping := r.sortedPermissions()
-		assert.Loosely(t, perms, should.Resemble([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"}))
-		assert.Loosely(t, mapping, should.Resemble([]uint32{0, 3, 1, 4, 2}))
+		assert.Loosely(t, perms, should.Match([]string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3", "luci.dev.p4", "luci.dev.p5"}))
+		assert.Loosely(t, mapping, should.Match([]uint32{0, 3, 1, 4, 2}))
 		reMap := func(perms []string, mapping []uint32, permSet []uint32) []string {
 			res := make([]string, 0, len(permSet))
 			for _, idx := range permSet {
@@ -204,7 +204,7 @@ func TestRolesExpander(t *testing.T) {
 		// eyeballing the numbers is difficult.
 		permSet, err := r.role("customRole/custom1")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Resemble([]string{
+		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
 			"luci.dev.p1",
 			"luci.dev.p4",
 			"luci.dev.p2",
@@ -213,7 +213,7 @@ func TestRolesExpander(t *testing.T) {
 		}))
 		permSet, err = r.role("customRole/custom2")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Resemble([]string{
+		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
 			"luci.dev.p4",
 			"luci.dev.p2",
 			"luci.dev.p5",
@@ -221,7 +221,7 @@ func TestRolesExpander(t *testing.T) {
 		}))
 		permSet, err = r.role("customRole/custom3")
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Resemble([]string{
+		assert.Loosely(t, reMap(perms, mapping, permSet.toSortedSlice()), should.Match([]string{
 			"luci.dev.p2",
 			"luci.dev.p5",
 			"luci.dev.p3",

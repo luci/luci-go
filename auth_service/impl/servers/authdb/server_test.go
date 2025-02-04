@@ -100,7 +100,7 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			snapshot, err := server.GetSnapshot(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
+			assert.Loosely(t, snapshot, should.Match(&rpcpb.Snapshot{
 				AuthDbRev:      2,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: testDeflated,
@@ -115,7 +115,7 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			latestSnapshot, err := server.GetSnapshot(ctx, request)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, latestSnapshot, should.Resemble(&rpcpb.Snapshot{
+			assert.Loosely(t, latestSnapshot, should.Match(&rpcpb.Snapshot{
 				AuthDbRev:      4,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: testDeflated,
@@ -130,7 +130,7 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			snapshot, err := server.GetSnapshot(ctx, requestSnapshotSkip)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
+			assert.Loosely(t, snapshot, should.Match(&rpcpb.Snapshot{
 				AuthDbRev:    3,
 				AuthDbSha256: testHash,
 				CreatedTs:    timestamppb.New(testTS),
@@ -143,7 +143,7 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			latest, err := server.GetSnapshot(ctx, requestLatestSkip)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, latest, should.Resemble(&rpcpb.Snapshot{
+			assert.Loosely(t, latest, should.Match(&rpcpb.Snapshot{
 				AuthDbRev:    4,
 				AuthDbSha256: testHash,
 				CreatedTs:    timestamppb.New(testTS),
@@ -178,7 +178,7 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			snapshot, err := server.GetSnapshot(ctx, requestSnapshot)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, snapshot, should.Resemble(&rpcpb.Snapshot{
+			assert.Loosely(t, snapshot, should.Match(&rpcpb.Snapshot{
 				AuthDbRev:      42,
 				AuthDbSha256:   testHash,
 				AuthDbDeflated: []byte("shard-1-groupsshard-2-groups"),

@@ -44,6 +44,6 @@ func TestConfigContext(t *testing.T) {
 		assert.Loosely(t, SetConfig(ctx, settingsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(settingsCfg))
+		assert.Loosely(t, cfgFromGet, should.Match(settingsCfg))
 	})
 }

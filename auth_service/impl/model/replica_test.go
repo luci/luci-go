@@ -89,7 +89,7 @@ func TestAuthReplicaStateToProto(t *testing.T) {
 			PushStatus:      ReplicaPushStatusFatalError,
 			PushError:       "some sort of fatal error",
 		}
-		assert.Loosely(t, replica.ToProto(), should.Resemble(&rpcpb.ReplicaState{
+		assert.Loosely(t, replica.ToProto(), should.Match(&rpcpb.ReplicaState{
 			AppId:           "dev~appA",
 			BaseUrl:         "https://test.dev~appA.appspot.com",
 			AuthDbRev:       4,
@@ -131,7 +131,7 @@ func TestGetAllReplicas(t *testing.T) {
 			// Check all the replica states were returned, sorted by App ID.
 			replicas, err := GetAllReplicas(ctx)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, replicas, should.Resemble([]*AuthReplicaState{
+			assert.Loosely(t, replicas, should.Match([]*AuthReplicaState{
 				testReplicaState(ctx, "dev~appA", 4),
 				testReplicaState(ctx, "dev~appB", 5),
 				testReplicaState(ctx, "dev~appC", 3),
@@ -173,7 +173,7 @@ func TestGetAllStaleReplicas(t *testing.T) {
 			// in ascending order of the app ID.
 			replicas, err := GetAllStaleReplicas(ctx, 4)
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, replicas, should.Resemble([]*AuthReplicaState{
+			assert.Loosely(t, replicas, should.Match([]*AuthReplicaState{
 				testReplicaState(ctx, "dev~appC", 3),
 				testReplicaState(ctx, "dev~appD", 2),
 				testReplicaState(ctx, "dev~appE", 3),
@@ -200,7 +200,7 @@ func TestGetAuthReplicaState(t *testing.T) {
 
 		actual, err := getAuthReplicaState(ctx, replicaStateKey(ctx, "dev~appA"))
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Resemble(r))
+		assert.Loosely(t, actual, should.Match(r))
 	})
 }
 
@@ -243,7 +243,7 @@ func TestUpdateReplicaStateOnSuccess(t *testing.T) {
 				Parent: ReplicasRootKey(ctx),
 			}
 			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&AuthReplicaState{
+			assert.Loosely(t, actual, should.Match(&AuthReplicaState{
 				Kind:            "AuthReplicaState",
 				ID:              testAppID,
 				Parent:          ReplicasRootKey(ctx),
@@ -300,7 +300,7 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 				Parent: ReplicasRootKey(ctx),
 			}
 			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(initialState))
+			assert.Loosely(t, actual, should.Match(initialState))
 		})
 
 		t.Run("updates last known state with error details", func(t *ftt.Test) {
@@ -320,7 +320,7 @@ func TestUpdateReplicaStateOnFail(t *testing.T) {
 				Parent: ReplicasRootKey(ctx),
 			}
 			assert.Loosely(t, datastore.Get(ctx, actual), should.BeNil)
-			assert.Loosely(t, actual, should.Resemble(&AuthReplicaState{
+			assert.Loosely(t, actual, should.Match(&AuthReplicaState{
 				Kind:           "AuthReplicaState",
 				ID:             testAppID,
 				Parent:         ReplicasRootKey(ctx),

@@ -119,6 +119,6 @@ func TestReplicasServer(t *testing.T) {
 		srv := Server{}
 		resp, err := srv.ListReplicas(ctx, &emptypb.Empty{})
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, resp, should.Resemble(expectedResp))
+		assert.Loosely(t, resp, should.Match(expectedResp))
 	})
 }

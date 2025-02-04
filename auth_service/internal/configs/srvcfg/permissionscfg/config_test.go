@@ -82,7 +82,7 @@ func TestConfigContext(t *testing.T) {
 		assert.Loosely(t, SetConfig(ctx, permissionsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(permissionsCfg))
+		assert.Loosely(t, cfgFromGet, should.Match(permissionsCfg))
 	})
 
 	ftt.Run("Testing config operations with metadata", t, func(t *ftt.Test) {
@@ -93,7 +93,7 @@ func TestConfigContext(t *testing.T) {
 		assert.Loosely(t, SetConfigWithMetadata(ctx, permissionsCfg, metadata), should.BeNil)
 		cfgFromGet, metadataFromGet, err := GetWithMetadata(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(permissionsCfg))
-		assert.Loosely(t, metadataFromGet, should.Resemble(metadata))
+		assert.Loosely(t, cfgFromGet, should.Match(permissionsCfg))
+		assert.Loosely(t, metadataFromGet, should.Match(metadata))
 	})
 }

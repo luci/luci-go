@@ -616,7 +616,7 @@ func TestFindCycle(t *testing.T) {
 		}
 		cycle, err := findCycle("A", graph)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cycle, should.Resemble([]string{"A", "A"}))
+		assert.Loosely(t, cycle, should.Match([]string{"A", "A"}))
 	})
 
 	ftt.Run("Loop", t, func(t *ftt.Test) {
@@ -627,7 +627,7 @@ func TestFindCycle(t *testing.T) {
 		}
 		cycle, err := findCycle("A", graph)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B", "C", "A"}))
+		assert.Loosely(t, cycle, should.Match([]string{"A", "B", "C", "A"}))
 	})
 
 	ftt.Run("Irrelevant cycle", t, func(t *ftt.Test) {
@@ -650,7 +650,7 @@ func TestFindCycle(t *testing.T) {
 		}
 		cycle, err := findCycle("A", graph)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B", "C", "D", "A"}))
+		assert.Loosely(t, cycle, should.Match([]string{"A", "B", "C", "D", "A"}))
 	})
 
 	ftt.Run("Diamond with no cycles", t, func(t *ftt.Test) {
@@ -676,6 +676,6 @@ func TestFindCycle(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		// Note: this graph has two cycles, but the slice order dictates
 		// the exploration order.
-		assert.Loosely(t, cycle, should.Resemble([]string{"A", "B2", "C", "A"}))
+		assert.Loosely(t, cycle, should.Match([]string{"A", "B2", "C", "A"}))
 	})
 }

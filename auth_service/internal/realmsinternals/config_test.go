@@ -66,7 +66,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("invalid project config", func(t *ftt.Test) {
@@ -106,7 +106,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("simple bindings", func(t *ftt.Test) {
@@ -154,7 +154,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("simple bindings with conditions", func(t *ftt.Test) {
@@ -240,7 +240,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("custom root", func(t *ftt.Test) {
@@ -299,7 +299,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("realm inheritance", func(t *ftt.Test) {
@@ -380,7 +380,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("realm inheritance with conditions", func(t *ftt.Test) {
@@ -494,7 +494,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("custom roles", func(t *ftt.Test) {
@@ -559,7 +559,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("implicit root bindings with no root", func(t *ftt.Test) {
@@ -628,7 +628,7 @@ func TestRealmsExpansion(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("implicit root bindings with root", func(t *ftt.Test) {
@@ -727,7 +727,7 @@ func TestRealmsExpansion(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("implicit root bindings in internal", func(t *ftt.Test) {
@@ -765,7 +765,7 @@ func TestRealmsExpansion(t *testing.T) {
 			}
 
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 
 		t.Run("enforce in service", func(t *ftt.Test) {
@@ -830,7 +830,7 @@ func TestRealmsExpansion(t *testing.T) {
 				},
 			}
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, actualRealms, should.Resemble(expectedRealms))
+			assert.Loosely(t, actualRealms, should.Match(expectedRealms))
 		})
 	})
 }
@@ -845,7 +845,7 @@ func TestFetchLatestRealmsConfigs(t *testing.T) {
 
 		latestConfigs, err := FetchLatestRealmsConfigs(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, latestConfigs, should.Resemble(
+		assert.Loosely(t, latestConfigs, should.Match(
 			testConfigClient.GetExpectedConfigsForTest(ctx)))
 	})
 }

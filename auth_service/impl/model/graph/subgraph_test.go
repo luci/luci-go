@@ -76,7 +76,7 @@ func TestSubgraphOperations(t *testing.T) {
 				{Identity, testUser}: 2,
 			}
 
-			assert.Loosely(t, subgraph.nodesToID, should.Resemble(expectedNodeMap))
+			assert.Loosely(t, subgraph.nodesToID, should.Match(expectedNodeMap))
 		})
 
 	})
@@ -163,7 +163,7 @@ func TestSubgraphOperations(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, subgraph.Nodes, should.Resemble(expectedSubgraph.Nodes))
+			assert.Loosely(t, subgraph.Nodes, should.Match(expectedSubgraph.Nodes))
 		})
 
 		// Make sure that the order that of the edges stays consistent and is predictable.
@@ -211,7 +211,7 @@ func TestSubgraphOperations(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, subgraph.Nodes, should.Resemble(expectedSubgraph.Nodes))
+			assert.Loosely(t, subgraph.Nodes, should.Match(expectedSubgraph.Nodes))
 		})
 	})
 }

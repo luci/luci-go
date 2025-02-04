@@ -57,6 +57,6 @@ func TestConfigContext(t *testing.T) {
 		assert.Loosely(t, SetConfig(ctx, realmsCfg), should.BeNil)
 		cfgFromGet, err := Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, cfgFromGet, should.Resemble(realmsCfg))
+		assert.Loosely(t, cfgFromGet, should.Match(realmsCfg))
 	})
 }

@@ -126,8 +126,8 @@ func TestPermissionsDBGeneration(t *testing.T) {
 		t.Run("succeeds without metadata", func(t *ftt.Test) {
 			db := NewPermissionsDB(cfg, nil)
 			assert.Loosely(t, db.Rev, should.Equal("config-without-metadata"))
-			assert.Loosely(t, db.Permissions, should.Resemble(expectedDB.Permissions))
-			assert.Loosely(t, db.Roles, should.Resemble(expectedDB.Roles))
+			assert.Loosely(t, db.Permissions, should.Match(expectedDB.Permissions))
+			assert.Loosely(t, db.Roles, should.Match(expectedDB.Roles))
 			assert.Loosely(t, setsAreEqual(db.attributes, expectedDB.attributes), should.BeTrue)
 		})
 
@@ -137,8 +137,8 @@ func TestPermissionsDBGeneration(t *testing.T) {
 				Revision: "123",
 			})
 			assert.Loosely(t, db.Rev, should.Equal("permissions.cfg:123"))
-			assert.Loosely(t, db.Permissions, should.Resemble(expectedDB.Permissions))
-			assert.Loosely(t, db.Roles, should.Resemble(expectedDB.Roles))
+			assert.Loosely(t, db.Permissions, should.Match(expectedDB.Permissions))
+			assert.Loosely(t, db.Roles, should.Match(expectedDB.Roles))
 			assert.Loosely(t, setsAreEqual(db.attributes, expectedDB.attributes), should.BeTrue)
 		})
 	})

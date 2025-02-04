@@ -40,7 +40,7 @@ func TestAccountsServer(t *testing.T) {
 		t.Run("GetSelf anonymous", func(t *ftt.Test) {
 			resp, err := srv.GetSelf(ctx, &emptypb.Empty{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&rpcpb.SelfInfo{
+			assert.Loosely(t, resp, should.Match(&rpcpb.SelfInfo{
 				Identity: "anonymous:anonymous",
 				Ip:       "127.0.0.1",
 			}))
@@ -53,7 +53,7 @@ func TestAccountsServer(t *testing.T) {
 			})
 			resp, err := srv.GetSelf(ctx, &emptypb.Empty{})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, resp, should.Resemble(&rpcpb.SelfInfo{
+			assert.Loosely(t, resp, should.Match(&rpcpb.SelfInfo{
 				Identity: "user:someone@example.com",
 				Ip:       "192.168.0.1",
 			}))
