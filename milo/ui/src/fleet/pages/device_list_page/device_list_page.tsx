@@ -28,7 +28,7 @@ import {
   getFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { Option, SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
@@ -86,7 +86,9 @@ export const DeviceListPage = () => {
   );
 };
 
-const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
+const toFilterOptions = (
+  response: GetDeviceDimensionsResponse,
+): OptionCategory[] => {
   const baseDimensions = Object.entries(response.baseDimensions).map(
     ([key, value]) => {
       return {
@@ -95,7 +97,7 @@ const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
         options: value.values.map((value) => {
           return { label: value, value: value };
         }),
-      } as Option;
+      } as OptionCategory;
     },
   );
 
@@ -113,7 +115,7 @@ const toFilterOptions = (response: GetDeviceDimensionsResponse): Option[] => {
         options: value.values.map((value) => {
           return { label: value, value: value };
         }),
-      } as Option,
+      } as OptionCategory,
     ];
   });
 

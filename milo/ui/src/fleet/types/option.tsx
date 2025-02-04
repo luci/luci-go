@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export type Option = {
+export interface OptionValue {
   label: string;
   value: string;
-  options: {
-    label: string;
-    value: string;
-  }[];
+}
+
+export type OptionCategory = {
+  label: string;
+  value: string;
+  options: OptionValue[];
 };
 
 export type SelectedOptions = Record<string, string[]>;

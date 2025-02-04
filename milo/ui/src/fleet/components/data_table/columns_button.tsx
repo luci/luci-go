@@ -21,7 +21,7 @@ import {
 import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useState } from 'react';
 
-import { Option, SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { OptionsDropdown } from '../options_dropdown';
 
@@ -46,7 +46,7 @@ export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
     gridRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
   };
 
-  const columns: Option = {
+  const columns: OptionCategory = {
     label: 'column',
     value: 'column',
     options: columnDefinitions.map((column) => ({

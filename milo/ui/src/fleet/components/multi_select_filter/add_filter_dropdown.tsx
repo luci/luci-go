@@ -17,9 +17,11 @@ import { Backdrop, Card, Checkbox, MenuItem, MenuList } from '@mui/material';
 import _ from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Option, SelectedOptions } from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
+import { OptionCategory, OptionValue } from '@/fleet/types/option';
+import { fuzzySort, SortedElement } from '@/fleet/utils/fuzzy_sort';
 
-import { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from '../../utils';
+import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 import { SearchInput } from '../search_input';
@@ -31,7 +33,7 @@ export function AddFilterDropdown({
   anchorEl,
   setAnchorEL,
 }: {
-  filterOptions: Option[];
+  filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
   anchorEl: HTMLElement | null;
@@ -108,20 +110,32 @@ export function AddFilterDropdown({
     setAnchorEL(null);
   };
 
-  const filterResults = useMemo(
-    () =>
-      Object.values(
-        _.groupBy(
-          fuzzySort(searchQuery)(
-            filterOptions,
-            (el) => el.options,
-            (el) => el.label,
-          ),
-          (o) => o.parent?.value ?? o.el.value,
-        ),
+  const filterResults = useMemo(() => {
+    const flatMapWithParent = filterOptions.flatMap((category) => [
+      { ...category, parent: undefined },
+      ...category.options.map((o) => ({ ...o, parent: category })),
+    ]);
+    const groupsByCategory = Object.values(
+      _.groupBy(
+        fuzzySort(searchQuery)(flatMapWithParent, (el) => el.label),
+        (o) => o.el.parent?.value ?? o.el.value,
       ),
-    [filterOptions, searchQuery],
-  );
+    );
+    const categories = groupsByCategory.map((g) => ({
+      parent: g.find(
+        (x) => x.el.parent === undefined,
+      ) as SortedElement<OptionCategory>,
+      children: g
+        .filter((x) => x.el.parent !== undefined)
+        .map((c) => c as SortedElement<OptionValue>),
+    }));
+    if (searchQuery === '') return categories;
+    return categories.filter(
+      (g) =>
+        g.parent.score > 0 ||
+        (g.children.length > 0 && g.children[0].score > 0),
+    );
+  }, [filterOptions, searchQuery]);
 
   const applyOptions = () => {
     closeMenu();
@@ -136,6 +150,51 @@ export function AddFilterDropdown({
       setSearchQuery((old) => old + e.key);
       e.preventDefault(); // Avoid race condition to type twice in the input
     }
+  };
+
+  const OptionsMenu = () => {
+    if (openCategoryIndex === undefined) return <></>;
+    const parent = filterResults[openCategoryIndex].parent;
+    const options = filterResults[openCategoryIndex].children;
+
+    return options.map((o2, idx) => (
+      <MenuItem
+        key={`innerMenu-${parent!.el.value}-${o2.el.value}`}
+        disableRipple
+        onClick={(e) => {
+          if (e.type === 'keydown' || e.type === 'keyup') {
+            const parsedE = e as unknown as React.KeyboardEvent<HTMLLIElement>;
+            if (parsedE.key === ' ') return;
+            if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
+          }
+          flipOption(parent!.el.value, o2.el.value);
+        }}
+        onKeyDown={keyboardUpDownHandler}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={idx === 0}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '6px 12px',
+          minHeight: 'auto',
+        }}
+      >
+        <Checkbox
+          sx={{
+            padding: 0,
+            marginRight: '13px',
+          }}
+          size="small"
+          checked={
+            !!tempSelectedOptions[parent!.el.value]?.includes(o2.el.value)
+          }
+          tabIndex={-1}
+        />
+        <HighlightCharacter variant="body2" highlightIndexes={o2.matches}>
+          {o2.el.label}
+        </HighlightCharacter>
+      </MenuItem>
+    ));
   };
 
   return (
@@ -193,10 +252,8 @@ export function AddFilterDropdown({
               }}
             />
             {filterResults.map((searchResult, idx) => {
-              const parent = searchResult[0].parent ?? searchResult[0].el;
-              const parentMatches = searchResult
-                .filter((sr) => sr.parent === undefined)
-                .at(0)?.matches;
+              const parent = searchResult.parent;
+              const parentMatches = parent.matches;
 
               return (
                 <MenuItem
@@ -215,7 +272,7 @@ export function AddFilterDropdown({
                       e.currentTarget.click();
                     }
                   }}
-                  key={`item-${parent.value}-${idx}`}
+                  key={`item-${parent.el.value}-${idx}`}
                   disableRipple
                   selected={openCategoryIndex === idx}
                   sx={{
@@ -230,7 +287,7 @@ export function AddFilterDropdown({
                     variant="body2"
                     highlightIndexes={parentMatches}
                   >
-                    {parent.label}
+                    {parent.el.label}
                   </HighlightCharacter>
                   <ArrowRightIcon />
                 </MenuItem>
@@ -268,53 +325,7 @@ export function AddFilterDropdown({
                     handleRandomTextInput(e);
                   }}
                 >
-                  {filterResults[openCategoryIndex]
-                    .filter((sr) => sr.parent !== undefined)
-                    .map((o2, idx) => (
-                      <MenuItem
-                        key={`innerMenu-${o2.parent!.value}-${o2.el.value}`}
-                        disableRipple
-                        onClick={(e) => {
-                          if (e.type === 'keydown' || e.type === 'keyup') {
-                            const parsedE =
-                              e as unknown as React.KeyboardEvent<HTMLLIElement>;
-                            if (parsedE.key === ' ') return;
-                            if (parsedE.key === 'Enter' && parsedE.ctrlKey)
-                              return;
-                          }
-                          flipOption(o2.parent!.value, o2.el.value);
-                        }}
-                        onKeyDown={keyboardUpDownHandler}
-                        // eslint-disable-next-line jsx-a11y/no-autofocus
-                        autoFocus={idx === 0}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '6px 12px',
-                          minHeight: 'auto',
-                        }}
-                      >
-                        <Checkbox
-                          sx={{
-                            padding: 0,
-                            marginRight: '13px',
-                          }}
-                          size="small"
-                          checked={
-                            !!tempSelectedOptions[o2.parent!.value]?.includes(
-                              o2.el.value,
-                            )
-                          }
-                          tabIndex={-1}
-                        />
-                        <HighlightCharacter
-                          variant="body2"
-                          highlightIndexes={o2.matches}
-                        >
-                          {o2.label}
-                        </HighlightCharacter>
-                      </MenuItem>
-                    ))}
+                  <OptionsMenu />
                 </MenuList>
                 <Footer onCancelClick={closeMenu} onApplyClick={applyOptions} />
               </Card>

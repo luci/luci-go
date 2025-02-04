@@ -16,7 +16,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Chip } from '@mui/material';
 import { useState } from 'react';
 
-import { Option, SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { OptionsDropdown } from '../options_dropdown';
 
@@ -25,7 +25,7 @@ export function SelectedChip({
   selectedOptions,
   setSelectedOptions,
 }: {
-  option: Option;
+  option: OptionCategory;
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) {

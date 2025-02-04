@@ -16,7 +16,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { Chip, colors } from '@mui/material';
 import { useState } from 'react';
 
-import { Option, SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 
 import { AddFilterDropdown } from './add_filter_dropdown';
 
@@ -25,7 +25,7 @@ export function AddFilterButton({
   selectedOptions,
   setSelectedOptions,
 }: {
-  filterOptions: Option[];
+  filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) {

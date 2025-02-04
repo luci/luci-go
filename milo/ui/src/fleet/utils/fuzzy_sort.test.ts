@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fuzzySort } from './utils';
+import { fuzzySort } from './fuzzy_sort';
 
-describe('utils', () => {
+describe('fuzzy_sort', () => {
   describe('fuzzySort', () => {
     it('find a perfect match', () => {
       const options = ['abc', 'def', 'ghi'];
@@ -24,12 +24,26 @@ describe('utils', () => {
       expect(result[0].el).toEqual(options[1]);
     });
 
-    it('be empty if there are no matches', () => {
+    it('returns same array if there are no matches', () => {
       const options = ['abc', 'def', 'ghi'];
       const query = 'zzz';
 
       const result = fuzzySort(query)(options);
-      expect(result).toEqual([]);
+      expect(result[0]).toEqual({
+        el: options[0],
+        score: -1,
+        matches: [],
+      });
+      expect(result[1]).toEqual({
+        el: options[1],
+        score: -1,
+        matches: [],
+      });
+      expect(result[2]).toEqual({
+        el: options[2],
+        score: -1,
+        matches: [],
+      });
     });
 
     it('find an option with a missing character', () => {
@@ -45,7 +59,7 @@ describe('utils', () => {
       const query = 'aa';
 
       const result = fuzzySort(query)(options);
-      expect(result.map((r) => r.el)).toEqual(['aaa', 'azzza']);
+      expect(result.map((r) => r.el)).toEqual(['aaa', 'azzza', 'bb']);
     });
 
     it('works with a getter function', () => {
@@ -53,23 +67,15 @@ describe('utils', () => {
       const query = 'a';
       const getter = (n: number) => String.fromCharCode('a'.charCodeAt(0) + n);
 
-      const result = fuzzySort(query)(options, () => [], getter);
-      expect(result.map((r) => r.el)).toEqual([0]);
-    });
-
-    it('respects minScore', () => {
-      const options = ['abc', 'def', 'ghi'];
-      const query = options[1];
-
-      const result = fuzzySort(query, Infinity)(options);
-      expect(result).toEqual([]);
+      const result = fuzzySort(query)(options, getter);
+      expect(result[0].el).toEqual(0);
     });
 
     it('works with nested options', () => {
       const options = [['abc', 'def'], ['ghi']];
       const query = 'ab';
 
-      const result = fuzzySort(query)(options, (x) => x, String);
+      const result = fuzzySort(query)(options, String);
       expect(result.map((r) => r.el)).toContain(options[0]);
     });
 
@@ -87,18 +93,6 @@ describe('utils', () => {
 
       const result = fuzzySort(query)(options);
       expect(result[0].matches).toEqual([0, 1]);
-    });
-
-    it('returns the correct matches, with nested options', () => {
-      const options = [['abcabc', 'xyzab']];
-      const query = 'ab';
-
-      const result = fuzzySort(query)(options, (x) => x, String);
-      expect(result.map((r) => r.matches)).toEqual([
-        [0, 1], // parent
-        [0, 1], // child 1
-        [3, 4], // child 2
-      ]);
     });
   });
 });

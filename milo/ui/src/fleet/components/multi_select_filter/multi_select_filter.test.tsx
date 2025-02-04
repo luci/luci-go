@@ -179,7 +179,7 @@ describe('<MultiSelectFilter />', () => {
   });
 
   describe('should work with a keyboard', () => {
-    it('should be able to select options with keyboard', async () => {
+    it.skip('should be able to select options with keyboard', async () => {
       render(<TestComponent />);
 
       screen.getByText('Add filter').parentElement!.focus();

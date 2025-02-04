@@ -14,17 +14,17 @@
 
 import {
   Checkbox,
-  MenuItem,
   Menu,
-  PopoverOrigin,
+  MenuItem,
   MenuProps,
+  PopoverOrigin,
 } from '@mui/material';
-import _ from 'lodash';
 import { useMemo, useRef, useState } from 'react';
 
-import { Option, SelectedOptions } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
-import { fuzzySort, hasAnyModifier, keyboardUpDownHandler } from '../../utils';
+import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
 import { HighlightCharacter } from '../highlight_character';
 import { SearchInput } from '../search_input';
 
@@ -34,7 +34,7 @@ type OptionsDropdownProps = MenuProps & {
   onClose?: (event: object, reason: 'backdropClick' | 'escapeKeyDown') => void;
   anchorEl: HTMLElement | null;
   open: boolean;
-  option: Option;
+  option: OptionCategory;
   selectedOptions: SelectedOptions;
   setSelectedOptions?: React.Dispatch<React.SetStateAction<SelectedOptions>>;
   anchorOrigin?: PopoverOrigin | undefined;
@@ -92,14 +92,12 @@ export function OptionsDropdown({
   const [searchQuery, setSearchQuery] = useState('');
 
   const [options, highlightedCharactersWrapper] = useMemo(() => {
-    if (enableSearchInput) {
-      const results = Object.values(
-        fuzzySort(searchQuery)(
-          option.options,
-          () => [],
-          (el) => el.label,
-        ),
-      );
+    if (enableSearchInput && searchQuery !== '') {
+      const results = fuzzySort(searchQuery)(
+        option.options,
+        (el) => el.label,
+      ).filter((sr) => sr.score > 0);
+
       const highlightedCharacters = Object.fromEntries(
         results.map((sr) => [sr.el.value, sr.matches]),
       );

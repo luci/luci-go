@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Option } from '@/fleet/types';
+import { OptionCategory } from '@/fleet/types';
 import { SelectedOptions } from '@/fleet/types';
 
 import { AddFilterButton } from './add_filter_button';
@@ -23,7 +23,7 @@ export const MultiSelectFilter = ({
   selectedOptions,
   setSelectedOptions,
 }: {
-  filterOptions: Option[];
+  filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
 }) => {
