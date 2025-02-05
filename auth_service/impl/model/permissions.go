@@ -47,12 +47,9 @@ func processSnapshot(authDBSnapshot *AuthDBSnapshot) (*protocol.ReplicationPushR
 	return req, nil
 }
 
-func getRealms(ctx context.Context) (*protocol.Realms, error) {
-	snapshotLatest, err := GetAuthDBSnapshotLatest(ctx)
-	if err != nil {
-		return nil, err
-	}
-	snapshot, err := GetAuthDBSnapshot(ctx, snapshotLatest.AuthDBRev, false)
+// GetRealms returns the realms object from AuthDB snapshot, given its revision.
+func GetRealms(ctx context.Context, authDBRev int64) (*protocol.Realms, error) {
+	snapshot, err := GetAuthDBSnapshot(ctx, authDBRev, false)
 	if err != nil {
 		return nil, err
 	}

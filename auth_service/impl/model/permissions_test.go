@@ -92,7 +92,7 @@ func TestGetRealms(t *testing.T) {
 		err = datastore.Put(ctx, authDBSnapshotLatest)
 		assert.Loosely(t, err, should.BeNil)
 
-		actual, err := getRealms(ctx)
+		actual, err := GetRealms(ctx, testAuthDBRev)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, actual, should.Match(testRealms))
 	})
