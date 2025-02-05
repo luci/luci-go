@@ -233,7 +233,6 @@ func writeError(ctx context.Context, w http.ResponseWriter, err error, codec pro
 			httpStatus,
 			strings.TrimPrefix(st.Message(), "prpc: "),
 		)
-		errors.Log(ctx, err)
 	}
 
 	// Use the gRPC status message as the response body.

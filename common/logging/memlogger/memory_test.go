@@ -98,17 +98,22 @@ func TestLogger(t *testing.T) {
 
 	ftt.Run("dump", t, func(t *ftt.Test) {
 		var l MemLogger
-		l.fields = map[string]any{"key": 100}
+		l.lctx = &logging.LogContext{Fields: map[string]any{"key": 100}}
 		l.Debugf("test %s", logging.Debug)
 		l.Infof("test %s", logging.Info)
 
+		l.lctx.StackTrace.Textual = "stack trace"
+		l.Errorf("test stack")
+
 		buf := bytes.Buffer{}
-		l.Dump(&buf)
+		_, _ = l.Dump(&buf)
 
 		assert.Loosely(t, buf.String(), should.Equal(`
 DUMP LOG:
   debug: test debug: {"key":100}
   info: test info: {"key":100}
+  error: test stack: {"key":100}
+    stack trace
 `))
 	})
 }

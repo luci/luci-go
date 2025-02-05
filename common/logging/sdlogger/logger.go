@@ -28,6 +28,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -165,8 +166,8 @@ func (s *Sink) Write(l *LogEntry) {
 	}
 	s.l.Lock()
 	defer s.l.Unlock()
-	s.Out.Write(buf)
-	s.Out.Write([]byte("\n"))
+	_, _ = s.Out.Write(buf)
+	_, _ = s.Out.Write([]byte("\n"))
 }
 
 // Factory returns a factory of logger.Logger instances that log to the given
@@ -221,8 +222,10 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 		return
 	}
 
+	var msg strings.Builder
+	_, _ = fmt.Fprintf(&msg, format, args...)
+
 	fields := l.lc.Fields
-	var fieldsStr string
 	if len(fields) > 0 {
 		// logging.ErrorKey usually points to a value that implements 'error'
 		// interface, which is not JSON-serializable. Convert it to a string. Note
@@ -232,12 +235,18 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 			fields = logging.NewFields(fields)
 			fields[logging.ErrorKey] = err.Error()
 		}
-		fieldsStr = " :: " + fields.String()
+		msg.WriteString(" :: ")
+		msg.WriteString(fields.String())
+	}
+
+	if stack := l.lc.StackTrace.ForTextLog(); stack != "" {
+		msg.WriteString("\n\n")
+		msg.WriteString(stack)
 	}
 
 	e := l.prototype
 	e.Severity = LevelToSeverity(lvl)
-	e.Message = fmt.Sprintf(format, args...) + fieldsStr
+	e.Message = msg.String()
 	e.Timestamp = ToTimestamp(clock.Now(l.ctx))
 	e.Fields = fields
 

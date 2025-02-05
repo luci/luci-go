@@ -130,25 +130,7 @@ func TestAnnotation(t *testing.T) {
 				ml := logging.Get(ctx).(*memlogger.MemLogger)
 				msgs := ml.Messages()
 				assert.Loosely(t, msgs, should.HaveLength(1))
-				lines := strings.Split(msgs[0].Msg, "\n")
-				FixForTest(lines)
-				assert.Loosely(t, lines, should.Resemble(expectedLines))
-			})
-			t.Run("via Log in chunks", func(t *ftt.Test) {
-				maxLogEntrySize = 200
-				ctx := memlogger.Use(context.Background())
-				Log(ctx, e, excludedPkgs...)
-				ml := logging.Get(ctx).(*memlogger.MemLogger)
-				var lines []string
-				for i, m := range ml.Messages() {
-					assert.Loosely(t, len(m.Msg), should.BeLessThan(maxLogEntrySize))
-					mLines := strings.Split(m.Msg, "\n")
-					if i > 0 {
-						assert.Loosely(t, mLines[0], should.Equal("(continuation of error log)"))
-						mLines = mLines[1:]
-					}
-					lines = append(lines, mLines...)
-				}
+				lines := strings.Split(msgs[0].Msg+"\n\n"+msgs[0].StackTrace.Textual, "\n")
 				FixForTest(lines)
 				assert.Loosely(t, lines, should.Resemble(expectedLines))
 			})

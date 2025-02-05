@@ -69,9 +69,9 @@ func TestGRPCLogger(t *testing.T) {
 					case Suppress, logging.Error, logging.Warning, logging.Info:
 					default:
 						expected = append(expected, []memlogger.LogEntry{
-							{logging.Debug, "info foo bar", nil, 3},
-							{logging.Debug, `infof("foo", "bar")`, nil, 3},
-							{logging.Debug, "infoln foo bar", nil, 3},
+							{Level: logging.Debug, Msg: "info foo bar", CallDepth: 3},
+							{Level: logging.Debug, Msg: `infof("foo", "bar")`, CallDepth: 3},
+							{Level: logging.Debug, Msg: "infoln foo bar", CallDepth: 3},
 						}...)
 					}
 
@@ -83,9 +83,9 @@ func TestGRPCLogger(t *testing.T) {
 					case Suppress, logging.Error:
 					default:
 						expected = append(expected, []memlogger.LogEntry{
-							{logging.Warning, "warning foo bar", nil, 3},
-							{logging.Warning, `warningf("foo", "bar")`, nil, 3},
-							{logging.Warning, "warningln foo bar", nil, 3},
+							{Level: logging.Warning, Msg: "warning foo bar", CallDepth: 3},
+							{Level: logging.Warning, Msg: `warningf("foo", "bar")`, CallDepth: 3},
+							{Level: logging.Warning, Msg: "warningln foo bar", CallDepth: 3},
 						}...)
 					}
 
@@ -97,9 +97,9 @@ func TestGRPCLogger(t *testing.T) {
 					case Suppress:
 					default:
 						expected = append(expected, []memlogger.LogEntry{
-							{logging.Error, "error foo bar", nil, 3},
-							{logging.Error, `errorf("foo", "bar")`, nil, 3},
-							{logging.Error, "errorln foo bar", nil, 3},
+							{Level: logging.Error, Msg: "error foo bar", CallDepth: 3},
+							{Level: logging.Error, Msg: `errorf("foo", "bar")`, CallDepth: 3},
+							{Level: logging.Error, Msg: "errorln foo bar", CallDepth: 3},
 						}...)
 					}
 
@@ -120,9 +120,9 @@ func TestGRPCLogger(t *testing.T) {
 					grpclog.Fatalln("fatalln", "foo", "bar")
 
 					assert.Loosely(t, base.Messages(), should.Resemble([]memlogger.LogEntry{
-						{logging.Error, "fatal foo bar", nil, 3},
-						{logging.Error, `fatalf("foo", "bar")`, nil, 3},
-						{logging.Error, "fatalln foo bar", nil, 3},
+						{Level: logging.Error, Msg: "fatal foo bar", CallDepth: 3},
+						{Level: logging.Error, Msg: `fatalf("foo", "bar")`, CallDepth: 3},
+						{Level: logging.Error, Msg: "fatalln foo bar", CallDepth: 3},
 					}))
 					assert.Loosely(t, exitCalls, should.Equal(3))
 				})

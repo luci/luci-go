@@ -67,11 +67,58 @@ type Logger interface {
 // Values of LogContext are immutable once constructed.
 type LogContext struct {
 	// Factory can instantiate loggers configured to use this context.
+	//
+	// Used to construct Loggers when logging a message.
 	Factory Factory
+
 	// Level is the current logging level.
+	//
+	// Logging messages below this level will be silently discarded.
 	Level Level
-	// Fields is the current field put into all messages.
+
+	// Fields is the current fields put into all messages.
+	//
+	// Details of how fields are logged depend on a particular logger
+	// implementation.
 	Fields Fields
+
+	// StackTrace is a stack trace to associate with messages (if any).
+	//
+	// This is usually set only when logging messages that explicitly have a stack
+	// trace attached (e.g. panic messages). Normally (e.g. when logging info
+	// level messages) this will not be set. It's logging library user's
+	// responsibility to capture this stack trace and associate it was a logging
+	// message via ErrorWithStackTrace.
+	StackTrace StackTrace
+}
+
+// StackTrace is a representation of a stack trace where an error happened.
+type StackTrace struct {
+	// Standard is a stack trace in a standard format compatible with what is
+	// produced by https://pkg.go.dev/runtime/debug#Stack
+	//
+	// This must be a stack trace of a single goroutine. This format is used when
+	// pushing the stack trace to Cloud Error Reporting or similar services that
+	// can aggregate errors by where they happened.
+	Standard string
+
+	// Textual is a stack trace in an arbitrary human-readable format for output
+	// in text logs.
+	//
+	// This can have arbitrary format as long as the information here is useful
+	// to show in text logs. This trace will be appended to the logging message
+	// when logging to a human-readable log.
+	//
+	// If empty, defaults to Standard.
+	Textual string
+}
+
+// ForTextLog returns either s.Textual (if set) or s.Standard.
+func (s StackTrace) ForTextLog() string {
+	if s.Textual != "" {
+		return s.Textual
+	}
+	return s.Standard
 }
 
 var ctxKey = "logging.LogContext"

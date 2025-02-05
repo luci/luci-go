@@ -31,11 +31,8 @@ type Panic struct {
 }
 
 // Log logs the given message at error severity with the panic stack trace.
-//
-// The stack trace will be attached via a new line. The reason is not implicitly
-// logged. You can pass it via args.
 func (p *Panic) Log(ctx context.Context, fmt string, args ...any) {
-	logging.Errorf(ctx, fmt+"\n%s", append(args, p.Stack)...)
+	logging.ErrorWithStackTrace(ctx, logging.StackTrace{Standard: p.Stack}, fmt, args...)
 }
 
 // Catch recovers from panic. It should be used as a deferred call.

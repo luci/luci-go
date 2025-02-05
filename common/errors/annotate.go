@@ -239,40 +239,27 @@ func (a *Annotator) Err() error {
 	return (*annotatedError)(a)
 }
 
-// maxLogEntrySize limits log messages produced by Log.
-//
-// It is modified in tests of this package.
-var maxLogEntrySize = 64 * 1024
-
 // Log logs the full error. If this is an Annotated error, it will log the full
 // stack information as well.
 //
-// This is a shortcut for logging the output of RenderStack(err).
-//
-// If resulting log message is large, splits it into log entries of at most
-// 64KiB.
+// Does nothing if err is nil.
 func Log(ctx context.Context, err error, excludePkgs ...string) {
-	log := logging.Get(ctx)
-	r := renderStack(err)
-	buf := strings.Builder{}
-	_, _ = r.dumpTo(&buf, excludePkgs...) // no errors can happen, only panics.
-	s := strings.TrimSuffix(buf.String(), "\n")
+	if err == nil {
+		return
+	}
 
-	preamble := ""
-	for len(s) > 0 {
-		chunk := s
-		if maxLen := maxLogEntrySize - len(preamble); maxLen < len(chunk) {
-			// Make chunk end with '\n' and be smaller than maxLen.
-			chunk = strings.TrimRightFunc(chunk[:maxLen], func(r rune) bool { return r != '\n' })
-			if len(chunk) == 0 {
-				// Chunk is 1 very long line, can't be nice about splitting it.
-				chunk = s[:maxLen]
-			}
+	r := renderStack(err)
+
+	if len(r.stacks) == 0 {
+		// Not an annotated error. Just log it normally.
+		logging.Errorf(ctx, "%s", r.originalError)
+	} else {
+		// This is an annotated error. Report it with a stack trace attached.
+		stack := logging.StackTrace{
+			Standard: r.toGoStack(false, excludePkgs...),
+			Textual:  r.toCompactStack(excludePkgs...),
 		}
-		s = s[len(chunk):]
-		chunk = strings.TrimSuffix(chunk, "\n")
-		log.Errorf("%s%s", preamble, chunk)
-		preamble = "(continuation of error log)\n"
+		logging.ErrorWithStackTrace(ctx, stack, "original error: %s", r.originalError)
 	}
 }
 
@@ -430,15 +417,13 @@ type renderedError struct {
 	stacks        []*renderedStack
 }
 
-// toLines renders a full-information stack trace as a series of lines.
-func (r *renderedError) toLines(excludePkgs ...string) lines {
-	if r.originalError != "" && len(r.stacks) == 0 {
-		return []string{r.originalError}
+func (r *renderedError) toCompactStack(excludePkgs ...string) string {
+	if len(r.stacks) == 0 {
+		return ""
 	}
-
 	buf := bytes.Buffer{}
-	r.dumpTo(&buf, excludePkgs...)
-	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	_, _ = r.dumpTo(&buf, excludePkgs...)
+	return strings.TrimSuffix(buf.String(), "\n")
 }
 
 func (r *renderedError) toGoStack(onlyInner bool, excludePkgs ...string) string {
@@ -480,16 +465,13 @@ func (r *renderedError) toGoStack(onlyInner bool, excludePkgs ...string) string 
 }
 
 // dumpTo writes the full-information stack trace to the writer.
+//
+// Writes nothing if there's no stack trace.
 func (r *renderedError) dumpTo(w io.Writer, excludePkgs ...string) (n int, err error) {
-	if r.originalError != "" && len(r.stacks) == 0 {
-		return w.Write([]byte(r.originalError))
+	if len(r.stacks) == 0 {
+		return 0, nil
 	}
-
 	return iotools.WriteTracker(w, func(w io.Writer) error {
-		if r.originalError != "" {
-			fmt.Fprintf(w, "original error: %s\n\n", r.originalError)
-		}
-
 		for i := len(r.stacks) - 1; i >= 0; i-- {
 			if i != len(r.stacks)-1 {
 				w.Write(nlSlice)
@@ -524,9 +506,20 @@ func frameHeaderDetails(frm uintptr) (pkg, filename, funcName string, lineno int
 	return
 }
 
-// RenderStack renders the error to a list of lines.
+// RenderStack renders the error message and a stack to a list of lines.
+//
+// Uses a compact stack format.
 func RenderStack(err error, excludePkgs ...string) []string {
-	return renderStack(err).toLines(excludePkgs...)
+	r := renderStack(err)
+	if r.originalError != "" && len(r.stacks) == 0 {
+		return []string{r.originalError}
+	}
+	buf := bytes.Buffer{}
+	if r.originalError != "" {
+		_, _ = fmt.Fprintf(&buf, "original error: %s\n\n", r.originalError)
+	}
+	_, _ = r.dumpTo(&buf, excludePkgs...)
+	return strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
 }
 
 // RenderGoStack renders the error to a Go-style stacktrace.

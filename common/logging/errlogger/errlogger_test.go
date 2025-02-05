@@ -20,7 +20,9 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -81,6 +83,40 @@ func TestErrLogger(t *testing.T) {
 
 		// The stack is present.
 		assert.That(t, lastReport.Stack, should.NotEqual(""))
+	})
+
+	t.Run("Panic catcher e2e", func(t *testing.T) {
+		var lastReport *ErrorReport
+		ctx := logging.SetFactory(context.Background(), Factory(&Config{
+			Sink: callbackSink(func(rep *ErrorReport) {
+				lastReport = rep
+			}),
+			ServiceContext: svcCtx,
+		}, reqCtx))
+
+		paniccatcher.Do(func() {
+			panic("BOOM")
+		}, func(p *paniccatcher.Panic) {
+			p.Log(ctx, "Crashed")
+		})
+
+		assert.That(t, lastReport.Message, should.Equal("Crashed"))
+		assert.That(t, lastReport.Stack, should.MatchRegexp(`panic\(.*\)`))
+	})
+
+	t.Run("errors.Log e2e", func(t *testing.T) {
+		var lastReport *ErrorReport
+		ctx := logging.SetFactory(context.Background(), Factory(&Config{
+			Sink: callbackSink(func(rep *ErrorReport) {
+				lastReport = rep
+			}),
+			ServiceContext: svcCtx,
+		}, reqCtx))
+
+		errors.Log(ctx, errors.Reason("Error reason").Err())
+
+		assert.That(t, lastReport.Message, should.Equal("original error: Error reason"))
+		assert.That(t, lastReport.Stack, should.MatchRegexp(`errlogger_test.go\:116`))
 	})
 }
 

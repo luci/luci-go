@@ -17,6 +17,7 @@ package gologger
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -41,7 +42,7 @@ type goLoggerWrapper struct {
 type loggerImpl struct {
 	*goLoggerWrapper // The logger instance to log through.
 
-	level  logging.Level
+	lctx   *logging.LogContext
 	fields string
 }
 
@@ -59,15 +60,21 @@ func (li *loggerImpl) Errorf(format string, args ...any) {
 }
 
 func (li *loggerImpl) LogCall(l logging.Level, calldepth int, format string, args []any) {
-	// Append the fields to the format string.
-	if l < li.level {
+	if l < li.lctx.Level {
 		return
 	}
 
+	// Append the fields to the format string.
 	if len(li.fields) > 0 {
 		text := formatWithFields(format, li.fields, args)
 		format = strings.Replace(text, "%", "%%", -1)
 		args = nil
+	}
+
+	// Append the textual stack trace, if any.
+	if stack := li.lctx.StackTrace.ForTextLog(); stack != "" {
+		format += "\n\n%s"
+		args = append(slices.Clone(args), stack)
 	}
 
 	li.Lock()

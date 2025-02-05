@@ -36,7 +36,7 @@ func use(ctx context.Context, out io.Writer, proto LogEntry) context.Context {
 func read(b *bytes.Buffer) *LogEntry {
 	var result LogEntry
 	if err := json.NewDecoder(b).Decode(&result); err != nil {
-		panic(fmt.Errorf("could not decode `%s`: %q", b.Bytes(), err))
+		panic(fmt.Sprintf("could not decode `%s`: %s", b.Bytes(), err))
 	}
 	return &result
 }
@@ -51,7 +51,7 @@ func TestLogger(t *testing.T) {
 	ftt.Run("Basic", t, func(t *ftt.Test) {
 		c = use(c, buf, LogEntry{TraceID: "hi"})
 		logging.Infof(c, "test context")
-		assert.Loosely(t, read(buf), should.Resemble(&LogEntry{
+		assert.That(t, read(buf), should.Match(&LogEntry{
 			Message:   "test context",
 			Severity:  InfoSeverity,
 			Timestamp: Timestamp{Seconds: 1454472306, Nanos: 7},

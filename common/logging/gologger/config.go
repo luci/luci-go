@@ -109,8 +109,7 @@ func (lc *LoggerConfig) NewLogger(_ context.Context, lctx *logging.LogContext) l
 		}
 		lc.w = &goLoggerWrapper{l: logger}
 	})
-	ret := &loggerImpl{goLoggerWrapper: lc.w}
-	ret.level = lctx.Level
+	ret := &loggerImpl{goLoggerWrapper: lc.w, lctx: lctx}
 	if len(lctx.Fields) > 0 {
 		ret.fields = lctx.Fields.String()
 	}

@@ -49,8 +49,8 @@ func TestTQifyError(t *testing.T) {
 			assert.Loosely(t, ml.Messages(), should.HaveLength(1))
 			m := ml.Messages()[0]
 			assert.Loosely(t, m.Level, should.Equal(logging.Error))
-			assert.Loosely(t, m.Msg, should.ContainSubstring("common.TestTQifyError"))
-			assert.Loosely(t, m.Msg, should.ContainSubstring("errors_test.go"))
+			assert.Loosely(t, m.StackTrace.Standard, should.ContainSubstring("common.TestTQifyError"))
+			assert.Loosely(t, m.StackTrace.Standard, should.ContainSubstring("errors_test.go"))
 		}
 		assertLoggedAt := func(level logging.Level) {
 			assert.Loosely(t, ml.Messages(), should.HaveLength(1))

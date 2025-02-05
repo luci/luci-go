@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 
 	"go.chromium.org/luci/common/logging"
@@ -28,18 +29,19 @@ import (
 // LogEntry is a single entry in a MemLogger, containing a message and a
 // severity.
 type LogEntry struct {
-	Level     logging.Level
-	Msg       string
-	Data      map[string]any
-	CallDepth int
+	Level      logging.Level
+	Msg        string
+	Data       map[string]any
+	StackTrace logging.StackTrace
+	CallDepth  int
 }
 
 // MemLogger is an implementation of Logger.
 // Zero value is a valid logger.
 type MemLogger struct {
-	lock   *sync.Mutex
-	data   *[]LogEntry
-	fields map[string]any
+	lock *sync.Mutex
+	data *[]LogEntry
+	lctx *logging.LogContext
 }
 
 var _ logging.Logger = (*MemLogger)(nil)
@@ -73,7 +75,17 @@ func (m *MemLogger) LogCall(lvl logging.Level, calldepth int, format string, arg
 	if m.data == nil {
 		m.data = new([]LogEntry)
 	}
-	*m.data = append(*m.data, LogEntry{lvl, fmt.Sprintf(format, args...), m.fields, calldepth + 1})
+	lctx := m.lctx
+	if lctx == nil {
+		lctx = &logging.LogContext{}
+	}
+	*m.data = append(*m.data, LogEntry{
+		Level:      lvl,
+		Msg:        fmt.Sprintf(format, args...),
+		Data:       lctx.Fields,
+		StackTrace: lctx.StackTrace,
+		CallDepth:  calldepth + 1,
+	})
 }
 
 // Messages returns all of the log messages that this memory logger has
@@ -142,25 +154,37 @@ func (m *MemLogger) Has(lvl logging.Level, msg string, data map[string]any) bool
 // Dump dumps the current memory logger contents to the given writer in a
 // human-readable format.
 func (m *MemLogger) Dump(w io.Writer) (n int, err error) {
-	amt := 0
+	write := func(msg string, args ...any) bool {
+		var wrote int
+		wrote, err = fmt.Fprintf(w, msg, args...)
+		n += wrote
+		return err == nil
+	}
 	for i, msg := range m.Messages() {
 		if i == 0 {
-			amt, err = fmt.Fprintf(w, "\nDUMP LOG:\n")
-			n += amt
-			if err != nil {
+			if !write("\nDUMP LOG:\n") {
 				return
 			}
 		}
-		if msg.Data == nil {
-			amt, err = fmt.Fprintf(w, "  %s: %s\n", msg.Level, msg.Msg)
-			n += amt
-			if err != nil {
+		if !write("  %s: %s", msg.Level, msg.Msg) {
+			return
+		}
+		if msg.Data != nil {
+			if !write(": %s", logging.Fields(msg.Data)) {
 				return
 			}
+		}
+		if stack := msg.StackTrace.ForTextLog(); stack != "" {
+			if !write("\n") {
+				return
+			}
+			for _, line := range strings.Split(stack, "\n") {
+				if !write("    %s\n", line) {
+					return
+				}
+			}
 		} else {
-			amt, err = fmt.Fprintf(w, "  %s: %s: %s\n", msg.Level, msg.Msg, logging.Fields(msg.Data))
-			n += amt
-			if err != nil {
+			if !write("\n") {
 				return
 			}
 		}
@@ -203,9 +227,9 @@ func Use(ctx context.Context) context.Context {
 	data := []LogEntry{}
 	return logging.SetFactory(ctx, func(ctx context.Context, lc *logging.LogContext) logging.Logger {
 		return &MemLogger{
-			lock:   &lock,
-			data:   &data,
-			fields: lc.Fields,
+			lock: &lock,
+			data: &data,
+			lctx: lc,
 		}
 	})
 }

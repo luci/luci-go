@@ -102,14 +102,17 @@ func Factory(cfg *Config, req *RequestContext) logging.Factory {
 			if cfg.UserResolver != nil {
 				user = cfg.UserResolver(ctx)
 			}
+			stack := lc.StackTrace.Standard
+			if stack == "" {
+				stack = captureStack()
+			}
 			cfg.Sink.ReportError(&ErrorReport{
 				ServiceContext: cfg.ServiceContext,
 				RequestContext: req,
 				User:           user,
 				Timestamp:      clock.Now(ctx),
 				Message:        fmt.Sprintf(fm, args...),
-				// TODO: Use the stack from logging.LogContext if present.
-				Stack: captureStack(),
+				Stack:          stack,
 			})
 		})
 	}
