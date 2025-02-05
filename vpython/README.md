@@ -190,7 +190,7 @@ the overhead of downloading and/or resolving a package multiple times.
 
 #### Command-line.
 
-`vpython3` is a natural replacement for `pytho3n` in the command line:
+`vpython3` is a natural replacement for `python3` in the command line:
 
 ```sh
 python3 ./foo/bar/baz.py -d --flag value arg arg whatever
