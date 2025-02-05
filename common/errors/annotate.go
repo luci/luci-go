@@ -90,9 +90,6 @@ type stackContext struct {
 	// publicly-facing reason, and will show up in the Error() string.
 	reason string
 
-	// used for printing tracebacks, but will not show up in the Error() string.
-	internalReason string
-
 	// tags are any data associated with this frame.
 	tags map[TagKey]any
 }
@@ -115,9 +112,6 @@ func (s *stackContext) renderPublic(inner error) string {
 //	internal reason: I am an internal reason formatted with key1: value
 func (s *stackContext) render() lines {
 	siz := len(s.tags)
-	if s.internalReason != "" {
-		siz++
-	}
 	if s.reason != "" {
 		siz++
 	}
@@ -128,9 +122,6 @@ func (s *stackContext) render() lines {
 	ret := make(lines, 0, siz)
 	if s.reason != "" {
 		ret = append(ret, fmt.Sprintf("reason: %s", s.reason))
-	}
-	if s.internalReason != "" {
-		ret = append(ret, fmt.Sprintf("internal reason: %s", s.internalReason))
 	}
 	keys := make(tagKeySlice, 0, len(s.tags))
 	for key := range s.tags {
@@ -185,23 +176,6 @@ func (e *annotatedError) Unwrap() error              { return e.inner }
 type Annotator struct {
 	inner error
 	ctx   stackContext
-}
-
-// InternalReason adds a stack-trace-only internal reason string (for humans) to
-// this error.
-//
-// The text here will only be visible when using `errors.Log` or
-// `errors.RenderStack`, not when calling the .Error() method of the resulting
-// error.
-//
-// The `reason` string is formatted with `args` and may contain Sprintf-style
-// formatting directives.
-func (a *Annotator) InternalReason(reason string, args ...any) *Annotator {
-	if a == nil {
-		return a
-	}
-	a.ctx.internalReason = fmt.Sprintf(reason, args...)
-	return a
 }
 
 // Tag adds a tag with an optional value to this error.
@@ -624,8 +598,8 @@ func renderStack(err error) *renderedError {
 
 // Annotate captures the current stack frame and returns a new annotatable
 // error, attaching the publicly readable `reason` format string to the error.
-// You can add additional metadata to this error with the 'InternalReason' and
-// 'Tag' methods, and then obtain a real `error` with the Err() function.
+// You can add tags to this error with the 'Tag' method, and then obtain a real
+// `error` with the Err() function.
 //
 // If this is passed nil, it will return a no-op Annotator whose .Err() function
 // will also return nil.

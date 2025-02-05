@@ -112,15 +112,6 @@ func (m MultiError) First() error {
 	return nil
 }
 
-func (m MultiError) stackContext() stackContext {
-	n, _ := m.Summary()
-
-	return stackContext{
-		internalReason: fmt.Sprintf(
-			"MultiError %d/%d: following first non-nil error.", n, len(m)),
-	}
-}
-
 // NewMultiError create new multi error from given errors.
 //
 // Can be used to workaround 'go vet' confusion "composite literal uses unkeyed

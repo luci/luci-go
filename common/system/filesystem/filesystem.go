@@ -16,7 +16,6 @@ package filesystem
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,8 +45,7 @@ func MakeDirs(path string) error {
 func AbsPath(base *string) error {
 	v, err := filepath.Abs(*base)
 	if err != nil {
-		return errors.Annotate(err, "unable to resolve absolute path").
-			InternalReason("base(%q)", *base).Err()
+		return errors.Annotate(err, "unable to resolve absolute path: %q", *base).Err()
 	}
 	*base = v
 	return nil
@@ -78,7 +76,7 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 		when = time.Now()
 	}
 	if err := os.Chtimes(path, when, when); err != nil {
-		return errors.Annotate(err, "failed to Chtimes").InternalReason("path(%q)", path).Err()
+		return errors.Annotate(err, "failed to Chtimes: %q", path).Err()
 	}
 
 	return nil
@@ -204,7 +202,7 @@ func RenamingRemoveAll(path, renameToDir string) (renamedToPath string, err erro
 	if renameToDir == "" {
 		renameToDir = pathParentDir
 	}
-	renameToDir, err = ioutil.TempDir(renameToDir, ".trash-")
+	renameToDir, err = os.MkdirTemp(renameToDir, ".trash-")
 	if err != nil {
 		err = RemoveAll(path)
 		return
@@ -241,7 +239,7 @@ func MakePathUserWritable(path string, fi os.FileInfo) error {
 	if fi == nil {
 		var err error
 		if fi, err = os.Stat(path); err != nil {
-			return errors.Annotate(err, "failed to Stat path").InternalReason("path(%q)", path).Err()
+			return errors.Annotate(err, "failed to Stat path: %q", path).Err()
 		}
 	}
 
@@ -250,7 +248,7 @@ func MakePathUserWritable(path string, fi os.FileInfo) error {
 	if (mode & 0200) == 0 {
 		mode |= 0200
 		if err := os.Chmod(path, mode); err != nil {
-			return errors.Annotate(err, "could not Chmod path").InternalReason("mode(%#o)/path(%q)", mode, path).Err()
+			return errors.Annotate(err, "could not Chmod path: mode=%#o: %q", mode, path).Err()
 		}
 	}
 	return nil
@@ -270,7 +268,7 @@ func recursiveChmod(path string, filter func(string) bool, chmod func(mode os.Fi
 		if (mode.IsRegular() || mode.IsDir()) && filter(path) {
 			if newMode := chmod(mode); newMode != mode {
 				if err := os.Chmod(path, newMode); err != nil {
-					return errors.Annotate(err, "failed to Chmod").InternalReason("path(%q)", path).Err()
+					return errors.Annotate(err, "failed to Chmod: %q", path).Err()
 				}
 			}
 		}

@@ -25,16 +25,15 @@ func someProcessingFunction(val int) error {
 	}
 	if err := someProcessingFunction(val - 1); err != nil {
 		// correctly handles recursion
-		return Annotate(err, "").InternalReason("val(%d)", val).Err()
+		return Annotate(err, "").Err()
 	}
 	return nil
 }
 
 func someLibFunc(vals ...int) error {
-	for i, v := range vals {
+	for _, v := range vals {
 		if err := someProcessingFunction(v); err != nil {
-			return Annotate(err, "processing %d", v).
-				InternalReason("secret(%s)/i(%d)", "value", i).Err()
+			return Annotate(err, "processing %d", v).Err()
 		}
 	}
 	return nil
@@ -92,31 +91,26 @@ func ExampleAnnotate() {
 	//   reason: bad number: 1
 	//
 	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
-	//   internal reason: val(2)
-	//
 	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:26 - errors.someProcessingFunction()
-	//   internal reason: val(3)
-	//
-	// From frame 2 to 3, the following wrappers were found:
+	// From frame 0 to 3, the following wrappers were found:
 	//   unknown wrapper *errors.MiscWrappedError
 	//
 	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:35 - errors.someLibFunc()
 	//   reason: processing 3
-	//   internal reason: secret(value)/i(0)
 	//
 	// From frame 3 to 4, the following wrappers were found:
-	//   internal reason: MultiError 1/1: following first non-nil error.
+	//   unknown wrapper errors.MultiError
 	//
-	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:59 - errors.someIntermediateFunc.func1()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:58 - errors.someIntermediateFunc.func1()
 	//   reason: could not process
 	//
 	// ... skipped SOME frames in pkg "runtime"...
 	//
 	// GOROUTINE LINE
-	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:68 - errors.someIntermediateFunc()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:67 - errors.someIntermediateFunc()
 	//   reason: while processing [3]
 	//
-	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:74 - errors.ExampleAnnotate()
+	// #? go.chromium.org/luci/common/errors/annotate_example_test.go:73 - errors.ExampleAnnotate()
 	//   reason: top level
 	//
 	// #? testing/run_example.go:XXX - testing.runExample()

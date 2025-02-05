@@ -74,15 +74,14 @@ func TestAnnotation(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("Test annotation struct", t, func(t *ftt.Test) {
-		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy").
-			InternalReason("extra(%.3f)", 8.2).Err()
+		e := Annotate(New("bad thing"), "%d some error: %q", 20, "stringy").Err()
 		ae := e.(*annotatedError)
 
 		t.Run("annotation can render itself for public usage", func(t *ftt.Test) {
 			assert.Loosely(t, ae.Error(), should.Equal(`20 some error: "stringy": bad thing`))
 		})
 
-		t.Run("annotation can render itself for internal usage", func(t *ftt.Test) {
+		t.Run("annotation can render itself", func(t *ftt.Test) {
 			lines := RenderStack(e, excludedPkgs...)
 			FixForTest(lines)
 
@@ -92,7 +91,6 @@ func TestAnnotation(t *testing.T) {
 				`GOROUTINE LINE`,
 				`#? go.chromium.org/luci/common/errors/annotate_test.go:XX - errors.TestAnnotation.func1()`,
 				`  reason: 20 some error: "stringy"`,
-				`  internal reason: extra(8.200)`,
 				``,
 				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
@@ -115,7 +113,6 @@ func TestAnnotation(t *testing.T) {
 				`    reason: outer frame outer`,
 				`  annotation #1:`,
 				`    reason: 20 some error: "stringy"`,
-				`    internal reason: extra(8.200)`,
 				``,
 				`... skipped SOME frames in pkg "go.chromium.org/luci/common/testing/ftt"...`,
 				``,
