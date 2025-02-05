@@ -103,12 +103,7 @@ export const DataTable = ({
   // is fired it already has the correct columns loaded.
   if (isLoading) {
     return (
-      <div
-        css={{
-          width: '100%',
-          padding: '0 50%',
-        }}
-      >
+      <div css={{ padding: '0 50%' }}>
         <CircularProgress />
       </div>
     );

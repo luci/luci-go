@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import DevicesIcon from '@mui/icons-material/Devices';
-import { Drawer, Typography } from '@mui/material';
+import { styled, Typography } from '@mui/material';
+import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -22,6 +23,24 @@ import { Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import { colors } from '../theme/colors';
+
+import { drawerWidth } from './constants';
+
+const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
+  width: 0,
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    width: `${drawerWidth}px`,
+  }),
+}));
+
 type SidebarSection = {
   title: string;
   pages: {
@@ -50,8 +69,10 @@ export const Sidebar = ({ open }: { open: boolean }) => {
   return (
     <Drawer
       sx={{
+        position: 'relative',
+        height: '100%',
         '& .MuiDrawer-paper': {
-          width: 213,
+          width: drawerWidth,
           boxSizing: 'border-box',
         },
       }}

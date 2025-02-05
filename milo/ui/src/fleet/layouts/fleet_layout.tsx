@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ThemeProvider } from '@mui/material';
+import { ThemeProvider, styled } from '@mui/material';
 import { Helmet } from 'react-helmet';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorage } from 'react-use';
@@ -21,11 +21,27 @@ import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
+import {
+  QueuedStickyScrollingBase,
+  StickyOffset,
+  Sticky,
+} from '@/generic_libs/components/queued_sticky';
 
 import { theme } from '../theme/theme';
 
 import { Header } from './header';
 import { Sidebar } from './sidebar';
+
+const ScrollingBase = styled(QueuedStickyScrollingBase)`
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'header header'
+    'sidebar main'
+    'sidebar footer';
+`;
 
 export const FleetLayout = () => {
   const [sidebarOpen = false, setSidebarOpen] = useLocalStorage<boolean>(
@@ -34,30 +50,30 @@ export const FleetLayout = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Helmet titleTemplate="%s | Fleet" defaultTitle="Fleet">
-        <link rel="icon" href={bassFavicon} />
-      </Helmet>
-      <div
-        css={{
-          minHeight: '100vh',
-          minWidth: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <Sidebar open={sidebarOpen} />
-        <Outlet />
-
-        <div
-          css={{
-            marginTop: 'auto',
-          }}
+      <ScrollingBase>
+        <Helmet titleTemplate="%s | Fleet" defaultTitle="Fleet">
+          <link rel="icon" href={bassFavicon} />
+        </Helmet>
+        <Sticky
+          top
+          sx={{ gridArea: 'header', zIndex: (theme) => theme.zIndex.appBar }}
         >
+          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        </Sticky>
+        <Sticky
+          left
+          sx={{ gridArea: 'sidebar', zIndex: (theme) => theme.zIndex.drawer }}
+        >
+          <Sidebar open={sidebarOpen} />
+        </Sticky>
+        <Sticky top sx={{ gridArea: 'footer' }}>
           <PrivacyFooter />
-        </div>
+        </Sticky>
+        <StickyOffset component="main" sx={{ gridArea: 'main' }}>
+          <Outlet />
+        </StickyOffset>
         <CookieConsentBar />
-      </div>
+      </ScrollingBase>
     </ThemeProvider>
   );
 };
