@@ -225,6 +225,7 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/sdlogger"
 	"go.chromium.org/luci/common/logging/teelogger"
+	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/system/signals"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -320,16 +321,25 @@ func Main(opts *Options, mods []module.Module, init func(srv *Server) error) {
 		os.Exit(3)
 	}
 
-	// Construct the server and run its serving loop.
+	// Construct the base server and initialize all modules.
 	srv, err := New(context.Background(), *opts, mods)
 	if err != nil {
 		srv.Fatal(err)
 	}
+
+	// Run the user-supplied configuration callback.
 	if init != nil {
-		if err = init(srv); err != nil {
-			srv.Fatal(err)
-		}
+		paniccatcher.Do(func() {
+			if err = init(srv); err != nil {
+				srv.Fatal(err)
+			}
+		}, func(p *paniccatcher.Panic) {
+			p.Log(srv.Context, "Panic initializing the server: %s", p.Reason)
+			srv.Fatal(nil)
+		})
 	}
+
+	// Run the serving loop. This blocks.
 	if err = srv.Serve(); err != nil {
 		srv.Fatal(err)
 	}
@@ -896,10 +906,11 @@ type Server struct {
 
 	lastReqTime atomic.Value // time.Time when the last request started
 
-	stdout       sdlogger.LogEntryWriter                   // for logging to stdout, nil in dev mode
-	stderr       sdlogger.LogEntryWriter                   // for logging to stderr, nil in dev mode
-	errloggerCfg *errlogger.Config                         // for reporting to the Cloud Error Reporting
-	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
+	stdout        sdlogger.LogEntryWriter                   // for logging to stdout, nil in dev mode
+	stderr        sdlogger.LogEntryWriter                   // for logging to stderr, nil in dev mode
+	errloggerCfg  *errlogger.Config                         // for reporting to the Cloud Error Reporting
+	errloggerSink *errlogger.CloudErrorReporter             // for flushing errors on abnormal exit
+	logRequestCB  func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
 	mainPort  *Port        // pre-registered main HTTP port, see initMainPort
 	adminPort *Port        // pre-registered admin HTTP port, if any, see initAdminPort
@@ -1194,7 +1205,20 @@ func New(ctx context.Context, opts Options, mods []module.Module) (srv *Server, 
 	impls := make([]*moduleHostImpl, len(sorted))
 	for i, mod := range sorted {
 		impls[i] = &moduleHostImpl{srv: srv, mod: mod}
-		switch ctx, err := mod.Initialize(srv.Context, impls[i], srv.Options.hostOptions()); {
+
+		// Modules are essentially user-supplied code and they may panic. Make sure
+		// to log such panics into Error Reporting and abort the server with
+		// Fatal(...) to flush such error reports.
+		var ctx context.Context
+		var err error
+		paniccatcher.Do(func() {
+			ctx, err = mod.Initialize(srv.Context, impls[i], srv.Options.hostOptions())
+		}, func(p *paniccatcher.Panic) {
+			p.Log(srv.Context, "Panic initializing %s: %s", mod.Name(), p.Reason)
+			srv.Fatal(nil)
+		})
+
+		switch {
 		case err != nil:
 			return srv, errors.Annotate(err, "failed to initialize module %q", mod.Name()).Err()
 		case ctx != nil:
@@ -1744,11 +1768,18 @@ func (s *Server) shutdownPorts() bool {
 	return true
 }
 
-// Fatal logs the error and immediately shuts down the process with exit code 3.
+// Fatal logs the error (if any), flushes pending error reports and shuts down
+// the process with exit code 3.
 //
-// No cleanup is performed. Deferred statements are not run. Not recoverable.
+// No full cleanup is performed. Deferred statements are not run. Not
+// recoverable.
 func (s *Server) Fatal(err error) {
-	errors.Log(s.Context, err)
+	if err != nil {
+		errors.Log(s.Context, err)
+	}
+	if s.errloggerSink != nil {
+		s.errloggerSink.Close(s.Context)
+	}
 	os.Exit(3)
 }
 
@@ -3124,12 +3155,13 @@ func (s *Server) initErrorReporting() error {
 		return nil
 	}
 
-	sink, err := errlogger.NewCloudErrorReporter(s.Context, option.WithTokenSource(s.cloudTS))
+	var err error
+	s.errloggerSink, err = errlogger.NewCloudErrorReporter(s.Context, option.WithTokenSource(s.cloudTS))
 	if err != nil {
 		return err
 	}
 	s.errloggerCfg = &errlogger.Config{
-		Sink: sink,
+		Sink: s.errloggerSink,
 		ServiceContext: &errlogger.ServiceContext{
 			Project: s.Options.CloudProject,
 			Service: s.getServiceID(),
@@ -3144,7 +3176,18 @@ func (s *Server) initErrorReporting() error {
 			return ""
 		},
 	}
-	s.RegisterCleanup(func(ctx context.Context) { sink.Close(ctx) })
+
+	// This cleanup will run on normal server exit. If the server crashes (e.g.
+	// panics), pending errors will be flushed in Fatal(...) explicitly, since
+	// cleanups are not ran on crashes (but it is still important to report
+	// errors).
+	s.RegisterCleanup(func(ctx context.Context) { s.errloggerSink.Close(ctx) })
+
+	// Report errors logged to the server-global log as well. Note that
+	// per-request contexts will have their logger configured separately in
+	// startRequest.
+	s.Context = teelogger.Use(s.Context, errlogger.Factory(s.errloggerCfg, nil))
+
 	return nil
 }
 
