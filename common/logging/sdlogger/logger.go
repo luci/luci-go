@@ -24,26 +24,16 @@
 package sdlogger
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"regexp"
-	"runtime"
-	"strings"
 	"sync"
 	"time"
 
-	"cloud.google.com/go/errorreporting"
-
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
-
-var errStackRe = regexp.MustCompile(`(.*)[\r\n]+` + `(` + errors.RenderedStackDumpRe + `[\s\S]*)`)
 
 // Severity is a string denoting the logging level of the entry.
 //
@@ -177,95 +167,6 @@ func (s *Sink) Write(l *LogEntry) {
 	defer s.l.Unlock()
 	s.Out.Write(buf)
 	s.Out.Write([]byte("\n"))
-}
-
-// CloudErrorsSink wraps a LogEntryWriter and an errorreporting.Client.
-type CloudErrorsSink struct {
-	Client  *errorreporting.Client
-	Request *http.Request
-	Out     LogEntryWriter
-}
-
-// Write appends a log entry to the given writer and reports the message to the
-// cloud error reporting for the Error severity.
-func (s *CloudErrorsSink) Write(l *LogEntry) {
-	if l.Severity == ErrorSeverity {
-		s.Client.Report(prepErrorReportingEntry(l, s.Request))
-	}
-	s.Out.Write(l)
-}
-
-// prepErrorReportingEntry prepares an errorreporting.Entry from the LogEntry message.
-func prepErrorReportingEntry(l *LogEntry, req *http.Request) errorreporting.Entry {
-	// Append the trace id to make it easier to search in Cloud Logs Explorer.
-	if msgWithStack := errStackRe.FindStringSubmatch(l.Message); msgWithStack != nil {
-		return errorreporting.Entry{
-			Req:   req,
-			Error: errors.New(strings.TrimSpace(msgWithStack[1]) + " (Log Trace ID: " + l.TraceID + ")"),
-			Stack: []byte(msgWithStack[2]),
-		}
-	}
-	// Capture the stack where the error happened. Limit the stack trace to 16K
-	// and remove all stack frames that belong to the logging library itself.
-	var buf [16 * 1024]byte
-	stack := buf[0:runtime.Stack(buf[:], false)]
-	stack = cleanupStack(stack)
-	return errorreporting.Entry{
-		Req:   req,
-		Error: errors.New(l.Message + " (Log Trace ID: " + l.TraceID + ")"),
-		Stack: stack,
-	}
-}
-
-// cleanupStack removes internal logging stack frames from the stack trace.
-//
-// That way the data reported to Cloud Error Reporting is cleaner.
-func cleanupStack(s []byte) []byte {
-	// `s` has form:
-	//
-	//  <first line with some overall message>\n
-	//  <symbolname>(<args>)\n
-	//  \t<filepath> <offset>\n
-	//  <symbolname>(<args>)\n
-	//  \t<filepath> <offset>\n
-	//  ...
-	//
-	// We need to preserve the first line, but remove all head entries (pairs of
-	// lines) for symbols in go.chromium.org/luci/common/logging package.
-	const skipPrefix = "go.chromium.org/luci/common/logging"
-
-	readLine := func() (line []byte) {
-		if idx := bytes.IndexByte(s, '\n'); idx != -1 {
-			line, s = s[:idx+1], s[idx+1:]
-		}
-		return line
-	}
-
-	firstLine := readLine()
-	if firstLine == nil {
-		return s
-	}
-
-	// Write the first line to the output as is.
-	out := bytes.Buffer{}
-	out.Grow(len(firstLine) + len(s))
-	_, _ = out.Write(firstLine)
-
-	// Skip pairs of lines we want filtered out.
-	for len(s) > 0 {
-		// Read <symbolname>(<args>)\n.
-		if sym := readLine(); !bytes.HasPrefix(sym, []byte(skipPrefix)) {
-			// Something unexpected (or just EOF). Dump it all to the output.
-			_, _ = out.Write(sym)
-			break
-		}
-		// Skip the following line with "\t<filepath> <offset>\n" as well.
-		_ = readLine()
-	}
-
-	// Dump the rest as is.
-	_, _ = out.Write(s)
-	return out.Bytes()
 }
 
 // Factory returns a factory of logger.Logger instances that log to the given

@@ -188,7 +188,6 @@ import (
 	"time"
 
 	gcemetadata "cloud.google.com/go/compute/metadata"
-	"cloud.google.com/go/errorreporting"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
 	"cloud.google.com/go/profiler"
@@ -215,14 +214,17 @@ import (
 	"google.golang.org/grpc/status"
 
 	clientauth "go.chromium.org/luci/auth"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/errlogger"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/sdlogger"
+	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/system/signals"
 	tsmoncommon "go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -896,7 +898,7 @@ type Server struct {
 
 	stdout       sdlogger.LogEntryWriter                   // for logging to stdout, nil in dev mode
 	stderr       sdlogger.LogEntryWriter                   // for logging to stderr, nil in dev mode
-	errRptClient *errorreporting.Client                    // for reporting to the cloud Error Reporting
+	errloggerCfg *errlogger.Config                         // for reporting to the Cloud Error Reporting
 	logRequestCB func(context.Context, *sdlogger.LogEntry) // if non-nil, need to emit request log entries via it
 
 	mainPort  *Port        // pre-registered main HTTP port, see initMainPort
@@ -2097,6 +2099,8 @@ func (s *Server) grpcDispatch() grpcutil.UnifiedServerInterceptor {
 func (s *Server) startRequest(ctx context.Context) (context.Context, func(*requestResult)) {
 	// The value *must* be there. Let it panic if it is not.
 	req := ctx.Value(&incomingRequestKey).(*incomingRequest)
+	userAgent := req.metadata.Header("User-Agent")
+	remoteIP := endUserIP(req.metadata)
 
 	// If running on GAE, initialize the per-request API tickets needed to make
 	// RPCs to the GAE service bridge.
@@ -2146,24 +2150,15 @@ func (s *Server) startRequest(ctx context.Context) (context.Context, func(*reque
 	// Cloud Logger collectors understand natively.
 	var severityTracker *sdlogger.SeverityTracker
 	if s.Options.Prod {
-		// Start assembling logging sink layers starting with the innermost one.
-		logSink := s.stdout
+		loggers := make([]logging.Factory, 0, 2)
 
 		// If we are going to log the overall request status, install the tracker
 		// that observes the maximum emitted severity to use it as an overall
 		// severity for the request log entry.
+		logSink := s.stdout
 		if s.logRequestCB != nil {
 			severityTracker = &sdlogger.SeverityTracker{Out: logSink}
 			logSink = severityTracker
-		}
-
-		// If have Cloud Error Reporting enabled, intercept errors to upload them.
-		// TODO(vadimsh): Fill in `CloudErrorsSink.Request` with something.
-		if s.errRptClient != nil {
-			logSink = &sdlogger.CloudErrorsSink{
-				Client: s.errRptClient,
-				Out:    logSink,
-			}
 		}
 
 		// Associate log entries with the tracing span where they were emitted.
@@ -2173,11 +2168,25 @@ func (s *Server) startRequest(ctx context.Context) (context.Context, func(*reque
 			}
 		}
 
-		// Finally install all this into the request context.
-		ctx = logging.SetFactory(ctx, sdlogger.Factory(logSink, sdlogger.LogEntry{
+		// A logger emitting JSON logs in a format understood by Cloud Logging.
+		loggers = append(loggers, sdlogger.Factory(logSink, sdlogger.LogEntry{
 			TraceID:   traceID,
 			Operation: &sdlogger.Operation{ID: s.genUniqueID(32)},
 		}, annotateWithSpan))
+
+		// A logger emitting errors into Cloud Error Reporting sink.
+		if s.errloggerCfg != nil {
+			loggers = append(loggers, errlogger.Factory(s.errloggerCfg, &errlogger.RequestContext{
+				HTTPMethod: req.method,
+				URL:        req.url,
+				UserAgent:  userAgent,
+				RemoteIP:   remoteIP,
+				TraceID:    traceID,
+			}))
+		}
+
+		// Finally install all this into the request context.
+		ctx = logging.SetFactory(ctx, teelogger.Factory(loggers...))
 	}
 
 	// Do final context touches.
@@ -2233,8 +2242,8 @@ func (s *Server) startRequest(ctx context.Context) (context.Context, func(*reque
 				Status:       res.statusCode,
 				RequestSize:  fmt.Sprintf("%d", res.requestSize),
 				ResponseSize: fmt.Sprintf("%d", res.responseSize),
-				UserAgent:    req.metadata.Header("User-Agent"),
-				RemoteIP:     endUserIP(req.metadata),
+				UserAgent:    userAgent,
+				RemoteIP:     remoteIP,
 				Latency:      fmt.Sprintf("%fs", latency.Seconds()),
 			},
 		})
@@ -3115,22 +3124,27 @@ func (s *Server) initErrorReporting() error {
 		return nil
 	}
 
-	// Get token source to call Error Reporting API.
-	var err error
-	s.errRptClient, err = errorreporting.NewClient(s.Context, s.Options.CloudProject, errorreporting.Config{
-		ServiceName:    s.getServiceID(),
-		ServiceVersion: s.Options.ImageVersion(),
-		OnError: func(err error) {
-			// TODO(crbug/1204640): s/Warningf/Errorf once "Error Reporting" is itself
-			// more reliable.
-			logging.Warningf(s.Context, "Error Reporting could not log error: %s", err)
-		},
-	}, option.WithTokenSource(s.cloudTS))
+	sink, err := errlogger.NewCloudErrorReporter(s.Context, option.WithTokenSource(s.cloudTS))
 	if err != nil {
 		return err
 	}
-
-	s.RegisterCleanup(func(ctx context.Context) { s.errRptClient.Close() })
+	s.errloggerCfg = &errlogger.Config{
+		Sink: sink,
+		ServiceContext: &errlogger.ServiceContext{
+			Project: s.Options.CloudProject,
+			Service: s.getServiceID(),
+			Version: s.Options.ImageVersion(),
+		},
+		// This is ultimately used to count "affected users" in aggregated reports.
+		UserResolver: func(ctx context.Context) string {
+			ident := auth.CurrentIdentity(ctx)
+			if ident.Kind() != identity.Anonymous {
+				return string(ident)
+			}
+			return ""
+		},
+	}
+	s.RegisterCleanup(func(ctx context.Context) { sink.Close(ctx) })
 	return nil
 }
 
