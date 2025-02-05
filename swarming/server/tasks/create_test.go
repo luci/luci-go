@@ -147,12 +147,14 @@ func TestCreation(t *testing.T) {
 								},
 							},
 						},
+						PubSubTopic: "pubsub-topic",
 					},
 					SecretBytes: &model.SecretBytes{
 						SecretBytes: []byte("secret"),
 					},
-					ServerVersion: "v2",
-					Config:        cfg,
+					ServerVersion:  "v2",
+					Config:         cfg,
+					LifecycleTasks: lt,
 				}
 
 				trs, err = c.Run(ctx)
@@ -171,6 +173,7 @@ func TestCreation(t *testing.T) {
 				}
 				err = datastore.Get(ctx, newSecret)
 				assert.That(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
+				assert.That(t, lt.PopTask("pubsub-go"), should.Equal("2cbe1fa55012fa10"))
 			})
 
 			t.Run("found_duplicate_too_old", func(t *ftt.Test) {
@@ -213,6 +216,8 @@ func TestCreation(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
 				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
+				// No PubSub notification.
+				assert.That(t, lt.PopTask("pubsub-go"), should.Equal(""))
 			})
 		})
 
@@ -254,6 +259,7 @@ func TestCreation(t *testing.T) {
 						},
 					},
 					RBEInstance: "rbe-instance",
+					PubSubTopic: "pubsub-topic",
 				},
 				LifecycleTasks:  lt,
 				SwarmingProject: "swarming",
@@ -277,7 +283,7 @@ func TestCreation(t *testing.T) {
 			}
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
-			assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
+			assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
 		})
 	})
 }

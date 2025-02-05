@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
 )
@@ -218,8 +219,13 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		}
 
 		// TODO(b/355013510): handle BuildTask
-		// TODO(b/355012874): Pubsub notification
 
+		if trs.State != apipb.TaskState_PENDING {
+			if err := c.LifecycleTasks.sendOnTaskUpdate(ctx, tr, trs); err != nil {
+				return errors.Annotate(err,
+					"failed to enqueue pubsub notification cloud tasks for creating task %s", taskID).Err()
+			}
+		}
 		return datastore.Put(ctx, toPut...)
 	}, nil)
 	if err != nil {
