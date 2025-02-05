@@ -65,16 +65,16 @@ func (cgp *CachingGroupsProvider) GetAllAuthGroups(ctx context.Context, allowSta
 }
 
 func groupsRefresher(ctx context.Context, prev any) (updated any, err error) {
-	var fresh *AuthGroupsSnapshot
 	if prev == nil {
-		fresh, err = fetch(ctx)
+		updated, err = fetch(ctx)
 	} else {
-		fresh, err = refetch(ctx, prev.(*AuthGroupsSnapshot))
+		updated, err = refetch(ctx, prev.(*AuthGroupsSnapshot))
 	}
 	if err != nil {
-		return nil, err
+		updated = nil
 	}
-	return fresh, nil
+
+	return
 }
 
 // refetch fetches all AuthGroups only if outdated; otherwise, returns `prev`.
@@ -86,7 +86,7 @@ func refetch(ctx context.Context, prev *AuthGroupsSnapshot) (*AuthGroupsSnapshot
 			"failed to check the latest AuthDB revision").Err()
 	}
 
-	if latestState.AuthDBRev == prev.authDBRev {
+	if prev.authDBRev >= latestState.AuthDBRev {
 		logging.Debugf(ctx, "Using cached AuthGroups from rev %d", prev.authDBRev)
 		return prev, nil
 	}
