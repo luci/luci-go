@@ -53,7 +53,6 @@ func simpliestValidSlice(pool string) *apipb.TaskSlice {
 		Properties: &apipb.TaskProperties{
 			GracePeriodSecs:      60,
 			ExecutionTimeoutSecs: 300,
-			IoTimeoutSecs:        300,
 			Command:              []string{"command", "arg"},
 			Dimensions: []*apipb.StringPair{
 				{
@@ -1635,7 +1634,6 @@ func TestNewTask(t *testing.T) {
 		props := &apipb.TaskProperties{
 			GracePeriodSecs:      60,
 			ExecutionTimeoutSecs: 300,
-			IoTimeoutSecs:        300,
 			Command:              []string{"command", "arg"},
 			Dimensions: []*apipb.StringPair{
 				{

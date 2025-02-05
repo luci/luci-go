@@ -308,7 +308,8 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 		return "", errors.Annotate(err, "grace_period_secs").Err()
 	case teeErr(validateTimeoutSecs(props.ExecutionTimeoutSecs, maxTimeoutSecs), &err) != nil:
 		return "", errors.Annotate(err, "execution_timeout_secs").Err()
-	case teeErr(validateTimeoutSecs(props.IoTimeoutSecs, maxTimeoutSecs), &err) != nil:
+	case props.IoTimeoutSecs != 0 &&
+		teeErr(validateTimeoutSecs(props.IoTimeoutSecs, maxTimeoutSecs), &err) != nil:
 		return "", errors.Annotate(err, "io_timeout_secs").Err()
 	case teeErr(validateCommand(props.Command), &err) != nil:
 		return "", errors.Annotate(err, "command").Err()
