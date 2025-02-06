@@ -25,12 +25,14 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
+	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
 )
 
@@ -44,6 +46,8 @@ func TestCreation(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
 		ctx = cryptorand.MockForTest(ctx, 0)
 		lt := MockTQTasks()
+		ctx, _ = tsmon.WithDummyInMemory(ctx)
+		globalStore := tsmon.Store(ctx)
 
 		t.Run("duplicate_with_request_id", func(t *ftt.Test) {
 			t.Run("error_fetching_result", func(t *ftt.Test) {
@@ -148,6 +152,13 @@ func TestCreation(t *testing.T) {
 							},
 						},
 						PubSubTopic: "pubsub-topic",
+						Tags: []string{
+							"project:project",
+							"subproject:subproject",
+							"pool:pool",
+							"rbe:rbe-instance",
+							"spec_name:spec",
+						},
 					},
 					SecretBytes: &model.SecretBytes{
 						SecretBytes: []byte("secret"),
@@ -174,6 +185,9 @@ func TestCreation(t *testing.T) {
 				err = datastore.Get(ctx, newSecret)
 				assert.That(t, err, should.ErrLike(datastore.ErrNoSuchEntity))
 				assert.That(t, lt.PopTask("pubsub-go"), should.Equal("2cbe1fa55012fa10"))
+
+				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"spec", "project", "subproject", "pool", "rbe-instance", true})
+				assert.Loosely(t, val, should.Equal(1))
 			})
 
 			t.Run("found_duplicate_too_old", func(t *ftt.Test) {
@@ -205,6 +219,9 @@ func TestCreation(t *testing.T) {
 							},
 						},
 						RBEInstance: "rbe-instance",
+						Tags: []string{
+							"buildername:builder",
+						},
 					},
 					ServerVersion:   "v1",
 					Config:          cfg,
@@ -218,6 +235,8 @@ func TestCreation(t *testing.T) {
 				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
 				// No PubSub notification.
 				assert.That(t, lt.PopTask("pubsub-go"), should.Equal(""))
+				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"builder", "", "", "", "none", false})
+				assert.Loosely(t, val, should.Equal(1))
 			})
 		})
 

@@ -74,6 +74,18 @@ var (
 		field.String("status"),        // "pending", or "running".
 	)
 
+	JobsRequested = metric.NewCounter(
+		"jobs/requested",
+		"Number of requested jobs over time.",
+		nil,
+		field.String("spec_name"),     // name of a job specification.
+		field.String("project_id"),    // e.g. "chromium".
+		field.String("subproject_id"), // e.g. "blink". Set to empty string if not used.
+		field.String("pool"),          // e.g. "Chrome".
+		field.String("rbe"),           // RBE instance of the task or literal "none".
+		field.Bool("deduped"),         // whether the job was deduped or not.
+	)
+
 	BotsPerState = metric.NewInt(
 		"swarming/rbe_migration/bots",
 		"Number of Swarming bots per RBE migration state.",

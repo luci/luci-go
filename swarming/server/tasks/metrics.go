@@ -32,5 +32,19 @@ func onTaskStatusChangeSchedulerLatency(ctx context.Context, trs *model.TaskResu
 		// Don't report deduped tasks, they have no state changes.
 		return
 	}
-	metrics.TaskStatusChangeSchedulerLatency.Add(ctx, float64(latency.Milliseconds()), tags["pool"], model.SpecName(tags), trs.State.String(), tags["device_type"])
+	metrics.TaskStatusChangeSchedulerLatency.Add(
+		ctx, float64(latency.Milliseconds()), tags["pool"],
+		model.SpecName(tags), trs.State.String(), tags["device_type"])
+}
+
+// onTaskRequested reports to JobsRequested for the newly created task.
+func onTaskRequested(ctx context.Context, trs *model.TaskResultSummary, deduped bool) {
+	tags := model.TagListToMap(trs.Tags)
+	rbe, ok := tags["rbe"]
+	if !ok {
+		rbe = "none"
+	}
+	metrics.JobsRequested.Add(
+		ctx, 1, model.SpecName(tags), tags["project"],
+		tags["subproject"], tags["pool"], rbe, deduped)
 }

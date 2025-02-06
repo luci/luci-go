@@ -237,7 +237,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 			model.RequestKeyToTaskID(dupResult.TaskRequestKey(), model.AsRequest))
 	}
 
-	// TODO(b/355013251): report metrics
+	onTaskRequested(ctx, trs, dupResult != nil)
 	return trs, nil
 }
 
