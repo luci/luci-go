@@ -13,51 +13,68 @@
 // limitations under the License.
 
 import { GridColDef } from '@mui/x-data-grid';
+import { useQuery } from '@tanstack/react-query';
 
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
+import {
+  StateQuery,
+  TaskResultResponse,
+  TaskState,
+  taskStateToJSON,
+  TasksWithPerfRequest,
+} from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import { useTasksClient } from '@/swarming/hooks/prpc_clients';
 
-interface Task {
+import { useDeviceData } from './use_device_data';
+
+// Similar to Swarming's implementation in:
+// https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/luci/appengine/swarming/ui2/modules/task-page/task-page-helpers.js;l=100;drc=6c1b10b83a339300fc10d5f5e08a56f1c48b3d3e
+// TODO: Look into if we can make the UX for this prettier than what Swarming does.
+const prettifySwarmingState = (task: TaskResultResponse): string => {
+  if (task.state === TaskState.COMPLETED) {
+    if (task.failure) {
+      return 'COMPLETED (FAILURE)';
+    }
+    return 'COMPLETED (SUCCESS)';
+  }
+  return taskStateToJSON(task.state);
+};
+
+export const Tasks = ({
+  id,
+  swarmingHost = 'chromeos-swarming.appspot.com',
+}: {
   id: string;
-  task: string;
-  started: string;
-  duration: string;
-  result: string;
-}
+  swarmingHost?: string;
+}) => {
+  const device = useDeviceData(id);
+  const swarmingCli = useTasksClient(swarmingHost);
+  const dutId = device?.dutId;
 
-export const Tasks = () => {
-  const mockTasks: Task[] = [
-    {
-      id: '1',
-      task: 'bb-49187241987-chromeos/labpack_runner/repair',
-      started: '10/20/2024, 1:37:12 AM (PDT)',
-      duration: '1m 37s',
-      result: 'SUCCESS',
-    },
-    {
-      id: '2',
-      task: 'bb-21784612874-chromeos/labpack_runner/repair',
-      started: '10/20/2024, 1:28:25 AM (PDT)',
-      duration: '1m 21s',
-      result: 'SUCCESS',
-    },
-    {
-      id: '3',
-      task: 'bb-64785642387-chromeos/labpack_runner/repair',
-      started: '10/20/2024, 1:27:05 AM (PDT)',
-      duration: '1m 51s',
-      result: 'SUCCESS',
-    },
-    {
-      id: '4',
-      task: 'bb-34194714192-chromeos/labpack_runner/repair',
-      started: '10/20/2024, 1:16:52 AM (PDT)',
-      duration: '2m 14s',
-      result: 'SUCCESS',
-    },
-  ];
+  const taskData = useQuery({
+    ...swarmingCli.ListTasks.query(
+      TasksWithPerfRequest.fromPartial({
+        tags: [`dut_id:${dutId}`],
+        state: StateQuery.QUERY_ALL,
+        limit: 20,
+      }),
+    ),
+    refetchInterval: 60000,
+  });
 
-  const rows = mockTasks;
+  const tasks = taskData?.data?.items || [];
+
+  const taskGridData = tasks.map((t) => ({
+    id: t.taskId,
+    task: t.name,
+    started: t.startedTs,
+    duration: `${t.duration}s`,
+    result: prettifySwarmingState(t),
+  }));
+
+  // TODO: 371010330 - Prettify these columns.
   const columns: GridColDef[] = [
+    // TODO: 393586616 - Add a link to the Milo UI.
     {
       field: 'task',
       headerName: 'Task',
@@ -73,6 +90,8 @@ export const Tasks = () => {
       headerName: 'Duration',
       flex: 1,
     },
+    // TODO: 371010330 - Make rows and add a failure icon somehwere (for a11y)
+    // if result is a failure.
     {
       field: 'result',
       headerName: 'Result',
@@ -82,7 +101,7 @@ export const Tasks = () => {
 
   return (
     <StyledGrid
-      rows={rows}
+      rows={taskGridData}
       columns={columns}
       getRowHeight={() => 'auto'}
       disableColumnMenu

@@ -1,4 +1,4 @@
-// Copyright 2024 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,22 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { render, screen } from '@testing-library/react';
 
-import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
-import { TasksClientImpl } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
+import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-const ALLOWED_HOSTS = Object.freeze([
-  SETTINGS.swarming.defaultHost,
-  ...(SETTINGS.swarming.allowedHosts || []),
-]);
+import { Tasks } from './tasks_table';
 
-export function useTasksClient(host: string) {
-  if (!ALLOWED_HOSTS.includes(host)) {
-    throw new Error(`'${host}' is not an allowed host`);
-  }
+describe('<Tasks />', () => {
+  it('should render', async () => {
+    render(
+      <FakeContextProvider>
+        <Tasks id="dut1331" swarmingHost={SETTINGS.swarming.defaultHost} />
+      </FakeContextProvider>,
+    );
 
-  return usePrpcServiceClient({
-    host,
-    ClientImpl: TasksClientImpl,
+    expect(screen.getByRole('grid')).toBeVisible();
+    expect(screen.getByText('Task')).toBeVisible();
   });
-}
+});

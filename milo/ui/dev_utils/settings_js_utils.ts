@@ -54,6 +54,10 @@ export function getLocalDevSettingsJs(env: Record<string, string | undefined>) {
     },
     swarming: {
       defaultHost: assertNonNullable(env['VITE_SWARMING_DEFAULT_HOST']),
+      // Allow defining multiple allowed hosts
+      allowedHosts: assertNonNullable(env['VITE_SWARMING_ALLOWED_HOSTS']).split(
+        ';',
+      ),
     },
     resultdb: {
       host: assertNonNullable(env['VITE_RESULT_DB_HOST']),

@@ -139,7 +139,7 @@ export const DeviceDetailsPage = () => {
             </TabList>
           </Box>
           <TabPanel value={TabValue.TASKS}>
-            <Tasks />
+            <Tasks id={id} />
           </TabPanel>
           <TabPanel value={TabValue.SCHEDULING}>
             <SchedulingData id={id} />
