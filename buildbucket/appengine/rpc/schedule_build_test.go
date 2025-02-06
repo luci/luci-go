@@ -3973,11 +3973,11 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["agent_binary_cipd_filename"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bbagent${EXECUTABLE_SUFFIX}"}}
 			expectedBackendConfig.Fields["wait_for_capacity"] = &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: true}}
 
-			assert.Loosely(t, buildResult.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+			assert.Loosely(t, buildResult.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 				Caches: []*pb.CacheEntry{
 					{
 						Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-						Path:             "builder",
+						Path:             "cache/builder",
 						WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 					},
 				},
@@ -4878,11 +4878,11 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
+							Path:             "cache/builder",
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
@@ -4905,11 +4905,11 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 2}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "service_account"}}
 
-				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
+							Path:             "cache/builder",
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
@@ -4932,11 +4932,11 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 22}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
+							Path:             "cache/builder",
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
@@ -4962,11 +4962,11 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["priority"] = &structpb.Value{Kind: &structpb.Value_NumberValue{NumberValue: 200}}
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
-				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
+							Path:             "cache/builder",
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
@@ -5000,11 +5000,11 @@ func TestScheduleBuild(t *testing.T) {
 				expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 
 				assert.Loosely(t, b.Infra.Swarming, should.BeNil)
-				assert.Loosely(t, b.Infra.Backend, should.Resemble(&pb.BuildInfra_Backend{
+				assert.Loosely(t, b.Infra.Backend, should.Match(&pb.BuildInfra_Backend{
 					Caches: []*pb.CacheEntry{
 						{
 							Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-							Path:             "builder",
+							Path:             "cache/builder",
 							WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 						},
 					},
@@ -5939,11 +5939,11 @@ func TestScheduleBuild(t *testing.T) {
 					buildInDB := &model.Build{ID: 9021868963221667745}
 					bInfra := &model.BuildInfra{Build: datastore.KeyForObj(ctx, buildInDB)}
 					assert.Loosely(t, datastore.Get(ctx, buildInDB, bInfra), should.BeNil)
-					assert.Loosely(t, bInfra.Proto.Backend, should.Resemble(&pb.BuildInfra_Backend{
+					assert.Loosely(t, bInfra.Proto.Backend, should.Match(&pb.BuildInfra_Backend{
 						Caches: []*pb.CacheEntry{
 							{
 								Name:             "builder_1809c38861a9996b1748e4640234fbd089992359f6f23f62f68deb98528f5f2b_v2",
-								Path:             "builder",
+								Path:             "cache/builder",
 								WaitForWarmCache: &durationpb.Duration{Seconds: 240},
 							},
 						},

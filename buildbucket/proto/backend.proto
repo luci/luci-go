@@ -200,7 +200,7 @@ message RunTaskRequest {
   // this much time after being canceled, or after hitting execution_timeout.
   google.protobuf.Duration grace_period = 12;
 
-  // Describes the list of cache ids, their paths (relative to the cache root)
+  // Describes the list of cache ids, their paths (relative to the task root)
   // and how long the Backend should wait for a bot with a warm cache to
   // become available.
   repeated CacheEntry caches = 13;

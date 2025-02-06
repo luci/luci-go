@@ -1571,6 +1571,10 @@ func setInfraBackend(ctx context.Context, globalCfg *pb.SettingsCfg, build *pb.B
 		config.Fields["wait_for_capacity"] = structpb.NewBoolValue(true)
 	}
 
+	for _, c := range taskCaches {
+		c.Path = fmt.Sprintf("%s/%s", build.Infra.Bbagent.CacheDir, c.Path)
+	}
+
 	build.Infra.Backend = &pb.BuildInfra_Backend{
 		Caches: taskCaches,
 		Config: config,
