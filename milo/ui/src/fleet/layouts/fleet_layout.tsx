@@ -36,7 +36,7 @@ const ScrollingBase = styled(QueuedStickyScrollingBase)`
   display: grid;
   min-height: 100vh;
   grid-template-rows: auto 1fr auto;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
     'header header'
     'sidebar main'

@@ -80,9 +80,6 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       anchor="left"
       open={open}
       role="complementary"
-      PaperProps={{
-        elevation: 2,
-      }}
     >
       <Toolbar
         variant="dense"
