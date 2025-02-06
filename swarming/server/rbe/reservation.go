@@ -118,7 +118,7 @@ func (s *ReservationServer) RegisterPSHandlers(disp *pubsub.Dispatcher) {
 				instanceID,
 				m.ReservationId,
 			)
-			return s.ExpireSliceBasedOnReservation(ctx, reservationName)
+			return s.expireSliceBasedOnReservation(ctx, reservationName)
 		},
 	))
 }
@@ -276,10 +276,10 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 	}
 
 	// Tell Swarming to switch to the next slice, if necessary.
-	return s.expireSlice(ctx, task, reasonCode, reason.Error())
+	return s.expireSlice(ctx, task, reasonCode, "", reason.Error())
 }
 
-// ExpireSliceBasedOnReservation checks the reservation status by calling
+// expireSliceBasedOnReservation checks the reservation status by calling
 // the Reservations API and invokes ExpireSlice if the reservation is dead.
 //
 // It is ultimately invoked from a PubSub push handler when handling
@@ -287,9 +287,7 @@ func (s *ReservationServer) reservationDenied(ctx context.Context, task *interna
 //
 // `reservationName` is a full reservation name, including the project and
 // RBE instance IDs: `projects/.../instances/.../reservations/...`.
-//
-// TODO: Make private once old PubSub handler is gone.
-func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, reservationName string) error {
+func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, reservationName string) error {
 	// Get the up-to-date state of the reservation.
 	reservation, err := s.rbe.GetReservation(ctx, &remoteworkers.GetReservationRequest{
 		Name:        reservationName,
@@ -409,20 +407,21 @@ func (s *ReservationServer) ExpireSliceBasedOnReservation(ctx context.Context, r
 
 	// Tell Swarming to switch to the next slice, if necessary
 	logging.Warningf(ctx, "Expiring slice with %s: %s", reasonCode, statusErr)
-	if err := s.expireSlice(ctx, &payload, reasonCode, statusErr.Error()); err != nil {
+	if err := s.expireSlice(ctx, &payload, reasonCode, reservation.AssignedBotId, statusErr.Error()); err != nil {
 		return errors.Annotate(err, "failed to expire the slice").Tag(transient.Tag).Err()
 	}
 	return nil
 }
 
 // expireSlice calls Swarming Python's ExpireSlice RPC.
-func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, details string) error {
+func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.TaskPayload, code internalspb.ExpireSliceRequest_Reason, culpritBotID, details string) error {
 	_, err := s.internals.ExpireSlice(ctx, &internalspb.ExpireSliceRequest{
 		TaskId:         task.TaskId,
 		TaskToRunShard: task.TaskToRunShard,
 		TaskToRunId:    task.TaskToRunId,
 		Reason:         code,
 		Details:        details,
+		CulpritBotId:   culpritBotID,
 	})
 	return err
 }

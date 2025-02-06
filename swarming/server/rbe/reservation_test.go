@@ -297,7 +297,7 @@ func TestReservationServer(t *testing.T) {
 				}
 				expireSliceReason = internalspb.ExpireSliceRequest_REASON_UNSPECIFIED
 				expireSliceDetails = ""
-				assert.NoErr(t, srv.ExpireSliceBasedOnReservation(ctx, reservationName))
+				assert.NoErr(t, srv.expireSliceBasedOnReservation(ctx, reservationName))
 			}
 
 			expectNoExpireSlice := func() {

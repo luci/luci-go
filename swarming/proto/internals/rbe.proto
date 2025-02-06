@@ -174,4 +174,7 @@ message ExpireSliceRequest {
   }
   Reason reason = 4;
   string details = 5;
+
+  // Set if we know a bot that is likely responsible for BOT_INTERNAL_ERROR.
+  string culprit_bot_id = 6;
 }
