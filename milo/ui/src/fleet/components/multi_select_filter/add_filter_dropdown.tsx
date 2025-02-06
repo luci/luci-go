@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import { Backdrop, Card, Checkbox, MenuItem, MenuList } from '@mui/material';
+import { Backdrop, Card, MenuItem, MenuList } from '@mui/material';
 import _ from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -25,6 +25,8 @@ import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
 import { HighlightCharacter } from '../highlight_character';
 import { Footer } from '../options_dropdown/footer';
 import { SearchInput } from '../search_input';
+
+import { OptionsMenu } from './options_menu';
 
 export function AddFilterDropdown({
   filterOptions,
@@ -142,7 +144,9 @@ export function AddFilterDropdown({
     setSelectedOptions(tempSelectedOptions);
   };
 
-  const handleRandomTextInput = (e: React.KeyboardEvent<HTMLUListElement>) => {
+  const handleRandomTextInput: (
+    e: React.KeyboardEvent<HTMLUListElement>,
+  ) => void = (e: React.KeyboardEvent<HTMLUListElement>) => {
     // allow user to search when any alphanumeric key has been pressed
     if (/^[a-zA-Z0-9]\b/.test(e.key) && !hasAnyModifier(e)) {
       closeInnerMenu();
@@ -150,51 +154,6 @@ export function AddFilterDropdown({
       setSearchQuery((old) => old + e.key);
       e.preventDefault(); // Avoid race condition to type twice in the input
     }
-  };
-
-  const OptionsMenu = () => {
-    if (openCategoryIndex === undefined) return <></>;
-    const parent = filterResults[openCategoryIndex].parent;
-    const options = filterResults[openCategoryIndex].children;
-
-    return options.map((o2, idx) => (
-      <MenuItem
-        key={`innerMenu-${parent!.el.value}-${o2.el.value}`}
-        disableRipple
-        onClick={(e) => {
-          if (e.type === 'keydown' || e.type === 'keyup') {
-            const parsedE = e as unknown as React.KeyboardEvent<HTMLLIElement>;
-            if (parsedE.key === ' ') return;
-            if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
-          }
-          flipOption(parent!.el.value, o2.el.value);
-        }}
-        onKeyDown={keyboardUpDownHandler}
-        // eslint-disable-next-line jsx-a11y/no-autofocus
-        autoFocus={idx === 0}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '6px 12px',
-          minHeight: 'auto',
-        }}
-      >
-        <Checkbox
-          sx={{
-            padding: 0,
-            marginRight: '13px',
-          }}
-          size="small"
-          checked={
-            !!tempSelectedOptions[parent!.el.value]?.includes(o2.el.value)
-          }
-          tabIndex={-1}
-        />
-        <HighlightCharacter variant="body2" highlightIndexes={o2.matches}>
-          {o2.el.label}
-        </HighlightCharacter>
-      </MenuItem>
-    ));
   };
 
   return (
@@ -302,7 +261,10 @@ export function AddFilterDropdown({
               <Card onClick={(e) => e.stopPropagation()}>
                 <MenuList
                   variant="selectedMenu"
-                  sx={{ overflowY: 'hidden', overflow: 'auto', maxHeight: 400 }}
+                  sx={{
+                    maxHeight: 400,
+                    width: 300,
+                  }}
                   onKeyDown={(e: React.KeyboardEvent<HTMLUListElement>) => {
                     if (e.key === 'Tab') {
                       closeMenu();
@@ -325,7 +287,19 @@ export function AddFilterDropdown({
                     handleRandomTextInput(e);
                   }}
                 >
-                  <OptionsMenu />
+                  <OptionsMenu
+                    elements={filterResults[openCategoryIndex].children}
+                    selectedElements={
+                      new Set(
+                        tempSelectedOptions[
+                          filterOptions[openCategoryIndex].value
+                        ],
+                      )
+                    }
+                    flipOption={(value) =>
+                      flipOption(filterOptions[openCategoryIndex].value, value)
+                    }
+                  />
                 </MenuList>
                 <Footer onCancelClick={closeMenu} onApplyClick={applyOptions} />
               </Card>

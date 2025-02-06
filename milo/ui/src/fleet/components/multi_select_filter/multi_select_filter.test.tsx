@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import {
-  screen,
-  render,
+  act,
   cleanup,
   fireEvent,
-  act,
+  render,
+  screen,
   within,
 } from '@testing-library/react';
 import { useEffect, useState } from 'react';
@@ -53,6 +53,22 @@ function click(texts: string[]) {
 function keyDown(key: object) {
   fireEvent.keyDown(document.activeElement!, key);
 }
+
+// following https://github.com/TanStack/virtual/issues/641
+// we are using virtualized list, measuring height of each element in a DOM
+// which doesn't exist in the scope of tests, so we can mock it instead
+const mockMenuItemDomProperties = () => {
+  Element.prototype.getBoundingClientRect = jest.fn(() => {
+    return {
+      width: 120,
+      height: 32,
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+    } as DOMRect;
+  });
+};
 
 const DOWN_KEY = {
   key: 'ArrowDown',
@@ -97,6 +113,7 @@ const CTRL_K_KEY = {
 describe('<MultiSelectFilter />', () => {
   beforeEach(() => {
     jest.useFakeTimers();
+    mockMenuItemDomProperties();
   });
 
   afterEach(() => {
@@ -179,7 +196,7 @@ describe('<MultiSelectFilter />', () => {
   });
 
   describe('should work with a keyboard', () => {
-    it.skip('should be able to select options with keyboard', async () => {
+    it('should be able to select options with keyboard', async () => {
       render(<TestComponent />);
 
       screen.getByText('Add filter').parentElement!.focus();

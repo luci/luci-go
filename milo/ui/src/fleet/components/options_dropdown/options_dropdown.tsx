@@ -12,20 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {
-  Checkbox,
-  Menu,
-  MenuItem,
-  MenuProps,
-  PopoverOrigin,
-} from '@mui/material';
+import { Menu, MenuProps, PopoverOrigin } from '@mui/material';
 import { useMemo, useRef, useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { fuzzySort } from '@/fleet/utils/fuzzy_sort';
 
 import { hasAnyModifier, keyboardUpDownHandler } from '../../utils';
-import { HighlightCharacter } from '../highlight_character';
+import { OptionsMenu } from '../multi_select_filter/options_menu';
 import { SearchInput } from '../search_input';
 
 import { Footer } from './footer';
@@ -78,6 +72,8 @@ export function OptionsDropdown({
       ...(tempSelectedOptions ?? {}),
       [option.value]: newValues,
     });
+
+    if (onFlipOption) onFlipOption(o2Value);
   };
 
   const resetTempOptions = () => setTempSelectedOptions(selectedOptions);
@@ -158,7 +154,8 @@ export function OptionsDropdown({
       <div
         css={{
           maxHeight: maxHeight,
-          overflow: 'auto',
+          overflow: 'hidden',
+          width: 300,
         }}
         tabIndex={-1}
       >
@@ -171,49 +168,18 @@ export function OptionsDropdown({
             }}
           />
         )}
-        {options.map((o2, idx) => (
-          <MenuItem
-            key={`innerMenu-${option.value}-${o2.value}`}
-            disableRipple
-            onClick={(e) => {
-              if (e.type === 'keydown' || e.type === 'keyup') {
-                const parsedE =
-                  e as unknown as React.KeyboardEvent<HTMLLIElement>;
-                if (parsedE.key === ' ') return;
-                if (parsedE.key === 'Enter' && parsedE.ctrlKey) return;
-              }
-              flipOption(o2.value);
-              if (onFlipOption) {
-                onFlipOption(o2.value);
-              }
-            }}
-            onKeyDown={keyboardUpDownHandler}
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus={idx === 0}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '6px 12px',
-              minHeight: 'auto',
-            }}
-          >
-            <Checkbox
-              sx={{
-                padding: 0,
-                marginRight: '13px',
-              }}
-              size="small"
-              checked={!!tempSelectedOptions[option.value]?.includes(o2.value)}
-              tabIndex={-1}
-            />
-            <HighlightCharacter
-              variant="body2"
-              highlightIndexes={highlightedCharactersWrapper?.[o2.value]}
-            >
-              {o2.label}
-            </HighlightCharacter>
-          </MenuItem>
-        ))}
+        <OptionsMenu
+          elements={options.map((o) => ({
+            el: o,
+            matches:
+              (highlightedCharactersWrapper &&
+                highlightedCharactersWrapper[o.value]) ??
+              [],
+            score: 0,
+          }))}
+          selectedElements={new Set(tempSelectedOptions[option.value])}
+          flipOption={flipOption}
+        />
       </div>
       {!disableFooter && (
         <Footer

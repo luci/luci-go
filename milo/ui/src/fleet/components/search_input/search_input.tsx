@@ -50,6 +50,7 @@ export function SearchInput({
         variant="standard"
         onChange={onChange}
         value={searchQuery}
+        fullWidth
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
         onKeyDown={(e) => {

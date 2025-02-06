@@ -37,6 +37,7 @@
     "@mui/x-data-grid": "^7.22.2",
     "@mui/x-date-pickers": "^7.22.0",
     "@tanstack/react-query": "^4.36.1",
+    "@tanstack/react-virtual": "^3.11.3",
     "ansi-to-html": "^0.7.2",
     "codemirror": "^5.65.18",
     "copy-to-clipboard": "^3.3.3",
