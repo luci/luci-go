@@ -3175,6 +3175,9 @@ func (s *Server) initErrorReporting() error {
 			}
 			return ""
 		},
+		// All prod environments have Cloud Error Reporting log scrapers that
+		// already recognize logs with stack traces. Do not report them explicitly.
+		StacklessErrorsOnly: s.Options.Prod,
 	}
 
 	// This cleanup will run on normal server exit. If the server crashes (e.g.

@@ -239,9 +239,11 @@ func (l *jsonLogger) LogCall(lvl logging.Level, calldepth int, format string, ar
 		msg.WriteString(fields.String())
 	}
 
-	if stack := l.lc.StackTrace.ForTextLog(); stack != "" {
+	// Log the stack trace in a standard format to make sure Cloud Error Reporting
+	// scraper can recognize it.
+	if l.lc.StackTrace.Standard != "" {
 		msg.WriteString("\n\n")
-		msg.WriteString(stack)
+		msg.WriteString(l.lc.StackTrace.Standard)
 	}
 
 	e := l.prototype

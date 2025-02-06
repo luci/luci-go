@@ -81,10 +81,24 @@ type Sink interface {
 type Config struct {
 	// Sink is where to send reports. Required.
 	Sink Sink
+
 	// ServiceContext is information about the running service. Required.
 	ServiceContext *ServiceContext
+
 	// UserResolver returns a token identifying an effected user. Optional.
 	UserResolver func(ctx context.Context) string
+
+	// StacklessErrorsOnly instructs to only log errors that do not have a stack
+	// trace explicitly attached to them.
+	//
+	// This is useful in GCP environments where errors with stack traces logged
+	// to Cloud Logging are already automatically recognized by the Cloud Error
+	// Reporting. If we report such an error explicitly, we will end up with
+	// a duplicate report.
+	//
+	// Error-level log lines without a stack trace aren't recognized by the Cloud
+	// Error Reporting log scraper. They will still be reported explicitly.
+	StacklessErrorsOnly bool
 }
 
 // Factory returns a factory that produces error loggers scoped to a single
@@ -98,6 +112,9 @@ func Factory(cfg *Config, req *RequestContext) logging.Factory {
 	}
 	return func(ctx context.Context, lc *logging.LogContext) logging.Logger {
 		return errLogger(func(fm string, args []any) {
+			if cfg.StacklessErrorsOnly && lc.StackTrace.Standard != "" {
+				return
+			}
 			var user string
 			if cfg.UserResolver != nil {
 				user = cfg.UserResolver(ctx)
