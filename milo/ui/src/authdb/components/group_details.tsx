@@ -20,6 +20,7 @@ import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
 
 import { GroupForm } from '@/authdb/components/group_form';
+import { GroupPermissions } from '@/authdb/components/group_permissions';
 import {
   FullListingTabFlag,
   RealmsTabFlag,
@@ -80,7 +81,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
               <Tab label="Overview" {...a11yProps('overview')} />
               {realmsFlag && (
-                <Tab label="Realms Permissions" {...a11yProps('permissions')} />
+                <Tab label="Permissions" {...a11yProps('permissions')} />
               )}
               {listingFlag && (
                 <Tab label="Full Listing" {...a11yProps('listing')} />
@@ -96,7 +97,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
               role="tabpanel"
               id="tabpanel-permissions"
             >
-              <span> WIP Permissions Tab</span>
+              <GroupPermissions name={name}></GroupPermissions>
             </TabPanel>
           )}
           {listingFlag && (
