@@ -3969,7 +3969,7 @@ func TestScheduleBuild(t *testing.T) {
 			expectedBackendConfig.Fields["service_account"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "account"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_pkg"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_pkg/${platform}"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_vers"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_vers"}}
-			expectedBackendConfig.Fields["agent_binary_cipd_server"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "cipd_server"}}
+			expectedBackendConfig.Fields["agent_binary_cipd_server"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "https://cipd_server"}}
 			expectedBackendConfig.Fields["agent_binary_cipd_filename"] = &structpb.Value{Kind: &structpb.Value_StringValue{StringValue: "bbagent${EXECUTABLE_SUFFIX}"}}
 			expectedBackendConfig.Fields["wait_for_capacity"] = &structpb.Value{Kind: &structpb.Value_BoolValue{BoolValue: true}}
 

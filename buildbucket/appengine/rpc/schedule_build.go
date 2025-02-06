@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
 	"sort"
 	"strings"
@@ -1534,7 +1535,7 @@ func setInfraBackendConfigAgent(b *pb.Build) {
 	agentSource := b.Infra.Buildbucket.GetAgent().GetSource()
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_pkg"] = structpb.NewStringValue(agentSource.GetCipd().Package)
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_vers"] = structpb.NewStringValue(agentSource.GetCipd().Version)
-	b.Infra.Backend.Config.Fields["agent_binary_cipd_server"] = structpb.NewStringValue(agentSource.GetCipd().Server)
+	b.Infra.Backend.Config.Fields["agent_binary_cipd_server"] = structpb.NewStringValue(buildURL(agentSource.GetCipd().Server))
 	// TODO(crbug.com/1420443): Remove this harcoding and use
 	// globalCfg.GetSwarming().GetBbagentPackage().binary_agent_name.
 	b.Infra.Backend.Config.Fields["agent_binary_cipd_filename"] = structpb.NewStringValue("bbagent${EXECUTABLE_SUFFIX}")
@@ -2117,4 +2118,15 @@ func setCipdPackagesCache(build *pb.Build) {
 		Name: fmt.Sprintf("cipd_cache_%x", sha256.Sum256([]byte(taskServiceAccount))),
 		Path: "cipd_cache",
 	}
+}
+
+func buildURL(baseURL string) string {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		panic(fmt.Sprintf("invalid base URL: %s", err))
+	}
+	if u.Scheme == "" {
+		u.Scheme = "https"
+	}
+	return u.String()
 }
