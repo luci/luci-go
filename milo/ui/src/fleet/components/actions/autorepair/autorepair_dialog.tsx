@@ -1,0 +1,146 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from '@mui/material';
+
+import { generateBuildUrl, BuildIdentifier, SWARMING_SERVER } from './shared';
+
+export interface SessionInfo {
+  sessionId?: string;
+  builds?: BuildIdentifier[];
+  dutNames?: string[];
+}
+
+interface AutorepairDialogProps {
+  open: boolean;
+  sessionInfo: SessionInfo;
+  handleClose: () => void;
+  handleOk: () => void;
+}
+
+const plurifyDevices = (count: number) => {
+  return count === 1 ? 'device' : `${count} devices`;
+};
+
+export default function AutorepairDialog({
+  open,
+  sessionInfo: { dutNames = [], builds, sessionId },
+  handleClose,
+  handleOk,
+}: AutorepairDialogProps) {
+  const confirmationScreen = (
+    <>
+      <DialogTitle>Running autorepair</DialogTitle>
+      <DialogContent>
+        {/* TODO: b/394429368 - remove this alert. */}
+        <Alert severity="info">
+          At this time, devices in the ready and needs_repair states cannot have
+          autorepair run on them from the UI. For more info, see:{' '}
+          <a href="http://b/394429368" target="_blank" rel="noreferrer">
+            b/394429368
+          </a>
+        </Alert>
+        <p>
+          Please confirm that you want to run autorepair on the following{' '}
+          {plurifyDevices(dutNames.length)}:
+        </p>
+
+        <ul>
+          {dutNames?.map((dutName) => {
+            return (
+              <li key={dutName}>
+                <a
+                  href={`/ui/fleet/labs/devices/${dutName}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {dutName}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+        <p>Equivalent shivas command:</p>
+        {/** TODO: Prettify terminal commands display. */}
+        <p style={{ fontFamily: 'monospace' }}>
+          $ shivas repair {dutNames.join(' ')}
+        </p>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleOk} variant="contained">
+          Confirm
+        </Button>
+      </DialogActions>
+    </>
+  );
+  const finalScreen = (
+    <>
+      <DialogTitle>Autorepair results</DialogTitle>
+      <DialogContent>
+        <p>
+          Autorepair has been triggered on the following{' '}
+          {plurifyDevices(dutNames.length)}:
+        </p>
+        <ul>
+          {builds?.map((b, i) => {
+            const dutName = dutNames[i];
+            return (
+              <li key={dutName}>
+                <a
+                  href={`/ui/fleet/labs/devices/${dutName}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {dutName}
+                </a>
+                :{' '}
+                <a href={generateBuildUrl(b)} target="_blank" rel="noreferrer">
+                  View in Milo
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+        <p>
+          (
+          <a
+            href={`https://${SWARMING_SERVER}/tasklist?f=admin-session:${sessionId}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View tasks in Swarming
+          </a>
+          )
+        </p>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} variant="contained">
+          Done
+        </Button>
+      </DialogActions>
+    </>
+  );
+  return (
+    <Dialog onClose={handleClose} open={open}>
+      {builds ? finalScreen : confirmationScreen}
+    </Dialog>
+  );
+}

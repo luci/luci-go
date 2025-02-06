@@ -17,6 +17,8 @@ import {
   GridAutosizeOptions,
   GridColDef,
   GridColumnVisibilityModel,
+  GridRowModel,
+  GridRowSelectionModel,
   GridSortModel,
 } from '@mui/x-data-grid';
 import { GridApiCommunity } from '@mui/x-data-grid/internals';
@@ -42,6 +44,14 @@ const autosizeOptions: GridAutosizeOptions = {
   expand: true,
   includeHeaders: true,
   includeOutliers: true,
+};
+
+const computeSelectedRows = (
+  gridSelection: GridRowSelectionModel,
+  rows: GridRowModel[],
+): GridRowModel[] => {
+  const selectedSet = new Set(gridSelection);
+  return rows.filter((r) => selectedSet.has(r.id));
 };
 
 interface DataTableProps {
@@ -77,6 +87,10 @@ export const DataTable = ({
   onSortModelChange,
 }: DataTableProps) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  // See: https://mui.com/x/react-data-grid/row-selection/#controlled-row-selection
+  const [rowSelectionModel, setRowSelectionModel] =
+    React.useState<GridRowSelectionModel>([]);
 
   const onColumnVisibilityModelChange = (
     newColumnVisibilityModel: GridColumnVisibilityModel,
@@ -126,10 +140,15 @@ export const DataTable = ({
         },
         toolbar: {
           gridRef: apiRef,
+          selectedRows: computeSelectedRows(rowSelectionModel, rows),
         },
       }}
-      getRowHeight={() => 'auto'}
       disableRowSelectionOnClick
+      checkboxSelection
+      onRowSelectionModelChange={(newRowSelectionModel) => {
+        setRowSelectionModel(newRowSelectionModel);
+      }}
+      rowSelectionModel={rowSelectionModel}
       sortModel={sortModel}
       onSortModelChange={onSortModelChange}
       rowCount={UNKNOWN_ROW_COUNT}

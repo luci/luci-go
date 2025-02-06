@@ -16,6 +16,14 @@ import { colors } from '@mui/material';
 import { DataGrid, DataGridProps, gridClasses } from '@mui/x-data-grid';
 
 export const StyledGrid = (props: DataGridProps) => {
+  // We want to add padding to table cells but not add too much padding if
+  // there are checkboxes since they increase the height of the table.
+  const cellStyles = props.checkboxSelection
+    ? {}
+    : {
+        py: 2,
+      };
+
   return (
     <DataGrid
       sx={{
@@ -31,9 +39,7 @@ export const StyledGrid = (props: DataGridProps) => {
         [`& .${gridClasses.filler}`]: {
           background: colors.grey[100],
         },
-        [`& .${gridClasses.cell}`]: {
-          py: 2,
-        },
+        [`& .${gridClasses.cell}`]: cellStyles,
         [`& .${gridClasses.columnHeaderTitle}`]: {
           whiteSpace: 'normal',
         },

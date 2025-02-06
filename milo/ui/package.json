@@ -71,6 +71,7 @@
     "reflect-metadata": "^0.2.2",
     "stackdriver-errors-js": "^0.12.0",
     "trusted-types": "^2.0.0",
+    "uuid": "^11.0.5",
     "validator": "^13.12.0",
     "workbox-precaching": "^7.3.0",
     "workbox-routing": "^7.3.0",

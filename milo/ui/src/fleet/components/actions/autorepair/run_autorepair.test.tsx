@@ -16,17 +16,17 @@ import { render, screen } from '@testing-library/react';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
-import { MainMetrics } from './main_metrics';
+import { RunAutorepair } from './run_autorepair';
 
-describe('<MainMetrics />', () => {
+describe('<RunAutorepair />', () => {
   it('should render', async () => {
     render(
       <FakeContextProvider>
-        <MainMetrics filter={{}} />
+        <RunAutorepair selectedDuts={[]} />
       </FakeContextProvider>,
     );
 
-    const total = screen.getByText('Total');
-    expect(total).toBeVisible();
+    const label = screen.getByText('Run autorepair');
+    expect(label).toBeVisible();
   });
 });
