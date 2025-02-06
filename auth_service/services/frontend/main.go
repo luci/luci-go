@@ -113,7 +113,10 @@ func main() {
 			impl.AuthorizeRPCAccess,
 		)
 
-		authdbServer := &authdb.Server{}
+		// Initialize authdb server.
+		authdbServer := authdb.NewServer()
+		srv.RegisterWarmup(authdbServer.WarmUp)
+		srv.RunInBackground("authdb.refresh-all-permissions", authdbServer.RefreshPeriodically)
 
 		// Initialize groups server.
 		groupsServer := groups.NewServer()

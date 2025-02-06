@@ -35,9 +35,22 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 
+// PermissionsProvider is the interface to get all permissions entities.
+type PermissionsProvider interface {
+	GetAllPermissions(ctx context.Context) (map[string][]*rpcpb.RealmPermissions, error)
+	RefreshPeriodically(ctx context.Context)
+}
+
 // Server implements AuthDB server.
 type Server struct {
 	rpcpb.UnimplementedAuthDBServer
+	permissionsProvider PermissionsProvider
+}
+
+func NewServer() *Server {
+	return &Server{
+		permissionsProvider: &CachingPermissionsProvider{},
+	}
 }
 
 type SnapshotJSON struct {
@@ -45,6 +58,17 @@ type SnapshotJSON struct {
 	AuthDBDeflated []byte `json:"deflated_body,omitempty"`
 	AuthDBSha256   string `json:"sha256"`
 	CreatedTS      int64  `json:"created_ts"`
+}
+
+// WarmUp does the setup for the permissions server; it should be called before the
+// main serving loop.
+func (srv *Server) WarmUp(ctx context.Context) {
+	if srv.permissionsProvider != nil {
+		_, err := srv.permissionsProvider.GetAllPermissions(ctx)
+		if err != nil {
+			logging.Errorf(ctx, "error warming up Permissions provider")
+		}
+	}
 }
 
 // GetSnapshot implements the corresponding RPC method.
@@ -218,4 +242,41 @@ func (srv *Server) CheckLegacyMembership(ctx *router.Context) error {
 	}
 
 	return nil
+}
+
+// RefreshPeriodically wraps the groups provider's refresh method.
+func (srv *Server) RefreshPeriodically(ctx context.Context) {
+	if srv.permissionsProvider != nil {
+		srv.permissionsProvider.RefreshPeriodically(ctx)
+	}
+}
+
+// GetPrincipalPermissions implements the corresponding RPC method.
+func (srv *Server) GetPrincipalPermissions(ctx context.Context, request *rpcpb.GetPrincipalPermissionsRequest) (*rpcpb.PrincipalPermissions, error) {
+	if request.Principal == nil || request.Principal.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "principal is required")
+	}
+	principal := request.Principal.Name
+	switch request.Principal.Kind {
+	case rpcpb.PrincipalKind_GROUP:
+		principal = "group:" + principal
+	case rpcpb.PrincipalKind_IDENTITY:
+		return nil, status.Error(codes.Unimplemented, "user permissions lookup not supported")
+	case rpcpb.PrincipalKind_GLOB:
+		return nil, status.Error(codes.Unimplemented, "globs permissions lookup not supported")
+	default:
+		return nil, status.Error(codes.InvalidArgument, "principal kind not recognised")
+	}
+	permissionsMap, err := srv.permissionsProvider.GetAllPermissions(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch all permissions: %s", err)
+	}
+	perms, ok := permissionsMap[principal]
+	if !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "principal: %s not found", principal)
+	}
+
+	return &rpcpb.PrincipalPermissions{
+		RealmPermissions: perms,
+	}, nil
 }

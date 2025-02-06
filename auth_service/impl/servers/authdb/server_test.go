@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -286,6 +287,243 @@ func TestAuthDBServing(t *testing.T) {
 			}
 			err := server.HandleLegacyAuthDBServing(rctx)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
+		})
+	})
+	ftt.Run("GetPrincipalPermissions RPC call", t, func(t *ftt.Test) {
+		srv := Server{
+			permissionsProvider: &CachingPermissionsProvider{},
+		}
+		ctx := auth.WithState(memory.Use(context.Background()), &authtest.FakeState{
+			Identity:       "user:someone@example.com",
+			IdentityGroups: []string{"testers"},
+		})
+		testTime := time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)
+		ctx, tc := testclock.UseTime(ctx, testTime)
+		const revInitial = 1000
+		const revUpdated = 1001
+
+		// Set up initial revision with 1 group with permissions in 1 realm.
+		realmsInitial := &protocol.Realms{
+			Permissions: []*protocol.Permission{
+				{Name: "luci.dev.p1"},
+				{Name: "luci.dev.p2"},
+				{Name: "luci.dev.p3"},
+			},
+			Realms: []*protocol.Realm{
+				{
+					Name: "p:r",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr1"},
+						},
+						{
+							Permissions: []uint32{1, 2},
+							Principals:  []string{"group:gr2"},
+						},
+						{
+							Permissions: []uint32{0},
+							Principals:  []string{"user:u1"},
+						},
+						{
+							Permissions: []uint32{0},
+							Principals:  []string{"glob:g1"},
+						},
+					},
+				},
+				{
+					Name: "p:r2",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{2},
+							Principals:  []string{"group:gr1"},
+						},
+					},
+				},
+			},
+		}
+
+		gr1Expected := &rpcpb.PrincipalPermissions{
+			RealmPermissions: []*rpcpb.RealmPermissions{
+				{
+					Name:        "p:r",
+					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+				},
+				{
+					Name:        "p:r2",
+					Permissions: []string{"luci.dev.p3"},
+				},
+			},
+		}
+
+		gr2Expected := &rpcpb.PrincipalPermissions{
+			RealmPermissions: []*rpcpb.RealmPermissions{
+				{
+					Name:        "p:r",
+					Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
+				},
+			},
+		}
+
+		// Store realms in snapshot & set latest snapshot to its revision number.
+		storeTestAuthDBSnapshot(ctx, realmsInitial, revInitial, t)
+		storeTestAuthDBSnapshotLatest(ctx, revInitial, t)
+		req1 := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "gr1",
+				Kind: rpcpb.PrincipalKind_GROUP,
+			},
+		}
+		resp1, err := srv.GetPrincipalPermissions(ctx, req1)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp1, should.Match(gr1Expected))
+
+		req2 := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "gr2",
+				Kind: rpcpb.PrincipalKind_GROUP,
+			},
+		}
+		resp2, err := srv.GetPrincipalPermissions(ctx, req2)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, resp2, should.Match(gr2Expected))
+
+		// Update gr1 in datastore.
+		realmsUpdated := &protocol.Realms{
+			Permissions: []*protocol.Permission{
+				{Name: "luci.dev.p1"},
+				{Name: "luci.dev.p2"},
+				{Name: "luci.dev.p3"},
+			},
+			Realms: []*protocol.Realm{
+				{
+					Name: "p:r",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0},
+							Principals:  []string{"group:gr1"},
+						},
+						{
+							Permissions: []uint32{1, 2},
+							Principals:  []string{"group:gr2"},
+						},
+						{
+							Permissions: []uint32{0},
+							Principals:  []string{"user:u1"},
+						},
+						{
+							Permissions: []uint32{0},
+							Principals:  []string{"glob:g1"},
+						},
+					},
+				},
+				{
+					Name: "p:r2",
+					Bindings: []*protocol.Binding{
+						{
+							Permissions: []uint32{0, 1, 2},
+							Principals:  []string{"group:gr1"},
+						},
+					},
+				},
+			},
+		}
+		storeTestAuthDBSnapshot(ctx, realmsUpdated, revUpdated, t)
+		storeTestAuthDBSnapshotLatest(ctx, revUpdated, t)
+
+		gr1ExpectedUpdated := &rpcpb.PrincipalPermissions{
+			RealmPermissions: []*rpcpb.RealmPermissions{
+				{
+					Name:        "p:r",
+					Permissions: []string{"luci.dev.p1"},
+				},
+				{
+					Name:        "p:r2",
+					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+				},
+			},
+		}
+		t.Run("returns cached permissions if max staleness not exceeded", func(t *ftt.Test) {
+			// Request should return cached copy as max staleness has not been exceeded.
+			tc.Add(maxStaleness - 1)
+			resp1, err = srv.GetPrincipalPermissions(ctx, req1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp1, should.Match(gr1Expected))
+		})
+		t.Run("returns updated permissions if max staleness exceeded", func(t *ftt.Test) {
+			tc.Add(maxStaleness)
+			resp1Updated, err := srv.GetPrincipalPermissions(ctx, req1)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp1Updated, should.Match(gr1ExpectedUpdated))
+		})
+
+		// User and glob requests are not currently supported & should return unimplemented err.
+		reqUser := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "u1",
+				Kind: rpcpb.PrincipalKind_IDENTITY,
+			},
+		}
+		reqGlob := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "g1",
+				Kind: rpcpb.PrincipalKind_GLOB,
+			},
+		}
+
+		t.Run("user lookup not currently supported", func(t *ftt.Test) {
+			respUser, err := srv.GetPrincipalPermissions(ctx, reqUser)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
+			assert.Loosely(t, respUser, should.BeNil)
+		})
+
+		t.Run("glob lookup not currently supported", func(t *ftt.Test) {
+			respGlob, err := srv.GetPrincipalPermissions(ctx, reqGlob)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
+			assert.Loosely(t, respGlob, should.BeNil)
+		})
+
+		// Principal that does not exist should return invalid argument err.
+		reqInvalid := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "random-group",
+				Kind: rpcpb.PrincipalKind_GROUP,
+			},
+		}
+		t.Run("returns invalid argument for non-existent group", func(t *ftt.Test) {
+			respInvalid, err := srv.GetPrincipalPermissions(ctx, reqInvalid)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, respInvalid, should.BeNil)
+		})
+
+		t.Run("returns invalid argument for empty request", func(t *ftt.Test) {
+			respEmpty, err := srv.GetPrincipalPermissions(ctx, &rpcpb.GetPrincipalPermissionsRequest{})
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, respEmpty, should.BeNil)
+		})
+		reqEmptyName := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "",
+				Kind: rpcpb.PrincipalKind_GROUP,
+			},
+		}
+		t.Run("returns invalid argument for empty principal name", func(t *ftt.Test) {
+			respEmptyName, err := srv.GetPrincipalPermissions(ctx, reqEmptyName)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, respEmptyName, should.BeNil)
+		})
+
+		reqInvalidKind := &rpcpb.GetPrincipalPermissionsRequest{
+			Principal: &rpcpb.Principal{
+				Name: "gr1",
+				Kind: rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED,
+			},
+		}
+
+		t.Run("returns invalid argument if principal kind is not user, group or glob", func(t *ftt.Test) {
+			respInvalidKind, err := srv.GetPrincipalPermissions(ctx, reqInvalidKind)
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+			assert.Loosely(t, respInvalidKind, should.BeNil)
 		})
 	})
 }
