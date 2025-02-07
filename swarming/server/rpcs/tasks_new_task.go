@@ -126,13 +126,14 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
 	}
 	creation := &tasks.Creation{
-		RequestID:       requestID,
-		Request:         ents.request,
-		SecretBytes:     ents.secretBytes,
-		ServerVersion:   srv.ServerVersion,
-		Config:          state.Config,
-		SwarmingProject: srv.SwarmingProject,
-		LifecycleTasks:  srv.TaskLifecycleTasks,
+		RequestID:             requestID,
+		Request:               ents.request,
+		SecretBytes:           ents.secretBytes,
+		ServerVersion:         srv.ServerVersion,
+		Config:                state.Config,
+		SwarmingProject:       srv.SwarmingProject,
+		LifecycleTasks:        srv.TaskLifecycleTasks,
+		ResultDBClientFactory: srv.ResultDBClientFactory,
 	}
 
 	// Create the task in a loop to retry on task ID collisions.
@@ -147,8 +148,12 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	}
 
 	if err != nil {
-		logging.Errorf(ctx, "Failed to create task: %s", err)
-		return nil, status.Errorf(codes.Internal, "failed to create task")
+		if status.Code(err) == codes.Unknown {
+			logging.Errorf(ctx, "Failed to create task: %s", err)
+			return nil, status.Errorf(codes.Internal, "failed to create task")
+		} else {
+			return nil, err
+		}
 	}
 
 	if attempts > 1 {

@@ -36,9 +36,9 @@ func TestRecorderClient(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.Use(context.Background())
-	taskID := "65aba3a3e6b99310"
-	invID := "task-example.appspot.com-65aba3a3e6b99310"
-	invName := "invocations/task-example.appspot.com-65aba3a3e6b99310"
+	taskID := "65aba3a3e6b99311"
+	invID := "task-example.appspot.com-65aba3a3e6b99311"
+	invName := "invocations/task-example.appspot.com-65aba3a3e6b99311"
 
 	ftt.Run("CreateInvocation", t, func(t *ftt.Test) {
 		realm := "project:bucket"

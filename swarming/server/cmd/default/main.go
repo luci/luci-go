@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/swarming/server/notifications"
 	"go.chromium.org/luci/swarming/server/pyproxy"
 	"go.chromium.org/luci/swarming/server/rbe"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/rpcs"
 	"go.chromium.org/luci/swarming/server/tasks"
 
@@ -249,10 +250,11 @@ func main() {
 		apipb.RegisterBotsServer(srv, &rpcs.BotsServer{BotQuerySplitMode: model.SplitOptimally})
 
 		tasksServer := &rpcs.TasksServer{
-			TaskQuerySplitMode: model.SplitOptimally,
-			TaskLifecycleTasks: taskLifeCycle,
-			ServerVersion:      srv.Options.ImageVersion(),
-			SwarmingProject:    srv.Options.CloudProject,
+			TaskQuerySplitMode:    model.SplitOptimally,
+			TaskLifecycleTasks:    taskLifeCycle,
+			ServerVersion:         srv.Options.ImageVersion(),
+			SwarmingProject:       srv.Options.CloudProject,
+			ResultDBClientFactory: resultdb.NewRecorderFactory(srv.Options.CloudProject),
 		}
 		apipb.RegisterTasksServer(srv, tasksServer)
 		apipb.RegisterSwarmingServer(srv, &rpcs.SwarmingServer{

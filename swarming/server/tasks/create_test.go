@@ -17,8 +17,13 @@ package tasks
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
@@ -28,12 +33,16 @@ import (
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
+	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/metrics"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 )
 
 func TestCreation(t *testing.T) {
@@ -99,6 +108,9 @@ func TestCreation(t *testing.T) {
 			mockCfg := &cfgtest.MockedConfigs{
 				Settings: &configpb.SettingsCfg{
 					ReusableTaskAgeSecs: 3600,
+					Resultdb: &configpb.ResultDBSettings{
+						Server: "https://rdbhost.example.com",
+					},
 				},
 			}
 			p := cfgtest.MockConfigs(ctx, mockCfg)
@@ -209,6 +221,11 @@ func TestCreation(t *testing.T) {
 					Created:        now.Add(-10 * time.Hour),
 				}
 				assert.That(t, datastore.Put(ctx, tr, trs), should.ErrLike(nil))
+				inv := &rdbpb.Invocation{
+					Name: "invocations/task-example.appspot.com-65aba3a3e6b99311",
+				}
+				mcf := resultdb.NewMockRecorderClientFactory(nil, inv, nil, "token for 65aba3a3e6b99311")
+
 				c := Creation{
 					Request: &model.TaskRequest{
 						TaskSlices: []model.TaskSlice{
@@ -223,10 +240,11 @@ func TestCreation(t *testing.T) {
 							"buildername:builder",
 						},
 					},
-					ServerVersion:   "v1",
-					Config:          cfg,
-					LifecycleTasks:  lt,
-					SwarmingProject: "swarming",
+					ServerVersion:         "v1",
+					Config:                cfg,
+					LifecycleTasks:        lt,
+					SwarmingProject:       "swarming",
+					ResultDBClientFactory: mcf,
 				}
 
 				trs, err = c.Run(ctx)
@@ -263,6 +281,105 @@ func TestCreation(t *testing.T) {
 			}
 			_, err := c.Run(ctx)
 			assert.That(t, err, should.ErrLike(ErrAlreadyExists))
+		})
+
+		t.Run("resultdb_enabled", func(t *ftt.Test) {
+			taskRunID := "2cbe1fa55012fa11"
+			invocationID := "task-example.appspot.com-2cbe1fa55012fa11"
+			realm := "project:realm"
+			deadline := testclock.TestRecentTimeUTC.Add(3600 * time.Second)
+
+			prepCreation := func(cfg *cfg.Config, mcf resultdb.RecorderFactory) *Creation {
+				return &Creation{
+					Request: &model.TaskRequest{
+						TaskSlices: []model.TaskSlice{
+							{
+								Properties: model.TaskProperties{
+									Dimensions: model.TaskDimensions{
+										"pool": {"pool"},
+									},
+									ExecutionTimeoutSecs: 2400,
+									GracePeriodSecs:      600,
+								},
+								ExpirationSecs: 600,
+							},
+						},
+						ResultDB: model.ResultDBConfig{
+							Enable: true,
+						},
+						Realm:   realm,
+						Created: testclock.TestRecentTimeUTC,
+					},
+					ResultDBClientFactory: mcf,
+					Config:                cfg,
+					LifecycleTasks:        lt,
+				}
+			}
+
+			req := &rdbpb.CreateInvocationRequest{
+				InvocationId: invocationID,
+				Invocation: &rdbpb.Invocation{
+					ProducerResource: fmt.Sprintf("//example.appspot.com/tasks/%s", taskRunID),
+					Realm:            realm,
+					Deadline:         timestamppb.New(deadline),
+				},
+			}
+
+			t.Run("resultdb_not_configured", func(t *ftt.Test) {
+				mockCfg := &cfgtest.MockedConfigs{
+					Settings: &configpb.SettingsCfg{},
+				}
+				p := cfgtest.MockConfigs(ctx, mockCfg)
+				cfg := p.Cached(ctx)
+				mcf := resultdb.NewMockRecorderClientFactory(nil, nil, nil, "")
+				c := prepCreation(cfg, mcf)
+				_, err := c.Run(ctx)
+				assert.That(t, err, should.ErrLike("ResultDB integration is not configured"))
+				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
+			})
+
+			t.Run("resultdb_configured", func(t *ftt.Test) {
+				mockCfg := &cfgtest.MockedConfigs{
+					Settings: &configpb.SettingsCfg{
+						Resultdb: &configpb.ResultDBSettings{
+							Server: "https://rdbhost.example.com",
+						},
+					},
+				}
+				p := cfgtest.MockConfigs(ctx, mockCfg)
+				cfg := p.Cached(ctx)
+				t.Run("failed", func(t *ftt.Test) {
+					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
+						status.Errorf(codes.PermissionDenied, "boom"), "")
+					c := prepCreation(cfg, mcf)
+					_, err := c.Run(ctx)
+					assert.That(t, err, should.ErrLike("error creating ResultDB invocation"))
+				})
+
+				t.Run("already_exists", func(t *ftt.Test) {
+					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
+						status.Errorf(codes.AlreadyExists, "invocation already exists"), "")
+					c := prepCreation(cfg, mcf)
+					_, err := c.Run(ctx)
+					assert.That(t, err, should.ErrLike(ErrAlreadyExists))
+				})
+
+				t.Run("OK", func(t *ftt.Test) {
+					token := "token for 2cbe1fa55012fa11"
+					inv := &rdbpb.Invocation{
+						Name: "invocations/" + invocationID,
+					}
+					mcf := resultdb.NewMockRecorderClientFactory(req, inv,
+						nil, token)
+					c := prepCreation(cfg, mcf)
+					trs, err := c.Run(ctx)
+					assert.NoErr(t, err)
+					assert.Loosely(t, trs, should.NotBeNil)
+					assert.That(t, trs.ResultDBInfo.Hostname, should.Equal("https://rdbhost.example.com"))
+					assert.That(t, trs.ResultDBInfo.Invocation, should.Equal(inv.Name))
+				})
+			})
+
 		})
 
 		t.Run("OK", func(t *ftt.Test) {

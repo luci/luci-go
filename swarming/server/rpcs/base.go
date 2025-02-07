@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/swarming/server/cursor"
 	"go.chromium.org/luci/swarming/server/cursor/cursorpb"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
 
@@ -95,6 +96,9 @@ type TasksServer struct {
 
 	// SwarmingProject is the Cloud project of the Swarming service, e.g. "chromium-swarm".
 	SwarmingProject string
+
+	// ResultDBClientFactory can create a client to interact with ResultDB Recorder.
+	ResultDBClientFactory resultdb.RecorderFactory
 }
 
 // TaskBackend implements bbpb.TaskBackendServer.

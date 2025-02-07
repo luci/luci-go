@@ -193,6 +193,11 @@ func TestTaskRequest(t *testing.T) {
 				assert.Loosely(t, partiallyPopulated.BotID(), should.BeEmpty)
 			})
 		})
+
+		t.Run("TestExecutionDeadline", func(t *ftt.Test) {
+			expected := testTime.Add(time.Duration(600+1200+123+456) * time.Second)
+			assert.That(t, fullyPopulated.ExecutionDeadline(), should.Match(expected))
+		})
 	})
 
 	ftt.Run("NewTaskRequestKey", t, func(t *ftt.Test) {

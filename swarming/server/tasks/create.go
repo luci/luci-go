@@ -21,16 +21,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth/realms"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/cfg"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 )
 
 // ErrAlreadyExists is a special error to return when task ID collision happens.
@@ -53,6 +57,9 @@ type Creation struct {
 
 	// ServerVersion is the version of the executing binary.
 	ServerVersion string
+
+	// ResultDBClientFactory can create a client to interact with ResultDB Recorder.
+	ResultDBClientFactory resultdb.RecorderFactory
 
 	// Config is a snapshot of the server configuration.
 	Config *cfg.Config
@@ -157,8 +164,31 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		if tr.ResultDB.Enable {
+			taskRunID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)
+			resultdbHost := c.Config.Settings().GetResultdb().GetServer()
+			if resultdbHost == "" {
+				return nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
+			}
+			invName, rdbUpdateToken, err := c.createResultDBInvocation(ctx, resultdbHost, tr, taskRunID)
+			switch {
+			case status.Code(err) == codes.AlreadyExists:
+				// Task ID collision causes ResultDB CreateInvocation failure.
+				// We should also retry in this case.
+				return nil, ErrAlreadyExists
+			case err != nil:
+				logging.Errorf(ctx, "error creating ResultDB invocation: %s", err)
+				return nil, errors.Reason("error creating ResultDB invocation").Err()
+			}
+
+			tr.ResultDBUpdateToken = rdbUpdateToken
+			trs.ResultDBInfo = model.ResultDBInfo{
+				Hostname:   resultdbHost,
+				Invocation: invName,
+			}
+		}
 	}
-	// TODO(b/355013250): Create ResultDB invocation.
 
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Recheck TaskRequestID in transaction in case it has just been
@@ -327,4 +357,15 @@ func (c *Creation) copyDuplicateTask(ctx context.Context, new, dup *model.TaskRe
 	// new's Key, RequestName, RequestUser, Tags, Created, Modified remain unchanged.
 	// Since dup is a succeeded task, fields for any type of failures are skipped.
 	// new is a duplication of dup, so its PropertiesHash should remain empty.
+}
+
+func (c *Creation) createResultDBInvocation(ctx context.Context, resultdbHost string, tr *model.TaskRequest, taskRunID string) (string, string, error) {
+	realm := tr.Realm
+	project, _ := realms.Split(realm)
+	recorder, err := c.ResultDBClientFactory.MakeClient(ctx, resultdbHost, project)
+	if err != nil {
+		return "", "", err
+	}
+	return recorder.CreateInvocation(
+		ctx, taskRunID, realm, tr.ExecutionDeadline())
 }

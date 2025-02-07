@@ -257,6 +257,26 @@ func (p *TaskRequest) TaskAuthInfo(ctx context.Context) (*acls.TaskAuthInfo, err
 	}, nil
 }
 
+// ExecutionDeadline returns the latest time where this task can be in
+// PENDING or RUNNING state.
+func (p *TaskRequest) ExecutionDeadline() time.Time {
+	return p.Created.Add(p.maxLifeTime())
+}
+
+// maxLifeTime returns the maximum latency at which the task may still be running.
+func (p *TaskRequest) maxLifeTime() time.Duration {
+	var ret, offset int64
+	for _, slice := range p.TaskSlices {
+		offset += slice.ExpirationSecs
+		props := slice.Properties
+		mlt := offset + props.ExecutionTimeoutSecs + props.GracePeriodSecs
+		if mlt > ret {
+			ret = mlt
+		}
+	}
+	return time.Duration(ret) * time.Second
+}
+
 // ToProto converts a TaskRequest to apipb.TaskRequestResponse.
 func (p *TaskRequest) ToProto() *apipb.TaskRequestResponse {
 	taskSlices := make([]*apipb.TaskSlice, len(p.TaskSlices))

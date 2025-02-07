@@ -38,12 +38,14 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/cfg/cfgtest"
 	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/resultdb"
 	"go.chromium.org/luci/swarming/server/tasks"
 	"go.chromium.org/luci/swarming/server/validate"
 )
@@ -75,7 +77,7 @@ func simpliestValidRequest(pool string) *apipb.NewTaskRequest {
 	}
 }
 
-func fullSlice(secretBytes []byte) *apipb.TaskSlice {
+func fullSlice(pool string, secretBytes []byte) *apipb.TaskSlice {
 	s := &apipb.TaskSlice{
 		Properties: &apipb.TaskProperties{
 			GracePeriodSecs:      60,
@@ -131,7 +133,7 @@ func fullSlice(secretBytes []byte) *apipb.TaskSlice {
 			Dimensions: []*apipb.StringPair{
 				{
 					Key:   "pool",
-					Value: "pool",
+					Value: pool,
 				},
 			},
 		},
@@ -162,8 +164,8 @@ func fullRequest() *apipb.NewTaskRequest {
 			"k2:v2",
 		},
 		TaskSlices: []*apipb.TaskSlice{
-			fullSlice([]byte("this is a secret")),
-			fullSlice(nil),
+			fullSlice("pool", []byte("this is a secret")),
+			fullSlice("pool", nil),
 		},
 		Resultdb: &apipb.ResultDBCfg{
 			Enable: true,
@@ -972,35 +974,6 @@ func TestToTaskRequestEntities(t *testing.T) {
 				assert.That(t, ents.request.Priority, should.Equal(int64(10)))
 			})
 		})
-
-		taskRequest := func(id string) *model.TaskRequest {
-			key, err := model.TaskIDToRequestKey(ctx, id)
-			assert.NoErr(t, err)
-			return &model.TaskRequest{
-				Key:        key,
-				User:       "parent_user",
-				RootTaskID: "root_id",
-				TaskSlices: []model.TaskSlice{
-					{
-						Properties: model.TaskProperties{
-							Dimensions: model.TaskDimensions{
-								"pool": {"pool"},
-							},
-						},
-					},
-				},
-			}
-		}
-
-		taskResult := func(id string, state apipb.TaskState) *model.TaskResultSummary {
-			key, _ := model.TaskIDToRequestKey(ctx, id)
-			return &model.TaskResultSummary{
-				Key: model.TaskResultSummaryKey(ctx, key),
-				TaskResultCommon: model.TaskResultCommon{
-					State: state,
-				},
-			}
-		}
 		t.Run("parent_failures", func(t *ftt.Test) {
 			t.Run("parent_not_found", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
@@ -1026,7 +999,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 						},
 					},
 				}
-				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_RUNNING)
+				pTRS := taskResult(ctx, req.ParentTaskId, apipb.TaskState_RUNNING)
 				assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 				_, err = toTaskRequestEntities(ctx, req, "pool")
@@ -1036,8 +1009,8 @@ func TestToTaskRequestEntities(t *testing.T) {
 			t.Run("parent_has_ended", func(t *ftt.Test) {
 				req := simpliestValidRequest("pool")
 				req.ParentTaskId = "60b2ed0a43078111"
-				pTR := taskRequest(req.ParentTaskId)
-				pTRS := taskResult(req.ParentTaskId, apipb.TaskState_COMPLETED)
+				pTR := taskRequest(ctx, req.ParentTaskId)
+				pTRS := taskResult(ctx, req.ParentTaskId, apipb.TaskState_COMPLETED)
 				assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 				_, err := toTaskRequestEntities(ctx, req, "pool")
@@ -1272,13 +1245,13 @@ func TestToTaskRequestEntities(t *testing.T) {
 							},
 						}
 					}
-					return fullSlice(nil).Properties.Env
+					return fullSlice("pool", nil).Properties.Env
 				}
 
 				expectedEnvPrefix := func(template string) []*apipb.StringListPair {
 					switch template {
 					case "none":
-						return fullSlice(nil).Properties.EnvPrefixes
+						return fullSlice("pool", nil).Properties.EnvPrefixes
 					case "canary":
 						return []*apipb.StringListPair{
 							{
@@ -1310,7 +1283,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 
 				expectedCaches := func(template string) []*apipb.CacheEntry {
 					if template == "none" {
-						return fullSlice(nil).Properties.Caches
+						return fullSlice("pool", nil).Properties.Caches
 					}
 					return []*apipb.CacheEntry{
 						{
@@ -1326,7 +1299,7 @@ func TestToTaskRequestEntities(t *testing.T) {
 
 				expectedPackages := func(template string) []*apipb.CipdPackage {
 					if template == "none" {
-						return fullSlice(nil).Properties.CipdInput.Packages
+						return fullSlice("pool", nil).Properties.CipdInput.Packages
 					}
 
 					if template == "prod" {
@@ -1407,8 +1380,8 @@ func TestToTaskRequestEntities(t *testing.T) {
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			pID := "60b2ed0a43023111"
-			pTR := taskRequest(pID)
-			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
+			pTR := taskRequest(ctx, pID)
+			pTRS := taskResult(ctx, pID, apipb.TaskState_RUNNING)
 			assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 			req := fullRequest()
@@ -1426,8 +1399,8 @@ func TestToTaskRequestEntities(t *testing.T) {
 			ctx, _ = testclock.UseTime(ctx, now)
 
 			pID := "60b2ed0a43023111"
-			pTR := taskRequest(pID)
-			pTRS := taskResult(pID, apipb.TaskState_RUNNING)
+			pTR := taskRequest(ctx, pID)
+			pTRS := taskResult(ctx, pID, apipb.TaskState_RUNNING)
 			assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
 
 			req := fullRequest()
@@ -1742,7 +1715,7 @@ func TestNewTask(t *testing.T) {
 			logging.Info, "Created the task after 2 attempts"))
 	})
 
-	ftt.Run("OK", t, func(t *ftt.Test) {
+	ftt.Run("OK-simple", t, func(t *ftt.Test) {
 		ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
 		ctx = MockRequestState(ctx, state)
 		ctx = cryptorand.MockForTest(ctx, 0)
@@ -1752,6 +1725,76 @@ func TestNewTask(t *testing.T) {
 
 		_, err := srv.NewTask(ctx, req)
 		assert.NoErr(t, err)
+	})
+
+	ftt.Run("OK-full", t, func(t *ftt.Test) {
+		ctx, _ := testclock.UseTime(ctx, time.Date(2025, time.January, 1, 2, 3, 4, 0, time.UTC))
+
+		state := NewMockedRequestState()
+		visiblePool := state.Configs.MockPool("visible-pool", "project:visible-pool-realm")
+		visiblePool.DefaultTaskRealm = "project:visible-task-realm"
+		visiblePool.RbeMigration = &configpb.Pool_RBEMigration{
+			RbeInstance:    "rbe-instance",
+			RbeModePercent: int32(100),
+			BotModeAllocation: []*configpb.Pool_RBEMigration_BotModeAllocation{
+				{Mode: configpb.Pool_RBEMigration_BotModeAllocation_HYBRID, Percent: 100},
+			},
+		}
+		state.MockPerm("project:visible-pool-realm", acls.PermPoolsCreateTask)
+		state.MockPerm("project:visible-task-realm", acls.PermTasksCreateInRealm)
+		state.MockPermWithIdentity("project:visible-task-realm",
+			identity.Identity("user:sa@account.com"), acls.PermTasksActAs)
+		state.Configs.Settings.Resultdb = &configpb.ResultDBSettings{
+			Server: "https://rdbhost.example.com",
+		}
+		ctx = MockRequestState(ctx, state)
+		ctx = cryptorand.MockForTest(ctx, 0)
+
+		pID := "60b2ed0a43023111"
+		pTR := taskRequest(ctx, pID)
+		pTRS := taskResult(ctx, pID, apipb.TaskState_RUNNING)
+		assert.NoErr(t, datastore.Put(ctx, pTR, pTRS))
+
+		req := &apipb.NewTaskRequest{
+			Name:                 "new",
+			ParentTaskId:         "60b2ed0a43023111",
+			Priority:             30,
+			User:                 "user",
+			ServiceAccount:       "bot",
+			PubsubTopic:          "projects/project/topics/topic",
+			PubsubAuthToken:      "token",
+			PubsubUserdata:       "userdata",
+			BotPingToleranceSecs: 300,
+			Realm:                "project:visible-task-realm",
+			Tags: []string{
+				"k1:v1",
+				"k2:v2",
+			},
+			TaskSlices: []*apipb.TaskSlice{
+				fullSlice("visible-pool", []byte("this is a secret")),
+			},
+			Resultdb: &apipb.ResultDBCfg{
+				Enable: true,
+			},
+			PoolTaskTemplate: apipb.NewTaskRequest_SKIP,
+		}
+
+		inv := &rdbpb.Invocation{
+			Name: "invocations/task-swarming.appspot.com-6e386bafc02af911",
+		}
+		token := "token for 6e386bafc02af911"
+		lt := tasks.MockTQTasks()
+		srv := TasksServer{
+			SwarmingProject:       "swarming",
+			ResultDBClientFactory: resultdb.NewMockRecorderClientFactory(nil, inv, nil, token),
+			ServerVersion:         "version",
+			TaskLifecycleTasks:    lt,
+		}
+
+		res, err := srv.NewTask(ctx, req)
+		assert.NoErr(t, err)
+		assert.Loosely(t, res.TaskResult, should.NotBeNil)
+		assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-6e386bafc02af910-0"))
 	})
 
 	ftt.Run("Fail", t, func(t *ftt.Test) {
@@ -1770,7 +1813,7 @@ func TestNewTask(t *testing.T) {
 		req.RequestUuid = "request-id"
 
 		res, err := srv.NewTask(ctx, req)
-		assert.That(t, err, grpccode.ShouldBe(codes.Internal))
+		assert.That(t, err, grpccode.ShouldBe(codes.NotFound))
 		assert.Loosely(t, res, should.BeNil)
 	})
 }
@@ -1860,4 +1903,32 @@ func TestApplyRBE(t *testing.T) {
 			assert.That(t, ents.request.Tags, should.Contain("rbe:rbe_instance"))
 		})
 	})
+}
+
+func taskRequest(ctx context.Context, id string) *model.TaskRequest {
+	key, _ := model.TaskIDToRequestKey(ctx, id)
+	return &model.TaskRequest{
+		Key:        key,
+		User:       "parent_user",
+		RootTaskID: "root_id",
+		TaskSlices: []model.TaskSlice{
+			{
+				Properties: model.TaskProperties{
+					Dimensions: model.TaskDimensions{
+						"pool": {"pool"},
+					},
+				},
+			},
+		},
+	}
+}
+
+func taskResult(ctx context.Context, id string, state apipb.TaskState) *model.TaskResultSummary {
+	key, _ := model.TaskIDToRequestKey(ctx, id)
+	return &model.TaskResultSummary{
+		Key: model.TaskResultSummaryKey(ctx, key),
+		TaskResultCommon: model.TaskResultCommon{
+			State: state,
+		},
+	}
 }
