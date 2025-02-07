@@ -20,7 +20,11 @@ import {
   DialogTitle,
 } from '@mui/material';
 
-import { generateBuildUrl, BuildIdentifier, SWARMING_SERVER } from './shared';
+import {
+  generateBuildUrl,
+  BuildIdentifier,
+  FLEET_BUILDS_SWARMING_HOST,
+} from '@/fleet/utils/builds';
 
 export interface SessionInfo {
   sessionId?: string;
@@ -122,7 +126,7 @@ export default function AutorepairDialog({
         <p>
           (
           <a
-            href={`https://${SWARMING_SERVER}/tasklist?f=admin-session:${sessionId}`}
+            href={`https://${FLEET_BUILDS_SWARMING_HOST}/tasklist?f=admin-session:${sessionId}`}
             target="_blank"
             rel="noreferrer"
           >

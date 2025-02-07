@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { BuildIdentifier, USING_BUILD_BUCKET_DEV } from '@/fleet/utils/builds';
 import {
   BatchRequest_Request,
   BatchResponse,
@@ -34,43 +35,9 @@ const DEV_BUILDER = {
   builder: 'linux-rel-buildbucket',
 };
 
-// Check if we're using the dev version of build bucket to adjust the RPC to
-// go through properly.
-// TODO: Find out if there's a better pattern for this besides hardcoding
-// build bucket dev's project name.
-const IS_BUILD_BUCKET_DEV =
-  SETTINGS.buildbucket.host.includes('cr-buildbucket-dev');
-
-export interface BuildIdentifier {
-  project?: string;
-  bucket?: string;
-  builder?: string;
-  buildId?: string;
-}
-
 export interface DutNameAndState {
   name: string;
   state?: string;
-}
-
-// Note that this is different from SETTINGS.milo.host or the host of the
-// current server because we are looking for the frontend associated with
-// our current SETTINGS.buildbucket.host config.
-export const MILO_SERVER = IS_BUILD_BUCKET_DEV
-  ? 'luci-milo-dev.appspot.com'
-  : 'ci.chromium.org';
-
-export const SWARMING_SERVER = IS_BUILD_BUCKET_DEV
-  ? 'chromium-swarm-dev.appspot.com'
-  : 'chromeos-swarming.appspot.com';
-
-export function generateBuildUrl({
-  project,
-  bucket,
-  builder,
-  buildId,
-}: BuildIdentifier) {
-  return `https://${MILO_SERVER}/p/${project}/builders/${bucket}/${builder}/b${buildId}`;
 }
 
 /**
@@ -88,12 +55,12 @@ export function autorepairRequestsFromDuts(
 ): BatchRequest_Request[] {
   // Combine all build requests into one Swarming view using a session ID.
 
-  const builder = IS_BUILD_BUCKET_DEV ? DEV_BUILDER : PROD_BUILDER;
+  const builder = USING_BUILD_BUCKET_DEV ? DEV_BUILDER : PROD_BUILDER;
 
   return duts.map((dut) => {
     // Avoid matching dut_name on Buildbucket dev because duts do not exist
     // on dev.
-    const variableDimensions = IS_BUILD_BUCKET_DEV
+    const variableDimensions = USING_BUILD_BUCKET_DEV
       ? []
       : [
           {

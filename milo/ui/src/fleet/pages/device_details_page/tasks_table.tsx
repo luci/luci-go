@@ -17,6 +17,11 @@ import { useQuery } from '@tanstack/react-query';
 
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
 import {
+  DEVICE_TASKS_MILO_HOST,
+  DEVICE_TASKS_SWARMING_HOST,
+  extractBuildUrlFromTagData,
+} from '@/fleet/utils/builds';
+import {
   StateQuery,
   TaskResultResponse,
   TaskState,
@@ -42,7 +47,7 @@ const prettifySwarmingState = (task: TaskResultResponse): string => {
 
 export const Tasks = ({
   id,
-  swarmingHost = 'chromeos-swarming.appspot.com',
+  swarmingHost = DEVICE_TASKS_SWARMING_HOST,
 }: {
   id: string;
   swarmingHost?: string;
@@ -64,12 +69,15 @@ export const Tasks = ({
 
   const tasks = taskData?.data?.items || [];
 
+  const taskMap = new Map(tasks.map((t) => [t.taskId, t]));
+
   const taskGridData = tasks.map((t) => ({
     id: t.taskId,
     task: t.name,
     started: t.startedTs,
     duration: `${t.duration}s`,
     result: prettifySwarmingState(t),
+    tags: t.tags,
   }));
 
   // TODO: 371010330 - Prettify these columns.
@@ -79,6 +87,22 @@ export const Tasks = ({
       field: 'task',
       headerName: 'Task',
       flex: 2,
+      renderCell: (params) => {
+        return (
+          <>
+            <a
+              href={extractBuildUrlFromTagData(
+                taskMap.get(`${params.id}`)?.tags || [],
+                DEVICE_TASKS_MILO_HOST,
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {params.value}
+            </a>
+          </>
+        );
+      },
     },
     {
       field: 'started',
