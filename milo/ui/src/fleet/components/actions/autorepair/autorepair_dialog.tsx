@@ -26,6 +26,8 @@ import {
   FLEET_BUILDS_SWARMING_HOST,
 } from '@/fleet/utils/builds';
 
+import CodeSnippet from '../../code_snippet/code_snippet';
+
 export interface SessionInfo {
   sessionId?: string;
   builds?: BuildIdentifier[];
@@ -103,10 +105,10 @@ export default function AutorepairDialog({
               {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
             </ul>
             <p>Equivalent shivas command:</p>
-            {/* TODO: Prettify terminal commands display. */}
-            <p style={{ fontFamily: 'monospace' }}>
-              $ shivas repair {dutNames.join(' ')}
-            </p>
+            <CodeSnippet
+              displayText={'$ shivas repair ' + dutNames.join(' ')}
+              copyText={'shivas repair ' + dutNames.join(' ')}
+            />
           </>
         )}
       </DialogContent>
