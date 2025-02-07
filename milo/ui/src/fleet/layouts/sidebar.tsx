@@ -12,19 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import DevicesIcon from '@mui/icons-material/Devices';
+import LaunchIcon from '@mui/icons-material/Launch';
+import MenuIcon from '@mui/icons-material/Menu';
 import { styled, Typography } from '@mui/material';
 import MuiDrawer from '@mui/material/Drawer';
 import MaterialLink from '@mui/material/Link';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
 import Toolbar from '@mui/material/Toolbar';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-import { colors } from '../theme/colors';
+import { colors } from '@/fleet/theme/colors';
 
 import { drawerWidth } from './constants';
+import { generateSidebarSections } from './sidebar_sections';
 
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
   width: 0,
@@ -41,31 +47,12 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
   }),
 }));
 
-type SidebarSection = {
-  title: string;
-  pages: {
-    external?: boolean;
-    url: string;
-    icon: React.ReactNode;
-    label: string;
-  }[];
-};
-
-const sidebarSections: SidebarSection[] = [
-  {
-    title: 'Fleet Console',
-    pages: [
-      {
-        url: '/ui/fleet/labs/devices',
-        icon: <DevicesIcon />,
-        label: 'Devices',
-      },
-    ],
-  },
-];
-
 export const Sidebar = ({ open }: { open: boolean }) => {
   const location = useLocation();
+  const sidebarSections = useMemo(() => {
+    return generateSidebarSections();
+  }, []);
+
   return (
     <Drawer
       sx={{
@@ -81,40 +68,52 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       open={open}
       role="complementary"
     >
-      <Toolbar
-        variant="dense"
-        sx={{
-          height: 64,
-        }}
-      />
-      <List sx={{ mb: '40px', pt: 0, margin: '20px 0' }}>
+      <Toolbar variant="dense" sx={{ height: 64 }} />
+      <List sx={{ mb: '40px', pt: 0 }}>
         {sidebarSections.map((sidebarSection) => (
           <Fragment key={sidebarSection.title}>
-            {sidebarSection.pages.map((sidebarPage, idx) => (
-              <ListItemButton
-                key={sidebarPage.url + idx + sidebarSection.title}
-                sx={{
-                  px: 2.5,
-                  borderRadius: '40px 999em 999em 40px',
-                  // margin: '5px 0',
-                  '&.Mui-selected': {
-                    color: colors.blue[700],
-                    backgroundColor: colors.blue[50],
-                    ':hover': {
-                      backgroundColor: colors.blue[100],
-                    },
-                  },
-                }}
-                selected={sidebarPage.url === location.pathname}
-                component={sidebarPage.external ? MaterialLink : Link}
-                to={sidebarPage.url}
-                target={sidebarPage.external ? '_blank' : ''}
+            <ListSubheader>{sidebarSection.title}</ListSubheader>
+            {sidebarSection.pages.map((sidebarPage) => (
+              <ListItem
+                dense
+                key={sidebarPage.url}
+                disablePadding
+                sx={{ display: 'block' }}
               >
-                <Typography>{sidebarPage.label}</Typography>
-              </ListItemButton>
+                <ListItemButton
+                  sx={{ px: 2.5 }}
+                  selected={sidebarPage.url === location.pathname}
+                  component={sidebarPage.external ? MaterialLink : Link}
+                  to={sidebarPage.url}
+                  target={sidebarPage.external ? '_blank' : ''}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1 }}>
+                    {sidebarPage.icon}
+                  </ListItemIcon>
+
+                  <ListItemText primary={sidebarPage.label} />
+
+                  {sidebarPage.external && (
+                    <ListItemIcon sx={{ minWidth: 0, mr: 1 }}>
+                      <LaunchIcon color="inherit" />
+                    </ListItemIcon>
+                  )}
+                </ListItemButton>
+              </ListItem>
             ))}
           </Fragment>
         ))}
+
+        <div style={{ margin: '40px 20px', color: colors.grey[600] }}>
+          <Typography variant="caption">
+            Click{' '}
+            <MenuIcon
+              fontSize="small"
+              style={{ position: 'relative', top: '5px' }}
+            />{' '}
+            above to hide this menu.
+          </Typography>
+        </div>
       </List>
     </Drawer>
   );
