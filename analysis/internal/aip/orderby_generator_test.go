@@ -17,6 +17,9 @@ package aip
 import (
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
+	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -32,30 +35,30 @@ func TestOrderByClause(t *testing.T) {
 		).Build()
 
 		t.Run("Empty order by", func(t *ftt.Test) {
-			result, err := table.OrderByClause([]OrderBy{})
+			result, err := table.OrderByClause([]aip132.OrderBy{})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, result, should.BeEmpty)
 		})
 		t.Run("Single order by", func(t *ftt.Test) {
-			result, err := table.OrderByClause([]OrderBy{
+			result, err := table.OrderByClause([]aip132.OrderBy{
 				{
-					FieldPath: NewFieldPath("foo"),
+					FieldPath: aip132.NewFieldPath("foo"),
 				},
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, result, should.Equal("ORDER BY db_foo\n"))
 		})
 		t.Run("Multiple order by", func(t *ftt.Test) {
-			result, err := table.OrderByClause([]OrderBy{
+			result, err := table.OrderByClause([]aip132.OrderBy{
 				{
-					FieldPath:  NewFieldPath("foo"),
+					FieldPath:  aip132.NewFieldPath("foo"),
 					Descending: true,
 				},
 				{
-					FieldPath: NewFieldPath("bar"),
+					FieldPath: aip132.NewFieldPath("bar"),
 				},
 				{
-					FieldPath:  NewFieldPath("baz"),
+					FieldPath:  aip132.NewFieldPath("baz"),
 					Descending: true,
 				},
 			})
@@ -63,21 +66,21 @@ func TestOrderByClause(t *testing.T) {
 			assert.Loosely(t, result, should.Equal("ORDER BY db_foo DESC, db_bar, db_baz DESC\n"))
 		})
 		t.Run("Unsortable field in order by", func(t *ftt.Test) {
-			_, err := table.OrderByClause([]OrderBy{
+			_, err := table.OrderByClause([]aip132.OrderBy{
 				{
-					FieldPath:  NewFieldPath("unsortable"),
+					FieldPath:  aip132.NewFieldPath("unsortable"),
 					Descending: true,
 				},
 			})
 			assert.Loosely(t, err, should.ErrLike(`no sortable field named "unsortable", valid fields are foo, bar, baz`))
 		})
 		t.Run("Repeated field in order by", func(t *ftt.Test) {
-			_, err := table.OrderByClause([]OrderBy{
+			_, err := table.OrderByClause([]aip132.OrderBy{
 				{
-					FieldPath: NewFieldPath("foo"),
+					FieldPath: aip132.NewFieldPath("foo"),
 				},
 				{
-					FieldPath: NewFieldPath("foo"),
+					FieldPath: aip132.NewFieldPath("foo"),
 				},
 			})
 			assert.Loosely(t, err, should.ErrLike(`field appears in order_by multiple times: "foo"`))
@@ -87,47 +90,49 @@ func TestOrderByClause(t *testing.T) {
 
 func TestMergeWithDefaultOrder(t *testing.T) {
 	ftt.Run("MergeWithDefaultOrder", t, func(t *ftt.Test) {
-		defaultOrder := []OrderBy{
+		fieldPathAllowUnexported := cmp.AllowUnexported(aip132.FieldPath{})
+
+		defaultOrder := []aip132.OrderBy{
 			{
-				FieldPath:  NewFieldPath("foo"),
+				FieldPath:  aip132.NewFieldPath("foo"),
 				Descending: true,
 			}, {
-				FieldPath: NewFieldPath("bar"),
+				FieldPath: aip132.NewFieldPath("bar"),
 			}, {
-				FieldPath:  NewFieldPath("baz"),
+				FieldPath:  aip132.NewFieldPath("baz"),
 				Descending: true,
 			},
 		}
 		t.Run("Empty order", func(t *ftt.Test) {
 			result := MergeWithDefaultOrder(defaultOrder, nil)
-			assert.Loosely(t, result, should.Resemble(defaultOrder))
+			assert.Loosely(t, result, should.Match(defaultOrder, fieldPathAllowUnexported))
 		})
 		t.Run("Non-empty order", func(t *ftt.Test) {
-			order := []OrderBy{
+			order := []aip132.OrderBy{
 				{
-					FieldPath:  NewFieldPath("other"),
+					FieldPath:  aip132.NewFieldPath("other"),
 					Descending: true,
 				},
 				{
-					FieldPath: NewFieldPath("baz"),
+					FieldPath: aip132.NewFieldPath("baz"),
 				},
 			}
 			result := MergeWithDefaultOrder(defaultOrder, order)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			assert.Loosely(t, result, should.Match([]aip132.OrderBy{
 				{
-					FieldPath:  NewFieldPath("other"),
+					FieldPath:  aip132.NewFieldPath("other"),
 					Descending: true,
 				},
 				{
-					FieldPath: NewFieldPath("baz"),
+					FieldPath: aip132.NewFieldPath("baz"),
 				},
 				{
-					FieldPath:  NewFieldPath("foo"),
+					FieldPath:  aip132.NewFieldPath("foo"),
 					Descending: true,
 				}, {
-					FieldPath: NewFieldPath("bar"),
+					FieldPath: aip132.NewFieldPath("bar"),
 				},
-			}))
+			}, fieldPathAllowUnexported))
 		})
 	})
 }

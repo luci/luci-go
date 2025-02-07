@@ -14,6 +14,10 @@
 
 package aip
 
+import (
+	"go.chromium.org/luci/common/data/aip132"
+)
+
 type ColumnBuilder struct {
 	column Column
 }
@@ -31,7 +35,7 @@ func NewColumn() *ColumnBuilder {
 // E.g. the field path "metrics.`some-metric`.value" would be specified
 // as ["metrics", "some-metric", "value"].
 func (c *ColumnBuilder) WithFieldPath(segments ...string) *ColumnBuilder {
-	c.column.fieldPath = NewFieldPath(segments...)
+	c.column.fieldPath = aip132.NewFieldPath(segments...)
 	return c
 }
 

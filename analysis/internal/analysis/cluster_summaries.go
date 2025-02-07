@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 
+	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 
@@ -69,7 +70,7 @@ const metricByDayColumnSuffix = "by_day"
 type QueryClusterSummariesOptions struct {
 	// A filter on the underlying failures to include in the clusters.
 	FailureFilter *aip160.Filter
-	OrderBy       []aip.OrderBy
+	OrderBy       []aip132.OrderBy
 	Realms        []string
 	// Metrics is the set of metrics to query. If a metric is referenced
 	// in the OrderBy clause, it must also be included here.
@@ -109,7 +110,7 @@ type ClusterSummary struct {
 type QueryClusterMetricBreakdownsOptions struct {
 	// A filter on the underlying failures to include in the clusters.
 	FailureFilter *aip160.Filter
-	OrderBy       []aip.OrderBy
+	OrderBy       []aip132.OrderBy
 	Realms        []string
 	// Metrics is the set of metrics to query. If a metric is referenced
 	// in the OrderBy clause, it must also be included here.
@@ -130,7 +131,7 @@ type MetricBreakdown struct {
 	DailyValues []int64
 }
 
-func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
+func defaultOrder(ms []metrics.Definition) []aip132.OrderBy {
 	sortedMetrics := make([]metrics.Definition, len(ms))
 	copy(sortedMetrics, ms)
 
@@ -146,10 +147,10 @@ func defaultOrder(ms []metrics.Definition) []aip.OrderBy {
 		return false
 	})
 
-	var result []aip.OrderBy
+	var result []aip132.OrderBy
 	for _, m := range sortedMetrics {
-		result = append(result, aip.OrderBy{
-			FieldPath:  aip.NewFieldPath("metrics", string(m.ID), "value"),
+		result = append(result, aip132.OrderBy{
+			FieldPath:  aip132.NewFieldPath("metrics", string(m.ID), "value"),
 			Descending: true,
 		})
 	}

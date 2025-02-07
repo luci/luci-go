@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/errors"
 
@@ -166,7 +167,7 @@ func (w *whereClause) restrictionQuery(restriction *aip160.Restriction) (string,
 		}
 		return "(" + strings.Join(clauses, " OR ") + ")", nil
 	}
-	column, err := w.table.FilterableColumnByFieldPath(NewFieldPath(restriction.Comparable.Member.Value))
+	column, err := w.table.FilterableColumnByFieldPath(aip132.NewFieldPath(restriction.Comparable.Member.Value))
 	if err != nil {
 		return "", err
 	}

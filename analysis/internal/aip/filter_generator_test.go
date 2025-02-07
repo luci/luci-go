@@ -56,7 +56,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "%somevalue%",
@@ -70,7 +70,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
@@ -93,7 +93,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
@@ -116,7 +116,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "%somevalue%",
@@ -130,7 +130,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -148,7 +148,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -166,7 +166,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "key",
@@ -191,7 +191,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue",
@@ -240,7 +240,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somevalue-v2",
@@ -261,7 +261,7 @@ func TestWhereClause(t *testing.T) {
 
 				result, pars, err := table.WhereClause(filter, "p_")
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+				assert.Loosely(t, pars, should.Match([]QueryParameter{
 					{
 						Name:  "p_0",
 						Value: "somekey",
@@ -280,7 +280,7 @@ func TestWhereClause(t *testing.T) {
 
 			result, pars, err := table.WhereClause(filter, "p_")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, pars, should.Resemble([]QueryParameter{
+			assert.Loosely(t, pars, should.Match([]QueryParameter{
 				{
 					Name:  "p_0",
 					Value: "%implicit%",

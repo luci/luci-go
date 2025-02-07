@@ -21,6 +21,8 @@ package aip
 import (
 	"fmt"
 	"strings"
+
+	"go.chromium.org/luci/common/data/aip132"
 )
 
 const (
@@ -48,7 +50,7 @@ func (t ColumnType) String() string {
 type Column struct {
 	// The externally-visible field path this column maps to.
 	// This path may be referenced in AIP-160 filters and AIP-132 order by clauses.
-	fieldPath FieldPath
+	fieldPath aip132.FieldPath
 
 	// The database name of the column.
 	// Important: Only assign assign safe constants to this field.
@@ -92,7 +94,7 @@ type Table struct {
 
 // FilterableColumnByFieldPath returns the database name of the filterable column
 // with the given field path.
-func (t *Table) FilterableColumnByFieldPath(path FieldPath) (*Column, error) {
+func (t *Table) FilterableColumnByFieldPath(path aip132.FieldPath) (*Column, error) {
 	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.filterable {
 		return col, nil
@@ -109,7 +111,7 @@ func (t *Table) FilterableColumnByFieldPath(path FieldPath) (*Column, error) {
 
 // SortableColumnByFieldPath returns the sortable database column
 // with the given externally-visible field path.
-func (t *Table) SortableColumnByFieldPath(path FieldPath) (*Column, error) {
+func (t *Table) SortableColumnByFieldPath(path aip132.FieldPath) (*Column, error) {
 	col := t.columnByFieldPath[path.String()]
 	if col != nil && col.sortable {
 		return col, nil

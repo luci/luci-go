@@ -31,7 +31,7 @@
 // No validation is performed to test that the field paths are valid for
 // a particular protocol buffer message.
 
-package aip
+package aip132
 
 import (
 	"regexp"
@@ -86,11 +86,11 @@ type FieldPath struct {
 	// The field path as its segments.
 	segments []string
 
-	// The canoncial reprsentation of the field path.
-	canoncial string
+	// The canonical representation of the field path.
+	canonical string
 }
 
-// NewFieldPath initialises a new field path with the given segments.
+// NewFieldPath initializes a new field path with the given segments.
 func NewFieldPath(segments ...string) FieldPath {
 	var builder strings.Builder
 	for _, segment := range segments {
@@ -107,20 +107,24 @@ func NewFieldPath(segments ...string) FieldPath {
 	}
 	return FieldPath{
 		segments:  segments,
-		canoncial: builder.String(),
+		canonical: builder.String(),
 	}
 }
 
 // Equals returns iff two field paths refer to exactly the
 // same field.
 func (f FieldPath) Equals(other FieldPath) bool {
-	return f.canoncial == other.canoncial
+	return f.canonical == other.canonical
 }
 
-// String returns a canoncial representation of the field path,
+// String returns a canonical representation of the field path,
 // following AIP-132 / AIP-161 syntax.
 func (f FieldPath) String() string {
-	return f.canoncial
+	return f.canonical
+}
+
+func (f FieldPath) GetSegments() []string {
+	return f.segments
 }
 
 // ParseOrderBy parses an AIP-132 order_by list. The method validates the
@@ -189,7 +193,7 @@ type segment struct {
 
 func (s *segment) Value() string {
 	if s.QuotedString != nil {
-		// Remove the outer backticks and replace all occurances
+		// Remove the outer backticks and replace all occurrences
 		// of double backticks with single backticks.
 		unquotedString := (*s.QuotedString)[1 : len(*s.QuotedString)-1]
 		return strings.ReplaceAll(unquotedString, "``", "`")

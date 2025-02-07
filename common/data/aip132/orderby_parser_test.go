@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aip
+package aip132
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -23,32 +25,38 @@ import (
 )
 
 func TestParseOrderBy(t *testing.T) {
+
 	ftt.Run("ParseOrderBy", t, func(t *ftt.Test) {
+		fieldPathAllowUnexported := cmp.AllowUnexported(FieldPath{})
+
 		// Test examples from the AIP-132 spec.
 		t.Run("Values should be a comma separated list of fields", func(t *ftt.Test) {
-			result, err := ParseOrderBy("foo,bar")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			expectedResult := []OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
 				},
 				{
 					FieldPath: NewFieldPath("bar"),
 				},
-			}))
+			}
 
-			result, err = ParseOrderBy("foo")
+			result, err := ParseOrderBy("foo,bar")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
+
+			expectedResult = []OrderBy{
 				{
 					FieldPath: NewFieldPath("foo"),
 				},
-			}))
+			}
+			result, err = ParseOrderBy("foo")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 		})
 		t.Run("The default sort order is ascending", func(t *ftt.Test) {
 			result, err := ParseOrderBy("foo desc, bar")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			assert.Loosely(t, result, should.Match([]OrderBy{
 				{
 					FieldPath:  NewFieldPath("foo"),
 					Descending: true,
@@ -56,7 +64,7 @@ func TestParseOrderBy(t *testing.T) {
 				{
 					FieldPath: NewFieldPath("bar"),
 				},
-			}))
+			}, fieldPathAllowUnexported))
 		})
 		t.Run("Redundant space characters in the syntax are insignificant", func(t *ftt.Test) {
 			expectedResult := []OrderBy{
@@ -70,20 +78,18 @@ func TestParseOrderBy(t *testing.T) {
 			}
 			result, err := ParseOrderBy("foo, bar desc")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 
 			result, err = ParseOrderBy("  foo  ,  bar desc  ")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 
 			result, err = ParseOrderBy("foo,bar desc")
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble(expectedResult))
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 		})
 		t.Run("Subfields are specified with a . character", func(t *ftt.Test) {
-			result, err := ParseOrderBy("foo.bar, foo.foo.bar desc")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			expectedResult := []OrderBy{
 				{
 					FieldPath: NewFieldPath("foo", "bar"),
 				},
@@ -91,12 +97,13 @@ func TestParseOrderBy(t *testing.T) {
 					FieldPath:  NewFieldPath("foo", "foo", "bar"),
 					Descending: true,
 				},
-			}))
+			}
+			result, err := ParseOrderBy("foo.bar, foo.foo.bar desc")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 		})
 		t.Run("Quoted strings can be used instead of string literals", func(t *ftt.Test) {
-			result, err := ParseOrderBy("foo.`bar`, foo.foo.`a-backtick-```.bar desc")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, result, should.Resemble([]OrderBy{
+			expectedResult := []OrderBy{
 				{
 					FieldPath: NewFieldPath("foo", "bar"),
 				},
@@ -104,7 +111,10 @@ func TestParseOrderBy(t *testing.T) {
 					FieldPath:  NewFieldPath("foo", "foo", "a-backtick-`", "bar"),
 					Descending: true,
 				},
-			}))
+			}
+			result, err := ParseOrderBy("foo.`bar`, foo.foo.`a-backtick-```.bar desc")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, result, should.Match(expectedResult, fieldPathAllowUnexported))
 		})
 		t.Run("Invalid input is rejected", func(t *ftt.Test) {
 			_, err := ParseOrderBy("`something")

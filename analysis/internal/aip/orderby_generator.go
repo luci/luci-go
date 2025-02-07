@@ -17,6 +17,8 @@ package aip
 import (
 	"fmt"
 	"strings"
+
+	"go.chromium.org/luci/common/data/aip132"
 )
 
 // MergeWithDefaultOrder merges the specified order with the given
@@ -24,8 +26,8 @@ import (
 //   - Ordering specified in `order` takes precedence.
 //   - For columns not specified in the `order` that appear in `defaultOrder`,
 //     ordering is applied in the order they apply in defaultOrder.
-func MergeWithDefaultOrder(defaultOrder []OrderBy, order []OrderBy) []OrderBy {
-	result := make([]OrderBy, 0, len(order)+len(defaultOrder))
+func MergeWithDefaultOrder(defaultOrder []aip132.OrderBy, order []aip132.OrderBy) []aip132.OrderBy {
+	result := make([]aip132.OrderBy, 0, len(order)+len(defaultOrder))
 	seenColumns := make(map[string]struct{})
 	for _, o := range order {
 		result = append(result, o)
@@ -45,7 +47,7 @@ func MergeWithDefaultOrder(defaultOrder []OrderBy, order []OrderBy) []OrderBy {
 //
 // The returned order clause is safe against SQL injection; only
 // strings appearing from Table appear in the output.
-func (t *Table) OrderByClause(order []OrderBy) (string, error) {
+func (t *Table) OrderByClause(order []aip132.OrderBy) (string, error) {
 	if len(order) == 0 {
 		return "", nil
 	}

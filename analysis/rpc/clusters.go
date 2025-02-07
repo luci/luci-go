@@ -23,6 +23,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/data/aip132"
 	"go.chromium.org/luci/common/data/aip160"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/resultdb/rdbperms"
 
-	"go.chromium.org/luci/analysis/internal/aip"
 	"go.chromium.org/luci/analysis/internal/analysis"
 	"go.chromium.org/luci/analysis/internal/analysis/metrics"
 	"go.chromium.org/luci/analysis/internal/clustering"
@@ -453,7 +453,7 @@ func (c *clustersServer) QueryClusterSummaries(ctx context.Context, req *pb.Quer
 				bqErr = invalidArgumentError(errors.Annotate(err, "failure_filter").Err())
 				return nil
 			}
-			opts.OrderBy, err = aip.ParseOrderBy(req.OrderBy)
+			opts.OrderBy, err = aip132.ParseOrderBy(req.OrderBy)
 			if err != nil {
 				bqErr = invalidArgumentError(errors.Annotate(err, "order_by").Err())
 				return nil
