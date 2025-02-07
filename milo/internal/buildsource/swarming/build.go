@@ -28,7 +28,6 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -363,7 +362,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarmingpb.TaskResult
 }
 
 func addBuildsetInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
-	for _, bs := range tags[bbv1.TagBuildSet] {
+	for _, bs := range tags["buildset"] {
 		if cl, ok := protoutil.ParseBuildSet(bs).(*buildbucketpb.GerritChange); ok {
 			if build.Trigger == nil {
 				build.Trigger = &ui.Trigger{}

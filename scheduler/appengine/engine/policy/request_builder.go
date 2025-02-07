@@ -23,7 +23,6 @@ import (
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/buildbucket/protoutil"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/strpair"
@@ -120,7 +119,7 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 	r.Tags = make([]string, 0, len(t.Tags)+3)
 	r.Tags = append(
 		r.Tags,
-		strpair.Format(bbv1.TagBuildSet, protoutil.GitilesBuildSet(commit)),
+		strpair.Format("buildset", protoutil.GitilesBuildSet(commit)),
 		strpair.Format("gitiles_ref", t.Ref),
 	)
 	r.Tags = append(r.Tags, t.Tags...)

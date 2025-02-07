@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:generate ./update_gensupport.sh
-//go:generate apigen -api-subproject "buildbucket" -service "https://cr-buildbucket.appspot.com" -api "buildbucket:v1" -api "swarmbucket:v1"
 //go:generate apigen -api-subproject "swarming" -service "https://chromium-swarm.appspot.com" -api "swarming:v1"
 
 package api

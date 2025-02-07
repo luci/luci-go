@@ -23,7 +23,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	"go.chromium.org/luci/milo/internal/bbv1"
 	"go.chromium.org/luci/milo/internal/buildsource/swarming"
 )
 

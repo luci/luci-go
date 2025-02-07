@@ -1,4 +1,4 @@
-// Copyright 2018 The LUCI Authors.
+// Copyright 2025 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildbucket
+// Package bbv1 contains legacy support for Buildbucket v1 naming conventions.
+package bbv1
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"go.chromium.org/luci/common/data/strpair"
 )
 
 // FormatBuildAddress returns a value for TagBuildAddress tag.
@@ -70,47 +68,6 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 		return "", ""
 	}
 	return p[1], p[2]
-}
-
-// ValidateBuildAddress returns an error if the build address is invalid.
-func ValidateBuildAddress(address string) error {
-	_, _, _, _, _, err := ParseBuildAddress(address)
-	return err
-}
-
-// GetByAddress fetches a build by its address.
-// Returns (nil, nil) if build is not found.
-func GetByAddress(ctx context.Context, client *Service, address string) (*LegacyApiCommonBuildMessage, error) {
-	id, _, _, _, _, err := ParseBuildAddress(address)
-	if err != nil {
-		return nil, err
-	}
-
-	if id != 0 {
-		res, err := client.Get(id).Context(ctx).Do()
-		switch {
-		case err != nil:
-			return nil, err
-		case res.Error != nil && res.Error.Reason == ReasonNotFound:
-			return nil, nil
-		default:
-			return res.Build, nil
-		}
-	}
-
-	msgs, _, err := client.Search().
-		Context(ctx).
-		Tag(strpair.Format(TagBuildAddress, address)).
-		IncludeExperimental(true).
-		Fetch(1, nil)
-	switch {
-	case err != nil:
-		return nil, err
-	case len(msgs) == 0:
-		return nil, nil
-	default:
-		return msgs[0], nil
-	}
 }
 
 // ProjectFromBucket tries to retrieve project id from bucket name.

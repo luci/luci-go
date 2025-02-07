@@ -24,7 +24,6 @@ import (
 	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbprotoutil "go.chromium.org/luci/buildbucket/protoutil"
-	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/pagination"
@@ -34,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/realms"
 
+	"go.chromium.org/luci/milo/internal/bbv1"
 	"go.chromium.org/luci/milo/internal/model"
 	"go.chromium.org/luci/milo/internal/projectconfig"
 	"go.chromium.org/luci/milo/internal/utils"

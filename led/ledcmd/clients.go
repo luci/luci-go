@@ -15,11 +15,9 @@
 package ledcmd
 
 import (
-	"fmt"
 	"net/http"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
-	swarmbucket "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/grpc/prpc"
 	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -29,16 +27,6 @@ func newSwarmTasksClient(authClient *http.Client, host string) swarmingpb.TasksC
 		C:    authClient,
 		Host: host,
 	})
-}
-
-func newSwarmbucketClient(authClient *http.Client, host string) *swarmbucket.Service {
-	// TODO(iannucci): Switch this to prpc endpoints
-	sbucket, err := swarmbucket.New(authClient)
-	if err != nil {
-		panic(err)
-	}
-	sbucket.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", host)
-	return sbucket
 }
 
 func newBuildbucketClient(authClient *http.Client, host string) bbpb.BuildsClient {
