@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { getByRole, render, screen } from '@testing-library/react';
 
 import AutorepairDialog from './autorepair_dialog';
 
@@ -112,6 +112,52 @@ describe('<AutorepairDialog />', () => {
     expect(miloLink).toHaveAttribute(
       'href',
       expect.stringContaining('/p/proj/builders/buck/builder/b1337'),
+    );
+  });
+
+  it('confirm button not visible if only invalid DUTs selected', async () => {
+    render(
+      <AutorepairDialog
+        open={true}
+        handleClose={handleCloseMock}
+        handleOk={handleOkMock}
+        sessionInfo={{
+          invalidDutNames: ['invalid-test-dut1', 'invalid-test-dut2'],
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Confirm' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('warning displayed when mix of valid and invalid DUTs selected', async () => {
+    const invalidDuts = ['invalid-test-dut1', 'invalid-test-dut2'];
+    render(
+      <AutorepairDialog
+        open={true}
+        handleClose={handleCloseMock}
+        handleOk={handleOkMock}
+        sessionInfo={{
+          dutNames: ['test-dut1', 'test-dut2'],
+          invalidDutNames: invalidDuts,
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Confirm' }),
+    ).toBeInTheDocument();
+
+    const warning = screen.getByText(
+      /For the following devices autorepair will not be executed/,
+    );
+
+    expect(warning).toBeVisible();
+
+    invalidDuts.forEach((dutName) =>
+      expect(getByRole(warning, 'link', { name: dutName })).toBeVisible(),
     );
   });
 });

@@ -30,6 +30,7 @@ export interface SessionInfo {
   sessionId?: string;
   builds?: BuildIdentifier[];
   dutNames?: string[];
+  invalidDutNames?: string[];
 }
 
 interface AutorepairDialogProps {
@@ -43,9 +44,23 @@ const plurifyDevices = (count: number) => {
   return count === 1 ? 'device' : `${count} devices`;
 };
 
+function getDeviceDetailListItem(dutName: string) {
+  return (
+    <li key={dutName}>
+      <a
+        href={`/ui/fleet/labs/devices/${dutName}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {dutName}
+      </a>
+    </li>
+  );
+}
+
 export default function AutorepairDialog({
   open,
-  sessionInfo: { dutNames = [], builds, sessionId },
+  sessionInfo: { dutNames = [], builds, sessionId, invalidDutNames = [] },
   handleClose,
   handleOk,
 }: AutorepairDialogProps) {
@@ -55,43 +70,53 @@ export default function AutorepairDialog({
       <DialogContent>
         {/* TODO: b/394429368 - remove this alert. */}
         <Alert severity="info">
-          At this time, devices in the ready and needs_repair states cannot have
-          autorepair run on them from the UI. For more info, see:{' '}
+          At this time, devices in the <code>ready</code> and{' '}
+          <code>needs_repair</code> states cannot have autorepair run on them
+          from the UI. For more info, see:{' '}
           <a href="http://b/394429368" target="_blank" rel="noreferrer">
             b/394429368
           </a>
         </Alert>
-        <p>
-          Please confirm that you want to run autorepair on the following{' '}
-          {plurifyDevices(dutNames.length)}:
-        </p>
 
-        <ul>
-          {dutNames?.map((dutName) => {
-            return (
-              <li key={dutName}>
-                <a
-                  href={`/ui/fleet/labs/devices/${dutName}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {dutName}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-        <p>Equivalent shivas command:</p>
-        {/** TODO: Prettify terminal commands display. */}
-        <p style={{ fontFamily: 'monospace' }}>
-          $ shivas repair {dutNames.join(' ')}
-        </p>
+        {invalidDutNames.length > 0 && (
+          <>
+            <Alert severity="error" sx={{ mt: 1 }}>
+              For the following devices autorepair will not be executed, as they
+              are in a <code>ready</code> and/or <code>needs_repair</code>{' '}
+              state:
+              <ul>
+                {invalidDutNames?.map((dutName) =>
+                  getDeviceDetailListItem(dutName),
+                )}
+              </ul>
+            </Alert>
+          </>
+        )}
+
+        {dutNames.length > 0 && (
+          <>
+            <p>
+              Please confirm that you want to run autorepair on the following{' '}
+              {plurifyDevices(dutNames.length)}:
+            </p>
+            <ul>
+              {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
+            </ul>
+            <p>Equivalent shivas command:</p>
+            {/* TODO: Prettify terminal commands display. */}
+            <p style={{ fontFamily: 'monospace' }}>
+              $ shivas repair {dutNames.join(' ')}
+            </p>
+          </>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleOk} variant="contained">
-          Confirm
-        </Button>
+        {dutNames.length > 0 && (
+          <Button onClick={handleOk} variant="contained">
+            Confirm
+          </Button>
+        )}
       </DialogActions>
     </>
   );

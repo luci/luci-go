@@ -37,19 +37,15 @@ export function FleetToolbar({
   gridRef,
   selectedRows = [],
 }: FleetToolbarProps) {
-  // TODO: b/394429368 - Stop filtering out ready devices once we have moved
-  // admin tasks off of Buildbucket.
-  // NeedsRepair DUTS are filtered to prevent users from accidentally
-  // scheduling too many autorepair jobs in a short-time.
-  const validAutorepairDuts = selectedRows
-    .filter(
-      (row) => row.dut_state !== 'ready' && row.dut_state !== 'needs_repair',
-    )
-    .map((row) => ({ name: `${row.dut_name}`, state: row.dut_state }));
+  const selectedDuts = selectedRows.map((row) => ({
+    name: `${row.dut_name}`,
+    state: row.dut_state,
+  }));
+
   return (
     <GridToolbarContainer>
       {selectedRows.length ? (
-        <RunAutorepair selectedDuts={validAutorepairDuts} />
+        <RunAutorepair selectedDuts={selectedDuts} />
       ) : (
         <></>
       )}

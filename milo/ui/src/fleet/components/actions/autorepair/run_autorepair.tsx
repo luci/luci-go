@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useBuildsClient } from '@/build/hooks/prpc_clients';
+import { DutStatusesNotEligibleForAutorepair } from '@/fleet/constants/dut';
 import { BatchRequest } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
@@ -36,13 +37,32 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
 
+  // TODO: b/394429368 - Stop filtering out ready devices once we have moved
+  // admin tasks off of Buildbucket.
+  // NeedsRepair DUTS are filtered to prevent users from accidentally
+  // scheduling too many autorepair jobs in a short-time.
+  const validDuts = selectedDuts.filter(
+    (selectedDut) =>
+      selectedDut.state &&
+      DutStatusesNotEligibleForAutorepair.includes(selectedDut.state) === false,
+  );
+
+  // User may select invalid DUTs for autorepair
+  // and should be warned that autorepair won't be executed for them.
+  const invalidDuts = selectedDuts.filter(
+    (selectedDut) =>
+      selectedDut.state &&
+      DutStatusesNotEligibleForAutorepair.includes(selectedDut.state) === true,
+  );
+
   // First, give users a modal to confirm if they want autorepair or not.
   const initializeAutorepair = () => {
     const sessionId = uuidv4();
 
     setSessionInfo({
       sessionId,
-      dutNames: selectedDuts.map((d) => d.name),
+      dutNames: validDuts.map((d) => d.name),
+      invalidDutNames: invalidDuts.map((d) => d.name),
     });
     setOpen(true);
 
@@ -53,7 +73,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
     const resp = await bbClient.Batch(
       BatchRequest.fromPartial({
         requests: autorepairRequestsFromDuts(
-          selectedDuts || [],
+          validDuts || [],
           sessionInfo.sessionId || '',
         ),
       }),
