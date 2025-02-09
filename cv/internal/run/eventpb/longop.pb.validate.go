@@ -285,7 +285,7 @@ type LongOpCompletedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompletedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -416,7 +416,7 @@ type LongOpCompleted_PostStartMessageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_PostStartMessageMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -550,7 +550,7 @@ type LongOpCompleted_PostGerritMessageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_PostGerritMessageMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -687,7 +687,7 @@ type LongOpCompleted_ResetTriggersMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_ResetTriggersMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -795,7 +795,7 @@ type LongOpCompleted_ExecutePostActionResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_ExecutePostActionResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -991,7 +991,7 @@ type LongOpCompleted_ResetTriggers_ResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_ResetTriggers_ResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1126,7 +1126,7 @@ type LongOpCompleted_ResetTriggers_Result_SuccessMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_ResetTriggers_Result_SuccessMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1235,7 +1235,7 @@ type LongOpCompleted_ResetTriggers_Result_FailureMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LongOpCompleted_ResetTriggers_Result_FailureMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

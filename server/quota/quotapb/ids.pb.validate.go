@@ -115,7 +115,7 @@ type PolicyConfigIDMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PolicyConfigIDMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -294,7 +294,7 @@ type PolicyIDMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PolicyIDMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -397,7 +397,7 @@ type PolicyRefMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PolicyRefMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -529,7 +529,7 @@ type PolicyKeyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PolicyKeyMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -694,7 +694,7 @@ type AccountIDMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m AccountIDMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

@@ -330,7 +330,7 @@ type RunMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RunMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -435,7 +435,7 @@ type GerritChangeMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GerritChangeMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -535,7 +535,7 @@ type Run_SubmissionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Run_SubmissionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

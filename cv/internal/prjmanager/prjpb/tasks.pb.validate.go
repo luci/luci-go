@@ -102,7 +102,7 @@ type ManageProjectTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ManageProjectTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -235,7 +235,7 @@ type KickManageProjectTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m KickManageProjectTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -401,7 +401,7 @@ type PurgeCLTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PurgeCLTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -532,7 +532,7 @@ type TriggeringCLDepsTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TriggeringCLDepsTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

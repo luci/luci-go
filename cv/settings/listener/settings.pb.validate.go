@@ -104,7 +104,7 @@ type SettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -208,7 +208,7 @@ type Settings_ReceiveSettingsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Settings_ReceiveSettingsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -365,7 +365,7 @@ type Settings_GerritSubscriptionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Settings_GerritSubscriptionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

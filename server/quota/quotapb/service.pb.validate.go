@@ -105,7 +105,7 @@ type GetAccountsRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetAccountsRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -241,7 +241,7 @@ type GetAccountsResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetAccountsResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -409,7 +409,7 @@ type ApplyOpsRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ApplyOpsRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -520,7 +520,7 @@ type OpResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OpResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -683,7 +683,7 @@ type ApplyOpsResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ApplyOpsResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -863,7 +863,7 @@ type WritePolicyConfigRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m WritePolicyConfigRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -967,7 +967,7 @@ type WritePolicyConfigResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m WritePolicyConfigResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1142,7 +1142,7 @@ type GetAccountsResponse_AccountStateMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetAccountsResponse_AccountStateMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

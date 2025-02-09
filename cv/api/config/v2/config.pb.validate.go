@@ -144,7 +144,7 @@ type ConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -526,7 +526,7 @@ type ConfigGroupMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroupMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -657,7 +657,7 @@ type SubmitOptionsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SubmitOptionsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -821,7 +821,7 @@ type ModeMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ModeMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -966,7 +966,7 @@ type CombineCLsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CombineCLsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1210,7 +1210,7 @@ type VerifiersMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m VerifiersMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1369,7 +1369,7 @@ type UserLimitMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UserLimitMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1505,7 +1505,7 @@ type ConfigGroup_GerritMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_GerritMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1732,7 +1732,7 @@ type ConfigGroup_PostActionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_PostActionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1874,7 +1874,7 @@ type ConfigGroup_TryjobExperimentMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_TryjobExperimentMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1979,7 +1979,7 @@ type ConfigGroup_Gerrit_ProjectMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_Gerrit_ProjectMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2122,7 +2122,7 @@ type ConfigGroup_PostAction_TriggeringConditionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_PostAction_TriggeringConditionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2273,7 +2273,7 @@ type ConfigGroup_PostAction_VoteGerritLabelsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_PostAction_VoteGerritLabelsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2392,7 +2392,7 @@ type ConfigGroup_PostAction_VoteGerritLabels_VoteMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_PostAction_VoteGerritLabels_VoteMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2515,7 +2515,7 @@ type ConfigGroup_TryjobExperiment_ConditionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigGroup_TryjobExperiment_ConditionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2626,7 +2626,7 @@ type Verifiers_GerritCQAbilityMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_GerritCQAbilityMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2732,7 +2732,7 @@ type Verifiers_TreeStatusMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_TreeStatusMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2899,7 +2899,7 @@ type Verifiers_TryjobMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_TryjobMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2999,7 +2999,7 @@ type Verifiers_CQLinterMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_CQLinterMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3107,7 +3107,7 @@ type Verifiers_FakeMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_FakeMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3318,7 +3318,7 @@ type Verifiers_Tryjob_BuilderMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_BuilderMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3428,7 +3428,7 @@ type Verifiers_Tryjob_EquivalentBuilderMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_EquivalentBuilderMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3535,7 +3535,7 @@ type Verifiers_Tryjob_IncludableBuilderMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_IncludableBuilderMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3648,7 +3648,7 @@ type Verifiers_Tryjob_RetryConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_RetryConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3764,7 +3764,7 @@ type Verifiers_Tryjob_Builder_LocationFilterMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_Builder_LocationFilterMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3873,7 +3873,7 @@ type Verifiers_Tryjob_Builder_SkipFooterMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Verifiers_Tryjob_Builder_SkipFooterMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4005,7 +4005,7 @@ type UserLimit_LimitMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UserLimit_LimitMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4136,7 +4136,7 @@ type UserLimit_RunMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UserLimit_RunMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4265,7 +4265,7 @@ type UserLimit_TryjobMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UserLimit_TryjobMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

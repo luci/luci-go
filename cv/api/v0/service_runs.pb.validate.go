@@ -73,7 +73,7 @@ type GetRunRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetRunRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -206,7 +206,7 @@ type SearchRunsRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SearchRunsRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -344,7 +344,7 @@ type SearchRunsResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SearchRunsResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -481,7 +481,7 @@ type RunPredicateMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RunPredicateMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

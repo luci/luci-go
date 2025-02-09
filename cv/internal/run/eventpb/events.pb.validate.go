@@ -554,7 +554,7 @@ type EventMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m EventMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -652,7 +652,7 @@ type StartMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m StartMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -752,7 +752,7 @@ type CancelMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CancelMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -850,7 +850,7 @@ type PokeMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PokeMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -953,7 +953,7 @@ type NewConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m NewConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1053,7 +1053,7 @@ type ReadyForSubmissionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ReadyForSubmissionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1155,7 +1155,7 @@ type ParentRunCompletedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ParentRunCompletedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1256,7 +1256,7 @@ type CLsSubmittedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CLsSubmittedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

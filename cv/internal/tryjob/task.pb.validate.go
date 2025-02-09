@@ -75,7 +75,7 @@ type UpdateTryjobTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateTryjobTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -181,7 +181,7 @@ type CancelStaleTryjobsTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CancelStaleTryjobsTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -285,7 +285,7 @@ type ExecuteTryjobsPayloadMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecuteTryjobsPayloadMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -387,7 +387,7 @@ type ExecuteTryjobsResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecuteTryjobsResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

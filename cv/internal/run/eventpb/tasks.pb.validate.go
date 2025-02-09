@@ -73,7 +73,7 @@ type ManageRunTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ManageRunTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -204,7 +204,7 @@ type KickManageRunTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m KickManageRunTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -310,7 +310,7 @@ type ManageRunLongOpTaskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ManageRunLongOpTaskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

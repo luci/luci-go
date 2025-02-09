@@ -163,7 +163,7 @@ type DefinitionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m DefinitionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -325,7 +325,7 @@ type RequirementMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m RequirementMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -558,7 +558,7 @@ type ResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -785,7 +785,7 @@ type ExecutionStateMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionStateMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -919,7 +919,7 @@ type ExecutionLogEntriesMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntriesMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1342,7 +1342,7 @@ type ExecutionLogEntryMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntryMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1446,7 +1446,7 @@ type TryjobUpdatedEventMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TryjobUpdatedEventMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1582,7 +1582,7 @@ type TryjobUpdatedEventsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TryjobUpdatedEventsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1715,7 +1715,7 @@ type Definition_BuildbucketMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Definition_BuildbucketMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1881,7 +1881,7 @@ type Result_BuildbucketMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m Result_BuildbucketMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2019,7 +2019,7 @@ type ExecutionState_ExecutionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionState_ExecutionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2189,7 +2189,7 @@ type ExecutionState_FailuresMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionState_FailuresMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2330,7 +2330,7 @@ type ExecutionState_Execution_AttemptMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionState_Execution_AttemptMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2466,7 +2466,7 @@ type ExecutionState_Failures_LaunchFailureMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionState_Failures_LaunchFailureMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2574,7 +2574,7 @@ type ExecutionState_Failures_UnsuccessfulResultMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionState_Failures_UnsuccessfulResultMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2679,7 +2679,7 @@ type ExecutionLogEntry_RequirementChangedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_RequirementChangedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2850,7 +2850,7 @@ type ExecutionLogEntry_TryjobSnapshotMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobSnapshotMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2989,7 +2989,7 @@ type ExecutionLogEntry_TryjobsLaunchedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobsLaunchedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3128,7 +3128,7 @@ type ExecutionLogEntry_TryjobsLaunchFailedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobsLaunchFailedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3264,7 +3264,7 @@ type ExecutionLogEntry_TryjobLaunchFailedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobLaunchFailedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3401,7 +3401,7 @@ type ExecutionLogEntry_TryjobsReusedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobsReusedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3538,7 +3538,7 @@ type ExecutionLogEntry_TryjobsEndedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobsEndedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3674,7 +3674,7 @@ type ExecutionLogEntry_TryjobDiscardedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_TryjobDiscardedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3813,7 +3813,7 @@ type ExecutionLogEntry_RetryDeniedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ExecutionLogEntry_RetryDeniedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

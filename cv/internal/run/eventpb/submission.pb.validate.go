@@ -160,7 +160,7 @@ type SubmissionCompletedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SubmissionCompletedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -269,7 +269,7 @@ type SubmissionCompleted_CLSubmissionFailureMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SubmissionCompleted_CLSubmissionFailureMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -409,7 +409,7 @@ type SubmissionCompleted_CLSubmissionFailuresMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SubmissionCompleted_CLSubmissionFailuresMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

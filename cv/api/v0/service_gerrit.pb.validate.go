@@ -100,7 +100,7 @@ type GetCLRunInfoRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetCLRunInfoRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -304,7 +304,7 @@ type GetCLRunInfoResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetCLRunInfoResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -497,7 +497,7 @@ type GetCLRunInfoResponse_RunInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetCLRunInfoResponse_RunInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -667,7 +667,7 @@ type GetCLRunInfoResponse_DepChangeInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m GetCLRunInfoResponse_DepChangeInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

@@ -141,7 +141,7 @@ type TriggerMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TriggerMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -298,7 +298,7 @@ type TriggersMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TriggersMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -488,7 +488,7 @@ type SubmissionMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SubmissionMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -596,7 +596,7 @@ type OptionsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OptionsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -729,7 +729,7 @@ type LogEntriesMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntriesMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1395,7 +1395,7 @@ type LogEntryMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntryMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1674,7 +1674,7 @@ type TryjobsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TryjobsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1844,7 +1844,7 @@ type TryjobMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TryjobMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1990,7 +1990,7 @@ type OngoingLongOpsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOpsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2092,7 +2092,7 @@ type LogEntry_CreatedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_CreatedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2192,7 +2192,7 @@ type LogEntry_StartedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_StartedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2294,7 +2294,7 @@ type LogEntry_ConfigChangedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_ConfigChangedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2398,7 +2398,7 @@ type LogEntry_TryjobsRequirementUpdatedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_TryjobsRequirementUpdatedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2505,7 +2505,7 @@ type LogEntry_InfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_InfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2639,7 +2639,7 @@ type LogEntry_TryjobsUpdatedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_TryjobsUpdatedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2743,7 +2743,7 @@ type LogEntry_TreeCheckedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_TreeCheckedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2845,7 +2845,7 @@ type LogEntry_WaitlistedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_WaitlistedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2947,7 +2947,7 @@ type LogEntry_AcquiredSubmitQueueMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_AcquiredSubmitQueueMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3050,7 +3050,7 @@ type LogEntry_ReleasedSubmitQueueMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_ReleasedSubmitQueueMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3155,7 +3155,7 @@ type LogEntry_CLSubmittedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_CLSubmittedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3286,7 +3286,7 @@ type LogEntry_SubmissionFailureMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_SubmissionFailureMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3388,7 +3388,7 @@ type LogEntry_RunEndedMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogEntry_RunEndedMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3702,7 +3702,7 @@ type OngoingLongOps_OpMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_OpMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3840,7 +3840,7 @@ type OngoingLongOps_Op_ResetTriggersMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_Op_ResetTriggersMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4035,7 +4035,7 @@ type OngoingLongOps_Op_ExecutePostActionPayloadMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_Op_ExecutePostActionPayloadMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4142,7 +4142,7 @@ type OngoingLongOps_Op_PostGerritMessageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_Op_PostGerritMessageMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4254,7 +4254,7 @@ type OngoingLongOps_Op_ResetTriggers_RequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_Op_ResetTriggers_RequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4361,7 +4361,7 @@ type OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OngoingLongOps_Op_ExecutePostActionPayload_CreditRunQuotaMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

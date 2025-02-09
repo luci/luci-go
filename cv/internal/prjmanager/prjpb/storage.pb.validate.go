@@ -280,7 +280,7 @@ type PStateMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PStateMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -379,7 +379,7 @@ type LogReasonsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m LogReasonsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -647,7 +647,7 @@ type PCLMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PCLMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -751,7 +751,7 @@ type PRunMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PRunMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -915,7 +915,7 @@ type ComponentMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ComponentMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1134,7 +1134,7 @@ type PurgingCLMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PurgingCLMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1298,7 +1298,7 @@ type TriggeringCLDepsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m TriggeringCLDepsMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1484,7 +1484,7 @@ type PurgeReasonMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PurgeReasonMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1584,7 +1584,7 @@ type PurgingCL_NotificationMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m PurgingCL_NotificationMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
