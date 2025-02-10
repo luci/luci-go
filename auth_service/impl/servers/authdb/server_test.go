@@ -344,6 +344,7 @@ func TestAuthDBServing(t *testing.T) {
 		}
 
 		gr1Expected := &rpcpb.PrincipalPermissions{
+			Name: "group:gr1",
 			RealmPermissions: []*rpcpb.RealmPermissions{
 				{
 					Name:        "p:r",
@@ -357,6 +358,7 @@ func TestAuthDBServing(t *testing.T) {
 		}
 
 		gr2Expected := &rpcpb.PrincipalPermissions{
+			Name: "group:gr2",
 			RealmPermissions: []*rpcpb.RealmPermissions{
 				{
 					Name:        "p:r",
@@ -432,6 +434,7 @@ func TestAuthDBServing(t *testing.T) {
 		storeTestAuthDBSnapshotLatest(ctx, revUpdated, t)
 
 		gr1ExpectedUpdated := &rpcpb.PrincipalPermissions{
+			Name: "group:gr1",
 			RealmPermissions: []*rpcpb.RealmPermissions{
 				{
 					Name:        "p:r",

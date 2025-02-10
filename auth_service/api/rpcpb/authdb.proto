@@ -65,6 +65,8 @@ message GetPrincipalPermissionsRequest {
 // PrincipalPermissions specifies a list of realm permissions for a single principal.
 message PrincipalPermissions {
   repeated RealmPermissions realmPermissions = 1;
+  // Principal that was used for querying permissions, e.g. "group:administrators".
+  string name = 2;
 }
 
 // RealmPermissions specifies a realm name and the permissions a principal has in it.

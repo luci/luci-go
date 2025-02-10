@@ -273,10 +273,11 @@ func (srv *Server) GetPrincipalPermissions(ctx context.Context, request *rpcpb.G
 	}
 	perms, ok := permissionsMap[principal]
 	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "principal: %s not found", principal)
+		return nil, status.Errorf(codes.InvalidArgument, "principal: %q not found", principal)
 	}
 
 	return &rpcpb.PrincipalPermissions{
+		Name:             principal,
 		RealmPermissions: perms,
 	}, nil
 }
