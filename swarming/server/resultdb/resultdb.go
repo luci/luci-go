@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/prpc"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 	"go.chromium.org/luci/server/auth"
@@ -49,8 +51,11 @@ type prodClientFactory struct {
 //
 // If project is given, the client will act as the project; otherwise act as self.
 func (pcf *prodClientFactory) MakeClient(ctx context.Context, host, project string) (*RecorderClient, error) {
+	trimmed, err := trimUrlScheme(host)
+	if err != nil {
+		return nil, err
+	}
 	var t http.RoundTripper
-	var err error
 	if project == "" {
 		t, err = auth.GetRPCTransport(ctx, auth.AsSelf)
 	} else {
@@ -63,10 +68,22 @@ func (pcf *prodClientFactory) MakeClient(ctx context.Context, host, project stri
 		client: rdbpb.NewRecorderPRPCClient(
 			&prpc.Client{
 				C:    &http.Client{Transport: t},
-				Host: host,
+				Host: trimmed,
 			}),
 		swarmingProject: pcf.swarmingProject,
 	}, nil
+}
+
+func trimUrlScheme(baseURL string) (string, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", errors.Annotate(err, "invalid base URL %q", baseURL).Err()
+	}
+
+	if u.Scheme != "" {
+		u.Scheme = ""
+	}
+	return u.String(), nil
 }
 
 // NewRecorderFactory returns a RecorderFactory to create
