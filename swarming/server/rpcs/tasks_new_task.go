@@ -952,12 +952,18 @@ func applyTemplateEnv(props *model.TaskProperties, template *configpb.TaskTempla
 		}
 
 		if e.Value != "" {
+			if props.Env == nil {
+				props.Env = make(model.Env, 0)
+			}
 			if _, ok := props.Env[e.Var]; !ok {
 				props.Env[e.Var] = e.Value
 			}
 		}
 
 		if len(e.Prefix) != 0 {
+			if props.EnvPrefixes == nil {
+				props.EnvPrefixes = make(model.EnvPrefixes, 0)
+			}
 			envPrefix := props.EnvPrefixes[e.Var]
 			envPrefix = append(envPrefix, e.Prefix...)
 			props.EnvPrefixes[e.Var] = envPrefix

@@ -1245,6 +1245,14 @@ func TestToTaskRequestEntities(t *testing.T) {
 							},
 						}
 					}
+					if template == "canary-to-empty" {
+						return []*apipb.StringPair{
+							{
+								Key:   "ep",
+								Value: "b",
+							},
+						}
+					}
 					return fullSlice("pool", nil).Properties.Env
 				}
 
@@ -1258,6 +1266,15 @@ func TestToTaskRequestEntities(t *testing.T) {
 								Key: "ep",
 								Value: []string{
 									"a/b",
+									"e/f",
+								},
+							},
+						}
+					case "canary-to-empty":
+						return []*apipb.StringListPair{
+							{
+								Key: "ep",
+								Value: []string{
 									"e/f",
 								},
 							},
@@ -1372,6 +1389,16 @@ func TestToTaskRequestEntities(t *testing.T) {
 					})
 				}
 
+				t.Run("apply_template_to_empty_env_prefix", func(t *ftt.Test) {
+					req := simpliestValidRequest("pool")
+					req.PoolTaskTemplate = 1
+					ents, err := toTaskRequestEntities(ctx, req, "pool")
+					assert.NoErr(t, err)
+					res := ents.request.ToProto()
+					props := res.GetTaskSlices()[0].GetProperties()
+					assert.That(t, props.GetEnv(), should.Match(expectedEnv("canary-to-empty")))
+					assert.That(t, props.GetEnvPrefixes(), should.Match(expectedEnvPrefix("canary-to-empty")))
+				})
 			})
 		})
 
