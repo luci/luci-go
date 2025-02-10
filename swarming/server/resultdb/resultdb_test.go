@@ -111,6 +111,14 @@ func TestRecorderClient(t *testing.T) {
 	})
 }
 
+func TestExtractHostname(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		h, _ := extractHostname("http://resultdb.example.com")
+		assert.That(t, h, should.Equal("resultdb.example.com"))
+	})
+}
+
 func newMockedRecorder(ctx context.Context, expectedRequest proto.Message, inv *rdbpb.Invocation, err error, updateToken string) *RecorderClient {
 	mcf := NewMockRecorderClientFactory(expectedRequest, inv, err, updateToken)
 	recorder, _ := mcf.MakeClient(ctx, "rdbhost", "project")

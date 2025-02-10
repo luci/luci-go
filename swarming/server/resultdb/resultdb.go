@@ -51,7 +51,7 @@ type prodClientFactory struct {
 //
 // If project is given, the client will act as the project; otherwise act as self.
 func (pcf *prodClientFactory) MakeClient(ctx context.Context, host, project string) (*RecorderClient, error) {
-	trimmed, err := trimUrlScheme(host)
+	trimmed, err := extractHostname(host)
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +74,12 @@ func (pcf *prodClientFactory) MakeClient(ctx context.Context, host, project stri
 	}, nil
 }
 
-func trimUrlScheme(baseURL string) (string, error) {
+func extractHostname(baseURL string) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", errors.Annotate(err, "invalid base URL %q", baseURL).Err()
 	}
-
-	if u.Scheme != "" {
-		u.Scheme = ""
-	}
-	return u.String(), nil
+	return u.Hostname(), nil
 }
 
 // NewRecorderFactory returns a RecorderFactory to create
