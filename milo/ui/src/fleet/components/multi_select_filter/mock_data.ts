@@ -45,6 +45,7 @@ export const TEST_FILTER_OPTIONS: OptionCategory[] = [
     options: [
       { label: 'The first option', value: 'o41' },
       { label: 'The second option', value: 'o42' },
+      { label: 'The third option', value: 'o43' },
     ],
   },
 ];

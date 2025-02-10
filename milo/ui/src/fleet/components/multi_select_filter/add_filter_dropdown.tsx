@@ -42,7 +42,7 @@ export function AddFilterDropdown({
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
 }) {
   const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
-  const [openCategoryIndex, setOpenCategory] = useState<number | undefined>(
+  const [openCategory, setOpenCategory] = useState<string | undefined>(
     undefined,
   );
   const searchInput = useRef<HTMLInputElement>(null);
@@ -76,7 +76,7 @@ export function AddFilterDropdown({
 
   useEffect(() => {
     setTempSelectedOptions(initSelectedOptions);
-  }, [initSelectedOptions, openCategoryIndex]);
+  }, [initSelectedOptions, openCategory]);
 
   if (cardRef.current) {
     const anchorRect = anchorEl?.getBoundingClientRect();
@@ -218,8 +218,8 @@ export function AddFilterDropdown({
                 <MenuItem
                   onClick={(event) => {
                     // The onClick fires also when closing the menu
-                    if (openCategoryIndex !== idx) {
-                      setOpenCategory(idx);
+                    if (openCategory !== parent.el.value) {
+                      setOpenCategory(parent.el.value);
                       setAnchorELInner(event.currentTarget);
                     } else {
                       setOpenCategory(undefined);
@@ -233,7 +233,7 @@ export function AddFilterDropdown({
                   }}
                   key={`item-${parent.el.value}-${idx}`}
                   disableRipple
-                  selected={openCategoryIndex === idx}
+                  selected={openCategory === parent.el.value}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
@@ -257,7 +257,7 @@ export function AddFilterDropdown({
         <div ref={innerCardRef} css={{ position: 'absolute' }}>
           {anchorElInner &&
             innerCardRef.current &&
-            openCategoryIndex !== undefined && (
+            openCategory !== undefined && (
               <Card onClick={(e) => e.stopPropagation()}>
                 <MenuList
                   variant="selectedMenu"
@@ -288,17 +288,15 @@ export function AddFilterDropdown({
                   }}
                 >
                   <OptionsMenu
-                    elements={filterResults[openCategoryIndex].children}
+                    elements={
+                      filterResults.find(
+                        (r) => r.parent.el.value === openCategory,
+                      )?.children ?? []
+                    }
                     selectedElements={
-                      new Set(
-                        tempSelectedOptions[
-                          filterOptions[openCategoryIndex].value
-                        ],
-                      )
+                      new Set(tempSelectedOptions[openCategory])
                     }
-                    flipOption={(value) =>
-                      flipOption(filterOptions[openCategoryIndex].value, value)
-                    }
+                    flipOption={(value) => flipOption(openCategory, value)}
                   />
                 </MenuList>
                 <Footer onCancelClick={closeMenu} onApplyClick={applyOptions} />

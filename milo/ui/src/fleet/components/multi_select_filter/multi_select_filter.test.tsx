@@ -160,6 +160,37 @@ describe('<MultiSelectFilter />', () => {
     });
   });
 
+  it('should work correctly with filtered values', async () => {
+    render(<TestComponent />);
+
+    click(['Add filter']);
+
+    const search = screen.getByPlaceholderText('search');
+
+    const searchQuery = 'third';
+    fireEvent.change(search, { target: { value: searchQuery } });
+    expect(search).toHaveValue(searchQuery);
+
+    expect(screen.queryByText('Option 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Option 4')).toBeInTheDocument();
+
+    click(['Option 4']);
+
+    const thirdOption = screen.getAllByText(
+      // this search is agnostic to our highlighting mechanism
+      (_, element) => element?.textContent === 'The third option',
+    )[0];
+
+    expect(thirdOption).toBeInTheDocument();
+
+    fireEvent.click(thirdOption);
+    click(['Apply']);
+
+    expect(
+      screen.queryByText('1 | [ Option 4 ]: The third option'),
+    ).toBeInTheDocument();
+  });
+
   it('should cancel the selection when clicking on cancel', () => {
     render(<TestComponent />);
 
