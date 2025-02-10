@@ -90,7 +90,7 @@ export function AddFilterDropdown({
     const anchorRect = anchorEl?.getBoundingClientRect();
     const outerMenuRect = anchorElInner?.getBoundingClientRect();
     if (outerMenuRect && anchorRect) {
-      innerCardRef.current.style.left = `${anchorRect.width / 4 + outerMenuRect.width + 2}px`;
+      innerCardRef.current.style.left = `${anchorRect.left + outerMenuRect.width + 2}px`;
       if (outerMenuRect.top > window.innerHeight / 2) {
         innerCardRef.current.style.top = '';
         innerCardRef.current.style.bottom = `${-outerMenuRect.bottom + anchorRect.top - 10}px`;
