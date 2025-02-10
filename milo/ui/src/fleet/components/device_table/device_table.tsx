@@ -23,7 +23,7 @@ import { useMemo, useState } from 'react';
 import {
   getPageSize,
   getPageToken,
-  usePagerContext,
+  PagerContext,
 } from '@/common/components/params_pager';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
@@ -39,9 +39,6 @@ import { stringifyFilters } from '../multi_select_filter/search_param_utils/sear
 
 import { BASE_DIMENSIONS, getColumns } from './columns';
 import { useDevices } from './use_devices';
-
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
-const DEFAULT_PAGE_SIZE = 25;
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {
@@ -76,14 +73,11 @@ function getRow(device: Device): Record<string, string> {
 interface DeviceTableProps {
   filter: SelectedOptions;
   gridRef: React.MutableRefObject<GridApiCommunity>;
+  pagerCtx: PagerContext;
 }
 
-export function DeviceTable({ filter, gridRef }: DeviceTableProps) {
+export function DeviceTable({ filter, gridRef, pagerCtx }: DeviceTableProps) {
   const [searchParams] = useSyncedSearchParams();
-  const pagerCtx = usePagerContext({
-    pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
-    defaultPageSize: DEFAULT_PAGE_SIZE,
-  });
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const getOrderByFromSortModel = () => {

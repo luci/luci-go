@@ -19,6 +19,10 @@ import { Helmet } from 'react-helmet';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import {
+  emptyPageTokenUpdater,
+  usePagerContext,
+} from '@/common/components/params_pager';
 import { DeviceTable } from '@/fleet/components/device_table';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { MainMetrics } from '@/fleet/components/main_metrics';
@@ -33,8 +37,15 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
+const DEFAULT_PAGE_SIZE = 25;
+
 export const DeviceListPage = () => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
+  const pagerCtx = usePagerContext({
+    pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
+    defaultPageSize: DEFAULT_PAGE_SIZE,
+  });
   const gridRef = useGridApiRef();
 
   const [selectedOptions, setSelectedOptions] = useState<SelectedOptions>(
@@ -43,6 +54,11 @@ export const DeviceListPage = () => {
 
   useEffect(() => {
     setSearchParams(filtersUpdater(selectedOptions));
+
+    // Clear out all the page tokens when the filter changes.
+    // An AIP-158 page token is only valid for the filter
+    // option that generated it.
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
   }, [selectedOptions, setSearchParams]);
 
   const client = useFleetConsoleClient();
@@ -80,7 +96,11 @@ export const DeviceListPage = () => {
           marginTop: 24,
         }}
       >
-        <DeviceTable gridRef={gridRef} filter={selectedOptions} />
+        <DeviceTable
+          gridRef={gridRef}
+          filter={selectedOptions}
+          pagerCtx={pagerCtx}
+        />
       </div>
     </div>
   );
