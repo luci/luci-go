@@ -81,8 +81,8 @@ export function AddFilterDropdown({
   if (cardRef.current) {
     const anchorRect = anchorEl?.getBoundingClientRect();
     if (anchorRect) {
-      cardRef.current.style.left = `${anchorRect.width / 4}px`;
-      cardRef.current.style.top = `${anchorRect.height}px`;
+      cardRef.current.style.left = `${anchorRect.left}px`;
+      cardRef.current.style.top = `${anchorEl?.parentElement?.getBoundingClientRect().height || anchorRect.height}px`;
     }
   }
 
