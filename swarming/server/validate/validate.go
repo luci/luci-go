@@ -102,11 +102,7 @@ func keyLength(key string) error {
 	return nil
 }
 
-// DimensionValue checks if `val` can be a dimension value.
-func DimensionValue(val string) error {
-	if val == "" {
-		return errors.Reason("the value cannot be empty").Err()
-	}
+func tagOrDimValue(val string) error {
 	if len(val) > maxDimensionValLen {
 		return errors.Reason("the value should be no longer than %d (got %d)", maxDimensionValLen, len(val)).Err()
 	}
@@ -114,6 +110,14 @@ func DimensionValue(val string) error {
 		return errors.Reason("the value should have no leading or trailing spaces").Err()
 	}
 	return nil
+}
+
+// DimensionValue checks if `val` can be a dimension value.
+func DimensionValue(val string) error {
+	if val == "" {
+		return errors.Reason("the value cannot be empty").Err()
+	}
+	return tagOrDimValue(val)
 }
 
 // SessionID checks if `val` is a valid bot session ID.
@@ -267,7 +271,7 @@ func validatePinnedInstanceVersion(v string) error {
 
 // Tag checks a "<key>:<value>" tag is correct.
 func Tag(tag string) error {
-	parts := strings.Split(tag, ":")
+	parts := strings.SplitN(tag, ":", 2)
 	if len(parts) != 2 {
 		return errors.Reason("tag must be in key:value form, not %q", tag).Err()
 	}
@@ -276,7 +280,8 @@ func Tag(tag string) error {
 	if err := keyLength(key); err != nil {
 		return err
 	}
-	if err := DimensionValue(value); err != nil {
+
+	if err := tagOrDimValue(value); err != nil {
 		return err
 	}
 	if reservedTags.Has(key) {

@@ -123,12 +123,13 @@ func TestTag(t *testing.T) {
 		{"", "tag must be in key:value form"},
 		{fmt.Sprintf("%s:v", strings.Repeat("k", maxDimensionKeyLen)), nil},
 		{fmt.Sprintf("k:%s", strings.Repeat("v", maxDimensionValLen)), nil},
+		{"k:", nil},
+		{"k:v1:subv2", nil},
 		// key
 		{":v", "the key cannot be empty"},
 		{fmt.Sprintf("%s:v", strings.Repeat("k", maxDimensionKeyLen+1)),
 			"should be no longer"},
 		// value
-		{"k:", "the value cannot be empty"},
 		{"k: v", "no leading or trailing spaces"},
 		{"k:v ", "no leading or trailing spaces"},
 		{fmt.Sprintf("k:%s", strings.Repeat("v", maxDimensionValLen+1)),
