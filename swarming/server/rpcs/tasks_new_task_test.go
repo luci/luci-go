@@ -1158,6 +1158,31 @@ func TestToTaskRequestEntities(t *testing.T) {
 					`request.env_prefix "ep" conflicts with pool's template`))
 			})
 
+			t.Run("no_deployment_scheme", func(t *ftt.Test) {
+				poolCfg.TaskDeploymentScheme = nil
+				ctx := MockRequestState(ctx, state)
+				expectedTags := []string{
+					"authenticated:user:test@example.com",
+					"k1:v1",
+					"k2:v2",
+					"pool:pool",
+					"priority:30",
+					"realm:project:realm",
+					"service_account:bot",
+					"swarming.pool.task_template:none",
+					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+					"user:user",
+				}
+
+				req := fullRequest()
+				req.PoolTaskTemplate = apipb.NewTaskRequest_AUTO
+				req.ParentTaskId = ""
+				ents, err := toTaskRequestEntities(ctx, req, "pool")
+				assert.NoErr(t, err)
+				res := ents.request.ToProto()
+				assert.That(t, res.Tags, should.Match(expectedTags))
+			})
+
 			t.Run("pass", func(t *ftt.Test) {
 				poolCfg.TaskDeploymentScheme = &configpb.Pool_TaskTemplateDeploymentInline{
 					TaskTemplateDeploymentInline: &configpb.TaskTemplateDeployment{

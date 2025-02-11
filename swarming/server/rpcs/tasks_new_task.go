@@ -860,6 +860,12 @@ func selectTaskTemplate(ctx context.Context, state *RequestState, pool string, p
 			panic(`template can only be "prod", "canary" or "none"`)
 		}
 	}
+
+	if poolCfg.Deployment == nil {
+		choose("none")
+		return template, tags
+	}
+
 	switch poolTaskTemplate {
 	case apipb.NewTaskRequest_AUTO:
 		if poolCfg.Deployment.Canary == nil {
