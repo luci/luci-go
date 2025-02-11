@@ -205,7 +205,6 @@ func main() {
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
 			// Protect WIP or unimplemented Swarming APIs.
 			"/swarming.v2.Bots/TerminateBot":      devAPIAccessGroup,
-			"/swarming.v2.Tasks/NewTask":          devAPIAccessGroup,
 			"/buildbucket.v2.TaskBackend/RunTask": devAPIAccessGroup,
 
 			// Fully implemented APIs allowed to receive external traffic.
@@ -226,6 +225,7 @@ func main() {
 			"/swarming.v2.Tasks/CountTasks":               rpcacl.All,
 			"/swarming.v2.Tasks/ListTasks":                rpcacl.All,
 			"/swarming.v2.Tasks/ListTaskRequests":         rpcacl.All,
+			"/swarming.v2.Tasks/NewTask":                  rpcacl.All,
 			"/swarming.v2.Swarming/GetDetails":            rpcacl.All,
 			"/swarming.v2.Swarming/GetPermissions":        rpcacl.All,
 			"/swarming.v2.Swarming/GetToken":              rpcacl.All,
