@@ -33,6 +33,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/pubsub"
@@ -51,6 +54,15 @@ const (
 	// How many times to retry submitting a reservation in case the bot dies right
 	// after picking it up.
 	maxReservationRetryCount = 3
+)
+
+// Incremented when a failed RBE reservation is resubmitted.
+var resubmitCount = metric.NewCounter(
+	"swarming/rbe/resubmissions",
+	"Counter of RBE reservation resubmissions",
+	&types.MetricMetadata{},
+	// Swarming pool of the resubmitted reservation.
+	field.String("pool"),
 )
 
 // ReservationServer is responsible for creating and canceling RBE reservations.
@@ -446,7 +458,13 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 
 // resubmitReservation submits a new RBE reservation for the given TaskToRun.
 func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datastore.Key, prev *internalspb.TaskPayload) error {
-	return datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+	submitted := false
+	pool := ""
+
+	err := datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+		submitted = false
+		pool = ""
+
 		// Refetch TaskToRun and ensure it was untouched.
 		ttr := &model.TaskToRun{Key: ttr}
 		switch err := datastore.Get(tctx, ttr); {
@@ -473,6 +491,10 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 			return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
 		}
 
+		// Report this to monitoring (if the transaction actually lands).
+		submitted = true
+		pool = tr.Pool()
+
 		// Submit the retry.
 		ttr.RetryCount++
 		ttr.RBEReservation = model.NewReservationID(s.serverProject, ttr.Key.Parent(), ttr.TaskSliceIndex(), int(ttr.RetryCount))
@@ -481,6 +503,19 @@ func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datast
 		}
 		return s.enqueueNew(tctx, tr, ttr)
 	}, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if submitted {
+		if pool == "" {
+			pool = "<unknown>"
+		}
+		resubmitCount.Add(ctx, 1, pool)
+	}
+
+	return nil
 }
 
 // handleCancelRBETask cancels a reservation.
