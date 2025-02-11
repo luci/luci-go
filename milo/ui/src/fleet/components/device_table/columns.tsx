@@ -15,6 +15,7 @@
 import { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { Link } from 'react-router-dom';
 
+import { getSwarmingStateDocLinkForLabel } from '@/fleet/constants/flops_doc_mapping';
 import {
   Device,
   DeviceState,
@@ -25,7 +26,7 @@ import { Cell } from './Cell';
 
 interface Dimension {
   id: string; // unique id used for sorting and filtering
-  displayName: string;
+  displayName?: string;
   getValue: (device: Device) => string;
   renderCell?: (props: GridRenderCellParams) => React.JSX.Element;
 }
@@ -34,27 +35,56 @@ const getPathnameWithParams = () => {
   return window.location.href.toString().split(window.location.host)[1];
 };
 
+interface CellWithLinkProps {
+  cellProps: GridRenderCellParams;
+  linkTo: string;
+  linkText: string;
+  tooltipTitle?: string;
+  target?: string;
+}
+
+const getCellWithLink = (props: CellWithLinkProps) => {
+  return (
+    <Cell
+      {...props.cellProps}
+      value={
+        <Link
+          to={props.linkTo}
+          state={{
+            navigatedFromLink: getPathnameWithParams(),
+          }}
+          target={props.target || '_self'}
+        >
+          {props.linkText}
+        </Link>
+      }
+      tooltipTitle={props.tooltipTitle || props.linkText}
+    />
+  );
+};
+
+const getCellWithLinkToSwarmingDocs = (props: GridRenderCellParams) => {
+  return getCellWithLink({
+    cellProps: props,
+    linkTo: getSwarmingStateDocLinkForLabel(props.value),
+    linkText: props.value,
+    tooltipTitle: props.value,
+    target: '_blank',
+  });
+};
+
 export const BASE_DIMENSIONS: Dimension[] = [
   {
     id: 'id',
     displayName: 'ID',
     getValue: (device: Device) => device.id,
-    renderCell: (props) => (
-      <Cell
-        {...props}
-        value={
-          <Link
-            to={`/ui/fleet/labs/devices/${props.value}`}
-            state={{
-              navigatedFromLink: getPathnameWithParams(),
-            }}
-          >
-            {props.value}
-          </Link>
-        }
-        tooltipTitle={props.value}
-      />
-    ),
+    renderCell: (props) =>
+      getCellWithLink({
+        cellProps: props,
+        linkTo: `/ui/fleet/labs/devices/${props.value}`,
+        linkText: props.value,
+        tooltipTitle: props.value,
+      }),
   },
   {
     id: 'dut_id',
@@ -83,6 +113,27 @@ export const BASE_DIMENSIONS: Dimension[] = [
   },
 ] as const;
 
+export const DIMENSIONS: Dimension[] = [
+  {
+    id: 'dut_state',
+    getValue: (device: Device) =>
+      device.deviceSpec?.labels['dut_state']?.values[0] || '',
+    renderCell: getCellWithLinkToSwarmingDocs,
+  },
+  {
+    id: 'label-servo_state',
+    getValue: (device: Device) =>
+      device.deviceSpec?.labels['label-servo_state']?.values[0] || '',
+    renderCell: getCellWithLinkToSwarmingDocs,
+  },
+  {
+    id: 'bluetooth_state',
+    getValue: (device: Device) =>
+      device.deviceSpec?.labels['bluetooth_state']?.values[0] || '',
+    renderCell: getCellWithLinkToSwarmingDocs,
+  },
+] as const;
+
 export const getColumns = (columnIds: string[]): GridColDef[] => {
   // order columns as in BASE_DIMENSIONS and put labels at the end
   const columnsOrdered = columnIds.sort((a, b) => {
@@ -96,15 +147,17 @@ export const getColumns = (columnIds: string[]): GridColDef[] => {
 
   const columns: GridColDef[] = columnsOrdered.map((id) => ({
     field: id,
-    headerName: BASE_DIMENSIONS.find((dim) => dim.id === id)?.displayName || id,
+    headerName:
+      [...BASE_DIMENSIONS, ...DIMENSIONS].find((dim) => dim.id === id)
+        ?.displayName || id,
     editable: false,
     minWidth: 70,
     maxWidth: 700,
     flex: 1,
     renderCell: (props) =>
-      BASE_DIMENSIONS.find((dim) => dim.id === id)?.renderCell?.(props) || (
-        <Cell {...props}></Cell>
-      ),
+      [...BASE_DIMENSIONS, ...DIMENSIONS]
+        .find((dim) => dim.id === id)
+        ?.renderCell?.(props) || <Cell {...props}></Cell>,
   }));
 
   return columns;
