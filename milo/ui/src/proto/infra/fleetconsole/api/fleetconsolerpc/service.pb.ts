@@ -229,6 +229,12 @@ export interface PingDBRequest {
 export interface PingDBResponse {
 }
 
+export interface CleanExitRequest {
+}
+
+export interface CleanExitResponse {
+}
+
 function createBasePingRequest(): PingRequest {
   return {};
 }
@@ -1901,6 +1907,92 @@ export const PingDBResponse: MessageFns<PingDBResponse> = {
   },
 };
 
+function createBaseCleanExitRequest(): CleanExitRequest {
+  return {};
+}
+
+export const CleanExitRequest: MessageFns<CleanExitRequest> = {
+  encode(_: CleanExitRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CleanExitRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCleanExitRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): CleanExitRequest {
+    return {};
+  },
+
+  toJSON(_: CleanExitRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<CleanExitRequest>): CleanExitRequest {
+    return CleanExitRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<CleanExitRequest>): CleanExitRequest {
+    const message = createBaseCleanExitRequest() as any;
+    return message;
+  },
+};
+
+function createBaseCleanExitResponse(): CleanExitResponse {
+  return {};
+}
+
+export const CleanExitResponse: MessageFns<CleanExitResponse> = {
+  encode(_: CleanExitResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CleanExitResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCleanExitResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): CleanExitResponse {
+    return {};
+  },
+
+  toJSON(_: CleanExitResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<CleanExitResponse>): CleanExitResponse {
+    return CleanExitResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<CleanExitResponse>): CleanExitResponse {
+    const message = createBaseCleanExitResponse() as any;
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /** Ping does not send or receive any information. It just checks that the service is there. */
   Ping(request: PingRequest): Promise<PingResponse>;
@@ -1918,6 +2010,8 @@ export interface FleetConsole {
   RepopulateCache(request: RepopulateCacheRequest): Promise<RepopulateCacheResponse>;
   /** PingDB attempts to establish contact with the database and does nothing else. */
   PingDB(request: PingDBRequest): Promise<PingDBResponse>;
+  /** CleanExit just exits the current process. */
+  CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -1936,6 +2030,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CountDevices = this.CountDevices.bind(this);
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.PingDB = this.PingDB.bind(this);
+    this.CleanExit = this.CleanExit.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
@@ -1983,6 +2078,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = PingDBRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "PingDB", data);
     return promise.then((data) => PingDBResponse.fromJSON(data));
+  }
+
+  CleanExit(request: CleanExitRequest): Promise<CleanExitResponse> {
+    const data = CleanExitRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "CleanExit", data);
+    return promise.then((data) => CleanExitResponse.fromJSON(data));
   }
 }
 
