@@ -231,7 +231,7 @@ func validateNewTask(ctx context.Context, req *apipb.NewTaskRequest) (pool strin
 			}
 		}
 
-		if err := validateTimeoutSecs(s.ExpirationSecs, maxExpirationSecs); err != nil {
+		if err := validateTimeoutSecs(s.ExpirationSecs, maxExpirationSecs, minTimeOutSecs, false); err != nil {
 			return "", errors.Annotate(err, "invalid expiration_secs of slice %d", i).Err()
 		}
 
@@ -297,10 +297,13 @@ func validateBotPingToleranceSecs(bpt int32) error {
 	return validate.BotPingTolerance(int64(bpt))
 }
 
-func validateTimeoutSecs(timeoutSecs int32, max int32) error {
-	if timeoutSecs > max || timeoutSecs < minTimeOutSecs {
+func validateTimeoutSecs(timeoutSecs int32, max, min int32, allowZero bool) error {
+	if allowZero && timeoutSecs == 0 {
+		return nil
+	}
+	if timeoutSecs > max || timeoutSecs < min {
 		return errors.Reason(
-			"%d must be between %ds and %ds", timeoutSecs, minTimeOutSecs, max).Err()
+			"%d must be between %ds and %ds", timeoutSecs, min, max).Err()
 	}
 	return nil
 }
@@ -309,12 +312,11 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	switch {
 	case props == nil:
 		return "", errors.New("required")
-	case teeErr(validateTimeoutSecs(props.GracePeriodSecs, maxGracePeriodSecs), &err) != nil:
+	case teeErr(validateTimeoutSecs(props.GracePeriodSecs, maxGracePeriodSecs, 0, true), &err) != nil:
 		return "", errors.Annotate(err, "grace_period_secs").Err()
-	case teeErr(validateTimeoutSecs(props.ExecutionTimeoutSecs, maxTimeoutSecs), &err) != nil:
+	case teeErr(validateTimeoutSecs(props.ExecutionTimeoutSecs, maxTimeoutSecs, minTimeOutSecs, false), &err) != nil:
 		return "", errors.Annotate(err, "execution_timeout_secs").Err()
-	case props.IoTimeoutSecs != 0 &&
-		teeErr(validateTimeoutSecs(props.IoTimeoutSecs, maxTimeoutSecs), &err) != nil:
+	case teeErr(validateTimeoutSecs(props.IoTimeoutSecs, maxTimeoutSecs, minTimeOutSecs, true), &err) != nil:
 		return "", errors.Annotate(err, "io_timeout_secs").Err()
 	case teeErr(validateCommand(props.Command), &err) != nil:
 		return "", errors.Annotate(err, "command").Err()

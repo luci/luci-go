@@ -53,7 +53,6 @@ import (
 func simpliestValidSlice(pool string) *apipb.TaskSlice {
 	return &apipb.TaskSlice{
 		Properties: &apipb.TaskProperties{
-			GracePeriodSecs:      60,
 			ExecutionTimeoutSecs: 300,
 			Command:              []string{"command", "arg"},
 			Dimensions: []*apipb.StringPair{
@@ -478,7 +477,7 @@ func TestValidateNewTask(t *testing.T) {
 				t.Run("grace_period_secs", func(t *ftt.Test) {
 					t.Run("too_short", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
-						req.TaskSlices[0].Properties.GracePeriodSecs = 10
+						req.TaskSlices[0].Properties.GracePeriodSecs = -10
 						_, err := validateNewTask(ctx, req)
 						assert.That(t, err, should.ErrLike("must be between"))
 					})
@@ -1632,7 +1631,6 @@ func TestNewTask(t *testing.T) {
 		var empty *apipb.TaskResultResponse
 		assert.That(t, res.TaskResult, should.Match(empty))
 		props := &apipb.TaskProperties{
-			GracePeriodSecs:      60,
 			ExecutionTimeoutSecs: 300,
 			Command:              []string{"command", "arg"},
 			Dimensions: []*apipb.StringPair{
