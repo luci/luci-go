@@ -80,7 +80,7 @@ func TestTaskToRuns(t *testing.T) {
 				assert.That(t, toRun.Created, should.Match(now))
 			}
 			assert.That(t, toRun.RBEReservation,
-				should.Equal(fmt.Sprintf("swarming-65aba3a3e6b99310-%d", i)))
+				should.Equal(fmt.Sprintf("swarming-65aba3a3e6b99310-%d-0", i)))
 			assert.That(t, toRun.Expiration.Get(),
 				should.Match(taskReq.Created.Add(time.Duration(expirations[i])*time.Second)))
 			assert.That(t, toRun.Dimensions, should.Match(taskSlices[i].Properties.Dimensions))

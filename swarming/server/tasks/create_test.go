@@ -250,7 +250,7 @@ func TestCreation(t *testing.T) {
 				trs, err = c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
-				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
+				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
 				// No PubSub notification.
 				assert.That(t, lt.PopTask("pubsub-go"), should.Equal(""))
 				val := globalStore.Get(ctx, metrics.JobsRequested, []any{"builder", "", "", "", "none", false})
@@ -419,7 +419,7 @@ func TestCreation(t *testing.T) {
 			}
 			assert.NoErr(t, datastore.Get(ctx, ttr))
 			assert.That(t, ttr.TaskSliceIndex(), should.Equal(0))
-			assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0"))
+			assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
 		})
 	})
 }

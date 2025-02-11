@@ -47,20 +47,32 @@ import (
 	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
+const (
+	// How many times to retry submitting a reservation in case the bot dies right
+	// after picking it up.
+	maxReservationRetryCount = 3
+)
+
 // ReservationServer is responsible for creating and canceling RBE reservations.
 type ReservationServer struct {
 	rbe           remoteworkers.ReservationsClient
 	internals     internalspb.InternalsClient
+	serverProject string
 	serverVersion string
+
+	// enqueueNew is usually EnqueueNew, but it can be mocked in tests.
+	enqueueNew func(context.Context, *model.TaskRequest, *model.TaskToRun) error
 }
 
 // NewReservationServer creates a new reservation server given an RBE client
 // connection.
-func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverVersion string) *ReservationServer {
+func NewReservationServer(ctx context.Context, cc grpc.ClientConnInterface, internals internalspb.InternalsClient, serverProject, serverVersion string) *ReservationServer {
 	return &ReservationServer{
 		rbe:           remoteworkers.NewReservationsClient(cc),
 		internals:     internals,
+		serverProject: serverProject,
 		serverVersion: serverVersion,
+		enqueueNew:    EnqueueNew,
 	}
 }
 
@@ -189,27 +201,17 @@ func (s *ReservationServer) handleEnqueueRBETask(ctx context.Context, task *inte
 		}
 	}
 
-	var overallExpiration *timestamppb.Timestamp
-	var queuingTimeout *durationpb.Duration
-	var executionTimeout *durationpb.Duration
-
-	if task.ExecutionTimeout == nil {
-		// TODO(vadimsh): Get rid of this code path when it is no longer being hit.
-		logging.Warningf(ctx, "No execution timeout set")
-		overallExpiration = task.Expiry
-	} else {
-		// How much time left to sit in the queue.
-		untilExpired := task.Expiry.AsTime().Sub(clock.Now(ctx))
-		if untilExpired < 0 {
-			untilExpired = 0
-		}
-		queuingTimeout = durationpb.New(untilExpired)
-		// How much time there is to run once started.
-		executionTimeout = task.ExecutionTimeout
-		// The task must be done by that time.
-		overallExpiration = timestamppb.New(
-			task.Expiry.AsTime().Add(task.ExecutionTimeout.AsDuration()))
+	// How much time left to sit in the queue.
+	untilExpired := task.Expiry.AsTime().Sub(clock.Now(ctx))
+	if untilExpired < 0 {
+		untilExpired = 0
 	}
+	queuingTimeout := durationpb.New(untilExpired)
+	// How much time there is to run once started.
+	executionTimeout := task.ExecutionTimeout
+	// The task must be done by that time.
+	overallExpiration := timestamppb.New(
+		task.Expiry.AsTime().Add(task.ExecutionTimeout.AsDuration()))
 
 	logging.Infof(ctx, "Creating reservation %q", task.Payload.ReservationId)
 	reservationName := fmt.Sprintf("%s/reservations/%s", task.RbeInstance, task.Payload.ReservationId)
@@ -366,12 +368,17 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 		return errors.Annotate(err, "bad TaskPayload").Err()
 	}
 	switch err := datastore.Get(ctx, ttr); {
-	case err == datastore.ErrNoSuchEntity:
+	case errors.Is(err, datastore.ErrNoSuchEntity):
 		logging.Warningf(ctx, "TaskToRun entity is already gone")
 		return nil
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
 	case !ttr.IsReapable():
+		return nil
+	case ttr.RBEReservation != payload.ReservationId:
+		logging.Warningf(ctx,
+			"Skipping stale notification: expecting reservation %q, but got notification about %q",
+			ttr.RBEReservation, payload.ReservationId)
 		return nil
 	}
 
@@ -405,6 +412,17 @@ func (s *ReservationServer) expireSliceBasedOnReservation(ctx context.Context, r
 		return nil
 	}
 
+	// If this reservation was picked up by a bot and later dropped before it
+	// was claimed (i.e. before the bot actually started working on it, we already
+	// checked that above), we can resubmit it as a new reservation.
+	if reasonCode == internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR {
+		if ttr.RetryCount < maxReservationRetryCount {
+			logging.Warningf(ctx, "Resubmitting reservation (retry #%d)", ttr.RetryCount+1)
+			return s.resubmitReservation(ctx, ttr.Key, &payload)
+		}
+		logging.Warningf(ctx, "The reservation was retried too many times, giving up")
+	}
+
 	// Tell Swarming to switch to the next slice, if necessary
 	logging.Warningf(ctx, "Expiring slice with %s: %s", reasonCode, statusErr)
 	if err := s.expireSlice(ctx, &payload, reasonCode, reservation.AssignedBotId, statusErr.Error()); err != nil {
@@ -424,6 +442,45 @@ func (s *ReservationServer) expireSlice(ctx context.Context, task *internalspb.T
 		CulpritBotId:   culpritBotID,
 	})
 	return err
+}
+
+// resubmitReservation submits a new RBE reservation for the given TaskToRun.
+func (s *ReservationServer) resubmitReservation(ctx context.Context, ttr *datastore.Key, prev *internalspb.TaskPayload) error {
+	return datastore.RunInTransaction(ctx, func(tctx context.Context) error {
+		// Refetch TaskToRun and ensure it was untouched.
+		ttr := &model.TaskToRun{Key: ttr}
+		switch err := datastore.Get(tctx, ttr); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			logging.Warningf(tctx, "TaskToRun entity is already gone")
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch TaskToRun").Tag(transient.Tag).Err()
+		case !ttr.IsReapable():
+			logging.Warningf(tctx, "TaskToRun is no longer pending")
+			return nil
+		case ttr.RBEReservation != prev.ReservationId:
+			logging.Warningf(tctx, "The reservation was already resubmitted")
+			return nil
+		}
+
+		// Fetch TaskRequest non-transactionally, since it is static.
+		tr := &model.TaskRequest{Key: ttr.Key.Parent()}
+		switch err := datastore.Get(ctx, tr); {
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			logging.Warningf(tctx, "TaskRequest entity is already gone")
+			return nil
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch TaskRequest").Tag(transient.Tag).Err()
+		}
+
+		// Submit the retry.
+		ttr.RetryCount++
+		ttr.RBEReservation = model.NewReservationID(s.serverProject, ttr.Key.Parent(), ttr.TaskSliceIndex(), int(ttr.RetryCount))
+		if err := datastore.Put(tctx, ttr); err != nil {
+			return errors.Annotate(err, "failed to store TaskToRun").Tag(transient.Tag).Err()
+		}
+		return s.enqueueNew(tctx, tr, ttr)
+	}, nil)
 }
 
 // handleCancelRBETask cancels a reservation.
@@ -507,7 +564,7 @@ func EnqueueNew(ctx context.Context, tr *model.TaskRequest, ttr *model.TaskToRun
 
 	logging.Infof(ctx, "RBE: enqueuing task to launch %s", ttr.RBEReservation)
 	return tq.AddTask(ctx, &tq.Task{
-		Title: fmt.Sprintf("%s-%d", taskID, sliceIndex),
+		Title: fmt.Sprintf("%s-%d-%d", taskID, sliceIndex, ttr.RetryCount),
 		Payload: &internalspb.EnqueueRBETask{
 			Payload: &internalspb.TaskPayload{
 				ReservationId:  ttr.RBEReservation,

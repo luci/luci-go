@@ -62,6 +62,7 @@ func TestReservationServer(t *testing.T) {
 		srv := ReservationServer{
 			rbe:           &rbe,
 			internals:     &internals,
+			serverProject: "cloud-proj",
 			serverVersion: "go-version",
 		}
 
@@ -245,10 +246,22 @@ func TestReservationServer(t *testing.T) {
 			const (
 				reservationName = "projects/.../instances/.../reservations/..."
 				taskSliceIndex  = 1
-				taskToRunShard  = 5
-				taskToRunID     = 678
 				taskID          = "637f8e221100aa10"
 			)
+
+			// This is checked when retrying the submission.
+			reqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
+			req := &model.TaskRequest{
+				Key:        reqKey,
+				TaskSlices: make([]model.TaskSlice, taskSliceIndex+1), // empty, its fine for this test
+			}
+			assert.NoErr(t, datastore.Put(ctx, req))
+
+			// Get the matching parameters of TaskToRun, they are derived from task ID
+			// and the slice index.
+			ttrKey, _ := model.TaskRequestToToRunKey(ctx, req, taskSliceIndex)
+			taskToRunID := ttrKey.IntID()
+			taskToRunShard := (&model.TaskToRun{Key: ttrKey}).MustShardIndex()
 
 			var (
 				expireSliceReason  internalspb.ExpireSliceRequest_Reason
@@ -264,29 +277,42 @@ func TestReservationServer(t *testing.T) {
 				return nil
 			}
 
-			prepTaskToRun := func(reapable bool) {
+			var resubmittedTTR []*model.TaskToRun
+			srv.enqueueNew = func(_ context.Context, tr *model.TaskRequest, ttr *model.TaskToRun) error {
+				assert.That(t, tr.Key.Equal(ttr.Key.Parent()), should.BeTrue)
+				resubmittedTTR = append(resubmittedTTR, ttr)
+				return nil
+			}
+
+			reservationID := func(retryCount int) string {
+				return fmt.Sprintf("%s-%s-%d-%d", srv.serverProject, taskID, taskSliceIndex, retryCount)
+			}
+
+			prepTaskToRun := func(reapable bool, retryCount int) {
 				var exp datastore.Optional[time.Time, datastore.Indexed]
 				if reapable {
 					exp.Set(testclock.TestRecentTimeUTC.Add(time.Hour))
 				}
 				taskReqKey, _ := model.TaskIDToRequestKey(ctx, taskID)
 				assert.NoErr(t, datastore.Put(ctx, &model.TaskToRun{
-					Key:        model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
-					Expiration: exp,
+					Key:            model.TaskToRunKey(ctx, taskReqKey, taskToRunShard, taskToRunID),
+					Expiration:     exp,
+					RetryCount:     int64(retryCount),
+					RBEReservation: reservationID(retryCount),
 				}))
 			}
 
-			prepReapableTaskToRun := func() { prepTaskToRun(true) }
-			prepClaimedTaskToRun := func() { prepTaskToRun(false) }
+			prepReapableTaskToRun := func(retryCount int) { prepTaskToRun(true, retryCount) }
+			prepClaimedTaskToRun := func() { prepTaskToRun(false, 0) }
 
-			expireBasedOnReservation := func(state remoteworkers.ReservationState, statusErr error, result *internalspb.TaskResult) {
+			expireBasedOnReservation := func(state remoteworkers.ReservationState, reservationID string, statusErr error, result *internalspb.TaskResult) {
 				rbe.reservation = &remoteworkers.Reservation{
 					Name:   reservationName,
 					State:  state,
 					Status: status.Convert(statusErr).Proto(),
 				}
 				rbe.reservation.Payload, _ = anypb.New(&internalspb.TaskPayload{
-					ReservationId:  "",
+					ReservationId:  reservationID,
 					TaskId:         taskID,
 					SliceIndex:     taskSliceIndex,
 					TaskToRunShard: taskToRunShard,
@@ -304,15 +330,28 @@ func TestReservationServer(t *testing.T) {
 				assert.Loosely(t, expireSliceReason, should.Equal(internalspb.ExpireSliceRequest_REASON_UNSPECIFIED))
 			}
 
+			expectNoResubmit := func() {
+				assert.Loosely(t, resubmittedTTR, should.HaveLength(0))
+			}
+
 			expectExpireSlice := func(r internalspb.ExpireSliceRequest_Reason, details string) {
+				expectNoResubmit()
 				assert.Loosely(t, expireSliceReason, should.Equal(r))
 				assert.Loosely(t, expireSliceDetails, should.ContainSubstring(details))
 			}
 
+			expectResubmit := func(reservationID string) {
+				expectNoExpireSlice()
+				assert.Loosely(t, resubmittedTTR, should.HaveLength(1))
+				assert.That(t, resubmittedTTR[0].RBEReservation, should.Equal(reservationID))
+				resubmittedTTR = nil
+			}
+
 			t.Run("Still pending", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_PENDING,
+					reservationID(0),
 					nil,
 					nil,
 				)
@@ -323,6 +362,7 @@ func TestReservationServer(t *testing.T) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					nil,
 					&internalspb.TaskResult{},
 				)
@@ -333,6 +373,7 @@ func TestReservationServer(t *testing.T) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.Canceled, "canceled"),
 					nil,
 				)
@@ -343,6 +384,7 @@ func TestReservationServer(t *testing.T) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_CANCELLED,
+					reservationID(0),
 					nil,
 					nil,
 				)
@@ -350,9 +392,10 @@ func TestReservationServer(t *testing.T) {
 			})
 
 			t.Run("Expired", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.DeadlineExceeded, "deadline"),
 					nil,
 				)
@@ -360,39 +403,76 @@ func TestReservationServer(t *testing.T) {
 			})
 
 			t.Run("No resources", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.FailedPrecondition, "no bots"),
 					nil,
 				)
 				expectExpireSlice(internalspb.ExpireSliceRequest_NO_RESOURCE, "no bots")
 			})
 
-			t.Run("Bot internal error", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+			t.Run("Bot internal error, first attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
+					status.Errorf(codes.DeadlineExceeded, "ignored"),
+					&internalspb.TaskResult{BotInternalError: "boom"},
+				)
+				expectResubmit(reservationID(1))
+			})
+
+			t.Run("Bot internal error, last attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(maxReservationRetryCount)
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(maxReservationRetryCount),
 					status.Errorf(codes.DeadlineExceeded, "ignored"),
 					&internalspb.TaskResult{BotInternalError: "boom"},
 				)
 				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "boom")
 			})
 
-			t.Run("Aborted before claimed", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+			t.Run("Aborted before claimed, first attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
+					status.Errorf(codes.Aborted, "bot died"),
+					nil,
+				)
+				expectResubmit(reservationID(1))
+			})
+
+			t.Run("Aborted before claimed, last attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(maxReservationRetryCount)
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(maxReservationRetryCount),
 					status.Errorf(codes.Aborted, "bot died"),
 					nil,
 				)
 				expectExpireSlice(internalspb.ExpireSliceRequest_BOT_INTERNAL_ERROR, "bot died")
 			})
 
-			t.Run("Unexpectedly successful reservations", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+			t.Run("Unexpectedly successful reservations, first attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
+					nil,
+					nil,
+				)
+				expectResubmit(reservationID(1))
+			})
+
+			t.Run("Unexpectedly successful reservations, last attempt", func(t *ftt.Test) {
+				prepReapableTaskToRun(maxReservationRetryCount)
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(maxReservationRetryCount),
 					nil,
 					nil,
 				)
@@ -400,9 +480,10 @@ func TestReservationServer(t *testing.T) {
 			})
 
 			t.Run("Unexpectedly canceled reservations", func(t *ftt.Test) {
-				prepReapableTaskToRun()
+				prepReapableTaskToRun(0)
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.Canceled, "ignored"),
 					nil,
 				)
@@ -413,6 +494,7 @@ func TestReservationServer(t *testing.T) {
 				prepClaimedTaskToRun()
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.FailedPrecondition, "no bots"),
 					nil,
 				)
@@ -422,7 +504,19 @@ func TestReservationServer(t *testing.T) {
 			t.Run("Skips missing TaskToRun", func(t *ftt.Test) {
 				expireBasedOnReservation(
 					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0),
 					status.Errorf(codes.FailedPrecondition, "no bots"),
+					nil,
+				)
+				expectNoExpireSlice()
+			})
+
+			t.Run("Skips stale notification", func(t *ftt.Test) {
+				prepReapableTaskToRun(1)
+				expireBasedOnReservation(
+					remoteworkers.ReservationState_RESERVATION_COMPLETED,
+					reservationID(0), // stale attempt
+					status.Errorf(codes.DeadlineExceeded, "deadline"),
 					nil,
 				)
 				expectNoExpireSlice()

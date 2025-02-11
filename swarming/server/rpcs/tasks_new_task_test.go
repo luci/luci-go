@@ -1821,7 +1821,7 @@ func TestNewTask(t *testing.T) {
 		res, err := srv.NewTask(ctx, req)
 		assert.NoErr(t, err)
 		assert.Loosely(t, res.TaskResult, should.NotBeNil)
-		assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-6e386bafc02af910-0"))
+		assert.That(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-6e386bafc02af910-0-0"))
 	})
 
 	ftt.Run("Fail", t, func(t *ftt.Test) {

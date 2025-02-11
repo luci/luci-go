@@ -136,6 +136,12 @@ type TaskToRun struct {
 	// Never gets unset once set.
 	ClaimID datastore.Optional[string, datastore.Unindexed] `gae:"claim_id"`
 
+	// RetryCount is increased when resubmitting an RBE reservation if the
+	// previous one failed before the TaskToRun was claimed.
+	//
+	// Used only in RBE mode.
+	RetryCount int64 `gae:"retry_count,noindex"`
+
 	// ExpirationDelay is a delay from Expiration to the actual expiry time.
 	//
 	// This is set at expiration process if the last task slice expired by
@@ -237,18 +243,23 @@ func NewTaskToRun(ctx context.Context, swarmingProject string, tr *TaskRequest, 
 		Created:        created,
 		Dimensions:     tr.TaskSlices[sliceIndex].Properties.Dimensions,
 		Expiration:     exp,
-		RBEReservation: NewReservationID(swarmingProject, tr.Key, sliceIndex),
+		RBEReservation: NewReservationID(swarmingProject, tr.Key, sliceIndex, 0),
 	}
 	return ttr, nil
 }
 
-// NewReservationID generates an RBE reservation ID representing a particular slice.
+// NewReservationID generates an RBE reservation ID representing a particular
+// slice and a particular attempt to execute it.
 //
 // It needs to globally (potentially across Swarming instances) identify
-// a particular task slice. Used to idempotently submit RBE reservations.
+// a particular task slice execution attempt. Used to idempotently submit RBE
+// reservations.
 //
 // Placing this function in rbe package would cause an import loop, so putting
 // it here instead.
-func NewReservationID(swarmingProject string, reqKey *datastore.Key, sliceIndex int) string {
-	return fmt.Sprintf("%s-%s-%d", swarmingProject, RequestKeyToTaskID(reqKey, AsRequest), sliceIndex)
+func NewReservationID(swarmingProject string, reqKey *datastore.Key, sliceIndex, retryCount int) string {
+	if reqKey.Kind() != "TaskRequest" {
+		panic(fmt.Sprintf("expecting TaskRequest key, got %s", reqKey))
+	}
+	return fmt.Sprintf("%s-%s-%d-%d", swarmingProject, RequestKeyToTaskID(reqKey, AsRequest), sliceIndex, retryCount)
 }
