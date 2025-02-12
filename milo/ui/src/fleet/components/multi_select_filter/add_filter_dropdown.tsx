@@ -78,19 +78,21 @@ export function AddFilterDropdown({
     setTempSelectedOptions(initSelectedOptions);
   }, [initSelectedOptions, openCategory]);
 
+  const anchorRect = anchorEl?.getBoundingClientRect();
+  // need to get a parent for an anchor to calculate baseline as hamburger menu may be open
+  const anchorParentRect = anchorEl?.parentElement?.getBoundingClientRect();
+
   if (cardRef.current) {
-    const anchorRect = anchorEl?.getBoundingClientRect();
     if (anchorRect) {
-      cardRef.current.style.left = `${anchorRect.left}px`;
+      cardRef.current.style.left = `${anchorRect.left - (anchorParentRect?.left || 0)}px`;
       cardRef.current.style.top = `${anchorEl?.parentElement?.getBoundingClientRect().height || anchorRect.height}px`;
     }
   }
 
   if (innerCardRef.current) {
-    const anchorRect = anchorEl?.getBoundingClientRect();
     const outerMenuRect = anchorElInner?.getBoundingClientRect();
     if (outerMenuRect && anchorRect) {
-      innerCardRef.current.style.left = `${anchorRect.left + outerMenuRect.width + 2}px`;
+      innerCardRef.current.style.left = `${anchorRect.left - (anchorParentRect?.left || 0) + outerMenuRect.width + 2}px`;
       if (outerMenuRect.top > window.innerHeight / 2) {
         innerCardRef.current.style.top = '';
         innerCardRef.current.style.bottom = `${-outerMenuRect.bottom + anchorRect.top - 10}px`;
