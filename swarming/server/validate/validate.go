@@ -235,7 +235,7 @@ func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, doc
 		merr.MaybeAdd(errors.Annotate(err, "version").Err())
 	}
 
-	if err := Path(pkg.GetPath(), MaxPackagePathLength); err != nil {
+	if err := Path(pkg.GetPath(), MaxPackagePathLength, false); err != nil {
 		merr.MaybeAdd(errors.Annotate(err, "path").Err())
 	}
 
@@ -380,14 +380,14 @@ func teeErr(err error, keep *error) error {
 }
 
 // Path validates a path.
-func Path(p string, maxLen int) error {
+func Path(p string, maxLen int, allowWinPath bool) error {
 	var err error
 	switch {
 	case p == "":
 		return errors.New("cannot be empty")
 	case teeErr(Length(p, maxLen), &err) != nil:
 		return err
-	case strings.Contains(p, "\\"):
+	case !allowWinPath && strings.Contains(p, "\\"):
 		return errors.New(`cannot contain "\\". On Windows forward-slashes will be replaced with back-slashes.`)
 	case strings.HasPrefix(p, "/"):
 		return errors.New(`cannot start with "/"`)
@@ -430,7 +430,7 @@ func Caches[C cacheEntry](caches []C, cacheSource string) (*directoryocclusion.C
 		if !nameSet.Add(c.GetName()) {
 			merr.MaybeAdd(errors.New("same cache name cannot be specified twice"))
 		}
-		if err := Path(c.GetPath(), maxCachePathLength); err != nil {
+		if err := Path(c.GetPath(), maxCachePathLength, false); err != nil {
 			merr.MaybeAdd(errors.Annotate(err, "cache path %d", i).Err())
 			continue
 		}

@@ -458,7 +458,7 @@ func validateEnv(ctx *validation.Context, envs []*configpb.TaskTemplate_Env) {
 			}
 		}
 		for _, prefix := range env.Prefix {
-			if err := validate.Path(prefix, validate.MaxEnvValueLength); err != nil {
+			if err := validate.Path(prefix, validate.MaxEnvValueLength, false); err != nil {
 				ctx.Errorf("prefix: %s", err)
 			}
 		}

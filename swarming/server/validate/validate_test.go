@@ -266,20 +266,22 @@ func TestPath(t *testing.T) {
 	t.Parallel()
 	maxLen := 255
 	cases := []struct {
-		name string
-		path string
-		err  any
+		name         string
+		path         string
+		allowWinPath bool
+		err          any
 	}{
-		{"empty", "", "cannot be empty"},
-		{"too_long", strings.Repeat("a", maxLen+1), "too long"},
-		{"with_double_backslashes", "a\\b", `cannot contain "\\".`},
-		{"with_leading_slash", "/a/b", `cannot start with "/"`},
-		{"not_normalized_dot", "./a/b", "is not normalized"},
-		{"not_normalized_double_dots", "a/../b", "is not normalized"},
+		{"empty", "", false, "cannot be empty"},
+		{"too_long", strings.Repeat("a", maxLen+1), false, "too long"},
+		{"with_double_backslashes", "a\\b", false, `cannot contain "\\".`},
+		{"with_double_backslashes_but_allow", "a\\b", true, nil},
+		{"with_leading_slash", "/a/b", false, `cannot start with "/"`},
+		{"not_normalized_dot", "./a/b", false, "is not normalized"},
+		{"not_normalized_double_dots", "a/../b", false, "is not normalized"},
 	}
 	for _, cs := range cases {
 		t.Run(cs.name, func(t *testing.T) {
-			err := Path(cs.path, maxLen)
+			err := Path(cs.path, maxLen, cs.allowWinPath)
 			assert.That(t, err, should.ErrLike(cs.err))
 		})
 	}

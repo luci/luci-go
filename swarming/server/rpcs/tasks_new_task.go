@@ -321,7 +321,7 @@ func validateProperties(props *apipb.TaskProperties) (pool string, err error) {
 	case teeErr(validateCommand(props.Command), &err) != nil:
 		return "", errors.Annotate(err, "command").Err()
 	case props.RelativeCwd != "" &&
-		teeErr(validate.Path(props.RelativeCwd, validate.MaxPackagePathLength), &err) != nil:
+		teeErr(validate.Path(props.RelativeCwd, validate.MaxPackagePathLength, true), &err) != nil:
 		return "", errors.Annotate(err, "relative_cwd").Err()
 	case teeErr(validateEnv(props.Env), &err) != nil:
 		return "", errors.Annotate(err, "env").Err()
@@ -393,7 +393,7 @@ func validateEnvPrefixes(envPrefixes []*apipb.StringListPair) error {
 			return errors.New("value is required")
 		}
 		for j, p := range ep.Value {
-			if err := validate.Path(p, validate.MaxEnvValueLength); err != nil {
+			if err := validate.Path(p, validate.MaxEnvValueLength, false); err != nil {
 				return errors.Annotate(err, "value %d-%d", i, j).Err()
 			}
 		}
@@ -435,7 +435,7 @@ func validateOutputs(outputs []string) error {
 		return errors.Reason("can have up to %d outputs", maxOutputPathLength).Err()
 	}
 	for i, output := range outputs {
-		if err := validate.Path(output, maxOutputPathLength); err != nil {
+		if err := validate.Path(output, maxOutputPathLength, false); err != nil {
 			return errors.Annotate(err, "output %d", i).Err()
 		}
 	}
