@@ -135,6 +135,9 @@ func fullSlice(pool string, secretBytes []byte) *apipb.TaskSlice {
 					Value: pool,
 				},
 			},
+			Containment: &apipb.Containment{
+				ContainmentType: apipb.Containment_NONE,
+			},
 		},
 		ExpirationSecs: 300,
 	}
@@ -1515,6 +1518,9 @@ func TestToTaskRequestEntities(t *testing.T) {
 					},
 					Outputs: []string{
 						"output",
+					},
+					Containment: model.Containment{
+						ContainmentType: apipb.Containment_NONE,
 					},
 				}
 			}

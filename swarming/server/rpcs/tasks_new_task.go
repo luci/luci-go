@@ -782,6 +782,12 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 				Version:     p.GetCipdInput().GetClientPackage().GetVersion(),
 			},
 		},
+		Containment: model.Containment{
+			ContainmentType:           p.GetContainment().GetContainmentType(),
+			LowerPriority:             p.GetContainment().GetLowerPriority(),
+			LimitProcesses:            p.GetContainment().GetLimitProcesses(),
+			LimitTotalCommittedMemory: p.GetContainment().GetLimitTotalCommittedMemory(),
+		},
 	}
 
 	// Dimensions
