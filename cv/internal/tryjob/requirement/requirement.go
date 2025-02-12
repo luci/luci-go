@@ -17,6 +17,7 @@ package requirement
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"runtime"
 	"sync/atomic"
 
@@ -225,13 +226,13 @@ func handleOverriddenTryjobs(ctx context.Context, in Input) (*ComputationResult,
 		},
 	}
 	for _, b := range in.ConfigGroup.GetVerifiers().GetTryjob().GetBuilders() {
-		switch ps := isPresubmit(b); {
-		case !override.Has(b.GetName()) && !override.Has(b.GetEquivalentTo().GetName()):
+		if !override.Has(b.GetName()) && !override.Has(b.GetEquivalentTo().GetName()) {
 			continue
-		case in.RunOptions.GetSkipTryjobs() && !ps:
-			continue
-		// TODO(crbug.com/950074): Remove this clause.
-		case in.RunOptions.GetSkipPresubmit() && ps:
+		}
+		switch skip, err := skipByFooters(in, b); {
+		case err != nil:
+			return nil, err
+		case skip:
 			continue
 		}
 
@@ -282,11 +283,10 @@ const (
 // shouldInclude decides based on the configuration whether a given builder
 // should be skipped in generating the Requirement.
 func shouldInclude(ctx context.Context, in Input, dm *definitionMaker, isOptional, useEquivalent bool, b *cfgpb.Verifiers_Tryjob_Builder, incl stringset.Set, owners []string) (inclusionResult, ComputationFailure, error) {
-	switch ps := isPresubmit(b); {
-	case in.RunOptions.GetSkipTryjobs() && !ps:
-		return skipBuilder, nil, nil
-	// TODO(crbug.com/950074): Remove this clause.
-	case in.RunOptions.GetSkipPresubmit() && ps:
+	switch skip, err := skipByFooters(in, b); {
+	case err != nil:
+		return skipBuilder, nil, err
+	case skip:
 		return skipBuilder, nil, nil
 	}
 
@@ -584,6 +584,38 @@ func isModeAllowed(mode run.Mode, allowedModes []string) bool {
 		}
 	}
 	return false
+}
+
+func skipByFooters(in Input, b *cfgpb.Verifiers_Tryjob_Builder) (bool, error) {
+	// Handle No-Try and No-Presubmit footer
+	// TODO: crbug/40621912 - Move No-Try and No-Presubmit footer to use
+	// skip_footers in the config.
+	switch ps := isPresubmit(b); {
+	case in.RunOptions.GetSkipTryjobs() && !ps:
+		return true, nil
+	case in.RunOptions.GetSkipPresubmit() && ps:
+		return true, nil
+	}
+
+	if len(b.GetSkipFooters()) > 0 {
+		skipKeyToValueRegexp := make(map[string]*regexp.Regexp, len(b.GetSkipFooters()))
+		for _, sf := range b.GetSkipFooters() {
+			pattern, err := regexp.Compile(sf.GetValueRegexp())
+			if err != nil {
+				return false, fmt.Errorf("failed to compile value pattern %q: %w", sf.GetValueRegexp(), err)
+			}
+			skipKeyToValueRegexp[sf.GetKey()] = pattern
+		}
+
+		for _, cl := range in.CLs {
+			for _, footer := range cl.Detail.GetMetadata() {
+				if valueRegexp, ok := skipKeyToValueRegexp[footer.GetKey()]; ok && valueRegexp.MatchString(footer.GetValue()) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }
 
 func isPresubmit(builder *cfgpb.Verifiers_Tryjob_Builder) bool {

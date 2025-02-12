@@ -285,15 +285,15 @@ func TestGetDisallowedOwners(t *testing.T) {
 			t.Run("with no allowlists", func(t *ftt.Test) {
 				disallowed, err := getDisallowedOwners(ctx, input, []string{userA.Email()})
 				assert.NoErr(t, err)
-				assert.Loosely(t, disallowed, should.HaveLength(0))
+				assert.Loosely(t, disallowed, should.BeEmpty)
 			})
 		})
 		t.Run("panics", func(t *ftt.Test) {
 			t.Run("with nil users", func(t *ftt.Test) {
-				assert.Loosely(t, func() { _, _ = getDisallowedOwners(ctx, input, nil, group1) }, should.PanicLike("nil user"))
+				assert.That(t, func() { _, _ = getDisallowedOwners(ctx, input, nil, group1) }, should.PanicLikeString("nil user"))
 			})
 			t.Run("with zero users", func(t *ftt.Test) {
-				assert.Loosely(t, func() { _, _ = getDisallowedOwners(ctx, input, []string{}, group1) }, should.PanicLike("nil user"))
+				assert.That(t, func() { _, _ = getDisallowedOwners(ctx, input, []string{}, group1) }, should.PanicLikeString("nil user"))
 			})
 		})
 	})
@@ -341,7 +341,7 @@ func TestCompute(t *testing.T) {
 
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
-			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -367,8 +367,8 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ComputationResult{
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
 					Builders: []string{"test-proj/test/unlisted"},
 				},
@@ -385,8 +385,8 @@ func TestCompute(t *testing.T) {
 
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.OK(), should.BeFalse)
-				assert.Loosely(t, res, should.Resemble(&ComputationResult{
+				assert.That(t, res.OK(), should.BeFalse)
+				assert.That(t, res, should.Match(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
 						Builder: "test-proj/test/builder1",
@@ -405,8 +405,8 @@ func TestCompute(t *testing.T) {
 
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.OK(), should.BeFalse)
-				assert.Loosely(t, res, should.Resemble(&ComputationResult{
+				assert.That(t, res.OK(), should.BeFalse)
+				assert.That(t, res, should.Match(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userD.Email()},
 						Builder: "test-proj/test/builder1",
@@ -429,7 +429,7 @@ func TestCompute(t *testing.T) {
 
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.OK(), should.BeTrue)
+				assert.That(t, res.OK(), should.BeTrue)
 			})
 		})
 		t.Run("with includable-only builder", func(t *ftt.Test) {
@@ -442,7 +442,7 @@ func TestCompute(t *testing.T) {
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
-				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+				assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
@@ -470,7 +470,7 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					assert.Loosely(t, err, should.BeNil, truth.LineContext())
 					assert.Loosely(t, res.ComputationFailure, should.BeNil, truth.LineContext())
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -531,8 +531,8 @@ func TestCompute(t *testing.T) {
 
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.OK(), should.BeFalse)
-				assert.Loosely(t, res, should.Resemble(&ComputationResult{
+				assert.That(t, res.OK(), should.BeFalse)
+				assert.That(t, res, should.Match(&ComputationResult{
 					ComputationFailure: &unauthorizedIncludedTryjob{
 						Users:   []string{userA.Email()},
 						Builder: "test-proj/test/equibuilder",
@@ -551,7 +551,7 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					assert.Loosely(t, err, should.BeNil, truth.LineContext())
 					assert.Loosely(t, res.ComputationFailure, should.BeNil, truth.LineContext())
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -608,7 +608,7 @@ func TestCompute(t *testing.T) {
 
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
-				assert.Loosely(t, res.OK(), should.BeTrue)
+				assert.That(t, res.OK(), should.BeTrue)
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 			})
 
@@ -622,8 +622,8 @@ func TestCompute(t *testing.T) {
 					}.generate()})
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.OK(), should.BeTrue)
-					assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
+					assert.That(t, res.OK(), should.BeTrue)
+					assert.That(t, res.Requirement.Definitions, should.Match([]*tryjob.Definition{
 						{
 							Backend: &tryjob.Definition_Buildbucket_{
 								Buildbucket: &tryjob.Definition_Buildbucket{
@@ -649,7 +649,7 @@ func TestCompute(t *testing.T) {
 					}.generate()})
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
-					assert.Loosely(t, res.OK(), should.BeTrue)
+					assert.That(t, res.OK(), should.BeTrue)
 					assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 				})
 
@@ -670,12 +670,12 @@ func TestCompute(t *testing.T) {
 				if len(res.Requirement.GetDefinitions()) > 0 {
 					assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 					def := res.Requirement.GetDefinitions()[0]
-					assert.Loosely(t, def.GetCritical(), should.BeFalse)
-					assert.Loosely(t, def.GetOptional(), should.BeTrue)
+					assert.That(t, def.GetCritical(), should.BeFalse)
+					assert.That(t, def.GetOptional(), should.BeTrue)
 					selected++
 				}
 			}
-			assert.Loosely(t, selected, should.BeBetween(150, 250)) // expecting 1000*20%=200
+			assert.That(t, selected, should.BeBetween(150, 250)) // expecting 1000*20%=200
 		})
 
 		t.Run("optional but explicitly included ", func(t *ftt.Test) {
@@ -691,8 +691,8 @@ func TestCompute(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(1))
 				def := res.Requirement.GetDefinitions()[0]
-				assert.Loosely(t, def.GetCritical(), should.BeTrue)
-				assert.Loosely(t, def.GetOptional(), should.BeTrue)
+				assert.That(t, def.GetCritical(), should.BeTrue)
+				assert.That(t, def.GetOptional(), should.BeTrue)
 			}
 		})
 
@@ -716,7 +716,7 @@ func TestCompute(t *testing.T) {
 				res, err := Compute(ctx, *in)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
-				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+				assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
@@ -744,7 +744,7 @@ func TestCompute(t *testing.T) {
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
 					// If the builder is not skipped, it will be in
 					// res.Requirement.Definitions.
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -770,7 +770,7 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -785,7 +785,7 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -831,7 +831,7 @@ func TestCompute(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				// Builder is triggered because there is a merge commit.
-				assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+				assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 					RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 						SingleQuota: 2,
 						GlobalQuota: 8,
@@ -879,7 +879,7 @@ func TestCompute(t *testing.T) {
 
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -895,7 +895,7 @@ func TestCompute(t *testing.T) {
 
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -910,9 +910,7 @@ func TestCompute(t *testing.T) {
 					res, err := Compute(ctx, *in)
 					assert.NoErr(t, err)
 					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.NoErr(t, err)
-					assert.Loosely(t, res.ComputationFailure, should.BeNil)
-					assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+					assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 						RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 							SingleQuota: 2,
 							GlobalQuota: 8,
@@ -957,7 +955,7 @@ func TestCompute(t *testing.T) {
 				assert.Loosely(t, res.Requirement.GetDefinitions(), should.HaveLength(3))
 				expectedSkipStaleCheck := []bool{false, true, false}
 				for i, def := range res.Requirement.GetDefinitions() {
-					assert.Loosely(t, def.GetSkipStaleCheck(), should.Equal(expectedSkipStaleCheck[i]))
+					assert.That(t, def.GetSkipStaleCheck(), should.Equal(expectedSkipStaleCheck[i]))
 				}
 			})
 			t.Run("overridden by run option", func(t *ftt.Test) {
@@ -979,7 +977,7 @@ func TestCompute(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.Loosely(t, res.ComputationFailure, should.BeNil)
 				for _, def := range res.Requirement.GetDefinitions() {
-					assert.Loosely(t, def.GetSkipStaleCheck(), should.BeTrue)
+					assert.That(t, def.GetSkipStaleCheck(), should.BeTrue)
 				}
 			})
 		})
@@ -1000,7 +998,7 @@ func TestCompute(t *testing.T) {
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
-			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -1048,7 +1046,7 @@ func TestCompute(t *testing.T) {
 
 			assert.NoErr(t, err)
 			assert.Loosely(t, res.ComputationFailure, should.BeNil)
-			assert.Loosely(t, res.Requirement, should.Resemble(&tryjob.Requirement{
+			assert.That(t, res.Requirement, should.Match(&tryjob.Requirement{
 				RetryConfig: &cfgpb.Verifiers_Tryjob_RetryConfig{
 					SingleQuota: 2,
 					GlobalQuota: 8,
@@ -1070,14 +1068,65 @@ func TestCompute(t *testing.T) {
 			}))
 		})
 
+		t.Run("Has skip footers", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				{
+					Name: "test-proj/test/builder1",
+					SkipFooters: []*cfgpb.Verifiers_Tryjob_Builder_SkipFooter{
+						{
+							Key:         "Bypass-Builder-1",
+							ValueRegexp: `^(?i)(true)$`,
+						},
+					},
+				},
+				{
+					Name: "test-proj/test/builder2",
+					SkipFooters: []*cfgpb.Verifiers_Tryjob_Builder_SkipFooter{
+						{
+							Key:         "Bypass-Builder-2",
+							ValueRegexp: `^(?i)(true)$`,
+						},
+					},
+				},
+			})
+			in.CLs[0].Detail.Metadata = append(in.CLs[0].Detail.Metadata,
+				&changelist.StringPair{
+					Key:   "Bypass-Builder-1",
+					Value: "True",
+				},
+				&changelist.StringPair{
+					Key:   "Bypass-Builder-2",
+					Value: "false",
+				},
+			)
+
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.ComputationFailure, should.BeNil)
+			assert.That(t, res.Requirement.Definitions, should.Match([]*tryjob.Definition{
+				{
+					Backend: &tryjob.Definition_Buildbucket_{
+						Buildbucket: &tryjob.Definition_Buildbucket{
+							Host: "cr-buildbucket.appspot.com",
+							Builder: &buildbucketpb.BuilderID{
+								Project: "test-proj",
+								Bucket:  "test",
+								Builder: "builder2",
+							},
+						},
+					},
+					Critical: true,
+				},
+			}))
+		})
 		t.Run("override has undefined builder", func(t *ftt.Test) {
 			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{builderConfigGenerator{Name: "test-proj/test/builder1"}.generate()})
 			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:unlisted")
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ComputationResult{
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
 				ComputationFailure: &buildersNotDefined{
 					Builders: []string{"test-proj/test/unlisted"},
 				},
@@ -1091,7 +1140,32 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeTrue)
+			assert.That(t, res.OK(), should.BeTrue)
+			assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
+		})
+
+		t.Run("override honors skip footers", func(t *ftt.Test) {
+			in := makeInput(ctx, &ct, []*cfgpb.Verifiers_Tryjob_Builder{
+				{
+					Name: "test-proj/test/builder1",
+					SkipFooters: []*cfgpb.Verifiers_Tryjob_Builder_SkipFooter{
+						{
+							Key:         "Bypass-Builder-1",
+							ValueRegexp: `^(?i)(true)$`,
+						},
+					},
+				},
+			})
+			in.RunOptions.OverriddenTryjobs = append(in.RunOptions.OverriddenTryjobs, "test-proj/test:builder1")
+			in.CLs[0].Detail.Metadata = append(in.CLs[0].Detail.Metadata,
+				&changelist.StringPair{
+					Key:   "Bypass-Builder-1",
+					Value: "True",
+				},
+			)
+			res, err := Compute(ctx, *in)
+			assert.NoErr(t, err)
+			assert.That(t, res.OK(), should.BeTrue)
 			assert.Loosely(t, res.Requirement.GetDefinitions(), should.BeEmpty)
 		})
 
@@ -1104,8 +1178,8 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeFalse)
-			assert.Loosely(t, res, should.Resemble(&ComputationResult{
+			assert.That(t, res.OK(), should.BeFalse)
+			assert.That(t, res, should.Match(&ComputationResult{
 				ComputationFailure: &unauthorizedIncludedTryjob{
 					Users:   []string{userA.Email()},
 					Builder: "test-proj/test/builder1",
@@ -1126,8 +1200,8 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeTrue)
-			assert.Loosely(t, res.Requirement.Definitions, should.Resemble([]*tryjob.Definition{
+			assert.That(t, res.OK(), should.BeTrue)
+			assert.That(t, res.Requirement.Definitions, should.Match([]*tryjob.Definition{
 				{
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
@@ -1158,9 +1232,9 @@ func TestCompute(t *testing.T) {
 
 			res, err := Compute(ctx, *in)
 			assert.NoErr(t, err)
-			assert.Loosely(t, res.OK(), should.BeTrue)
+			assert.That(t, res.OK(), should.BeTrue)
 			assert.Loosely(t, res.Requirement.Definitions, should.HaveLength(1))
-			assert.Loosely(t, res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), should.Equal("builder2"))
+			assert.That(t, res.Requirement.Definitions[0].GetBuildbucket().GetBuilder().GetBuilder(), should.Equal("builder2"))
 		})
 	})
 }
