@@ -47,7 +47,7 @@ import (
 	"go.chromium.org/luci/luci_notify/mailtmpl"
 )
 
-var validRecipientSuffixes = []string{"@chromium.org", "@grotations.appspotmail.com", "@google.com"}
+var validRecipientSuffixes = []string{"@chromium.org", "@grotations.appspotmail.com", "@google.com", "@rotations.google.com"}
 
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
 func createEmailTasks(c context.Context, recipients []EmailNotify, input *notifypb.TemplateInput) (map[string]*internal.EmailTask, error) {
