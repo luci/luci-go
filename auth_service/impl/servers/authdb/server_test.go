@@ -433,19 +433,6 @@ func TestAuthDBServing(t *testing.T) {
 		storeTestAuthDBSnapshot(ctx, realmsUpdated, revUpdated, t)
 		storeTestAuthDBSnapshotLatest(ctx, revUpdated, t)
 
-		gr1ExpectedUpdated := &rpcpb.PrincipalPermissions{
-			Name: "group:gr1",
-			RealmPermissions: []*rpcpb.RealmPermissions{
-				{
-					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1"},
-				},
-				{
-					Name:        "p:r2",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
-				},
-			},
-		}
 		t.Run("returns cached permissions if max staleness not exceeded", func(t *ftt.Test) {
 			// Request should return cached copy as max staleness has not been exceeded.
 			tc.Add(maxStaleness - 1)
@@ -455,48 +442,64 @@ func TestAuthDBServing(t *testing.T) {
 		})
 		t.Run("returns updated permissions if max staleness exceeded", func(t *ftt.Test) {
 			tc.Add(maxStaleness)
+			gr1ExpectedUpdated := &rpcpb.PrincipalPermissions{
+				Name: "group:gr1",
+				RealmPermissions: []*rpcpb.RealmPermissions{
+					{
+						Name:        "p:r",
+						Permissions: []string{"luci.dev.p1"},
+					},
+					{
+						Name:        "p:r2",
+						Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					},
+				},
+			}
 			resp1Updated, err := srv.GetPrincipalPermissions(ctx, req1)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp1Updated, should.Match(gr1ExpectedUpdated))
 		})
 
-		// User and glob requests are not currently supported & should return unimplemented err.
-		reqUser := &rpcpb.GetPrincipalPermissionsRequest{
-			Principal: &rpcpb.Principal{
-				Name: "u1",
-				Kind: rpcpb.PrincipalKind_IDENTITY,
-			},
-		}
-		reqGlob := &rpcpb.GetPrincipalPermissionsRequest{
-			Principal: &rpcpb.Principal{
-				Name: "g1",
-				Kind: rpcpb.PrincipalKind_GLOB,
-			},
-		}
-
 		t.Run("user lookup not currently supported", func(t *ftt.Test) {
+			// User and glob requests are not currently supported & should return unimplemented err.
+			reqUser := &rpcpb.GetPrincipalPermissionsRequest{
+				Principal: &rpcpb.Principal{
+					Name: "u1",
+					Kind: rpcpb.PrincipalKind_IDENTITY,
+				},
+			}
 			respUser, err := srv.GetPrincipalPermissions(ctx, reqUser)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
 			assert.Loosely(t, respUser, should.BeNil)
 		})
 
 		t.Run("glob lookup not currently supported", func(t *ftt.Test) {
+			reqGlob := &rpcpb.GetPrincipalPermissionsRequest{
+				Principal: &rpcpb.Principal{
+					Name: "g1",
+					Kind: rpcpb.PrincipalKind_GLOB,
+				},
+			}
 			respGlob, err := srv.GetPrincipalPermissions(ctx, reqGlob)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.Unimplemented))
 			assert.Loosely(t, respGlob, should.BeNil)
 		})
 
-		// Principal that does not exist should return invalid argument err.
-		reqInvalid := &rpcpb.GetPrincipalPermissionsRequest{
-			Principal: &rpcpb.Principal{
-				Name: "random-group",
-				Kind: rpcpb.PrincipalKind_GROUP,
-			},
-		}
-		t.Run("returns invalid argument for non-existent group", func(t *ftt.Test) {
+		t.Run("returns empty realms permissions when group not found in mapping", func(t *ftt.Test) {
+			// Principal that does not exist should return empty realms permissions.
+			reqInvalid := &rpcpb.GetPrincipalPermissionsRequest{
+				Principal: &rpcpb.Principal{
+					Name: "random-group",
+					Kind: rpcpb.PrincipalKind_GROUP,
+				},
+			}
+			invalidExpected := &rpcpb.PrincipalPermissions{
+				Name:             "group:random-group",
+				RealmPermissions: []*rpcpb.RealmPermissions{},
+			}
 			respInvalid, err := srv.GetPrincipalPermissions(ctx, reqInvalid)
-			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-			assert.Loosely(t, respInvalid, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, respInvalid, should.Match(invalidExpected))
 		})
 
 		t.Run("returns invalid argument for empty request", func(t *ftt.Test) {
@@ -504,26 +507,25 @@ func TestAuthDBServing(t *testing.T) {
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, respEmpty, should.BeNil)
 		})
-		reqEmptyName := &rpcpb.GetPrincipalPermissionsRequest{
-			Principal: &rpcpb.Principal{
-				Name: "",
-				Kind: rpcpb.PrincipalKind_GROUP,
-			},
-		}
 		t.Run("returns invalid argument for empty principal name", func(t *ftt.Test) {
+			reqEmptyName := &rpcpb.GetPrincipalPermissionsRequest{
+				Principal: &rpcpb.Principal{
+					Name: "",
+					Kind: rpcpb.PrincipalKind_GROUP,
+				},
+			}
 			respEmptyName, err := srv.GetPrincipalPermissions(ctx, reqEmptyName)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, respEmptyName, should.BeNil)
 		})
 
-		reqInvalidKind := &rpcpb.GetPrincipalPermissionsRequest{
-			Principal: &rpcpb.Principal{
-				Name: "gr1",
-				Kind: rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED,
-			},
-		}
-
 		t.Run("returns invalid argument if principal kind is not user, group or glob", func(t *ftt.Test) {
+			reqInvalidKind := &rpcpb.GetPrincipalPermissionsRequest{
+				Principal: &rpcpb.Principal{
+					Name: "gr1",
+					Kind: rpcpb.PrincipalKind_PRINCIPAL_KIND_UNSPECIFIED,
+				},
+			}
 			respInvalidKind, err := srv.GetPrincipalPermissions(ctx, reqInvalidKind)
 			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
 			assert.Loosely(t, respInvalidKind, should.BeNil)
