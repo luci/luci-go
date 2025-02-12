@@ -361,7 +361,7 @@ func validateDefaultCIPD(ctx *validation.Context, pb *configpb.ExternalServices_
 		return
 	}
 	ctx.Enter("name")
-	if err := validate.CIPDPackageName(clientPkg.PackageName); err != nil {
+	if err := validate.CIPDPackageName(clientPkg.PackageName, true); err != nil {
 		ctx.Error(err)
 	}
 	ctx.Exit()

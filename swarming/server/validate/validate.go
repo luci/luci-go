@@ -151,20 +151,23 @@ func CIPDServer(server string) error {
 
 // CIPDPackageName checks CIPD package name is correct.
 //
-// The package name is allowed to be a template e.g. have "${platform}" and
-// other substitutions inside.
-func CIPDPackageName(pkg string) error {
+// If allowTemplate is true, the package name is allowed to be a template e.g.
+// have "${platform}" and other substitutions inside.
+func CIPDPackageName(pkg string, allowTemplate bool) error {
 	if pkg == "" {
 		return errors.New("required")
 	}
+
 	expanded, err := cipdExpander.Expand(pkg)
 	if err != nil {
 		return errors.Annotate(err, "bad package name template %q", pkg).Err()
 	}
-	if err := common.ValidatePackageName(expanded); err != nil {
-		return err // the error has all details already
+	if !allowTemplate && pkg != expanded {
+		return errors.Reason("package name template %q is not allowed here", pkg).Err()
 	}
-	return nil
+
+	// No need to annotate the error, it has all details already.
+	return common.ValidatePackageName(expanded)
 }
 
 // CIPDPackageVersion checks CIPD package version is correct.
@@ -224,7 +227,7 @@ func CIPDPackages[P cipdPkg](packages []P, requirePinnedVer bool, doc *directory
 func validateCIPDPackage(pkgName string, pkg cipdPkg, requirePinnedVer bool, doc *directoryocclusion.Checker, pkgSource string) errors.MultiError {
 	var merr errors.MultiError
 
-	if err := CIPDPackageName(pkgName); err != nil {
+	if err := CIPDPackageName(pkgName, true); err != nil {
 		merr.MaybeAdd(errors.Annotate(err, "name").Err())
 	}
 

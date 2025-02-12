@@ -96,7 +96,7 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 			ctx.Errorf("this is a required field")
 		} else {
 			ctx.Enter("package_name")
-			if err := validate.CIPDPackageName(cfg.Cipd.DefaultClientPackage.PackageName); err != nil {
+			if err := validate.CIPDPackageName(cfg.Cipd.DefaultClientPackage.PackageName, true); err != nil {
 				ctx.Errorf("%s", err)
 			}
 			ctx.Exit()
@@ -127,10 +127,53 @@ func validateSettingsCfg(ctx *validation.Context, cfg *configpb.SettingsCfg) {
 		validateTrafficMigration(ctx, cfg.TrafficMigration)
 		ctx.Exit()
 	}
+
+	if cfg.BotDeployment != nil {
+		ctx.Enter("bot_deployment")
+		validateBotDeployment(ctx, cfg.BotDeployment)
+		ctx.Exit()
+	}
+}
+
+func validateBotDeployment(ctx *validation.Context, d *configpb.BotDeployment) {
+	if d.Stable == nil {
+		ctx.Errorf("missing required \"stable\" section")
+	} else {
+		validateBotPackage(ctx, "stable", d.Stable)
+	}
+	if d.Canary != nil {
+		validateBotPackage(ctx, "canary", d.Canary)
+	}
+	if d.CanaryPercent < 0 || d.CanaryPercent > 100 {
+		ctx.Errorf("canary_percent must be between 0 and 100")
+	}
+}
+
+func validateBotPackage(ctx *validation.Context, channel string, pkg *configpb.BotDeployment_BotPackage) {
+	ctx.Enter("%s", channel)
+	defer ctx.Exit()
+
+	ctx.Enter("server")
+	if err := validate.CIPDServer(pkg.Server); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("pkg")
+	if err := validate.CIPDPackageName(pkg.Pkg, false); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
+
+	ctx.Enter("version")
+	if err := validate.CIPDPackageVersion(pkg.Version); err != nil {
+		ctx.Error(err)
+	}
+	ctx.Exit()
 }
 
 func validateHTTPS(ctx *validation.Context, key, val string) {
-	ctx.Enter(key)
+	ctx.Enter("%s", key)
 	defer ctx.Exit()
 
 	if val == "" {

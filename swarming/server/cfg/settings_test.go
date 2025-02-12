@@ -70,6 +70,19 @@ func TestSettingsValidation(t *testing.T) {
 					{Name: "/swarming/api/v1/bot/something", RouteToGoPercent: 100},
 				},
 			},
+			BotDeployment: &configpb.BotDeployment{
+				Stable: &configpb.BotDeployment_BotPackage{
+					Server:  "https://example.com",
+					Pkg:     "some/pkg",
+					Version: "stable",
+				},
+				Canary: &configpb.BotDeployment_BotPackage{
+					Server:  "https://example.com",
+					Pkg:     "some/pkg",
+					Version: "canary",
+				},
+				CanaryPercent: 20,
+			},
 		})), should.BeNil)
 	})
 
@@ -211,9 +224,81 @@ func TestSettingsValidation(t *testing.T) {
 				},
 				err: `(traffic_migration / "/prpc/service/method1"): route_to_go_percent should be in range [0, 100]`,
 			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{},
+				},
+				err: `(bot_deployment): missing required "stable" section`,
+			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{
+						Stable: &configpb.BotDeployment_BotPackage{
+							Server:  "not-https",
+							Pkg:     "some/pkg",
+							Version: "latest",
+						},
+					},
+				},
+				err: `(bot_deployment / stable / server): invalid URL "not-https"`,
+			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{
+						Stable: &configpb.BotDeployment_BotPackage{
+							Server:  "https://example.com",
+							Pkg:     "some/pkg/${platform}", // needs to be a concrete package
+							Version: "latest",
+						},
+					},
+				},
+				err: `(bot_deployment / stable / pkg): package name template "some/pkg/${platform}" is not allowed here`,
+			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{
+						Stable: &configpb.BotDeployment_BotPackage{
+							Server:  "https://example.com",
+							Pkg:     "some/pkg",
+							Version: "!!!",
+						},
+					},
+				},
+				err: `(bot_deployment / stable / version): bad version "!!!": not an instance ID, a ref or a tag`,
+			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{
+						Stable: &configpb.BotDeployment_BotPackage{
+							Server:  "https://example.com",
+							Pkg:     "some/pkg",
+							Version: "latest",
+						},
+						Canary: &configpb.BotDeployment_BotPackage{
+							Server:  "not-https",
+							Pkg:     "some/pkg",
+							Version: "latest",
+						},
+					},
+				},
+				err: `(bot_deployment / canary / server): invalid URL "not-https"`,
+			},
+			{
+				cfg: &configpb.SettingsCfg{
+					BotDeployment: &configpb.BotDeployment{
+						Stable: &configpb.BotDeployment_BotPackage{
+							Server:  "https://example.com",
+							Pkg:     "some/pkg",
+							Version: "latest",
+						},
+						CanaryPercent: -1,
+					},
+				},
+				err: `(bot_deployment): canary_percent must be between 0 and 100`,
+			},
 		}
 		for _, cs := range testCases {
-			assert.Loosely(t, call(cs.cfg), should.Resemble([]string{`in "settings.cfg" ` + cs.err}))
+			assert.Loosely(t, call(cs.cfg), should.Match([]string{`in "settings.cfg" ` + cs.err}))
 		}
 	})
 }

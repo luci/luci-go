@@ -466,7 +466,7 @@ func validateCIPDClientPackage(pkg *apipb.CipdPackage) error {
 		return nil
 	case pkg.Path != "":
 		return errors.New("path must be unset")
-	case teeErr(validate.CIPDPackageName(pkg.PackageName), &err) != nil:
+	case teeErr(validate.CIPDPackageName(pkg.PackageName, true), &err) != nil:
 		return errors.Annotate(err, "package_name").Err()
 	case teeErr(validate.CIPDPackageVersion(pkg.Version), &err) != nil:
 		return errors.Annotate(err, "version").Err()

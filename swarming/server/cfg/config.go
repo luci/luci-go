@@ -401,9 +401,8 @@ func UpdateConfigs(ctx context.Context, ebs *EmbeddedBotSettings, cipdClient CIP
 	// a bot zip archive stored in the datastore (in chunks) and its digest. If
 	// such inputs have already been processed, it is mostly noop.
 	//
-	// TODO(vadimsh): Start requiring bot_deployment section once this is ready
-	// for the final rollout. For now this section is optional and present only
-	// on the dev instance.
+	// Bot deployment section may be missing if this is a new unconfigured server.
+	// In that case it won't be able to bootstrap any bots.
 	if stable := bundle.Settings.GetBotDeployment().GetStable(); stable != nil {
 		canary := bundle.Settings.GetBotDeployment().GetCanary()
 		if canary == nil {
