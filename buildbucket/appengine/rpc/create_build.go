@@ -107,33 +107,42 @@ func validateBucketConstraints(ctx context.Context, b *pb.Build) error {
 		return errors.Reason("constraints for %s not found", bckStr).Err()
 	}
 
-	// want to return early if swarming is not set and backend is set.
-	if b.GetInfra().GetSwarming() == nil {
-		return nil
-	}
 	allowedPools := stringset.NewFromSlice(constraints.GetPools()...)
 	allowedSAs := stringset.NewFromSlice(constraints.GetServiceAccounts()...)
-	poolAllowed := false
+
 	var pool string
-	for _, dim := range b.GetInfra().GetSwarming().GetTaskDimensions() {
-		if dim.Key != "pool" {
-			continue
-		}
-		pool = dim.Value
-		if allowedPools.Has(dim.Value) {
-			poolAllowed = true
+	for _, dim := range taskDimensions(b.GetInfra()) {
+		if dim.Key == "pool" {
+			pool = dim.Value
 			break
 		}
 	}
-	if !poolAllowed {
-		return errors.Reason("build.infra.swarming.dimension['pool']: %s not allowed", pool).Err()
+	if pool == "" || !allowedPools.Has(pool) {
+		return errors.Reason("pool: %s not allowed", pool).Err()
 	}
 
-	sa := b.GetInfra().GetSwarming().GetTaskServiceAccount()
+	sa := taskServiceAccount(b.GetInfra())
 	if sa == "" || !allowedSAs.Has(sa) {
-		return errors.Reason("build.infra.swarming.task_service_account: %s not allowed", sa).Err()
+		return errors.Reason("service_account: %s not allowed", sa).Err()
 	}
 	return nil
+}
+
+func taskDimensions(infra *pb.BuildInfra) []*pb.RequestedDimension {
+	if infra.GetBackend() != nil {
+		return infra.GetBackend().GetTaskDimensions()
+	}
+	return infra.GetSwarming().GetTaskDimensions()
+}
+
+func taskServiceAccount(infra *pb.BuildInfra) string {
+	if infra.GetBackend() != nil {
+		sav := infra.GetBackend().GetConfig().GetFields()["service_account"]
+		if v, ok := sav.GetKind().(*structpb.Value_StringValue); ok {
+			return v.StringValue
+		}
+	}
+	return infra.GetSwarming().GetTaskServiceAccount()
 }
 
 func validateHostName(host string) error {

@@ -560,18 +560,6 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
 						assert.Loosely(t, err, should.ErrLike(`build: infra: can only have one of backend or swarming in build infra. both were provided`))
 					})
-					t.Run("targetIsValid", func(t *ftt.Test) {
-						req.Build.Infra.Swarming = nil
-						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
-							Task: &pb.Task{
-								Id: &pb.TaskID{
-									Target: "swarming://chromium-swarm",
-								},
-							},
-						}
-						_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-						assert.Loosely(t, err, should.BeNil)
-					})
 					t.Run("targetIsNotValid", func(t *ftt.Test) {
 						req.Build.Infra.Swarming = nil
 						req.Build.Infra.Backend = &pb.BuildInfra_Backend{
@@ -697,7 +685,7 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 					},
 				})
 				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-				assert.Loosely(t, err, should.ErrLike(`build.infra.swarming.dimension['pool']: example.pool not allowed`))
+				assert.Loosely(t, err, should.ErrLike(`pool: example.pool not allowed`))
 			})
 			t.Run("service account not allowed", func(t *ftt.Test) {
 				testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
@@ -713,7 +701,65 @@ func TestValidateCreateBuildRequest(t *testing.T) {
 					},
 				})
 				_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
-				assert.Loosely(t, err, should.ErrLike(`build.infra.swarming.task_service_account: example@account.com not allowed`))
+				assert.Loosely(t, err, should.ErrLike(`service_account: example@account.com not allowed`))
+			})
+
+			t.Run("backend", func(t *ftt.Test) {
+				req := validCreateBuildRequest()
+				req.Build.Infra.Swarming = nil
+				req.Build.Infra.Backend = &pb.BuildInfra_Backend{
+					Task: &pb.Task{
+						Id: &pb.TaskID{
+							Target: "swarming://chromium-swarm",
+						},
+					},
+					TaskDimensions: []*pb.RequestedDimension{
+						{
+							Key:   "pool",
+							Value: "example.pool",
+						},
+					},
+					Config: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"service_account": {
+								Kind: &structpb.Value_StringValue{StringValue: "example@account.com"},
+							},
+						},
+					},
+				}
+
+				t.Run("pool not allowed", func(t *ftt.Test) {
+					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+						Constraints: &pb.Bucket_Constraints{
+							Pools:           []string{"different.pool"},
+							ServiceAccounts: []string{"example@account.com"},
+						}})
+
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:someone@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+						},
+					})
+					_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+					assert.Loosely(t, err, should.ErrLike(`pool: example.pool not allowed`))
+				})
+				t.Run("service account not allowed", func(t *ftt.Test) {
+					testutil.PutBucket(ctx, "project", "bucket", &pb.Bucket{
+						Constraints: &pb.Bucket_Constraints{
+							Pools:           []string{"example.pool"},
+							ServiceAccounts: []string{"different@account.com"},
+						}})
+
+					ctx = auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:someone@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "project:bucket", Permission: bbperms.BuildsCreate},
+						},
+					})
+					_, err := validateCreateBuildRequest(ctx, wellknownExps, req)
+					assert.Loosely(t, err, should.ErrLike(`service_account: example@account.com not allowed`))
+				})
 			})
 		})
 
@@ -950,7 +996,19 @@ func TestCreateBuild(t *testing.T) {
 				Task: &pb.Task{
 					Id: &pb.TaskID{
 						Target: "swarming://chromium-swarm",
-						Id:     "1",
+					},
+				},
+				TaskDimensions: []*pb.RequestedDimension{
+					{
+						Key:   "pool",
+						Value: "example.pool",
+					},
+				},
+				Config: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"service_account": {
+							Kind: &structpb.Value_StringValue{StringValue: "example@account.com"},
+						},
 					},
 				},
 			}
