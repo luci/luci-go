@@ -42,7 +42,7 @@ import { useNavigate } from 'react-router-dom';
 import { isGlob, isMember, isSubgroup } from '@/authdb/common/helpers';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 
-import './groups_list.css';
+import './groups.css';
 
 const expansionThreshold = 10;
 

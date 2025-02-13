@@ -30,7 +30,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -48,33 +47,6 @@ import {
   UpdateGroupRequest,
   DeleteGroupRequest,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-const theme = createTheme({
-  typography: {
-    h6: {
-      color: 'black',
-      margin: '0',
-      padding: '0',
-      fontSize: '1.17em',
-      fontWeight: 'bold',
-    },
-    subtitle1: {
-      color: 'red',
-      fontStyle: 'italic',
-    },
-  },
-  components: {
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          borderBottom: 'none',
-          paddingLeft: '0',
-          paddingBottom: '0',
-        },
-      },
-    },
-  },
-});
 
 // Strips '<prefix>:' from a string if it starts with it.
 function stripPrefix(prefix: string, str: string) {
@@ -335,264 +307,247 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
 
   return (
     <>
-      <ThemeProvider theme={theme}>
-        <FormControl data-testid="group-form" style={{ width: '100%' }}>
-          {!isExternal && (
-            <TableContainer sx={{ p: 0, width: '100%' }}>
-              <Table data-testid="description-table">
-                <TableBody>
-                  <TableRow
-                    data-testid="description-row"
-                    onMouseEnter={() => setShowDescriptionEdit(true)}
-                    onMouseLeave={() => setShowDescriptionEdit(false)}
-                  >
-                    <TableCell
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        minHeight: '45px',
-                        paddingTop: '0px',
-                      }}
-                    >
-                      <Typography variant="h6">Description</Typography>
-                      {(showDescriptionEdit || descriptionMode) &&
-                        callerCanModify && (
-                          <IconButton
-                            color="primary"
-                            onClick={changeDescriptionMode}
-                            sx={{ p: 0, ml: 1.5 }}
-                            data-testid="edit-description-icon"
-                          >
-                            {descriptionMode ? <DoneIcon /> : <EditIcon />}
-                          </IconButton>
-                        )}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell
-                      align="left"
-                      style={{ width: '95%' }}
-                      sx={{ pt: 0 }}
-                    >
-                      {descriptionMode ? (
-                        <TextField
-                          value={description}
-                          style={{
-                            width: '100%',
-                            whiteSpace: 'pre-wrap',
-                          }}
-                          onChange={(e) => setDescription(e.target.value)}
-                          onKeyDown={(e) =>
-                            checkFieldSubmit(e.key, 'description')
-                          }
-                          id="descriptionTextfield"
-                          data-testid="description-textfield"
-                          error={descriptionErrorMessage !== ''}
-                          helperText={descriptionErrorMessage}
-                          onBlur={validateDescription}
-                        ></TextField>
-                      ) : (
-                        <Typography variant="body2" style={{ width: '100%' }}>
-                          {' '}
-                          {description}{' '}
-                        </Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-              <Table
-                onMouseEnter={() => setShowOwnersEdit(true)}
-                onMouseLeave={() => setShowOwnersEdit(false)}
-                data-testid="owners-table"
-              >
-                <TableBody>
-                  <TableRow>
-                    <TableCell
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        minHeight: '45px',
-                      }}
-                    >
-                      <Typography variant="h6">Owners</Typography>
-                      {(showOwnersEdit || ownersMode) && callerCanModify && (
+      <FormControl data-testid="group-form" style={{ width: '100%' }}>
+        {!isExternal && (
+          <TableContainer sx={{ p: 0, width: '100%' }}>
+            <Table data-testid="description-table">
+              <TableBody>
+                <TableRow
+                  data-testid="description-row"
+                  onMouseEnter={() => setShowDescriptionEdit(true)}
+                  onMouseLeave={() => setShowDescriptionEdit(false)}
+                >
+                  <TableCell sx={{ pt: 0 }}>
+                    <Typography variant="h6">Description</Typography>
+                    {(showDescriptionEdit || descriptionMode) &&
+                      callerCanModify && (
                         <IconButton
                           color="primary"
-                          onClick={changeOwnersMode}
+                          onClick={changeDescriptionMode}
                           sx={{ p: 0, ml: 1.5 }}
-                          data-testid="edit-owners-icon"
+                          data-testid="edit-description-icon"
                         >
-                          {ownersMode ? <DoneIcon /> : <EditIcon />}
+                          {descriptionMode ? <DoneIcon /> : <EditIcon />}
                         </IconButton>
                       )}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell
-                      align="left"
-                      style={{ width: '95%' }}
-                      sx={{ pt: 0 }}
-                    >
-                      {ownersMode ? (
-                        <TextField
-                          value={owners}
-                          style={{ width: '100%' }}
-                          onChange={(e) => setOwners(e.target.value)}
-                          onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
-                          id="ownersTextfield"
-                          data-testid="owners-textfield"
-                          error={ownersErrorMessage !== ''}
-                          helperText={ownersErrorMessage}
-                          onBlur={validateOwners}
-                          placeholder="administrators"
-                        ></TextField>
-                      ) : (
-                        <Typography variant="body2" style={{ width: '100%' }}>
-                          {' '}
-                          {owners}{' '}
-                        </Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          {isExternal ? (
-            <>
-              {callerCanViewMembers ? (
-                <GroupsFormListReadonly name="Members" initialItems={members} />
-              ) : (
-                <Typography variant="h6" sx={{ p: 1.5 }}>
-                  {' '}
-                  {numRedacted} members redacted
-                </Typography>
-              )}
-            </>
-          ) : (
-            <>
-              {callerCanModify ? (
-                <>
-                  {callerCanViewMembers ? (
-                    <GroupsFormList
-                      name="Members"
-                      initialValues={members}
-                      ref={membersRef}
-                      submitValues={() => submitField('members')}
-                    />
-                  ) : (
-                    <Typography variant="h6" sx={{ p: '16px' }}>
-                      {' '}
-                      {numRedacted} members redacted
-                    </Typography>
-                  )}
-                  <GroupsFormList
-                    name="Globs"
-                    initialValues={globs}
-                    ref={globsRef}
-                    submitValues={() => submitField('globs')}
-                  />
-                  <GroupsFormList
-                    name="Subgroups"
-                    initialValues={subgroups}
-                    ref={subgroupsRef}
-                    submitValues={() => submitField('nested')}
-                  />
-                  <div>
-                    {successEditedGroup && (
-                      <Alert severity="success" sx={{ mt: 1.5 }}>
-                        Group updated
-                      </Alert>
-                    )}
-                    {errorMessage && (
-                      <Alert severity="error" sx={{ mt: 1.5 }}>
-                        {errorMessage}
-                      </Alert>
-                    )}
-                  </div>
-                  {isUpdating && <CircularProgress></CircularProgress>}
-                  {name !== 'administrators' && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row-reverse',
-                      }}
-                    >
-                      <Button
-                        variant="contained"
-                        color="error"
-                        disableElevation
-                        style={{ width: '170px' }}
-                        sx={{ mt: 1.5, ml: 1.5 }}
-                        onClick={() => setOpenDeleteDialog(true)}
-                        data-testid="delete-button"
-                      >
-                        Delete Group
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {callerCanViewMembers ? (
-                    <GroupsFormListReadonly
-                      name="Members"
-                      initialItems={members}
-                    />
-                  ) : (
-                    <Typography variant="h6" sx={{ p: '16px' }}>
-                      {' '}
-                      {numRedacted} members redacted
-                    </Typography>
-                  )}
-                  <GroupsFormListReadonly name="Globs" initialItems={globs} />
-                  <GroupsFormListReadonly
-                    name="Subgroups"
-                    initialItems={subgroups}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{ p: '16px' }}
-                    style={{ fontStyle: 'italic' }}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    align="left"
+                    style={{ width: '95%' }}
+                    sx={{ pt: 0 }}
                   >
-                    You do not have sufficient permissions to modify this group.
+                    {descriptionMode ? (
+                      <TextField
+                        value={description}
+                        style={{
+                          width: '100%',
+                          whiteSpace: 'pre-wrap',
+                        }}
+                        onChange={(e) => setDescription(e.target.value)}
+                        onKeyDown={(e) =>
+                          checkFieldSubmit(e.key, 'description')
+                        }
+                        id="descriptionTextfield"
+                        data-testid="description-textfield"
+                        error={descriptionErrorMessage !== ''}
+                        helperText={descriptionErrorMessage}
+                        onBlur={validateDescription}
+                      ></TextField>
+                    ) : (
+                      <Typography variant="body2" style={{ width: '100%' }}>
+                        {' '}
+                        {description}{' '}
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            <Table
+              onMouseEnter={() => setShowOwnersEdit(true)}
+              onMouseLeave={() => setShowOwnersEdit(false)}
+              data-testid="owners-table"
+            >
+              <TableBody>
+                <TableRow>
+                  <TableCell>
+                    <Typography variant="h6">Owners</Typography>
+                    {(showOwnersEdit || ownersMode) && callerCanModify && (
+                      <IconButton
+                        color="primary"
+                        onClick={changeOwnersMode}
+                        sx={{ p: 0, ml: 1.5 }}
+                        data-testid="edit-owners-icon"
+                      >
+                        {ownersMode ? <DoneIcon /> : <EditIcon />}
+                      </IconButton>
+                    )}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    align="left"
+                    style={{ width: '95%' }}
+                    sx={{ pt: 0 }}
+                  >
+                    {ownersMode ? (
+                      <TextField
+                        value={owners}
+                        style={{ width: '100%' }}
+                        onChange={(e) => setOwners(e.target.value)}
+                        onKeyDown={(e) => checkFieldSubmit(e.key, 'owners')}
+                        id="ownersTextfield"
+                        data-testid="owners-textfield"
+                        error={ownersErrorMessage !== ''}
+                        helperText={ownersErrorMessage}
+                        onBlur={validateOwners}
+                        placeholder="administrators"
+                      ></TextField>
+                    ) : (
+                      <Typography variant="body2" style={{ width: '100%' }}>
+                        {' '}
+                        {owners}{' '}
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+        {isExternal ? (
+          <>
+            {callerCanViewMembers ? (
+              <GroupsFormListReadonly name="Members" initialItems={members} />
+            ) : (
+              <Typography variant="h6" sx={{ p: 1.5 }}>
+                {' '}
+                {numRedacted} members redacted
+              </Typography>
+            )}
+          </>
+        ) : (
+          <>
+            {callerCanModify ? (
+              <>
+                {callerCanViewMembers ? (
+                  <GroupsFormList
+                    name="Members"
+                    initialValues={members}
+                    ref={membersRef}
+                    submitValues={() => submitField('members')}
+                  />
+                ) : (
+                  <Typography variant="h6" sx={{ p: '16px' }}>
+                    {' '}
+                    {numRedacted} members redacted
                   </Typography>
-                </>
-              )}
-            </>
-          )}
-        </FormControl>
-        <Dialog
-          open={openDeleteDialog || false}
-          onClose={handleDeleteDialogClose}
-          data-testid="delete-confirm-dialog"
-        >
-          <DialogTitle>
-            {`Are you sure you want to delete this group: ${name}?`}
-          </DialogTitle>
-          <DialogActions>
-            <Button
-              onClick={handleDeleteDialogClose}
-              disableElevation
-              variant="outlined"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={deleteGroup}
-              disableElevation
-              variant="contained"
-              color="error"
-              data-testid="delete-confirm-button"
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </ThemeProvider>
+                )}
+                <GroupsFormList
+                  name="Globs"
+                  initialValues={globs}
+                  ref={globsRef}
+                  submitValues={() => submitField('globs')}
+                />
+                <GroupsFormList
+                  name="Subgroups"
+                  initialValues={subgroups}
+                  ref={subgroupsRef}
+                  submitValues={() => submitField('nested')}
+                />
+                <div>
+                  {successEditedGroup && (
+                    <Alert severity="success" sx={{ mt: 1.5 }}>
+                      Group updated
+                    </Alert>
+                  )}
+                  {errorMessage && (
+                    <Alert severity="error" sx={{ mt: 1.5 }}>
+                      {errorMessage}
+                    </Alert>
+                  )}
+                </div>
+                {isUpdating && <CircularProgress></CircularProgress>}
+                {name !== 'administrators' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row-reverse',
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      color="error"
+                      disableElevation
+                      style={{ width: '170px' }}
+                      sx={{ mt: 1.5, ml: 1.5 }}
+                      onClick={() => setOpenDeleteDialog(true)}
+                      data-testid="delete-button"
+                    >
+                      Delete Group
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {callerCanViewMembers ? (
+                  <GroupsFormListReadonly
+                    name="Members"
+                    initialItems={members}
+                  />
+                ) : (
+                  <Typography variant="h6" sx={{ p: '16px' }}>
+                    {' '}
+                    {numRedacted} members redacted
+                  </Typography>
+                )}
+                <GroupsFormListReadonly name="Globs" initialItems={globs} />
+                <GroupsFormListReadonly
+                  name="Subgroups"
+                  initialItems={subgroups}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{ p: '16px' }}
+                  style={{ fontStyle: 'italic' }}
+                >
+                  You do not have sufficient permissions to modify this group.
+                </Typography>
+              </>
+            )}
+          </>
+        )}
+      </FormControl>
+      <Dialog
+        open={openDeleteDialog || false}
+        onClose={handleDeleteDialogClose}
+        data-testid="delete-confirm-dialog"
+      >
+        <DialogTitle>
+          {`Are you sure you want to delete this group: ${name}?`}
+        </DialogTitle>
+        <DialogActions>
+          <Button
+            onClick={handleDeleteDialogClose}
+            disableElevation
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={deleteGroup}
+            disableElevation
+            variant="contained"
+            color="error"
+            data-testid="delete-confirm-button"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

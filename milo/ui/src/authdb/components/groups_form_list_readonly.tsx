@@ -19,7 +19,7 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useState, useEffect } from 'react';
 
-import './groups_list.css';
+import './groups.css';
 
 interface GroupsFormListReadonlyProps {
   initialItems: string[];

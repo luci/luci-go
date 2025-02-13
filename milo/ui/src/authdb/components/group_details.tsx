@@ -18,6 +18,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import { GroupForm } from '@/authdb/components/group_form';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
@@ -32,6 +33,32 @@ interface GroupDetailsProps {
   name: string;
   refetchList: (fresh: boolean) => void;
 }
+
+const theme = createTheme({
+  typography: {
+    h6: {
+      color: 'black',
+      margin: '0',
+      padding: '0',
+      fontSize: '1.17em',
+      fontWeight: 'bold',
+    },
+  },
+  components: {
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: 'none',
+          paddingLeft: '0',
+          paddingBottom: '5px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+        },
+      },
+    },
+  },
+});
 
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
@@ -72,41 +99,43 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
 
   return (
     <>
-      <TabContext value={value}>
-        <Box sx={{ width: '100%' }}>
-          <Typography variant="h4" sx={{ pl: 2, pb: 0.5, pt: 2 }}>
-            {name}
-          </Typography>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
-              <Tab label="Overview" {...a11yProps('overview')} />
-              {realmsFlag && (
-                <Tab label="Permissions" {...a11yProps('permissions')} />
-              )}
-              {listingFlag && (
-                <Tab label="Full Listing" {...a11yProps('listing')} />
-              )}
-            </TabList>
+      <ThemeProvider theme={theme}>
+        <TabContext value={value}>
+          <Box sx={{ width: '100%' }}>
+            <Typography variant="h4" sx={{ pl: 2, pb: 0.5, pt: 2 }}>
+              {name}
+            </Typography>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
+                <Tab label="Overview" {...a11yProps('overview')} />
+                {realmsFlag && (
+                  <Tab label="Permissions" {...a11yProps('permissions')} />
+                )}
+                {listingFlag && (
+                  <Tab label="Full Listing" {...a11yProps('listing')} />
+                )}
+              </TabList>
+            </Box>
+            <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
+              <GroupForm name={name} refetchList={refetchList} />
+            </TabPanel>
+            {realmsFlag && (
+              <TabPanel
+                value="permissions"
+                role="tabpanel"
+                id="tabpanel-permissions"
+              >
+                <GroupPermissions name={name}></GroupPermissions>
+              </TabPanel>
+            )}
+            {listingFlag && (
+              <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
+                <span> WIP Full Listing Tab</span>
+              </TabPanel>
+            )}
           </Box>
-          <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
-            <GroupForm name={name} refetchList={refetchList} />
-          </TabPanel>
-          {realmsFlag && (
-            <TabPanel
-              value="permissions"
-              role="tabpanel"
-              id="tabpanel-permissions"
-            >
-              <GroupPermissions name={name}></GroupPermissions>
-            </TabPanel>
-          )}
-          {listingFlag && (
-            <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
-              <span> WIP Full Listing Tab</span>
-            </TabPanel>
-          )}
-        </Box>
-      </TabContext>
+        </TabContext>
+      </ThemeProvider>
     </>
   );
 }
