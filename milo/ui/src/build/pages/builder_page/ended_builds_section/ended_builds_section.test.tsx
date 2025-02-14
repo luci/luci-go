@@ -118,7 +118,7 @@ describe('EndedBuildsSection', () => {
         <EndedBuildsSection builderId={builderId} />
       </FakeContextProvider>,
     );
-    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runOnlyPendingTimersAsync());
 
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
@@ -133,7 +133,7 @@ describe('EndedBuildsSection', () => {
     const nextPageLink = screen.getByText('Next Page');
 
     fireEvent.click(nextPageLink);
-    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runOnlyPendingTimersAsync());
     expect(prevPageLink).not.toHaveAttribute('aria-disabled', 'true');
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
@@ -150,7 +150,7 @@ describe('EndedBuildsSection', () => {
     fireEvent.click(screen.getByTestId('CalendarIcon'));
     fireEvent.click(screen.getByText('Today'));
 
-    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runOnlyPendingTimersAsync());
     // Prev page tokens are purged.
     expect(prevPageLink).toHaveAttribute('aria-disabled', 'true');
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
@@ -171,14 +171,14 @@ describe('EndedBuildsSection', () => {
         name: 'Open',
       }),
     );
-    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runOnlyPendingTimersAsync());
 
     const infraFailureOption = screen.getByRole('option', {
       name: 'Infra failed',
     });
     endedBuildsTableMock.mockClear();
     fireEvent.click(infraFailureOption);
-    await act(() => jest.runAllTimersAsync());
+    await act(() => jest.runOnlyPendingTimersAsync());
     expect(buildStatusFilter).toHaveAttribute('value', 'Infra failed');
     expect(endedBuildsTableMock).toHaveBeenCalledWith(
       {
