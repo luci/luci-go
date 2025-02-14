@@ -399,6 +399,62 @@ func TestBotInfoUpdate(t *testing.T) {
 			assert.That(t, events[3].TaskID, should.Equal(""))        // bot_idle
 		})
 
+		t.Run("Connect => TerminateBot => Connect => Missing", func(t *ftt.Test) {
+			submit(BotEventConnected, "connect-1", nil, testState1, nil, nil)
+			tickOneSec()
+			submit(BotEventTerminate, "terminate", nil, testState1, nil, &BotEventTaskInfo{
+				TaskID:    "task-id",
+				TaskName:  "task-name",
+				TaskFlags: TaskFlagTermination,
+			})
+			tickOneSec()
+			submit(BotEventTaskCompleted, "done", nil, testState1, nil, &BotEventTaskInfo{})
+			tickOneSec()
+			submit(BotEventShutdown, "dead", nil, testState1, nil, nil)
+			tickOneSec()
+
+			botInfo, events := check()
+
+			assert.That(t, summary(events), should.Match([]string{
+				"bot_connected",
+				"bot_terminate",
+				"task_completed",
+				"bot_shutdown",
+			}))
+
+			assert.That(t, botInfo.Composite, should.Match([]BotStateEnum{
+				BotStateNotInMaintenance,
+				BotStateDead,
+				BotStateHealthy,
+				BotStateIdle,
+			}))
+			assert.That(t, botInfo.TaskID, should.Equal(""))
+			assert.That(t, botInfo.TaskName, should.Equal(""))
+			assert.That(t, botInfo.TaskFlags, should.Equal(TaskFlags(0)))
+			assert.That(t, botInfo.LastFinishedTask, should.Equal(LastTaskDetails{
+				TaskID:      "task-id",
+				TaskName:    "task-name",
+				TaskFlags:   TaskFlagTermination,
+				FinishedDue: BotEventTaskCompleted,
+			}))
+			assert.That(t, botInfo.TerminationTaskID, should.Equal("task-id"))
+
+			// When it connects again, TerminationTaskID gets unset.
+			submit(BotEventConnected, "connect-2", nil, testState1, nil, nil)
+			tickOneSec()
+
+			botInfo, _ = check()
+			assert.That(t, botInfo.LastFinishedTask, should.Equal(LastTaskDetails{}))
+			assert.That(t, botInfo.TerminationTaskID, should.Equal(""))
+
+			// When it does ungracefully, TerminationTaskID is still unset.
+			submit(BotEventMissing, "missing", nil, testState1, nil, nil)
+			tickOneSec()
+
+			botInfo, _ = check()
+			assert.That(t, botInfo.TerminationTaskID, should.Equal(""))
+		})
+
 		t.Run("Prepare + initial update", func(t *ftt.Test) {
 			// The callback sees `nil` if there's no BotInfo yet.
 			var saw []*BotInfo

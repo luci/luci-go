@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -151,4 +152,14 @@ func TimestampToRequestKey(ctx context.Context, timestamp time.Time, suffix int6
 	base := deltaMS << 20
 	reqID := base | suffix<<4 | 0x1
 	return datastore.NewKey(ctx, "TaskRequest", "", reqID^taskRequestIDMask, nil), nil
+}
+
+// AsTaskRequestID converts TaskRunResult ID to TaskRequest ID.
+//
+// This just makes sure the ID ends with `0`. Doesn't do any validation.
+func AsTaskRequestID(tid string) string {
+	if tid != "" && !strings.HasSuffix(tid, "0") {
+		tid = tid[:len(tid)-1] + "0"
+	}
+	return tid
 }

@@ -980,6 +980,8 @@ message TaskRequestMetadataResponse {
 }
 
 // Representation of the BotInfo ndb model.
+//
+// TODO: Document fields properly.
 message BotInfo {
   string bot_id = 1;
   string task_id = 2;
@@ -997,6 +999,16 @@ message BotInfo {
   string state = 13;
   bool deleted = 14;
   string session_id = 15;
+
+  // Set if the bot was shutdown in response to TerminateBot request.
+  //
+  // Set only if `is_dead` is also True. Contains the same task ID as was
+  // returned by the corresponding TerminateBot request.
+  //
+  // Unset for alive bots, bots that terminated themselves in response to
+  // SIGTERM (or in some other way not involving TerminateBot), or bots that
+  // just stopped pinging the server for whatever reason (aka "missing bots").
+  string termination_task_id = 16;
 }
 
 // Wraps a list of BotInfo.

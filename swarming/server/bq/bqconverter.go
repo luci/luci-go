@@ -38,13 +38,6 @@ func sortedKeys[K ~string, V any](m map[K]V) []string {
 	return keys
 }
 
-func runIDToTaskID(runID string) string {
-	if runID == "" {
-		return ""
-	}
-	return runID[:len(runID)-1] + "0"
-}
-
 func taskProperties(tp *model.TaskProperties) *bqpb.TaskProperties {
 	inputPackages := make([]*bqpb.CIPDPackage, len(tp.CIPDInput.Packages))
 	for i, pack := range tp.CIPDInput.Packages {
@@ -155,9 +148,9 @@ func taskRequest(tr *model.TaskRequest) *bqpb.TaskRequest {
 		Realm:            tr.Realm,
 		Resultdb:         &apipb.ResultDBCfg{Enable: tr.ResultDB.Enable},
 		TaskId:           model.RequestKeyToTaskID(tr.Key, model.AsRequest),
-		ParentTaskId:     runIDToTaskID(tr.ParentTaskID.Get()),
+		ParentTaskId:     model.AsTaskRequestID(tr.ParentTaskID.Get()),
 		ParentRunId:      tr.ParentTaskID.Get(),
-		RootTaskId:       runIDToTaskID(tr.RootTaskID),
+		RootTaskId:       model.AsTaskRequestID(tr.RootTaskID),
 		RootRunId:        tr.RootTaskID,
 		BotPingTolerance: float64(tr.BotPingToleranceSecs),
 	}

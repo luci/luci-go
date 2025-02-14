@@ -258,6 +258,8 @@ type BotEventTaskInfo struct {
 	TaskID string
 	// TaskName matches TaskRequest.Name of the task identified by TaskID.
 	TaskName string
+	// TaskFlags hold aspects of the task, see TaskFlag*.
+	TaskFlags TaskFlags
 }
 
 // SubmittedBotInfoUpdate is details about a submitted bot info update.
@@ -445,8 +447,33 @@ func (u *BotInfoUpdate) execute(ctx context.Context) (*SubmittedBotInfoUpdate, e
 	// Update the task assigned to the bot (or reset it if TaskInfo is an empty
 	// struct).
 	if u.TaskInfo != nil {
+		if u.TaskInfo.TaskID == "" && current.TaskID != "" {
+			current.LastFinishedTask = LastTaskDetails{
+				TaskID:      current.TaskID,
+				TaskName:    current.TaskName,
+				TaskFlags:   current.TaskFlags,
+				FinishedDue: u.EventType,
+			}
+		}
 		current.TaskID = u.TaskInfo.TaskID
 		current.TaskName = u.TaskInfo.TaskName
+		current.TaskFlags = u.TaskInfo.TaskFlags
+	}
+
+	// Update TerminationTaskID if the bot was shutdown by a termination task.
+	if u.EventType == BotEventShutdown && current.LastFinishedTask.TaskFlags&TaskFlagTermination != 0 {
+		current.TerminationTaskID = current.LastFinishedTask.TaskID
+	} else {
+		current.TerminationTaskID = ""
+	}
+
+	// Forget the last task history if this is a new bot session. That way if a
+	// bot reconnects after a graceful termination, but then immediately
+	// terminates again ungracefully, we won't mistakenly have TerminationTaskID
+	// set.
+	if u.EventType == BotEventConnected {
+		current.LastFinishedTask = LastTaskDetails{}
+		current.TerminationTaskID = ""
 	}
 
 	// IdleSince is set only for bots that can potentially run tasks (i.e. they
