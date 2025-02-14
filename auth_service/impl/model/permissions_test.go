@@ -30,7 +30,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 )
 
-func TestGetRealms(t *testing.T) {
+func TestGetAuthorizationSnapshot(t *testing.T) {
 	t.Parallel()
 	ftt.Run("Returns realms object", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
@@ -65,12 +65,17 @@ func TestGetRealms(t *testing.T) {
 				},
 			},
 		}
+		testGroups := []*protocol.AuthGroup{
+			{Name: "group-a", Members: []string{"a@example.com"}},
+			{Name: "group-b", Nested: []string{"group-a"}},
+		}
 		testRequest := &protocol.ReplicationPushRequest{
 			Revision: &protocol.AuthDBRevision{
 				AuthDbRev: testAuthDBRev,
 			},
 			AuthDb: &protocol.AuthDB{
 				Realms: testRealms,
+				Groups: testGroups,
 			},
 		}
 		blob, err := proto.Marshal(testRequest)
@@ -92,9 +97,10 @@ func TestGetRealms(t *testing.T) {
 		err = datastore.Put(ctx, authDBSnapshotLatest)
 		assert.Loosely(t, err, should.BeNil)
 
-		actual, err := GetRealms(ctx, testAuthDBRev)
+		actual, err := GetAuthDBFromSnapshot(ctx, testAuthDBRev)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, actual, should.Match(testRealms))
+		assert.Loosely(t, actual.Realms, should.Match(testRealms))
+		assert.Loosely(t, actual.Groups, should.Match(testGroups))
 	})
 }
 

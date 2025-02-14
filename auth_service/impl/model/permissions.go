@@ -31,6 +31,10 @@ import (
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 )
 
+var (
+	ErrSnapshotMissingAuthDB = errors.New("AuthDBSnapshot missing AuthDB field")
+)
+
 // processSnapshot is a helper function to get the
 // ReplicationPushRequest from the given AuthDBSnapshot.
 func processSnapshot(authDBSnapshot *AuthDBSnapshot) (*protocol.ReplicationPushRequest, error) {
@@ -47,8 +51,9 @@ func processSnapshot(authDBSnapshot *AuthDBSnapshot) (*protocol.ReplicationPushR
 	return req, nil
 }
 
-// GetRealms returns the realms object from AuthDB snapshot, given its revision.
-func GetRealms(ctx context.Context, authDBRev int64) (*protocol.Realms, error) {
+// GetAuthDBFromSnapshot returns the AuthDB at the given revision, if an
+// AuthDBSnapshot at that revision exists.
+func GetAuthDBFromSnapshot(ctx context.Context, authDBRev int64) (*protocol.AuthDB, error) {
 	snapshot, err := GetAuthDBSnapshot(ctx, authDBRev, false)
 	if err != nil {
 		return nil, err
@@ -60,14 +65,17 @@ func GetRealms(ctx context.Context, authDBRev int64) (*protocol.Realms, error) {
 	}
 
 	if req.AuthDb == nil {
-		return nil, errors.New("Snapshot had no AuthDB")
+		return nil, ErrSnapshotMissingAuthDB
 	}
 
-	return req.AuthDb.Realms, nil
+	return req.AuthDb, nil
 }
 
-// AnalyzePrincipalPermissions analyzes the realms for the permissions granted to each principal in a given realm.
-// It returns a mapping of principal -> collection of realm permissions, the permissions that principal has in that specific realm.
+// AnalyzePrincipalPermissions analyzes the realms for the permissions granted
+// to each principal in a given realm.
+//
+// It returns a mapping of principal -> collection of realm permissions
+// (the permissions that principal has in that specific realm).
 func AnalyzePrincipalPermissions(realms *protocol.Realms) (map[string][]*rpcpb.RealmPermissions, error) {
 	result := make(map[string][]*rpcpb.RealmPermissions)
 	for _, realm := range realms.Realms {

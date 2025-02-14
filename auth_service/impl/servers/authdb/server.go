@@ -33,11 +33,12 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
 // PermissionsProvider is the interface to get all permissions entities.
 type PermissionsProvider interface {
-	GetAllPermissions(ctx context.Context) (map[string][]*rpcpb.RealmPermissions, error)
+	Get(ctx context.Context) (*PermissionsSnapshot, error)
 	RefreshPeriodically(ctx context.Context)
 }
 
@@ -64,7 +65,7 @@ type SnapshotJSON struct {
 // main serving loop.
 func (srv *Server) WarmUp(ctx context.Context) {
 	if srv.permissionsProvider != nil {
-		_, err := srv.permissionsProvider.GetAllPermissions(ctx)
+		_, err := srv.permissionsProvider.Get(ctx)
 		if err != nil {
 			logging.Errorf(ctx, "error warming up Permissions provider")
 		}
@@ -256,31 +257,64 @@ func (srv *Server) GetPrincipalPermissions(ctx context.Context, request *rpcpb.G
 	if request.Principal == nil || request.Principal.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "principal is required")
 	}
-	principal := request.Principal.Name
-	switch request.Principal.Kind {
-	case rpcpb.PrincipalKind_GROUP:
-		principal = "group:" + principal
-	case rpcpb.PrincipalKind_IDENTITY:
-		return nil, status.Error(codes.Unimplemented, "user permissions lookup not supported")
-	case rpcpb.PrincipalKind_GLOB:
-		return nil, status.Error(codes.Unimplemented, "globs permissions lookup not supported")
-	default:
-		return nil, status.Error(codes.InvalidArgument, "principal kind not recognised")
-	}
-	permissionsMap, err := srv.permissionsProvider.GetAllPermissions(ctx)
+
+	principalNode, err := graph.ConvertPrincipal(request.Principal)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch all permissions: %s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	perms, ok := permissionsMap[principal]
-	if !ok {
-		return &rpcpb.PrincipalPermissions{
-			Name:             principal,
-			RealmPermissions: []*rpcpb.RealmPermissions{},
-		}, nil
+
+	snap, err := srv.permissionsProvider.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch permissions snapshot: %s", err)
+	}
+
+	// Get the subgraph of groups that include this principal.
+	subgraph, err := snap.groupsGraph.GetRelevantSubgraph(principalNode)
+	if err != nil {
+		if errors.Is(err, graph.ErrNoSuchGroup) {
+			return nil, status.Errorf(codes.NotFound,
+				"The requested group \"%s\" was not found.", principalNode.Value)
+		}
+
+		return nil, status.Errorf(codes.Internal,
+			"Error getting relevant groups: %s", err)
+	}
+
+	// The first node is always the principal that was used as the root of the
+	// subgraph.
+	principal := subgraph.Nodes[0].ToPermissionKey()
+	// Collate the permissions for each node that includes this principal.
+	allRealms := stringset.New(0)
+	permissionsByRealm := make(map[string]stringset.Set)
+	for _, node := range subgraph.Nodes {
+		permKey := node.ToPermissionKey()
+		if permKey == "" {
+			continue
+		}
+		nodePerms, ok := snap.permissionsMap[permKey]
+		if !ok {
+			continue
+		}
+		for _, realmPerms := range nodePerms {
+			realm := realmPerms.GetName()
+			allRealms.Add(realm)
+			if _, ok := permissionsByRealm[realm]; !ok {
+				permissionsByRealm[realm] = stringset.New(0)
+			}
+			permissionsByRealm[realm].AddAll(realmPerms.GetPermissions())
+		}
+	}
+
+	realmPermissions := make([]*rpcpb.RealmPermissions, allRealms.Len())
+	for i, realm := range allRealms.ToSortedSlice() {
+		realmPermissions[i] = &rpcpb.RealmPermissions{
+			Name:        realm,
+			Permissions: permissionsByRealm[realm].ToSortedSlice(),
+		}
 	}
 
 	return &rpcpb.PrincipalPermissions{
 		Name:             principal,
-		RealmPermissions: perms,
+		RealmPermissions: realmPermissions,
 	}, nil
 }

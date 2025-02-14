@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
 // The maximum amount of time since a permissions snapshot was taken before it is
@@ -41,22 +42,22 @@ var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 type PermissionsSnapshot struct {
 	authDBRev      int64
 	permissionsMap map[string][]*rpcpb.RealmPermissions
+	groupsGraph    *graph.Graph
 }
 
 type CachingPermissionsProvider struct {
 	cached breadbox.Breadbox
 }
 
-// GetAllPermissions gets realm and analyzes the principal permissions mapping.
-// The result may be stale.
-func (cgp *CachingPermissionsProvider) GetAllPermissions(ctx context.Context) (map[string][]*rpcpb.RealmPermissions, error) {
+// Get retrieves the PermissionsSnapshot from the cache (result may be stale).
+func (cgp *CachingPermissionsProvider) Get(ctx context.Context) (*PermissionsSnapshot, error) {
 	val, err := cgp.cached.Get(ctx, maxStaleness, permissionsRefresher)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return val.(*PermissionsSnapshot).permissionsMap, nil
+	return val.(*PermissionsSnapshot), nil
 }
 
 func permissionsRefresher(ctx context.Context, prev any) (updated any, err error) {
@@ -100,35 +101,44 @@ func fetch(ctx context.Context) (snap *PermissionsSnapshot, err error) {
 		span.End()
 	}()
 
-	// Transactionally fetch permissions mapping.
-	logging.Debugf(ctx, "Fetching permissions from Datastore...")
-	var realms *protocol.Realms
+	// Transactionally fetch the AuthDB from the latest AuthDBSnapshot.
+	logging.Debugf(ctx, "Fetching latest AuthDB from Datastore...")
+	snap = &PermissionsSnapshot{}
+	var authDB *protocol.AuthDB
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
-		snap = &PermissionsSnapshot{}
-
-		// Get revision of latest snapshot.
+		// Get the revision of the latest snapshot.
 		latestState, dsErr := model.GetAuthDBSnapshotLatest(ctx)
 		if dsErr != nil {
 			return dsErr
 		}
 		snap.authDBRev = latestState.AuthDBRev
-		// Get realms of latest snapshot.
-		realms, dsErr = model.GetRealms(ctx, snap.authDBRev)
+
+		// Get AuthDB of latest snapshot.
+		authDB, dsErr = model.GetAuthDBFromSnapshot(ctx, snap.authDBRev)
 		if dsErr != nil {
 			return dsErr
 		}
+
 		return nil
 	}, &datastore.TransactionOptions{ReadOnly: true})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to fetch latest realms").Err()
+		return nil, errors.Annotate(err, "failed to fetch latest AuthDB").Err()
 	}
 
-	snap.permissionsMap, err = model.AnalyzePrincipalPermissions(realms)
+	// Create permissions map from the realms.
+	snap.permissionsMap, err = model.AnalyzePrincipalPermissions(authDB.Realms)
 	if err != nil {
 		return nil, errors.Annotate(err, "error analyzing permissions").Err()
 	}
 
-	logging.Debugf(ctx, "Fetched Permissions (rev %d)", snap.authDBRev)
+	// Create a graph from the groups.
+	groups := make([]model.GraphableGroup, len(authDB.Groups))
+	for i, group := range authDB.Groups {
+		groups[i] = model.GraphableGroup(group)
+	}
+	snap.groupsGraph = graph.NewGraph(groups)
+
+	logging.Debugf(ctx, "Fetched permissions snapshot (rev %d)", snap.authDBRev)
 	return snap, nil
 }
 
@@ -139,8 +149,8 @@ func (cgp *CachingPermissionsProvider) RefreshPeriodically(ctx context.Context) 
 		if r := <-clock.After(ctx, maxStaleness); r.Err != nil {
 			return // the context is canceled
 		}
-		if _, err := cgp.GetAllPermissions(ctx); err != nil {
-			logging.Errorf(ctx, "Failed to refresh Permissions: %s", err)
+		if _, err := cgp.Get(ctx); err != nil {
+			logging.Errorf(ctx, "Failed to refresh permissions snapshot: %s", err)
 		}
 	}
 }

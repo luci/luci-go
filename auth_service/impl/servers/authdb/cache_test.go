@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -32,15 +33,18 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
-func storeTestAuthDBSnapshot(ctx context.Context, realms *protocol.Realms, rev int64, t *ftt.Test) {
+func storeTestAuthDBSnapshot(ctx context.Context, realms *protocol.Realms,
+	groups []*protocol.AuthGroup, rev int64, t *ftt.Test) {
 	testRequest := &protocol.ReplicationPushRequest{
 		Revision: &protocol.AuthDBRevision{
 			AuthDbRev: rev,
 		},
 		AuthDb: &protocol.AuthDB{
 			Realms: realms,
+			Groups: groups,
 		},
 	}
 	blob, err := proto.Marshal(testRequest)
@@ -69,44 +73,62 @@ func TestPermissionsProvider(t *testing.T) {
 
 	testTime := time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC)
 
+	snapComp := cmp.AllowUnexported(
+		PermissionsSnapshot{}, graph.Graph{}, graph.GroupNode{})
+
 	ftt.Run("CachingPermissionsProvider works", t, func(t *ftt.Test) {
 		ctx := memory.Use(context.Background())
 		ctx, tc := testclock.UseTime(ctx, testTime)
 		const revInitial = 1000
 		const revUpdated = 1001
 
-		expectedInitial := map[string][]*rpcpb.RealmPermissions{
-			"group:gr1": []*rpcpb.RealmPermissions{
-				{
-					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
-				},
-			},
+		group1 := &protocol.AuthGroup{
+			Name:    "gr1",
+			Members: []string{"someone@example.com"},
 		}
-		expectedUpdated := map[string][]*rpcpb.RealmPermissions{
-			"group:gr1": []*rpcpb.RealmPermissions{
-				{
-					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
-				},
-				{
-					Name:        "p:r2",
-					Permissions: []string{"luci.dev.p3"},
-				},
-			},
-			"group:gr2": []*rpcpb.RealmPermissions{
-				{
-					Name:        "p:r",
-					Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
+
+		expectedInitial := &PermissionsSnapshot{
+			authDBRev: revInitial,
+			permissionsMap: map[string][]*rpcpb.RealmPermissions{
+				"group:gr1": {
+					{
+						Name:        "p:r",
+						Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					},
 				},
 			},
+			groupsGraph: graph.NewGraph(
+				[]model.GraphableGroup{model.GraphableGroup(group1)}),
+		}
+		expectedUpdated := &PermissionsSnapshot{
+			authDBRev: revUpdated,
+			permissionsMap: map[string][]*rpcpb.RealmPermissions{
+				"group:gr1": {
+					{
+						Name:        "p:r",
+						Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					},
+					{
+						Name:        "p:r2",
+						Permissions: []string{"luci.dev.p3"},
+					},
+				},
+				"group:gr2": {
+					{
+						Name:        "p:r",
+						Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
+					},
+				},
+			},
+			groupsGraph: graph.NewGraph(
+				[]model.GraphableGroup{model.GraphableGroup(group1)}),
 		}
 
 		provider := &CachingPermissionsProvider{}
 
 		// Getting the initial permissions snapshot fails, since there's nothing in
 		// datastore yet.
-		_, err := provider.GetAllPermissions(ctx)
+		_, err := provider.Get(ctx)
 		assert.Loosely(t, errors.Is(err, datastore.ErrNoSuchEntity), should.BeTrue)
 
 		// Set up initial revision with 1 group with permissions in 1 realm.
@@ -128,18 +150,16 @@ func TestPermissionsProvider(t *testing.T) {
 				},
 			},
 		}
+		groups := []*protocol.AuthGroup{group1}
 
 		// Store realms in snapshot & set latest snapshot to its revision number.
-		storeTestAuthDBSnapshot(ctx, realmsInitial, revInitial, t)
+		storeTestAuthDBSnapshot(ctx, realmsInitial, groups, revInitial, t)
 		storeTestAuthDBSnapshotLatest(ctx, revInitial, t)
-		latest, err := model.GetAuthDBSnapshotLatest(ctx)
-		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, latest, should.Match(latest))
 
-		// Check all permissions were fetched.
-		permissions, err := provider.GetAllPermissions(ctx)
+		// Check the permissions snapshot was fetched.
+		snapshot1, err := provider.Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, permissions, should.Match(expectedInitial))
+		assert.Loosely(t, snapshot1, should.Match(expectedInitial, snapComp))
 
 		// Add permission to gr1 & new gr2 in realms.
 		realmsUpdated := &protocol.Realms{
@@ -175,20 +195,23 @@ func TestPermissionsProvider(t *testing.T) {
 		}
 
 		// Update snapshot & latest snapshot revision number.
-		storeTestAuthDBSnapshot(ctx, realmsUpdated, revUpdated, t)
+		storeTestAuthDBSnapshot(ctx, realmsUpdated, groups, revUpdated, t)
 		storeTestAuthDBSnapshotLatest(ctx, revUpdated, t)
 
-		// At a later time, calling again returns the exact same permissions since
-		// maxStaleness time has not been exceeded.
+		// At a later time, calling again returns the exact same permission
+		// snapshot since maxStaleness time has not been exceeded.
 		tc.Add(maxStaleness - 1)
-		permissions, err = provider.GetAllPermissions(ctx)
+		snapshot2, err := provider.Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, permissions, should.Match(expectedInitial))
+		assert.Loosely(t, snapshot2, should.Match(expectedInitial, snapComp))
+		// It should literally be the same object.
+		assert.Loosely(t, snapshot2, should.Equal(snapshot1))
 
-		// Now check the permissions is updated once the cached copy is too stale.
+		// Now check the permissions snapshot is updated once the cached copy is too
+		// stale.
 		tc.Add(1)
-		permissions, err = provider.GetAllPermissions(ctx)
+		snapshot3, err := provider.Get(ctx)
 		assert.Loosely(t, err, should.BeNil)
-		assert.Loosely(t, permissions, should.Match(expectedUpdated))
+		assert.Loosely(t, snapshot3, should.Match(expectedUpdated, snapComp))
 	})
 }
