@@ -47,9 +47,7 @@ Recognized URL forms:
 	https://<gerrit_host>/c/<path/to/project>/+/<change>
 	https://<gerrit_host>/c/<path/to/project>/+/<change>/<patchset>
 
-If you provide URLs in one of the first two forms and <gerrit_host> has public read
-access, this will fill in the missing information for the change. Otherwise, this will
-fail and ask you to provide the full URL containing host, project, change and patchset.
+If you provide URLs in one of the first two forms, this will fill in the missing information for the change.
 
 By default, when adding a CL, this will clear all existing CLs on the job, unless
 you pass -no-implicit-clear. Most jobs only expect one CL, so this implicit clearing
@@ -178,10 +176,9 @@ func parseCrChangeListURL(clURL string, resolveChange changeResolver) (*bbpb.Ger
 	return ret, nil
 }
 
-func gerritResolver(ctx context.Context) changeResolver {
+func gerritResolver(ctx context.Context, authClient *http.Client) changeResolver {
 	return func(host string, change int64) (string, int64, error) {
-		// TODO(crbug/1211623): allow authentication for internal hosts.
-		gc, err := gerritapi.NewRESTClient(http.DefaultClient, host, false)
+		gc, err := gerritapi.NewRESTClient(authClient, host, true)
 		if err != nil {
 			return "", 0, errors.Annotate(err, "creating new gerrit client").Err()
 		}
@@ -215,8 +212,20 @@ func (c *cmdEditCl) validateFlags(ctx context.Context, positionals []string, _ s
 		return errors.New("cannot specify both -remove and -no-implicit-clear")
 	}
 
-	c.gerritChange, err = parseCrChangeListURL(positionals[0], gerritResolver(ctx))
-	return errors.Annotate(err, "invalid URL_TO_CHANGESET").Err()
+	authClient, err := c.authenticator.Client()
+	switch {
+	case errors.Is(err, auth.ErrLoginRequired):
+		return errors.New("Login required: run `led auth-login`.")
+	case err != nil:
+		return errors.Annotate(err, "authenticating").Err()
+	}
+
+	c.gerritChange, err = parseCrChangeListURL(positionals[0], gerritResolver(ctx, authClient))
+	return errors.Annotate(
+		err,
+		"invalid URL_TO_CHANGESET. If you see `Invalid authentication "+
+			"credentials. Please generate a new identifier` in the error "+
+			"message, run `led auth-login` again.").Err()
 }
 
 func (c *cmdEditCl) execute(ctx context.Context, _ *http.Client, _ auth.Options, inJob *job.Definition) (out any, err error) {
