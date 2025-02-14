@@ -1989,6 +1989,26 @@ func (snapshot *AuthDBSnapshot) ToProto() *rpcpb.Snapshot {
 }
 
 // /////////////////////////////////////////////////////////////////////
+// /////////////// Group methods to enable graphing ////////////////////
+// /////////////////////////////////////////////////////////////////////
+
+type GraphableGroup interface {
+	GetName() string
+	GetDescription() string
+	GetOwners() string
+	GetMembers() []string
+	GetGlobs() []string
+	GetNested() []string
+}
+
+func (group *AuthGroup) GetName() string        { return group.ID }
+func (group *AuthGroup) GetDescription() string { return group.Description }
+func (group *AuthGroup) GetOwners() string      { return group.Owners }
+func (group *AuthGroup) GetMembers() []string   { return group.Members }
+func (group *AuthGroup) GetGlobs() []string     { return group.Globs }
+func (group *AuthGroup) GetNested() []string    { return group.Nested }
+
+// /////////////////////////////////////////////////////////////////////
 // ///////////////////// Realms helper functions ///////////////////////
 // /////////////////////////////////////////////////////////////////////
 

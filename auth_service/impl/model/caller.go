@@ -23,25 +23,26 @@ import (
 
 // CanCallerModify returns whether the current identity can modify the given
 // group.
-func CanCallerModify(ctx context.Context, group *AuthGroup) (bool, error) {
-	if IsExternalAuthGroupName(group.ID) {
+func CanCallerModify(ctx context.Context, group GraphableGroup) (bool, error) {
+	if IsExternalAuthGroupName(group.GetName()) {
 		return false, nil
 	}
 
-	return auth.IsMember(ctx, AdminGroup, group.Owners)
+	return auth.IsMember(ctx, AdminGroup, group.GetOwners())
 }
 
 // CanCallerViewMembers returns whether the current identity can view the
 // members of the given group.
-func CanCallerViewMembers(ctx context.Context, group *AuthGroup) (bool, error) {
+func CanCallerViewMembers(ctx context.Context, group GraphableGroup) (bool, error) {
+	name := group.GetName()
 	// Don't filter if the group is internal.
-	if !IsExternalAuthGroupName(group.ID) {
+	if !IsExternalAuthGroupName(name) {
 		return true, nil
 	}
 
 	// Currently, the Members filter is only necessary for external Google
 	// groups.
-	if !strings.HasPrefix(group.ID, "google/") {
+	if !strings.HasPrefix(name, "google/") {
 		return true, nil
 	}
 

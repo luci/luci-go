@@ -62,7 +62,7 @@ func testAuthGroup(name string, items ...string) *model.AuthGroup {
 func TestGraphBuilding(t *testing.T) {
 	t.Parallel()
 
-	graphComp := cmp.AllowUnexported(Graph{}, groupNode{})
+	graphComp := cmp.AllowUnexported(Graph{}, GroupNode{})
 
 	ftt.Run("Testing basic Graph Building.", t, func(t *ftt.Test) {
 		authGroups := []*model.AuthGroup{
@@ -71,10 +71,15 @@ func TestGraphBuilding(t *testing.T) {
 			testAuthGroup("group-2", "user:*@example.com"),
 		}
 
-		actualGraph := NewGraph(authGroups)
+		graphableGroups := make([]model.GraphableGroup, len(authGroups))
+		for i, group := range authGroups {
+			graphableGroups[i] = model.GraphableGroup(group)
+		}
+
+		actualGraph := NewGraph(graphableGroups)
 
 		expectedGraph := &Graph{
-			groups: map[string]*groupNode{
+			groups: map[string]*GroupNode{
 				"group-0": {
 					group: authGroups[0],
 				},
@@ -107,7 +112,12 @@ func TestGraphBuilding(t *testing.T) {
 			testAuthGroup("group-2", "group-1"),
 		}
 
-		actualGraph := NewGraph(authGroups)
+		graphableGroups := make([]model.GraphableGroup, len(authGroups))
+		for i, group := range authGroups {
+			graphableGroups[i] = model.GraphableGroup(group)
+		}
+
+		actualGraph := NewGraph(graphableGroups)
 
 		assert.Loosely(t, actualGraph.groups["group-0"].included[0].group,
 			should.Match(authGroups[1], graphComp))
@@ -145,7 +155,12 @@ func TestGetExpandedGroup(t *testing.T) {
 			testAuthGroup(testSysGroupA, testUser1, testGoogleGroupA),
 		}
 
-		graph := NewGraph(authGroups)
+		graphableGroups := make([]model.GraphableGroup, len(authGroups))
+		for i, group := range authGroups {
+			graphableGroups[i] = model.GraphableGroup(group)
+		}
+
+		graph := NewGraph(graphableGroups)
 
 		t.Run("unknown group should return error", func(t *ftt.Test) {
 			_, err := graph.GetExpandedGroup(ctx, "unknown-group", false)
@@ -252,7 +267,12 @@ func TestGetRelevantSubgraph(t *testing.T) {
 			testAuthGroup(testGroup2, testGlob),
 		}
 
-		graph := NewGraph(authGroups)
+		graphableGroups := make([]model.GraphableGroup, len(authGroups))
+		for i, group := range authGroups {
+			graphableGroups[i] = model.GraphableGroup(group)
+		}
+
+		graph := NewGraph(graphableGroups)
 
 		t.Run("Testing Group Principal.", func(t *ftt.Test) {
 			principal := NodeKey{Group, testGroup1}
@@ -483,7 +503,12 @@ func TestGetRelevantSubgraph(t *testing.T) {
 				testAuthGroup("group-3", testGlob3),
 				testAuthGroup("group-4", testGlob4),
 			}
-			graph2 := NewGraph(authGroups2)
+			graphableGroups2 := make([]model.GraphableGroup, len(authGroups2))
+			for i, group := range authGroups2 {
+				graphableGroups2[i] = model.GraphableGroup(group)
+			}
+
+			graph2 := NewGraph(graphableGroups2)
 
 			subgraph, err := graph2.GetRelevantSubgraph(principal)
 			assert.Loosely(t, err, should.BeNil)

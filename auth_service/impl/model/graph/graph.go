@@ -27,13 +27,21 @@ import (
 	"go.chromium.org/luci/auth_service/impl/model"
 )
 
-// ErrNoSuchGroup is returned when a group is not found in the groups graph.
-var ErrNoSuchGroup = errors.New("no such group")
+var (
+	// ErrNoSuchGroup is returned when a group is not found in the groups graph.
+	ErrNoSuchGroup = errors.New("no such group")
+
+	// ErrInvalidPrincipalKind is returned when a principal has an invalid kind.
+	ErrInvalidPrincipalKind = errors.New("invalid principal kind")
+
+	// ErrInvalidPrincipalValue is returned when a principal has an invalid value.
+	ErrInvalidPrincipalValue = errors.New("invalid principal value")
+)
 
 // Graph represents a traversable group graph.
 type Graph struct {
 	// All graph nodes, key is group name.
-	groups map[string]*groupNode
+	groups map[string]*GroupNode
 	// All known globs sorted alphabetically.
 	globs []identity.Glob
 	// Group names that directly include the given identity.
@@ -42,38 +50,40 @@ type Graph struct {
 	globsIndex map[identity.Glob][]string
 }
 
-// groupNode contains information related to an individual group.
-type groupNode struct {
-	group *model.AuthGroup
+// GroupNode contains information related to an individual group.
+type GroupNode struct {
+	group model.GraphableGroup
 
-	includes []*groupNode // groups directly included by this group.
-	included []*groupNode // groups that directly include this group.
+	includes []*GroupNode // groups directly included by this group.
+	included []*GroupNode // groups that directly include this group.
 }
 
 // initializeNodes initializes the groupNode(s) in the graph
 // it creates a groupNode for every group in the datastore.
-func (g *Graph) initializeNodes(groups []*model.AuthGroup) {
+func (g *Graph) initializeNodes(groups []model.GraphableGroup) {
 	for _, group := range groups {
-		g.groups[group.ID] = &groupNode{group: group}
+		name := group.GetName()
+		g.groups[name] = &GroupNode{group: group}
 		// Populate globsIndex.
-		for _, glob := range group.Globs {
+		for _, glob := range group.GetGlobs() {
 			identityGlob := identity.Glob(glob)
-			g.globsIndex[identityGlob] = append(g.globsIndex[identityGlob], group.ID)
+			g.globsIndex[identityGlob] = append(g.globsIndex[identityGlob], name)
 		}
 
 		// Populate members.
-		for _, member := range group.Members {
+		for _, member := range group.GetMembers() {
 			memberIdentity := identity.NewNormalizedIdentity(member)
-			g.membersIndex[memberIdentity] = append(g.membersIndex[memberIdentity], group.ID)
+			g.membersIndex[memberIdentity] = append(g.membersIndex[memberIdentity], name)
 		}
 	}
 
 	// Populate includes and included.
 	for _, parent := range groups {
-		for _, nestedID := range parent.Nested {
+		for _, nestedID := range parent.GetNested() {
 			if nested, ok := g.groups[nestedID]; ok {
-				g.groups[parent.ID].includes = append(g.groups[parent.ID].includes, nested)
-				nested.included = append(nested.included, g.groups[parent.ID])
+				parentName := parent.GetName()
+				g.groups[parentName].includes = append(g.groups[parentName].includes, nested)
+				nested.included = append(nested.included, g.groups[parentName])
 			}
 		}
 	}
@@ -91,9 +101,9 @@ func (g *Graph) initializeNodes(groups []*model.AuthGroup) {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // NewGraph creates all groupNode(s) that are available in the graph.
-func NewGraph(groups []*model.AuthGroup) *Graph {
+func NewGraph(groups []model.GraphableGroup) *Graph {
 	graph := &Graph{
-		groups:       make(map[string]*groupNode, len(groups)),
+		groups:       make(map[string]*GroupNode, len(groups)),
 		membersIndex: map[identity.NormalizedIdentity][]string{},
 		globsIndex:   map[identity.Glob][]string{},
 	}
@@ -135,9 +145,10 @@ func (g *Graph) GetExpandedGroup(ctx context.Context,
 	// The set of groups which have already been expanded.
 	expanded := stringset.Set{}
 
-	var expand func(node *groupNode) error
-	expand = func(node *groupNode) error {
-		if expanded.Has(node.group.ID) {
+	var expand func(node *GroupNode) error
+	expand = func(node *GroupNode) error {
+		name := node.group.GetName()
+		if expanded.Has(name) {
 			// Skip previously processed group.
 			return nil
 		}
@@ -145,7 +156,7 @@ func (g *Graph) GetExpandedGroup(ctx context.Context,
 		// Process the group's members, globs and nested groups.
 
 		if skipFilter {
-			members.AddAll(node.group.Members)
+			members.AddAll(node.group.GetMembers())
 		} else {
 			// Check whether the caller can view members.
 			ok, err := model.CanCallerViewMembers(ctx, node.group)
@@ -153,18 +164,18 @@ func (g *Graph) GetExpandedGroup(ctx context.Context,
 				return err
 			}
 			if ok {
-				members.AddAll(node.group.Members)
+				members.AddAll(node.group.GetMembers())
 			} else {
-				redactedMembers.AddAll(node.group.Members)
+				redactedMembers.AddAll(node.group.GetMembers())
 			}
 		}
 
 		// Record the group's globs and nested subgroups.
-		globs.AddAll(node.group.Globs)
-		nested.AddAll(node.group.Nested)
+		globs.AddAll(node.group.GetGlobs())
+		nested.AddAll(node.group.GetNested())
 
 		// Record the group as having been processed.
-		expanded.Add(node.group.ID)
+		expanded.Add(name)
 
 		// Process the memberships from subgroups of this group.
 		for _, subgroup := range node.includes {
@@ -187,7 +198,7 @@ func (g *Graph) GetExpandedGroup(ctx context.Context,
 	redactedMembers.DelAll(knownMembers)
 
 	return &rpcpb.AuthGroup{
-		Name:        root.group.ID,
+		Name:        root.group.GetName(),
 		Members:     knownMembers,
 		Globs:       globs.ToSortedSlice(),
 		Nested:      nested.ToSortedSlice(),
@@ -258,8 +269,26 @@ func (g *Graph) traverse(group string, s *Subgraph) int32 {
 	if added {
 		groupNode := g.groups[group]
 		for _, supergroup := range groupNode.included {
-			s.addEdge(groupID, g.traverse(supergroup.group.ID, s))
+			s.addEdge(groupID, g.traverse(supergroup.group.GetName(), s))
 		}
 	}
 	return groupID
+}
+
+// ConvertPrincipal handles the conversion of rpcpb.Principal -> graph.NodeKey.
+func ConvertPrincipal(p *rpcpb.Principal) (NodeKey, error) {
+	if p.Name == "" {
+		return NodeKey{}, ErrInvalidPrincipalValue
+	}
+
+	switch p.Kind {
+	case rpcpb.PrincipalKind_GLOB:
+		return NodeKey{Kind: Glob, Value: p.Name}, nil
+	case rpcpb.PrincipalKind_IDENTITY:
+		return NodeKey{Kind: Identity, Value: p.Name}, nil
+	case rpcpb.PrincipalKind_GROUP:
+		return NodeKey{Kind: Group, Value: p.Name}, nil
+	default:
+		return NodeKey{}, ErrInvalidPrincipalKind
+	}
 }

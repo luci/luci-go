@@ -15,6 +15,7 @@
 package graph
 
 import (
+	"fmt"
 	"sort"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
@@ -123,6 +124,22 @@ func (sn *SubgraphNode) ToProto() *rpcpb.Node {
 		Principal:  sn.NodeKey.ToProto(),
 		IncludedBy: sn.IncludedBy,
 	}
+}
+
+// ToPermissionKey returns the key that would be associated with this node in a
+// realms config.
+func (nk *NodeKey) ToPermissionKey() string {
+	var prefix string
+	switch nk.Kind {
+	case Group:
+		prefix = "group:"
+	case Identity, Glob:
+		prefix = ""
+	default:
+		return ""
+	}
+
+	return fmt.Sprintf("%s%s", prefix, nk.Value)
 }
 
 // ToProto converts the NodeKey for the internal subgraph representation

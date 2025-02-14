@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/auth_service/impl/model"
+	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
 
 // The maximum amount of time since a groups snapshot was taken before it is
@@ -40,6 +41,7 @@ var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 type AuthGroupsSnapshot struct {
 	authDBRev int64
 	groups    []*model.AuthGroup
+	graph     *graph.Graph
 }
 
 type CachingGroupsProvider struct {
@@ -62,6 +64,24 @@ func (cgp *CachingGroupsProvider) GetAllAuthGroups(ctx context.Context, allowSta
 	}
 
 	return val.(*AuthGroupsSnapshot).groups, nil
+}
+
+// GetGroupsGraph gets a graph of the AuthGroups. The result may be slightly
+// stale if allowStale is true.
+func (cgp *CachingGroupsProvider) GetGroupsGraph(ctx context.Context, allowStale bool) (*graph.Graph, error) {
+	var val any
+	var err error
+	if allowStale {
+		val, err = cgp.cached.Get(ctx, maxStaleness, groupsRefresher)
+	} else {
+		val, err = cgp.cached.GetFresh(ctx, groupsRefresher)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return val.(*AuthGroupsSnapshot).graph, nil
 }
 
 func groupsRefresher(ctx context.Context, prev any) (updated any, err error) {
@@ -135,6 +155,12 @@ func fetch(ctx context.Context) (snap *AuthGroupsSnapshot, err error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch all AuthGroups").Err()
 	}
+
+	graphableGroups := make([]model.GraphableGroup, len(snap.groups))
+	for i, group := range snap.groups {
+		graphableGroups[i] = model.GraphableGroup(group)
+	}
+	snap.graph = graph.NewGraph(graphableGroups)
 
 	logging.Debugf(ctx, "Fetched AuthGroups (rev %d)", snap.authDBRev)
 	return snap, nil

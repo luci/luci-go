@@ -67,6 +67,7 @@ type ListingJSON struct {
 // AuthGroupsProvider is the interface to get all AuthGroup entities.
 type AuthGroupsProvider interface {
 	GetAllAuthGroups(ctx context.Context, allowStale bool) ([]*model.AuthGroup, error)
+	GetGroupsGraph(ctx context.Context, allowStale bool) (*graph.Graph, error)
 	RefreshPeriodically(ctx context.Context)
 }
 
@@ -225,15 +226,12 @@ func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRe
 //	Internal error for datastore access issues.
 //	NotFound error wrapping a graph.ErrNoSuchGroup if group is not present in groups graph.
 func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*rpcpb.AuthGroup, error) {
-	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, false)
+	// Get the latest graph of all groups.
+	groupsGraph, err := srv.authGroupsProvider.GetGroupsGraph(ctx, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
-			"Failed to fetch groups: %s", err)
+			"failed to fetch groups graph: %s", err)
 	}
-
-	// Build graph from groups.
-	groupsGraph := graph.NewGraph(groups)
 
 	// Get the recursively expanded group members, globs and nested groups.
 	// Members may be redacted based on the caller's group memberships.
@@ -241,11 +239,11 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return nil, status.Errorf(codes.NotFound,
-				"The requested group \"%s\" was not found.", request.Name)
+				"the requested group %q was not found.", request.Name)
 		}
 
 		return nil, status.Errorf(codes.Internal,
-			"Error expanding group: %s", err)
+			"error expanding group %q: %s", request.Name, err)
 	}
 
 	return expandedGroup, nil
@@ -260,31 +258,28 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 //	InvalidArgument error if the PrincipalKind is unspecified.
 //	Annotated error if the subgraph building fails, this may be an InvalidArgument or NotFound error.
 func (srv *Server) GetSubgraph(ctx context.Context, request *rpcpb.GetSubgraphRequest) (*rpcpb.Subgraph, error) {
-	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(ctx, false)
+	// Get the latest graph of all groups.
+	groupsGraph, err := srv.authGroupsProvider.GetGroupsGraph(ctx, false)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
-			"Failed to fetch groups: %s", err)
+			"failed to fetch groups graph: %s", err)
 	}
 
-	// Build graph from groups.
-	groupsGraph := graph.NewGraph(groups)
-
-	principal, err := convertPrincipal(request.Principal)
+	principal, err := graph.ConvertPrincipal(request.Principal)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal,
-			"Issue parsing the principal from the request: %s", err)
+			"issue parsing the principal from the request: %s", err)
 	}
 
 	subgraph, err := groupsGraph.GetRelevantSubgraph(principal)
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return nil, status.Errorf(codes.NotFound,
-				"The requested group \"%s\" was not found.", principal.Value)
+				"the requested group %q was not found.", principal.Value)
 		}
 
 		return nil, status.Errorf(codes.Internal,
-			"Error getting relevant groups: %s", err)
+			"error getting relevant groups for %q: %s", principal.Value, err)
 	}
 
 	subgraphProto := subgraph.ToProto()
@@ -308,7 +303,7 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, datastore.ErrNoSuchEntity) {
-			return status.Errorf(codes.NotFound, "no such group %s", name)
+			return status.Errorf(codes.NotFound, "no such group %q", name)
 		}
 		err = errors.Annotate(err, "legacyGetAuthGroup failed").Err()
 		logging.Errorf(c, err.Error())
@@ -375,14 +370,11 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 		return status.Error(codes.InvalidArgument, "invalid group name")
 	}
 
-	// Get all groups.
-	groups, err := srv.authGroupsProvider.GetAllAuthGroups(c, false)
+	// Get the latest graph of all groups.
+	groupsGraph, err := srv.authGroupsProvider.GetGroupsGraph(c, false)
 	if err != nil {
-		return status.Error(codes.Internal, "failed to fetch all groups")
+		return status.Error(codes.Internal, "failed to fetch graph of all groups")
 	}
-
-	// Build graph from groups.
-	groupsGraph := graph.NewGraph(groups)
 
 	// Get the recursively expanded group members, globs and nested groups.
 	// Disable the privacy filter to maintain the behavior of this legacy
@@ -420,18 +412,4 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 	}
 
 	return nil
-}
-
-// convertPrincipal handles the conversion of rpcpb.Principal -> graph.NodeKey
-func convertPrincipal(p *rpcpb.Principal) (graph.NodeKey, error) {
-	switch p.Kind {
-	case rpcpb.PrincipalKind_GLOB:
-		return graph.NodeKey{Kind: graph.Glob, Value: p.Name}, nil
-	case rpcpb.PrincipalKind_IDENTITY:
-		return graph.NodeKey{Kind: graph.Identity, Value: p.Name}, nil
-	case rpcpb.PrincipalKind_GROUP:
-		return graph.NodeKey{Kind: graph.Group, Value: p.Name}, nil
-	default:
-		return graph.NodeKey{}, status.Errorf(codes.InvalidArgument, "invalid principal kind")
-	}
 }
