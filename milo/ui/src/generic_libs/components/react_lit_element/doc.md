@@ -165,8 +165,10 @@ class MyCustomElement extends ReactLitElement {
     if (!this.cache) {
       this.cache = createCache({
         key: 'my-custom-element',
-        // This instructs emotion to inject the style under (the shadow root of)
-        // this component.
+        // This instructs emotion to inject the style under this component.
+        // As a result, if this component is used under a shadow root, then that
+        // shadow root will have the style sheets required to render this
+        // component.
         container: this,
       });
     }
