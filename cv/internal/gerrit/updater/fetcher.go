@@ -88,8 +88,8 @@ func (f *fetcher) fetch(ctx context.Context) error {
 	ci, err := f.fetchChangeInfo(ctx,
 		// These are expensive to compute for Gerrit,
 		// CV should not do this needlessly.
+		gerritpb.QueryOption_ALL_COMMITS,
 		gerritpb.QueryOption_ALL_REVISIONS,
-		gerritpb.QueryOption_CURRENT_COMMIT,
 		gerritpb.QueryOption_DETAILED_LABELS,
 		gerritpb.QueryOption_DETAILED_ACCOUNTS,
 		gerritpb.QueryOption_MESSAGES,
