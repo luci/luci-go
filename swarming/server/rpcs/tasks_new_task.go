@@ -76,7 +76,6 @@ const (
 
 var (
 	casInstanceRe = regexp.MustCompile(`^projects/[a-z0-9-]+/instances/[a-z0-9-_]+$`)
-	cacheNameRe   = regexp.MustCompile(`^[a-z0-9_]+$`)
 )
 
 // NewTask implements the corresponding RPC method.
@@ -88,26 +87,35 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 	}
 
-	// Check permissions
+	// Check permissions.
 	state := State(ctx)
 
-	// pool level check
+	// Check the user is allowed to submit tasks into the pool at all.
 	checkResult := state.ACL.CheckPoolPerm(ctx, pool, acls.PermPoolsCreateTask)
 	if !checkResult.Permitted || checkResult.InternalError {
 		return nil, checkResult.ToGrpcErr()
 	}
 
-	// task realm level checks
+	// Populate req.Realm based on the pool's default if necessary. This returns
+	// an error if the task has no realm and there's no default realm in the pool
+	// config.
 	if err = setTaskRealm(ctx, state, req, pool); err != nil {
 		return nil, err
 	}
-	saToCheck := req.ServiceAccount
-	if nonEmailServiceAccount(req.ServiceAccount) {
-		saToCheck = ""
-	}
-	checkResult = State(ctx).ACL.CheckNewTaskAllowed(ctx, req.Realm, saToCheck)
+
+	// Check the user is allowed to associate tasks with the selected realm.
+	checkResult = State(ctx).ACL.CheckCanCreateInRealm(ctx, req.Realm)
 	if !checkResult.Permitted || checkResult.InternalError {
 		return nil, checkResult.ToGrpcErr()
+	}
+
+	// Check the selected service account is allowed to be used by the tasks
+	// associated with the selected realm.
+	if !nonEmailServiceAccount(req.ServiceAccount) {
+		checkResult = State(ctx).ACL.CheckTaskCanActAsServiceAccount(ctx, req.Realm, req.ServiceAccount)
+		if !checkResult.Permitted || checkResult.InternalError {
+			return nil, checkResult.ToGrpcErr()
+		}
 	}
 
 	ents, err := toTaskRequestEntities(ctx, req, pool)

@@ -644,67 +644,100 @@ func (m *mockedTask) TaskAuthInfo(ctx context.Context) (*TaskAuthInfo, error) {
 	return &m.info, m.err
 }
 
-func TestCheckNewTaskAllowed(t *testing.T) {
+func TestCheckCanCreateInRealm(t *testing.T) {
 	const (
-		unknownID                  identity.Identity = "user:unknown@example.com"
-		idWithPoolPermission       identity.Identity = "user:authorizedinpool@example.com"
-		fullyAuthorizedID          identity.Identity = "user:authorized@example.com"
-		authorizedServiceAccount                     = "sa@account.com"
-		authorizedServiceAccountID identity.Identity = "user:sa@account.com"
+		unknownID    = "user:unknown@example.com"
+		authorizedID = "user:authorized@example.com"
+		allowedRealm = "project:allowed-realm"
+		unknownRealm = "project:unknown-realm"
 	)
 
 	t.Parallel()
 
 	ctx := context.Background()
-
-	cfg := mockedConfig(&configpb.AuthSettings{
-		AdminsGroup: "admins",
-	}, map[string]string{
-		"visible-pool":  "project:visible-pool-realm",
-		"visible-pool2": "project:visible-pool2-realm",
-		"hidden-pool":   "project:hidden-pool-realm",
-	}, nil)
-
+	cfg := mockedConfig(nil, nil, nil)
 	db := authtest.NewFakeDB(
-		authtest.MockPermission(fullyAuthorizedID, "project:visible-task-realm", PermTasksCreateInRealm),
-		authtest.MockPermission(fullyAuthorizedID, "project:visible-pool-realm", PermPoolsCreateTask),
-
-		authtest.MockPermission(idWithPoolPermission, "project:visible-pool-realm", PermPoolsCreateTask),
-		authtest.MockPermission(idWithPoolPermission, "project:visible-pool2-realm", PermPoolsCreateTask),
-
-		authtest.MockPermission(authorizedServiceAccountID, "project:visible-task-realm", PermTasksActAs),
+		authtest.MockPermission(authorizedID, allowedRealm, PermTasksCreateInRealm),
 	)
 
-	checkNewTask := func(caller identity.Identity, taskRealm, sa string) CheckResult {
+	check := func(caller identity.Identity, taskRealm string) CheckResult {
 		chk := Checker{cfg: cfg, db: db, caller: caller}
-		res := chk.CheckNewTaskAllowed(ctx, taskRealm, sa)
-		assert.Loosely(t, res.InternalError, should.BeFalse)
+		res := chk.CheckCanCreateInRealm(ctx, taskRealm)
+		assert.That(t, res.InternalError, should.BeFalse)
 		return res
 	}
 
-	ftt.Run("CheckNewTaskAllowed", t, func(t *ftt.Test) {
-		t.Run("no_permission_to_create_in_realm", func(t *ftt.Test) {
-			res := checkNewTask(idWithPoolPermission, "project:hidden-task-realm", "")
-			assert.That(t, res.Permitted, should.BeFalse)
-			assert.That(t, res.ToGrpcErr(), should.ErrLike(
-				`doesn't have permission "swarming.tasks.createInRealm" in the realm "project:hidden-task-realm"`))
-		})
+	t.Run("OK", func(t *testing.T) {
+		res := check(authorizedID, allowedRealm)
+		assert.That(t, res.Permitted, should.BeTrue)
+	})
 
-		t.Run("no_permission_to_act_as", func(t *ftt.Test) {
-			res := checkNewTask(fullyAuthorizedID, "project:visible-task-realm", "unknown@account.com")
-			assert.That(t, res.Permitted, should.BeFalse)
-			assert.That(t, res.ToGrpcErr(), should.ErrLike(
-				`doesn't have permission "swarming.tasks.actAs" in the realm "project:visible-task-realm"`))
-		})
+	t.Run("Unauthorized user", func(t *testing.T) {
+		res := check(unknownID, allowedRealm)
+		assert.That(t, res.Permitted, should.BeFalse)
+		err := res.ToGrpcErr()
+		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(
+			`doesn't have permission "swarming.tasks.createInRealm" in the realm "project:allowed-realm"`))
+	})
 
-		t.Run("OK_with_non_email_service_account", func(t *ftt.Test) {
-			res := checkNewTask(fullyAuthorizedID, "project:visible-task-realm", "")
-			assert.That(t, res.Permitted, should.BeTrue)
-		})
+	t.Run("Unknown realm", func(t *testing.T) {
+		res := check(authorizedID, unknownRealm)
+		assert.That(t, res.Permitted, should.BeFalse)
+		err := res.ToGrpcErr()
+		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(
+			`doesn't have permission "swarming.tasks.createInRealm" in the realm "project:unknown-realm"`))
+	})
+}
 
-		t.Run("OK", func(t *ftt.Test) {
-			res := checkNewTask(fullyAuthorizedID, "project:visible-task-realm", authorizedServiceAccount)
-			assert.That(t, res.Permitted, should.BeTrue)
-		})
+func TestCheckTaskCanActAsServiceAccount(t *testing.T) {
+	const (
+		irrelevantCaller = "user:some-irrelevant-caller@example.com"
+		unknownSA        = "unknown@example.com"
+		authorizedSA     = "authorized@example.com"
+		allowedRealm     = "project:allowed-realm"
+		unknownRealm     = "project:unknown-realm"
+	)
+
+	t.Parallel()
+
+	ctx := context.Background()
+	cfg := mockedConfig(nil, nil, nil)
+	db := authtest.NewFakeDB(
+		authtest.MockPermission("user:"+authorizedSA, allowedRealm, PermTasksActAs),
+		// These should be irrelevant.
+		authtest.MockPermission(irrelevantCaller, allowedRealm, PermTasksActAs),
+		authtest.MockPermission(irrelevantCaller, unknownRealm, PermTasksActAs),
+	)
+
+	check := func(taskRealm, sa string) CheckResult {
+		chk := Checker{cfg: cfg, db: db, caller: irrelevantCaller}
+		res := chk.CheckTaskCanActAsServiceAccount(ctx, taskRealm, sa)
+		assert.That(t, res.InternalError, should.BeFalse)
+		return res
+	}
+
+	t.Run("OK", func(t *testing.T) {
+		res := check(allowedRealm, authorizedSA)
+		assert.That(t, res.Permitted, should.BeTrue)
+	})
+
+	t.Run("Unauthorized account", func(t *testing.T) {
+		res := check(allowedRealm, unknownSA)
+		assert.That(t, res.Permitted, should.BeFalse)
+		err := res.ToGrpcErr()
+		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(
+			`doesn't have permission "swarming.tasks.actAs" in the realm "project:allowed-realm"`))
+	})
+
+	t.Run("Unknown realm", func(t *testing.T) {
+		res := check(unknownRealm, authorizedSA)
+		assert.That(t, res.Permitted, should.BeFalse)
+		err := res.ToGrpcErr()
+		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+		assert.That(t, err, should.ErrLike(
+			`doesn't have permission "swarming.tasks.actAs" in the realm "project:unknown-realm"`))
 	})
 }

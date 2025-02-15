@@ -495,41 +495,34 @@ func (chk *Checker) CheckTaskPerm(ctx context.Context, task Task, perm realms.Pe
 	}
 }
 
-// CheckNewTaskAllowed checks permissions to create a task in a realm.
-//
-// It checks
-// * if the caller has the permissions to create a task in the task realm;
-// * if the provided service account is allowed to run in the task realm.
-//
-// Assume the provided taskRealm, serviceAccount have been validated.
-func (chk *Checker) CheckNewTaskAllowed(ctx context.Context, taskRealm, serviceAccount string) CheckResult {
-	// `swarming.tasks.createInRealm`
+// CheckCanCreateInRealm checks the caller can associated new tasks with
+// a realm.
+func (chk *Checker) CheckCanCreateInRealm(ctx context.Context, taskRealm string) CheckResult {
 	res := chk.hasPermission(ctx, PermTasksCreateInRealm, taskRealm)
-	if res.InternalError {
+	if res.Permitted || res.InternalError {
 		return res
 	}
-	if !res.Permitted {
-		return CheckResult{
-			err: status.Errorf(
-				codes.PermissionDenied,
-				"the caller %q doesn't have permission %q in the realm %q",
-				chk.caller, PermTasksCreateInRealm, taskRealm),
-		}
+	return CheckResult{
+		err: status.Errorf(
+			codes.PermissionDenied,
+			"the caller %q doesn't have permission %q in the realm %q",
+			chk.caller, PermTasksCreateInRealm, taskRealm),
 	}
+}
 
-	// `swarming.pools.createTask`
-	if serviceAccount == "" {
-		return res
-	}
+// CheckTaskCanActAsServiceAccount checks if a task in the given realm can act
+// as (i.e. run as) the given service account email.
+//
+// Assumes the provided taskRealm, serviceAccount have been validated.
+func (chk *Checker) CheckTaskCanActAsServiceAccount(ctx context.Context, taskRealm, serviceAccount string) CheckResult {
 	saIdentity, err := identity.MakeIdentity(fmt.Sprintf("%s:%s", identity.User, serviceAccount))
 	if err != nil {
 		panic(fmt.Sprintf("invalid service account: %s", err))
 	}
-	res = chk.hasPermissionWithIdentity(ctx, PermTasksActAs, taskRealm, saIdentity)
+	res := chk.hasPermissionWithIdentity(ctx, PermTasksActAs, taskRealm, saIdentity)
 	if res.Permitted || res.InternalError {
 		return res
 	}
-
 	return CheckResult{
 		err: status.Errorf(
 			codes.PermissionDenied,
