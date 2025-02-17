@@ -96,11 +96,7 @@ export const DeviceListPage = () => {
           marginTop: 24,
         }}
       >
-        <DeviceTable
-          gridRef={gridRef}
-          filter={selectedOptions}
-          pagerCtx={pagerCtx}
-        />
+        <DeviceTable gridRef={gridRef} pagerCtx={pagerCtx} />
       </div>
     </div>
   );

@@ -27,7 +27,6 @@ import {
 } from '@/common/components/params_pager';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { SelectedOptions } from '@/fleet/types';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
   Device,
@@ -35,7 +34,7 @@ import {
 } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { DataTable } from '../data_table';
-import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
+import { getFilterValue } from '../multi_select_filter/search_param_utils/search_param_utils';
 
 import { BASE_DIMENSIONS, getColumns } from './columns';
 import { useDevices } from './use_devices';
@@ -71,12 +70,11 @@ function getRow(device: Device): Record<string, string> {
 }
 
 interface DeviceTableProps {
-  filter: SelectedOptions;
   gridRef: React.MutableRefObject<GridApiCommunity>;
   pagerCtx: PagerContext;
 }
 
-export function DeviceTable({ filter, gridRef, pagerCtx }: DeviceTableProps) {
+export function DeviceTable({ gridRef, pagerCtx }: DeviceTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
@@ -101,7 +99,7 @@ export function DeviceTable({ filter, gridRef, pagerCtx }: DeviceTableProps) {
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
     orderBy: getOrderByFromSortModel(),
-    filter: stringifyFilters(filter),
+    filter: getFilterValue(searchParams),
   });
 
   const devicesQuery = useDevices(request);

@@ -78,10 +78,17 @@ export const stringifyFilters = (filters: SelectedOptions): string =>
     .join(' ');
 
 /**
+ * Get the filter parameter from the URLSearchParams.
+ */
+export function getFilterValue(params: URLSearchParams) {
+  return params.get(FILTERS_PARAM_KEY) ?? '';
+}
+
+/**
  * Get the filter from the URLSearchParams.
  */
 export function getFilters(params: URLSearchParams) {
-  const status = params.get(FILTERS_PARAM_KEY) ?? '';
+  const status = getFilterValue(params);
   try {
     return parseFilters(status);
   } catch {
