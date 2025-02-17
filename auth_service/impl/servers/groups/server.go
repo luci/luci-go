@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
@@ -134,7 +135,7 @@ func (*Server) GetGroup(ctx context.Context, request *rpcpb.GetGroupRequest) (*r
 			return nil, err
 		}
 		return g, nil
-	case errors.Is(err, model.ErrInvalidName):
+	case errors.Is(err, customerrors.ErrInvalidName):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", request.Name)
@@ -153,15 +154,15 @@ func (srv *Server) CreateGroup(ctx context.Context, request *rpcpb.CreateGroupRe
 			return nil, status.Errorf(codes.Internal, "failed to lookup caller: %s", err)
 		}
 		return newGroup, nil
-	case errors.Is(err, model.ErrAlreadyExists):
+	case errors.Is(err, customerrors.ErrAlreadyExists):
 		return nil, status.Errorf(codes.AlreadyExists, "group already exists: %s", group.ID)
-	case errors.Is(err, model.ErrInvalidName):
+	case errors.Is(err, customerrors.ErrInvalidName):
 		return nil, status.Errorf(codes.InvalidArgument, "invalid group name: %s", group.ID)
-	case errors.Is(err, model.ErrInvalidReference):
+	case errors.Is(err, customerrors.ErrInvalidReference):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, model.ErrInvalidIdentity):
+	case errors.Is(err, customerrors.ErrInvalidIdentity):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, model.ErrInvalidArgument):
+	case errors.Is(err, customerrors.ErrInvalidArgument):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to create group %q: %s", request.GetGroup().GetName(), err)
@@ -180,17 +181,17 @@ func (srv *Server) UpdateGroup(ctx context.Context, request *rpcpb.UpdateGroupRe
 		return updatedGroupProto, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", groupUpdate.ID)
-	case errors.Is(err, model.ErrPermissionDenied):
+	case errors.Is(err, customerrors.ErrPermissionDenied):
 		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to update group %q: %s", auth.CurrentIdentity(ctx), groupUpdate.ID, err)
-	case errors.Is(err, model.ErrConcurrentModification):
+	case errors.Is(err, customerrors.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
-	case errors.Is(err, model.ErrInvalidReference):
+	case errors.Is(err, customerrors.ErrInvalidReference):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, model.ErrInvalidArgument):
+	case errors.Is(err, customerrors.ErrInvalidArgument):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, model.ErrInvalidIdentity):
+	case errors.Is(err, customerrors.ErrInvalidIdentity):
 		return nil, status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, model.ErrCyclicDependency):
+	case errors.Is(err, customerrors.ErrCyclicDependency):
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	default:
 		return nil, status.Errorf(codes.Internal, "failed to update group %q: %s", request.GetGroup().GetName(), err)
@@ -205,11 +206,11 @@ func (srv *Server) DeleteGroup(ctx context.Context, request *rpcpb.DeleteGroupRe
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, status.Errorf(codes.NotFound, "no such group %q", name)
-	case errors.Is(err, model.ErrPermissionDenied):
+	case errors.Is(err, customerrors.ErrPermissionDenied):
 		return nil, status.Errorf(codes.PermissionDenied, "%s does not have permission to delete group %q: %s", auth.CurrentIdentity(ctx), name, err)
-	case errors.Is(err, model.ErrConcurrentModification):
+	case errors.Is(err, customerrors.ErrConcurrentModification):
 		return nil, status.Error(codes.Aborted, err.Error())
-	case errors.Is(err, model.ErrReferencedEntity):
+	case errors.Is(err, customerrors.ErrReferencedEntity):
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	// TODO(cjacomet): Handle context cancelled and internal errors in a more general way with logging.
 	case errors.Is(err, context.Canceled):
@@ -299,7 +300,7 @@ func (srv *Server) GetLegacyAuthGroup(ctx *router.Context) error {
 
 	group, err := model.GetAuthGroup(c, name)
 	if err != nil {
-		if errors.Is(err, model.ErrInvalidName) {
+		if errors.Is(err, customerrors.ErrInvalidName) {
 			return status.Error(codes.InvalidArgument, err.Error())
 		}
 		if errors.Is(err, datastore.ErrNoSuchEntity) {

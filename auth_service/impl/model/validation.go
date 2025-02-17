@@ -23,6 +23,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 )
 
 // validateAuthDB returns nil if AuthDB is valid.
@@ -48,17 +50,18 @@ func validateAuthDB(ctx context.Context, db *protocol.AuthDB) error {
 //   - ModifiedBy.
 func validateAuthGroup(ctx context.Context, group *protocol.AuthGroup) error {
 	if !auth.IsValidGroupName(group.Name) {
-		return fmt.Errorf("%w for AuthGroup: %q", ErrInvalidName, group.Name)
+		return fmt.Errorf("%w for AuthGroup: %q",
+			customerrors.ErrInvalidName, group.Name)
 	}
 
 	if _, err := identity.MakeIdentity(group.CreatedBy); err != nil {
 		return fmt.Errorf("%w %q in AuthGroup %q's CreatedBy - %w",
-			ErrInvalidIdentity, group.CreatedBy, group.Name, err)
+			customerrors.ErrInvalidIdentity, group.CreatedBy, group.Name, err)
 	}
 
 	if _, err := identity.MakeIdentity(group.ModifiedBy); err != nil {
 		return fmt.Errorf("%w %q in AuthGroup %q's ModifiedBy - %w",
-			ErrInvalidIdentity, group.ModifiedBy, group.Name, err)
+			customerrors.ErrInvalidIdentity, group.ModifiedBy, group.Name, err)
 	}
 
 	return nil

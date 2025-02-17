@@ -42,6 +42,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/taskspb"
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
@@ -308,7 +309,7 @@ func TestGetAuthGroup(t *testing.T) {
 
 		t.Run("handles empty name", func(t *ftt.Test) {
 			actual, err := GetAuthGroup(context.Background(), "")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidName))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidName))
 			assert.Loosely(t, actual, should.BeNil)
 		})
 	})
@@ -377,21 +378,21 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "")
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrInvalidName))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrInvalidName))
 		})
 
 		t.Run("invalid group name", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "foo^")
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrInvalidName))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrInvalidName))
 		})
 
 		t.Run("external group name", func(t *ftt.Test) {
 			group := testAuthGroup(ctx, "mdb/foo")
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrInvalidName))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrInvalidName))
 		})
 
 		t.Run("group name that already exists", func(t *ftt.Test) {
@@ -402,7 +403,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group := testAuthGroup(ctx, "foo")
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrAlreadyExists))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrAlreadyExists))
 		})
 
 		t.Run("invalid member identities", func(t *ftt.Test) {
@@ -410,7 +411,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group.Members = []string{"no-prefix@google.com"}
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidIdentity))
 			assert.Loosely(t, err, should.ErrLike("bad identity string \"no-prefix@google.com\""))
 		})
 
@@ -419,7 +420,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group.Globs = []string{"*@no-prefix.com"}
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidIdentity))
 			assert.Loosely(t, err, should.ErrLike("bad identity glob string \"*@no-prefix.com\""))
 		})
 
@@ -429,7 +430,7 @@ func TestCreateAuthGroup(t *testing.T) {
 			group.Nested = []string{"baz", "qux"}
 
 			_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidReference))
 			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist: baz, qux, bar"))
 		})
 
@@ -667,7 +668,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			})
 			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, etag, "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrPermissionDenied))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 		})
 
@@ -740,7 +741,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 		t.Run("can't delete if etag doesn't match", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			_, err := UpdateAuthGroup(ctx, group, nil, "bad-etag", "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrConcurrentModification))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrConcurrentModification))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 		})
 
@@ -757,7 +758,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Members = []string{"no-prefix@google.com"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"members"}}, etag, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidIdentity))
 			assert.Loosely(t, err, should.ErrLike("bad identity string \"no-prefix@google.com\""))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 		})
@@ -779,7 +780,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Globs = []string{"*@no-prefix.com"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"globs"}}, etag, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidIdentity))
 			assert.Loosely(t, err, should.ErrLike("bad identity glob string \"*@no-prefix.com\""))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 		})
@@ -801,7 +802,7 @@ func TestUpdateAuthGroup(t *testing.T) {
 			group.Nested = []string{"baz", "qux"}
 
 			_, err := UpdateAuthGroup(ctx, group, &fieldmaskpb.FieldMask{Paths: []string{"nested"}}, etag, "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidReference))
 			assert.Loosely(t, err, should.ErrLike("some referenced groups don't exist"))
 			assert.Loosely(t, taskScheduler.Tasks(), should.BeEmpty)
 		})
@@ -1075,7 +1076,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 
 		t.Run("can't delete the admin group", func(t *ftt.Test) {
 			err := DeleteAuthGroup(ctx, AdminGroup, "", "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrPermissionDenied))
 		})
 
 		t.Run("can't delete external group", func(t *ftt.Test) {
@@ -1091,13 +1092,13 @@ func TestDeleteAuthGroup(t *testing.T) {
 			})
 			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "", "Go pRPC API")
-			assert.Loosely(t, err, should.Equal(ErrPermissionDenied))
+			assert.Loosely(t, err, should.Equal(customerrors.ErrPermissionDenied))
 		})
 
 		t.Run("can't delete if etag doesn't match", func(t *ftt.Test) {
 			assert.Loosely(t, datastore.Put(ctx, group), should.BeNil)
 			err := DeleteAuthGroup(ctx, group.ID, "bad-etag", "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrConcurrentModification))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrConcurrentModification))
 		})
 
 		t.Run("group name that doesn't exist", func(t *ftt.Test) {
@@ -1113,7 +1114,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, ownedGroup), should.BeNil)
 
 			err := DeleteAuthGroup(ctx, group.ID, "", "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrReferencedEntity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrReferencedEntity))
 			assert.Loosely(t, err, should.ErrLike("this group is referenced by other groups: [owned]"))
 		})
 
@@ -1125,7 +1126,7 @@ func TestDeleteAuthGroup(t *testing.T) {
 			assert.Loosely(t, datastore.Put(ctx, nestingGroup), should.BeNil)
 
 			err := DeleteAuthGroup(ctx, group.ID, "", "Go pRPC API")
-			assert.Loosely(t, err, should.ErrLike(ErrReferencedEntity))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrReferencedEntity))
 			assert.Loosely(t, err, should.ErrLike("this group is referenced by other groups: [nester]"))
 		})
 
@@ -2264,7 +2265,8 @@ func TestValidateAdminGroup(t *testing.T) {
 				ID:     AdminGroup,
 				Owners: "test-group",
 			}
-			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				customerrors.ErrInvalidArgument)
 			assert.ErrIsLike(t, validateAdminGroup(ctx, g), "owned by itself")
 		})
 
@@ -2274,7 +2276,7 @@ func TestValidateAdminGroup(t *testing.T) {
 				Owners: AdminGroup,
 				Globs:  []string{"user:*@example.com"},
 			}
-			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g), customerrors.ErrInvalidArgument)
 			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
 				"cannot have globs")
 		})
@@ -2285,7 +2287,8 @@ func TestValidateAdminGroup(t *testing.T) {
 				Owners: AdminGroup,
 				Nested: []string{"test-group"},
 			}
-			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				customerrors.ErrInvalidArgument)
 			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
 				"can only have external subgroups")
 		})
@@ -2295,7 +2298,8 @@ func TestValidateAdminGroup(t *testing.T) {
 				ID:     AdminGroup,
 				Owners: AdminGroup,
 			}
-			assert.ErrIsLike(t, validateAdminGroup(ctx, g), ErrInvalidArgument)
+			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
+				customerrors.ErrInvalidArgument)
 			assert.ErrIsLike(t, validateAdminGroup(ctx, g),
 				"cannot be empty")
 		})

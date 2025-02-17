@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/auth/service/protocol"
+
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 )
 
 func TestValidation(t *testing.T) {
@@ -44,7 +46,8 @@ func TestValidation(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, validateAuthDB(ctx, db), should.ErrLike(ErrInvalidName))
+			assert.Loosely(t, validateAuthDB(ctx, db),
+				should.ErrLike(customerrors.ErrInvalidName))
 		})
 
 		t.Run("bad creator", func(t *ftt.Test) {
@@ -56,7 +59,8 @@ func TestValidation(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, validateAuthDB(ctx, db), should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, validateAuthDB(ctx, db),
+				should.ErrLike(customerrors.ErrInvalidIdentity))
 		})
 
 		t.Run("bad modifier", func(t *ftt.Test) {
@@ -68,7 +72,8 @@ func TestValidation(t *testing.T) {
 					},
 				},
 			}
-			assert.Loosely(t, validateAuthDB(ctx, db), should.ErrLike(ErrInvalidIdentity))
+			assert.Loosely(t, validateAuthDB(ctx, db),
+				should.ErrLike(customerrors.ErrInvalidIdentity))
 		})
 
 		t.Run("unknown group", func(t *ftt.Test) {

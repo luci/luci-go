@@ -22,7 +22,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	stderrors "errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -44,6 +43,7 @@ import (
 
 	"go.chromium.org/luci/auth_service/api/configspb"
 	"go.chromium.org/luci/auth_service/api/rpcpb"
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 	"go.chromium.org/luci/auth_service/internal/permissions"
@@ -405,28 +405,6 @@ type AuthDBSnapshotLatest struct {
 	ModifiedTS time.Time `gae:"modified_ts,noindex"`
 }
 
-var (
-	// ErrAlreadyExists is returned when an entity already exists.
-	ErrAlreadyExists = stderrors.New("entity already exists")
-	// ErrPermissionDenied is returned when the user does not have permission for
-	// the requested entity operation.
-	ErrPermissionDenied = stderrors.New("permission denied")
-	// ErrInvalidArgument is a generic error returned when an argument is invalid.
-	ErrInvalidArgument = stderrors.New("invalid argument")
-	// ErrInvalidName is returned when a supplied entity name is invalid.
-	ErrInvalidName = stderrors.New("invalid entity name")
-	// ErrInvalidReference is returned when a referenced entity name is invalid.
-	ErrInvalidReference = stderrors.New("some referenced groups don't exist")
-	// ErrInvalidIdentity is returned when a referenced identity or glob is invalid.
-	ErrInvalidIdentity = stderrors.New("invalid identity")
-	// ErrConcurrentModification is returned when an entity is modified by two concurrent operations.
-	ErrConcurrentModification = stderrors.New("concurrent modification")
-	// ErrReferencedEntity is returned when an entity cannot be deleted because it is referenced elsewhere.
-	ErrReferencedEntity = stderrors.New("cannot delete referenced entity")
-	// ErrCyclicDependency is returned when an update would create a cyclic dependency.
-	ErrCyclicDependency = stderrors.New("groups can't have cyclic dependencies")
-)
-
 // RootKey gets the root key of the entity group with all AuthDB entities.
 func RootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(ctx, "AuthGlobalConfig", "root", 0, nil)
@@ -635,7 +613,7 @@ func runAuthDBChange(ctx context.Context, historicalComment string, f func(conte
 // Returns an annotated error for other errors.
 func GetAuthGroup(ctx context.Context, groupName string) (*AuthGroup, error) {
 	if groupName == "" {
-		return nil, fmt.Errorf("%w: empty group name", ErrInvalidName)
+		return nil, fmt.Errorf("%w: empty group name", customerrors.ErrInvalidName)
 	}
 
 	authGroup := makeAuthGroup(ctx, groupName)
@@ -698,7 +676,7 @@ func validateGlobs(globs []string) error {
 }
 
 // checkGroupsExist checks that groups with the given names exist in datastore.
-// Returns ErrInvalidReference if one or more of the groups do not exist.
+// Returns customerrors.ErrInvalidReference if one or more of the groups do not exist.
 func checkGroupsExist(ctx context.Context, groups []string) error {
 	if len(groups) == 0 {
 		return nil
@@ -718,7 +696,7 @@ func checkGroupsExist(ctx context.Context, groups []string) error {
 				missingRefs = append(missingRefs, r)
 			}
 		}
-		return fmt.Errorf("%w: %s", ErrInvalidReference, strings.Join(missingRefs, ", "))
+		return fmt.Errorf("%w: %s", customerrors.ErrInvalidReference, strings.Join(missingRefs, ", "))
 	}
 	return nil
 }
@@ -827,15 +805,15 @@ func findGroupDependencyCycle(ctx context.Context, group *AuthGroup) ([]string, 
 func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment string) (*AuthGroup, error) {
 	// Check the supplied group name is valid, and not an external group.
 	if !auth.IsValidGroupName(group.ID) || IsExternalAuthGroupName(group.ID) {
-		return nil, ErrInvalidName
+		return nil, customerrors.ErrInvalidName
 	}
 
 	// Check that the supplied members and globs are well-formed.
 	if err := validateIdentities(group.Members); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
+		return nil, fmt.Errorf("%w: %w", customerrors.ErrInvalidIdentity, err)
 	}
 	if err := validateGlobs(group.Globs); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
+		return nil, fmt.Errorf("%w: %w", customerrors.ErrInvalidIdentity, err)
 	}
 
 	// Construct a new group so that we don't modify the input.
@@ -849,7 +827,7 @@ func CreateAuthGroup(ctx context.Context, group *AuthGroup, historicalComment st
 			return errors.Annotate(err, "failed to check whether group name already exists").Err()
 		}
 		if exists.Get(0) {
-			return ErrAlreadyExists
+			return customerrors.ErrAlreadyExists
 		}
 
 		// Copy in all user-settable fields.
@@ -943,11 +921,11 @@ func findReferencingGroups(ctx context.Context, groupName string) (stringset.Set
 //
 // Possible errors:
 //
-//	ErrInvalidArgument if the field mask provided is invalid.
-//	ErrInvalidIdentity if any identities or globs specified in the update are invalid.
+//	customerrors.ErrInvalidArgument if the field mask provided is invalid.
+//	customerrors.ErrInvalidIdentity if any identities or globs specified in the update are invalid.
 //	datastore.ErrNoSuchEntity if the specified group does not exist.
-//	ErrPermissionDenied if the caller is not allowed to update the group.
-//	ErrConcurrentModification if the provided etag is not up-to-date.
+//	customerrors.ErrPermissionDenied if the caller is not allowed to update the group.
+//	customerrors.ErrConcurrentModification if the provided etag is not up-to-date.
 //	Annotated error for other errors.
 func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fieldmaskpb.FieldMask, etag, historicalComment string) (*AuthGroup, error) {
 	// A nil updateMask means we should update all fields.
@@ -967,7 +945,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 
 	// External groups cannot be manually updated.
 	if IsExternalAuthGroupName(groupUpdate.ID) {
-		return nil, errors.Annotate(ErrPermissionDenied, "cannot update external group").Err()
+		return nil, errors.Annotate(customerrors.ErrPermissionDenied, "cannot update external group").Err()
 	}
 
 	// Do some preliminary validation before entering the Datastore transaction.
@@ -976,19 +954,19 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		case "members":
 			// Check that the supplied members are well-formed.
 			if err := validateIdentities(groupUpdate.Members); err != nil {
-				return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
+				return nil, fmt.Errorf("%w: %w", customerrors.ErrInvalidIdentity, err)
 			}
 		case "globs":
 			// Check that the supplied globs are well-formed.
 			if err := validateGlobs(groupUpdate.Globs); err != nil {
-				return nil, fmt.Errorf("%w: %w", ErrInvalidIdentity, err)
+				return nil, fmt.Errorf("%w: %w", customerrors.ErrInvalidIdentity, err)
 			}
 		case "owners":
 			// Admin group must always be owned by itself.
 			// Note: empty owners field is permitted as the admin group is the
 			// default for owners.
 			if groupUpdate.ID == AdminGroup && groupUpdate.Owners != "" && groupUpdate.Owners != AdminGroup {
-				return nil, fmt.Errorf("%w: changing %q group owners is forbidden", ErrInvalidArgument, AdminGroup)
+				return nil, fmt.Errorf("%w: changing %q group owners is forbidden", customerrors.ErrInvalidArgument, AdminGroup)
 			}
 		}
 	}
@@ -1006,12 +984,12 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 		}
 
 		if !ok {
-			return ErrPermissionDenied
+			return customerrors.ErrPermissionDenied
 		}
 
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
-			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", authGroup.ID).Err()
+			return errors.Annotate(customerrors.ErrConcurrentModification, "group %q was updated by someone else", authGroup.ID).Err()
 		}
 
 		// Update fields according to the mask.
@@ -1047,7 +1025,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 					return err
 				} else if cycle != nil {
 					cycleStr := strings.Join(cycle, " -> ")
-					return fmt.Errorf("%w: %s", ErrCyclicDependency, cycleStr)
+					return fmt.Errorf("%w: %s", customerrors.ErrCyclicDependency, cycleStr)
 				}
 			case "description":
 				if authGroup.Description != groupUpdate.Description {
@@ -1073,7 +1051,7 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 				authGroup.Owners = newOwners
 				updated = true
 			default:
-				return errors.Annotate(ErrInvalidArgument, "unknown field: %s", field).Err()
+				return errors.Annotate(customerrors.ErrInvalidArgument, "unknown field: %s", field).Err()
 			}
 		}
 
@@ -1107,13 +1085,13 @@ func UpdateAuthGroup(ctx context.Context, groupUpdate *AuthGroup, updateMask *fi
 func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 	// The admin group must own itself.
 	if admin.Owners != AdminGroup {
-		return errors.Annotate(ErrInvalidArgument,
+		return errors.Annotate(customerrors.ErrInvalidArgument,
 			"%s must be owned by itself", AdminGroup).Err()
 	}
 
 	// Forbid globs because the admin group is very privileged.
 	if len(admin.Globs) > 0 {
-		return errors.Annotate(ErrInvalidArgument,
+		return errors.Annotate(customerrors.ErrInvalidArgument,
 			"%s cannot have globs", AdminGroup).Err()
 	}
 
@@ -1121,7 +1099,7 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 	// admin group over time.
 	for _, nested := range admin.Nested {
 		if !IsExternalAuthGroupName(nested) {
-			return errors.Annotate(ErrInvalidArgument,
+			return errors.Annotate(customerrors.ErrInvalidArgument,
 				"%s can only have external subgroups", AdminGroup).Err()
 		}
 	}
@@ -1135,7 +1113,7 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 		return nil
 	}
 
-	return errors.Annotate(ErrInvalidArgument,
+	return errors.Annotate(customerrors.ErrInvalidArgument,
 		"%s cannot be empty", AdminGroup).Err()
 }
 
@@ -1144,19 +1122,19 @@ func validateAdminGroup(ctx context.Context, admin *AuthGroup) error {
 // Possible errors:
 //
 //	datastore.ErrNoSuchEntity if the specified group does not exist.
-//	ErrPermissionDenied if the caller is not allowed to delete the group.
-//	ErrConcurrentModification if the provided etag is not up-to-date.
-//	ErrReferencedEntity if the group is referenced by another group.
+//	customerrors.ErrPermissionDenied if the caller is not allowed to delete the group.
+//	customerrors.ErrConcurrentModification if the provided etag is not up-to-date.
+//	customerrors.ErrReferencedEntity if the group is referenced by another group.
 //	Annotated error for other errors.
 func DeleteAuthGroup(ctx context.Context, groupName string, etag string, historicalComment string) error {
 	// Disallow deletion of the admin group.
 	if groupName == AdminGroup {
-		return ErrPermissionDenied
+		return customerrors.ErrPermissionDenied
 	}
 
 	// External groups cannot be manually deleted.
 	if IsExternalAuthGroupName(groupName) {
-		return errors.Annotate(ErrPermissionDenied, "cannot delete external group").Err()
+		return errors.Annotate(customerrors.ErrPermissionDenied, "cannot delete external group").Err()
 	}
 
 	return runAuthDBChange(ctx, historicalComment, func(ctx context.Context, commitEntity commitAuthEntity) error {
@@ -1170,12 +1148,12 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 			return errors.Annotate(err, "permission check failed").Err()
 		}
 		if !ok {
-			return ErrPermissionDenied
+			return customerrors.ErrPermissionDenied
 		}
 
 		// Verify etag (if provided) to protect against concurrent modifications.
 		if etag != "" && authGroup.etag() != etag {
-			return errors.Annotate(ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
+			return errors.Annotate(customerrors.ErrConcurrentModification, "group %q was updated by someone else", groupName).Err()
 		}
 
 		// Check that the group is not referenced from elsewhere.
@@ -1187,7 +1165,7 @@ func DeleteAuthGroup(ctx context.Context, groupName string, etag string, histori
 		referencingGroups.Del(groupName)
 		if len(referencingGroups) > 0 {
 			groupsStr := strings.Join(referencingGroups.ToSortedSlice(), ", ")
-			return errors.Annotate(ErrReferencedEntity, "this group is referenced by other groups: [%s]", groupsStr).Err()
+			return errors.Annotate(customerrors.ErrReferencedEntity, "this group is referenced by other groups: [%s]", groupsStr).Err()
 		}
 
 		// Delete the group.

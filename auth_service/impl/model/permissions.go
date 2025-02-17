@@ -26,12 +26,9 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/util/indexset"
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
-)
-
-var (
-	ErrSnapshotMissingAuthDB = errors.New("AuthDBSnapshot missing AuthDB field")
 )
 
 // RealmPermissions represent the permissions in a single realm.
@@ -75,7 +72,7 @@ func GetAuthDBFromSnapshot(ctx context.Context, authDBRev int64) (*protocol.Auth
 	}
 
 	if req.AuthDb == nil {
-		return nil, ErrSnapshotMissingAuthDB
+		return nil, customerrors.ErrSnapshotMissingAuthDB
 	}
 
 	return req.AuthDb, nil

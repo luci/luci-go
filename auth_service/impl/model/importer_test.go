@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/tq"
 
 	"go.chromium.org/luci/auth_service/api/configspb"
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/info"
 	"go.chromium.org/luci/auth_service/internal/configs/srvcfg/importscfg"
 	"go.chromium.org/luci/auth_service/testsupport"
@@ -263,7 +264,7 @@ func TestImportBundles(t *testing.T) {
 
 		t.Run("aborts without AdminGroup", func(t *ftt.Test) {
 			updatedGroups, revision, err := importBundles(ctx, bundles, callerIdent, nil)
-			assert.Loosely(t, err, should.ErrLike(ErrInvalidReference))
+			assert.Loosely(t, err, should.ErrLike(customerrors.ErrInvalidReference))
 			assert.Loosely(t, err, should.ErrLike("aborting groups import"))
 			assert.Loosely(t, err, should.ErrLike(AdminGroup))
 			assert.Loosely(t, updatedGroups, should.BeEmpty)
