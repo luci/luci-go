@@ -40,6 +40,16 @@ export const fleetRoutes: RouteObject[] = [
               },
             ],
           },
+          {
+            path: 'requests',
+            children: [
+              {
+                index: true,
+                lazy: () =>
+                  import('@/fleet/pages/resource_request_insights_page'),
+              },
+            ],
+          },
           { path: 'sandbox', lazy: () => import('@/fleet/pages/sandbox_page') },
         ],
       },
