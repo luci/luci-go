@@ -31,7 +31,6 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
@@ -88,12 +87,13 @@ func TestPermissionsProvider(t *testing.T) {
 		}
 
 		expectedInitial := &PermissionsSnapshot{
-			authDBRev: revInitial,
-			permissionsMap: map[string][]*rpcpb.RealmPermissions{
+			authDBRev:       revInitial,
+			permissionNames: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+			permissionsMap: map[string][]*model.RealmPermissions{
 				"group:gr1": {
 					{
 						Name:        "p:r",
-						Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+						Permissions: []uint32{0, 1, 2},
 					},
 				},
 			},
@@ -101,22 +101,23 @@ func TestPermissionsProvider(t *testing.T) {
 				[]model.GraphableGroup{model.GraphableGroup(group1)}),
 		}
 		expectedUpdated := &PermissionsSnapshot{
-			authDBRev: revUpdated,
-			permissionsMap: map[string][]*rpcpb.RealmPermissions{
+			authDBRev:       revUpdated,
+			permissionNames: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+			permissionsMap: map[string][]*model.RealmPermissions{
 				"group:gr1": {
 					{
 						Name:        "p:r",
-						Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+						Permissions: []uint32{0, 1, 2},
 					},
 					{
 						Name:        "p:r2",
-						Permissions: []string{"luci.dev.p3"},
+						Permissions: []uint32{2},
 					},
 				},
 				"group:gr2": {
 					{
 						Name:        "p:r",
-						Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
+						Permissions: []uint32{1, 2},
 					},
 				},
 			},

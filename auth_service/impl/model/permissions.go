@@ -23,17 +23,27 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
+	"go.chromium.org/luci/auth_service/impl/util/indexset"
 	"go.chromium.org/luci/auth_service/impl/util/zlib"
 )
 
 var (
 	ErrSnapshotMissingAuthDB = errors.New("AuthDBSnapshot missing AuthDB field")
 )
+
+// RealmPermissions represent the permissions in a single realm.
+type RealmPermissions struct {
+	// Full name of the realm, i.e. format is "<project>:<realmName>".
+	Name string
+
+	// Sorted slice of permission indices, representing the permissions granted in
+	// this realm. The index is relative to the lexicographically ordered set of
+	// all permissions in the AuthDB.
+	Permissions []uint32
+}
 
 // processSnapshot is a helper function to get the
 // ReplicationPushRequest from the given AuthDBSnapshot.
@@ -76,27 +86,25 @@ func GetAuthDBFromSnapshot(ctx context.Context, authDBRev int64) (*protocol.Auth
 //
 // It returns a mapping of principal -> collection of realm permissions
 // (the permissions that principal has in that specific realm).
-func AnalyzePrincipalPermissions(realms *protocol.Realms) (map[string][]*rpcpb.RealmPermissions, error) {
-	result := make(map[string][]*rpcpb.RealmPermissions)
+func AnalyzePrincipalPermissions(realms *protocol.Realms) (map[string][]*RealmPermissions, error) {
+	result := make(map[string][]*RealmPermissions)
 	for _, realm := range realms.Realms {
-		principalToPermissions := make(map[string]stringset.Set)
+		principalToPermissions := make(map[string]indexset.Set)
+
 		// Maintain map of principal to permissions set.
 		for _, binding := range realm.Bindings {
-			permissionNames := stringset.New(len(binding.Permissions))
-			for _, permIndex := range binding.Permissions {
-				permissionNames.Add(realms.Permissions[permIndex].Name)
-			}
-			// For each principal look up its current permission set & extend it by these permission names.
-			permissions := permissionNames.ToSlice()
+			// For each principal, look up its current permission set & extend it by
+			// this binding's permissions.
 			for _, principal := range binding.Principals {
 				if _, ok := principalToPermissions[principal]; !ok {
-					principalToPermissions[principal] = stringset.New(0)
+					principalToPermissions[principal] = indexset.New(0)
 				}
-				principalToPermissions[principal].AddAll(permissions)
+				principalToPermissions[principal].AddAll(binding.Permissions)
 			}
 		}
+
 		for principal, permissions := range principalToPermissions {
-			realmPermissions := &rpcpb.RealmPermissions{
+			realmPermissions := &RealmPermissions{
 				Name:        realm.Name,
 				Permissions: permissions.ToSortedSlice(),
 			}

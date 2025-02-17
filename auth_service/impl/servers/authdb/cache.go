@@ -28,7 +28,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
 
-	"go.chromium.org/luci/auth_service/api/rpcpb"
+	customerrors "go.chromium.org/luci/auth_service/impl/errors"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
 )
@@ -40,9 +40,10 @@ const maxStaleness = 30 * time.Second
 var tracer = otel.Tracer("go.chromium.org/luci/auth_service")
 
 type PermissionsSnapshot struct {
-	authDBRev      int64
-	permissionsMap map[string][]*rpcpb.RealmPermissions
-	groupsGraph    *graph.Graph
+	authDBRev       int64
+	permissionNames []string
+	permissionsMap  map[string][]*model.RealmPermissions
+	groupsGraph     *graph.Graph
 }
 
 type CachingPermissionsProvider struct {
@@ -123,6 +124,18 @@ func fetch(ctx context.Context) (snap *PermissionsSnapshot, err error) {
 	}, &datastore.TransactionOptions{ReadOnly: true})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch latest AuthDB").Err()
+	}
+
+	realms := authDB.GetRealms()
+	if realms == nil {
+		return nil, customerrors.ErrAuthDBMissingRealms
+	}
+
+	// Get all permission names from the realms.
+	permissions := realms.GetPermissions()
+	snap.permissionNames = make([]string, len(permissions))
+	for i, p := range permissions {
+		snap.permissionNames[i] = p.GetName()
 	}
 
 	// Create permissions map from the realms.

@@ -26,8 +26,6 @@ import (
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/service/protocol"
-
-	"go.chromium.org/luci/auth_service/api/rpcpb"
 )
 
 func TestGetAuthorizationSnapshot(t *testing.T) {
@@ -146,33 +144,33 @@ func TestAnalyzePrincipalPermissions(t *testing.T) {
 				},
 			},
 		}
-		expectedResult := map[string][]*rpcpb.RealmPermissions{
+		expectedResult := map[string][]*RealmPermissions{
 			"group:gr1": {
 				{
 					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					Permissions: []uint32{0, 1, 2},
 				},
 				{
 					Name:        "p:r2",
-					Permissions: []string{"luci.dev.p3"},
+					Permissions: []uint32{2},
 				},
 			},
 			"group:gr2": {
 				{
 					Name:        "p:r",
-					Permissions: []string{"luci.dev.p2", "luci.dev.p3"},
+					Permissions: []uint32{1, 2},
 				},
 			},
 			"group:gr3": {
 				{
 					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					Permissions: []uint32{0, 1, 2},
 				},
 			},
 			"group:gr4": {
 				{
 					Name:        "p:r",
-					Permissions: []string{"luci.dev.p1", "luci.dev.p2", "luci.dev.p3"},
+					Permissions: []uint32{0, 1, 2},
 				},
 			},
 		}

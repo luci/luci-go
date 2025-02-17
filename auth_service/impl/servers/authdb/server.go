@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/auth_service/api/rpcpb"
 	"go.chromium.org/luci/auth_service/impl/model"
 	"go.chromium.org/luci/auth_service/impl/model/graph"
+	"go.chromium.org/luci/auth_service/impl/util/indexset"
 )
 
 // PermissionsProvider is the interface to get all permissions entities.
@@ -285,7 +286,7 @@ func (srv *Server) GetPrincipalPermissions(ctx context.Context, request *rpcpb.G
 	principal := subgraph.Nodes[0].ToPermissionKey()
 	// Collate the permissions for each node that includes this principal.
 	allRealms := stringset.New(0)
-	permissionsByRealm := make(map[string]stringset.Set)
+	permissionsByRealm := make(map[string]indexset.Set)
 	for _, node := range subgraph.Nodes {
 		permKey := node.ToPermissionKey()
 		if permKey == "" {
@@ -296,20 +297,28 @@ func (srv *Server) GetPrincipalPermissions(ctx context.Context, request *rpcpb.G
 			continue
 		}
 		for _, realmPerms := range nodePerms {
-			realm := realmPerms.GetName()
+			realm := realmPerms.Name
 			allRealms.Add(realm)
 			if _, ok := permissionsByRealm[realm]; !ok {
-				permissionsByRealm[realm] = stringset.New(0)
+				permissionsByRealm[realm] = indexset.New(0)
 			}
-			permissionsByRealm[realm].AddAll(realmPerms.GetPermissions())
+			permissionsByRealm[realm].AddAll(realmPerms.Permissions)
 		}
 	}
 
 	realmPermissions := make([]*rpcpb.RealmPermissions, allRealms.Len())
 	for i, realm := range allRealms.ToSortedSlice() {
+		// Map the permission indices to their names. We can sort the indices first
+		// to guarantee the permission names are in lexicographical order.
+		permIndices := permissionsByRealm[realm].ToSortedSlice()
+		permNames := make([]string, len(permIndices))
+		for j, permIndex := range permIndices {
+			permNames[j] = snap.permissionNames[permIndex]
+		}
+
 		realmPermissions[i] = &rpcpb.RealmPermissions{
 			Name:        realm,
-			Permissions: permissionsByRealm[realm].ToSortedSlice(),
+			Permissions: permNames,
 		}
 	}
 
