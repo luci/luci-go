@@ -14,6 +14,11 @@
 
 const swarmingStateBaseUrl = 'http://go/flops-swarming';
 
-export const getSwarmingStateDocLinkForLabel = (value: string): string => {
+export const getSwarmingStateDocLinkForLabel = (
+  value: string | undefined,
+): string => {
+  if (value === undefined) {
+    return '';
+  }
   return `${swarmingStateBaseUrl}#${value.replace(/_/g, '-').toLowerCase()}`;
 };
