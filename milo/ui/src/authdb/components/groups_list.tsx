@@ -25,7 +25,7 @@ import { Link } from 'react-router-dom';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 
 import { GroupsListItem } from '@/authdb/components/groups_list_item';
-import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
+import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import {
   AuthGroup,
@@ -51,7 +51,7 @@ export const GroupsList = forwardRef<GroupsListElement, GroupsListProps>(
       endIndex: 0,
     });
 
-    const client = useAuthServiceClient();
+    const client = useAuthServiceGroupsClient();
     const {
       isLoading,
       isError,

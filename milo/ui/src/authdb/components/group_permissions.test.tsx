@@ -15,24 +15,62 @@
 import { render, screen } from '@testing-library/react';
 
 import {
-  createMockGroupIndividual,
-  mockFetchGetGroup,
-} from '@/authdb/testing_tools/mocks/group_individual_mock';
+  createMockPrincipalPermissions,
+  mockFetchGetPrincipalPermissions,
+  mockErrorFetchingGetPermissions,
+} from '@/authdb/testing_tools/mocks/group_permissions_mock';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { GroupPermissions } from './group_permissions';
 
 describe('<GroupPermissions />', () => {
-  test('displays group name', async () => {
-    const mockGroup = createMockGroupIndividual('123', true, true);
-    mockFetchGetGroup(mockGroup);
+  test('displays realm names', async () => {
+    const mockPermissions = createMockPrincipalPermissions('123');
+    mockFetchGetPrincipalPermissions(mockPermissions);
 
     render(
       <FakeContextProvider>
         <GroupPermissions name="123" />
       </FakeContextProvider>,
     );
+    await screen.findByTestId('group-permissions');
 
-    expect(screen.getByText(mockGroup.name)).toBeInTheDocument();
+    for (const realmPermission of mockPermissions.realmPermissions) {
+      expect(screen.getByText(realmPermission.name)).toBeInTheDocument();
+    }
+  });
+
+  test('displays permissions', async () => {
+    const mockPermissions = createMockPrincipalPermissions('123');
+    mockFetchGetPrincipalPermissions(mockPermissions);
+
+    render(
+      <FakeContextProvider>
+        <GroupPermissions name="123" />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('group-permissions');
+
+    for (const realmPermission of mockPermissions.realmPermissions) {
+      for (const permission of realmPermission.permissions) {
+        expect(screen.getByText(permission)).toBeInTheDocument();
+      }
+    }
+  });
+
+  test('if appropriate message is displayed for an error', async () => {
+    mockErrorFetchingGetPermissions();
+
+    render(
+      <FakeContextProvider>
+        <GroupPermissions name="123" />
+      </FakeContextProvider>,
+    );
+    await screen.findByTestId('group-permissions-error');
+
+    expect(
+      screen.getByText('Failed to load group permissions'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('group-permissions')).toBeNull();
   });
 });

@@ -13,11 +13,19 @@
 // limitations under the License.
 
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
+import { AuthDBClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
 import { GroupsClientImpl } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
 
-export function useAuthServiceClient() {
+export function useAuthServiceGroupsClient() {
   return usePrpcServiceClient({
     host: SETTINGS.authService.host,
     ClientImpl: GroupsClientImpl,
+  });
+}
+
+export function useAuthServiceAuthDBClient() {
+  return usePrpcServiceClient({
+    host: SETTINGS.authService.host,
+    ClientImpl: AuthDBClientImpl,
   });
 }

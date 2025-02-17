@@ -34,7 +34,7 @@ import {
   isMember,
   isSubgroup,
 } from '@/authdb/common/helpers';
-import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
+import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import {
   AuthGroup,
@@ -89,7 +89,7 @@ export function GroupsFormNew({ onCreate }: GroupsFormNewProps) {
     useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>();
 
-  const client = useAuthServiceClient();
+  const client = useAuthServiceGroupsClient();
   const createMutation = useMutation({
     mutationFn: (request: CreateGroupRequest) => {
       return client.CreateGroup(request);

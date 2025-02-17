@@ -40,7 +40,7 @@ import {
   FormListElement,
 } from '@/authdb/components/groups_form_list';
 import { GroupsFormListReadonly } from '@/authdb/components/groups_form_list_readonly';
-import { useAuthServiceClient } from '@/authdb/hooks/prpc_clients';
+import { useAuthServiceGroupsClient } from '@/authdb/hooks/prpc_clients';
 import { getURLPathFromAuthGroup } from '@/common/tools/url_utils';
 import {
   AuthGroup,
@@ -93,7 +93,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
   const membersRef = createRef<FormListElement>();
   const subgroupsRef = createRef<FormListElement>();
   const globsRef = createRef<FormListElement>();
-  const client = useAuthServiceClient();
+  const client = useAuthServiceGroupsClient();
   const {
     isLoading,
     isError,
