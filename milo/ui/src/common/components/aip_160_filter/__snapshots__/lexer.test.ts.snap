@@ -1,0 +1,1510 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Lexer getAllTokens input:   wsAroundLong   1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": "  ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "wsAroundLong",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 14,
+    "value": "  ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  "string"  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "STRING",
+    "startPos": 1,
+    "value": ""string"",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 9,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  ( )  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "PAREN",
+    "startPos": 1,
+    "value": "(",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 3,
+    "kind": "PAREN",
+    "startPos": 3,
+    "value": ")",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 4,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  (composite)  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "PAREN",
+    "startPos": 1,
+    "value": "(",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "composite",
+  },
+  {
+    "index": 3,
+    "kind": "PAREN",
+    "startPos": 11,
+    "value": ")",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 12,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  - negated  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "-",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 3,
+    "value": "negated",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 10,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  1`] = `[]`;
+
+exports[`Lexer getAllTokens input:  a AND 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "a",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 3,
+    "kind": "KEYWORD",
+    "startPos": 3,
+    "value": "AND",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  a OR 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "a",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 3,
+    "kind": "KEYWORD",
+    "startPos": 3,
+    "value": "OR",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  wsAround  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "wsAround",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 9,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input:  wsBefore 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "wsBefore",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "quoted\\"string" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "value": ""quoted\\"string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "string" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "value": ""string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "ws string" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "value": ""ws string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: 'single quoted' 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "value": "'single quoted'",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: 'single then double" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "UNCLOSED_STRING",
+    "startPos": 0,
+    "value": "'single then double"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: ( composite ) 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "PAREN",
+    "startPos": 0,
+    "value": "(",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 1,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "composite",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 11,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "PAREN",
+    "startPos": 12,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: (composite) 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "PAREN",
+    "startPos": 0,
+    "value": "(",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "composite",
+  },
+  {
+    "index": 2,
+    "kind": "PAREN",
+    "startPos": 10,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: \\ 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "INVALID_CHAR",
+    "startPos": 0,
+    "value": "\\",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: - a 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "-",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 1,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "a",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: -negated 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "NEGATE",
+    "startPos": 0,
+    "value": "-",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "negated",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: AND 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "AND",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: AND AND 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "AND",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 3,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "KEYWORD",
+    "startPos": 4,
+    "value": "AND",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: AND a 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "AND",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 3,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 4,
+    "value": "a",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: NOT negated 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "NOT",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 3,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 4,
+    "value": "negated",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: OR 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "OR",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: OR OR 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "OR",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "KEYWORD",
+    "startPos": 3,
+    "value": "OR",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: OR a 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "KEYWORD",
+    "startPos": 0,
+    "value": "OR",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 2,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 3,
+    "value": "a",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: a < 1 AND b > 2 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "a",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 1,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "COMPARATOR",
+    "startPos": 2,
+    "value": "<",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 3,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 4,
+    "value": "1",
+  },
+  {
+    "index": 5,
+    "kind": "WHITESPACE",
+    "startPos": 5,
+    "value": " ",
+  },
+  {
+    "index": 6,
+    "kind": "KEYWORD",
+    "startPos": 6,
+    "value": "AND",
+  },
+  {
+    "index": 7,
+    "kind": "WHITESPACE",
+    "startPos": 9,
+    "value": " ",
+  },
+  {
+    "index": 8,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "b",
+  },
+  {
+    "index": 9,
+    "kind": "WHITESPACE",
+    "startPos": 11,
+    "value": " ",
+  },
+  {
+    "index": 10,
+    "kind": "COMPARATOR",
+    "startPos": 12,
+    "value": ">",
+  },
+  {
+    "index": 11,
+    "kind": "WHITESPACE",
+    "startPos": 13,
+    "value": " ",
+  },
+  {
+    "index": 12,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 14,
+    "value": "2",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: a <= 1 AND b >= 2 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "a",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 1,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "COMPARATOR",
+    "startPos": 2,
+    "value": "<",
+  },
+  {
+    "index": 3,
+    "kind": "COMPARATOR",
+    "startPos": 3,
+    "value": "=",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 4,
+    "value": " ",
+  },
+  {
+    "index": 5,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 5,
+    "value": "1",
+  },
+  {
+    "index": 6,
+    "kind": "WHITESPACE",
+    "startPos": 6,
+    "value": " ",
+  },
+  {
+    "index": 7,
+    "kind": "KEYWORD",
+    "startPos": 7,
+    "value": "AND",
+  },
+  {
+    "index": 8,
+    "kind": "WHITESPACE",
+    "startPos": 10,
+    "value": " ",
+  },
+  {
+    "index": 9,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 11,
+    "value": "b",
+  },
+  {
+    "index": 10,
+    "kind": "WHITESPACE",
+    "startPos": 12,
+    "value": " ",
+  },
+  {
+    "index": 11,
+    "kind": "COMPARATOR",
+    "startPos": 13,
+    "value": ">=",
+  },
+  {
+    "index": 12,
+    "kind": "WHITESPACE",
+    "startPos": 15,
+    "value": " ",
+  },
+  {
+    "index": 13,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 16,
+    "value": "2",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: a.b.c 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "a.b.c",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: a:b:c 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "a",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 1,
+    "value": ":",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "b",
+  },
+  {
+    "index": 3,
+    "kind": "COMPARATOR",
+    "startPos": 3,
+    "value": ":",
+  },
+  {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 4,
+    "value": "c",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: a=1 AND b="2" OR c!=3 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "a",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 1,
+    "value": "=",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 2,
+    "value": "1",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 3,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "KEYWORD",
+    "startPos": 4,
+    "value": "AND",
+  },
+  {
+    "index": 5,
+    "kind": "WHITESPACE",
+    "startPos": 7,
+    "value": " ",
+  },
+  {
+    "index": 6,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "b",
+  },
+  {
+    "index": 7,
+    "kind": "COMPARATOR",
+    "startPos": 9,
+    "value": "=",
+  },
+  {
+    "index": 8,
+    "kind": "STRING",
+    "startPos": 10,
+    "value": ""2"",
+  },
+  {
+    "index": 9,
+    "kind": "WHITESPACE",
+    "startPos": 13,
+    "value": " ",
+  },
+  {
+    "index": 10,
+    "kind": "KEYWORD",
+    "startPos": 14,
+    "value": "OR",
+  },
+  {
+    "index": 11,
+    "kind": "WHITESPACE",
+    "startPos": 16,
+    "value": " ",
+  },
+  {
+    "index": 12,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 17,
+    "value": "c",
+  },
+  {
+    "index": 13,
+    "kind": "COMPARATOR",
+    "startPos": 18,
+    "value": "!=",
+  },
+  {
+    "index": 14,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 20,
+    "value": "3",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: composite (expression) 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "composite",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 9,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "PAREN",
+    "startPos": 10,
+    "value": "(",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 11,
+    "value": "expression",
+  },
+  {
+    "index": 4,
+    "kind": "PAREN",
+    "startPos": 21,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: dash-separated-name 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "dash-separated-name",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: empty.func.call() 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FUNCTION",
+    "startPos": 0,
+    "value": "empty.func.call(",
+  },
+  {
+    "index": 1,
+    "kind": "PAREN",
+    "startPos": 16,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: explicit AND and 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "explicit",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "KEYWORD",
+    "startPos": 9,
+    "value": "AND",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 12,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 13,
+    "value": "and",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: func.call(arg1, "arg2") 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FUNCTION",
+    "startPos": 0,
+    "value": "func.call(",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "arg1",
+  },
+  {
+    "index": 2,
+    "kind": "COMMA",
+    "startPos": 14,
+    "value": ",",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 15,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "STRING",
+    "startPos": 16,
+    "value": ""arg2"",
+  },
+  {
+    "index": 5,
+    "kind": "PAREN",
+    "startPos": 22,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: implicit and 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "implicit",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 9,
+    "value": "and",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: implicit and AND explicit 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "implicit",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 9,
+    "value": "and",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 12,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "KEYWORD",
+    "startPos": 13,
+    "value": "AND",
+  },
+  {
+    "index": 5,
+    "kind": "WHITESPACE",
+    "startPos": 16,
+    "value": " ",
+  },
+  {
+    "index": 6,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 17,
+    "value": "explicit",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: implicit with OR term AND explicit OR term 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "implicit",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 9,
+    "value": "with",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 13,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "KEYWORD",
+    "startPos": 14,
+    "value": "OR",
+  },
+  {
+    "index": 5,
+    "kind": "WHITESPACE",
+    "startPos": 16,
+    "value": " ",
+  },
+  {
+    "index": 6,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 17,
+    "value": "term",
+  },
+  {
+    "index": 7,
+    "kind": "WHITESPACE",
+    "startPos": 21,
+    "value": " ",
+  },
+  {
+    "index": 8,
+    "kind": "KEYWORD",
+    "startPos": 22,
+    "value": "AND",
+  },
+  {
+    "index": 9,
+    "kind": "WHITESPACE",
+    "startPos": 25,
+    "value": " ",
+  },
+  {
+    "index": 10,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 26,
+    "value": "explicit",
+  },
+  {
+    "index": 11,
+    "kind": "WHITESPACE",
+    "startPos": 34,
+    "value": " ",
+  },
+  {
+    "index": 12,
+    "kind": "KEYWORD",
+    "startPos": 35,
+    "value": "OR",
+  },
+  {
+    "index": 13,
+    "kind": "WHITESPACE",
+    "startPos": 37,
+    "value": " ",
+  },
+  {
+    "index": 14,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 38,
+    "value": "term",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: member.field 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "member.field",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: simple 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "simple",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: term -negated-term 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "term",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 4,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "NEGATE",
+    "startPos": 5,
+    "value": "-",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 6,
+    "value": "negated-term",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: test OR or 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "test",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 4,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "KEYWORD",
+    "startPos": 5,
+    "value": "OR",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 7,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "or",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value < 21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 5,
+    "value": " ",
+  },
+  {
+    "index": 2,
+    "kind": "COMPARATOR",
+    "startPos": 6,
+    "value": "<",
+  },
+  {
+    "index": 3,
+    "kind": "WHITESPACE",
+    "startPos": 7,
+    "value": " ",
+  },
+  {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value!=21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": "!=",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 7,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value:21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": ":",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 6,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value<=21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": "<",
+  },
+  {
+    "index": 2,
+    "kind": "COMPARATOR",
+    "startPos": 6,
+    "value": "=",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 7,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value<21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": "<",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 6,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value=(composite) 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": "=",
+  },
+  {
+    "index": 2,
+    "kind": "PAREN",
+    "startPos": 6,
+    "value": "(",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 7,
+    "value": "composite",
+  },
+  {
+    "index": 4,
+    "kind": "PAREN",
+    "startPos": 16,
+    "value": ")",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value=21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": "=",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 6,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value>=21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": ">=",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 7,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: value>21 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "value",
+  },
+  {
+    "index": 1,
+    "kind": "COMPARATOR",
+    "startPos": 5,
+    "value": ">",
+  },
+  {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 6,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: wsAfter  1`] = `
+[
+  {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "wsAfter",
+  },
+  {
+    "index": 1,
+    "kind": "WHITESPACE",
+    "startPos": 7,
+    "value": " ",
+  },
+]
+`;
