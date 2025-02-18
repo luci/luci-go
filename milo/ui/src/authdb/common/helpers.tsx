@@ -69,3 +69,14 @@ export const isMember = (item: string) => {
 export const isSubgroup = (item: string) => {
   return nameRe.test(item!);
 };
+
+// Strips '<prefix>:' from a string if it starts with it.
+export function stripPrefix(prefix: string, value: string) {
+  if (!value) {
+    return '';
+  }
+  if (value.startsWith(prefix + ':')) {
+    return value.slice(prefix.length + 1, value.length);
+  }
+  return value;
+}

@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import { GroupForm } from '@/authdb/components/group_form';
+import { GroupListing } from '@/authdb/components/group_listing';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
 import {
   FullListingTabFlag,
@@ -130,7 +131,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             )}
             {listingFlag && (
               <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
-                <span> WIP Full Listing Tab</span>
+                <GroupListing name={name}></GroupListing>
               </TabPanel>
             )}
           </Box>

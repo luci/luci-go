@@ -34,7 +34,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useState, createRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { addPrefixToItems, nameRe } from '@/authdb/common/helpers';
+import { addPrefixToItems, nameRe, stripPrefix } from '@/authdb/common/helpers';
 import {
   GroupsFormList,
   FormListElement,
@@ -47,18 +47,6 @@ import {
   UpdateGroupRequest,
   DeleteGroupRequest,
 } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
-
-// Strips '<prefix>:' from a string if it starts with it.
-function stripPrefix(prefix: string, str: string) {
-  if (!str) {
-    return '';
-  }
-  if (str.slice(0, prefix.length + 1) === prefix + ':') {
-    return str.slice(prefix.length + 1, str.length);
-  } else {
-    return str;
-  }
-}
 
 // True if group name starts with '<something>/' prefix, where
 // <something> is a non-empty string.

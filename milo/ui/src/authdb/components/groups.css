@@ -40,3 +40,9 @@
 .subgroup-button {
     text-transform: none !important;
 }
+
+ul {
+    margin: 0;
+    list-style-type: none;
+    padding-left: 20px;
+}

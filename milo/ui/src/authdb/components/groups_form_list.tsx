@@ -271,8 +271,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                 colSpan={2}
                 sx={{ pb: 0 }}
                 style={{
-                  display: 'flex',
-                  flexDirection: 'row',
                   alignItems: 'center',
                   minHeight: '45px',
                 }}
