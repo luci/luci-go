@@ -1508,3 +1508,135 @@ exports[`Lexer getAllTokens input: wsAfter  1`] = `
   },
 ]
 `;
+
+exports[`Lexer getAtPosition inputWithCursor:  |value < 21   1`] = `
+[
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "value",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  valu|e < 21   1`] = `
+[
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "value",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value < |21   1`] = `
+[
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+  {
+    "index": 5,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 9,
+    "value": "21",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value < 21  | 1`] = `
+[
+  {
+    "index": 6,
+    "kind": "WHITESPACE",
+    "startPos": 11,
+    "value": "  ",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value < 21 |  1`] = `
+[
+  {
+    "index": 6,
+    "kind": "WHITESPACE",
+    "startPos": 11,
+    "value": "  ",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value <| 21   1`] = `
+[
+  {
+    "index": 3,
+    "kind": "COMPARATOR",
+    "startPos": 7,
+    "value": "<",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value |< 21   1`] = `
+[
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 6,
+    "value": " ",
+  },
+  {
+    "index": 3,
+    "kind": "COMPARATOR",
+    "startPos": 7,
+    "value": "<",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor:  value| < 21   1`] = `
+[
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "value": "value",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 6,
+    "value": " ",
+  },
+]
+`;
+
+exports[`Lexer getAtPosition inputWithCursor: | 1`] = `[]`;
+
+exports[`Lexer getAtPosition inputWithCursor: | value < 21   1`] = `
+[
+  undefined,
+  {
+    "index": 0,
+    "kind": "WHITESPACE",
+    "startPos": 0,
+    "value": " ",
+  },
+]
+`;

@@ -82,36 +82,32 @@ describe('Lexer', () => {
     });
   });
 
-  describe('getBeforePosition', () => {
+  describe('getAtPosition', () => {
     it.each([
-      ['| value < 21  ', false, undefined, undefined],
-      ['| value < 21  ', true, undefined, undefined],
-      [' |value < 21  ', false, undefined, undefined],
-      [' |value < 21  ', true, TokenKind.Whitespace, ' '],
-      [' valu|e < 21  ', false, TokenKind.QualifiedFieldOrValue, 'value'],
-      [' value| < 21  ', false, TokenKind.QualifiedFieldOrValue, 'value'],
-      [' value| < 21  ', true, TokenKind.QualifiedFieldOrValue, 'value'],
-      [' value |< 21  ', false, TokenKind.QualifiedFieldOrValue, 'value'],
-      [' value |< 21  ', true, TokenKind.Whitespace, ' '],
-      [' value <| 21  ', false, TokenKind.Comparator, '<'],
-      [' value <| 21  ', true, TokenKind.Comparator, '<'],
-      [' value < |21  ', false, TokenKind.Comparator, '<'],
-      [' value < |21  ', true, TokenKind.Whitespace, ' '],
-      [' value < 21 | ', false, TokenKind.QualifiedFieldOrValue, '21'],
-      [' value < 21 | ', true, TokenKind.Whitespace, '  '],
-      [' value < 21  |', false, TokenKind.QualifiedFieldOrValue, '21'],
-      [' value < 21  |', true, TokenKind.Whitespace, '  '],
-    ])(
-      'inputWithCursor: %s, allowWS: %s',
-      (inputWithCursor, allowWS, expectedKind, expectedValue) => {
-        const input = inputWithCursor.replace('|', '');
-        const cursorPos = inputWithCursor.indexOf('|');
-        const lexer = new Lexer(input);
-        const token = lexer.getBeforePosition(cursorPos, allowWS);
-        expect(token?.kind).toBe(expectedKind);
-        expect(token?.value).toBe(expectedValue);
-      },
-    );
+      ['|'],
+      ['| value < 21  '],
+      [' |value < 21  '],
+      [' valu|e < 21  '],
+      [' value| < 21  '],
+      [' value |< 21  '],
+      [' value <| 21  '],
+      [' value < |21  '],
+      [' value < 21 | '],
+      [' value < 21  |'],
+    ])('inputWithCursor: %s', (inputWithCursor) => {
+      const input = inputWithCursor.replace('|', '');
+      const cursorPos = inputWithCursor.indexOf('|');
+      const lexer = new Lexer(input);
+      const tokens = lexer.getAtPosition(cursorPos);
+      expect(tokens).toMatchSnapshot();
+    });
+
+    it('cursor position out of bounds', () => {
+      const input = ' value < 21 ';
+      const lexer = new Lexer(input);
+      expect(lexer.getAtPosition(-1)).toEqual([]);
+      expect(lexer.getAtPosition(input.length + 1)).toEqual([]);
+    });
   });
 
   describe('getBeforeIndex', () => {

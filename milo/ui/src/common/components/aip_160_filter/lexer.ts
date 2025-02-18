@@ -103,33 +103,49 @@ export class Lexer {
   }
 
   /**
-   * Get the last token with a start position before the specified cursor
-   * position.
-   *
-   * @param allowWS When set the true, include `Whitespace` token. Defaults to
-   *   false.
+   * Get token(s) at the specified cursor position. Return
+   *  * two tokens: if the cursor divide two tokens (e.g. `text|<=`).
+   *  * one token: if the cursor is in the middle of a token (e.g. `te|xt<=`)
+   *  * zero token: if the cursor is not placed on any token (e.g. `text<=  |`)
    */
-  getBeforePosition(cursorPos: number, allowWS = false): Token | null {
-    while (this.unprocessedInput !== '' && this.processedLen <= cursorPos) {
+  getAtPosition(
+    cursorPos: number,
+  ): readonly [Token, Token] | readonly [Token] | readonly [] {
+    while (this.unprocessedInput !== '' && this.processedLen <= cursorPos + 1) {
       this.processNextToken();
     }
-    let targetTokenIndex = -1;
+
+    // The text is empty.
+    if (this.processedLen === 0) {
+      return [];
+    }
+
+    // The cursor position is not in the range of the text [0, text_length].
+    if (cursorPos < 0 || cursorPos > this.processedLen) {
+      return [];
+    }
+
+    // Find the LAST token that starts before the cursor.
+    let tokenIndex = -1;
     for (let i = 0; i < this.cachedTokens.length; ++i) {
-      const token = this.cachedTokens[i];
-      if (!allowWS && token.kind === TokenKind.Whitespace) {
-        continue;
-      }
-      if (token.startPos >= cursorPos) {
+      if (this.cachedTokens[i].startPos >= cursorPos) {
         break;
       }
-      targetTokenIndex = i;
+      tokenIndex = i;
     }
 
-    if (targetTokenIndex === -1) {
-      return null;
+    // `prevToken !== null` is always true because the previous two early
+    // returns guarantee there's a token that starts before the cursor.
+    const prevToken = this.cachedTokens[tokenIndex];
+    const nextToken = this.cachedTokens[tokenIndex + 1] as Token | undefined;
+
+    // If the next token starts at the cursor position, the cursor must divide
+    // two tokens (e.g. `${prevToken}|${nextToken}`). Return both of them.
+    if (nextToken?.startPos === cursorPos) {
+      return [prevToken, nextToken];
     }
 
-    return this.cachedTokens[targetTokenIndex];
+    return [prevToken];
   }
 
   /**
