@@ -20,7 +20,7 @@
 //
 // Following sources were used as a base:
 //   - Repo: https://github.com/golang/appengine
-//   - Revision: 6d50fa847719498e759db6d80533dde0284307b3
+//   - Revision: ef2135aad62454e588006ef8beb7247022461e6c
 //
 // Some proto files were copied, and their proto package and `go_package`
 // updated to reflect their new location to avoid clashing with real GAE SDK
@@ -28,6 +28,7 @@
 // of using full Go package paths:
 //   - v2/internal/base/api_base.proto => base/
 //   - v2/internal/mail/mail_service.proto => mail/
+//   - v2/internal/memcache/memcache_service.proto => memcache/
 //   - v2/internal/remote_api/remote_api.proto => remote_api/
 //
 // The rest is written from scratch based on what the SDK is doing.
@@ -56,6 +57,7 @@ import (
 
 //go:generate cproto base
 //go:generate cproto mail
+//go:generate cproto memcache
 //go:generate cproto remote_api
 
 var (
@@ -65,13 +67,13 @@ var (
 
 // Note: Go GAE SDK attempts to limit the number of concurrent connections using
 // a hand-rolled semaphore-based dialer. It is not clear why it can't just use
-// MaxConnsPerHost. We use MaxConnsPerHost below for simplicity. We also don't
-// anticipate this client to be used with a ton of concurrent requests yet.
+// MaxConnsPerHost. We use MaxConnsPerHost below for simplicity.
 var apiHTTPClient = &http.Client{
 	Transport: &http.Transport{
 		Proxy:               http.ProxyFromEnvironment,
 		MaxConnsPerHost:     200,
-		MaxIdleConnsPerHost: 100,
+		MaxIdleConns:        1000,
+		MaxIdleConnsPerHost: 1000,
 		IdleConnTimeout:     90 * time.Second,
 	},
 }
@@ -252,7 +254,7 @@ func postToServiceBridge(ctx context.Context, tickets *Tickets, body []byte) ([]
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to make HTTP call").Err()
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	switch body, err := io.ReadAll(res.Body); {
 	case err != nil:
