@@ -21,7 +21,7 @@ gcloud auth application-default login
 
 Authenticate in LUCI and in CIPD:
 
-1. In LUCI Analysis's `frontend` directory run:
+1. In LUCI Analysis's `service-api` directory run:
    ```
    luci-auth login -scopes "https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/userinfo.email"
    ```
@@ -32,7 +32,7 @@ Authenticate in LUCI and in CIPD:
 
 To run the server, in another terminal use:
 ```
-cd frontend
+cd service-api
 go run main.go \
  -cloud-project luci-analysis-dev \
  -spanner-database projects/luci-analysis-dev/instances/dev/databases/luci-analysis-dev \
@@ -113,9 +113,7 @@ eval infra/go/env.py
 
 Then use the following commands to deploy:
 ```
-cd frontend/ui
-npm run build
-gae.py upload -A luci-analysis-dev default api
+gae.py upload -A luci-analysis-dev --host-scheme VERSION.staging.analysis.api.luci.app default api
 ```
 
 ### Dev and Prod Instances
