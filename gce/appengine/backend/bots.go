@@ -111,9 +111,6 @@ func manageMissingBot(c context.Context, vm *model.VM) error {
 	case vm.Timeout > 0 && vm.Created+vm.Timeout < time.Now().Unix():
 		logging.Debugf(c, "timeout %d exceeded", vm.Created+vm.Timeout)
 		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	case time.Since(time.Unix(vm.Created, 0)) > minPendingForBotConnected:
-		logging.Debugf(c, "already waited for %d minutes for bots to connect to swarming, stop waiting", minPendingForBotConnected)
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
 	default:
 		return nil
 	}
