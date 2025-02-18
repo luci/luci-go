@@ -1,6 +1,9 @@
 service: default-go
 runtime: go123
 
+# For accessing GAE memcache.
+app_engine_apis: true
+
 instance_class: F4
 
 automatic_scaling:

@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/encryptedcookies"
 	"go.chromium.org/luci/server/gaeemulation"
+	"go.chromium.org/luci/server/gaememcache"
 	"go.chromium.org/luci/server/module"
 	"go.chromium.org/luci/server/pubsub"
 	"go.chromium.org/luci/server/router"
@@ -65,6 +66,7 @@ func main() {
 		cron.NewModuleFromFlags(),
 		encryptedcookies.NewModuleFromFlags(),
 		gaeemulation.NewModuleFromFlags(),
+		gaememcache.NewModuleFromFlags(),
 		pubsub.NewModuleFromFlags(),
 		secrets.NewModuleFromFlags(),
 		tq.NewModuleFromFlags(),
