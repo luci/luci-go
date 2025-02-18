@@ -289,8 +289,9 @@ func knownBotProvider(ctx context.Context, botID string) (*botsrv.KnownBotInfo, 
 	switch err := datastore.Get(ctx, info); {
 	case err == nil:
 		return &botsrv.KnownBotInfo{
-			SessionID:  info.SessionID,
-			Dimensions: info.Dimensions,
+			SessionID:     info.SessionID,
+			Dimensions:    info.Dimensions,
+			CurrentTaskID: info.TaskID,
 		}, nil
 	case errors.Is(err, datastore.ErrNoSuchEntity):
 		return nil, nil

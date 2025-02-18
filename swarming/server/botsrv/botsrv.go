@@ -50,10 +50,12 @@ type RequestBody interface {
 	ExtractDebugRequest() any // serialized as JSON and logged on errors
 }
 
-// Request is extracted from an authenticated request from a bot.
+// Request is extracted from an authenticated request from a bot and the bot
+// state in the datastore.
 type Request struct {
-	Session    *internalspb.Session // the bot session from the session token
-	Dimensions BotDimensions        // bot's "k:v" dimensions as stored in the datastore
+	Session       *internalspb.Session // the bot session from the session token
+	Dimensions    BotDimensions        // bot's "k:v" dimensions as stored in the datastore
+	CurrentTaskID string               // the TaskRunResult key of the current task as store in the datastore
 }
 
 // BotDimensions is a sorted list of bot's "k:v" dimensions.
@@ -88,6 +90,8 @@ type KnownBotInfo struct {
 	SessionID string
 	// Dimensions is "k:v" dimensions registered by this bot in the last poll.
 	Dimensions BotDimensions
+	// CurrentTaskID is the TaskRunResult key of the current task on the bot.
+	CurrentTaskID string
 }
 
 // KnownBotProvider knows how to return information about existing bots.
@@ -268,8 +272,9 @@ func JSON[B any, RB RequestBodyConstraint[B]](s *Server, route string, h Handler
 
 		// The request is valid, dispatch it to the handler.
 		resp, err := h(ctx, body, &Request{
-			Session:    session,
-			Dimensions: knownBot.Dimensions,
+			Session:       session,
+			Dimensions:    knownBot.Dimensions,
+			CurrentTaskID: knownBot.CurrentTaskID,
 		})
 		if err != nil {
 			writeErr(err, req, wrt, RB(body), session)
