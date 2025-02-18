@@ -153,9 +153,13 @@ func manageBot(c context.Context, payload proto.Message) error {
 		logGrpcError(c, vm.Hostname, err)
 		return errors.Annotate(err, "failed to fetch bot").Err()
 	}
-	if bot.IsDead || bot.Deleted {
+	// botIsDeeeead represents that the bot is in dead state and was last seen more than `vm.Timeout` seconds ago
+	botIsDeeeead := bot.IsDead && time.Since(bot.LastSeenTs.AsTime()) > time.Duration(vm.Timeout*int64(time.Second))
+	// botIsTerminated is set if it has been terminated in swarming
+	botIsTerminated := bot.IsDead && bot.GetTerminationTaskId() != ""
+	if botIsDeeeead || bot.Deleted || botIsTerminated {
 		// If the bot is dead or deleted, schedule a task to destroy the instance
-		logging.Debugf(c, "manageBot: bot %s is dead[%v]/deleted[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted)
+		logging.Debugf(c, "manageBot: bot %s is_dead[%v] deleted[%v] terminated[%v] last_seen[%v] timeout[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted, bot.TerminationTaskId, bot.LastSeenTs, vm.Timeout)
 		// A bot may be returned as deleted or dead if a bot with the same ID was previously connected to Swarming, but this new VM's bot hasn't connected yet
 		if time.Since(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
 			logging.Debugf(c, "bot %s is newly created, wait for %s minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
