@@ -14,3 +14,4 @@
 
 export * from './aip_160_autocomplete';
 export * from './types';
+export { tryUnquoteStr } from './lexer';

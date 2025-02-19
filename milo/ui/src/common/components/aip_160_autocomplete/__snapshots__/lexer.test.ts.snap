@@ -251,6 +251,34 @@ exports[`Lexer getAllTokens input:  wsBefore 1`] = `
 ]
 `;
 
+exports[`Lexer getAllTokens input: "\\ 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "INVALID_CHAR",
+    "startPos": 0,
+    "text": """,
+  },
+  {
+    "index": 1,
+    "kind": "INVALID_CHAR",
+    "startPos": 1,
+    "text": "\\",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "double ' quoted" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "text": ""double ' quoted"",
+  },
+]
+`;
+
 exports[`Lexer getAllTokens input: "quoted\\"string" 1`] = `
 [
   {
@@ -280,6 +308,17 @@ exports[`Lexer getAllTokens input: "ws string" 1`] = `
     "kind": "STRING",
     "startPos": 0,
     "text": ""ws string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: 'single " quoted' 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "text": "'single " quoted'",
   },
 ]
 `;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Lexer, TokenKind } from './lexer';
+import { Lexer, TokenKind, tryUnquoteStr } from './lexer';
 
 describe('Lexer', () => {
   describe('getAllTokens', () => {
@@ -28,6 +28,8 @@ describe('Lexer', () => {
       '"ws string"',
       '"quoted\\"string"', // Escaped quote in string
       "'single quoted'", // Single quoted string
+      "'single \" quoted'", // Single quoted with unescaped double quote.
+      '"double \' quoted"', // Double quoted with unescaped single quote.
       '\'single then double"', // Invalid mixed single and double quote in string
 
       '-negated',
@@ -75,6 +77,7 @@ describe('Lexer', () => {
       'OR', // factor with just an OR
       'OR OR', // factor with two ORs
       '\\', // Invalid escape sequence
+      '"\\', // Invalid escape sequence in unclosed string
     ])('input: %s', (input) => {
       const lexer = new Lexer(input);
       const tokens = lexer.getAllTokens();
@@ -152,5 +155,54 @@ describe('Lexer', () => {
         expect(token?.text).toBe(expectedValue);
       },
     );
+  });
+});
+
+describe('tryUnquoteStr', () => {
+  // Note that the input strings below are double encoded.
+  // Users input are quoted strings, so the string content needs to be encoded.
+  // We are representing the quoted strings in JS code using quoted strings. So
+  // we need to encode the content again.
+  it.each([
+    ['unquoted', 'unquoted'],
+    ['unquoted with \\" escape', 'unquoted with \\" escape'],
+
+    ['"double quoted"', 'double quoted'],
+    ['"double quoted with \\" escape"', 'double quoted with " escape'],
+    [
+      '"double quoted with \\\\\\" long escape"',
+      'double quoted with \\" long escape',
+    ],
+    [
+      '"double quoted with \' not escaped single quote"',
+      "double quoted with ' not escaped single quote",
+    ],
+    [
+      '"double quoted with \\\\\' long not escaped single quote"',
+      "double quoted with \\' long not escaped single quote",
+    ],
+
+    ["'single quoted'", 'single quoted'],
+    ["'single quoted with \\\" escape'", 'single quoted with " escape'],
+    [
+      "'single quoted with \\\\\\\" long escape'",
+      'single quoted with \\" long escape',
+    ],
+    [
+      "'single quoted with \" not escaped double quote'",
+      'single quoted with " not escaped double quote',
+    ],
+    [
+      "'single quoted with \\\\\" long not escaped double quote'",
+      'single quoted with \\" long not escaped double quote',
+    ],
+
+    ["'unclosed quote", 'unclosed quote'],
+    [
+      "'unclosed quote with invalid escape \\",
+      "'unclosed quote with invalid escape \\",
+    ],
+  ])('input: %s', (input, expected) => {
+    expect(tryUnquoteStr(input)).toEqual(expected);
   });
 });

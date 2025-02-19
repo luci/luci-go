@@ -45,6 +45,14 @@ export enum TokenKind {
 
 const TOKEN_KINDS = Object.values(TokenKind);
 
+const STRING_RE = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/;
+const SINGLE_STRING_RE = new RegExp(`^(${STRING_RE.source})$`);
+const UNCLOSED_STRING_RE =
+  /'(?:[^'\\\n]|\\.)*(?=\n|$)|"(?:[^"\\\n]|\\.)*(?=\n|$)/;
+const SINGLE_UNCLOSED_STRING_RE = new RegExp(
+  `^(${UNCLOSED_STRING_RE.source})$`,
+);
+
 /**
  * LEXER_RE has one capture group for each kind of token that can be lexed.
  * The ith capturing group represents a token of the ith kind in `TokenKind`.
@@ -69,9 +77,9 @@ const LEXER_RE = new RegExp(
       // QualifiedField
       /[\w._-]+/,
       // String
-      /'(?:[^"\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/,
+      STRING_RE,
       // UnclosedString
-      /'(?:[^'\\\n]|\\.)*(?=\n|$)|"(?:[^"\\\n]|\\.)*(?=\n|$)/,
+      UNCLOSED_STRING_RE,
       // InvalidChar
       /.|\n/,
     ]
@@ -240,4 +248,43 @@ export class Lexer {
       `invariant violated: unhandled lexer regexp match '${matches[TOKEN_KINDS.length]}'`,
     );
   }
+}
+
+/**
+ * Try to unquote a string.
+ *
+ * 1. If it's partially quoted, make it fully quoted.
+ * 2. If it's quoted, unquote it.
+ * 3. If it's still not a valid quoted string after the fix, return the original
+ *    string.
+ */
+export function tryUnquoteStr(input: string) {
+  let fixed = input;
+  // If the string quoted but unclosed, close it first.
+  if (SINGLE_UNCLOSED_STRING_RE.test(fixed)) {
+    fixed += fixed[0];
+  }
+
+  // If the string is quoted, try unquote it.
+  if (SINGLE_STRING_RE.test(fixed)) {
+    // Convert single quoted string to double quoted string.
+    if (fixed[0] === "'") {
+      const inner = fixed.slice(1, -1);
+      const escapedDoubleQuote = inner.replace(
+        // Only match double quotes that have an even number of leading \.
+        // Double quotes with an odd number of leading \ are already escaped.
+        /(?<!\\)(?:\\\\)*"/g,
+        (partial) => partial.replace('"', '\\"'),
+      );
+      fixed = `"${escapedDoubleQuote}"`;
+    }
+
+    try {
+      return JSON.parse(fixed);
+    } catch (_) {
+      // Do nothing.
+    }
+  }
+
+  return input;
 }
