@@ -70,7 +70,7 @@ const ClustersTable = ({ project }: Props) => {
   return (
     <ClusterTableContextProvider metrics={metrics}>
       <Grid container columnGap={2} rowGap={2}>
-        <ClustersTableForm />
+        <ClustersTableForm project={project} />
         {error && <LoadErrorAlert entityName="metrics" error={error} />}
         {isLoading && <CentralizedProgress />}
         {isSuccess && metrics !== undefined && (

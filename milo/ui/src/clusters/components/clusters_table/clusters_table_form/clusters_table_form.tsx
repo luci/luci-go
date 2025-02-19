@@ -18,11 +18,15 @@ import ClustersTableFilter from './clusters_table_filter/clusters_table_filter';
 import { ClustersTableIntervalSelection } from './clusters_table_interval_selection/clusters_table_interval_selection';
 import ClustersTableMetricSelection from './clusters_table_metric_selection/clusters_table_metric_selection';
 
-const ClustersTableForm = () => {
+export interface ClustersTableFormProps {
+  readonly project: string;
+}
+
+const ClustersTableForm = ({ project }: ClustersTableFormProps) => {
   return (
     <Grid container spacing={2} data-testid="clusters_table_filter" size={12}>
       <Grid size={6}>
-        <ClustersTableFilter />
+        <ClustersTableFilter project={project} />
       </Grid>
       <Grid size={2}>
         <ClustersTableIntervalSelection />

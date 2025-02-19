@@ -189,9 +189,10 @@ export function TextAutocomplete<T>({
     () =>
       debounce(
         () =>
+          inputRef.current &&
           requestOptionsUpdateRef.current(
-            inputRef.current!.value,
-            inputRef.current!.selectionStart ?? inputRef.current!.value.length,
+            inputRef.current.value,
+            inputRef.current.selectionStart ?? inputRef.current.value.length,
           ),
         suggestionDelayMsRef.current,
       ),

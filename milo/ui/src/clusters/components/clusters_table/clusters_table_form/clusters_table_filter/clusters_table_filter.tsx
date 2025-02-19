@@ -14,15 +14,24 @@
 
 import HelpOutline from '@mui/icons-material/HelpOutline';
 import Search from '@mui/icons-material/Search';
-import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Popover from '@mui/material/Popover';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
+import { useTestHistoryClient } from '@/analysis/hooks/prpc_clients';
 import { useFilterParam } from '@/clusters/components/clusters_table/hooks';
+import {
+  Aip160Autocomplete,
+  FetchValuesFn,
+  FieldsSchema,
+} from '@/common/components/aip_160_filter';
+import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
+import {
+  QueryTestsRequest,
+  QueryTestsResponse,
+} from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 
 const FilterHelp = () => {
   // TODO: more styling on this.
@@ -78,74 +87,112 @@ const FilterHelp = () => {
   );
 };
 
-const ClustersTableFilter = () => {
-  const [isDirty, setDirty] = useState<boolean>(false);
+export interface ClustersTableFilterProps {
+  readonly project: string;
+}
+
+const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
   const [filterHelpAnchorEl, setFilterHelpAnchorEl] =
     useState<HTMLButtonElement | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const [failureFilter, updateFailureFilterParam] = useFilterParam();
 
-  useEffect(() => {
-    if (!isDirty && inputRef.current) {
-      inputRef.current.value = failureFilter;
-    }
-  }, [isDirty, failureFilter]);
+  const client = useTestHistoryClient();
+  const fetchTestIds: FetchValuesFn<QueryTestsResponse> = (
+    partial: string,
+  ) => ({
+    ...client.QueryTests.query(
+      QueryTestsRequest.fromPartial({
+        project,
+        testIdSubstring: partial,
+        caseInsensitive: true,
+        pageSize: 50,
+      }),
+    ),
+    enabled: partial !== '',
+    select: (data) => {
+      return data.testIds
+        .filter((text) => text !== partial)
+        .map((text) => ({ text }));
+    },
+  });
+  const fetchTestIdsRef = useRef(fetchTestIds);
+  fetchTestIdsRef.current = fetchTestIds;
 
-  const handleFailureFilterChanged = (newFilter: string) => {
-    if (newFilter === failureFilter) {
-      return;
-    }
-    updateFailureFilterParam(newFilter);
-  };
+  const schema = useMemo(() => {
+    const ret: FieldsSchema = {
+      test_id: {
+        fetchValues: (...params) => fetchTestIdsRef.current(...params),
+      },
+      failure_reason: {},
+      realm: {},
+      ingested_invocation_id: {},
+      cluster_algorithm: {
+        getValues: (partial) => {
+          const lowerPartial = partial.toLowerCase();
+          return ['rules', 'rules-v3', 'reason-v6', 'testname-v4']
+            .filter((text) => text.includes(lowerPartial))
+            .map((text) => ({ text }));
+        },
+      },
+      cluster_id: {},
+      variant_hash: {},
+      test_run_id: {},
+      is_test_run_blocked: {
+        getValues: (partial) => {
+          const lowerPartial = partial.toLowerCase();
+          return ['true', 'false']
+            .filter((text) => text.includes(lowerPartial))
+            .map((text) => ({ text }));
+        },
+      },
+      is_ingested_invocation_blocked: {
+        getValues: (partial) => {
+          const lowerPartial = partial.toLowerCase();
+          return ['true', 'false']
+            .filter((text) => text.includes(lowerPartial))
+            .map((text) => ({ text }));
+        },
+      },
+    };
+    return ret;
+  }, []);
 
   return (
     <>
-      <FormControl fullWidth data-testid="failure_filter">
-        <TextField
-          id="failure_filter"
-          inputRef={inputRef}
-          variant="outlined"
-          label="Filter failures"
-          placeholder="Filter test failures used in clusters"
-          onChange={() => {
-            setDirty(true);
-          }}
-          onKeyUp={(e) => {
-            if (e.key === 'Enter' && inputRef.current) {
-              handleFailureFilterChanged(inputRef.current.value);
-              setDirty(false);
-            }
-          }}
-          onBlur={() => {
-            if (inputRef.current) {
-              handleFailureFilterChanged(inputRef.current.value);
-              setDirty(false);
-            }
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle search help"
-                  edge="end"
-                  onClick={(e) => setFilterHelpAnchorEl(e.currentTarget)}
-                >
-                  {<HelpOutline />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          inputProps={{
-            'data-testid': 'failure_filter_input',
-          }}
-        ></TextField>
-      </FormControl>
+      <Aip160Autocomplete
+        schema={schema}
+        value={failureFilter}
+        onValueCommit={(newVal) => updateFailureFilterParam(newVal)}
+        placeholder="Filter test failures used in clusters"
+        slotProps={{
+          textField: {
+            slotProps: {
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <CommitOrClear />
+                    <IconButton
+                      aria-label="toggle search help"
+                      edge="end"
+                      onClick={(e) => setFilterHelpAnchorEl(e.currentTarget)}
+                    >
+                      <HelpOutline />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                inputProps: {
+                  'data-testid': 'failure_filter_input',
+                },
+              },
+            },
+          },
+        }}
+      />
       <Popover
         open={Boolean(filterHelpAnchorEl)}
         anchorEl={filterHelpAnchorEl}

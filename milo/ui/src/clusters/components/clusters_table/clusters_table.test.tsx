@@ -298,7 +298,7 @@ describe('Test ClustersTable component', () => {
     fireEvent.change(screen.getByTestId('failure_filter_input'), {
       target: { value: 'new_criteria' },
     });
-    fireEvent.blur(screen.getByTestId('failure_filter_input'));
+    fireEvent.click(screen.getByTestId('KeyboardReturnIcon'));
 
     await waitFor(() =>
       expect(screen.getByText('crbug.com/3333333')).toBeInTheDocument(),

@@ -22,15 +22,18 @@ import ClustersTableFilter from './clusters_table_filter';
 
 describe('Test ClustersTableFilter component', () => {
   it('should display the failures filter', async () => {
-    renderWithRouter(<ClustersTableFilter />, '/?q=');
+    renderWithRouter(<ClustersTableFilter project="chromium" />, '/?q=');
 
-    await screen.findByTestId('failure_filter');
+    await screen.findByTestId('failure_filter_input');
 
-    expect(screen.getByTestId('failure_filter')).toBeInTheDocument();
+    expect(screen.getByTestId('failure_filter_input')).toBeInTheDocument();
   });
 
   it('given an existing filter, the filter should be pre-populated', async () => {
-    renderWithRouter(<ClustersTableFilter />, '/?q=restriction');
+    renderWithRouter(
+      <ClustersTableFilter project="chromium" />,
+      '/?q=restriction',
+    );
 
     await screen.findByTestId('failure_filter_input');
 
