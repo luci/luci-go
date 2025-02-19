@@ -35,7 +35,9 @@ export function useFilterParam(): [
     setSearchParams(
       (stateParams) => {
         const params = new URLSearchParams(stateParams);
-        if (failureFilter !== '') {
+        if (failureFilter === '') {
+          params.delete('q');
+        } else {
           params.set('q', failureFilter);
         }
         return params;
