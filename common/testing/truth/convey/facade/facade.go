@@ -45,20 +45,29 @@ const ShortDuration = 3 * time.Millisecond
 
 // MaxTestLength is a sensible maximum number of characters for the name of a test.
 //
+// At or around 2025-02-19, I reduced the maximum test length to 50.
+// I am doing this to unblock a large change to migrate infra to go.chromium.org/infra.
+//
+// This compatibility library is only used by quota scheduler, so silently truncating
+// test names will cause minimal disruption.
+//
 // If the combined length of all tests exceeds 512 bytes, this starts causing problems with
 // downstream services as of 2024-07-22. However, with a budget of 100 characters you get
 // five levels, which should be enough in practice.
 //
 // See b:354772098 for more information.
-const MaxTestLength = 100
+//
+const MaxTestLength = 50
 
 // Convey is a replacement for legacy Convey. Subconveys need a T argument, however.
 //
-// If the test name exceeds 100 characters, we will "helpfully" panic.
+// If the test name exceeds MaxTestLength characters, we will truncate it.
 // See b:354772098 for details.
 func Convey(name string, t testing.TB, cb func(*ftt.Test)) {
-	if n := len(name); n > MaxTestLength {
-		panic(fmt.Sprintf("test %q has length %d which exceeds %d", name, n, MaxTestLength))
+	if len(name) > MaxTestLength {
+		// This is a little bit wrong if the length of the string is like 51 characters,
+		// but that's okay.
+		name = name[:MaxTestLength] + "..." + name[len(name)-3:]
 	}
 	t.Helper()
 	switch v := t.(type) {
