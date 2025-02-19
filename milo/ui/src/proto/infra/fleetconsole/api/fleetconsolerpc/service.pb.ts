@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import { Empty } from "../../../../google/protobuf/empty.pb";
+import { DateOnly } from "./common_types.pb";
 
 export const protobufPackage = "fleetconsole";
 
@@ -91,6 +92,14 @@ export interface PingRequest {
 
 /** PingResponse intentionally contains nothing. */
 export interface PingResponse {
+}
+
+/** PingBigQueryRequest intentionally contains nothing. */
+export interface PingBigQueryRequest {
+}
+
+/** PingBigQueryResponse intentionally contains nothing. */
+export interface PingBigQueryResponse {
 }
 
 /** PingDeviceManagerRequest intentionally contains nothing. */
@@ -235,6 +244,61 @@ export interface CleanExitRequest {
 export interface CleanExitResponse {
 }
 
+export interface ListResourceRequestsRequest {
+  /**
+   * The maximum number of Resource Requests to return. The service may return fewer than
+   * this value. If unspecified, at most 50 Resource Requests will be returned.
+   */
+  readonly pageSize: number;
+  /**
+   * A page token, received from a previous `ListResourceRequests` call. Provide this to
+   * retrieve the subsequent page. Returns first page if omitted.
+   *
+   * When paginating, all other parameters provided to `ListResourceRequests` must match
+   * the call that provided the page token.
+   */
+  readonly pageToken: string;
+  readonly orderBy: string;
+  /** See: AIP-160 (https://google.aip.dev/160) for the syntax */
+  readonly filter: string;
+}
+
+export interface ListResourceRequestsResponse {
+  /** List of Resource Requests to be returned. */
+  readonly resourceRequests: readonly ResourceRequest[];
+  /**
+   * A token, which can be sent as `page_token` to retrieve the next page. If
+   * this field is omitted, there are no subsequent pages.
+   */
+  readonly nextPageToken: string;
+}
+
+export interface ResourceRequest {
+  /**
+   * The resource name of the resource request.
+   * Format: resourceRequests/{rr_id}
+   */
+  readonly name: string;
+  /** The ID of the resource request. */
+  readonly rrId: string;
+  /** The details of the resource request. */
+  readonly resourceDetails: string;
+  /** The procurement end date of the resource request. */
+  readonly procurementEndDate:
+    | DateOnly
+    | undefined;
+  /** The build end date of the resource request. */
+  readonly buildEndDate:
+    | DateOnly
+    | undefined;
+  /** The QA end date of the resource request. */
+  readonly qaEndDate:
+    | DateOnly
+    | undefined;
+  /** The config end date of the resource request. */
+  readonly configEndDate: DateOnly | undefined;
+}
+
 function createBasePingRequest(): PingRequest {
   return {};
 }
@@ -317,6 +381,92 @@ export const PingResponse: MessageFns<PingResponse> = {
   },
   fromPartial(_: DeepPartial<PingResponse>): PingResponse {
     const message = createBasePingResponse() as any;
+    return message;
+  },
+};
+
+function createBasePingBigQueryRequest(): PingBigQueryRequest {
+  return {};
+}
+
+export const PingBigQueryRequest: MessageFns<PingBigQueryRequest> = {
+  encode(_: PingBigQueryRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PingBigQueryRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePingBigQueryRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PingBigQueryRequest {
+    return {};
+  },
+
+  toJSON(_: PingBigQueryRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<PingBigQueryRequest>): PingBigQueryRequest {
+    return PingBigQueryRequest.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<PingBigQueryRequest>): PingBigQueryRequest {
+    const message = createBasePingBigQueryRequest() as any;
+    return message;
+  },
+};
+
+function createBasePingBigQueryResponse(): PingBigQueryResponse {
+  return {};
+}
+
+export const PingBigQueryResponse: MessageFns<PingBigQueryResponse> = {
+  encode(_: PingBigQueryResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PingBigQueryResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePingBigQueryResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): PingBigQueryResponse {
+    return {};
+  },
+
+  toJSON(_: PingBigQueryResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create(base?: DeepPartial<PingBigQueryResponse>): PingBigQueryResponse {
+    return PingBigQueryResponse.fromPartial(base ?? {});
+  },
+  fromPartial(_: DeepPartial<PingBigQueryResponse>): PingBigQueryResponse {
+    const message = createBasePingBigQueryResponse() as any;
     return message;
   },
 };
@@ -1993,9 +2143,369 @@ export const CleanExitResponse: MessageFns<CleanExitResponse> = {
   },
 };
 
+function createBaseListResourceRequestsRequest(): ListResourceRequestsRequest {
+  return { pageSize: 0, pageToken: "", orderBy: "", filter: "" };
+}
+
+export const ListResourceRequestsRequest: MessageFns<ListResourceRequestsRequest> = {
+  encode(message: ListResourceRequestsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.pageSize !== 0) {
+      writer.uint32(8).int32(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      writer.uint32(18).string(message.pageToken);
+    }
+    if (message.orderBy !== "") {
+      writer.uint32(26).string(message.orderBy);
+    }
+    if (message.filter !== "") {
+      writer.uint32(34).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListResourceRequestsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListResourceRequestsRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.pageSize = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.pageToken = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.orderBy = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.filter = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListResourceRequestsRequest {
+    return {
+      pageSize: isSet(object.pageSize) ? globalThis.Number(object.pageSize) : 0,
+      pageToken: isSet(object.pageToken) ? globalThis.String(object.pageToken) : "",
+      orderBy: isSet(object.orderBy) ? globalThis.String(object.orderBy) : "",
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: ListResourceRequestsRequest): unknown {
+    const obj: any = {};
+    if (message.pageSize !== 0) {
+      obj.pageSize = Math.round(message.pageSize);
+    }
+    if (message.pageToken !== "") {
+      obj.pageToken = message.pageToken;
+    }
+    if (message.orderBy !== "") {
+      obj.orderBy = message.orderBy;
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListResourceRequestsRequest>): ListResourceRequestsRequest {
+    return ListResourceRequestsRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListResourceRequestsRequest>): ListResourceRequestsRequest {
+    const message = createBaseListResourceRequestsRequest() as any;
+    message.pageSize = object.pageSize ?? 0;
+    message.pageToken = object.pageToken ?? "";
+    message.orderBy = object.orderBy ?? "";
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
+function createBaseListResourceRequestsResponse(): ListResourceRequestsResponse {
+  return { resourceRequests: [], nextPageToken: "" };
+}
+
+export const ListResourceRequestsResponse: MessageFns<ListResourceRequestsResponse> = {
+  encode(message: ListResourceRequestsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.resourceRequests) {
+      ResourceRequest.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.nextPageToken !== "") {
+      writer.uint32(18).string(message.nextPageToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ListResourceRequestsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseListResourceRequestsResponse() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.resourceRequests.push(ResourceRequest.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.nextPageToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ListResourceRequestsResponse {
+    return {
+      resourceRequests: globalThis.Array.isArray(object?.resourceRequests)
+        ? object.resourceRequests.map((e: any) => ResourceRequest.fromJSON(e))
+        : [],
+      nextPageToken: isSet(object.nextPageToken) ? globalThis.String(object.nextPageToken) : "",
+    };
+  },
+
+  toJSON(message: ListResourceRequestsResponse): unknown {
+    const obj: any = {};
+    if (message.resourceRequests?.length) {
+      obj.resourceRequests = message.resourceRequests.map((e) => ResourceRequest.toJSON(e));
+    }
+    if (message.nextPageToken !== "") {
+      obj.nextPageToken = message.nextPageToken;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ListResourceRequestsResponse>): ListResourceRequestsResponse {
+    return ListResourceRequestsResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ListResourceRequestsResponse>): ListResourceRequestsResponse {
+    const message = createBaseListResourceRequestsResponse() as any;
+    message.resourceRequests = object.resourceRequests?.map((e) => ResourceRequest.fromPartial(e)) || [];
+    message.nextPageToken = object.nextPageToken ?? "";
+    return message;
+  },
+};
+
+function createBaseResourceRequest(): ResourceRequest {
+  return {
+    name: "",
+    rrId: "",
+    resourceDetails: "",
+    procurementEndDate: undefined,
+    buildEndDate: undefined,
+    qaEndDate: undefined,
+    configEndDate: undefined,
+  };
+}
+
+export const ResourceRequest: MessageFns<ResourceRequest> = {
+  encode(message: ResourceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.name !== "") {
+      writer.uint32(10).string(message.name);
+    }
+    if (message.rrId !== "") {
+      writer.uint32(18).string(message.rrId);
+    }
+    if (message.resourceDetails !== "") {
+      writer.uint32(26).string(message.resourceDetails);
+    }
+    if (message.procurementEndDate !== undefined) {
+      DateOnly.encode(message.procurementEndDate, writer.uint32(34).fork()).join();
+    }
+    if (message.buildEndDate !== undefined) {
+      DateOnly.encode(message.buildEndDate, writer.uint32(42).fork()).join();
+    }
+    if (message.qaEndDate !== undefined) {
+      DateOnly.encode(message.qaEndDate, writer.uint32(50).fork()).join();
+    }
+    if (message.configEndDate !== undefined) {
+      DateOnly.encode(message.configEndDate, writer.uint32(58).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResourceRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResourceRequest() as any;
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.name = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.rrId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.resourceDetails = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.procurementEndDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.buildEndDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.qaEndDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.configEndDate = DateOnly.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResourceRequest {
+    return {
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      rrId: isSet(object.rrId) ? globalThis.String(object.rrId) : "",
+      resourceDetails: isSet(object.resourceDetails) ? globalThis.String(object.resourceDetails) : "",
+      procurementEndDate: isSet(object.procurementEndDate) ? DateOnly.fromJSON(object.procurementEndDate) : undefined,
+      buildEndDate: isSet(object.buildEndDate) ? DateOnly.fromJSON(object.buildEndDate) : undefined,
+      qaEndDate: isSet(object.qaEndDate) ? DateOnly.fromJSON(object.qaEndDate) : undefined,
+      configEndDate: isSet(object.configEndDate) ? DateOnly.fromJSON(object.configEndDate) : undefined,
+    };
+  },
+
+  toJSON(message: ResourceRequest): unknown {
+    const obj: any = {};
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.rrId !== "") {
+      obj.rrId = message.rrId;
+    }
+    if (message.resourceDetails !== "") {
+      obj.resourceDetails = message.resourceDetails;
+    }
+    if (message.procurementEndDate !== undefined) {
+      obj.procurementEndDate = DateOnly.toJSON(message.procurementEndDate);
+    }
+    if (message.buildEndDate !== undefined) {
+      obj.buildEndDate = DateOnly.toJSON(message.buildEndDate);
+    }
+    if (message.qaEndDate !== undefined) {
+      obj.qaEndDate = DateOnly.toJSON(message.qaEndDate);
+    }
+    if (message.configEndDate !== undefined) {
+      obj.configEndDate = DateOnly.toJSON(message.configEndDate);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ResourceRequest>): ResourceRequest {
+    return ResourceRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ResourceRequest>): ResourceRequest {
+    const message = createBaseResourceRequest() as any;
+    message.name = object.name ?? "";
+    message.rrId = object.rrId ?? "";
+    message.resourceDetails = object.resourceDetails ?? "";
+    message.procurementEndDate = (object.procurementEndDate !== undefined && object.procurementEndDate !== null)
+      ? DateOnly.fromPartial(object.procurementEndDate)
+      : undefined;
+    message.buildEndDate = (object.buildEndDate !== undefined && object.buildEndDate !== null)
+      ? DateOnly.fromPartial(object.buildEndDate)
+      : undefined;
+    message.qaEndDate = (object.qaEndDate !== undefined && object.qaEndDate !== null)
+      ? DateOnly.fromPartial(object.qaEndDate)
+      : undefined;
+    message.configEndDate = (object.configEndDate !== undefined && object.configEndDate !== null)
+      ? DateOnly.fromPartial(object.configEndDate)
+      : undefined;
+    return message;
+  },
+};
+
 export interface FleetConsole {
   /** Ping does not send or receive any information. It just checks that the service is there. */
   Ping(request: PingRequest): Promise<PingResponse>;
+  /** PingBigQuery attempts to contact BigQuery service through Fleet Console. Useful for debugging. */
+  PingBigQuery(request: PingBigQueryRequest): Promise<PingBigQueryResponse>;
   /** PingDeviceManager attempts to contact DeviceManager through Fleet Console. Useful for debugging. */
   PingDeviceManager(request: PingDeviceManagerRequest): Promise<PingDeviceManagerResponse>;
   /** PingUfs attempts to contact UFS through Fleet Console. Useful for debugging. */
@@ -2012,6 +2522,8 @@ export interface FleetConsole {
   PingDB(request: PingDBRequest): Promise<PingDBResponse>;
   /** CleanExit just exits the current process. */
   CleanExit(request: CleanExitRequest): Promise<CleanExitResponse>;
+  /** ListResourceRequests returns Resource Requests provided by BigQuery */
+  ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse>;
 }
 
 export const FleetConsoleServiceName = "fleetconsole.FleetConsole";
@@ -2023,6 +2535,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.service = opts?.service || FleetConsoleServiceName;
     this.rpc = rpc;
     this.Ping = this.Ping.bind(this);
+    this.PingBigQuery = this.PingBigQuery.bind(this);
     this.PingDeviceManager = this.PingDeviceManager.bind(this);
     this.PingUfs = this.PingUfs.bind(this);
     this.ListDevices = this.ListDevices.bind(this);
@@ -2031,11 +2544,18 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.RepopulateCache = this.RepopulateCache.bind(this);
     this.PingDB = this.PingDB.bind(this);
     this.CleanExit = this.CleanExit.bind(this);
+    this.ListResourceRequests = this.ListResourceRequests.bind(this);
   }
   Ping(request: PingRequest): Promise<PingResponse> {
     const data = PingRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "Ping", data);
     return promise.then((data) => PingResponse.fromJSON(data));
+  }
+
+  PingBigQuery(request: PingBigQueryRequest): Promise<PingBigQueryResponse> {
+    const data = PingBigQueryRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "PingBigQuery", data);
+    return promise.then((data) => PingBigQueryResponse.fromJSON(data));
   }
 
   PingDeviceManager(request: PingDeviceManagerRequest): Promise<PingDeviceManagerResponse> {
@@ -2084,6 +2604,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = CleanExitRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "CleanExit", data);
     return promise.then((data) => CleanExitResponse.fromJSON(data));
+  }
+
+  ListResourceRequests(request: ListResourceRequestsRequest): Promise<ListResourceRequestsResponse> {
+    const data = ListResourceRequestsRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "ListResourceRequests", data);
+    return promise.then((data) => ListResourceRequestsResponse.fromJSON(data));
   }
 }
 

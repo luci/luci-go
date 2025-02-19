@@ -1,4 +1,7 @@
+import styled from '@emotion/styled';
+import { Alert, CircularProgress } from '@mui/material';
 import { GridColDef, GridSortModel } from '@mui/x-data-grid';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Helmet } from 'react-helmet';
 
@@ -8,18 +11,36 @@ import {
   getCurrentPageIndex,
   usePagerContext,
 } from '@/common/components/params_pager';
+import { Pagination } from '@/fleet/components/data_table/pagination';
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
+
+const Container = styled.div`
+  margin: 24px;
+`;
 
 export const ResourceRequestListPage = () => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
+
+  const client = useFleetConsoleClient();
+
+  const query = useQuery(
+    client.ListResourceRequests.query({
+      filter: '', // TODO: b/396079336 add filtering
+      orderBy: '', // TODO: b/397392558 add sorting
+      pageSize: pagerCtx.options.defaultPageSize,
+      pageToken: '', // TODO: b/396079903 add pagination
+    }),
+  );
 
   const [sortModel, setSortModel] = useState<GridSortModel>([
     { field: 'id', sort: 'asc' },
@@ -58,37 +79,49 @@ export const ResourceRequestListPage = () => {
     },
   ];
 
-  const rows = [
-    {
-      id: '1',
-      resource_details: 'Macbook Pro 8GB',
-      procurement_end_date: '2025-04-01',
-      build_end_date: '2025-04-15',
-      qa_end_date: '2025-04-28',
-      config_end_date: '2025-05-12',
-    },
-    {
-      id: '2',
-      resource_details: 'Macbook Pro 16GB',
-      procurement_end_date: '2025-04-12',
-      build_end_date: '2025-04-21',
-      qa_end_date: '2025-05-08',
-      config_end_date: '2025-05-28',
-    },
-  ];
+  if (query.isError) {
+    return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
+  }
+
+  if (query.isLoading || !query.data) {
+    return (
+      <Container>
+        <div css={{ padding: '0 50%' }}>
+          <CircularProgress />
+        </div>
+      </Container>
+    );
+  }
+
+  const rows: Record<string, string>[] = query.data.resourceRequests.map(
+    (resourceRequest) => ({
+      id: resourceRequest.rrId,
+      resource_details: resourceRequest.resourceDetails,
+      procurement_end_date: toIsoString(resourceRequest.procurementEndDate),
+      build_end_date: toIsoString(resourceRequest.buildEndDate),
+      qa_end_date: toIsoString(resourceRequest.qaEndDate),
+      config_end_date: toIsoString(resourceRequest.configEndDate),
+    }),
+  );
 
   return (
-    <div
-      css={{
-        margin: '24px',
-      }}
-    >
+    <Container>
+      {/* TODO: this piece of code is similar to data_table.tsx and could probably be separated to a shared component */}
       <StyledGrid
         columns={columns}
         rows={rows}
+        slots={{
+          pagination: Pagination,
+        }}
+        slotProps={{
+          pagination: {
+            pagerCtx: pagerCtx,
+            nextPageToken: '',
+          },
+        }}
         paginationMode="server"
         pageSizeOptions={pagerCtx.options.pageSizeOptions}
-        rowCount={rows.length} // TODO: handle pagination when we fetch data from backend
+        rowCount={-1} // TODO: b/396079903 handle pagination
         paginationModel={{
           page: getCurrentPageIndex(pagerCtx),
           pageSize: pagerCtx.options.defaultPageSize,
@@ -97,7 +130,7 @@ export const ResourceRequestListPage = () => {
         sortModel={sortModel}
         onSortModelChange={setSortModel}
       />
-    </div>
+    </Container>
   );
 };
 
