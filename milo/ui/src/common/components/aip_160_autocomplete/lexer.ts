@@ -83,7 +83,7 @@ export interface Token {
   readonly index: number;
   readonly startPos: number;
   readonly kind: TokenKind;
-  readonly value: string;
+  readonly text: string;
 }
 
 export class Lexer {
@@ -230,7 +230,7 @@ export class Lexer {
         index: this.cachedTokens.length,
         startPos,
         kind,
-        value: matches[i + 1],
+        text: matches[i + 1],
       });
       return;
     }

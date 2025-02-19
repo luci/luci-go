@@ -16,7 +16,7 @@ import { useState } from 'react';
 
 import {
   TextAutocomplete,
-  TextAutoCompleteProps,
+  TextAutocompleteProps,
 } from '@/generic_libs/components/text_autocomplete';
 
 import { useSuggestions } from './suggestion';
@@ -24,7 +24,7 @@ import { FieldsSchema } from './types';
 
 export interface Aip160Autocomplete
   extends Omit<
-    TextAutoCompleteProps<unknown>,
+    TextAutocompleteProps<unknown>,
     'options' | 'onRequestOptionsUpdate' | 'renderOption' | 'applyOption'
   > {
   readonly schema: FieldsSchema;

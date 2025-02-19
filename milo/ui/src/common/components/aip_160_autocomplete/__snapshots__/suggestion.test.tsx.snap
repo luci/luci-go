@@ -6,7 +6,7 @@ exports[`getSuggestionCtx inputWithCursor: |project 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }
@@ -18,7 +18,7 @@ exports[`getSuggestionCtx inputWithCursor: |project=chromium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }
@@ -30,7 +30,7 @@ exports[`getSuggestionCtx inputWithCursor: pro|ject 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }
@@ -42,7 +42,7 @@ exports[`getSuggestionCtx inputWithCursor: pro|ject=chromium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }
@@ -54,14 +54,14 @@ exports[`getSuggestionCtx inputWithCursor: project =   |  1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 3,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 10,
-    "value": "",
+    "text": "",
   },
 }
 `;
@@ -72,14 +72,14 @@ exports[`getSuggestionCtx inputWithCursor: project = |  1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 3,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 10,
-    "value": "",
+    "text": "",
   },
 }
 `;
@@ -90,14 +90,14 @@ exports[`getSuggestionCtx inputWithCursor: project = |chromium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 4,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 10,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -108,14 +108,14 @@ exports[`getSuggestionCtx inputWithCursor: project = chro|mium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 4,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 10,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -126,14 +126,14 @@ exports[`getSuggestionCtx inputWithCursor: project = chromium| 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 4,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 10,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -148,14 +148,14 @@ exports[`getSuggestionCtx inputWithCursor: project=|chromium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 2,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 8,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -166,14 +166,14 @@ exports[`getSuggestionCtx inputWithCursor: project=chro|mium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 2,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 8,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -186,14 +186,14 @@ exports[`getSuggestionCtx inputWithCursor: project=chromium| 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "value",
   "valueToken": {
     "index": 2,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 8,
-    "value": "chromium",
+    "text": "chromium",
   },
 }
 `;
@@ -204,7 +204,7 @@ exports[`getSuggestionCtx inputWithCursor: project| 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }
@@ -216,7 +216,7 @@ exports[`getSuggestionCtx inputWithCursor: project|=chromium 1`] = `
     "index": 0,
     "kind": "QUALIFIED_FIELD_OR_VALUE",
     "startPos": 0,
-    "value": "project",
+    "text": "project",
   },
   "type": "field",
 }

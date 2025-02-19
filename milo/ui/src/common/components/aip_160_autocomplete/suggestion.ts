@@ -117,9 +117,9 @@ export function getSuggestionCtx(
       fieldToken: prevToken1,
       valueToken: {
         index: selectedToken.index + 1,
-        startPos: selectedToken.startPos + selectedToken.value.length,
+        startPos: selectedToken.startPos + selectedToken.text.length,
         kind: TokenKind.QualifiedFieldOrValue,
-        value: '',
+        text: '',
       },
     };
   }
@@ -138,7 +138,7 @@ export function getSuggestionCtx(
         // Leave one space no matter how long the whitespace is.
         startPos: selectedToken.startPos + 1,
         kind: TokenKind.QualifiedFieldOrValue,
-        value: '',
+        text: '',
       },
     };
   }
@@ -180,8 +180,8 @@ function useSuggestionsAsync(
 ): readonly OptionDef<Suggestion>[] {
   const valueQuery = (ctx &&
     ctx.type === 'value' &&
-    getField(schema, ctx.fieldToken.value)?.fetchValues?.(
-      ctx.valueToken.value,
+    getField(schema, ctx.fieldToken.text)?.fetchValues?.(
+      ctx.valueToken.text,
     )) || {
     queryKey: ['always-disabled'],
     queryFn: () => [],
@@ -223,7 +223,7 @@ function useSuggestionsAsync(
         apply: () => {
           const prefixEnd = ctx.valueToken.startPos;
           const suffixStart =
-            ctx.valueToken.startPos + ctx.valueToken.value.length;
+            ctx.valueToken.startPos + ctx.valueToken.text.length;
           return [
             input.slice(0, prefixEnd) +
               valueDef.text +
@@ -241,9 +241,9 @@ function suggestField(
   input: string,
   fieldToken: Token,
 ): readonly OptionDef<Suggestion>[] {
-  const lastDotIndex = fieldToken.value.lastIndexOf('.');
-  const prev = fieldToken.value.slice(0, Math.max(lastDotIndex, 0));
-  const suffix = fieldToken.value.slice(lastDotIndex + 1);
+  const lastDotIndex = fieldToken.text.lastIndexOf('.');
+  const prev = fieldToken.text.slice(0, Math.max(lastDotIndex, 0));
+  const suffix = fieldToken.text.slice(lastDotIndex + 1);
   const suffixLower = suffix.toLowerCase();
   const targetSchema =
     prev === '' ? schema : getField(schema, prev)?.fields || {};
@@ -259,7 +259,7 @@ function suggestField(
         apply: () => {
           const prefixEnd = fieldToken.startPos + lastDotIndex + 1;
           const suffixStart =
-            prefixEnd + fieldToken.value.length - lastDotIndex - 1;
+            prefixEnd + fieldToken.text.length - lastDotIndex - 1;
           return [
             input.slice(0, prefixEnd) + name + input.slice(suffixStart),
             prefixEnd + name.length,
@@ -275,15 +275,15 @@ function suggestValue(
   fieldToken: Token,
   valueToken: Token,
 ): readonly OptionDef<Suggestion>[] {
-  const field = getField(schema, fieldToken.value);
+  const field = getField(schema, fieldToken.text);
   return (
-    field?.getValues?.(valueToken.value).map((valueDef) => ({
+    field?.getValues?.(valueToken.text).map((valueDef) => ({
       id: valueDef.text,
       value: {
         text: valueDef.text,
         apply: () => {
           const prefixEnd = valueToken.startPos;
-          const suffixStart = valueToken.startPos + valueToken.value.length;
+          const suffixStart = valueToken.startPos + valueToken.text.length;
           return [
             input.slice(0, prefixEnd) +
               valueDef.text +

@@ -26,7 +26,7 @@ import {
   Aip160Autocomplete,
   FetchValuesFn,
   FieldsSchema,
-} from '@/common/components/aip_160_filter';
+} from '@/common/components/aip_160_autocomplete';
 import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
 import {
   QueryTestsRequest,

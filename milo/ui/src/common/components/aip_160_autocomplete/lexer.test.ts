@@ -128,7 +128,7 @@ describe('Lexer', () => {
         const lexer = new Lexer(input);
         const token = lexer.getBeforeIndex(index, allowWS);
         expect(token?.kind).toBe(expectedKind);
-        expect(token?.value).toBe(expectedValue);
+        expect(token?.text).toBe(expectedValue);
       },
     );
   });
@@ -149,7 +149,7 @@ describe('Lexer', () => {
         const lexer = new Lexer(input);
         const token = lexer.getAfterIndex(index, allowWS);
         expect(token?.kind).toBe(expectedKind);
-        expect(token?.value).toBe(expectedValue);
+        expect(token?.text).toBe(expectedValue);
       },
     );
   });

@@ -68,7 +68,7 @@ const OptionTable = styled('table')`
   word-break: break-word;
 `;
 
-export interface TextAutoCompleteProps<T> {
+export interface TextAutocompleteProps<T> {
   readonly value: string;
   /**
    * Usually, `onValueCommit` is only called with the new value when user
@@ -135,7 +135,7 @@ export function TextAutocomplete<T>({
   initOptionsUpdateDelayMs = 200,
   placeholder = '',
   slotProps = {},
-}: TextAutoCompleteProps<T>) {
+}: TextAutocompleteProps<T>) {
   const [highlightOptionId, setHighlightOptionId] = useState<string | null>(
     null,
   );
