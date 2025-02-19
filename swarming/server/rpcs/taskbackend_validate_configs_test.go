@@ -30,8 +30,7 @@ import (
 func TestValidateConfigs(t *testing.T) {
 	t.Parallel()
 
-	call := func(cfgMaps []map[string]any) (*bbpb.ValidateConfigsResponse, error) {
-		target := "swarming://target"
+	call := func(target string, cfgMaps []map[string]any) (*bbpb.ValidateConfigsResponse, error) {
 		req := &bbpb.ValidateConfigsRequest{}
 		for _, m := range cfgMaps {
 			cfgJSON, _ := json.Marshal(m)
@@ -52,9 +51,29 @@ func TestValidateConfigs(t *testing.T) {
 	}
 
 	ftt.Run("No configs", t, func(t *ftt.Test) {
-		resp, err := call(nil)
+		resp, err := call("swarming://target", nil)
 		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
+	})
+
+	ftt.Run("No target", t, func(t *ftt.Test) {
+		resp, err := call("", []map[string]any{nil})
+		assert.NoErr(t, err)
+		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(1))
+		assert.Loosely(t, resp.ConfigErrors[0].Index, should.Equal(0))
+		assert.Loosely(t, resp.ConfigErrors[0].Error, should.Equal(`target: required`))
+	})
+
+	ftt.Run("wrong target", t, func(t *ftt.Test) {
+		cfgMap := map[string]any{
+			"random_field": 30,
+		}
+		resp, err := call("swarming://wrong-target", []map[string]any{cfgMap})
+		assert.NoErr(t, err)
+		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(1))
+		assert.Loosely(t, resp.ConfigErrors[0].Index, should.Equal(0))
+		assert.Loosely(t, resp.ConfigErrors[0].Error, should.Equal(
+			`target: Expected "swarming://target", got "swarming://wrong-target"`))
 	})
 
 	ftt.Run("pass", t, func(t *ftt.Test) {
@@ -67,12 +86,12 @@ func TestValidateConfigs(t *testing.T) {
 				"k2:v2",
 			},
 		}
-		resp, err := call([]map[string]any{cfgMap})
+		resp, err := call("swarming://target", []map[string]any{cfgMap})
 		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(0))
 	})
 
-	ftt.Run("one pass, one fail ingestion, on fail validation", t, func(t *ftt.Test) {
+	ftt.Run("one pass, one fail ingestion, one fail validation", t, func(t *ftt.Test) {
 		cfgMap1 := map[string]any{
 			"priority":           30,
 			"bot_ping_tolerance": 300,
@@ -95,7 +114,7 @@ func TestValidateConfigs(t *testing.T) {
 				"invalid",
 			},
 		}
-		resp, err := call([]map[string]any{cfgMap1, cfgMap2, cfgMap3})
+		resp, err := call("swarming://target", []map[string]any{cfgMap1, cfgMap2, cfgMap3})
 		assert.NoErr(t, err)
 		assert.Loosely(t, resp.ConfigErrors, should.HaveLength(5))
 		for i, ed := range resp.ConfigErrors {

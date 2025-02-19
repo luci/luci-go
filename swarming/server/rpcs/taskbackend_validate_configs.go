@@ -54,6 +54,10 @@ func (srv *TaskBackend) ValidateConfigs(ctx context.Context, req *bbpb.ValidateC
 		}
 	}
 	for i, cfgCtx := range req.Configs {
+		if err := srv.validateTarget(cfgCtx.GetTarget()); err != nil {
+			addErrs(i, errors.Annotate(err, "target").Err())
+			continue
+		}
 		config, err := ingestBackendConfigWithDefaults(cfgCtx.GetConfigJson())
 		if err != nil {
 			addErrs(i, err)
@@ -80,6 +84,17 @@ func ingestBackendConfigWithDefaults(cfgStruct *structpb.Struct) (*apipb.Swarmin
 		config.BotPingTolerance = defaultBotPingTolerance
 	}
 	return config, nil
+}
+
+func (srv *TaskBackend) validateTarget(target string) error {
+	switch {
+	case target == "":
+		return errors.New("required")
+	case target != srv.BuildbucketTarget:
+		return errors.Reason("Expected %q, got %q", srv.BuildbucketTarget, target).Err()
+	default:
+		return nil
+	}
 }
 
 // validateBackendConfig does basic validates on a `config`.
