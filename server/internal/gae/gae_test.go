@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"testing"
 
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -43,9 +44,13 @@ func TestCall(t *testing.T) {
 		ctx := WithTickets(context.Background(), &Tickets{
 			api:         "api-ticket",
 			dapperTrace: "dapper-ticket",
-			cloudTrace:  "cloud-ticket",
 			apiURL:      apiURL,
 		})
+
+		ctx = trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{
+			TraceID: [16]byte{1, 2},
+			SpanID:  [8]byte{3, 4},
+		}))
 
 		return Call(ctx, "service", "SomeMethod", in, out)
 	}
@@ -86,11 +91,11 @@ func TestCall(t *testing.T) {
 			})
 		}), should.BeNil)
 
-		assert.Loosely(t, res, should.Resemble(&gaebasepb.StringProto{
+		assert.Loosely(t, res, should.Match(&gaebasepb.StringProto{
 			Value: proto.String("res"),
 		}))
 
-		assert.Loosely(t, unmarshal(body, &remotepb.Request{}), should.Resemble(&remotepb.Request{
+		assert.Loosely(t, unmarshal(body, &remotepb.Request{}), should.Match(&remotepb.Request{
 			ServiceName: proto.String("service"),
 			Method:      proto.String("SomeMethod"),
 			Request:     marshal(req),
@@ -102,7 +107,7 @@ func TestCall(t *testing.T) {
 		assert.Loosely(t, headers.Get("X-Google-Rpc-Service-Deadline"), should.NotBeEmpty)
 		assert.Loosely(t, headers.Get("Content-Type"), should.Equal("application/octet-stream"))
 		assert.Loosely(t, headers.Get("X-Google-Dappertraceinfo"), should.Equal("dapper-ticket"))
-		assert.Loosely(t, headers.Get("X-Cloud-Trace-Context"), should.Equal("cloud-ticket"))
+		assert.Loosely(t, headers.Get("X-Cloud-Trace-Context"), should.Equal("01020000000000000000000000000000/217298682020626432;o=0"))
 	})
 
 	ftt.Run("Bad HTTP status code", t, func(t *ftt.Test) {

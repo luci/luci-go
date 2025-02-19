@@ -46,8 +46,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/errors"
@@ -82,7 +84,6 @@ var apiHTTPClient = &http.Client{
 type Tickets struct {
 	api         string   // API ticket identifying the incoming HTTP request
 	dapperTrace string   // Dapper Trace ticket
-	cloudTrace  string   // Cloud Trace ticket
 	apiURL      *url.URL // URL of the service bridge (overridden in tests)
 }
 
@@ -111,7 +112,6 @@ func RequestTickets(headers Headers) *Tickets {
 	return &Tickets{
 		api:         headers.Header("X-Appengine-Api-Ticket"),
 		dapperTrace: headers.Header("X-Google-Dappertraceinfo"),
-		cloudTrace:  headers.Header("X-Cloud-Trace-Context"),
 	}
 }
 
@@ -128,7 +128,7 @@ func WithTickets(ctx context.Context, tickets *Tickets) context.Context {
 // Note: currently returns opaque stringy errors. Refactor if you need to
 // distinguish API errors from transport errors or need error codes, etc.
 func Call(ctx context.Context, service, method string, in, out proto.Message) (err error) {
-	ctx, span := tracer.Start(ctx, fmt.Sprintf("luci/gae.Call/%s.%s", service, method))
+	ctx, span := tracer.Start(ctx, fmt.Sprintf("go.chromium.org/luci/gae.Call/%s.%s", service, method))
 	defer func() {
 		if err != nil {
 			span.RecordError(err)
@@ -246,9 +246,10 @@ func postToServiceBridge(ctx context.Context, tickets *Tickets, body []byte) ([]
 	if tickets.dapperTrace != "" {
 		req.Header.Set("X-Google-Dappertraceinfo", tickets.dapperTrace)
 	}
-	if tickets.cloudTrace != "" {
-		req.Header.Set("X-Cloud-Trace-Context", tickets.cloudTrace)
-	}
+	// This populates X-Cloud-Trace-Context header with the current trace and span
+	// IDs. That way internal GAE spans are attached to the correct spans in our
+	// code.
+	(propagator.CloudTraceFormatPropagator{}).Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	res, err := apiHTTPClient.Do(req.WithContext(ctx))
 	if err != nil {
