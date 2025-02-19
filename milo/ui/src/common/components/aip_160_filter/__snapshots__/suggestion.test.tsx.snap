@@ -1,0 +1,223 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getSuggestionCtx inputWithCursor: |project 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: |project=chromium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: pro|ject 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: pro|ject=chromium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project =   |  1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project = |  1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project = |chromium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project = chro|mium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project = chromium| 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 4,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 10,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project | 1`] = `null`;
+
+exports[`getSuggestionCtx inputWithCursor: project | another_project 1`] = `null`;
+
+exports[`getSuggestionCtx inputWithCursor: project=|chromium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project=chro|mium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project=chromium | 1`] = `null`;
+
+exports[`getSuggestionCtx inputWithCursor: project=chromium| 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 2,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 8,
+    "value": "chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project| 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project|=chromium 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "value": "project",
+  },
+  "type": "field",
+}
+`;
