@@ -127,7 +127,6 @@ export const Tasks = ({
     <StyledGrid
       rows={taskGridData}
       columns={columns}
-      getRowHeight={() => 'auto'}
       disableColumnMenu
       disableColumnFilter
       hideFooterPagination

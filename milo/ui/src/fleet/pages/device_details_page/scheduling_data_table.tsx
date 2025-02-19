@@ -44,7 +44,6 @@ export const SchedulingData = ({ id }: SchedulingDataProps) => {
   return (
     device && (
       <StyledGrid
-        getRowHeight={() => 'auto'}
         disableColumnMenu
         disableColumnFilter
         rows={rows}
