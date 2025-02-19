@@ -1,0 +1,121 @@
+// Copyright 2025 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package luci.resultdb.v1;
+
+option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
+option java_package = "com.google.luci.resultdb.v1";
+option java_multiple_files = true;
+
+// A scheme represents a kind of test type. For example, a JUnit tests
+// or Google Tests. Schemes control how tests with that type are
+// presented on the UI.
+//
+// Tests are associated with a type at the module level, via the module
+// type field.
+//
+// Schemes are ResultDB deployment-level configuration.
+//
+// Next id: 1.
+message Scheme {
+  // The resource name of the scheme.
+  //
+  // Format: schemes/{id}.
+  string name = 1;
+
+  // The identifier for the scheme, e.g. 'junit'.
+  //
+  // Limited to ^[a-z][a-z0-9]{0,19}$.
+  string id = 2;
+
+  // A human readable name for the scheme, describing the test type.
+  // For example, "JUnit" or "Web Tests".
+  //
+  // Please pay attention to capitalisation (should be similar to examples above)
+  // and avoid any punctuation.
+  string human_readable_name = 3;
+
+  // Configuration for a level of test hierarchy.
+  message Hierarchy {
+    // The human readable name for the hierarchy level, as it should appear on the UI.
+    // For example, "JUnit" or "Web Tests".
+    //
+    // Please pay attention to capitalisation (should be similar to examples above)
+    // and avoid any punctuation.
+    //
+    // Required.
+    string human_readable_name = 2;
+
+    // The regexp that defines valid values for this field. The value here will be
+    // wrapped in ^...$. Validation will apply to all newly uploaded test results.
+    // Use RE2 syntax.
+    //
+    // If blank, all values are taken to be valid.
+    //
+    // Please take care changing this value, as uploads may start to fail.
+    string validation_regexp = 3;
+  }
+
+  // Configuration for the coarse hierarchy. Set this field to enable the hierarchy level.
+  //
+  // If it is set, a value for this hierarchy level must be set for test results using this scheme.
+  // If it is not set, a value for this hierarchy level must NOT be set for test results using this scheme.
+  //
+  // Enabling or disabling a hierarchy level after it has been created is not permitted unless
+  // no data has been uploaded for the scheme.
+  //
+  // If only one of coarse and fine hierarchy should be enabled, enable the fine hierarchy.
+  Hierarchy coarse = 4;
+
+  // Configuration for the fine hierarchy.
+  //
+  // If it is set, a value for this hierarchy level must be set for all test results using this scheme.
+  // If it is not set, a value for this hierarchy level must NOT be set for all test results using this scheme.
+  //
+  // Enabling or disabling a hierarchy level after it has been created is not permitted unless
+  // no data has been uploaded for the scheme.
+  Hierarchy fine = 5;
+}
+
+// Service to read test schemes.
+service Schemes {
+  // Reads all schemes supported by the ResultDB deployment.
+  rpc List(ListSchemesRequest) returns (ListSchemesResponse) {};
+}
+
+message ListSchemesRequest {
+  // The maximum number of schemes to return. The service may return fewer than
+  // this value.
+  // If unspecified, at most 1000 schemes will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1;
+
+  // A page token, received from a previous `ListSchemes` call.
+  // Provide this to retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `ListSchemes` must match
+  // the call that provided the page token.
+  string page_token = 2;
+}
+
+message ListSchemesResponse {
+  // The schemes.
+  repeated Scheme schemes = 1;
+
+  // A token, which can be sent as `page_token` to retrieve the next page.
+  // If this field is omitted, there are no subsequent pages.
+  string next_page_token = 2;
+}

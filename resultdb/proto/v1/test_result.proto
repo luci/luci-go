@@ -54,25 +54,21 @@ message TestResult {
     (google.api.field_behavior) = IMMUTABLE
   ];
 
-  // Test id, a unique identifier of the test in a LUCI project.
+  // The structured test variant identifier.
+  //
+  // When uploading results, this should be specified in preference
+  // to test_id and variant below (which is supported only for legacy uploaders).
+  TestVariantIdentifier test_variant_identifier = 19 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The flat test id, a unique identifier of the test in a LUCI project.
   // Regex: ^[[::print::]]{1,512}$
   //
-  // If two tests have a common test id prefix that ends with a
-  // non-alphanumeric character, they considered a part of a group. Examples:
-  // - "a/b/c"
-  // - "a/b/d"
-  // - "a/b/e:x"
-  // - "a/b/e:y"
-  // - "a/f"
-  // This defines the following groups:
-  // - All items belong to one group because of the common prefix "a/"
-  // - Within that group, the first 4 form a sub-group because of the common
-  //   prefix "a/b/"
-  // - Within that group, "a/b/e:x" and "a/b/e:y" form a sub-group because of
-  //   the common prefix "a/b/e:".
-  // This can be used in UI.
-  // LUCI does not interpret test ids in any other way.
-  string test_id = 2 [(google.api.field_behavior) = IMMUTABLE];
+  // This is the flat-form encoding of the test component of the structured test variant ID above.
+  // See TestVariantIdentifier for details how a structured test identifier is converted
+  // to flat test ID.
+  //
+  // Output only. (Except for legacy uploaders.)
+  string test_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
   // Identifies a test result in a given invocation and test id.
   // Regex: ^[a-z0-9\-_.]{1,32}$
@@ -83,7 +79,7 @@ message TestResult {
 
   // Description of one specific way of running the test,
   // e.g. a specific bucket, builder and a test suite.
-  Variant variant = 4 [(google.api.field_behavior) = IMMUTABLE];
+  Variant variant = 4 [(google.api.field_behavior) = OUTPUT_ONLY, (google.api.field_behavior) = IMMUTABLE];
 
   // Whether the result of test case execution is expected.
   // In a typical Chromium CL, 99%+ of test results are expected.

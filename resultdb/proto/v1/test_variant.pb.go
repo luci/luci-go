@@ -114,7 +114,7 @@ func (TestVariantStatus) EnumDescriptor() ([]byte, []int) {
 type TestVariant struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// A unique identifier of the test in a LUCI project.
-	// Regex: ^[[::print::]]{1,256}$
+	// Regex: ^[[::print::]]{1,512}$
 	//
 	// Refer to TestResult.test_id for details.
 	TestId string `protobuf:"bytes,1,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`

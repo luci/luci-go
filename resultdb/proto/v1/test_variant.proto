@@ -29,7 +29,7 @@ option java_multiple_files = true;
 // Also known as a test verdict.
 message TestVariant {
   // A unique identifier of the test in a LUCI project.
-  // Regex: ^[[::print::]]{1,256}$
+  // Regex: ^[[::print::]]{1,512}$
   //
   // Refer to TestResult.test_id for details.
   string test_id = 1;

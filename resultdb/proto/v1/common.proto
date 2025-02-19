@@ -17,16 +17,17 @@ syntax = "proto3";
 package luci.resultdb.v1;
 
 import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
 
 option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
 option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
-// A key-value map describing one variant of a test case.
+// A key-value map describing one variant of a module.
 //
-// The same test case can be executed in different ways, for example on
+// A module can be executed in different ways, for example on
 // different OS, GPUs, with different compile options or runtime flags.
-// A variant definition captures one variant.
+// A variant definition captures one such variant.
 // A test case with a specific variant definition is called test variant.
 //
 // Guidelines for variant definition design:
@@ -52,6 +53,10 @@ message Variant {
   // The definition of the variant.
   // Key and values must be valid StringPair keys and values, see their
   // constraints.
+  //
+  // These values must be the same for all tests in a given execution of
+  // a module. Variants specific to a particular test case should be
+  // encoded in the test method name (see TestIdentifier.method).
   map<string, string> def = 1;
 }
 
@@ -63,6 +68,107 @@ message StringPair {
 
   // Max length: 256.
   string value = 2;
+}
+
+// TestVariantIdentifier represents the identity of a test variant in structured form.
+//
+// The structured test variant identifier represented in this proto corresponds to
+// the flat test identifier with the following form:
+// :{module_name}!{module_scheme}:{coarse_name}:{fine_name}#{case_name}
+//
+// and variant matching module_variant.
+//
+// Where {x} represents inserting the value of x with the characters
+// ':', '!', '#', and '\' escaped using a '\'.
+//
+// Special treatment exists for legacy test identifiers, for which
+// module_name = "legacy", module_scheme = "legacy", coarse_name = "",
+// fine_name = "" and case_name = <legacy_id>. For these, the corresponding
+// flat test ID is simply:
+// {case_name}
+//
+// (no escaping applies to this form, although method starting with ':'
+// is illegal for legacy test identifiers).
+//
+// See go/resultdb-test-hierarchy-design for more details.
+//
+// Limits: the encoded test ID (as per rules above) must be less than
+// 512 bytes in UTF-8.
+message TestVariantIdentifier {
+  // The name of the module being tested. A module is a set of tests which run
+  // with the same test harness, and typically corresponds with a unit of
+  // build, such as a bazel test target.
+  //
+  // For example, "CtsSdkExtensionsTestCases" or "chrome/test:blink_webkit_tests".
+  //
+  // Note: Modules are identified by the combination of module_name and scheme, not
+  // only module_name. See `scheme` field below for more.
+  //
+  // Limited to 300 bytes of printable UTF-8. See also limits on `TestIdentifier` as a whole.
+  string module_name = 1;
+
+  // The scheme of the module, for example, "junit" or "gtest".
+  //
+  // Must match one of the schemes in the ResultDB service configuration (see
+  // go/resultdb-schemes). Additional values can be configured as needed.
+  //
+  // Note: modules are identified by the combination of module_name, module_variant and
+  // module_scheme.
+  // Nonetheless, when presenting data on a frontend, it is acceptable to not show the scheme
+  // as it exists primarily to allow customisation of the labels shown next to the coarse_name,
+  // fine_name and case_name fields.
+  // When uploading data it is STRONGLY DISCOURAGED to use different schemes with the same
+  // module name as it may lead to ambiguous UI for users.
+  //
+  // Limited to ^[a-z][a-z0-9]{0,19}$.
+  string module_scheme = 2;
+
+  // Description of one specific way of running the tests in a module,
+  // e.g. specific ABI (x64/x86/...), build flags and/or operating system.
+  //
+  // Variants identify the unique ways the module was run compared to every other way
+  // the module is run by the LUCI project. As such, some variant keys may be repeated
+  // for all modules in an invocation.
+  Variant module_variant = 3;
+
+  // Hash of the module variant.
+  // hex(sha256(sorted(''.join('%s:%s\n' for k, v in module_variant.items()))))[:8].
+  string module_variant_hash = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Intermediate hierarchy - coarse name.
+  //
+  // For example "com.android.os.ext".
+  //
+  // A scheme dependent value used to organise the test into a coarse group of related tests,
+  // such as a package or directory.
+  // If the scheme does not define a coarse grouping, this must be blank.
+  // If only one intermediate hierarchy level is used for a scheme, it is always the
+  // fine hierarchy level.
+  //
+  // Constraints:
+  // - Must match constraints set by the module's scheme.
+  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  string coarse_name = 5;
+
+  // Interemdiate hierarchy - fine name.
+  //
+  // For example "SdkExtensionsTest" or "WebDialogBrowserTest".
+  //
+  // A finer grouping within the above coarse grouping (if any), e.g. class or file.
+  // If the scheme does not define a fine grouping, this must be blank.
+  //
+  // Constraints:
+  // - Must match constraints set by the module's scheme.
+  // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  string fine_name = 6;
+
+  // The identifier of test case within the above fine grouping.
+  //
+  // For example "testBadArgument" or "CloseParentWindow".
+  //
+  // This is the finest granularity component of the test identifier, and typically
+  // refers to sub-file granularity unless no such granularity exists.
+  string case_name = 7;
 }
 
 // GitilesCommit specifies the position of the gitiles commit an invocation
