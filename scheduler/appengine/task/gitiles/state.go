@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	ds "go.chromium.org/luci/gae/service/datastore"
 
+	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task/gitiles/pb"
 )
 
@@ -94,28 +95,28 @@ func saveStateEntry(c context.Context, jobID, repo string, compressedBytes []byt
 	return transient.Tag.Apply(ds.Put(c, &entry))
 }
 
-func loadState(c context.Context, jobID, repo string) (map[string]string, error) {
+func loadState(c context.Context, jobID, repo string) (map[string]string, []string, error) {
 	switch stored, err := loadStateEntry(c, jobID, repo); {
 	case err == ds.ErrNoSuchEntity:
-		return map[string]string{}, nil
+		return map[string]string{}, nil, nil
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	case len(stored.CompressedState) > 0:
 		unGzip, err := gzip.NewReader(bytes.NewBuffer(stored.CompressedState))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		uncompressed, err := io.ReadAll(unGzip)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if err = unGzip.Close(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		var state pb.RepositoryState
 		if err = proto.Unmarshal(uncompressed, &state); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		heads := map[string]string{}
@@ -124,14 +125,14 @@ func loadState(c context.Context, jobID, repo string) (map[string]string, error)
 				heads[space.Prefix+"/"+child.Suffix] = hex.EncodeToString(child.Sha1)
 			}
 		}
-		return heads, nil
+		return heads, state.GetRefs(), nil
 
 	default:
-		return map[string]string{}, nil
+		return map[string]string{}, nil, nil
 	}
 }
 
-func saveState(c context.Context, jobID, repo string, refTips map[string]string) error {
+func saveState(c context.Context, jobID string, cfg *messages.GitilesTask, refTips map[string]string) error {
 	// There could be many refTips in repos, though most will share some prefix.
 	// So we trade CPU to save this efficiently.
 
@@ -162,7 +163,10 @@ func saveState(c context.Context, jobID, repo string, refTips map[string]string)
 	}
 	sort.Sort(spaces)
 
-	serialized, err := proto.Marshal(&pb.RepositoryState{Spaces: spaces})
+	serialized, err := proto.Marshal(&pb.RepositoryState{
+		Spaces: spaces,
+		Refs:   cfg.GetRefs(),
+	})
 	if err != nil {
 		return err
 	}
@@ -177,7 +181,7 @@ func saveState(c context.Context, jobID, repo string, refTips map[string]string)
 
 	metricTaskGitilesStoredRefs.Set(c, int64(len(refTips)), jobID)
 	metricTaskGitilesStoredSize.Set(c, int64(compressed.Len()), jobID)
-	return saveStateEntry(c, jobID, repo, compressed.Bytes())
+	return saveStateEntry(c, jobID, cfg.GetRepo(), compressed.Bytes())
 }
 
 type sortedSpaces []*pb.RefSpace

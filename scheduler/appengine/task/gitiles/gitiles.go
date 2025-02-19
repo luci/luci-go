@@ -59,6 +59,10 @@ const defaultMaxTriggersPerInvocation = 100
 // triggers could be emitted.
 const defaultMaxCommitsPerRefUpdate = 50
 
+// refsTagsPrefix is the ref namespace prefix reserved for tags. Any ref with
+// this prefix is assumed to be a tag.
+const refsTagsPrefix = "refs/tags/"
+
 // TaskManager implements task.Manager interface for tasks defined with
 // GitilesTask proto message.
 type TaskManager struct {
@@ -188,7 +192,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		// the refs' heads newest values.
 		return err
 	}
-	if err := saveState(c, ctl.JobID(), cfg.Repo, refs.known); err != nil {
+	if err := saveState(c, ctl.JobID(), cfg, refs.known); err != nil {
 		return err
 	}
 	ctl.DebugLog("Saved %d known refs", len(refs.known))
@@ -247,6 +251,7 @@ func (m TaskManager) GetDebugState(c context.Context, ctl task.ControllerReadOnl
 		GitilesPoller: &pb.DebugState{
 			Known:   sortedRefs(refs.known),
 			Current: sortedRefs(refs.current),
+			Search:  cfg.GetRefs(),
 		},
 	}, nil
 }
@@ -257,7 +262,9 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.ControllerReadOn
 	var missingRefs []string
 	err := parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (loadErr error) {
-			refs.known, loadErr = loadState(c, ctl.JobID(), cfg.Repo)
+			var previousRefs []string
+			refs.known, previousRefs, loadErr = loadState(c, ctl.JobID(), cfg.Repo)
+			refs.previousWatched = gitiles.NewRefSet(previousRefs)
 			return
 		}
 		work <- func() (resolveErr error) {
@@ -314,6 +321,16 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 			// This ref counts as not yet examined.
 			return len(sortedRefs) - i, err
 		}
+
+		// For tags, only consider the tag be new if it was also matched by the
+		// last-used refset. If not, the tag is probably actually not new, and
+		// instead the task itself is new, or its configured refs have changed
+		// so that they match a different set of tags than before.
+		if strings.HasPrefix(ref, refsTagsPrefix) && !refs.previousWatched.Has(ref) {
+			ctl.DebugLog("Tag %s newly matched but already existed", ref)
+			continue
+		}
+
 		for i := range commits {
 			// commit[0] is latest, so emit triggers in reverse order of commits.
 			commit := commits[len(commits)-i-1]
@@ -377,10 +394,11 @@ type gitilesClient struct {
 }
 
 type refsState struct {
-	watched gitiles.RefSet
-	known   map[string]string // HEADs we saw before
-	current map[string]string // HEADs available now
-	changed int
+	watched         gitiles.RefSet
+	previousWatched gitiles.RefSet
+	known           map[string]string // HEADs we saw before
+	current         map[string]string // HEADs available now
+	changed         int
 }
 
 func (s *refsState) pruneKnown(ctl task.Controller) {

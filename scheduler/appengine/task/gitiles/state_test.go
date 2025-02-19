@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/types"
 	"go.chromium.org/luci/gae/impl/memory"
 	ds "go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/scheduler/appengine/messages"
 )
 
 func TestLoadSave(t *testing.T) {
@@ -38,10 +39,11 @@ func TestLoadSave(t *testing.T) {
 	ftt.Run("storeState/loadState work", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
 		repo := "https://example.googlesource.com/what/ever.git"
+		cfg := &messages.GitilesTask{Repo: repo}
 		jobID := "job"
 
 		loadNoError := func(repo string) map[string]string {
-			r, err := loadState(c, jobID, repo)
+			r, _, err := loadState(c, jobID, repo)
 			if err != nil {
 				panic(err)
 			}
@@ -54,14 +56,14 @@ func TestLoadSave(t *testing.T) {
 		})
 
 		t.Run("save/load/save/load", func(t *ftt.Test) {
-			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
 			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/heads/master": "beefcafe"}))
-			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/tails/master": "efacfeeb"}), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/tails/master": "efacfeeb"}), should.BeNil)
 			assert.Loosely(t, loadNoError(repo), should.Resemble(map[string]string{"refs/tails/master": "efacfeeb"}))
 		})
 
 		t.Run("save/change repo name/load", func(t *ftt.Test) {
-			assert.Loosely(t, saveState(c, jobID, repo, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, map[string]string{"refs/heads/master": "beefcafe"}), should.BeNil)
 			assert.Loosely(t, loadNoError("https://some-other.googlesource.com/repo"), should.Resemble(map[string]string{}))
 		})
 
@@ -75,7 +77,7 @@ func TestLoadSave(t *testing.T) {
 				"refs/heads/infra/configs/why": "55",
 				"refs/heads/infra/configs/not": "66",
 			}
-			assert.Loosely(t, saveState(c, jobID, repo, nested), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, nested), should.BeNil)
 			assert.Loosely(t, loadNoError(repo), should.Resemble(nested))
 		})
 	})
@@ -90,6 +92,7 @@ func TestLoadSaveCompression(t *testing.T) {
 		tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{}))
 
 		repo := "https://example.googlesource.com/what/ever.git"
+		cfg := &messages.GitilesTask{Repo: repo}
 		jobID := "job"
 
 		many16Ki := 16 * 1024
@@ -100,7 +103,7 @@ func TestLoadSaveCompression(t *testing.T) {
 			tags[ref] = hsh
 		}
 
-		assert.Loosely(t, saveState(c, jobID, repo, tags), should.BeNil)
+		assert.Loosely(t, saveState(c, jobID, cfg, tags), should.BeNil)
 		id, err := repositoryID(jobID, repo)
 		assert.Loosely(t, err, should.BeNil)
 		stored := Repository{ID: id}

@@ -33,6 +33,9 @@ message RefSpace {
 // RepositoryState stores tips of all watched refs in a repo.
 message RepositoryState {
   repeated RefSpace spaces = 1;
+
+  // Ref regexes used the last time this task ran.
+  repeated string refs = 2;
 }
 
 // DebugState is returned as part of GetDebugJobState RPC response.
@@ -43,4 +46,5 @@ message DebugState {
   }
   repeated Ref known = 1;   // tips as stored in the datastore
   repeated Ref current = 2; // tips as returned by gitiles right now
+  repeated string search = 3; // search query used to retrieve refs
 }

@@ -1621,7 +1621,11 @@ each iteration it triggers builders if either:
   * A ref belonging to the watched set has just been created. This produces
     a single triggering request for the commit at the ref's tip.
     This also applies right after a configuration change which instructs the
-    scheduler to watch a new ref.
+    scheduler to watch a new ref, unless the ref is a tag; only tags that
+    appear *after* a change to the poller's refs will be considered new.
+    Newly matched but pre-existing tags will not produce triggering
+    requests, since there may be many of them and it's rare that a job needs
+    to be triggered on all historical tags.
 
 Commits that trigger builders can also optionally be filtered by file paths
 they touch. These conditions are specified via `path_regexps` and

@@ -844,7 +844,9 @@ func (x *NoopTask) GetTriggersCount() int64 {
 //     For example, if you configure new GitilesTask or add a ref not previously
 //     watched to the existing GitilesTask, then Scheduler will "discover" this
 //     ref as newly created and emit exactly 1 trigger for the ref's current
-//     tip.
+//     tip. This behavior does not apply to tags, which are only considered to
+//     be new if they didn't previously exist, not if they're newly matched but
+//     pre-existing.
 //
 // LIMITATIONS:
 //

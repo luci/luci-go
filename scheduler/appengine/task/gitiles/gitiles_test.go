@@ -61,7 +61,7 @@ func TestTriggerBuild(t *testing.T) {
 		type strmap map[string]string
 
 		loadNoError := func() strmap {
-			state, err := loadState(c, jobID, cfg.Repo)
+			state, _, err := loadState(c, jobID, cfg.Repo)
 			if err != nil {
 				panic(err)
 			}
@@ -179,7 +179,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		t.Run("regexp refs are matched correctly", func(t *ftt.Test) {
 			cfg.Refs = []string{`regexp:refs/branch-heads/1\.\d+`}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/branch-heads/1.0": "deadcafe00",
 				"refs/branch-heads/1.1": "beefcafe02",
 			}), should.BeNil)
@@ -209,7 +209,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		t.Run("do not trigger if there are no new commits", func(t *ftt.Test) {
 			cfg.Refs = []string{"regexp:refs/branch-heads/[^/]+"}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/branch-heads/beta": "deadbeef00",
 			}), should.BeNil)
 			expectRefs("refs/branch-heads", strmap{"refs/branch-heads/beta": "deadbeef00"})
@@ -222,7 +222,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		t.Run("New, updated, and deleted refs", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/heads/master":   "deadbeef03",
 				"refs/branch-heads/x": "1234567890",
 				"refs/was/watched":    "0987654321",
@@ -260,7 +260,7 @@ func TestTriggerBuild(t *testing.T) {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`.+\.emit`}
 			cfg.PathRegexpsExclude = []string{`skip/.+`}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectLogWithDiff("deadbeef00", "deadbeef04", 50, "b",
 				"deadbeef00:skip/commit",
@@ -280,7 +280,7 @@ func TestTriggerBuild(t *testing.T) {
 		t.Run("Updated ref without matched commits", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
 			cfg.PathRegexps = []string{`must-match`}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{"refs/heads/master": "deadbeef04"}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 
 			expectLogWithDiff("deadbeef00", "deadbeef04", 50, "b",
@@ -297,7 +297,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		t.Run("do nothing at all if there are no changes", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/heads/master": "deadbeef",
 			}), should.BeNil)
 			expectRefs("refs/heads", strmap{
@@ -312,9 +312,69 @@ func TestTriggerBuild(t *testing.T) {
 			}))
 		})
 
+		t.Run("skip pre-existing refs when ref patterns change", func(t *ftt.Test) {
+			alreadyProcessedRef := "refs/tags/foobar"
+			newlyMatchedRef := "refs/tags/baz"
+			newRef := "refs/tags/foobaz"
+
+			cfg.Refs = []string{"regexp:refs/tags/foo.*"}
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
+				alreadyProcessedRef: "deadbeef",
+			}), should.BeNil)
+
+			// Change the filter so it matches a different set of tags than what
+			// was previously matched.
+			cfg.Refs = []string{"regexp:refs/tags/.*"}
+
+			expectRefs("refs/tags", strmap{
+				alreadyProcessedRef: "deadbeef",
+				// A newly appearing ref that doesn't match the previous filter,
+				// so should be assumed to not actually be new.
+				newlyMatchedRef: "def456",
+				// A ref that also matches the previous filter but wasn't seen
+				// before, so can be assumed to actually be new.
+				newRef: "abc123",
+			})
+			expectLog("abc123", "", 1, log("abc123"))
+			expectLog("def456", "", 1, log("def456"))
+
+			m.maxCommitsPerRefUpdate = 1
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				alreadyProcessedRef: "deadbeef",
+				newRef:              "abc123",
+				newlyMatchedRef:     "def456",
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(1))
+			assert.Loosely(t, ctl.Triggers[0].Id, should.Equal("https://a.googlesource.com/b.git/+/refs/tags/foobaz@abc123"))
+			assert.Loosely(t, ctl.Triggers[0].GetGitiles(), should.Resemble(&api.GitilesTrigger{
+				Repo:     "https://a.googlesource.com/b.git",
+				Ref:      newRef,
+				Revision: "abc123",
+			}))
+		})
+
+		t.Run("skip pre-existing refs for new trigger", func(t *ftt.Test) {
+			ref := "refs/tags/foobaz"
+
+			cfg.Refs = []string{"regexp:refs/tags/.*"}
+
+			expectRefs("refs/tags", strmap{
+				ref: "abc123",
+			})
+			expectLog("abc123", "", 1, log("abc123"))
+
+			m.maxCommitsPerRefUpdate = 1
+			assert.Loosely(t, m.LaunchTask(c, ctl), should.BeNil)
+			assert.Loosely(t, loadNoError(), should.Resemble(strmap{
+				ref: "abc123",
+			}))
+			assert.Loosely(t, ctl.Triggers, should.HaveLength(0))
+		})
+
 		t.Run("Avoid choking on too many refs", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master", "regexp:refs/branch-heads/[^/]+"}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/heads/master": "deadbeef",
 			}), should.BeNil)
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef"}).AnyTimes()
@@ -409,7 +469,7 @@ func TestTriggerBuild(t *testing.T) {
 
 		t.Run("distinguish force push from transient weirdness", func(t *ftt.Test) {
 			cfg.Refs = []string{"refs/heads/master"}
-			assert.Loosely(t, saveState(c, jobID, cfg.Repo, strmap{
+			assert.Loosely(t, saveState(c, jobID, cfg, strmap{
 				"refs/heads/master": "001d", // old.
 			}), should.BeNil)
 
