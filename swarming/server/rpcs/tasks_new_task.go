@@ -431,8 +431,8 @@ func validateDigest(digest *apipb.Digest) error {
 		return errors.New("required")
 	case digest.Hash == "":
 		return errors.New("hash is required")
-	case digest.SizeBytes == 0:
-		return errors.New("size_bytes is required")
+	case digest.SizeBytes < 0:
+		return errors.New("size_bytes cannot be negative")
 	default:
 		return nil
 	}

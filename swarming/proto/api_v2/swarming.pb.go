@@ -1390,6 +1390,12 @@ type TaskProperties struct {
 	Idempotent bool `protobuf:"varint,10,opt,name=idempotent,proto3" json:"idempotent,omitempty"`
 	// Digest of the input root uploaded to RBE-CAS.
 	// This MUST be digest of [build.bazel.remote.execution.v2.Directory].
+	//
+	// If a task wants to store outputs, but has no inputs, it should use an empty
+	// digest
+	// ('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855/0')
+	// to populate this field with the RBE-CAS instance to use for storing
+	// outputs.
 	CasInputRoot *CASReference `protobuf:"bytes,11,opt,name=cas_input_root,json=casInputRoot,proto3" json:"cas_input_root,omitempty"`
 	// Maximum number of seconds the task may be silent (no output to stdout nor
 	// stderr) before it is considered hung and it forcibly terminated early and

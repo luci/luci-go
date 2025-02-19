@@ -654,12 +654,13 @@ func TestValidateNewTask(t *testing.T) {
 							_, err := validateNewTask(ctx, req)
 							assert.That(t, err, should.ErrLike("hash is required"))
 						})
-						t.Run("zero_size", func(t *ftt.Test) {
+						t.Run("negative_size", func(t *ftt.Test) {
 							casInputRoot.Digest = &apipb.Digest{
-								Hash: "hash",
+								Hash:      "hash",
+								SizeBytes: -1,
 							}
 							_, err := validateNewTask(ctx, req)
-							assert.That(t, err, should.ErrLike("size_bytes is required"))
+							assert.That(t, err, should.ErrLike("size_bytes cannot be negative"))
 						})
 					})
 				})
