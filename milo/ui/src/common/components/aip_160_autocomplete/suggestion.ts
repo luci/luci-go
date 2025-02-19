@@ -107,6 +107,32 @@ export function getSuggestionCtx(
     };
   }
 
+  // Example: `field > "val|ue"`
+  if (
+    prevToken2?.kind === TokenKind.QualifiedFieldOrValue &&
+    prevToken1?.kind === TokenKind.Comparator &&
+    selectedToken.kind === TokenKind.String
+  ) {
+    return {
+      type: 'value',
+      fieldToken: prevToken2,
+      valueToken: selectedToken,
+    };
+  }
+
+  // Example: `field > "val|ue`
+  if (
+    prevToken2?.kind === TokenKind.QualifiedFieldOrValue &&
+    prevToken1?.kind === TokenKind.Comparator &&
+    selectedToken.kind === TokenKind.UnclosedString
+  ) {
+    return {
+      type: 'value',
+      fieldToken: prevToken2,
+      valueToken: selectedToken,
+    };
+  }
+
   // Example: `field >|`
   if (
     prevToken1?.kind === TokenKind.QualifiedFieldOrValue &&

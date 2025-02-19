@@ -26,6 +26,7 @@ import {
   Aip160Autocomplete,
   FetchValuesFn,
   FieldsSchema,
+  tryUnquoteStr,
 } from '@/common/components/aip_160_autocomplete';
 import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
 import {
@@ -97,24 +98,29 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
   const [failureFilter, updateFailureFilterParam] = useFilterParam();
 
   const client = useTestHistoryClient();
-  const fetchTestIds: FetchValuesFn<QueryTestsResponse> = (
-    partial: string,
-  ) => ({
-    ...client.QueryTests.query(
-      QueryTestsRequest.fromPartial({
-        project,
-        testIdSubstring: partial,
-        caseInsensitive: true,
-        pageSize: 50,
-      }),
-    ),
-    enabled: partial !== '',
-    select: (data) => {
-      return data.testIds
-        .filter((text) => text !== partial)
-        .map((text) => ({ text }));
-    },
-  });
+  const fetchTestIds: FetchValuesFn<QueryTestsResponse> = (partial: string) => {
+    const unquoted = tryUnquoteStr(partial);
+    return {
+      ...client.QueryTests.query(
+        QueryTestsRequest.fromPartial({
+          project,
+          testIdSubstring: unquoted,
+          caseInsensitive: true,
+          pageSize: 50,
+        }),
+      ),
+      enabled: unquoted !== '',
+      select: (data) => {
+        return (
+          data.testIds
+            // Use JSON.stringify to quote the string so special characters does
+            // not break the filter.
+            .map((text) => ({ text: JSON.stringify(text) }))
+            .filter(({ text }) => text !== partial)
+        );
+      },
+    };
+  };
   const fetchTestIdsRef = useRef(fetchTestIds);
   fetchTestIdsRef.current = fetchTestIds;
 
@@ -139,17 +145,19 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
       test_run_id: {},
       is_test_run_blocked: {
         getValues: (partial) => {
-          const lowerPartial = partial.toLowerCase();
+          const unquoted = tryUnquoteStr(partial);
+          const searchTerm = unquoted.toLowerCase();
           return ['true', 'false']
-            .filter((text) => text.includes(lowerPartial))
+            .filter((text) => text.includes(searchTerm) && text !== partial)
             .map((text) => ({ text }));
         },
       },
       is_ingested_invocation_blocked: {
         getValues: (partial) => {
-          const lowerPartial = partial.toLowerCase();
+          const unquoted = tryUnquoteStr(partial);
+          const searchTerm = unquoted.toLowerCase();
           return ['true', 'false']
-            .filter((text) => text.includes(lowerPartial))
+            .filter((text) => text.includes(searchTerm) && text !== partial)
             .map((text) => ({ text }));
         },
       },

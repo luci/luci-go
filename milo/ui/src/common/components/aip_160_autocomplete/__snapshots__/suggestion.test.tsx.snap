@@ -66,6 +66,42 @@ exports[`getSuggestionCtx inputWithCursor: project =   |  1`] = `
 }
 `;
 
+exports[`getSuggestionCtx inputWithCursor: project = "chromi|um 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "text": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 4,
+    "kind": "UNCLOSED_STRING",
+    "startPos": 10,
+    "text": ""chromium",
+  },
+}
+`;
+
+exports[`getSuggestionCtx inputWithCursor: project = "chromi|um" 1`] = `
+{
+  "fieldToken": {
+    "index": 0,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 0,
+    "text": "project",
+  },
+  "type": "value",
+  "valueToken": {
+    "index": 4,
+    "kind": "STRING",
+    "startPos": 10,
+    "text": ""chromium"",
+  },
+}
+`;
+
 exports[`getSuggestionCtx inputWithCursor: project = |  1`] = `
 {
   "fieldToken": {

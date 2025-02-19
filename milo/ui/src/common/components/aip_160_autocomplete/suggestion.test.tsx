@@ -326,6 +326,11 @@ describe('getSuggestionCtx', () => {
     // Cursor on whitespace after field.
     ['project |'],
     ['project | another_project'],
+
+    // Quoted string.
+    ['project = "chromi|um"'],
+    // Unclosed quoted string.
+    ['project = "chromi|um'],
   ])('inputWithCursor: %s', (inputWithCursor) => {
     const input = inputWithCursor.replace('|', '');
     const cursorPos = inputWithCursor.indexOf('|');
