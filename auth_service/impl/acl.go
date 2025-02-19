@@ -44,6 +44,10 @@ var AuthorizeRPCAccess = rpcacl.Interceptor(rpcacl.Map{
 	// Only members of auth-trusted-services can work with the AuthDB.
 	"/auth.service.AuthDB/*": model.TrustedServicesGroup,
 
+	// Only those authorized to access LUCI Auth Service can query principal
+	// permissions.
+	"/auth.service.AuthDB/GetPrincipalPermissions": authdb.AuthServiceAccessGroup,
+
 	// All methods to work with ChangeLogs require authorization.
 	"/auth.service.ChangeLogs/*": authdb.AuthServiceAccessGroup,
 
