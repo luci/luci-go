@@ -500,6 +500,7 @@ luci.cq_group(
                 ),
             ],
             mode_allowlist = [cq.MODE_DRY_RUN, cq.MODE_FULL_RUN],
+            disable_reuse_footers = ["Footer1", "Footer2"],
         ),
         # An experimental verifier with a location filter.
         luci.cq_tryjob_verifier(
@@ -646,6 +647,8 @@ lucicfg.emit(
 #       builders {
 #         name: "infra/try/linux try builder"
 #         result_visibility: COMMENT_LEVEL_RESTRICTED
+#         disable_reuse_footers: "Footer1"
+#         disable_reuse_footers: "Footer2"
 #         cancel_stale: NO
 #         location_filters {
 #           gerrit_host_regexp: "example.com"

@@ -1314,6 +1314,7 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         includable_only = verifier.props.includable_only,
         cancel_stale = _cq_toggle(verifier.props.cancel_stale),
         disable_reuse = verifier.props.disable_reuse,
+        disable_reuse_footers = verifier.props.disable_reuse_footers,
         experiment_percentage = verifier.props.experiment_percentage,
         owner_whitelist_group = verifier.props.owner_whitelist,
         location_filters = [_cq_location_filter(n) for n in verifier.props.location_filters],

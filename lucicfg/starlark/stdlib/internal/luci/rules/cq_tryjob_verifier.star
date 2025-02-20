@@ -28,6 +28,7 @@ def _cq_tryjob_verifier(
         includable_only = None,
         result_visibility = None,
         disable_reuse = None,
+        disable_reuse_footers = None,
         cancel_stale = None,
         experiment_percentage = None,
         location_filters = None,
@@ -210,6 +211,10 @@ def _cq_tryjob_verifier(
         supposed to be quick to run and provide additional OWNERS, lint, etc.
         checks which are useful to run against the latest revision of the CL's
         target branch.
+      disable_reuse_footers: a list of footers for which previous CQ attempts
+        will be not be reused if the footer is added, removed, or has its value
+        changed. Cannot be used together with `disable_reuse = True`, which
+        unconditionally disables reuse.
       experiment_percentage: when this field is present, it marks the verifier
         as experimental. Such verifier is only triggered on a given percentage
         of the CLs and the outcome does not affect the decision whether a CL can
@@ -278,6 +283,9 @@ def _cq_tryjob_verifier(
     for m in mode_allowlist:
         validate.string("mode_allowlist", m)
 
+    if disable_reuse and disable_reuse_footers:
+        fail('"disable_reuse" and "disable_reuse_footers" can not be used together')
+
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
             fail('"equivalent_builder_percentage" can be used only together with "equivalent_builder"')
@@ -298,6 +306,7 @@ def _cq_tryjob_verifier(
     key = keys.unique(kinds.CQ_TRYJOB_VERIFIER, builder.id)
     graph.add_node(key, props = {
         "disable_reuse": validate.bool("disable_reuse", disable_reuse, required = False),
+        "disable_reuse_footers": validate.list("disable_reuse_footers", disable_reuse_footers, required = False),
         "result_visibility": validate.int(
             "result_visibility",
             result_visibility,

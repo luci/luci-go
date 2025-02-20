@@ -2394,6 +2394,7 @@ luci.cq_tryjob_verifier(
     cancel_stale = None,
     includable_only = None,
     disable_reuse = None,
+    disable_reuse_footers = None,
     experiment_percentage = None,
     location_filters = None,
     owner_whitelist = None,
@@ -2553,6 +2554,7 @@ For example:
 * **cancel_stale**: Controls whether not yet finished builds previously triggered by CQ will be cancelled as soon as a substantially different patchset is uploaded to a CL. Default is True, meaning CQ will cancel. In LUCI Change Verifier (aka CV, successor of CQ), changing this option will only take effect on newly-created Runs once config propagates to CV. Ongoing Runs will retain the old behavior. (TODO(crbug/1127991): refactor this doc after migration. As of 09/2020, CV implementation is WIP)
 * **includable_only**: if True, this builder will only be triggered by CQ if it is also specified via `CQ-Include-Trybots:` on CL description. Default is False. See the explanation above for all details. For builders with `experiment_percentage` or `location_filters`, don't specify `includable_only`. Such builders can already be forcefully added via `CQ-Include-Trybots:` in the CL description.
 * **disable_reuse**: if True, a fresh build will be required for each CQ attempt. Default is False, meaning the CQ may re-use a successful build triggered before the current CQ attempt started. This option is typically used for verifiers which run presubmit scripts, which are supposed to be quick to run and provide additional OWNERS, lint, etc. checks which are useful to run against the latest revision of the CL's target branch.
+* **disable_reuse_footers**: a list of footers for which previous CQ attempts will be not be reused if the footer is added, removed, or has its value changed. Cannot be used together with `disable_reuse = True`, which unconditionally disables reuse.
 * **experiment_percentage**: when this field is present, it marks the verifier as experimental. Such verifier is only triggered on a given percentage of the CLs and the outcome does not affect the decision whether a CL can land or not. This is typically used to test new builders and estimate their capacity requirements.
 * **location_filters**: a list of [cq.location_filter(...)](#cq.location-filter).
 * **owner_whitelist**: a list of groups with accounts of CL owners to enable this builder for. If set, only CLs owned by someone from any one of these groups will be verified by this builder.
