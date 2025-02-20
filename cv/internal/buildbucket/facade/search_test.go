@@ -143,10 +143,11 @@ func TestSearch(t *testing.T) {
 					tj := results[0]
 					assert.Loosely(t, tj.Result, should.NotBeNil, truth.LineContext())
 					tj.Result = nil
-					assert.Loosely(t, tj, should.Match(&tryjob.Tryjob{
-						ExternalID: tryjob.MustBuildbucketID(bbHost, build.GetId()),
-						Definition: definition,
-						Status:     tryjob.Status_ENDED,
+					assert.That(t, tj, should.Match(&tryjob.Tryjob{
+						ExternalID:  tryjob.MustBuildbucketID(bbHost, build.GetId()),
+						Definition:  definition,
+						Status:      tryjob.Status_ENDED,
+						CLPatchsets: tryjob.CLPatchsets{tryjob.MakeCLPatchset(clid, gPatchset)},
 					}), truth.LineContext())
 				}
 
@@ -195,7 +196,7 @@ func TestSearch(t *testing.T) {
 			t.Run("No match", func(t *ftt.Test) {
 				t.Run("Patchset out of range ", func(t *ftt.Test) {
 					for _, ps := range []int{3, 11, 20} {
-						assert.Loosely(t, ps < gMinEquiPatchset || ps > gPatchset, should.BeTrue)
+						assert.That(t, ps < gMinEquiPatchset || ps > gPatchset, should.BeTrue)
 						gc.Patchset = int64(ps)
 						build, err := bbClient.ScheduleBuild(ctx, &bbpb.ScheduleBuildRequest{
 							Builder:       builderID,
@@ -374,12 +375,12 @@ func TestSearch(t *testing.T) {
 				}
 				got := stringset.New(numBuildsPerHost / 2 * len(bbHosts))
 				err := f.Search(ctx, []*run.RunCL{cl}, definitions, lProject, func(job *tryjob.Tryjob) bool {
-					assert.Loosely(t, got.Has(string(job.ExternalID)), should.BeFalse)
+					assert.That(t, got.Has(string(job.ExternalID)), should.BeFalse)
 					got.Add(string(job.ExternalID))
 					return true
 				})
 				assert.NoErr(t, err)
-				assert.Loosely(t, got, should.Resemble(expected))
+				assert.That(t, got, should.Match(expected))
 			})
 
 			t.Run("Can stop paging", func(t *ftt.Test) {

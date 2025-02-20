@@ -61,7 +61,7 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 	for def, candidate := range candidates {
 		tj, err := w.mutator.Upsert(ctx, candidate.ExternalID, func(tj *tryjob.Tryjob) error {
 			tj.ReuseKey = w.reuseKey
-			tj.CLPatchsets = w.clPatchsets
+			tj.CLPatchsets = candidate.CLPatchsets
 			tj.Definition = def
 			tj.ExternalID = candidate.ExternalID
 			tj.Status = candidate.Status

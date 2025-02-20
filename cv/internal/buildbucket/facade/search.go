@@ -17,6 +17,7 @@ package bbfacade
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/cv/internal/buildbucket"
+	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -76,6 +78,7 @@ func init() {
 //   - Definition
 //   - Status
 //   - Result
+//   - CLPatchsets
 //
 // Also, the Tryjobs are guaranteed to have decreasing build ID (in other
 // word, from newest to oldest) ONLY within the same host.
@@ -170,6 +173,7 @@ type searchWorker struct {
 	bbClient            buildbucket.Client
 	clSearchTarget      *run.RunCL
 	acceptedCLRanges    map[string]patchsetRange
+	changeIDToCLID      map[string]common.CLID
 	builderToDefinition map[string]*tryjob.Definition
 	shouldStop          func() bool
 }
@@ -199,8 +203,12 @@ func (f *Facade) makeSearchWorkers(ctx context.Context, cls []*run.RunCL, defini
 				bbClient:            bbClient,
 				acceptedCLRanges:    clRanges,
 				clSearchTarget:      clWithSmallestRange,
+				changeIDToCLID:      make(map[string]common.CLID, len(cls)),
 				builderToDefinition: make(map[string]*tryjob.Definition),
 				shouldStop:          shouldStop,
+			}
+			for _, cl := range cls {
+				worker.changeIDToCLID[formatChangeID(cl.Detail.GetGerrit().GetHost(), cl.Detail.GetGerrit().GetInfo().GetNumber())] = cl.ID
 			}
 			hostToWorker[bbHost] = worker
 		}
@@ -335,10 +343,16 @@ func (sw *searchWorker) toTryjob(ctx context.Context, build *bbpb.Build, def *tr
 	if err != nil {
 		return nil, err
 	}
-	return &tryjob.Tryjob{
-		ExternalID: tryjob.MustBuildbucketID(sw.bbHost, build.Id),
-		Definition: def,
-		Status:     status,
-		Result:     result,
-	}, nil
+	tj := &tryjob.Tryjob{
+		ExternalID:  tryjob.MustBuildbucketID(sw.bbHost, build.Id),
+		Definition:  def,
+		Status:      status,
+		Result:      result,
+		CLPatchsets: make(tryjob.CLPatchsets, len(build.GetInput().GetGerritChanges())),
+	}
+	for i, gc := range build.GetInput().GetGerritChanges() {
+		tj.CLPatchsets[i] = tryjob.MakeCLPatchset(sw.changeIDToCLID[formatChangeID(gc.GetHost(), gc.GetChange())], int32(gc.GetPatchset()))
+	}
+	sort.Sort(tj.CLPatchsets)
+	return tj, nil
 }
