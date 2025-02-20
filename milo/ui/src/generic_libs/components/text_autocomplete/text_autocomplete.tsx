@@ -164,9 +164,10 @@ export function TextAutocomplete<T>({
       setUncommittedValue(value);
     }
   }
-  function commitValue() {
-    onValueCommit(uncommittedValue);
-    previousCommitValueRef.current = uncommittedValue;
+  function commitValue(newValue = uncommittedValue) {
+    onValueCommit(newValue);
+    setUncommittedValue(newValue);
+    previousCommitValueRef.current = newValue;
   }
 
   // Apply initial highlight when filter is pre-populated.
@@ -241,10 +242,7 @@ export function TextAutocomplete<T>({
   const setters = useMemo(
     () => ({
       commit: () => commitValueRef.current(),
-      clear: () => {
-        setUncommittedValue('');
-        commitValueRef.current();
-      },
+      clear: () => commitValueRef.current(''),
     }),
     [],
   );
