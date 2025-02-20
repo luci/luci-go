@@ -45,10 +45,48 @@ export enum TokenKind {
 
 const TOKEN_KINDS = Object.values(TokenKind);
 
-const STRING_RE = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/;
+/**
+ * A regex that match a quoted string.
+ *
+ * Contains two cases.
+ *  * The first case, /'(?:[^'\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})*'/, matches a
+ *    single quoted string.
+ *  * The second case matches a double quoted string.
+ *
+ * /(?:[^'\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})/ matches a character.
+ * The character can either be
+ *  * any character that is NOT
+ *    * a single quote (or a double quote for the double quoted string case),
+ *    * a new line
+ *    * a backward slash.
+ *  * a backward slash with a following character that is not `u` or a newline
+ *    (e.g. `\t`).
+ *  * a backward slash followed by `u` and four hex digits (e.g. `\u1234`).
+ */
+const STRING_RE =
+  /'(?:[^'\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})*'|"(?:[^"\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})*"/;
+
+/**
+ * Similar to STRING_RE but requires the whole string to match STRING_RE.
+ */
 const SINGLE_STRING_RE = new RegExp(`^(${STRING_RE.source})$`);
+
+/**
+ * Similar to STRING_RE except that the closing quote is missing.
+ *
+ * Matches until a new line or end of string.
+ *
+ * The lookahead, /(?=\n|$)/, tells the regex to terminate at a newline or end
+ * of the string. This prevents a single unclosed quote from consuming the
+ * multiple lines when parsing tokens.
+ */
 const UNCLOSED_STRING_RE =
-  /'(?:[^'\\\n]|\\.)*(?=\n|$)|"(?:[^"\\\n]|\\.)*(?=\n|$)/;
+  /'(?:[^'\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})*(?=\n|$)|"(?:[^"\\\n]|\\[^u\n]|\\u[0-9a-fA-F]{4})*(?=\n|$)/;
+
+/**
+ * Similar to UNCLOSED_STRING_RE but requires the whole string to match
+ * UNCLOSED_STRING_RE.
+ */
 const SINGLE_UNCLOSED_STRING_RE = new RegExp(
   `^(${UNCLOSED_STRING_RE.source})$`,
 );

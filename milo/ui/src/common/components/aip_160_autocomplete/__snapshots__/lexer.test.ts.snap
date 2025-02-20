@@ -279,6 +279,59 @@ exports[`Lexer getAllTokens input: "double ' quoted" 1`] = `
 ]
 `;
 
+exports[`Lexer getAllTokens input: "invalid unicode \\u1" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "INVALID_CHAR",
+    "startPos": 0,
+    "text": """,
+  },
+  {
+    "index": 1,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 1,
+    "text": "invalid",
+  },
+  {
+    "index": 2,
+    "kind": "WHITESPACE",
+    "startPos": 8,
+    "text": " ",
+  },
+  {
+    "index": 3,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 9,
+    "text": "unicode",
+  },
+  {
+    "index": 4,
+    "kind": "WHITESPACE",
+    "startPos": 16,
+    "text": " ",
+  },
+  {
+    "index": 5,
+    "kind": "INVALID_CHAR",
+    "startPos": 17,
+    "text": "\\",
+  },
+  {
+    "index": 6,
+    "kind": "QUALIFIED_FIELD_OR_VALUE",
+    "startPos": 18,
+    "text": "u1",
+  },
+  {
+    "index": 7,
+    "kind": "UNCLOSED_STRING",
+    "startPos": 20,
+    "text": """,
+  },
+]
+`;
+
 exports[`Lexer getAllTokens input: "quoted\\"string" 1`] = `
 [
   {
@@ -297,6 +350,17 @@ exports[`Lexer getAllTokens input: "string" 1`] = `
     "kind": "STRING",
     "startPos": 0,
     "text": ""string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "valid unicode \\u12ab" 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "STRING",
+    "startPos": 0,
+    "text": ""valid unicode \\u12ab"",
   },
 ]
 `;
