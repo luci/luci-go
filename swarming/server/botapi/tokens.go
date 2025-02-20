@@ -162,7 +162,24 @@ func (srv *BotAPIServer) OAuthToken(ctx context.Context, body *TokenRequest, r *
 //
 // See OAuthToken for details.
 func (srv *BotAPIServer) IDToken(ctx context.Context, body *TokenRequest, r *botsrv.Request) (botsrv.Response, error) {
-	panic("not implemented")
+	if body.Audience == "" {
+		return nil, status.Errorf(codes.InvalidArgument, `"audience" is required`)
+	}
+	if len(body.Scopes) != 0 {
+		return nil, status.Errorf(codes.InvalidArgument, `"scopes" must not be used in ID token request`)
+	}
+	sa, tok, exp, err := srv.mintToken(ctx, body, r, &idTokenMinter{
+		audience:          body.Audience,
+		tokenServerClient: srv.tokenServerClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &TokenResponse{
+		ServiceAccount: sa,
+		IDToken:        tok,
+		Expiry:         exp,
+	}, nil
 }
 
 // tokenMinter is implemented by oauthTokenMinter and idTokenMinter.
@@ -297,6 +314,36 @@ func (m *oauthTokenMinter) mintTaskToken(ctx context.Context, realm, serviceAcco
 		ServiceAccount:      serviceAccountEmail,
 		Realm:               realm,
 		OauthScope:          m.scopes,
+		MinValidityDuration: int64(minTokenTTL.Seconds()),
+		AuditTags:           auditTags,
+	})
+	if err != nil {
+		// Propagate the gRPC error as is, it already has correct status code.
+		return nil, err
+	}
+	return &auth.Token{Token: resp.Token, Expiry: resp.Expiry.AsTime()}, nil
+}
+
+// idTokenMinter implements minting of ID tokens.
+type idTokenMinter struct {
+	audience          string
+	tokenServerClient func(ctx context.Context, realm string) (minterpb.TokenMinterClient, error)
+}
+
+func (m *idTokenMinter) kind() string {
+	return "ID token"
+}
+
+func (m *idTokenMinter) mintTaskToken(ctx context.Context, realm, serviceAccountEmail string, auditTags []string) (*auth.Token, error) {
+	ts, err := m.tokenServerClient(ctx, realm)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ts.MintServiceAccountToken(ctx, &minterpb.MintServiceAccountTokenRequest{
+		TokenKind:           minterpb.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
+		ServiceAccount:      serviceAccountEmail,
+		Realm:               realm,
+		IdTokenAudience:     m.audience,
 		MinValidityDuration: int64(minTokenTTL.Seconds()),
 		AuditTags:           auditTags,
 	})

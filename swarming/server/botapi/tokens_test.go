@@ -92,151 +92,225 @@ func TestTaskTokens(t *testing.T) {
 			return model.RequestKeyToTaskID(ent.Key, model.AsRunResult)
 		}
 
-		call := func(currentTaskID string, req *TokenRequest) (*TokenResponse, error) {
-			r, err := srv.OAuthToken(ctx, req, &botsrv.Request{
-				Session: &internalspb.Session{
-					BotId: testBotID,
-				},
-				CurrentTaskID: currentTaskID,
-			})
-			if err != nil {
-				return nil, err
+		t.Run("OAuth token", func(t *ftt.Test) {
+			call := func(currentTaskID string, req *TokenRequest) (*TokenResponse, error) {
+				r, err := srv.OAuthToken(ctx, req, &botsrv.Request{
+					Session: &internalspb.Session{
+						BotId: testBotID,
+					},
+					CurrentTaskID: currentTaskID,
+				})
+				if err != nil {
+					return nil, err
+				}
+				return r.(*TokenResponse), nil
 			}
-			return r.(*TokenResponse), nil
-		}
 
-		t.Run("OK: empty, bot none", func(t *ftt.Test) {
-			for _, acc := range []string{"", "bot", "none"} {
-				taskID := mockTask(acc, testTaskRealm)
+			t.Run("OK: empty, bot none", func(t *ftt.Test) {
+				for _, acc := range []string{"", "bot", "none"} {
+					taskID := mockTask(acc, testTaskRealm)
+					r, err := call(taskID, &TokenRequest{
+						AccountID: "task",
+						TaskID:    taskID,
+						Scopes:    []string{"some-scope"},
+					})
+					assert.NoErr(t, err)
+
+					expected := acc
+					if expected == "" {
+						expected = "none"
+					}
+					assert.That(t, r, should.Match(&TokenResponse{
+						ServiceAccount: expected,
+					}))
+				}
+			})
+
+			t.Run("OK: actual account", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
 				r, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+					Scopes:    []string{"some-scope1", "some-scope2"},
+				})
+				assert.NoErr(t, err)
+
+				assert.That(t, r, should.Match(&TokenResponse{
+					ServiceAccount: testTaskSA,
+					AccessToken:    testToken,
+					Expiry:         testTokenExpiry.Unix(),
+				}))
+
+				assert.That(t, mockedMinter.req, should.Match(&minterpb.MintServiceAccountTokenRequest{
+					TokenKind:           minterpb.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
+					ServiceAccount:      testTaskSA,
+					Realm:               testTaskRealm,
+					OauthScope:          []string{"some-scope1", "some-scope2"},
+					MinValidityDuration: int64(minTokenTTL.Seconds()),
+					AuditTags: []string{
+						"swarming:bot_id:" + testBotID,
+						"swarming:task_id:" + taskID,
+						"swarming:task_name:" + testTaskName,
+						"swarming:trace_id:00000000000000000000000000000000",
+						"swarming:service_version:swarming-proj/swarming-ver",
+					},
+				}))
+			})
+
+			t.Run("No scopes", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				_, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"scopes" are required`))
+			})
+
+			t.Run("Unexpected audience", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				_, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+					Scopes:    []string{"some-scope"},
+					Audience:  "huh",
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"audience" must not be used`))
+			})
+
+			t.Run("Unrecognized account ID", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				_, err := call(taskID, &TokenRequest{
+					AccountID: "huh",
+					TaskID:    taskID,
+					Scopes:    []string{"some-scope"},
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"account_id" must be either "system" or "task"`))
+			})
+
+			t.Run("No task ID", func(t *ftt.Test) {
+				_, err := call(testTaskSA, &TokenRequest{
+					AccountID: "task",
+					Scopes:    []string{"some-scope"},
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"task_id" is required`))
+			})
+
+			t.Run("Malformed task ID", func(t *ftt.Test) {
+				_, err := call(testTaskSA, &TokenRequest{
+					AccountID: "task",
+					TaskID:    "huh",
+					Scopes:    []string{"some-scope"},
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`bad task ID`))
+			})
+
+			t.Run("Wrong task ID", func(t *ftt.Test) {
+				taskID1 := mockTask(testTaskSA, testTaskRealm)
+				taskID2 := mockTask(testTaskSA, testTaskRealm)
+
+				_, err := call(taskID1, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID2,
+					Scopes:    []string{"some-scope"},
+				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`the bot is not executing this task`))
+			})
+
+			t.Run("Revoked permission", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, "some:unknown-realm")
+				_, err := call(taskID, &TokenRequest{
 					AccountID: "task",
 					TaskID:    taskID,
 					Scopes:    []string{"some-scope"},
 				})
+
+				assert.That(t, status.Code(err), should.Equal(codes.PermissionDenied))
+				assert.That(t, err, should.ErrLike(`the service account "task-sa@example.com" doesn't have permission "swarming.tasks.actAs" in the realm "some:unknown-realm"`))
+			})
+		})
+
+		t.Run("ID token", func(t *ftt.Test) {
+			call := func(currentTaskID string, req *TokenRequest) (*TokenResponse, error) {
+				r, err := srv.IDToken(ctx, req, &botsrv.Request{
+					Session: &internalspb.Session{
+						BotId: testBotID,
+					},
+					CurrentTaskID: currentTaskID,
+				})
+				if err != nil {
+					return nil, err
+				}
+				return r.(*TokenResponse), nil
+			}
+
+			// Only test code paths which are different from the OAuth token case.
+
+			t.Run("OK: actual account", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				r, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+					Audience:  "audience",
+				})
 				assert.NoErr(t, err)
 
-				expected := acc
-				if expected == "" {
-					expected = "none"
-				}
 				assert.That(t, r, should.Match(&TokenResponse{
-					ServiceAccount: expected,
+					ServiceAccount: testTaskSA,
+					IDToken:        testToken,
+					Expiry:         testTokenExpiry.Unix(),
 				}))
-			}
-		})
 
-		t.Run("OK: actual account", func(t *ftt.Test) {
-			taskID := mockTask(testTaskSA, testTaskRealm)
-			r, err := call(taskID, &TokenRequest{
-				AccountID: "task",
-				TaskID:    taskID,
-				Scopes:    []string{"some-scope1", "some-scope2"},
-			})
-			assert.NoErr(t, err)
-
-			assert.That(t, r, should.Match(&TokenResponse{
-				ServiceAccount: testTaskSA,
-				AccessToken:    testToken,
-				Expiry:         testTokenExpiry.Unix(),
-			}))
-
-			assert.That(t, mockedMinter.req, should.Match(&minterpb.MintServiceAccountTokenRequest{
-				TokenKind:           minterpb.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ACCESS_TOKEN,
-				ServiceAccount:      testTaskSA,
-				Realm:               testTaskRealm,
-				OauthScope:          []string{"some-scope1", "some-scope2"},
-				MinValidityDuration: int64(minTokenTTL.Seconds()),
-				AuditTags: []string{
-					"swarming:bot_id:" + testBotID,
-					"swarming:task_id:" + taskID,
-					"swarming:task_name:" + testTaskName,
-					"swarming:trace_id:00000000000000000000000000000000",
-					"swarming:service_version:swarming-proj/swarming-ver",
-				},
-			}))
-		})
-
-		t.Run("No scopes", func(t *ftt.Test) {
-			taskID := mockTask(testTaskSA, testTaskRealm)
-			_, err := call(taskID, &TokenRequest{
-				AccountID: "task",
-				TaskID:    taskID,
+				assert.That(t, mockedMinter.req, should.Match(&minterpb.MintServiceAccountTokenRequest{
+					TokenKind:           minterpb.ServiceAccountTokenKind_SERVICE_ACCOUNT_TOKEN_ID_TOKEN,
+					ServiceAccount:      testTaskSA,
+					Realm:               testTaskRealm,
+					IdTokenAudience:     "audience",
+					MinValidityDuration: int64(minTokenTTL.Seconds()),
+					AuditTags: []string{
+						"swarming:bot_id:" + testBotID,
+						"swarming:task_id:" + taskID,
+						"swarming:task_name:" + testTaskName,
+						"swarming:trace_id:00000000000000000000000000000000",
+						"swarming:service_version:swarming-proj/swarming-ver",
+					},
+				}))
 			})
 
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`"scopes" are required`))
-		})
+			t.Run("No audience", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				_, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+				})
 
-		t.Run("Unexpected audience", func(t *ftt.Test) {
-			taskID := mockTask(testTaskSA, testTaskRealm)
-			_, err := call(taskID, &TokenRequest{
-				AccountID: "task",
-				TaskID:    taskID,
-				Scopes:    []string{"some-scope"},
-				Audience:  "huh",
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"audience" is required`))
 			})
 
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`"audience" must not be used`))
-		})
+			t.Run("Unexpected scopes", func(t *ftt.Test) {
+				taskID := mockTask(testTaskSA, testTaskRealm)
+				_, err := call(taskID, &TokenRequest{
+					AccountID: "task",
+					TaskID:    taskID,
+					Audience:  "audience",
+					Scopes:    []string{"scope"},
+				})
 
-		t.Run("Unrecognized account ID", func(t *ftt.Test) {
-			taskID := mockTask(testTaskSA, testTaskRealm)
-			_, err := call(taskID, &TokenRequest{
-				AccountID: "huh",
-				TaskID:    taskID,
-				Scopes:    []string{"some-scope"},
+				assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
+				assert.That(t, err, should.ErrLike(`"scopes" must not be used`))
 			})
-
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`"account_id" must be either "system" or "task"`))
-		})
-
-		t.Run("No task ID", func(t *ftt.Test) {
-			_, err := call(testTaskSA, &TokenRequest{
-				AccountID: "task",
-				Scopes:    []string{"some-scope"},
-			})
-
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`"task_id" is required`))
-		})
-
-		t.Run("Malformed task ID", func(t *ftt.Test) {
-			_, err := call(testTaskSA, &TokenRequest{
-				AccountID: "task",
-				TaskID:    "huh",
-				Scopes:    []string{"some-scope"},
-			})
-
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`bad task ID`))
-		})
-
-		t.Run("Wrong task ID", func(t *ftt.Test) {
-			taskID1 := mockTask(testTaskSA, testTaskRealm)
-			taskID2 := mockTask(testTaskSA, testTaskRealm)
-
-			_, err := call(taskID1, &TokenRequest{
-				AccountID: "task",
-				TaskID:    taskID2,
-				Scopes:    []string{"some-scope"},
-			})
-
-			assert.That(t, status.Code(err), should.Equal(codes.InvalidArgument))
-			assert.That(t, err, should.ErrLike(`the bot is not executing this task`))
-		})
-
-		t.Run("Revoked permission", func(t *ftt.Test) {
-			taskID := mockTask(testTaskSA, "some:unknown-realm")
-			_, err := call(taskID, &TokenRequest{
-				AccountID: "task",
-				TaskID:    taskID,
-				Scopes:    []string{"some-scope"},
-			})
-
-			assert.That(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike(`the service account "task-sa@example.com" doesn't have permission "swarming.tasks.actAs" in the realm "some:unknown-realm"`))
 		})
 	})
 }
