@@ -27,36 +27,6 @@ import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsole
 
 import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
 
-type CountDevicesResponse = {
-  total: number;
-
-  taskState: {
-    busy: number;
-    idle: number;
-  };
-  deviceState: {
-    ready: number;
-    needManualRepair: number;
-    needRepair: number;
-    repairFailed: number;
-  };
-};
-
-const fakeData: CountDevicesResponse = {
-  total: 440,
-
-  taskState: {
-    busy: 401,
-    idle: 40,
-  },
-  deviceState: {
-    ready: 40,
-    needManualRepair: 40,
-    needRepair: 40,
-    repairFailed: 40,
-  },
-};
-
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {
     if (error.code === 7) {
@@ -121,7 +91,7 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
           >
             <SingleMetric
               name="Devices"
-              value={fakeData.total}
+              value={countQuery.data?.total}
               loading={countQuery.isLoading}
             />
           </div>
@@ -143,13 +113,13 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Busy"
               value={countQuery.data?.taskState?.busy}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Idle"
               value={countQuery.data?.taskState?.idle}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               loading={countQuery.isLoading}
             />
           </div>
@@ -166,13 +136,13 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Ready"
               value={countQuery.data?.deviceState?.ready}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need repair"
               value={countQuery.data?.deviceState?.needRepair}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               Icon={
                 <WarningIcon
                   sx={{ color: colors.yellow[900], marginTop: '-2px' }}
@@ -183,14 +153,14 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             <SingleMetric
               name="Repair failed"
               value={countQuery.data?.deviceState?.repairFailed}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
             />
             <SingleMetric
               name="Need manual repair"
               value={countQuery.data?.deviceState?.needManualRepair}
-              total={fakeData.total}
+              total={countQuery.data?.total}
               Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
               loading={countQuery.isLoading}
             />
@@ -241,11 +211,11 @@ export function SingleMetric({
       <Typography variant="body2">{name}</Typography>
       <div css={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         {Icon && Icon}
-        {!value || loading ? (
+        {loading ? (
           <Skeleton variant="text" width={34} height={36} />
         ) : (
           <>
-            <Typography variant="h3">{value}</Typography>
+            <Typography variant="h3">{value || 0}</Typography>
             {total ? (
               <Typography variant="caption">{` / ${total}`}</Typography>
             ) : (
