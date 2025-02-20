@@ -53,7 +53,6 @@ const OptionsContainer = styled(Box)(
     box-sizing: border-box;
     border-radius: 0.25rem;
     background: white;
-    color: var(--active-color);
     padding: 2px;
     z-index: ${theme.zIndex.tooltip - 1};
     max-height: 200px;

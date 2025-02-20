@@ -18,13 +18,18 @@ import { ReactNode, useEffect, useRef } from 'react';
 import { OptionDef } from './types';
 
 const Row = styled('tr')`
+  --light-hover-color: #eef8ff;
+
+  &.selectable {
+    color: var(--active-color);
+  }
+
   &.selected {
     border-color: var(--light-active-color);
     background-color: var(--light-active-color);
   }
 
-  &:not(.selected):hover {
-    // TODO: use a lighter color.
+  &.selectable:not(.selected):hover {
     border-color: var(--light-hover-color);
     background-color: var(--light-hover-color);
   }
@@ -56,11 +61,14 @@ export function OptionRow<T>({
     }
   }, [selected]);
 
+  const selectableClass = def.unselectable ? '' : 'selectable';
+  const selectedClass = selected && !def.unselectable ? 'selected' : '';
+
   return (
     <Row
       ref={ref}
       onClick={def.unselectable ? undefined : onClick}
-      className={selected && !def.unselectable ? 'selected' : ''}
+      className={`${selectableClass} ${selectedClass}`}
     >
       {children}
     </Row>
