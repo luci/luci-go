@@ -46,12 +46,13 @@ import (
 //
 // The list of mocks can also be extended later via db.AddMocks(...).
 type FakeDB struct {
-	m         sync.RWMutex
-	err       error                              // if not nil, return this error
-	perID     map[identity.Identity]*mockedForID // id => groups and perms it has
-	ips       map[string]stringset.Set           // IP => allowlists it belongs to
-	realmData map[string]*protocol.RealmData     // realm name => data
-	groups    stringset.Set                      // groups mentioned by the mocks
+	m               sync.RWMutex
+	err             error                              // if not nil, return this error
+	perID           map[identity.Identity]*mockedForID // id => groups and perms it has
+	ips             map[string]stringset.Set           // IP => allowlists it belongs to
+	realmData       map[string]*protocol.RealmData     // realm name => data
+	groups          stringset.Set                      // groups mentioned by the mocks
+	tokenServiceURL string                             // mocked Token Service URL, if any
 }
 
 var _ authdb.DB = (*FakeDB)(nil)
@@ -192,6 +193,13 @@ func MockIPAllowlist(ip, allowlist string) MockedDatum {
 func MockError(err error) MockedDatum {
 	return MockedDatum{
 		apply: func(db *FakeDB) { db.err = err },
+	}
+}
+
+// MockTokenServiceURL modifies the db to return this token service URL.
+func MockTokenServiceURL(url string) MockedDatum {
+	return MockedDatum{
+		apply: func(db *FakeDB) { db.tokenServiceURL = url },
 	}
 }
 
@@ -397,7 +405,12 @@ func (db *FakeDB) GetAuthServiceURL(ctx context.Context) (string, error) {
 
 // GetTokenServiceURL is part of authdb.DB interface.
 func (db *FakeDB) GetTokenServiceURL(ctx context.Context) (string, error) {
-	return "", fmt.Errorf("GetTokenServiceURL is not implemented by FakeDB")
+	db.m.RLock()
+	defer db.m.RUnlock()
+	if db.tokenServiceURL == "" {
+		return "", fmt.Errorf("Token Service URL is not configured")
+	}
+	return db.tokenServiceURL, nil
 }
 
 // GetRealmData is part of authdb.DB interface.

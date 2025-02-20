@@ -21,6 +21,7 @@ import (
 	"context"
 
 	"go.chromium.org/luci/common/data/caching/lru"
+	minterpb "go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	configpb "go.chromium.org/luci/swarming/proto/config"
 	"go.chromium.org/luci/swarming/server/botsrv"
@@ -48,6 +49,8 @@ type BotAPIServer struct {
 	authorizeBot func(ctx context.Context, botID string, methods []*configpb.BotAuth) error
 	// submitUpdate calls u.Submit, but it can be mocked in tests.
 	submitUpdate func(ctx context.Context, u *model.BotInfoUpdate) error
+	// tokenServerClient produces a Token Server client, can be mocked in tests.
+	tokenServerClient func(ctx context.Context, realm string) (minterpb.TokenMinterClient, error)
 }
 
 // NewBotAPIServer constructs a new BotAPIServer.
@@ -63,6 +66,7 @@ func NewBotAPIServer(cfg *cfg.Provider, secret *hmactoken.Secret, project, versi
 			_, err := u.Submit(ctx)
 			return err
 		},
+		tokenServerClient: tokenServerClient, // see tokens.go
 	}
 }
 
