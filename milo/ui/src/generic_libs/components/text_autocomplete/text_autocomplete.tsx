@@ -316,25 +316,28 @@ export function TextAutocomplete<T>({
                     </InputAdornment>
                   ),
                   ...slotProps.textField?.slotProps?.input,
+                  // Put the onFocus/onBlur handler on input directly rather
+                  // than on the TextField so clicking on the adornments won't
+                  // cause the suggestions to show up.
+                  onFocus: (e) => {
+                    // We emit fake focus events to ensure input is scrolled to
+                    // the cursor when a suggestion is accepted. Stop the fake
+                    // event from propagating to the parent.
+                    e.stopPropagation();
+                    setFocused(true);
+                  },
+                  onBlur: (e) => {
+                    // We emit fake blur events to ensure input is scrolled to
+                    // the cursor when a suggestion is accepted. Stop the fake
+                    // event from propagating to the parent.
+                    e.stopPropagation();
+                    setFocused(false);
+                  },
                 },
               }}
               inputRef={inputRef}
               placeholder={hint}
               value={uncommittedValue}
-              onFocus={(e) => {
-                // We emit fake focus events to ensure input is scrolled to the
-                // cursor when a suggestion is accepted. Stop the fake event
-                // from propagating to the parent.
-                e.stopPropagation();
-                setFocused(true);
-              }}
-              onBlur={(e) => {
-                // We emit fake blur events to ensure input is scrolled to the
-                // cursor when a suggestion is accepted. Stop the fake event
-                // from propagating to the parent.
-                e.stopPropagation();
-                setFocused(false);
-              }}
               onKeyDown={handleKeyDown}
               onKeyUp={() => updateGenOptionsParams()}
               onChange={(e) => setUncommittedValue(e.target.value)}
