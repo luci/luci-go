@@ -575,6 +575,16 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			}
 			vd.ctx.Exit()
 		}
+
+		for i, footerKey := range b.GetDisableReuseFooters() {
+			vd.ctx.Enter("disable_reuse_footers #%d", i+1)
+			if footerKey == "" {
+				vd.ctx.Errorf("footer must not be empty")
+			} else if footerKey != footer.NormalizeKey(footerKey) {
+				vd.ctx.Errorf("footer is not normalized")
+			}
+			vd.ctx.Exit()
+		}
 	})
 }
 

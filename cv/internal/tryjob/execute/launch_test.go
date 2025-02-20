@@ -47,7 +47,6 @@ func TestLaunch(t *testing.T) {
 			lProject     = "testProj"
 			bbHost       = "buildbucket.example.com"
 			buildID      = 9524107902457
-			reuseKey     = "cafecafe"
 			clid         = 34586452134
 			gHost        = "example-review.com"
 			gRepo        = "repo/a"
@@ -89,7 +88,6 @@ func TestLaunch(t *testing.T) {
 				},
 			},
 			knownTryjobIDs: make(common.TryjobIDSet),
-			reuseKey:       reuseKey,
 			clPatchsets:    tryjob.CLPatchsets{tryjob.MakeCLPatchset(clid, gPatchset)},
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),

@@ -93,7 +93,6 @@ func TestWorker(t *testing.T) {
 				},
 			},
 			knownTryjobIDs: make(common.TryjobIDSet),
-			reuseKey:       reuseKey,
 			clPatchsets:    tryjob.CLPatchsets{tryjob.MakeCLPatchset(clid, gPatchset)},
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
@@ -131,7 +130,7 @@ func TestWorker(t *testing.T) {
 					Status: tryjob.Result_SUCCEEDED,
 				}
 				tj.CLPatchsets = w.clPatchsets
-				tj.ReuseKey = w.reuseKey
+				tj.ReuseKey = reuseKey
 				return nil
 			})
 			assert.That(t, err, should.ErrLike(nil), truth.LineContext())
@@ -140,7 +139,7 @@ func TestWorker(t *testing.T) {
 		t.Run("Reuse", func(t *ftt.Test) {
 			eid := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			w.findReuseFns = []findReuseFn{
-				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+				func(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					assert.Loosely(t, definitions, should.HaveLength(1))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: makeReuseTryjob(ctx, def, eid),
@@ -167,7 +166,7 @@ func TestWorker(t *testing.T) {
 
 		t.Run("No reuse, launch new tryjob", func(t *ftt.Test) {
 			w.findReuseFns = []findReuseFn{
-				func(context.Context, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+				func(context.Context, string, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					return nil, nil
 				},
 			}
@@ -181,7 +180,7 @@ func TestWorker(t *testing.T) {
 		t.Run("Reuse find previous PENDING tryjob", func(t *ftt.Test) {
 			var reuseID common.TryjobID
 			w.findReuseFns = []findReuseFn{
-				func(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+				func(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					assert.Loosely(t, definitions, should.HaveLength(1))
 					tj := w.makePendingTryjob(ctx, definitions[0])
 					assert.That(t, datastore.Put(ctx, tj), should.ErrLike(nil))
@@ -227,13 +226,13 @@ func TestWorker(t *testing.T) {
 			eidForBuilder0 := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			eidForBuilder2 := tryjob.MustBuildbucketID(bbHost, mathrand.Int63(ctx))
 			w.findReuseFns = []findReuseFn{
-				func(ctx context.Context, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+				func(ctx context.Context, reuseKey string, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					assert.Loosely(t, defs, should.Resemble(definitions))
 					return map[*tryjob.Definition]*tryjob.Tryjob{
 						definitions[0]: makeReuseTryjob(ctx, def, eidForBuilder0),
 					}, nil
 				},
-				func(ctx context.Context, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+				func(ctx context.Context, reuseKey string, defs []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 					// reuse Tryjob already found for definitions[0]
 					assert.Loosely(t, defs, should.Resemble(definitions[1:]))
 					return map[*tryjob.Definition]*tryjob.Tryjob{

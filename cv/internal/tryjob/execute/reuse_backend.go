@@ -16,16 +16,26 @@ package execute
 
 import (
 	"context"
+	"slices"
+
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 
+	"go.chromium.org/luci/cv/internal/changelist"
+	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit/metadata"
+	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
 // findReuseInBackend finds reusable Tryjobs by querying the backend (e.g.
-// Buildbucket).
-func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+// Buildbucket) in order to reuse Tryjobs that were triggered outside of CV,
+// e.g. manually through Gerrit.
+func (w *worker) findReuseInBackend(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
 	cutOffTime := clock.Now(ctx).Add(-staleTryjobAge)
 	err := w.backend.Search(ctx, w.cls, definitions, w.run.ID.LUCIProject(), func(tj *tryjob.Tryjob) bool {
@@ -45,6 +55,7 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 			}
 		case w.knownExternalIDs.Has(string(tj.ExternalID)):
 		case canReuseTryjob(ctx, tj, w.run.Mode) == reuseDenied:
+		case w.disableReuseFootersChanged(ctx, tj):
 		default:
 			candidates[tj.Definition] = tj
 		}
@@ -60,7 +71,7 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 	ret := make(map[*tryjob.Definition]*tryjob.Tryjob)
 	for def, candidate := range candidates {
 		tj, err := w.mutator.Upsert(ctx, candidate.ExternalID, func(tj *tryjob.Tryjob) error {
-			tj.ReuseKey = w.reuseKey
+			tj.ReuseKey = reuseKey
 			tj.CLPatchsets = candidate.CLPatchsets
 			tj.Definition = def
 			tj.ExternalID = candidate.ExternalID
@@ -78,4 +89,75 @@ func (w *worker) findReuseInBackend(ctx context.Context, definitions []*tryjob.D
 	}
 
 	return ret, nil
+}
+
+// disableReuseFootersChanged determines whether any of the tryjob's
+// DisableReuseFooters have changed between between the patchset that the
+// previous attempt ran against and the current patchset.
+func (w *worker) disableReuseFootersChanged(ctx context.Context, tj *tryjob.Tryjob) bool {
+	disableReuseFooters := stringset.NewFromSlice(tj.Definition.GetDisableReuseFooters()...)
+	if len(disableReuseFooters) == 0 {
+		return false
+	}
+
+	clsByID := make(map[common.CLID]*run.RunCL)
+	for _, cl := range w.cls {
+		clsByID[cl.ID] = cl
+	}
+
+	for _, clp := range tj.CLPatchsets {
+		clID, prevPatchset, err := clp.Parse()
+		if err != nil {
+			logging.Errorf(ctx, "FIXME: parsing CLPatchset failed: %s", err)
+			return true
+		}
+		cl, ok := clsByID[clID]
+		if !ok {
+			logging.Errorf(ctx, "FIXME: CL %s from old tryjob missing in current attempt's CLs", clp)
+			return true
+		}
+
+		// The same patchset is still the latest so the footers cannot have
+		// changed.
+		if prevPatchset == cl.Detail.GetPatchset() {
+			continue
+		}
+
+		currentFooters := filterDisableReuseFooters(cl.Detail.GetMetadata(), disableReuseFooters)
+
+		revs := cl.Detail.GetGerrit().GetInfo().GetRevisions()
+		var previousRev *gerritpb.RevisionInfo
+		for _, rev := range revs {
+			if rev.Number == prevPatchset {
+				previousRev = rev
+				break
+			}
+		}
+		if previousRev == nil {
+			logging.Errorf(ctx, "FIXME: Information for CL patchset %s missing from datastore", clp)
+			return true
+		}
+
+		previousMsg := previousRev.GetCommit().GetMessage()
+		previousFooters := filterDisableReuseFooters(metadata.Extract(previousMsg), disableReuseFooters)
+
+		if !slices.EqualFunc(previousFooters, currentFooters, func(f1, f2 *changelist.StringPair) bool {
+			return proto.Equal(f1, f2)
+		}) {
+			return true
+		}
+	}
+	return false
+}
+
+func filterDisableReuseFooters(footers []*changelist.StringPair, disableReuseFooters stringset.Set) []*changelist.StringPair {
+	ret := make([]*changelist.StringPair, 0, len(footers))
+	for _, footer := range footers {
+		if disableReuseFooters.Has(footer.Key) {
+			ret = append(ret, footer)
+		}
+	}
+	// Ordering of footers doesn't matter, so sort before comparing.
+	sortFooters(ret)
+	return ret
 }

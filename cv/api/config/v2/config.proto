@@ -543,7 +543,7 @@ message Verifiers {
 
   // Tryjob configures builders which CQ may trigger and/or use to verify CL(s).
   message Tryjob {
-    // Next field number: 4
+    // Next field number: 19
 
 
     // Builders on which tryjobs should be triggered.
@@ -607,6 +607,13 @@ message Verifiers {
       // additional OWNERS, lint, etc checks which are useful to run against
       // the latest revision of the CL's target branch.
       bool disable_reuse = 2;
+
+      // disable reuse of previous tryjobs if any footer in the commit message
+      // matching one of these keys is added, removed, or has its value changed.
+      //
+      // The provided footers MUST be normalized (dash-case with first letter of
+      // each segment being uppercase. e.g. Bypass-Spell-Checker).
+      repeated string disable_reuse_footers = 18;
 
       // Optional. If YES (default), running or not-yet-started builds of this
       // builder previously triggered by CQ will be cancelled as soon as

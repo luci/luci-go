@@ -651,7 +651,7 @@ func TestExecutePlan(t *testing.T) {
 				reuseTryjob.EVersion = 1
 				reuseTryjob.EntityCreateTime = now.Add(-staleTryjobAge / 2)
 				reuseTryjob.EntityUpdateTime = now.Add(-1 * time.Minute)
-				reuseTryjob.ReuseKey = computeReuseKey([]*run.RunCL{runCL})
+				reuseTryjob.ReuseKey = computeReuseKey([]*run.RunCL{runCL}, nil)
 				reuseTryjob.CLPatchsets = tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)}
 				reuseTryjob.Definition = def
 				reuseTryjob.Status = tryjob.Status_ENDED

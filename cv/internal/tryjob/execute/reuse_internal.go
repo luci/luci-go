@@ -29,8 +29,8 @@ import (
 )
 
 // findReuseInCV returns reusable Tryjob candidates from CV datastore.
-func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-	candidates, err := w.queryForCandidates(ctx, definitions)
+func (w *worker) findReuseInCV(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+	candidates, err := w.queryForCandidates(ctx, reuseKey, definitions)
 	switch {
 	case err != nil:
 		return nil, err
@@ -57,8 +57,8 @@ func (w *worker) findReuseInCV(ctx context.Context, definitions []*tryjob.Defini
 
 // queryForCandidates makes a DS query to find Tryjob candidates for reuse that
 // have a matching reuse key.
-func (w *worker) queryForCandidates(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
-	q := datastore.NewQuery(tryjob.TryjobKind).Eq("ReuseKey", w.reuseKey)
+func (w *worker) queryForCandidates(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
+	q := datastore.NewQuery(tryjob.TryjobKind).Eq("ReuseKey", reuseKey)
 	luciProject := w.run.ID.LUCIProject()
 	mode := w.run.Mode
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob)

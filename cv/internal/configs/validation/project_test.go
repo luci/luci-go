@@ -1228,5 +1228,25 @@ func TestTryjobValidation(t *testing.T) {
 				}`),
 				should.ErrLikeString("error parsing regexp"))
 		})
+
+		t.Run("disable reuse footers", func(t *ftt.Test) {
+			assert.NoErr(t, validate(`
+			builders {
+				name: "a/b/c"
+				disable_reuse_footers: ["Foo", "Bar"]
+			}`))
+			assert.That(t, validate(`
+				builders {
+					name: "a/b/c"
+					disable_reuse_footers: ["Foo", ""]
+				}`),
+				should.ErrLikeString("footer must not be empty"))
+			assert.That(t, validate(`
+				builders {
+					name: "a/b/c"
+					disable_reuse_footers: ["ALL_CAPS"]
+				}`),
+				should.ErrLikeString("footer is not normalized"))
+		})
 	})
 }

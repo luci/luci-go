@@ -16,16 +16,21 @@ package execute
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"sort"
+	"strings"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
@@ -112,10 +117,25 @@ func isModeAllowed(mode run.Mode, allowlist []string) bool {
 
 // computeReuseKey computes the reuse key for a Tryjob based on the CLs it
 // involves.
-func computeReuseKey(cls []*run.RunCL) string {
+func computeReuseKey(cls []*run.RunCL, disableReuseFooters []string) string {
+	disableReuseFooterSet := stringset.NewFromSlice(disableReuseFooters...)
 	clPatchsets := make([][]byte, len(cls))
 	for i, cl := range cls {
-		clPatchsets[i] = []byte(fmt.Sprintf("%d/%d", cl.ID, cl.Detail.GetMinEquivalentPatchset()))
+		hashInputs := []string{
+			fmt.Sprintf("%d", cl.ID),
+			fmt.Sprintf("%d", cl.Detail.GetMinEquivalentPatchset()),
+		}
+		var footers []*changelist.StringPair
+		for _, f := range cl.Detail.Metadata {
+			if disableReuseFooterSet.Has(f.Key) {
+				footers = append(footers, f)
+			}
+		}
+		sortFooters(footers)
+		for _, f := range footers {
+			hashInputs = append(hashInputs, fmt.Sprintf("%s:%s", f.Key, f.Value))
+		}
+		clPatchsets[i] = []byte(strings.Join(hashInputs, "/"))
 	}
 	sort.Slice(clPatchsets, func(i, j int) bool {
 		return bytes.Compare(clPatchsets[i], clPatchsets[j]) < 0
@@ -123,4 +143,13 @@ func computeReuseKey(cls []*run.RunCL) string {
 	h := sha256.New()
 	h.Write(bytes.Join(clPatchsets, []byte{0}))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
+
+func sortFooters(footers []*changelist.StringPair) {
+	slices.SortFunc(footers, func(f1, f2 *changelist.StringPair) int {
+		if keyCmp := cmp.Compare(f1.Key, f2.Key); keyCmp != 0 {
+			return keyCmp
+		}
+		return cmp.Compare(f1.Value, f2.Value)
+	})
 }

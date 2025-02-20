@@ -79,6 +79,10 @@ message Definition {
 
   // Experiments to enable when launching Tryjob.
   repeated string experiments = 9;
+
+  // Commit message footers that, if changed in a later patchset, should disable
+  // reuse of previous tryjobs.
+  repeated string disable_reuse_footers = 10;
 }
 
 // Requirement is what has to happen to verify a specific Run.

@@ -17,6 +17,7 @@ package execute
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -44,7 +45,6 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 		cls:              cls,
 		knownTryjobIDs:   make(common.TryjobIDSet),
 		knownExternalIDs: make(stringset.Set),
-		reuseKey:         computeReuseKey(cls),
 		clPatchsets:      make(tryjob.CLPatchsets, len(cls)),
 	}
 	for _, execution := range executions {
@@ -83,7 +83,6 @@ type worker struct {
 	knownTryjobIDs   common.TryjobIDSet
 	knownExternalIDs stringset.Set
 
-	reuseKey    string
 	clPatchsets tryjob.CLPatchsets
 	backend     TryjobBackend
 	mutator     *tryjob.Mutator
@@ -92,20 +91,20 @@ type worker struct {
 	logEntries   []*tryjob.ExecutionLogEntry
 }
 
-func (w *worker) makeBaseTryjob(ctx context.Context) *tryjob.Tryjob {
+func (w *worker) makeBaseTryjob(ctx context.Context, def *tryjob.Definition) *tryjob.Tryjob {
 	now := datastore.RoundTime(clock.Now(ctx).UTC())
 	return &tryjob.Tryjob{
 		EVersion:         1,
 		EntityCreateTime: now,
 		EntityUpdateTime: now,
-		ReuseKey:         w.reuseKey,
+		ReuseKey:         computeReuseKey(w.cls, def.GetDisableReuseFooters()),
 		CLPatchsets:      w.clPatchsets,
 	}
 }
 
 // makePendingTryjob makes a pending Tryjob that is triggered by this Run.
 func (w *worker) makePendingTryjob(ctx context.Context, def *tryjob.Definition) *tryjob.Tryjob {
-	tj := w.makeBaseTryjob(ctx)
+	tj := w.makeBaseTryjob(ctx, def)
 	tj.Definition = def
 	tj.Status = tryjob.Status_PENDING
 	tj.LaunchedBy = w.run.ID
@@ -175,7 +174,7 @@ func (w *worker) start(ctx context.Context, definitions []*tryjob.Definition) ([
 	return ret, nil
 }
 
-type findReuseFn func(context.Context, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error)
+type findReuseFn func(context.Context, string, []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error)
 
 // findReuse finds Tryjobs that shall be reused.
 func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
@@ -183,33 +182,32 @@ func (w *worker) findReuse(ctx context.Context, definitions []*tryjob.Definition
 		return nil, nil
 	}
 	ret := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
-	remainingDefinitions := make([]*tryjob.Definition, 0, len(definitions))
+	definitionsByReuseKey := make(map[string][]*tryjob.Definition)
 	// Start with Tryjobs' Definitions that enable reuse.
 	for _, def := range definitions {
 		if !def.GetDisableReuse() {
-			remainingDefinitions = append(remainingDefinitions, def)
+			rk := computeReuseKey(w.cls, def.GetDisableReuseFooters())
+			definitionsByReuseKey[rk] = append(definitionsByReuseKey[rk], def)
 		}
 	}
 
-	for _, fn := range w.findReuseFns {
-		reuse, err := fn(ctx, remainingDefinitions)
-		if err != nil {
-			return nil, err
-		}
-		for def, tj := range reuse {
-			ret[def] = tj
-		}
-		// Reuse the `remainingDefinitions` slice and filter out the
-		// Definitions that have found reuse Tryjobs.
-		tmp := remainingDefinitions[:0]
-		for _, def := range remainingDefinitions {
-			if _, ok := reuse[def]; !ok {
-				tmp = append(tmp, def)
+	for reuseKey, remainingDefinitions := range definitionsByReuseKey {
+		for _, fn := range w.findReuseFns {
+			reuse, err := fn(ctx, reuseKey, remainingDefinitions)
+			if err != nil {
+				return nil, err
 			}
-		}
-		remainingDefinitions = tmp
-		if len(remainingDefinitions) == 0 {
-			break
+			for def, tj := range reuse {
+				ret[def] = tj
+			}
+			// Filter out the definitions that have found reusable Tryjobs.
+			remainingDefinitions = slices.DeleteFunc(remainingDefinitions, func(def *tryjob.Definition) bool {
+				_, ok := reuse[def]
+				return ok
+			})
+			if len(remainingDefinitions) == 0 {
+				break
+			}
 		}
 	}
 

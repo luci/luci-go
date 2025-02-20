@@ -76,7 +76,18 @@ type Tryjob struct {
 	// reusekey is currently computed in the following way:
 	//  base64(
 	//    sha256(
-	//      '\0'.join(sorted('%d/%d' % (cl.ID, cl.minEquiPatchSet) for cl in cls))
+	//      '\0'.join(sorted([
+	//        "/".join(
+	//          [
+	//            cl.Id,
+	//            cl.minEquiPatchSet,
+	//          ] + [
+	//            "%s:%s" % (k, v)
+	//            for k, v in sorted(cl.footers)
+	//            if k in disable_reuse_footers
+	//          ]
+	//        )
+	//      ]))
 	//    )
 	//  )
 	//

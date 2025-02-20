@@ -15,6 +15,7 @@
 package execute
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -87,7 +88,6 @@ func TestFindReuseInBackend(t *testing.T) {
 				},
 			},
 			knownTryjobIDs: make(common.TryjobIDSet),
-			reuseKey:       reuseKey,
 			clPatchsets:    tryjob.CLPatchsets{tryjob.MakeCLPatchset(clid, gPatchset)},
 			backend: &bbfacade.Facade{
 				ClientFactory: ct.BuildbucketFake.NewClientFactory(),
@@ -129,7 +129,7 @@ func TestFindReuseInBackend(t *testing.T) {
 		ct.Clock.Add(1 * time.Hour)
 
 		t.Run("Found reuse", func(t *ftt.Test) {
-			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
@@ -173,7 +173,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				build.StartTime = timestamppb.New(epoch)
 				build.EndTime = timestamppb.New(epoch.Add(10 * time.Minute))
 			})
-			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
@@ -182,7 +182,7 @@ func TestFindReuseInBackend(t *testing.T) {
 
 		t.Run("Build already known", func(t *ftt.Test) {
 			w.knownExternalIDs = stringset.NewFromSlice(string(tryjob.MustBuildbucketID(bbHost, build.GetId())))
-			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.BeEmpty)
 		})
@@ -200,18 +200,61 @@ func TestFindReuseInBackend(t *testing.T) {
 				build.EndTime = timestamppb.New(epoch.Add(10 * time.Minute))
 			})
 
-			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
 			assert.Loosely(t, result[defFoo].ExternalID, should.Equal(tryjob.MustBuildbucketID(bbHost, build.Id))) // reuse the old successful build
 		})
 
+		t.Run("Not reusable due to footer changes", func(t *ftt.Test) {
+			defFoo.DisableReuseFooters = []string{"Disable-Reuse-Footer"}
+
+			cl := w.cls[0]
+			cl.Detail.Patchset++
+			cl.Detail.Metadata = []*changelist.StringPair{
+				{Key: "Other-Footer", Value: "bar"},
+				{Key: "Disable-Reuse-Footer", Value: "foo"},
+			}
+			cl.Detail.GetGerrit().Info.Revisions = map[string]*gerritpb.RevisionInfo{
+				"abc123": {
+					Number: gPatchset,
+					Commit: &gerritpb.CommitInfo{
+						Message: strings.Join([]string{
+							"Do something",
+							"",
+							"Disable-Reuse-Footer: foo",
+							"Other-Footer: bar",
+						}, "\n"),
+					},
+				},
+			}
+
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.HaveLength(1))
+
+			// Changing the value of a footer that's *not* in
+			// `DisableReuseFooters` should not leave the tryjob reusable.
+			cl.Detail.Metadata[0].Value += "-blah"
+			result, err = w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.HaveLength(1))
+
+			// Changing the value of a footer that's in `DisableReuseFooters`
+			// should leave the tryjob un-reusable.
+			cl.Detail.Metadata[1].Value += "-blah"
+
+			result, err = w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.BeEmpty)
+		})
+
 		t.Run("Tryjob already exists", func(t *ftt.Test) {
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			tj := eid.MustCreateIfNotExists(ctx)
 			ct.Clock.Add(10 * time.Second)
-			result, err := w.findReuseInBackend(ctx, []*tryjob.Definition{defFoo})
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)
 			assert.Loosely(t, result, should.HaveLength(1))
 			assert.Loosely(t, result, should.ContainKey(defFoo))
@@ -226,7 +269,7 @@ func TestFindReuseInBackend(t *testing.T) {
 				EntityCreateTime: tj.EntityCreateTime,
 				EntityUpdateTime: datastore.RoundTime(ct.Clock.Now().UTC()),
 				Definition:       defFoo,
-				ReuseKey:         w.reuseKey,
+				ReuseKey:         reuseKey,
 				CLPatchsets:      w.clPatchsets,
 				Status:           tryjob.Status_ENDED,
 				ReusedBy:         common.RunIDs{runID},

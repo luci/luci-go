@@ -566,6 +566,7 @@ func (dm *definitionMaker) make() *tryjob.Definition {
 		panic(fmt.Errorf("unknown equivalentUsage(%d)", dm.equivalence))
 	}
 	definition.DisableReuse = dm.builder.GetDisableReuse()
+	definition.DisableReuseFooters = dm.builder.GetDisableReuseFooters()
 	definition.Critical = bool(dm.criticality)
 	definition.Optional = dm.builder.GetExperimentPercentage() > 0
 	definition.ResultVisibility = dm.builder.GetResultVisibility()

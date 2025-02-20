@@ -16,6 +16,7 @@ package execute
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -165,6 +166,113 @@ func TestComputeReuseKey(t *testing.T) {
 		}
 		// Should yield the same result as
 		// > python3 -c 'import base64;from hashlib import sha256;print(base64.b64encode(sha256(b"\0".join(sorted(b"%d/%d"%(x[0], x[1]) for x in [[22222,22],[11111,11]]))).digest()))'
-		assert.Loosely(t, computeReuseKey(cls), should.Equal("2Yh+hI8zJZFe8ac1TrrFjATWGjhiV9aXsKjNJIhzATk="))
+		assert.Loosely(t, computeReuseKey(cls, nil), should.Equal("2Yh+hI8zJZFe8ac1TrrFjATWGjhiV9aXsKjNJIhzATk="))
+	})
+
+	ftt.Run("computeReuseKey includes footers", t, func(t *ftt.Test) {
+		disableReuseFooters := []string{"Special-Footer1", "Special-Footer2"}
+
+		tests := []struct {
+			name        string
+			original    *run.RunCL
+			mutate      func(*run.RunCL)
+			expectEqual bool
+		}{
+			{
+				name:        "no-op",
+				mutate:      func(*run.RunCL) {},
+				expectEqual: true,
+			},
+			{
+				name: "add non-disable-reuse footer",
+				mutate: func(cl *run.RunCL) {
+					cl.Detail.Metadata = append(cl.Detail.Metadata,
+						&changelist.StringPair{
+							Key:   "Footer",
+							Value: "bar",
+						})
+				},
+				expectEqual: true,
+			},
+			{
+				name: "change value of non-disable-reuse footer",
+				original: &run.RunCL{Detail: &changelist.Snapshot{
+					Metadata: []*changelist.StringPair{
+						{
+							Key:   "Footer",
+							Value: "bar",
+						},
+					},
+				}},
+				mutate: func(cl *run.RunCL) {
+					cl.Detail.Metadata[0].Value += "blah"
+				},
+				expectEqual: true,
+			},
+			{
+				name: "add disable-reuse footer",
+				mutate: func(cl *run.RunCL) {
+					cl.Detail.Metadata = append(cl.Detail.Metadata,
+						&changelist.StringPair{
+							Key:   "Special-Footer1",
+							Value: "bar",
+						})
+				},
+				expectEqual: false,
+			},
+			{
+				name: "change value of disable-reuse footer",
+				original: &run.RunCL{Detail: &changelist.Snapshot{
+					Metadata: []*changelist.StringPair{
+						{
+							Key:   "Special-Footer1",
+							Value: "bar",
+						},
+					},
+				}},
+				mutate: func(cl *run.RunCL) {
+					cl.Detail.Metadata[0].Value += "blah"
+				},
+				expectEqual: false,
+			},
+			{
+				name: "change order of disable-reuse footers",
+				original: &run.RunCL{Detail: &changelist.Snapshot{
+					Metadata: []*changelist.StringPair{
+						{
+							Key:   "Special-Footer1",
+							Value: "bar",
+						},
+						{
+							Key:   "Special-Footer2",
+							Value: "bar",
+						},
+					},
+				}},
+				mutate: func(cl *run.RunCL) {
+					slices.Reverse(cl.Detail.Metadata)
+				},
+				expectEqual: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *ftt.Test) {
+				cl := test.original
+				if cl == nil {
+					cl = &run.RunCL{Detail: &changelist.Snapshot{}}
+				}
+
+				originalKey := computeReuseKey([]*run.RunCL{cl}, disableReuseFooters)
+
+				test.mutate(cl)
+
+				got := computeReuseKey([]*run.RunCL{cl}, disableReuseFooters)
+				if test.expectEqual {
+					assert.That(t, got, should.Equal(originalKey))
+				} else {
+					assert.That(t, got, should.NotEqual(originalKey))
+				}
+			})
+		}
 	})
 }

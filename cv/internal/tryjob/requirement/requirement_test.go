@@ -93,16 +93,18 @@ func TestDefinitionMaker(t *testing.T) {
 				b.ResultVisibility = cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED
 				b.ExperimentPercentage = 49.9
 				b.DisableReuse = true
+				b.DisableReuseFooters = []string{"Footer1", "Footer2"}
 				def := (&definitionMaker{
 					builder:     b,
 					equivalence: mainOnly,
 					criticality: critical,
 				}).make()
 				assert.That(t, def, should.Match(&tryjob.Definition{
-					DisableReuse:     true,
-					Critical:         true,
-					Optional:         true,
-					ResultVisibility: cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
+					DisableReuse:        true,
+					DisableReuseFooters: []string{"Footer1", "Footer2"},
+					Critical:            true,
+					Optional:            true,
+					ResultVisibility:    cfgpb.CommentLevel_COMMENT_LEVEL_RESTRICTED,
 					Backend: &tryjob.Definition_Buildbucket_{
 						Buildbucket: &tryjob.Definition_Buildbucket{
 							Host: "buildbucket.example.com",
