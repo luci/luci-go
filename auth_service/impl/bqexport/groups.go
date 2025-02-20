@@ -46,22 +46,22 @@ func expandGroups(ctx context.Context, authDB *protocol.AuthDB) ([]*rpcpb.AuthGr
 	groupsGraph := graph.NewGraph(groups)
 
 	names := stringset.New(sizeHint)
-	expandedGroups := make(map[string]*rpcpb.AuthGroup, len(authDB.Groups))
+	cache := &graph.ExpansionCache{
+		Groups: make(map[string]*graph.ExpandedGroup, sizeHint),
+	}
 	for _, group := range groups {
-		expanded, err := groupsGraph.GetExpandedGroup(ctx, group.GetName(), true)
+		expanded, err := groupsGraph.GetExpandedGroup(ctx, group.GetName(), true, cache)
 		if err != nil {
 			err = errors.Annotate(err,
 				"failed to expand group %q", group.GetName()).Err()
 			return nil, err
 		}
-
-		expandedGroups[expanded.Name] = expanded
 		names.Add(expanded.Name)
 	}
 
 	result := make([]*rpcpb.AuthGroup, sizeHint)
 	for i, name := range names.ToSortedSlice() {
-		result[i] = expandedGroups[name]
+		result[i] = cache.Groups[name].ToProto()
 	}
 
 	return result, nil

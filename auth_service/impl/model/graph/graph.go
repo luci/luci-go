@@ -113,13 +113,120 @@ func NewGraph(groups []model.GraphableGroup) *Graph {
 	return graph
 }
 
+// ExpandedGroup can represent a fully expanded AuthGroup, with all
+// memberships listed from both direct and indirect inclusions.
+type ExpandedGroup struct {
+	Name     string
+	Members  stringset.Set
+	Redacted stringset.Set
+	Globs    stringset.Set
+	Nested   stringset.Set
+}
+
+// Absorb updates this ExpandedGroup's memberships to include the memberships
+// in the other ExpandedGroup.
+func (e *ExpandedGroup) Absorb(other *ExpandedGroup) {
+	e.Members.AddAll(other.Members.ToSlice())
+	e.Redacted.AddAll(other.Redacted.ToSlice())
+	e.Globs.AddAll(other.Globs.ToSlice())
+	e.Nested.AddAll(other.Nested.ToSlice())
+}
+
+// ToProto converts an ExpandedGroup to a rpcpb.AuthGroup.
+func (e *ExpandedGroup) ToProto() *rpcpb.AuthGroup {
+	// Remove known members from redacted; they are part of the group some other
+	// way.
+	redacted := e.Redacted.Difference(e.Members)
+
+	return &rpcpb.AuthGroup{
+		Name:        e.Name,
+		Members:     e.Members.ToSortedSlice(),
+		Globs:       e.Globs.ToSortedSlice(),
+		Nested:      e.Nested.ToSortedSlice(),
+		NumRedacted: int32(len(redacted)),
+	}
+}
+
+// ExpansionCache is a map of groups which have already been expanded.
+type ExpansionCache struct {
+	Groups map[string]*ExpandedGroup
+}
+
+func (g *Graph) doExpansion(
+	ctx context.Context,
+	node *GroupNode,
+	skipFilter bool,
+	cache *ExpansionCache) (*ExpandedGroup, error) {
+	name := node.group.GetName()
+
+	// Check the cache first.
+	if cachedResult, ok := cache.Groups[name]; ok {
+		return cachedResult, nil
+	}
+
+	// Initialize this group's memberships. Direct globs and nested subgroups can
+	// be included regardless of the filter.
+	nested := node.group.GetNested()
+	result := &ExpandedGroup{
+		Name:     name,
+		Members:  stringset.New(0),
+		Redacted: stringset.New(0),
+		Globs:    stringset.NewFromSlice(node.group.GetGlobs()...),
+		Nested:   stringset.NewFromSlice(nested...),
+	}
+
+	// Add direct members depending on the filter.
+	members := node.group.GetMembers()
+	if skipFilter {
+		result.Members.AddAll(members)
+	} else {
+		// Check whether the caller can view members.
+		ok, err := model.CanCallerViewMembers(ctx, node.group)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			result.Members.AddAll(members)
+		} else {
+			result.Redacted.AddAll(members)
+		}
+	}
+
+	// Process the memberships from nested groups.
+	for _, subgroup := range node.includes {
+		subName := subgroup.group.GetName()
+
+		var expandedSub *ExpandedGroup
+		// Check the cache for this subgroup.
+		if cachedSub, ok := cache.Groups[subName]; ok {
+			expandedSub = cachedSub
+		}
+		if expandedSub == nil {
+			// Expand the subgroup.
+			var err error
+			expandedSub, err = g.doExpansion(ctx, subgroup, skipFilter, cache)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Add the subgroup's membership's to this group's memberships.
+		result.Absorb(expandedSub)
+	}
+
+	// Update the cache for this group.
+	cache.Groups[name] = result
+
+	return result, nil
+}
+
 // GetExpandedGroup returns the explicit membership rules for the group.
 //
 // Note: a privacy filter for members was added in Auth Service v2. To support
 // legacy endpoints and maintain the existing behavior of Auth Service v1,
 // the privacy filter can be disabled with `skipFilter` set to `true`.
 //
-// If the group exists in the Graph, the returned AuthGroup shall have the
+// If the group exists in the Graph, the returned ExpandedGroup shall have the
 // following fields:
 //   - Name, the name of the group;
 //   - Members, containing all unique members from both direct and indirect
@@ -128,82 +235,23 @@ func NewGraph(groups []model.GraphableGroup) *Graph {
 //     inclusions; and
 //   - Nested, containing all unique nested groups from both direct and indirect
 //     inclusions.
-//   - NumRedacted, the number of members redacted.
-func (g *Graph) GetExpandedGroup(ctx context.Context,
-	name string, skipFilter bool) (*rpcpb.AuthGroup, error) {
+//   - Redacted, containing all unique members which were redacted from both
+//     direct and indirect inclusions.
+func (g *Graph) GetExpandedGroup(
+	ctx context.Context, name string, skipFilter bool,
+	cache *ExpansionCache) (*ExpandedGroup, error) {
 	root, ok := g.groups[name]
 	if !ok {
 		return nil, ErrNoSuchGroup
 	}
 
-	// The direct and indirect memberships of the fully expanded group.
-	members := stringset.Set{}
-	redactedMembers := stringset.Set{}
-	globs := stringset.Set{}
-	nested := stringset.Set{}
-
-	// The set of groups which have already been expanded.
-	expanded := stringset.Set{}
-
-	var expand func(node *GroupNode) error
-	expand = func(node *GroupNode) error {
-		name := node.group.GetName()
-		if expanded.Has(name) {
-			// Skip previously processed group.
-			return nil
+	if cache == nil {
+		cache = &ExpansionCache{
+			Groups: make(map[string]*ExpandedGroup),
 		}
-
-		// Process the group's members, globs and nested groups.
-
-		if skipFilter {
-			members.AddAll(node.group.GetMembers())
-		} else {
-			// Check whether the caller can view members.
-			ok, err := model.CanCallerViewMembers(ctx, node.group)
-			if err != nil {
-				return err
-			}
-			if ok {
-				members.AddAll(node.group.GetMembers())
-			} else {
-				redactedMembers.AddAll(node.group.GetMembers())
-			}
-		}
-
-		// Record the group's globs and nested subgroups.
-		globs.AddAll(node.group.GetGlobs())
-		nested.AddAll(node.group.GetNested())
-
-		// Record the group as having been processed.
-		expanded.Add(name)
-
-		// Process the memberships from subgroups of this group.
-		for _, subgroup := range node.includes {
-			if err := expand(subgroup); err != nil {
-				return err
-			}
-		}
-
-		return nil
 	}
 
-	// Expand memberships, starting from the given group.
-	if err := expand(root); err != nil {
-		return nil, err
-	}
-
-	// Remove known members from redacted; they are part of the group some other
-	// way.
-	knownMembers := members.ToSortedSlice()
-	redactedMembers.DelAll(knownMembers)
-
-	return &rpcpb.AuthGroup{
-		Name:        root.group.GetName(),
-		Members:     knownMembers,
-		Globs:       globs.ToSortedSlice(),
-		Nested:      nested.ToSortedSlice(),
-		NumRedacted: int32(len(redactedMembers)),
-	}, nil
+	return g.doExpansion(ctx, root, skipFilter, cache)
 }
 
 // GetRelevantSubgraph returns a Subgraph of groups that

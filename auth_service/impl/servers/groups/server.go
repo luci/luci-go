@@ -236,7 +236,7 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 
 	// Get the recursively expanded group members, globs and nested groups.
 	// Members may be redacted based on the caller's group memberships.
-	expandedGroup, err := groupsGraph.GetExpandedGroup(ctx, request.Name, false)
+	expandedGroup, err := groupsGraph.GetExpandedGroup(ctx, request.Name, false, nil)
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return nil, status.Errorf(codes.NotFound,
@@ -247,7 +247,7 @@ func (srv *Server) GetExpandedGroup(ctx context.Context, request *rpcpb.GetGroup
 			"error expanding group %q: %s", request.Name, err)
 	}
 
-	return expandedGroup, nil
+	return expandedGroup.ToProto(), nil
 }
 
 // GetSubgraph implements the corresponding RPC method.
@@ -380,7 +380,7 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 	// Get the recursively expanded group members, globs and nested groups.
 	// Disable the privacy filter to maintain the behavior of this legacy
 	// endpoint.
-	expandedGroup, err := groupsGraph.GetExpandedGroup(c, name, true)
+	expandedGroup, err := groupsGraph.GetExpandedGroup(c, name, true, nil)
 	if err != nil {
 		if errors.Is(err, graph.ErrNoSuchGroup) {
 			return status.Errorf(codes.NotFound, "no such group %q", name)
@@ -394,13 +394,13 @@ func (srv *Server) GetLegacyListing(ctx *router.Context) error {
 		Globs:   make([]listingPrincipal, len(expandedGroup.Globs)),
 		Nested:  make([]listingPrincipal, len(expandedGroup.Nested)),
 	}
-	for i, member := range expandedGroup.Members {
+	for i, member := range expandedGroup.Members.ToSortedSlice() {
 		response.Members[i] = listingPrincipal{Principal: member}
 	}
-	for i, glob := range expandedGroup.Globs {
+	for i, glob := range expandedGroup.Globs.ToSortedSlice() {
 		response.Globs[i] = listingPrincipal{Principal: glob}
 	}
-	for i, nestedGroup := range expandedGroup.Nested {
+	for i, nestedGroup := range expandedGroup.Nested.ToSortedSlice() {
 		response.Nested[i] = listingPrincipal{Principal: nestedGroup}
 	}
 
