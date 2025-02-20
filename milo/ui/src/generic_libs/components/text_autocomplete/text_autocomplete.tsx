@@ -218,8 +218,16 @@ export function TextAutocomplete<T>({
     );
 
     setUncommittedValue(newVal);
+    // In order to set the cursor position, we must update the value immediately
+    // (rather than wait until the update is applied by React).
     inputRef.current!.value = newVal;
     inputRef.current!.setSelectionRange(newPos, newPos);
+    // Re-focus to scroll the input box to the cursor.
+    // If the focus event is needed by the parent component, we can measure the
+    // width of the text (by creating a span with the same style and text) and
+    // set `inputRef.current!.scrollLeft` directly.
+    inputRef.current!.blur();
+    inputRef.current!.focus();
   }
 
   // Dismiss options when the user clicks away.
@@ -235,8 +243,6 @@ export function TextAutocomplete<T>({
       commit: () => commitValueRef.current(),
       clear: () => {
         setUncommittedValue('');
-        inputRef.current!.value = '';
-        inputRef.current!.setSelectionRange(0, 0);
         commitValueRef.current();
       },
     }),
@@ -317,8 +323,20 @@ export function TextAutocomplete<T>({
               inputRef={inputRef}
               placeholder={hint}
               value={uncommittedValue}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
+              onFocus={(e) => {
+                // We emit fake focus events to ensure input is scrolled to the
+                // cursor when a suggestion is accepted. Stop the fake event
+                // from propagating to the parent.
+                e.stopPropagation();
+                setFocused(true);
+              }}
+              onBlur={(e) => {
+                // We emit fake blur events to ensure input is scrolled to the
+                // cursor when a suggestion is accepted. Stop the fake event
+                // from propagating to the parent.
+                e.stopPropagation();
+                setFocused(false);
+              }}
               onKeyDown={handleKeyDown}
               onKeyUp={() => updateGenOptionsParams()}
               onChange={(e) => setUncommittedValue(e.target.value)}
