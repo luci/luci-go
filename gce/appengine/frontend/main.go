@@ -54,6 +54,9 @@ func main() {
 				&gaeserver.OAuth2Method{Scopes: []string{gaeserver.EmailScope}},
 			}).Unary(),
 		),
+		// TODO(crbug/1082369): Remove this workaround once non-standard field masks
+		// are no longer used in the API.
+		EnableNonStandardFieldMasks: true,
 	}
 	server.RegisterConfigurationServer(&api, rpc.NewConfigurationServer())
 	instances.RegisterInstancesServer(&api, rpc.NewInstancesServer())
