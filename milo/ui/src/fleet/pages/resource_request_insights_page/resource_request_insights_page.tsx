@@ -3,9 +3,7 @@ import { Alert, CircularProgress } from '@mui/material';
 import { GridColDef, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Helmet } from 'react-helmet';
 
-import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   getCurrentPageIndex,
@@ -15,6 +13,7 @@ import { Pagination } from '@/fleet/components/data_table/pagination';
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
@@ -137,10 +136,7 @@ export const ResourceRequestListPage = () => {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-resource-request-list">
-      <Helmet>
-        <title>Streamlined Fleet UI</title>
-        <link rel="icon" href={bassFavicon} />
-      </Helmet>
+      <FleetHelmet pageTitle="Resource Requests" />
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.

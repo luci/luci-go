@@ -19,12 +19,11 @@ import TabPanel from '@mui/lab/TabPanel';
 import { Box, IconButton, Typography } from '@mui/material';
 import Tab from '@mui/material/Tab';
 import { useCallback, useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -152,16 +151,14 @@ export const DeviceDetailsPage = () => {
 
 export function Component() {
   return (
-    <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
+    <TrackLeafRoutePageView contentGroup="fleet-console-device-details">
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
         key="fleet-device-details-page"
       >
-        <Helmet>
-          <title>Streamlined Fleet UI</title>
-          <link rel="icon" type="image/x-icon" href={bassFavicon} />
-        </Helmet>
+        {/** TODO: Update this to show the ID of the device being viewed.  */}
+        <FleetHelmet pageTitle="Device Details" />
         <LoggedInBoundary>
           <DeviceDetailsPage />
         </LoggedInBoundary>

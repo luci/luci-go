@@ -18,6 +18,9 @@ import { LabsWarningAlert } from '@/common/components/labs_warning_alert';
 
 import { colors } from '../theme/colors';
 
+/**
+ * Layout used in `/ui/fleet/labs` to signify that a page is experimental.
+ */
 export function Component() {
   return (
     <>

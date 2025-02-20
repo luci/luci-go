@@ -13,9 +13,7 @@
 // limitations under the License.
 
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet';
 
-import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { usePrpcServiceClient } from '@/common/hooks/prpc_query';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
@@ -23,6 +21,8 @@ import {
   FleetClientImpl,
   ListMachinesRequest,
 } from '@/proto/infra/unifiedfleet/api/v1/rpc/fleet.pb';
+
+import { FleetHelmet } from '../layouts/fleet_helmet';
 
 const SandboxPage = () => {
   // See go/luci-ui-rpc-tutorial for more info on how to make pRPC requests.
@@ -57,10 +57,7 @@ const SandboxPage = () => {
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-sandbox">
-      <Helmet>
-        <title>Fleet Console</title>
-        <link rel="icon" href={bassFavicon} />
-      </Helmet>
+      <FleetHelmet pageTitle="Sandbox" />
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.

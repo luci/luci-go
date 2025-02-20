@@ -15,9 +15,7 @@
 import { useGridApiRef } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet';
 
-import bassFavicon from '@/common/assets/favicons/bass-32.png';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   emptyPageTokenUpdater,
@@ -32,6 +30,7 @@ import {
   getFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -141,10 +140,7 @@ const toFilterOptions = (
 export function Component() {
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-device-list">
-      <Helmet>
-        <title>Streamlined Fleet UI</title>
-        <link rel="icon" href={bassFavicon} />
-      </Helmet>
+      <FleetHelmet pageTitle="Device List" />
       <RecoverableErrorBoundary
         // See the documentation for `<LoginPage />` for why we handle error
         // this way.
