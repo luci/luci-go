@@ -68,7 +68,11 @@ const MOCK_ROWS: { [key: string]: string }[] = [
   { id: '13', first_name: 'Mia', last_name: 'Taylor' },
 ];
 
-function TestComponent() {
+function TestComponent({
+  withKnownTotalRowCount = false,
+}: {
+  withKnownTotalRowCount?: boolean;
+}) {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [3, 5, 10],
     defaultPageSize: 5,
@@ -104,6 +108,7 @@ function TestComponent() {
       pagerCtx={pagerCtx}
       sortModel={sortModel}
       onSortModelChange={setSortModel}
+      totalRowCount={withKnownTotalRowCount ? totalRowCount : undefined}
     />
   );
 }
@@ -346,5 +351,18 @@ describe('<DataTable />', () => {
     expect(screen.getByText('6-8 of more than 8')).toBeInTheDocument();
     expect(getNextPageButton()).toBeEnabled();
     expect(getPrevPageButton()).toBeEnabled();
+  });
+
+  it('should show total row count in pagination when it is provided', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent withKnownTotalRowCount={true} />
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(getPageRowCount()).toBe(5);
+    expect(screen.getByText('1-5 of 13')).toBeInTheDocument();
   });
 });

@@ -72,9 +72,14 @@ function getRow(device: Device): Record<string, string> {
 interface DeviceTableProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
   pagerCtx: PagerContext;
+  totalRowCount: number | undefined;
 }
 
-export function DeviceTable({ gridRef, pagerCtx }: DeviceTableProps) {
+export function DeviceTable({
+  gridRef,
+  pagerCtx,
+  totalRowCount,
+}: DeviceTableProps) {
   const [searchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
@@ -147,6 +152,7 @@ export function DeviceTable({ gridRef, pagerCtx }: DeviceTableProps) {
             }),
             {} as GridColumnVisibilityModel,
           )}
+          totalRowCount={totalRowCount}
         />
       )}
     </>

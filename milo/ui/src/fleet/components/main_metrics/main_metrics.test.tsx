@@ -14,15 +14,37 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { CountDevicesResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { MainMetrics } from './main_metrics';
 
+const MOCK_DATA: CountDevicesResponse = {
+  total: 440,
+
+  taskState: {
+    busy: 401,
+    idle: 40,
+  },
+  deviceState: {
+    ready: 40,
+    needManualRepair: 40,
+    needRepair: 40,
+    repairFailed: 40,
+  },
+};
+
 describe('<MainMetrics />', () => {
   it('should render', async () => {
+    const mockCountQuery = jest.fn().mockReturnValue({
+      data: MOCK_DATA,
+      isLoading: false,
+      error: null,
+    });
+
     render(
       <FakeContextProvider>
-        <MainMetrics filter={{}} />
+        <MainMetrics countQuery={mockCountQuery()} />
       </FakeContextProvider>,
     );
 

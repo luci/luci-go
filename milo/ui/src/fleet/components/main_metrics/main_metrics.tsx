@@ -17,15 +17,11 @@ import styled from '@emotion/styled';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import { Alert, Skeleton, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { UseQueryResult } from '@tanstack/react-query';
 import { ReactElement } from 'react';
 
-import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { colors } from '@/fleet/theme/colors';
-import { SelectedOptions } from '@/fleet/types';
-import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
-
-import { stringifyFilters } from '../multi_select_filter/search_param_utils/search_param_utils';
+import { CountDevicesResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof GrpcError) {
@@ -50,17 +46,12 @@ const HAS_RIGHT_SIBLING_STYLES = {
   marginRight: 32,
 };
 
-// TODO: b/393624377 - Refactor this component to make it easier to test.
-export function MainMetrics({ filter }: { filter: SelectedOptions }) {
-  const client = useFleetConsoleClient();
-  const countQuery = useQuery(
-    client.CountDevices.query(
-      CountDevicesRequest.fromPartial({
-        filter: stringifyFilters(filter),
-      }),
-    ),
-  );
+interface MainMetricsProps {
+  countQuery: UseQueryResult<CountDevicesResponse, unknown>;
+}
 
+// TODO: b/393624377 - Refactor this component to make it easier to test.
+export function MainMetrics({ countQuery }: MainMetricsProps) {
   const getContent = () => {
     if (countQuery.isError) {
       return (
@@ -102,7 +93,10 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             flexGrow: 0.4,
           }}
         >
-          <Typography variant="subhead1">Task status</Typography>
+          {/* Changed Task status to Lease state as it is what we show right now,
+          still confirming whether this matches with the Task state. Will be changed
+          accordingly we clear out everything about this */}
+          <Typography variant="subhead1">Lease state</Typography>
           <div
             css={{
               display: 'flex',
@@ -111,13 +105,13 @@ export function MainMetrics({ filter }: { filter: SelectedOptions }) {
             }}
           >
             <SingleMetric
-              name="Busy"
+              name="Leased"
               value={countQuery.data?.taskState?.busy}
               total={countQuery.data?.total}
               loading={countQuery.isLoading}
             />
             <SingleMetric
-              name="Idle"
+              name="Available"
               value={countQuery.data?.taskState?.idle}
               total={countQuery.data?.total}
               loading={countQuery.isLoading}
@@ -201,7 +195,11 @@ export function SingleMetric({
       <Skeleton width={16} height={18} />
     ) : (
       <Typography variant="caption" color={colors.grey[700]}>
-        {percentage.toLocaleString(undefined, { style: 'percent' })}
+        {percentage.toLocaleString(undefined, {
+          style: 'percent',
+          maximumFractionDigits: 1,
+          minimumFractionDigits: 0,
+        })}
       </Typography>
     );
   };

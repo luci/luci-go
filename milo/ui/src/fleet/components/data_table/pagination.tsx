@@ -41,12 +41,14 @@ declare module '@mui/x-data-grid' {
   interface PaginationPropsOverrides {
     pagerCtx: PagerContext;
     nextPageToken: string;
+    totalRowCount?: number;
   }
 }
 
 export function Pagination({
   pagerCtx,
   nextPageToken,
+  totalRowCount,
 }: PropsFromSlot<GridSlots['pagination']>) {
   const apiRef = useGridApiContext();
   const visibleTopLevelRowCount = useGridSelector(
@@ -64,7 +66,11 @@ export function Pagination({
     // may be a solution if current behavior is confusing.
     const from = getPrevFullRowCount(pagerCtx) + 1;
     const to = from + visibleTopLevelRowCount - 1;
-    return `${from}-${to} of ${hasNextPage ? `more than ${to}` : to}`;
+    if (totalRowCount) {
+      return `${from}-${to} of ${totalRowCount}`;
+    } else {
+      return `${from}-${to} of ${hasNextPage ? `more than ${to}` : to}`;
+    }
   };
 
   const handlePageSizeChange = React.useCallback(

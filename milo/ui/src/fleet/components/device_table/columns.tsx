@@ -98,7 +98,7 @@ export const BASE_DIMENSIONS: Dimension[] = [
   },
   {
     id: 'state',
-    displayName: 'State',
+    displayName: 'Lease state',
     getValue: (device: Device) => DeviceState[device.state],
   },
   {

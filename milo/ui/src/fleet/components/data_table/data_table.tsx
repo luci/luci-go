@@ -66,6 +66,7 @@ interface DataTableProps {
   pagerCtx: PagerContext;
   sortModel: GridSortModel;
   onSortModelChange: (newSortModel: GridSortModel) => void;
+  totalRowCount?: number;
 }
 
 // Used to get around TypeScript issues with custom toolbars.
@@ -85,6 +86,7 @@ export const DataTable = ({
   pagerCtx,
   sortModel,
   onSortModelChange,
+  totalRowCount,
 }: DataTableProps) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
@@ -137,6 +139,7 @@ export const DataTable = ({
         pagination: {
           pagerCtx: pagerCtx,
           nextPageToken: nextPageToken,
+          totalRowCount: totalRowCount,
         },
         toolbar: {
           gridRef: apiRef,

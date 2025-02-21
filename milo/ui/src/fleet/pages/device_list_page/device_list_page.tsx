@@ -28,12 +28,14 @@ import { MultiSelectFilter } from '@/fleet/components/multi_select_filter';
 import {
   filtersUpdater,
   getFilters,
+  stringifyFilters,
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 import { dimensionsToFilterOptions } from './helpers';
 
@@ -59,10 +61,17 @@ export const DeviceListPage = () => {
     // An AIP-158 page token is only valid for the filter
     // option that generated it.
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [selectedOptions, setSearchParams]);
+  }, [selectedOptions, setSearchParams, pagerCtx]);
 
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
+  const countQuery = useQuery(
+    client.CountDevices.query(
+      CountDevicesRequest.fromPartial({
+        filter: stringifyFilters(selectedOptions),
+      }),
+    ),
+  );
 
   return (
     <div
@@ -70,7 +79,7 @@ export const DeviceListPage = () => {
         margin: '24px',
       }}
     >
-      <MainMetrics filter={selectedOptions} />
+      <MainMetrics countQuery={countQuery} />
       {dimensionsQuery.data && (
         <div
           css={{
@@ -96,7 +105,11 @@ export const DeviceListPage = () => {
           marginTop: 24,
         }}
       >
-        <DeviceTable gridRef={gridRef} pagerCtx={pagerCtx} />
+        <DeviceTable
+          gridRef={gridRef}
+          pagerCtx={pagerCtx}
+          totalRowCount={countQuery?.data?.total}
+        />
       </div>
     </div>
   );
