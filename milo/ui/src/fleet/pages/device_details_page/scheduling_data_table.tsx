@@ -15,16 +15,13 @@
 import { GridColDef } from '@mui/x-data-grid';
 
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
-
-import { useDeviceData } from './use_device_data';
+import { Device } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 interface SchedulingDataProps {
-  id: string;
+  device?: Device;
 }
 
-export const SchedulingData = ({ id }: SchedulingDataProps) => {
-  const device = useDeviceData(id);
-
+export const SchedulingData = ({ device }: SchedulingDataProps) => {
   if (device?.deviceSpec === undefined) {
     return <></>;
   }

@@ -22,13 +22,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
+import { extractDutState } from '@/fleet/utils/devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 import { SchedulingData } from './scheduling_data_table';
 import { Tasks } from './tasks_table';
+import { useDeviceData } from './use_device_data';
 
 enum TabValue {
   TASKS = 'tasks',
@@ -91,12 +94,16 @@ const useNavigatedFromLink = () => {
 };
 
 export const DeviceDetailsPage = () => {
-  const { id } = useParams();
+  const { id = '' } = useParams();
   const navigatedFromLink = useNavigatedFromLink();
   const [selectedTab, setSelectedTab] = useTabs();
 
+  // TODO: Add loading indicator for when the device is being loaded.
+  const device = useDeviceData(id);
+
   const navigate = useNavigate();
 
+  // TODO: b/397968435 - Tell the user when a device is not found.
   if (!id || !selectedTab) {
     return <></>;
   }
@@ -104,47 +111,64 @@ export const DeviceDetailsPage = () => {
   return (
     <div
       css={{
+        width: '100%',
         margin: '24px 0px',
       }}
     >
-      <div css={{ width: '100%' }}>
-        <div
-          css={{
-            margin: '0px 24px 16px 24px',
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
+      <div
+        css={{
+          margin: '0px 24px 8px 24px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <IconButton
+          onClick={() => {
+            if (navigatedFromLink) {
+              navigate(navigatedFromLink);
+            } else {
+              navigate('/ui/fleet/labs/devices');
+            }
           }}
         >
-          <IconButton
-            onClick={() => {
-              if (navigatedFromLink) {
-                navigate(navigatedFromLink);
-              } else {
-                navigate('/ui/fleet/labs/devices');
-              }
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h4">Device details: {id}</Typography>
-        </div>
-        <TabContext value={selectedTab}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
-              <Tab label="Tasks" value={TabValue.TASKS} />
-              <Tab label="Scheduling data" value={TabValue.SCHEDULING} />
-            </TabList>
-          </Box>
-          <TabPanel value={TabValue.TASKS}>
-            <Tasks id={id} />
-          </TabPanel>
-          <TabPanel value={TabValue.SCHEDULING}>
-            <SchedulingData id={id} />
-          </TabPanel>
-        </TabContext>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h4">Device details: {id}</Typography>
       </div>
+      <div
+        css={{
+          boxSizing: 'border-box',
+          width: '100%',
+          paddingLeft: '72px',
+          marginBottom: '32px',
+        }}
+      >
+        <RunAutorepair
+          selectedDuts={[
+            {
+              name: id,
+              state: extractDutState(device),
+            },
+          ]}
+        />
+      </div>
+
+      <TabContext value={selectedTab}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <TabList onChange={(_, newValue) => setSelectedTab(newValue)}>
+            <Tab label="Tasks" value={TabValue.TASKS} />
+            <Tab label="Scheduling data" value={TabValue.SCHEDULING} />
+          </TabList>
+        </Box>
+        <TabPanel value={TabValue.TASKS}>
+          <Tasks id={id} />
+        </TabPanel>
+        <TabPanel value={TabValue.SCHEDULING}>
+          <SchedulingData device={device} />
+        </TabPanel>
+      </TabContext>
     </div>
   );
 };
