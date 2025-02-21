@@ -77,14 +77,11 @@ describe('Lexer', () => {
       'OR', // factor with just an OR
       'OR OR', // factor with two ORs
 
-      // TODO: when there's invalid escapes in a quoted string, ideally we still
-      // want to match the whole string as a single token, instead of treating
-      // it as a bunch of invalid tokens.
       '"invalid unicode \\u1"',
       '"backslash followed by newline \\\n"',
       '"valid unicode \\u12ab"',
       '\\', // Invalid escape sequence
-      '"\\', // Invalid escape sequence in unclosed string
+      '"unclosed string with incomplete escape sequence \\',
     ])('input: %s', (input) => {
       const lexer = new Lexer(input);
       const tokens = lexer.getAllTokens();

@@ -251,19 +251,27 @@ exports[`Lexer getAllTokens input:  wsBefore 1`] = `
 ]
 `;
 
-exports[`Lexer getAllTokens input: "\\ 1`] = `
+exports[`Lexer getAllTokens input: "backslash followed by newline \\
+" 1`] = `
 [
   {
     "index": 0,
-    "kind": "INVALID_CHAR",
+    "kind": "UNCLOSED_INVALID_STRING",
     "startPos": 0,
-    "text": """,
+    "text": ""backslash followed by newline \\",
   },
   {
     "index": 1,
-    "kind": "INVALID_CHAR",
-    "startPos": 1,
-    "text": "\\",
+    "kind": "WHITESPACE",
+    "startPos": 32,
+    "text": "
+",
+  },
+  {
+    "index": 2,
+    "kind": "UNCLOSED_STRING",
+    "startPos": 33,
+    "text": """,
   },
 ]
 `;
@@ -283,51 +291,9 @@ exports[`Lexer getAllTokens input: "invalid unicode \\u1" 1`] = `
 [
   {
     "index": 0,
-    "kind": "INVALID_CHAR",
+    "kind": "INVALID_STRING",
     "startPos": 0,
-    "text": """,
-  },
-  {
-    "index": 1,
-    "kind": "QUALIFIED_FIELD_OR_VALUE",
-    "startPos": 1,
-    "text": "invalid",
-  },
-  {
-    "index": 2,
-    "kind": "WHITESPACE",
-    "startPos": 8,
-    "text": " ",
-  },
-  {
-    "index": 3,
-    "kind": "QUALIFIED_FIELD_OR_VALUE",
-    "startPos": 9,
-    "text": "unicode",
-  },
-  {
-    "index": 4,
-    "kind": "WHITESPACE",
-    "startPos": 16,
-    "text": " ",
-  },
-  {
-    "index": 5,
-    "kind": "INVALID_CHAR",
-    "startPos": 17,
-    "text": "\\",
-  },
-  {
-    "index": 6,
-    "kind": "QUALIFIED_FIELD_OR_VALUE",
-    "startPos": 18,
-    "text": "u1",
-  },
-  {
-    "index": 7,
-    "kind": "UNCLOSED_STRING",
-    "startPos": 20,
-    "text": """,
+    "text": ""invalid unicode \\u1"",
   },
 ]
 `;
@@ -350,6 +316,17 @@ exports[`Lexer getAllTokens input: "string" 1`] = `
     "kind": "STRING",
     "startPos": 0,
     "text": ""string"",
+  },
+]
+`;
+
+exports[`Lexer getAllTokens input: "unclosed string with incomplete escape sequence \\ 1`] = `
+[
+  {
+    "index": 0,
+    "kind": "UNCLOSED_INVALID_STRING",
+    "startPos": 0,
+    "text": ""unclosed string with incomplete escape sequence \\",
   },
 ]
 `;

@@ -37,6 +37,16 @@ export enum TokenKind {
    */
   UnclosedString = 'UNCLOSED_STRING',
   /**
+   * Quoted single line string with invalid escape sequence.
+   */
+  InvalidString = 'INVALID_STRING',
+  /**
+   * Quoted single line string with invalid escape sequence and without the
+   * closing quote.
+   * Terminates before the first line break or at the end of the input.
+   */
+  UnclosedInvalidString = 'UNCLOSED_INVALID_STRING',
+  /**
    * Invalid char. Allow us to process the rest of the tokens even when we
    * encounter an unexpected one.
    */
@@ -118,6 +128,10 @@ const LEXER_RE = new RegExp(
       STRING_RE,
       // UnclosedString
       UNCLOSED_STRING_RE,
+      // InvalidString
+      /'(?:[^'\\\n]|\\[^\n])*'|"(?:[^"\\\n]|\\[^\n])*"/,
+      // UnclosedInvalidString
+      /'(?:[^'\\\n]|\\[^\n])*\\?(?=\n|$)|"(?:[^"\\\n]|\\[^\n])*\\?(?=\n|$)/,
       // InvalidChar
       /.|\n/,
     ]

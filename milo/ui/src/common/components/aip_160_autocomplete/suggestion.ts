@@ -50,6 +50,8 @@ const TOKEN_SELECTION_PRIORITY = Object.freeze([
   TokenKind.Comma,
   TokenKind.Keyword,
   TokenKind.Negate,
+  TokenKind.InvalidString,
+  TokenKind.UnclosedInvalidString,
   TokenKind.InvalidChar,
   TokenKind.Whitespace,
   undefined,
