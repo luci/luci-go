@@ -31,10 +31,11 @@ import {
 } from '@/fleet/components/multi_select_filter/search_param_utils/search_param_utils';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { OptionCategory, SelectedOptions } from '@/fleet/types';
+import { SelectedOptions } from '@/fleet/types';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
-import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
+
+import { dimensionsToFilterOptions } from './helpers';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -83,7 +84,7 @@ export const DeviceListPage = () => {
           }}
         >
           <MultiSelectFilter
-            filterOptions={toFilterOptions(dimensionsQuery.data)}
+            filterOptions={dimensionsToFilterOptions(dimensionsQuery.data)}
             selectedOptions={selectedOptions}
             setSelectedOptions={setSelectedOptions}
           />
@@ -99,42 +100,6 @@ export const DeviceListPage = () => {
       </div>
     </div>
   );
-};
-
-const toFilterOptions = (
-  response: GetDeviceDimensionsResponse,
-): OptionCategory[] => {
-  const baseDimensions = Object.entries(response.baseDimensions).map(
-    ([key, value]) => {
-      return {
-        label: key,
-        value: key,
-        options: value.values.map((value) => {
-          return { label: value, value: value };
-        }),
-      } as OptionCategory;
-    },
-  );
-
-  const labels = Object.entries(response.labels).flatMap(([key, value]) => {
-    // We need to avoid duplicate options
-    // E.g. `dut_id` is in both base dimensions and labels
-    if (response.baseDimensions[key]) {
-      return [];
-    }
-
-    return [
-      {
-        label: key,
-        value: 'labels.' + key,
-        options: value.values.map((value) => {
-          return { label: value, value: value };
-        }),
-      } as OptionCategory,
-    ];
-  });
-
-  return baseDimensions.concat(labels).filter((o) => o.options.length > 0);
 };
 
 export function Component() {

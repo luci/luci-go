@@ -12,15 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/**
+ * A single value in a category for an option. For example, if the category is
+ * "dut_name", then the list of OptionValues will contain a list of distinct
+ * names of duts.
+ *
+ * The `value` property is used to uniquely identify this option.
+ */
 export interface OptionValue {
   label: string;
   value: string;
 }
 
+/**
+ * Type for values in the first category of the multi-select menu. ie: For
+ * Fleet Console devices, "dut_name" might be an example of an OptionCategory.
+ *
+ * The `value` property is used to uniquely identify this category
+ */
 export type OptionCategory = {
   label: string;
   value: string;
   options: OptionValue[];
 };
 
+/**
+ * An Object capturing the set of options selected in this filter. The key is
+ * the value of the OptionCategory for the selection, and the value is the
+ * value for the OptionValue.
+ */
 export type SelectedOptions = Record<string, string[]>;
