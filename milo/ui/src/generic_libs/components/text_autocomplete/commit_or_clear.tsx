@@ -15,13 +15,13 @@
 import { Close, KeyboardReturn } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 
-import { useHasUncommitted, useSetters } from './context';
+import { useInputState, useSetters } from './context';
 
 export function CommitOrClear() {
   const setters = useSetters();
-  const hasUncommitted = useHasUncommitted();
+  const inputState = useInputState();
 
-  if (hasUncommitted) {
+  if (inputState.hasUncommitted) {
     return (
       <IconButton
         title="Press Enter to apply the changes"
@@ -31,6 +31,10 @@ export function CommitOrClear() {
         <KeyboardReturn sx={{ color: 'var(--active-color)' }} />
       </IconButton>
     );
+  }
+
+  if (inputState.isEmpty) {
+    return <></>;
   }
 
   return (

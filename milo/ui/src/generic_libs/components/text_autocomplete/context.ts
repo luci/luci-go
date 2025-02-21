@@ -29,12 +29,19 @@ export function useSetters() {
   return ctx;
 }
 
-export const HasUncommittedCtx = createContext<boolean | undefined>(undefined);
+export interface InputStateContext {
+  readonly hasUncommitted: boolean;
+  readonly isEmpty: boolean;
+}
 
-export function useHasUncommitted() {
-  const ctx = useContext(HasUncommittedCtx);
+export const InputStateCtx = createContext<InputStateContext | undefined>(
+  undefined,
+);
+
+export function useInputState() {
+  const ctx = useContext(InputStateCtx);
   if (ctx === undefined) {
-    throw new Error('useHasUncommitted can only be used in a TextAutocomplete');
+    throw new Error('useInputState can only be used in a TextAutocomplete');
   }
   return ctx;
 }

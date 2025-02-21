@@ -25,7 +25,7 @@ import { debounce } from 'lodash-es';
 import { useState, useRef, useEffect, useMemo, ReactNode } from 'react';
 
 import { CommitOrClear } from './commit_or_clear';
-import { HasUncommittedCtx, SettersCtx } from './context';
+import { InputStateCtx, SettersCtx } from './context';
 import { OptionRow } from './option_row';
 import { OptionDef } from './types';
 
@@ -240,6 +240,16 @@ export function TextAutocomplete<T>({
     [],
   );
 
+  const hasUncommitted = uncommittedValue !== value;
+  const isEmpty = uncommittedValue === '';
+  const inputState = useMemo(
+    () => ({
+      hasUncommitted,
+      isEmpty,
+    }),
+    [hasUncommitted, isEmpty],
+  );
+
   // Handle various keyboard shortcuts.
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     switch (e.code) {
@@ -295,7 +305,7 @@ export function TextAutocomplete<T>({
 
   return (
     <SettersCtx.Provider value={setters}>
-      <HasUncommittedCtx.Provider value={uncommittedValue !== value}>
+      <InputStateCtx.Provider value={inputState}>
         <RootContainer ref={containerRef}>
           <InputContainer {...slotProps.formControl}>
             <TextField
@@ -384,7 +394,7 @@ export function TextAutocomplete<T>({
             </OptionsContainer>
           </OptionsAnchor>
         </RootContainer>
-      </HasUncommittedCtx.Provider>
+      </InputStateCtx.Provider>
     </SettersCtx.Provider>
   );
 }
