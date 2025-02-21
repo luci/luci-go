@@ -96,15 +96,19 @@ export const Header = ({
           gap: 13,
         }}
       >
-        <Tooltip title="Fleet Console, work in progress">
-          <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
-        </Tooltip>
+        <IconButton onClick={() => window.open('http://go/fleet-console')}>
+          <Tooltip title="Fleet Console, work in progress">
+            <HelpOutlineOutlinedIcon sx={{ color: colors.grey[700] }} />
+          </Tooltip>
+        </IconButton>
         <IconButton
           onClick={() =>
             window.open(genFeedbackUrl({ bugComponent: '1664178' }))
           }
         >
-          <BugReportOutlinedIcon sx={{ color: colors.grey[700] }} />
+          <Tooltip title="File a bug">
+            <BugReportOutlinedIcon sx={{ color: colors.grey[700] }} />
+          </Tooltip>
         </IconButton>
         {!authState.identity || authState.identity === ANONYMOUS_IDENTITY ? (
           <Button
