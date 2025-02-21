@@ -67,7 +67,6 @@ require (
 	github.com/maruel/subcommands v1.1.1
 	github.com/mattn/go-tty v0.0.7
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20241112170944-20d2c9ebc01d

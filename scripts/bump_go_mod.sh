@@ -64,7 +64,6 @@ deps=(
   github.com/mattn/go-tty@latest
   github.com/mgutz/ansi@latest
   github.com/Microsoft/go-winio@latest
-  github.com/mitchellh/go-homedir@latest
   github.com/op/go-logging@latest
   github.com/pmezard/go-difflib@latest
   github.com/protocolbuffers/txtpbfmt@latest
