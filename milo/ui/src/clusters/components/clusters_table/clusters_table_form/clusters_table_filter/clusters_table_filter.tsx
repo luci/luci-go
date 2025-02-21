@@ -28,6 +28,7 @@ import {
   FieldsSchema,
   tryUnquoteStr,
 } from '@/common/components/aip_160_autocomplete';
+import { HighlightedText } from '@/generic_libs/components/highlighted_text';
 import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
 import {
   QueryTestsRequest,
@@ -115,7 +116,14 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           data.testIds
             // Use JSON.stringify to quote the string so special characters does
             // not break the filter.
-            .map((text) => ({ text: JSON.stringify(text) }))
+            .map((text) => ({
+              text: JSON.stringify(text),
+              display: (
+                <td>
+                  <HighlightedText text={text} highlight={unquoted} />
+                </td>
+              ),
+            }))
             .filter(({ text }) => text !== partial)
         );
       },
@@ -137,7 +145,14 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           const lowerPartial = partial.toLowerCase();
           return ['rules', 'rules-v3', 'reason-v6', 'testname-v4']
             .filter((text) => text.includes(lowerPartial))
-            .map((text) => ({ text }));
+            .map((text) => ({
+              text,
+              display: (
+                <td>
+                  <HighlightedText text={text} highlight={partial} />
+                </td>
+              ),
+            }));
         },
       },
       cluster_id: {},
@@ -149,7 +164,14 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           const searchTerm = unquoted.toLowerCase();
           return ['true', 'false']
             .filter((text) => text.includes(searchTerm) && text !== partial)
-            .map((text) => ({ text }));
+            .map((text) => ({
+              text,
+              display: (
+                <td>
+                  <HighlightedText text={text} highlight={searchTerm} />
+                </td>
+              ),
+            }));
         },
       },
       is_ingested_invocation_blocked: {
@@ -158,7 +180,14 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           const searchTerm = unquoted.toLowerCase();
           return ['true', 'false']
             .filter((text) => text.includes(searchTerm) && text !== partial)
-            .map((text) => ({ text }));
+            .map((text) => ({
+              text,
+              display: (
+                <td>
+                  <HighlightedText text={text} highlight={searchTerm} />
+                </td>
+              ),
+            }));
         },
       },
     };

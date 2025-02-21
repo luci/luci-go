@@ -17,7 +17,7 @@ import { escapeRegExp } from 'lodash-es';
 
 const Container = styled('span')`
   & > * {
-    white-space: pre;
+    white-space: preserved nowrap;
   }
 `;
 

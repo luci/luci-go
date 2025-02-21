@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { UseQueryOptions } from '@tanstack/react-query';
+import { ReactNode } from 'react';
 
 import { NonNullableProps } from '@/generic_libs/types';
 
@@ -53,6 +54,12 @@ export interface FieldDef {
  */
 export interface ValueDef {
   readonly text: string;
+  /**
+   * HTML (React) representation of the value.
+   *
+   * Defaults to `<td>{text}</td>`.
+   */
+  readonly display?: ReactNode;
 }
 
 /**
@@ -81,6 +88,12 @@ export interface Suggestion {
    * Text representation of the suggestion.
    */
   readonly text: string;
+  /**
+   * HTML (React) representation of the suggestion.
+   *
+   * Defaults to `<td>{text}</td>`.
+   */
+  readonly display?: ReactNode;
   /**
    * Apply the suggestion to the input.
    *

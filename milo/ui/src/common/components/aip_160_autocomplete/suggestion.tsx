@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { CircularProgress } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { HighlightedText } from '@/generic_libs/components/highlighted_text';
 import { OptionDef } from '@/generic_libs/components/text_autocomplete';
 
 import { Lexer, Token, TokenKind } from './lexer';
@@ -235,6 +237,13 @@ function useSuggestionsAsync(
         id: 'loading',
         value: {
           text: 'Loading...',
+          display: (
+            <td>
+              <b>
+                Loading <CircularProgress size="1em" />
+              </b>
+            </td>
+          ),
           // Doesn't matter. This option is not selectable.
           apply: () => ['', 0] as const,
         },
@@ -248,6 +257,7 @@ function useSuggestionsAsync(
       id: valueDef.text,
       value: {
         text: valueDef.text,
+        display: valueDef.display,
         apply: () => {
           const prefixEnd = ctx.valueToken.startPos;
           const suffixStart =
@@ -284,6 +294,11 @@ function suggestField(
       id: name,
       value: {
         text: name,
+        display: (
+          <td>
+            <HighlightedText text={name} highlight={suffix} />
+          </td>
+        ),
         apply: () => {
           const prefixEnd = fieldToken.startPos + lastDotIndex + 1;
           const suffixStart =
@@ -309,6 +324,7 @@ function suggestValue(
       id: valueDef.text,
       value: {
         text: valueDef.text,
+        display: valueDef.display,
         apply: () => {
           const prefixEnd = valueToken.startPos;
           const suffixStart = valueToken.startPos + valueToken.text.length;

@@ -53,6 +53,7 @@ describe('useSuggestions', () => {
         id: 'project',
         value: {
           text: 'project',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
       },
@@ -60,6 +61,7 @@ describe('useSuggestions', () => {
         id: 'projectWithSuffix',
         value: {
           text: 'projectWithSuffix',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
       },
@@ -90,6 +92,7 @@ describe('useSuggestions', () => {
         id: 'project',
         value: {
           text: 'project',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
       },
@@ -130,6 +133,7 @@ describe('useSuggestions', () => {
         id: 'Project',
         value: {
           text: 'Project',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
       },
@@ -150,6 +154,7 @@ describe('useSuggestions', () => {
         id: 'projectWithSuffix',
         value: {
           text: 'projectWithSuffix',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
       },
@@ -267,6 +272,7 @@ describe('useSuggestions', () => {
         id: 'loading',
         value: {
           text: 'Loading...',
+          display: expect.anything(),
           apply: expect.any(Function),
         },
         unselectable: true,

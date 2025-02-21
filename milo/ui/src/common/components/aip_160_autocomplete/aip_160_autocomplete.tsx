@@ -46,7 +46,9 @@ export function Aip160Autocomplete({ schema, ...props }: Aip160Autocomplete) {
         setGenOptionsValue(value);
         setGenOptionsCursorPos(cursorPos);
       }}
-      renderOption={(option) => <td>{option.value.text}</td>}
+      renderOption={(option) =>
+        option.value.display ?? <td>{option.value.text}</td>
+      }
       applyOption={(_prev, _pos, option) => option.value.apply()}
     />
   );
