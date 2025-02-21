@@ -49,10 +49,12 @@ export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
   const columns: OptionCategory = {
     label: 'column',
     value: 'column',
-    options: columnDefinitions.map((column) => ({
-      label: column.headerName ?? column.field,
-      value: column.field,
-    })),
+    options: columnDefinitions
+      .filter((column) => column.field !== '__check__')
+      .map((column) => ({
+        label: column.headerName ?? column.field,
+        value: column.field,
+      })),
   };
 
   const selectedColumns: SelectedOptions = {
