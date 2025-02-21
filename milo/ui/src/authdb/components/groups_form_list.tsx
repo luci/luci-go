@@ -261,18 +261,14 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
 
     return (
       <TableContainer data-testid="groups-form-list">
-        <Table
-          sx={{ p: 0, pt: '15px', width: '100%' }}
-          data-testid="mouse-enter-table"
-        >
+        <Table sx={{ width: '100%' }} data-testid="mouse-enter-table">
           <TableBody>
             <TableRow>
               <TableCell
                 colSpan={2}
-                sx={{ pb: 0 }}
                 style={{
                   alignItems: 'center',
-                  minHeight: '45px',
+                  minHeight: '40px',
                 }}
               >
                 <Typography variant="h6"> {name}</Typography>
@@ -348,10 +344,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             {addingItem && (
               <>
                 <TableRow>
-                  <TableCell
-                    sx={{ p: 0, pt: '15px', pr: '15px' }}
-                    style={{ width: '94%' }}
-                  >
+                  <TableCell sx={{ pt: '8px' }}>
                     <TextField
                       multiline
                       placeholder={placeHolderText}
@@ -366,10 +359,10 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ p: 0 }}>
+                  <TableCell sx={{ pt: '8px', pb: '16px' }}>
                     {errorMessage === '' && newItems !== '' && (
                       <Button
-                        sx={{ mt: '10px', mr: 1.5 }}
+                        sx={{ mr: 1.5 }}
                         variant="contained"
                         color="success"
                         onClick={() => {
@@ -381,7 +374,6 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
                       </Button>
                     )}
                     <Button
-                      sx={{ mt: '10px' }}
                       variant="contained"
                       color="error"
                       onClick={resetTextfield}
@@ -395,7 +387,7 @@ export const GroupsFormList = forwardRef<FormListElement, GroupsFormListProps>(
             )}
             {!addingItem && (
               <TableRow>
-                <TableCell>
+                <TableCell sx={{ pt: '8px', pb: '16px' }}>
                   <Button
                     variant="outlined"
                     startIcon={<AddCircleIcon />}

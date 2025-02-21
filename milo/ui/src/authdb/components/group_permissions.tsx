@@ -11,12 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import './groups.css';
+
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
+import { Fragment } from 'react';
 
 import { useAuthServiceAuthDBClient } from '@/authdb/hooks/prpc_clients';
 import { RealmPermissions } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/authdb.pb';
@@ -68,35 +76,45 @@ export function GroupPermissions({ name }: GroupPermissionsProps) {
     (response.realmPermissions as RealmPermissions[]) || [];
 
   return (
-    <Box data-testid="group-permissions">
-      {realmPermissions.length === 0 ? (
-        <Typography variant="body2">No permissions found.</Typography>
-      ) : (
-        <>
-          {realmPermissions?.map((realm) => {
-            return (
+    <>
+      <TableContainer sx={{ p: 0 }}>
+        <Table data-testid="permissions-table">
+          <TableBody>
+            {realmPermissions.length === 0 ? (
+              <Typography variant="body2">No permissions found.</Typography>
+            ) : (
               <>
-                <Typography variant="h6">{realm.name}</Typography>
-                <ul
-                  style={{
-                    margin: 0,
-                    listStyleType: 'none',
-                    paddingLeft: '20px',
-                  }}
-                >
-                  {realm.permissions.map((permission) => {
-                    return (
-                      <li key={permission}>
-                        <Typography variant="body2">{permission}</Typography>
-                      </li>
-                    );
-                  })}
-                </ul>
+                {realmPermissions?.map((realm) => {
+                  return (
+                    <Fragment key={realm.name}>
+                      <TableRow>
+                        <TableCell>
+                          <Typography variant="h6">{realm.name}</Typography>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell sx={{ pb: '16px' }}>
+                          <ul>
+                            {realm.permissions.map((permission) => {
+                              return (
+                                <li key={permission}>
+                                  <Typography variant="body2">
+                                    {permission}
+                                  </Typography>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </TableCell>
+                      </TableRow>
+                    </Fragment>
+                  );
+                })}
               </>
-            );
-          })}
-        </>
-      )}
-    </Box>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
   );
 }

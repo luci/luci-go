@@ -33,7 +33,7 @@ describe('<GroupPermissions />', () => {
         <GroupPermissions name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('group-permissions');
+    await screen.findByTestId('permissions-table');
 
     for (const realmPermission of mockPermissions.realmPermissions) {
       expect(screen.getByText(realmPermission.name)).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('<GroupPermissions />', () => {
         <GroupPermissions name="123" />
       </FakeContextProvider>,
     );
-    await screen.findByTestId('group-permissions');
+    await screen.findByTestId('permissions-table');
 
     for (const realmPermission of mockPermissions.realmPermissions) {
       for (const permission of realmPermission.permissions) {

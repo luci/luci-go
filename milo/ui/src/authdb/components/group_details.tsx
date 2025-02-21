@@ -23,11 +23,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { GroupForm } from '@/authdb/components/group_form';
 import { GroupListing } from '@/authdb/components/group_listing';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
-import {
-  FullListingTabFlag,
-  RealmsTabFlag,
-} from '@/authdb/hooks/feature_flags';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 interface GroupDetailsProps {
@@ -55,6 +50,7 @@ const theme = createTheme({
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
+          paddingTop: '0',
         },
       },
     },
@@ -63,9 +59,6 @@ const theme = createTheme({
 
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
-
-  const realmsFlag = useFeatureFlag(RealmsTabFlag);
-  const listingFlag = useFeatureFlag(FullListingTabFlag);
 
   const handleTabChange = (newValue: string) => {
     setSearchParams(
@@ -77,13 +70,7 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
     );
   };
 
-  const validValues = ['overview'];
-  if (realmsFlag) {
-    validValues.push('permissions');
-  }
-  if (listingFlag) {
-    validValues.push('listing');
-  }
+  const validValues = ['overview', 'permissions', 'listing'];
 
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
@@ -109,31 +96,23 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <TabList onChange={(_, newValue) => handleTabChange(newValue)}>
                 <Tab label="Overview" {...a11yProps('overview')} />
-                {realmsFlag && (
-                  <Tab label="Permissions" {...a11yProps('permissions')} />
-                )}
-                {listingFlag && (
-                  <Tab label="Full Listing" {...a11yProps('listing')} />
-                )}
+                <Tab label="Permissions" {...a11yProps('permissions')} />
+                <Tab label="Full Listing" {...a11yProps('listing')} />
               </TabList>
             </Box>
             <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
               <GroupForm name={name} refetchList={refetchList} />
             </TabPanel>
-            {realmsFlag && (
-              <TabPanel
-                value="permissions"
-                role="tabpanel"
-                id="tabpanel-permissions"
-              >
-                <GroupPermissions name={name}></GroupPermissions>
-              </TabPanel>
-            )}
-            {listingFlag && (
-              <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
-                <GroupListing name={name}></GroupListing>
-              </TabPanel>
-            )}
+            <TabPanel
+              value="permissions"
+              role="tabpanel"
+              id="tabpanel-permissions"
+            >
+              <GroupPermissions name={name}></GroupPermissions>
+            </TabPanel>
+            <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
+              <GroupListing name={name}></GroupListing>
+            </TabPanel>
           </Box>
         </TabContext>
       </ThemeProvider>

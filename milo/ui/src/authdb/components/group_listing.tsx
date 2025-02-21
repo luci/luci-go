@@ -75,12 +75,12 @@ export function GroupListing({ name }: GroupListingProps) {
         <Table data-testid="listing-table">
           <TableBody>
             <TableRow>
-              <TableCell sx={{ pt: 0 }}>
+              <TableCell>
                 <Typography variant="h6">Members</Typography>
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ pt: 0 }}>
+              <TableCell sx={{ pb: '16px' }}>
                 {members.length > 0 ? (
                   <ul>
                     {members?.map((member) => {
@@ -107,7 +107,7 @@ export function GroupListing({ name }: GroupListingProps) {
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ pt: 0 }}>
+              <TableCell sx={{ pb: '16px' }}>
                 {globs.length > 0 ? (
                   <ul>
                     {globs?.map((glob) => {
@@ -134,7 +134,7 @@ export function GroupListing({ name }: GroupListingProps) {
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell sx={{ pt: 0 }}>
+              <TableCell sx={{ pb: '16px' }}>
                 {nested.length > 0 ? (
                   <ul>
                     {nested?.map((group) => {

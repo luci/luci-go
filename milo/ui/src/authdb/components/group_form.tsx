@@ -305,7 +305,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   onMouseEnter={() => setShowDescriptionEdit(true)}
                   onMouseLeave={() => setShowDescriptionEdit(false)}
                 >
-                  <TableCell sx={{ pt: 0 }}>
+                  <TableCell>
                     <Typography variant="h6">Description</Typography>
                     {(showDescriptionEdit || descriptionMode) &&
                       callerCanModify && (
@@ -324,7 +324,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   <TableCell
                     align="left"
                     style={{ width: '95%' }}
-                    sx={{ pt: 0 }}
+                    sx={{ pb: '16px' }}
                   >
                     {descriptionMode ? (
                       <TextField
@@ -378,7 +378,7 @@ export function GroupForm({ name, refetchList }: GroupFormProps) {
                   <TableCell
                     align="left"
                     style={{ width: '95%' }}
-                    sx={{ pt: 0 }}
+                    sx={{ pb: '16px' }}
                   >
                     {ownersMode ? (
                       <TextField
