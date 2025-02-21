@@ -12,10 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { GridColDef } from '@mui/x-data-grid';
+import { GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
+import {
+  TASK_ONGOING_STATES,
+  TASK_EXCEPTIONAL_STATES,
+} from '@/fleet/constants/tasks';
+import { colors } from '@/fleet/theme/colors';
 import {
   DEVICE_TASKS_MILO_HOST,
   DEVICE_TASKS_SWARMING_HOST,
@@ -38,11 +43,33 @@ import { useDeviceData } from './use_device_data';
 const prettifySwarmingState = (task: TaskResultResponse): string => {
   if (task.state === TaskState.COMPLETED) {
     if (task.failure) {
-      return 'COMPLETED (FAILURE)';
+      return 'FAILURE';
     }
-    return 'COMPLETED (SUCCESS)';
+    return 'SUCCESS';
   }
   return taskStateToJSON(task.state);
+};
+
+// Similar to Swarming's implementation in:
+// https://chromium.googlesource.com/infra/luci/luci-py/+/refs/heads/main/appengine/swarming/ui2/modules/task-list/task-list-helpers.js#480
+const getRowClassName = (params: GridRowParams): string => {
+  const result = params.row.result;
+  if (result === 'FAILURE') {
+    return 'row--failure';
+  }
+  if (TASK_ONGOING_STATES.has(result)) {
+    return 'row--pending';
+  }
+  if (result === 'BOT_DIED') {
+    return 'row--bot_died';
+  }
+  if (result === 'CLIENT_ERROR') {
+    return 'row--client_error';
+  }
+  if (TASK_EXCEPTIONAL_STATES.has(result)) {
+    return 'row--exception';
+  }
+  return '';
 };
 
 export const Tasks = ({
@@ -130,6 +157,24 @@ export const Tasks = ({
       disableColumnMenu
       disableColumnFilter
       hideFooterPagination
+      getRowClassName={getRowClassName}
+      sx={{
+        '& .row--failure': {
+          backgroundColor: colors.red[100],
+        },
+        '& .row--pending': {
+          backgroundColor: colors.yellow[100],
+        },
+        '& .row--bot_died': {
+          backgroundColor: colors.grey[100],
+        },
+        '& .row--client_error': {
+          backgroundColor: colors.orange[100],
+        },
+        '& .row--exception': {
+          backgroundColor: colors.purple[100],
+        },
+      }}
     />
   );
 };
