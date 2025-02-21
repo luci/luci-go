@@ -78,13 +78,13 @@ type Creation struct {
 //
 // If task ID collision happens, a special error `ErrAlreadyExists` will be
 // returned so the server could retry creating the entities.
-func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
-	trs, err := c.dedupByRequestID(ctx)
+func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResultSummary, error) {
+	tr, trs, err := c.dedupByRequestID(ctx)
 	switch {
 	case err != nil:
-		return nil, err
+		return nil, nil, err
 	case trs != nil:
-		return trs, nil
+		return tr, trs, nil
 	}
 
 	// Populate TaskResultSummary and entity keys.
@@ -92,7 +92,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 	// modify them. Modifying them in-place could cause bugs if we retry this
 	// creation when ID collision happens.
 	trv := *c.Request
-	tr := &trv
+	tr = &trv
 	var sb *model.SecretBytes
 	if c.SecretBytes != nil {
 		sbv := *c.SecretBytes
@@ -122,7 +122,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 	for i := range len(tr.TaskSlices) {
 		s := &tr.TaskSlices[i]
 		if err := s.PrecalculatePropertiesHash(sb); err != nil {
-			return nil, errors.Annotate(err, "error calculating properties hash for slice %d", i).Err()
+			return nil, nil, errors.Annotate(err, "error calculating properties hash for slice %d", i).Err()
 		}
 	}
 
@@ -134,7 +134,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		}
 		dupResult, err = c.findDuplicateTask(ctx, s.PropertiesHash)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if dupResult != nil {
 			c.copyDuplicateTask(ctx, trs, dupResult, i)
@@ -162,24 +162,24 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		trs.CurrentTaskSlice = 0
 		ttr, err = model.NewTaskToRun(ctx, c.SwarmingProject, tr, int(trs.CurrentTaskSlice))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if tr.ResultDB.Enable {
 			taskRunID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)
 			resultdbHost := c.Config.Settings().GetResultdb().GetServer()
 			if resultdbHost == "" {
-				return nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
+				return nil, nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
 			}
 			invName, rdbUpdateToken, err := c.createResultDBInvocation(ctx, resultdbHost, tr, taskRunID)
 			switch {
 			case status.Code(err) == codes.AlreadyExists:
 				// Task ID collision causes ResultDB CreateInvocation failure.
 				// We should also retry in this case.
-				return nil, ErrAlreadyExists
+				return nil, nil, ErrAlreadyExists
 			case err != nil:
 				logging.Errorf(ctx, "error creating ResultDB invocation: %s", err)
-				return nil, errors.Reason("error creating ResultDB invocation").Err()
+				return nil, nil, errors.Reason("error creating ResultDB invocation").Err()
 			}
 
 			tr.ResultDBUpdateToken = rdbUpdateToken
@@ -193,11 +193,12 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Recheck TaskRequestID in transaction in case it has just been
 		// created after previous check.
-		dupTrs, err := c.dedupByRequestID(ctx)
+		dupTr, dupTrs, err := c.dedupByRequestID(ctx)
 		switch {
 		case err != nil:
 			return err
 		case dupTrs != nil:
+			tr = dupTr
 			trs = dupTrs
 			return nil
 		}
@@ -259,7 +260,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 		return datastore.Put(ctx, toPut...)
 	}, nil)
 	if err != nil {
-		return nil, errors.Annotate(err, "error saving the task").Err()
+		return nil, nil, errors.Annotate(err, "error saving the task").Err()
 	}
 
 	if dupResult != nil {
@@ -268,28 +269,43 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskResultSummary, error) {
 	}
 
 	onTaskRequested(ctx, trs, dupResult != nil)
-	return trs, nil
+	return tr, trs, nil
 }
 
-func (c *Creation) dedupByRequestID(ctx context.Context) (*model.TaskResultSummary, error) {
+func (c *Creation) dedupByRequestID(ctx context.Context) (*model.TaskRequest, *model.TaskResultSummary, error) {
 	if c.RequestID == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 	tri := &model.TaskRequestID{
 		Key: model.TaskRequestIDKey(ctx, c.RequestID),
 	}
 	switch err := datastore.Get(ctx, tri); {
-	case err == nil:
-		trs, subErr := model.TaskResultSummaryFromID(ctx, tri.TaskID)
-		if subErr != nil {
-			return nil, errors.Annotate(subErr, "failed to get TaskResultSummary for request id %s", c.RequestID).Err()
-		}
-		return trs, nil
-	case !errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, errors.Annotate(err, "failed to get TaskRequestID for request id %s", c.RequestID).Err()
-	default:
-		return nil, nil
+	case errors.Is(err, datastore.ErrNoSuchEntity):
+		return nil, nil, nil
+	case err != nil:
+		logging.Errorf(ctx, "failed to get TaskRequestID for request id %s", c.RequestID)
+		return nil, nil, status.Errorf(codes.Internal, "failed to get TaskRequestID for request id %s", c.RequestID)
 	}
+
+	key, err := model.TaskIDToRequestKey(ctx, tri.TaskID)
+	if err != nil {
+		return nil, nil, status.Errorf(codes.FailedPrecondition, "unexpectedly invalid task_id %s: %s", tri.TaskID, err)
+	}
+	tr := &model.TaskRequest{Key: key}
+	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, key)}
+	if err = datastore.Get(ctx, tr, trs); err != nil {
+		var merr errors.MultiError
+		if errors.As(err, &merr) {
+			for _, err := range merr {
+				if errors.Is(err, datastore.ErrNoSuchEntity) {
+					return nil, nil, status.Errorf(codes.NotFound, "no such task")
+				}
+			}
+		}
+		logging.Errorf(ctx, "Error fetching entities for task %s: %s", tri.TaskID, err)
+		return nil, nil, status.Errorf(codes.Internal, "datastore error fetching the task")
+	}
+	return tr, trs, nil
 }
 
 // findDuplicateTask finds a previously run task that can be reused.

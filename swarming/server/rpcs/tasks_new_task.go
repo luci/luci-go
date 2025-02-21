@@ -146,10 +146,11 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 
 	// Create the task in a loop to retry on task ID collisions.
 	var trs *model.TaskResultSummary
+	var tr *model.TaskRequest
 	attempts := 0
 	for {
 		attempts++
-		trs, err = creation.Run(ctx)
+		tr, trs, err = creation.Run(ctx)
 		if !errors.Is(err, tasks.ErrAlreadyExists) {
 			break
 		}
@@ -169,8 +170,11 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	}
 
 	return &apipb.TaskRequestMetadataResponse{
-		TaskId:     model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
-		Request:    ents.request.ToProto(),
+		TaskId: model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
+		// tasks.Creation makes shallow copies of entities to make updates.
+		// So we need to use tr instead of ents.request here to have
+		// TaskId populated.
+		Request:    tr.ToProto(),
 		TaskResult: trs.ToProto(),
 	}, nil
 }

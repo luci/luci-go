@@ -69,8 +69,27 @@ func TestCreation(t *testing.T) {
 				s := &Creation{
 					RequestID: "bad_task_id",
 				}
-				_, err := s.Run(ctx)
-				assert.That(t, err, should.ErrLike("failed to get TaskResultSummary for request id bad_task_id"))
+				_, _, err := s.Run(ctx)
+				assert.That(t, err, should.ErrLike("unexpectedly invalid task_id not_a_task_id"))
+			})
+			t.Run("missing_entity", func(t *ftt.Test) {
+				id := "65aba3a3e6b99310"
+				reqKey, err := model.TaskIDToRequestKey(ctx, id)
+				assert.NoErr(t, err)
+				tr := &model.TaskRequest{
+					Key: reqKey,
+				}
+				tri := &model.TaskRequestID{
+					Key:    model.TaskRequestIDKey(ctx, "exist"),
+					TaskID: id,
+				}
+				assert.NoErr(t, datastore.Put(ctx, tr, tri))
+
+				c := &Creation{
+					RequestID: "exist",
+				}
+				_, _, err = c.Run(ctx)
+				assert.That(t, err, should.ErrLike("no such task"))
 			})
 			t.Run("found_duplicate", func(t *ftt.Test) {
 				id := "65aba3a3e6b99310"
@@ -94,7 +113,7 @@ func TestCreation(t *testing.T) {
 				c := &Creation{
 					RequestID: "exist",
 				}
-				res, err := c.Run(ctx)
+				_, res, err := c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
 				assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
@@ -180,7 +199,7 @@ func TestCreation(t *testing.T) {
 					LifecycleTasks: lt,
 				}
 
-				trs, err = c.Run(ctx)
+				_, trs, err = c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
 				assert.That(t, trs.ResultDBInfo, should.Match(trs.ResultDBInfo))
@@ -247,7 +266,7 @@ func TestCreation(t *testing.T) {
 					ResultDBClientFactory: mcf,
 				}
 
-				trs, err = c.Run(ctx)
+				_, trs, err = c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
 				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
@@ -279,7 +298,7 @@ func TestCreation(t *testing.T) {
 					},
 				},
 			}
-			_, err := c.Run(ctx)
+			_, _, err := c.Run(ctx)
 			assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 		})
 
@@ -333,7 +352,7 @@ func TestCreation(t *testing.T) {
 				cfg := p.Cached(ctx)
 				mcf := resultdb.NewMockRecorderClientFactory(nil, nil, nil, "")
 				c := prepCreation(cfg, mcf)
-				_, err := c.Run(ctx)
+				_, _, err := c.Run(ctx)
 				assert.That(t, err, should.ErrLike("ResultDB integration is not configured"))
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			})
@@ -352,7 +371,7 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.PermissionDenied, "boom"), "")
 					c := prepCreation(cfg, mcf)
-					_, err := c.Run(ctx)
+					_, _, err := c.Run(ctx)
 					assert.That(t, err, should.ErrLike("error creating ResultDB invocation"))
 				})
 
@@ -360,7 +379,7 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.AlreadyExists, "invocation already exists"), "")
 					c := prepCreation(cfg, mcf)
-					_, err := c.Run(ctx)
+					_, _, err := c.Run(ctx)
 					assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 				})
 
@@ -372,7 +391,7 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, inv,
 						nil, token)
 					c := prepCreation(cfg, mcf)
-					trs, err := c.Run(ctx)
+					_, trs, err := c.Run(ctx)
 					assert.NoErr(t, err)
 					assert.Loosely(t, trs, should.NotBeNil)
 					assert.That(t, trs.ResultDBInfo.Hostname, should.Equal("https://rdbhost.example.com"))
@@ -383,34 +402,44 @@ func TestCreation(t *testing.T) {
 		})
 
 		t.Run("OK", func(t *ftt.Test) {
-			c := &Creation{
-				Request: &model.TaskRequest{
-					TaskSlices: []model.TaskSlice{
-						{
-							Properties: model.TaskProperties{
-								Dimensions: model.TaskDimensions{
-									"pool": {"pool"},
-								},
+			newTR := &model.TaskRequest{
+				TaskSlices: []model.TaskSlice{
+					{
+						Properties: model.TaskProperties{
+							Dimensions: model.TaskDimensions{
+								"pool": {"pool"},
 							},
 						},
 					},
-					RBEInstance: "rbe-instance",
-					PubSubTopic: "pubsub-topic",
 				},
+				RBEInstance: "rbe-instance",
+				PubSubTopic: "pubsub-topic",
+			}
+			c := &Creation{
+				Request:         newTR,
 				LifecycleTasks:  lt,
 				SwarmingProject: "swarming",
 			}
-			trs, err := c.Run(ctx)
+			updatedTR, trs, err := c.Run(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, trs, should.NotBeNil)
 			assert.That(
 				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
 				should.Equal("2cbe1fa55012fa10"))
 
+			updatedTRProto := updatedTR.ToProto()
+			assert.That(t, updatedTRProto.TaskId, should.Equal(trs.ToProto().TaskId))
+			// To confirm only TaskID is populated during creation.
+			newTRProto := newTR.ToProto()
+			assert.That(t, newTRProto.TaskId, should.Equal(""))
+			newTRProto.TaskId = updatedTRProto.TaskId
+			assert.That(t, updatedTRProto, should.Match(newTRProto))
+
 			tr := &model.TaskRequest{
 				Key: trs.TaskRequestKey(),
 			}
 			assert.NoErr(t, datastore.Get(ctx, tr))
+			assert.That(t, updatedTRProto, should.Match(tr.ToProto()))
 
 			ttrKey, err := model.TaskRequestToToRunKey(ctx, tr, 0)
 			assert.NoErr(t, err)
