@@ -23,7 +23,6 @@ import {
 } from '@mui/material';
 import { debounce } from 'lodash-es';
 import { useState, useRef, useEffect, useMemo, ReactNode } from 'react';
-import { useClickAway } from 'react-use';
 
 import { CommitOrClear } from './commit_or_clear';
 import { HasUncommittedCtx, SettersCtx } from './context';
@@ -231,12 +230,6 @@ export function TextAutocomplete<T>({
     inputRef.current!.focus();
   }
 
-  // Dismiss options when the user clicks away.
-  useClickAway(containerRef, () => {
-    toggleShowOptions(false);
-    setHighlightOptionId(null);
-  });
-
   const commitValueRef = useRef(commitValue);
   commitValueRef.current = commitValue;
   const setters = useMemo(
@@ -316,22 +309,34 @@ export function TextAutocomplete<T>({
                     </InputAdornment>
                   ),
                   ...slotProps.textField?.slotProps?.input,
-                  // Put the onFocus/onBlur handler on input directly rather
-                  // than on the TextField so clicking on the adornments won't
-                  // cause the suggestions to show up.
-                  onFocus: (e) => {
-                    // We emit fake focus events to ensure input is scrolled to
-                    // the cursor when a suggestion is accepted. Stop the fake
-                    // event from propagating to the parent.
-                    e.stopPropagation();
-                    setFocused(true);
-                  },
-                  onBlur: (e) => {
-                    // We emit fake blur events to ensure input is scrolled to
-                    // the cursor when a suggestion is accepted. Stop the fake
-                    // event from propagating to the parent.
-                    e.stopPropagation();
-                    setFocused(false);
+                  inputProps: {
+                    ...(slotProps.textField?.slotProps?.input &&
+                    'inputProps' in slotProps.textField.slotProps.input
+                      ? slotProps.textField.slotProps.input.inputProps
+                      : {}),
+                    // Put the the following handler on input directly rather
+                    // than on the TextField so clicking on the adornments
+                    // won't cause the suggestions to show up.
+                    onFocus: (e) => {
+                      // We emit fake focus events to ensure input is scrolled
+                      // to the cursor when a suggestion is accepted. Stop the
+                      // fake event from propagating to the parent.
+                      e.stopPropagation();
+                      setFocused(true);
+                    },
+                    onBlur: (e) => {
+                      // We emit fake blur events to ensure input is scrolled
+                      // to the cursor when a suggestion is accepted. Stop the
+                      // fake event from propagating to the parent.
+                      e.stopPropagation();
+                      setHighlightOptionId(null);
+                      setFocused(false);
+                      toggleShowOptions(false);
+                    },
+                    onClick: () => {
+                      toggleShowOptions(true);
+                      updateGenOptionsParams();
+                    },
                   },
                 },
               }}
@@ -342,10 +347,6 @@ export function TextAutocomplete<T>({
               onKeyUp={() => updateGenOptionsParams()}
               onChange={(e) => setUncommittedValue(e.target.value)}
               onInput={() => {
-                toggleShowOptions(true);
-                updateGenOptionsParams();
-              }}
-              onClick={() => {
                 toggleShowOptions(true);
                 updateGenOptionsParams();
               }}
