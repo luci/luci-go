@@ -14,7 +14,7 @@
 
 import { UiPage } from '@/common/constants/view';
 
-export const drawerWidth = 250;
+export const DRAWER_WIDTH = 250;
 
 export const PAGE_LABEL_MAP = Object.freeze({
   [UiPage.BuilderSearch]: 'Builder search',

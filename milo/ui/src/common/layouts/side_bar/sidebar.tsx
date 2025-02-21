@@ -35,7 +35,7 @@ import { useTreesClient } from '@/common/hooks/prpc_clients';
 import { logging } from '@/common/tools/logging';
 import { QueryTreesRequest } from '@/proto/go.chromium.org/luci/tree_status/proto/v1/trees.pb';
 
-import { PAGE_LABEL_MAP, drawerWidth } from '../constants';
+import { PAGE_LABEL_MAP, DRAWER_WIDTH } from '../constants';
 
 import { generateSidebarSections } from './pages';
 
@@ -50,7 +50,7 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    width: `${drawerWidth}px`,
+    width: `${DRAWER_WIDTH}px`,
   }),
 }));
 
@@ -88,7 +88,7 @@ export const Sidebar = ({ open }: Props) => {
         position: 'relative',
         height: '100%',
         '& .MuiDrawer-paper': {
-          width: drawerWidth,
+          width: DRAWER_WIDTH,
           boxSizing: 'border-box',
           position: 'sticky',
           height: 'min(100vh, 100%)',

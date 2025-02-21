@@ -29,7 +29,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 import { colors } from '@/fleet/theme/colors';
 
-import { drawerWidth } from './constants';
+import { DRAWER_WIDTH } from './constants';
 import { generateSidebarSections } from './sidebar_sections';
 
 const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
@@ -43,7 +43,7 @@ const Drawer = styled(MuiDrawer)(({ theme, open }) => ({
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
-    width: `${drawerWidth}px`,
+    width: `${DRAWER_WIDTH}px`,
   }),
 }));
 
@@ -59,7 +59,7 @@ export const Sidebar = ({ open }: { open: boolean }) => {
         position: 'relative',
         height: '100%',
         '& .MuiDrawer-paper': {
-          width: drawerWidth,
+          width: DRAWER_WIDTH,
           boxSizing: 'border-box',
         },
       }}

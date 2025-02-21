@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const drawerWidth = 213;
+export const DRAWER_WIDTH = 213;
