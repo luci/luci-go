@@ -26,6 +26,7 @@ import {
   DEVICE_TASKS_SWARMING_HOST,
   extractBuildUrlFromTagData,
 } from '@/fleet/utils/builds';
+import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
 import {
   StateQuery,
   TaskResultResponse,
@@ -101,8 +102,8 @@ export const Tasks = ({
   const taskGridData = tasks.map((t) => ({
     id: t.taskId,
     task: t.name,
-    started: t.startedTs,
-    duration: `${t.duration}s`,
+    started: prettyDateTime(t.startedTs),
+    duration: prettySeconds(t.duration),
     result: prettifySwarmingState(t),
     tags: t.tags,
   }));

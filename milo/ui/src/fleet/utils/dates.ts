@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { DateTime, Duration } from 'luxon';
+
 import { DateOnly } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/common_types.pb';
 
 export const toIsoString = (dateOnly: DateOnly | undefined): string => {
@@ -19,4 +21,22 @@ export const toIsoString = (dateOnly: DateOnly | undefined): string => {
     return '';
   }
   return `${dateOnly.year}-${String(dateOnly.month).padStart(2, '0')}-${String(dateOnly.day).padStart(2, '0')}`;
+};
+
+export const prettyDateTime = (dt: string | undefined): string => {
+  if (!dt) {
+    return '';
+  }
+  return DateTime.fromISO(dt).toLocaleString(
+    DateTime.DATETIME_SHORT_WITH_SECONDS,
+  );
+};
+
+export const prettySeconds = (seconds: number | undefined): string => {
+  if (!seconds) {
+    return '0s';
+  }
+  return Duration.fromObject({ seconds: seconds })
+    .rescale()
+    .toHuman({ unitDisplay: 'short' });
 };
