@@ -148,6 +148,7 @@ message TestVariantIdentifier {
   // Constraints:
   // - Must match constraints set by the module's scheme.
   // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
   string coarse_name = 5;
 
   // Interemdiate hierarchy - fine name.
@@ -160,6 +161,7 @@ message TestVariantIdentifier {
   // Constraints:
   // - Must match constraints set by the module's scheme.
   // - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
   string fine_name = 6;
 
   // The identifier of test case within the above fine grouping.
@@ -168,6 +170,15 @@ message TestVariantIdentifier {
   //
   // This is the finest granularity component of the test identifier, and typically
   // refers to sub-file granularity unless no such granularity exists.
+  //
+  // The special value "*fixture" may be used for reporting the result of
+  // setup and teardown common to tests in the same fine_name.
+  //
+  // Constraints:
+  // - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
+  //   unless it is to write the value "*fixture". Exception is made for tests in the
+  //   module 'legacy' for which a slightly broader set of starting characters is allowed
+  //   for backwards compatibility but use of this quirk is discouraged.
   string case_name = 7;
 }
 

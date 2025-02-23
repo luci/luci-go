@@ -245,6 +245,7 @@ type TestVariantIdentifier struct {
 	// Constraints:
 	// - Must match constraints set by the module's scheme.
 	// - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+	// - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
 	CoarseName string `protobuf:"bytes,5,opt,name=coarse_name,json=coarseName,proto3" json:"coarse_name,omitempty"`
 	// Interemdiate hierarchy - fine name.
 	//
@@ -256,6 +257,7 @@ type TestVariantIdentifier struct {
 	// Constraints:
 	// - Must match constraints set by the module's scheme.
 	// - Limited to 300 bytes of printable UTF-8 (see also limits on `TestIdentifier` as a whole).
+	// - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C).
 	FineName string `protobuf:"bytes,6,opt,name=fine_name,json=fineName,proto3" json:"fine_name,omitempty"`
 	// The identifier of test case within the above fine grouping.
 	//
@@ -263,6 +265,15 @@ type TestVariantIdentifier struct {
 	//
 	// This is the finest granularity component of the test identifier, and typically
 	// refers to sub-file granularity unless no such granularity exists.
+	//
+	// The special value "*fixture" may be used for reporting the result of
+	// setup and teardown common to tests in the same fine_name.
+	//
+	// Constraints:
+	//   - Must not start with one of the characters in [ !"#$%'()*+,] (i.e. U+0020 to U+002C),
+	//     unless it is to write the value "*fixture". Exception is made for tests in the
+	//     module 'legacy' for which a slightly broader set of starting characters is allowed
+	//     for backwards compatibility but use of this quirk is discouraged.
 	CaseName      string `protobuf:"bytes,7,opt,name=case_name,json=caseName,proto3" json:"case_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
