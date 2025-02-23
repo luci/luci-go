@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { debounce } from 'lodash-es';
 import { useState, useRef, useEffect, useMemo, ReactNode } from 'react';
+import { useClickAway } from 'react-use';
 
 import { CommitOrClear } from './commit_or_clear';
 import { InputStateCtx, SettersCtx } from './context';
@@ -209,6 +210,12 @@ export function TextAutocomplete<T>({
     }
   }
 
+  // Dismiss options when the user clicks away.
+  useClickAway(containerRef, () => {
+    toggleShowOptions(false);
+    setHighlightOptionId(null);
+  });
+
   // Handle when an option is confirmed by the user.
   function handleOptionConfirmed(option: OptionDef<T>) {
     const [newVal, newPos] = applyOption(
@@ -230,12 +237,15 @@ export function TextAutocomplete<T>({
     inputRef.current!.focus();
   }
 
+  const toggleShowOptionsRef = useRef(toggleShowOptions);
+  toggleShowOptionsRef.current = toggleShowOptions;
   const commitValueRef = useRef(commitValue);
   commitValueRef.current = commitValue;
   const setters = useMemo(
     () => ({
       commit: () => commitValueRef.current(),
       clear: () => commitValueRef.current(''),
+      hideOptions: () => toggleShowOptionsRef.current(false),
     }),
     [],
   );
@@ -339,9 +349,7 @@ export function TextAutocomplete<T>({
                       // to the cursor when a suggestion is accepted. Stop the
                       // fake event from propagating to the parent.
                       e.stopPropagation();
-                      setHighlightOptionId(null);
                       setFocused(false);
-                      toggleShowOptions(false);
                     },
                     onClick: () => {
                       toggleShowOptions(true);

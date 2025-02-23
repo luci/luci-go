@@ -15,3 +15,4 @@
 export * from './types';
 export * from './text_autocomplete';
 export * from './commit_or_clear';
+export { useInputState, useSetters } from './context';

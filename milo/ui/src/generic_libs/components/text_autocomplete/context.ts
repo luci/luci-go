@@ -17,6 +17,7 @@ import { createContext, useContext } from 'react';
 export interface SettersContext {
   readonly clear: () => void;
   readonly commit: () => void;
+  readonly hideOptions: () => void;
 }
 
 export const SettersCtx = createContext<SettersContext | undefined>(undefined);

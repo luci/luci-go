@@ -29,13 +29,16 @@ import {
   tryUnquoteStr,
 } from '@/common/components/aip_160_autocomplete';
 import { HighlightedText } from '@/generic_libs/components/highlighted_text';
-import { CommitOrClear } from '@/generic_libs/components/text_autocomplete';
+import {
+  CommitOrClear,
+  useSetters,
+} from '@/generic_libs/components/text_autocomplete';
 import {
   QueryTestsRequest,
   QueryTestsResponse,
 } from '@/proto/go.chromium.org/luci/analysis/proto/v1/test_history.pb';
 
-const FilterHelp = () => {
+const FilterHelpTooltip = () => {
   // TODO: more styling on this.
   return (
     <Typography sx={{ p: 2, maxWidth: '800px' }}>
@@ -89,13 +92,47 @@ const FilterHelp = () => {
   );
 };
 
+function FilterHelp() {
+  const [filterHelpAnchorEl, setFilterHelpAnchorEl] =
+    useState<HTMLButtonElement | null>(null);
+  const setters = useSetters();
+
+  return (
+    <>
+      <IconButton
+        aria-label="toggle search help"
+        edge="end"
+        onClick={(e) => {
+          setters.hideOptions();
+          setFilterHelpAnchorEl(e.currentTarget);
+        }}
+      >
+        <HelpOutline />
+      </IconButton>
+      <Popover
+        open={Boolean(filterHelpAnchorEl)}
+        anchorEl={filterHelpAnchorEl}
+        onClose={() => setFilterHelpAnchorEl(null)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <FilterHelpTooltip />
+      </Popover>
+    </>
+  );
+}
+
 export interface ClustersTableFilterProps {
   readonly project: string;
 }
 
 const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
-  const [filterHelpAnchorEl, setFilterHelpAnchorEl] =
-    useState<HTMLButtonElement | null>(null);
   const [failureFilter, updateFailureFilterParam] = useFilterParam();
 
   const client = useTestHistoryClient();
@@ -213,13 +250,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
                 endAdornment: (
                   <InputAdornment position="end">
                     <CommitOrClear />
-                    <IconButton
-                      aria-label="toggle search help"
-                      edge="end"
-                      onClick={(e) => setFilterHelpAnchorEl(e.currentTarget)}
-                    >
-                      <HelpOutline />
-                    </IconButton>
+                    <FilterHelp />
                   </InputAdornment>
                 ),
                 inputProps: {
@@ -230,21 +261,6 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           },
         }}
       />
-      <Popover
-        open={Boolean(filterHelpAnchorEl)}
-        anchorEl={filterHelpAnchorEl}
-        onClose={() => setFilterHelpAnchorEl(null)}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-      >
-        <FilterHelp />
-      </Popover>
     </>
   );
 };
