@@ -183,6 +183,14 @@ func (cfg *Config) adjustedTimeout(t time.Duration) time.Duration {
 	return time.Minute
 }
 
+// actorTokensConfigured is true if there's enough configuration to mint
+// actor tokens.
+func (cfg *Config) actorTokensConfigured() bool {
+	// Either there's an explicitly given provider, or there's enough
+	// configuration to use defaultActorTokensProviderImpl.
+	return cfg.ActorTokensProvider != nil || cfg.AccessTokenProvider != nil
+}
+
 // actorTokensProvider returns an actual ActorTokensProvider implementation.
 func (cfg *Config) actorTokensProvider() ActorTokensProvider {
 	if cfg.ActorTokensProvider != nil {

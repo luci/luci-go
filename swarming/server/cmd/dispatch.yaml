@@ -40,3 +40,7 @@ dispatch:
     service: default-go
   - url: "*/swarming/api/v1/bot/event"
     service: default-go
+  - url: "*/swarming/api/v1/bot/oauth_token"
+    service: default-go
+  - url: "*/swarming/api/v1/bot/id_token"
+    service: default-go

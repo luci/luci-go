@@ -16,16 +16,20 @@ package botapi
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
 
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -34,6 +38,8 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/auth/openid"
+	"go.chromium.org/luci/server/caching"
 	minterpb "go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	internalspb "go.chromium.org/luci/swarming/proto/internals"
@@ -106,7 +112,7 @@ func TestTaskTokens(t *testing.T) {
 				return r.(*TokenResponse), nil
 			}
 
-			t.Run("OK: empty, bot none", func(t *ftt.Test) {
+			t.Run("OK: empty, bot, none", func(t *ftt.Test) {
 				for _, acc := range []string{"", "bot", "none"} {
 					taskID := mockTask(acc, testTaskRealm)
 					r, err := call(taskID, &TokenRequest{
@@ -315,6 +321,129 @@ func TestTaskTokens(t *testing.T) {
 	})
 }
 
+func TestSystemTokens(t *testing.T) {
+	t.Parallel()
+
+	// Only test code paths which are different from the "task" token case.
+
+	const (
+		testBotID       = "test-bot"
+		testSystemSA    = "system-sa@example.com"
+		testAccessToken = "minted-token"
+	)
+
+	var (
+		testTime        = time.Date(2044, time.February, 3, 4, 5, 0, 0, time.UTC)
+		testTokenExpiry = testTime.Add(time.Hour)
+	)
+
+	ftt.Run("With mocks", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		ctx = caching.WithEmptyProcessCache(ctx)
+		ctx, _ = testclock.UseTime(ctx, testTime)
+
+		mockedTokenProvider := &mockedTokenProvider{
+			accessToken: testAccessToken,
+			expiry:      testTokenExpiry,
+		}
+
+		ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+			cfg.ActorTokensProvider = mockedTokenProvider
+			return cfg
+		})
+
+		srv := &BotAPIServer{}
+
+		t.Run("OAuth token", func(t *ftt.Test) {
+			call := func(systemAccount string, req *TokenRequest) (*TokenResponse, error) {
+				r, err := srv.OAuthToken(ctx, req, &botsrv.Request{
+					Session: &internalspb.Session{
+						BotId: testBotID,
+						BotConfig: &internalspb.BotConfig{
+							SystemServiceAccount: systemAccount,
+						},
+					},
+				})
+				if err != nil {
+					return nil, err
+				}
+				return r.(*TokenResponse), nil
+			}
+
+			t.Run("OK: empty, bot, none", func(t *ftt.Test) {
+				for _, acc := range []string{"", "bot", "none"} {
+					r, err := call(acc, &TokenRequest{
+						AccountID: "system",
+						Scopes:    []string{"some-scope"},
+					})
+					assert.NoErr(t, err)
+
+					expected := acc
+					if expected == "" {
+						expected = "none"
+					}
+					assert.That(t, r, should.Match(&TokenResponse{
+						ServiceAccount: expected,
+					}))
+				}
+			})
+
+			t.Run("OK: actual account", func(t *ftt.Test) {
+				r, err := call(testSystemSA, &TokenRequest{
+					AccountID: "system",
+					Scopes:    []string{"scope1", "scope2"},
+				})
+				assert.NoErr(t, err)
+
+				assert.That(t, r, should.Match(&TokenResponse{
+					ServiceAccount: testSystemSA,
+					AccessToken:    testAccessToken,
+					Expiry:         testTokenExpiry.Unix(),
+				}))
+
+				assert.That(t, mockedTokenProvider.serviceAccount, should.Equal(testSystemSA))
+				assert.That(t, mockedTokenProvider.scopes, should.Match([]string{"scope1", "scope2"}))
+				assert.That(t, mockedTokenProvider.audience, should.Equal(""))
+				assert.That(t, mockedTokenProvider.delegates, should.Match([]string(nil)))
+			})
+		})
+
+		t.Run("ID token", func(t *ftt.Test) {
+			call := func(systemAccount string, req *TokenRequest) (*TokenResponse, error) {
+				r, err := srv.IDToken(ctx, req, &botsrv.Request{
+					Session: &internalspb.Session{
+						BotId: testBotID,
+						BotConfig: &internalspb.BotConfig{
+							SystemServiceAccount: systemAccount,
+						},
+					},
+				})
+				if err != nil {
+					return nil, err
+				}
+				return r.(*TokenResponse), nil
+			}
+
+			r, err := call(testSystemSA, &TokenRequest{
+				AccountID: "system",
+				Audience:  "audience",
+			})
+			assert.NoErr(t, err)
+
+			assert.That(t, r, should.Match(&TokenResponse{
+				ServiceAccount: testSystemSA,
+				IDToken:        mockedTokenProvider.idToken, // generated
+				Expiry:         testTokenExpiry.Unix(),
+			}))
+
+			assert.That(t, mockedTokenProvider.serviceAccount, should.Equal(testSystemSA))
+			assert.That(t, mockedTokenProvider.scopes, should.Match([]string(nil)))
+			assert.That(t, mockedTokenProvider.audience, should.Equal("audience"))
+			assert.That(t, mockedTokenProvider.delegates, should.Match([]string(nil)))
+		})
+	})
+}
+
 func TestTokenServerClient(t *testing.T) {
 	t.Parallel()
 
@@ -351,4 +480,37 @@ func (m *mockedMinter) MintServiceAccountToken(ctx context.Context, in *minterpb
 		Token:  m.tokenValue,
 		Expiry: timestamppb.New(m.tokenExpiry),
 	}, nil
+}
+
+type mockedTokenProvider struct {
+	serviceAccount string
+	scopes         []string
+	audience       string
+	delegates      []string
+
+	accessToken string
+	idToken     string
+
+	expiry time.Time
+}
+
+func (m *mockedTokenProvider) GenerateAccessToken(ctx context.Context, serviceAccount string, scopes, delegates []string) (*oauth2.Token, error) {
+	m.serviceAccount = serviceAccount
+	m.scopes = scopes
+	m.audience = ""
+	m.delegates = delegates
+	return &oauth2.Token{AccessToken: m.accessToken, Expiry: m.expiry}, nil
+}
+
+func (m *mockedTokenProvider) GenerateIDToken(ctx context.Context, serviceAccount, audience string, delegates []string) (string, error) {
+	m.serviceAccount = serviceAccount
+	m.scopes = nil
+	m.audience = audience
+	m.delegates = delegates
+
+	// The caller parses the ID token to get the expiry. Generate a fake one.
+	body, _ := json.Marshal(&openid.IDToken{Exp: m.expiry.Unix()})
+	b64bdy := base64.RawURLEncoding.EncodeToString(body)
+	m.idToken = "mockedhdr." + b64bdy + "." + "mockedsig"
+	return m.idToken, nil
 }

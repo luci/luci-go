@@ -85,7 +85,7 @@ func MintIDTokenForServiceAccount(ctx context.Context, params MintIDTokenParams)
 	report := durationReporter(ctx, mintIDTokenDuration)
 
 	cfg := getConfig(ctx)
-	if cfg == nil || cfg.AccessTokenProvider == nil {
+	if cfg == nil || !cfg.actorTokensConfigured() {
 		report(ErrNotConfigured, "ERROR_NOT_CONFIGURED")
 		return nil, ErrNotConfigured
 	}

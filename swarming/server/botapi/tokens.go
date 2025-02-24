@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -186,6 +187,7 @@ func (srv *BotAPIServer) IDToken(ctx context.Context, body *TokenRequest, r *bot
 type tokenMinter interface {
 	kind() string
 	mintTaskToken(ctx context.Context, realm, serviceAccountEmail string, auditTags []string) (*auth.Token, error)
+	mintSystemToken(ctx context.Context, serviceAccountEmail string) (*auth.Token, error)
 }
 
 // mintToken is a common implementation of OAuthToken and IDToken.
@@ -291,7 +293,19 @@ func (srv *BotAPIServer) mintTaskToken(ctx context.Context, body *TokenRequest, 
 
 // mintSystemToken mints a token for "system" account (associated with the bot).
 func (srv *BotAPIServer) mintSystemToken(ctx context.Context, r *botsrv.Request, tm tokenMinter) (sa string, minted *auth.Token, err error) {
-	panic("not implemented")
+	sa = r.Session.BotConfig.SystemServiceAccount
+	switch sa {
+	case "", "none":
+		return "none", nil, nil
+	case "bot":
+		return "bot", nil, nil
+	default:
+		if err := validate.ServiceAccount(sa); err != nil {
+			return "", nil, status.Errorf(codes.FailedPrecondition, "misconfigured system service account: %s", err)
+		}
+	}
+	minted, err = tm.mintSystemToken(ctx, sa)
+	return
 }
 
 // oauthTokenMinter implements minting of OAuth access tokens.
@@ -324,6 +338,27 @@ func (m *oauthTokenMinter) mintTaskToken(ctx context.Context, realm, serviceAcco
 	return &auth.Token{Token: resp.Token, Expiry: resp.Expiry.AsTime()}, nil
 }
 
+func (m *oauthTokenMinter) mintSystemToken(ctx context.Context, serviceAccountEmail string) (*auth.Token, error) {
+	// This mints the token through Cloud IAM service account impersonation.
+	// The minted token is cached and reused in subsequent calls.
+	tok, err := auth.MintAccessTokenForServiceAccount(ctx, auth.MintAccessTokenParams{
+		ServiceAccount: serviceAccountEmail,
+		Scopes:         m.scopes,
+		MinTTL:         minTokenTTL,
+	})
+	switch {
+	case err == nil:
+		return tok, nil
+	case transient.Tag.In(err):
+		return nil, status.Errorf(codes.Internal, "transient error minting an access token for %q: %s", serviceAccountEmail, err)
+	default:
+		// This is most likely IAM permission error, which we need to expose to the
+		// bot as HTTP status 400 (aka "misconfiguration") which is represented by
+		// InvalidArgument status code.
+		return nil, status.Errorf(codes.InvalidArgument, "error minting an access token for %q: %s", serviceAccountEmail, err)
+	}
+}
+
 // idTokenMinter implements minting of ID tokens.
 type idTokenMinter struct {
 	audience          string
@@ -352,6 +387,27 @@ func (m *idTokenMinter) mintTaskToken(ctx context.Context, realm, serviceAccount
 		return nil, err
 	}
 	return &auth.Token{Token: resp.Token, Expiry: resp.Expiry.AsTime()}, nil
+}
+
+func (m *idTokenMinter) mintSystemToken(ctx context.Context, serviceAccountEmail string) (*auth.Token, error) {
+	// This mints the token through Cloud IAM service account impersonation.
+	// The minted token is cached and reused in subsequent calls.
+	tok, err := auth.MintIDTokenForServiceAccount(ctx, auth.MintIDTokenParams{
+		ServiceAccount: serviceAccountEmail,
+		Audience:       m.audience,
+		MinTTL:         minTokenTTL,
+	})
+	switch {
+	case err == nil:
+		return tok, nil
+	case transient.Tag.In(err):
+		return nil, status.Errorf(codes.Internal, "transient error minting an ID token for %q: %s", serviceAccountEmail, err)
+	default:
+		// This is most likely IAM permission error, which we need to expose to the
+		// bot as HTTP status 400 (aka "misconfiguration") which is represented by
+		// InvalidArgument
+		return nil, status.Errorf(codes.InvalidArgument, "error minting an ID token for %q: %s", serviceAccountEmail, err)
+	}
 }
 
 // tokenServerClient constructs a client to call the LUCI Token Server.
