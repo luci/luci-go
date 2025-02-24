@@ -36,8 +36,6 @@ import {
 } from '@/proto/go.chromium.org/luci/swarming/proto/api_v2/swarming.pb';
 import { useTasksClient } from '@/swarming/hooks/prpc_clients';
 
-import { useDeviceData } from './use_device_data';
-
 // Similar to Swarming's implementation in:
 // https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/luci/appengine/swarming/ui2/modules/task-page/task-page-helpers.js;l=100;drc=6c1b10b83a339300fc10d5f5e08a56f1c48b3d3e
 // TODO: Look into if we can make the UX for this prettier than what Swarming does.
@@ -74,16 +72,13 @@ const getRowClassName = (params: GridRowParams): string => {
 };
 
 export const Tasks = ({
-  id,
+  dutId,
   swarmingHost = DEVICE_TASKS_SWARMING_HOST,
 }: {
-  id: string;
+  dutId: string;
   swarmingHost?: string;
 }) => {
-  const device = useDeviceData(id);
   const swarmingCli = useTasksClient(swarmingHost);
-  const dutId = device?.dutId;
-
   const taskData = useQuery({
     ...swarmingCli.ListTasks.query(
       TasksWithPerfRequest.fromPartial({

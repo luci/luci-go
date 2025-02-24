@@ -25,7 +25,7 @@ import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { RunAutorepair } from '@/fleet/components/actions/autorepair/run_autorepair';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { extractDutState } from '@/fleet/utils/devices';
+import { extractDutState, extractDutId } from '@/fleet/utils/devices';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
@@ -100,11 +100,12 @@ export const DeviceDetailsPage = () => {
 
   // TODO: Add loading indicator for when the device is being loaded.
   const device = useDeviceData(id);
+  const dutId = extractDutId(device);
 
   const navigate = useNavigate();
 
   // TODO: b/397968435 - Tell the user when a device is not found.
-  if (!id || !selectedTab) {
+  if (!id || !selectedTab || !dutId) {
     return <></>;
   }
 
@@ -163,7 +164,7 @@ export const DeviceDetailsPage = () => {
           </TabList>
         </Box>
         <TabPanel value={TabValue.TASKS}>
-          <Tasks id={id} />
+          <Tasks dutId={dutId} />
         </TabPanel>
         <TabPanel value={TabValue.SCHEDULING}>
           <SchedulingData device={device} />

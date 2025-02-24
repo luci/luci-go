@@ -30,3 +30,27 @@ export const extractDutState = (device?: Device): string => {
     return '';
   return device.deviceSpec.labels['dut_state'].values[0];
 };
+
+/**
+ * Gets the id of a DUT from a device object if it exists.
+ * @param device Device data type from the Fleet Console backend.
+ * @returns String with the id of the DUT.
+ */
+export const extractDutId = (device?: Device): string => {
+  if (!device) {
+    return '';
+  }
+
+  if (device.dutId) {
+    return device.dutId;
+  }
+
+  if (
+    !device.deviceSpec ||
+    !device.deviceSpec.labels ||
+    !('dut_id' in device.deviceSpec.labels) ||
+    !device.deviceSpec.labels['dut_id'].values.length
+  )
+    return '';
+  return device.deviceSpec.labels['dut_id'].values[0];
+};

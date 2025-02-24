@@ -21,7 +21,7 @@ describe('<Tasks />', () => {
   it('should render', async () => {
     render(
       <FakeContextProvider>
-        <Tasks id="dut1331" swarmingHost={SETTINGS.swarming.defaultHost} />
+        <Tasks dutId="dut1331" swarmingHost={SETTINGS.swarming.defaultHost} />
       </FakeContextProvider>,
     );
 
