@@ -21,11 +21,8 @@ import (
 	"sort"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/text/unicode/norm"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -85,28 +82,6 @@ func (c *checker) isErr(err error, format string, args ...any) bool {
 // ValidateProject returns a non-nil error if project is invalid.
 func ValidateProject(project string) error {
 	return validate.SpecifiedWithRe(projectRe, project)
-}
-
-// ValidateTestID returns a non-nil error if testID is invalid.
-func ValidateTestID(testID string) error {
-	if testID == "" {
-		return validate.Unspecified()
-	}
-	if len(testID) > 512 {
-		return errors.Reason("longer than 512 bytes").Err()
-	}
-	if !utf8.ValidString(testID) {
-		return errors.Reason("not a valid utf8 string").Err()
-	}
-	if !norm.NFC.IsNormalString(testID) {
-		return errors.Reason("not in unicode normalized form C").Err()
-	}
-	for i, rune := range testID {
-		if !unicode.IsPrint(rune) {
-			return fmt.Errorf("non-printable rune %+q at byte index %d", rune, i)
-		}
-	}
-	return nil
 }
 
 // ValidateVariantHash returns a non-nil error if variantHash is invalid.
