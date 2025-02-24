@@ -128,6 +128,7 @@ export const DataTable = ({
       sortModel={sortModel}
       onSortModelChange={onSortModelChange}
       rowCount={UNKNOWN_ROW_COUNT}
+      sortingMode="server"
       paginationMode="server"
       pageSizeOptions={pagerCtx.options.pageSizeOptions}
       paginationModel={{
