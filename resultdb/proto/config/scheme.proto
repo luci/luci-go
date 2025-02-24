@@ -14,11 +14,9 @@
 
 syntax = "proto3";
 
-package luci.resultdb.v1;
+package luci.resultdb.config;
 
-option go_package = "go.chromium.org/luci/resultdb/proto/v1;resultpb";
-option java_package = "com.google.luci.resultdb.v1";
-option java_multiple_files = true;
+option go_package = "go.chromium.org/luci/resultdb/proto/config;configpb";
 
 // A scheme represents a kind of test type. For example, a JUnit tests
 // or Google Tests. Schemes control how tests with that type are
@@ -29,24 +27,19 @@ option java_multiple_files = true;
 //
 // Schemes are ResultDB deployment-level configuration.
 //
-// Next id: 6.
+// Next id: 5.
 message Scheme {
-  // The resource name of the scheme.
-  //
-  // Format: schemes/{id}.
-  string name = 1;
-
   // The identifier for the scheme, e.g. 'junit'.
   //
   // Limited to ^[a-z][a-z0-9]{0,19}$.
-  string id = 2;
+  string id = 1;
 
   // A human readable name for the scheme, describing the test type.
   // For example, "JUnit" or "Web Tests".
   //
   // Please pay attention to capitalisation (should be similar to examples above)
   // and avoid any punctuation.
-  string human_readable_name = 3;
+  string human_readable_name = 2;
 
   // Configuration for a level of test hierarchy.
   message Level {
@@ -81,7 +74,7 @@ message Scheme {
   //
   // If only one of coarse and fine hierarchy should be enabled, enable the fine hierarchy
   // only.
-  Level coarse = 4;
+  Level coarse = 3;
 
   // The fine level in the test hierarchy. Optional.
   //
@@ -94,38 +87,8 @@ message Scheme {
   // will result in existing uploads breaking and break presentation of already uploaded
   // data. Please use extreme caution if doing this; generally, it is better to define
   // a new scheme instead.
-  Level fine = 5;
+  Level fine = 4;
 
-  // The case level in the test hierarchy. This is the finest level. Required.
-  Level case = 6;
-}
-
-// Service to read test schemes.
-service Schemes {
-  // Reads all schemes supported by the ResultDB deployment.
-  rpc List(ListSchemesRequest) returns (ListSchemesResponse) {};
-}
-
-message ListSchemesRequest {
-  // The maximum number of schemes to return. The service may return fewer than
-  // this value.
-  // If unspecified, at most 1000 schemes will be returned.
-  // The maximum value is 1000; values above 1000 will be coerced to 1000.
-  int32 page_size = 1;
-
-  // A page token, received from a previous `ListSchemes` call.
-  // Provide this to retrieve the subsequent page.
-  //
-  // When paginating, all other parameters provided to `ListSchemes` must match
-  // the call that provided the page token.
-  string page_token = 2;
-}
-
-message ListSchemesResponse {
-  // The schemes.
-  repeated Scheme schemes = 1;
-
-  // A token, which can be sent as `page_token` to retrieve the next page.
-  // If this field is omitted, there are no subsequent pages.
-  string next_page_token = 2;
+  // The finest level in the test hierarchy (e.g. test method, test case). Required.
+  Level case = 5;
 }

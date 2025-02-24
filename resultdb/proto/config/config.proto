@@ -16,7 +16,9 @@ syntax = "proto3";
 
 package luci.resultdb.config;
 
-option go_package = "go.chromium.org/luci/resultdb/proto/config;resultpb";
+import "go.chromium.org/luci/resultdb/proto/config/scheme.proto";
+
+option go_package = "go.chromium.org/luci/resultdb/proto/config;configpb";
 
 // Config is the service-wide configuration data for Luci ResultDB.
 message Config {
@@ -26,6 +28,9 @@ message Config {
 
   // Control the export of artifact in the artifactexporter service.
   BqArtifactExportConfig bq_artifact_exporter_service_config = 2;
+
+  // Test schemes supported by the deployment.
+  repeated Scheme schemes = 3;
 }
 
 // BqArtifactExportConfig contains the configuration to export

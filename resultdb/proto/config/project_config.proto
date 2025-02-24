@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package luci.resultdb.config;
 
-option go_package = "go.chromium.org/luci/resultdb/proto/config;resultpb";
+option go_package = "go.chromium.org/luci/resultdb/proto/config;configpb";
 
 // ProjectConfig is the project-specific configuration data for Luci ResultDB.
 message ProjectConfig {
