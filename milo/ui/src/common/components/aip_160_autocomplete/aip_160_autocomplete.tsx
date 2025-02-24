@@ -20,14 +20,14 @@ import {
 } from '@/generic_libs/components/text_autocomplete';
 
 import { useSuggestions } from './suggestion';
-import { FieldsSchema } from './types';
+import { FieldDef } from './types';
 
 export interface Aip160Autocomplete
   extends Omit<
     TextAutocompleteProps<unknown>,
     'options' | 'onRequestOptionsUpdate' | 'renderOption' | 'applyOption'
   > {
-  readonly schema: FieldsSchema;
+  readonly schema: FieldDef;
 }
 
 export function Aip160Autocomplete({ schema, ...props }: Aip160Autocomplete) {

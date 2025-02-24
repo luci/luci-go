@@ -25,7 +25,7 @@ import { useFilterParam } from '@/clusters/components/clusters_table/hooks';
 import {
   Aip160Autocomplete,
   FetchValuesFn,
-  FieldsSchema,
+  FieldDef,
   tryUnquoteStr,
 } from '@/common/components/aip_160_autocomplete';
 import { HighlightedText } from '@/generic_libs/components/highlighted_text';
@@ -170,61 +170,63 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
   fetchTestIdsRef.current = fetchTestIds;
 
   const schema = useMemo(() => {
-    const ret: FieldsSchema = {
-      test_id: {
-        fetchValues: (...params) => fetchTestIdsRef.current(...params),
-      },
-      failure_reason: {},
-      realm: {},
-      ingested_invocation_id: {},
-      cluster_algorithm: {
-        getValues: (partial) => {
-          const lowerPartial = partial.toLowerCase();
-          return ['rules', 'rules-v3', 'reason-v6', 'testname-v4']
-            .filter((text) => text.includes(lowerPartial))
-            .map((text) => ({
-              text,
-              display: (
-                <td>
-                  <HighlightedText text={text} highlight={partial} />
-                </td>
-              ),
-            }));
+    const ret: FieldDef = {
+      fields: {
+        test_id: {
+          fetchValues: (...params) => fetchTestIdsRef.current(...params),
         },
-      },
-      cluster_id: {},
-      variant_hash: {},
-      test_run_id: {},
-      is_test_run_blocked: {
-        getValues: (partial) => {
-          const unquoted = tryUnquoteStr(partial);
-          const searchTerm = unquoted.toLowerCase();
-          return ['true', 'false']
-            .filter((text) => text.includes(searchTerm) && text !== partial)
-            .map((text) => ({
-              text,
-              display: (
-                <td>
-                  <HighlightedText text={text} highlight={searchTerm} />
-                </td>
-              ),
-            }));
+        failure_reason: {},
+        realm: {},
+        ingested_invocation_id: {},
+        cluster_algorithm: {
+          getValues: (partial) => {
+            const lowerPartial = partial.toLowerCase();
+            return ['rules', 'rules-v3', 'reason-v6', 'testname-v4']
+              .filter((text) => text.includes(lowerPartial))
+              .map((text) => ({
+                text,
+                display: (
+                  <td>
+                    <HighlightedText text={text} highlight={partial} />
+                  </td>
+                ),
+              }));
+          },
         },
-      },
-      is_ingested_invocation_blocked: {
-        getValues: (partial) => {
-          const unquoted = tryUnquoteStr(partial);
-          const searchTerm = unquoted.toLowerCase();
-          return ['true', 'false']
-            .filter((text) => text.includes(searchTerm) && text !== partial)
-            .map((text) => ({
-              text,
-              display: (
-                <td>
-                  <HighlightedText text={text} highlight={searchTerm} />
-                </td>
-              ),
-            }));
+        cluster_id: {},
+        variant_hash: {},
+        test_run_id: {},
+        is_test_run_blocked: {
+          getValues: (partial) => {
+            const unquoted = tryUnquoteStr(partial);
+            const searchTerm = unquoted.toLowerCase();
+            return ['true', 'false']
+              .filter((text) => text.includes(searchTerm) && text !== partial)
+              .map((text) => ({
+                text,
+                display: (
+                  <td>
+                    <HighlightedText text={text} highlight={searchTerm} />
+                  </td>
+                ),
+              }));
+          },
+        },
+        is_ingested_invocation_blocked: {
+          getValues: (partial) => {
+            const unquoted = tryUnquoteStr(partial);
+            const searchTerm = unquoted.toLowerCase();
+            return ['true', 'false']
+              .filter((text) => text.includes(searchTerm) && text !== partial)
+              .map((text) => ({
+                text,
+                display: (
+                  <td>
+                    <HighlightedText text={text} highlight={searchTerm} />
+                  </td>
+                ),
+              }));
+          },
         },
       },
     };

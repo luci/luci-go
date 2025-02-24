@@ -21,7 +21,7 @@ import { deferred } from '@/generic_libs/tools/utils';
 import { Lexer } from './lexer';
 import { useSuggestions } from './suggestion';
 import { getSuggestionCtx } from './suggestion';
-import { FieldsSchema } from './types';
+import { FieldDef } from './types';
 
 describe('useSuggestions', () => {
   const queryClient = new QueryClient();
@@ -39,10 +39,12 @@ describe('useSuggestions', () => {
   });
 
   it('should suggest fields', () => {
-    const schema: FieldsSchema = {
-      project: {},
-      projectWithSuffix: {},
-      builder: {},
+    const schema: FieldDef = {
+      fields: {
+        project: {},
+        projectWithSuffix: {},
+        builder: {},
+      },
     };
 
     const { result } = renderHook(() => useSuggestions(schema, 'projec', 3), {
@@ -71,18 +73,24 @@ describe('useSuggestions', () => {
   });
 
   it('should suggest nested fields', () => {
-    const schema: FieldsSchema = {
-      builderId: {
-        fields: {
-          project: {},
+    const schema: FieldDef = {
+      fields: {
+        build: {
+          fields: {
+            builderId: {
+              fields: {
+                project: {},
+              },
+            },
+            // Should not be suggested when `builderId.` prefix exists.
+            projectWithSuffix: {},
+          },
         },
       },
-      // Should not be suggested when `builderId.` prefix exists.
-      projectWithSuffix: {},
     };
 
     const { result } = renderHook(
-      () => useSuggestions(schema, 'builderId.pro', 3),
+      () => useSuggestions(schema, 'build.builderId.pro', 3),
       {
         wrapper: Wrapper,
       },
@@ -97,17 +105,22 @@ describe('useSuggestions', () => {
         },
       },
     ]);
-    expect(result.current[0]!.value.apply()).toEqual(['builderId.project', 17]);
+    expect(result.current[0]!.value.apply()).toEqual([
+      'build.builderId.project',
+      23,
+    ]);
   });
 
   it('should not suggest anything when the parent field does not exist', () => {
-    const schema: FieldsSchema = {
-      builderId: {
-        fields: {
-          project: {},
+    const schema: FieldDef = {
+      fields: {
+        builderId: {
+          fields: {
+            project: {},
+          },
         },
+        projectWithSuffix: {},
       },
-      projectWithSuffix: {},
     };
 
     const { result } = renderHook(
@@ -120,9 +133,11 @@ describe('useSuggestions', () => {
   });
 
   it('should be case insensitive when suggesting fields', () => {
-    const schema: FieldsSchema = {
-      Project: {},
-      project: {},
+    const schema: FieldDef = {
+      fields: {
+        Project: {},
+        project: {},
+      },
     };
 
     const { result } = renderHook(() => useSuggestions(schema, 'project', 3), {
@@ -141,9 +156,11 @@ describe('useSuggestions', () => {
   });
 
   it('should not suggest field with the exact match', () => {
-    const schema: FieldsSchema = {
-      project: {},
-      projectWithSuffix: {},
+    const schema: FieldDef = {
+      fields: {
+        project: {},
+        projectWithSuffix: {},
+      },
     };
 
     const { result } = renderHook(() => useSuggestions(schema, 'project', 3), {
@@ -162,12 +179,14 @@ describe('useSuggestions', () => {
   });
 
   it('should suggest values', () => {
-    const schema: FieldsSchema = {
-      project: {
-        getValues: (partial) =>
-          ['chromium', 'chromeos']
-            .filter((text) => text.includes(partial))
-            .map((text) => ({ text })),
+    const schema: FieldDef = {
+      fields: {
+        project: {
+          getValues: (partial) =>
+            ['chromium', 'chromeos']
+              .filter((text) => text.includes(partial))
+              .map((text) => ({ text })),
+        },
       },
     };
 
@@ -202,21 +221,27 @@ describe('useSuggestions', () => {
   });
 
   it('should suggest value of a nested field', () => {
-    const schema: FieldsSchema = {
-      builderId: {
-        fields: {
-          project: {
-            getValues: (partial) =>
-              ['chromium', 'chromeos']
-                .filter((text) => text.includes(partial))
-                .map((text) => ({ text })),
+    const schema: FieldDef = {
+      fields: {
+        build: {
+          fields: {
+            builderId: {
+              fields: {
+                project: {
+                  getValues: (partial) =>
+                    ['chromium', 'chromeos']
+                      .filter((text) => text.includes(partial))
+                      .map((text) => ({ text })),
+                },
+              },
+            },
           },
         },
       },
     };
 
     const { result } = renderHook(
-      () => useSuggestions(schema, 'builderId.project = chrom', 22),
+      () => useSuggestions(schema, 'build.builderId.project = chrom', 28),
       { wrapper: Wrapper },
     );
     expect(result.current).toEqual([
@@ -236,28 +261,30 @@ describe('useSuggestions', () => {
       },
     ]);
     expect(result.current[0]!.value.apply()).toEqual([
-      'builderId.project = chromium',
-      28,
+      'build.builderId.project = chromium',
+      34,
     ]);
     expect(result.current[1]!.value.apply()).toEqual([
-      'builderId.project = chromeos',
-      28,
+      'build.builderId.project = chromeos',
+      34,
     ]);
   });
 
   it('should suggest values asynchronously', async () => {
     const [blocker, resolveBlocker] = deferred();
-    const schema: FieldsSchema = {
-      project: {
-        fetchValues: (partial: string) => ({
-          queryKey: [partial],
-          queryFn: async () => {
-            await blocker;
-            return ['chromium', 'chromeos']
-              .filter((text) => text.includes(partial) && text !== partial)
-              .map((text) => ({ text }));
-          },
-        }),
+    const schema: FieldDef = {
+      fields: {
+        project: {
+          fetchValues: (partial: string) => ({
+            queryKey: [partial],
+            queryFn: async () => {
+              await blocker;
+              return ['chromium', 'chromeos']
+                .filter((text) => text.includes(partial) && text !== partial)
+                .map((text) => ({ text }));
+            },
+          }),
+        },
       },
     };
 

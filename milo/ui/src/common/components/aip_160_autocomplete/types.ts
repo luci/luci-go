@@ -18,20 +18,6 @@ import { ReactNode } from 'react';
 import { NonNullableProps } from '@/generic_libs/types';
 
 /**
- * The schema of a set of fields.
- */
-export interface FieldsSchema {
-  /**
-   * A map of fields.
-   *
-   * Fields that includes the user input as a substring (case-insensitive) will
-   * be suggested to the users.
-   * Exact match (case-sensitive) are not suggested.
-   */
-  readonly [field: string]: FieldDef;
-}
-
-/**
  * The definition of a single field (of a larger object).
  */
 export interface FieldDef {
@@ -47,6 +33,20 @@ export interface FieldDef {
   // We don't care about the shape of the data returned from the `queryFn`.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly fetchValues?: FetchValuesFn<any>;
+}
+
+/**
+ * The schema of a set of fields.
+ */
+export interface FieldsSchema {
+  /**
+   * A map of fields.
+   *
+   * Fields that includes the user input as a substring (case-insensitive) will
+   * be suggested to the users.
+   * Exact match (case-sensitive) are not suggested.
+   */
+  readonly [field: string]: FieldDef;
 }
 
 /**

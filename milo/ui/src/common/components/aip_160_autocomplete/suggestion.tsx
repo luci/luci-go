@@ -20,10 +20,10 @@ import { HighlightedText } from '@/generic_libs/components/highlighted_text';
 import { OptionDef } from '@/generic_libs/components/text_autocomplete';
 
 import { Lexer, Token, TokenKind } from './lexer';
-import { FieldDef, FieldsSchema, Suggestion } from './types';
+import { FieldDef, Suggestion } from './types';
 
 export function useSuggestions(
-  schema: FieldsSchema,
+  schema: FieldDef,
   input: string,
   cursorPos: number,
 ): readonly OptionDef<Suggestion>[] {
@@ -187,7 +187,7 @@ export function getSuggestionCtx(
 }
 
 function useSuggestionsSync(
-  schema: FieldsSchema,
+  schema: FieldDef,
   input: string,
   ctx: SuggestionContext,
 ): readonly OptionDef<Suggestion>[] {
@@ -204,7 +204,7 @@ function useSuggestionsSync(
 }
 
 function useSuggestionsAsync(
-  schema: FieldsSchema,
+  schema: FieldDef,
   input: string,
   ctx: SuggestionContext,
 ): readonly OptionDef<Suggestion>[] {
@@ -275,7 +275,7 @@ function useSuggestionsAsync(
 }
 
 function suggestField(
-  schema: FieldsSchema,
+  schema: FieldDef,
   input: string,
   fieldToken: Token,
 ): readonly OptionDef<Suggestion>[] {
@@ -283,10 +283,9 @@ function suggestField(
   const prev = fieldToken.text.slice(0, Math.max(lastDotIndex, 0));
   const suffix = fieldToken.text.slice(lastDotIndex + 1);
   const suffixLower = suffix.toLowerCase();
-  const targetSchema =
-    prev === '' ? schema : getField(schema, prev)?.fields || {};
+  const targetSchema = prev === '' ? schema : getField(schema, prev);
 
-  return Object.keys(targetSchema)
+  return Object.keys(targetSchema?.fields || {})
     .filter(
       (name) => name.toLowerCase().includes(suffixLower) && name !== suffix,
     )
@@ -313,7 +312,7 @@ function suggestField(
 }
 
 function suggestValue(
-  schema: FieldsSchema,
+  schema: FieldDef,
   input: string,
   fieldToken: Token,
   valueToken: Token,
@@ -340,17 +339,17 @@ function suggestValue(
   );
 }
 
-function getField(schema: FieldsSchema, fieldPath: string): FieldDef | null {
+function getField(schema: FieldDef, fieldPath: string): FieldDef | null {
   const fieldNames = fieldPath.split('.');
 
   let pivot = schema;
-  for (let i = 0; i < fieldNames.length - 1; ++i) {
+  for (let i = 0; i < fieldNames.length; ++i) {
     const fieldName = fieldNames[i];
-    const fieldDef = schema[fieldName];
-    if (!fieldDef?.fields) {
+    const fieldDef = pivot.fields?.[fieldName];
+    if (!fieldDef) {
       return null;
     }
-    pivot = fieldDef.fields;
+    pivot = fieldDef;
   }
-  return pivot[fieldNames.at(-1)!] ?? null;
+  return pivot;
 }
