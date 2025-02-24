@@ -152,6 +152,7 @@ export const Tasks = ({
       columns={columns}
       disableColumnMenu
       disableColumnFilter
+      disableRowSelectionOnClick
       hideFooterPagination
       getRowClassName={getRowClassName}
       sx={{

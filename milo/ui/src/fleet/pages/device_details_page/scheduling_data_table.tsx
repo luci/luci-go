@@ -43,6 +43,7 @@ export const SchedulingData = ({ device }: SchedulingDataProps) => {
       <StyledGrid
         disableColumnMenu
         disableColumnFilter
+        disableRowSelectionOnClick
         rows={rows}
         columns={columns}
         hideFooterPagination
