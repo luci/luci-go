@@ -80,29 +80,29 @@ var (
 
 // NewTask implements the corresponding RPC method.
 func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
-	tr, trs, err := srv.newTask(ctx, req)
+	res, err := srv.newTask(ctx, req)
 	switch {
 	case err != nil:
 		return nil, err
 	case req.EvaluateOnly:
 		return &apipb.TaskRequestMetadataResponse{
-			Request: tr.ToProto(),
+			Request: res.Request.ToProto(),
 		}, nil
 	default:
 		return &apipb.TaskRequestMetadataResponse{
-			TaskId:     model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
-			Request:    tr.ToProto(),
-			TaskResult: trs.ToProto(),
+			TaskId:     model.RequestKeyToTaskID(res.Result.TaskRequestKey(), model.AsRequest),
+			Request:    res.Request.ToProto(),
+			TaskResult: res.Result.ToProto(),
 		}, nil
 	}
 }
 
-func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) (*model.TaskRequest, *model.TaskResultSummary, error) {
+func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) (*tasks.CreatedTask, error) {
 	logNewRequest(ctx, req)
 
 	pool, err := validateNewTask(ctx, req)
 	if err != nil {
-		return nil, nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 	}
 
 	// Check permissions.
@@ -111,20 +111,20 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	// Check the user is allowed to submit tasks into the pool at all.
 	checkResult := state.ACL.CheckPoolPerm(ctx, pool, acls.PermPoolsCreateTask)
 	if !checkResult.Permitted || checkResult.InternalError {
-		return nil, nil, checkResult.ToGrpcErr()
+		return nil, checkResult.ToGrpcErr()
 	}
 
 	// Populate req.Realm based on the pool's default if necessary. This returns
 	// an error if the task has no realm and there's no default realm in the pool
 	// config.
 	if err = setTaskRealm(ctx, state, req, pool); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Check the user is allowed to associate tasks with the selected realm.
 	checkResult = State(ctx).ACL.CheckCanCreateInRealm(ctx, req.Realm)
 	if !checkResult.Permitted || checkResult.InternalError {
-		return nil, nil, checkResult.ToGrpcErr()
+		return nil, checkResult.ToGrpcErr()
 	}
 
 	// Check the selected service account is allowed to be used by the tasks
@@ -132,17 +132,19 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	if !nonEmailServiceAccount(req.ServiceAccount) {
 		checkResult = State(ctx).ACL.CheckTaskCanActAsServiceAccount(ctx, req.Realm, req.ServiceAccount)
 		if !checkResult.Permitted || checkResult.InternalError {
-			return nil, nil, checkResult.ToGrpcErr()
+			return nil, checkResult.ToGrpcErr()
 		}
 	}
 
 	ents, err := toTaskRequestEntities(ctx, req, pool)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if req.EvaluateOnly {
-		return ents.request, nil, nil
+		return &tasks.CreatedTask{
+			Request: ents.request,
+		}, nil
 	}
 
 	var requestID string
@@ -161,12 +163,11 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	}
 
 	// Create the task in a loop to retry on task ID collisions.
-	var trs *model.TaskResultSummary
-	var tr *model.TaskRequest
+	var res *tasks.CreatedTask
 	attempts := 0
 	for {
 		attempts++
-		tr, trs, err = creation.Run(ctx)
+		res, err = creation.Run(ctx)
 		if !errors.Is(err, tasks.ErrAlreadyExists) {
 			break
 		}
@@ -175,9 +176,9 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	if err != nil {
 		if status.Code(err) == codes.Unknown {
 			logging.Errorf(ctx, "Failed to create task: %s", err)
-			return nil, nil, status.Errorf(codes.Internal, "failed to create task")
+			return nil, status.Errorf(codes.Internal, "failed to create task")
 		} else {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -185,10 +186,7 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		logging.Infof(ctx, "Created the task after %d attempts", attempts)
 	}
 
-	// tasks.Creation makes shallow copies of entities to make updates.
-	// So we need to use tr instead of ents.request here to have
-	// TaskId populated.
-	return tr, trs, nil
+	return res, nil
 }
 
 // teeErr saves `err` in `keep` and then returns `err`

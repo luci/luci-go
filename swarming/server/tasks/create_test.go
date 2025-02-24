@@ -69,7 +69,7 @@ func TestCreation(t *testing.T) {
 				s := &Creation{
 					RequestID: "bad_task_id",
 				}
-				_, _, err := s.Run(ctx)
+				_, err := s.Run(ctx)
 				assert.That(t, err, should.ErrLike("unexpectedly invalid task_id not_a_task_id"))
 			})
 			t.Run("missing_entity", func(t *ftt.Test) {
@@ -88,7 +88,7 @@ func TestCreation(t *testing.T) {
 				c := &Creation{
 					RequestID: "exist",
 				}
-				_, _, err = c.Run(ctx)
+				_, err = c.Run(ctx)
 				assert.That(t, err, should.ErrLike("no such task"))
 			})
 			t.Run("found_duplicate", func(t *ftt.Test) {
@@ -113,10 +113,43 @@ func TestCreation(t *testing.T) {
 				c := &Creation{
 					RequestID: "exist",
 				}
-				_, res, err := c.Run(ctx)
+				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
 				assert.Loosely(t, res, should.NotBeNil)
-				assert.That(t, res.ToProto(), should.Match(trs.ToProto()))
+				assert.That(t, res.Result.ToProto(), should.Match(trs.ToProto()))
+			})
+			t.Run("found_duplicate_for_build_task", func(t *ftt.Test) {
+				id := "65aba3a3e6b99310"
+				reqKey, err := model.TaskIDToRequestKey(ctx, id)
+				assert.NoErr(t, err)
+				tr := &model.TaskRequest{
+					Key: reqKey,
+				}
+				trs := &model.TaskResultSummary{
+					Key: model.TaskResultSummaryKey(ctx, reqKey),
+					TaskResultCommon: model.TaskResultCommon{
+						State: apipb.TaskState_COMPLETED,
+					},
+				}
+				bt := &model.BuildTask{
+					Key:      model.BuildTaskKey(ctx, reqKey),
+					UpdateID: int64(3),
+				}
+				tri := &model.TaskRequestID{
+					Key:    model.TaskRequestIDKey(ctx, "exist"),
+					TaskID: id,
+				}
+				assert.NoErr(t, datastore.Put(ctx, tr, trs, bt, tri))
+
+				c := &Creation{
+					RequestID: "exist",
+					BuildTask: &model.BuildTask{},
+				}
+				res, err := c.Run(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, res, should.NotBeNil)
+				assert.That(t, res.Result.ToProto(), should.Match(trs.ToProto()))
+				assert.That(t, res.BuildTask.UpdateID, should.Equal(int64(3)))
 			})
 		})
 
@@ -199,8 +232,9 @@ func TestCreation(t *testing.T) {
 					LifecycleTasks: lt,
 				}
 
-				_, trs, err = c.Run(ctx)
+				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
+				trs = res.Result
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_COMPLETED))
 				assert.That(t, trs.ResultDBInfo, should.Match(trs.ResultDBInfo))
 				assert.That(t, trs.CurrentTaskSlice, should.Equal(int64(1)))
@@ -266,8 +300,9 @@ func TestCreation(t *testing.T) {
 					ResultDBClientFactory: mcf,
 				}
 
-				_, trs, err = c.Run(ctx)
+				res, err := c.Run(ctx)
 				assert.NoErr(t, err)
+				trs = res.Result
 				assert.That(t, trs.State, should.Equal(apipb.TaskState_PENDING))
 				assert.Loosely(t, lt.PopTask("rbe-new"), should.Equal("rbe-instance/swarming-2cbe1fa55012fa10-0-0"))
 				// No PubSub notification.
@@ -298,7 +333,7 @@ func TestCreation(t *testing.T) {
 					},
 				},
 			}
-			_, _, err := c.Run(ctx)
+			_, err := c.Run(ctx)
 			assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 		})
 
@@ -352,7 +387,7 @@ func TestCreation(t *testing.T) {
 				cfg := p.Cached(ctx)
 				mcf := resultdb.NewMockRecorderClientFactory(nil, nil, nil, "")
 				c := prepCreation(cfg, mcf)
-				_, _, err := c.Run(ctx)
+				_, err := c.Run(ctx)
 				assert.That(t, err, should.ErrLike("ResultDB integration is not configured"))
 				assert.That(t, err, grpccode.ShouldBe(codes.FailedPrecondition))
 			})
@@ -371,7 +406,7 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.PermissionDenied, "boom"), "")
 					c := prepCreation(cfg, mcf)
-					_, _, err := c.Run(ctx)
+					_, err := c.Run(ctx)
 					assert.That(t, err, should.ErrLike("error creating ResultDB invocation"))
 				})
 
@@ -379,7 +414,7 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, nil,
 						status.Errorf(codes.AlreadyExists, "invocation already exists"), "")
 					c := prepCreation(cfg, mcf)
-					_, _, err := c.Run(ctx)
+					_, err := c.Run(ctx)
 					assert.That(t, err, should.ErrLike(ErrAlreadyExists))
 				})
 
@@ -391,8 +426,9 @@ func TestCreation(t *testing.T) {
 					mcf := resultdb.NewMockRecorderClientFactory(req, inv,
 						nil, token)
 					c := prepCreation(cfg, mcf)
-					_, trs, err := c.Run(ctx)
+					res, err := c.Run(ctx)
 					assert.NoErr(t, err)
+					trs := res.Result
 					assert.Loosely(t, trs, should.NotBeNil)
 					assert.That(t, trs.ResultDBInfo.Hostname, should.Equal("https://rdbhost.example.com"))
 					assert.That(t, trs.ResultDBInfo.Invocation, should.Equal(inv.Name))
@@ -402,6 +438,7 @@ func TestCreation(t *testing.T) {
 		})
 
 		t.Run("OK", func(t *ftt.Test) {
+			now := testclock.TestRecentTimeUTC
 			newTR := &model.TaskRequest{
 				TaskSlices: []model.TaskSlice{
 					{
@@ -419,14 +456,23 @@ func TestCreation(t *testing.T) {
 				Request:         newTR,
 				LifecycleTasks:  lt,
 				SwarmingProject: "swarming",
+				BuildTask: &model.BuildTask{
+					BuildID:          "12345",
+					BuildbucketHost:  "bb.example.com",
+					LatestTaskStatus: apipb.TaskState_PENDING,
+					PubSubTopic:      "topic",
+					UpdateID:         now.UnixNano(),
+				},
 			}
-			updatedTR, trs, err := c.Run(ctx)
+			res, err := c.Run(ctx)
 			assert.NoErr(t, err)
+			trs := res.Result
 			assert.Loosely(t, trs, should.NotBeNil)
 			assert.That(
 				t, model.RequestKeyToTaskID(trs.TaskRequestKey(), model.AsRequest),
 				should.Equal("2cbe1fa55012fa10"))
 
+			updatedTR := res.Request
 			updatedTRProto := updatedTR.ToProto()
 			assert.That(t, updatedTRProto.TaskId, should.Equal(trs.ToProto().TaskId))
 			// To confirm only TaskID is populated during creation.
@@ -434,6 +480,9 @@ func TestCreation(t *testing.T) {
 			assert.That(t, newTRProto.TaskId, should.Equal(""))
 			newTRProto.TaskId = updatedTRProto.TaskId
 			assert.That(t, updatedTRProto, should.Match(newTRProto))
+			bt := res.BuildTask
+			assert.That(t, bt.BuildID, should.Equal("12345"))
+			assert.That(t, bt.Key, should.Match(model.BuildTaskKey(ctx, trs.TaskRequestKey())))
 
 			tr := &model.TaskRequest{
 				Key: trs.TaskRequestKey(),

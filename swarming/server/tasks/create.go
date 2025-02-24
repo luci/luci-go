@@ -68,6 +68,17 @@ type Creation struct {
 	LifecycleTasks LifecycleTasks
 }
 
+// CreatedTask contains entities for the new task that are updated and saved.
+type CreatedTask struct {
+	// Run() makes shallow copies of entities to make updates.
+	// So we need to return the updated entities to the caller.
+	Request   *model.TaskRequest
+	BuildTask *model.BuildTask
+
+	// Result is the created TaskResultSummary entity.
+	Result *model.TaskResultSummary
+}
+
 // Run creates and stores all the entities to create a new task.
 //
 // The number of entities created is ~5: TaskRequest, TaskToRunShard and
@@ -78,13 +89,13 @@ type Creation struct {
 //
 // If task ID collision happens, a special error `ErrAlreadyExists` will be
 // returned so the server could retry creating the entities.
-func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResultSummary, error) {
-	tr, trs, err := c.dedupByRequestID(ctx)
+func (c *Creation) Run(ctx context.Context) (*CreatedTask, error) {
+	res, err := c.dedupByRequestID(ctx)
 	switch {
 	case err != nil:
-		return nil, nil, err
-	case trs != nil:
-		return tr, trs, nil
+		return nil, err
+	case res != nil:
+		return res, nil
 	}
 
 	// Populate TaskResultSummary and entity keys.
@@ -92,7 +103,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 	// modify them. Modifying them in-place could cause bugs if we retry this
 	// creation when ID collision happens.
 	trv := *c.Request
-	tr = &trv
+	tr := &trv
 	var sb *model.SecretBytes
 	if c.SecretBytes != nil {
 		sbv := *c.SecretBytes
@@ -108,7 +119,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 	taskID := model.RequestKeyToTaskID(tr.Key, model.AsRequest)
 	tr.TxnUUID = uuid.New().String()
 	now := clock.Now(ctx)
-	trs = model.NewTaskResultSummary(ctx, tr, c.ServerVersion, now)
+	trs := model.NewTaskResultSummary(ctx, tr, c.ServerVersion, now)
 	if sb != nil {
 		sb.Key = model.SecretBytesKey(ctx, tr.Key)
 	}
@@ -122,7 +133,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 	for i := range len(tr.TaskSlices) {
 		s := &tr.TaskSlices[i]
 		if err := s.PrecalculatePropertiesHash(sb); err != nil {
-			return nil, nil, errors.Annotate(err, "error calculating properties hash for slice %d", i).Err()
+			return nil, errors.Annotate(err, "error calculating properties hash for slice %d", i).Err()
 		}
 	}
 
@@ -134,7 +145,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 		}
 		dupResult, err = c.findDuplicateTask(ctx, s.PropertiesHash)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if dupResult != nil {
 			c.copyDuplicateTask(ctx, trs, dupResult, i)
@@ -147,6 +158,18 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 			// and will just consume space in the datastore (and the task we
 			// deduplicate with will have them stored anyway, if we really want
 			// to get them again).
+			//
+			// Actually, dedupping build tasks by properties hashes is not
+			// supported. Because:
+			// * Buildbucket expects a running task from the backends so it
+			//   doesn't check the status of the returned task. It expects
+			//   the taskbackend to update each tasks via Pub/Sub, which will
+			//   not happen for this dedupped task.
+			// * Buildbucket also calls TaskBackend.FetchTask periodically on
+			//   tasks it has not heard for a while. But those calls would also
+			//   fail since BuildTask is not saved.
+			// As of Feb 2025, we don't have plan to dedup build tasks
+			// by properties hash, so it should be fine.
 			sb = nil
 			bt = nil
 			break
@@ -162,24 +185,24 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 		trs.CurrentTaskSlice = 0
 		ttr, err = model.NewTaskToRun(ctx, c.SwarmingProject, tr, int(trs.CurrentTaskSlice))
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if tr.ResultDB.Enable {
 			taskRunID := model.RequestKeyToTaskID(tr.Key, model.AsRunResult)
 			resultdbHost := c.Config.Settings().GetResultdb().GetServer()
 			if resultdbHost == "" {
-				return nil, nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
+				return nil, status.Errorf(codes.FailedPrecondition, "ResultDB integration is not configured")
 			}
 			invName, rdbUpdateToken, err := c.createResultDBInvocation(ctx, resultdbHost, tr, taskRunID)
 			switch {
 			case status.Code(err) == codes.AlreadyExists:
 				// Task ID collision causes ResultDB CreateInvocation failure.
 				// We should also retry in this case.
-				return nil, nil, ErrAlreadyExists
+				return nil, ErrAlreadyExists
 			case err != nil:
 				logging.Errorf(ctx, "error creating ResultDB invocation: %s", err)
-				return nil, nil, errors.Reason("error creating ResultDB invocation").Err()
+				return nil, errors.Reason("error creating ResultDB invocation").Err()
 			}
 
 			tr.ResultDBUpdateToken = rdbUpdateToken
@@ -193,13 +216,14 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 	err = datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		// Recheck TaskRequestID in transaction in case it has just been
 		// created after previous check.
-		dupTr, dupTrs, err := c.dedupByRequestID(ctx)
+		dupRes, err := c.dedupByRequestID(ctx)
 		switch {
 		case err != nil:
 			return err
-		case dupTrs != nil:
-			tr = dupTr
-			trs = dupTrs
+		case dupRes != nil:
+			tr = dupRes.Request
+			trs = dupRes.Result
+			bt = dupRes.BuildTask
 			return nil
 		}
 
@@ -249,7 +273,10 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 			}
 		}
 
-		// TODO(b/355013510): handle BuildTask
+		if bt != nil {
+			bt.Key = model.BuildTaskKey(ctx, tr.Key)
+			toPut = append(toPut, bt)
+		}
 
 		if trs.State != apipb.TaskState_PENDING {
 			if err := c.LifecycleTasks.sendOnTaskUpdate(ctx, tr, trs); err != nil {
@@ -260,7 +287,7 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 		return datastore.Put(ctx, toPut...)
 	}, nil)
 	if err != nil {
-		return nil, nil, errors.Annotate(err, "error saving the task").Err()
+		return nil, errors.Annotate(err, "error saving the task").Err()
 	}
 
 	if dupResult != nil {
@@ -269,43 +296,57 @@ func (c *Creation) Run(ctx context.Context) (*model.TaskRequest, *model.TaskResu
 	}
 
 	onTaskRequested(ctx, trs, dupResult != nil)
-	return tr, trs, nil
+	return &CreatedTask{
+		Request:   tr,
+		BuildTask: bt,
+		Result:    trs,
+	}, nil
 }
 
-func (c *Creation) dedupByRequestID(ctx context.Context) (*model.TaskRequest, *model.TaskResultSummary, error) {
+func (c *Creation) dedupByRequestID(ctx context.Context) (*CreatedTask, error) {
 	if c.RequestID == "" {
-		return nil, nil, nil
+		return nil, nil
 	}
 	tri := &model.TaskRequestID{
 		Key: model.TaskRequestIDKey(ctx, c.RequestID),
 	}
 	switch err := datastore.Get(ctx, tri); {
 	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return nil, nil, nil
+		return nil, nil
 	case err != nil:
 		logging.Errorf(ctx, "failed to get TaskRequestID for request id %s", c.RequestID)
-		return nil, nil, status.Errorf(codes.Internal, "failed to get TaskRequestID for request id %s", c.RequestID)
+		return nil, status.Errorf(codes.Internal, "failed to get TaskRequestID for request id %s", c.RequestID)
 	}
 
 	key, err := model.TaskIDToRequestKey(ctx, tri.TaskID)
 	if err != nil {
-		return nil, nil, status.Errorf(codes.FailedPrecondition, "unexpectedly invalid task_id %s: %s", tri.TaskID, err)
+		return nil, status.Errorf(codes.FailedPrecondition, "unexpectedly invalid task_id %s: %s", tri.TaskID, err)
 	}
 	tr := &model.TaskRequest{Key: key}
 	trs := &model.TaskResultSummary{Key: model.TaskResultSummaryKey(ctx, key)}
-	if err = datastore.Get(ctx, tr, trs); err != nil {
+	toGet := []any{tr, trs}
+	var bt *model.BuildTask
+	if c.BuildTask != nil {
+		bt = &model.BuildTask{Key: model.BuildTaskKey(ctx, key)}
+		toGet = append(toGet, bt)
+	}
+	if err = datastore.Get(ctx, toGet); err != nil {
 		var merr errors.MultiError
 		if errors.As(err, &merr) {
 			for _, err := range merr {
 				if errors.Is(err, datastore.ErrNoSuchEntity) {
-					return nil, nil, status.Errorf(codes.NotFound, "no such task")
+					return nil, status.Errorf(codes.NotFound, "no such task")
 				}
 			}
 		}
 		logging.Errorf(ctx, "Error fetching entities for task %s: %s", tri.TaskID, err)
-		return nil, nil, status.Errorf(codes.Internal, "datastore error fetching the task")
+		return nil, status.Errorf(codes.Internal, "datastore error fetching the task")
 	}
-	return tr, trs, nil
+	return &CreatedTask{
+		Request:   tr,
+		Result:    trs,
+		BuildTask: bt,
+	}, nil
 }
 
 // findDuplicateTask finds a previously run task that can be reused.
