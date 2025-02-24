@@ -24,10 +24,12 @@ export function SelectedChip({
   option,
   selectedOptions,
   setSelectedOptions,
+  isLoading,
 }: {
   option: OptionCategory;
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  isLoading?: boolean;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -75,6 +77,7 @@ export function SelectedChip({
           vertical: 'bottom',
           horizontal: 'left',
         }}
+        isLoading={isLoading}
       />
     </>
   );

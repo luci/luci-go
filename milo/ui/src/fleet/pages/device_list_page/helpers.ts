@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { OptionCategory } from '@/fleet/types';
+import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { GetDeviceDimensionsResponse } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 /**
@@ -55,4 +55,37 @@ export const dimensionsToFilterOptions = (
   });
 
   return baseDimensions.concat(labels).filter((o) => o.options.length > 0);
+};
+
+/**
+ * Converts the selected options to list of options.
+ * Used as a placeholder in <MultiSelectFilter />, until the real data is received.
+ * @param response SelectedOptions
+ * @returns List of options based on the selectedOptions.
+ */
+export const filterOptionsPlaceholder = (
+  selectedOptions: SelectedOptions,
+): OptionCategory[] => {
+  return Object.entries(selectedOptions)
+    .map(([key, values]) => {
+      return {
+        label: key.replace('labels.', ''),
+        value: key,
+        options: values.map((value) => {
+          return { label: value, value: value };
+        }),
+      } as OptionCategory;
+    })
+    .sort((a, b) => {
+      const aHasLabels = a.value.startsWith('labels.');
+      const bHasLabels = b.value.startsWith('labels.');
+
+      if (aHasLabels && !bHasLabels) {
+        return 1;
+      } else if (!aHasLabels && bHasLabels) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
 };

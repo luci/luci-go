@@ -102,12 +102,12 @@ export const BASE_DIMENSIONS: Dimension[] = [
     getValue: (device: Device) => DeviceState[device.state],
   },
   {
-    id: 'address.host',
+    id: 'host',
     displayName: 'Address',
     getValue: (device: Device) => device.address?.host || '',
   },
   {
-    id: 'address.port',
+    id: 'port',
     displayName: 'Port',
     getValue: (device: Device) => String(device.address?.port) || '',
   },

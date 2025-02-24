@@ -27,12 +27,13 @@ import { OptionsDropdown } from '../options_dropdown';
 
 interface ColumnsButtonProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
+  isLoading?: boolean;
 }
 
 /**
  * Component for displaying a menu to customize the columns on a table.
  */
-export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
+export function ColumnsButton({ gridRef, isLoading }: ColumnsButtonProps) {
   const columnVisibilityModel = gridColumnVisibilityModelSelector(gridRef);
   const columnDefinitions = gridColumnDefinitionsSelector(gridRef);
 
@@ -88,6 +89,7 @@ export function ColumnsButton({ gridRef }: ColumnsButtonProps) {
         enableSearchInput={true}
         onFlipOption={toggleColumn}
         maxHeight={500}
+        isLoading={isLoading}
       />
     </>
   );

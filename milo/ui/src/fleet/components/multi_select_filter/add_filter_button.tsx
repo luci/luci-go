@@ -24,10 +24,12 @@ export function AddFilterButton({
   filterOptions,
   selectedOptions,
   setSelectedOptions,
+  isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  isLoading?: boolean;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -45,6 +47,7 @@ export function AddFilterButton({
         setSelectedOptions={setSelectedOptions}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
+        isLoading={isLoading}
       />
     </>
   );

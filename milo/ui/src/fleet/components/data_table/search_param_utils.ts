@@ -14,7 +14,7 @@
 
 import { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 
-const COLUMNS_PARAM_KEY = 'c';
+import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 
 const areVisibilityModelsEqual = (
   a: GridColumnVisibilityModel,

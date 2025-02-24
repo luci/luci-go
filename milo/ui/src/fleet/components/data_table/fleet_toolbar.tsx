@@ -28,6 +28,7 @@ import { ColumnsButton } from './columns_button';
 export interface FleetToolbarProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
   selectedRows: GridRowModel[];
+  isLoadingColumns?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export interface FleetToolbarProps {
 export function FleetToolbar({
   gridRef,
   selectedRows = [],
+  isLoadingColumns,
 }: FleetToolbarProps) {
   const selectedDuts = selectedRows.map((row) => ({
     name: `${row.dut_name}`,
@@ -51,7 +53,7 @@ export function FleetToolbar({
       )}
       <GridToolbarExport printOptions={{ disableToolbarButton: true }} />
       <Box sx={{ flexGrow: 1 }} />
-      <ColumnsButton gridRef={gridRef} />
+      <ColumnsButton gridRef={gridRef} isLoading={isLoadingColumns} />
     </GridToolbarContainer>
   );
 }

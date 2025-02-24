@@ -37,7 +37,7 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { CountDevicesRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
-import { dimensionsToFilterOptions } from './helpers';
+import { dimensionsToFilterOptions, filterOptionsPlaceholder } from './helpers';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -80,25 +80,28 @@ export const DeviceListPage = () => {
       }}
     >
       <MainMetrics countQuery={countQuery} />
-      {dimensionsQuery.data && (
-        <div
-          css={{
-            marginTop: 24,
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 28,
-            borderRadius: 4,
-          }}
-        >
-          <MultiSelectFilter
-            filterOptions={dimensionsToFilterOptions(dimensionsQuery.data)}
-            selectedOptions={selectedOptions}
-            setSelectedOptions={setSelectedOptions}
-          />
-        </div>
-      )}
+      <div
+        css={{
+          marginTop: 24,
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 28,
+          borderRadius: 4,
+        }}
+      >
+        <MultiSelectFilter
+          filterOptions={
+            dimensionsQuery.data
+              ? dimensionsToFilterOptions(dimensionsQuery.data)
+              : filterOptionsPlaceholder(selectedOptions)
+          }
+          selectedOptions={selectedOptions}
+          setSelectedOptions={setSelectedOptions}
+          isLoading={dimensionsQuery.isLoading}
+        />
+      </div>
       <div
         css={{
           borderRadius: 4,

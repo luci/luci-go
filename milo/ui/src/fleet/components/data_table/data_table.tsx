@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CircularProgress } from '@mui/material';
 import {
-  GridAutosizeOptions,
   GridColDef,
   GridColumnVisibilityModel,
   GridRowModel,
@@ -40,12 +38,6 @@ import { StyledGrid } from './styled_data_grid';
 
 const UNKNOWN_ROW_COUNT = -1;
 
-const autosizeOptions: GridAutosizeOptions = {
-  expand: true,
-  includeHeaders: true,
-  includeOutliers: true,
-};
-
 const computeSelectedRows = (
   gridSelection: GridRowSelectionModel,
   rows: GridRowModel[],
@@ -67,6 +59,7 @@ interface DataTableProps {
   sortModel: GridSortModel;
   onSortModelChange: (newSortModel: GridSortModel) => void;
   totalRowCount?: number;
+  isLoadingColumns?: boolean;
 }
 
 // Used to get around TypeScript issues with custom toolbars.
@@ -87,6 +80,7 @@ export const DataTable = ({
   sortModel,
   onSortModelChange,
   totalRowCount,
+  isLoadingColumns,
 }: DataTableProps) => {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
@@ -103,33 +97,11 @@ export const DataTable = ({
         defaultColumnVisibilityModel,
       ),
     );
-    apiRef.current.autosizeColumns(autosizeOptions);
   };
-
-  React.useEffect(() => {
-    const autosize = _.debounce(() => {
-      apiRef.current.autosizeColumns(autosizeOptions);
-    }, 300);
-
-    window.addEventListener('resize', autosize);
-    return () => window.removeEventListener('resize', autosize);
-  }, [apiRef]);
-
-  // We avoid rendering the DataGrid while loading so that when autosizeOnMount
-  // is fired it already has the correct columns loaded.
-  if (isLoading) {
-    return (
-      <div css={{ padding: '0 50%' }}>
-        <CircularProgress />
-      </div>
-    );
-  }
 
   return (
     <StyledGrid
       apiRef={apiRef}
-      autosizeOnMount
-      autosizeOptions={autosizeOptions}
       slots={{
         pagination: Pagination,
         columnMenu: ColumnMenu,
@@ -144,6 +116,7 @@ export const DataTable = ({
         toolbar: {
           gridRef: apiRef,
           selectedRows: computeSelectedRows(rowSelectionModel, rows),
+          isLoadingColumns: isLoadingColumns,
         },
       }}
       disableRowSelectionOnClick
@@ -169,6 +142,7 @@ export const DataTable = ({
       onColumnVisibilityModelChange={onColumnVisibilityModelChange}
       rows={rows}
       columns={columns}
+      loading={isLoading}
     />
   );
 };

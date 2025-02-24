@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Menu, MenuProps, PopoverOrigin } from '@mui/material';
+import {
+  Box,
+  Menu,
+  MenuItem,
+  MenuList,
+  MenuProps,
+  PopoverOrigin,
+  Skeleton,
+} from '@mui/material';
 import { useMemo, useRef, useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
@@ -37,7 +45,90 @@ type OptionsDropdownProps = MenuProps & {
   enableSearchInput?: boolean;
   onFlipOption?: (value: string) => void;
   maxHeight?: number;
+  isLoading?: boolean;
 };
+
+function MenuSkeleton({
+  itemCount,
+  maxHeight,
+  disableFooter,
+}: {
+  itemCount: number;
+  maxHeight: number;
+  disableFooter: boolean;
+}) {
+  return (
+    <Box key="menu-container-skeleton">
+      {' '}
+      <MenuList
+        sx={{
+          overflowY: 'auto',
+        }}
+        tabIndex={-1}
+        key="menu-skeleton"
+      >
+        <Box
+          sx={{
+            width: 280,
+            maxHeight: maxHeight,
+            px: '10px',
+          }}
+          key="options-container-skeleton"
+        >
+          {Array.from({ length: itemCount }).map((_, index) => (
+            <MenuItem
+              sx={{
+                height: 30,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px 0',
+              }}
+              key={`option-${index}-skeleton`}
+            >
+              <Skeleton
+                variant="rectangular"
+                sx={{
+                  width: 20,
+                  height: 20,
+                  marginRight: 1,
+                }}
+              />
+              <Skeleton
+                variant="text"
+                height={32}
+                sx={{ width: '100%', marginBottom: '1px' }}
+              />
+            </MenuItem>
+          ))}
+        </Box>
+      </MenuList>
+      {!disableFooter && (
+        <Box
+          sx={{
+            height: 30,
+            display: 'flex',
+            padding: 2,
+            justifyContent: 'space-between',
+          }}
+          key="menu-footer-skeleton"
+        >
+          <Skeleton
+            variant="rectangular"
+            width={80}
+            height={36}
+            key="menu-footer-cancel-skeleton"
+          />
+          <Skeleton
+            variant="rectangular"
+            width={80}
+            height={36}
+            key="menu-footer-apply-skeleton"
+          />
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 export function OptionsDropdown({
   onClose,
@@ -56,6 +147,7 @@ export function OptionsDropdown({
   enableSearchInput = false,
   onFlipOption,
   maxHeight = 200,
+  isLoading,
   ...menuProps
 }: OptionsDropdownProps) {
   const [tempSelectedOptions, setTempSelectedOptions] =
@@ -151,44 +243,56 @@ export function OptionsDropdown({
       }}
       {...menuProps}
     >
-      <div
-        css={{
-          maxHeight: maxHeight,
-          overflow: 'hidden',
-          width: 300,
-        }}
-        tabIndex={-1}
-      >
-        {enableSearchInput && (
-          <SearchInput
-            searchInput={searchInput}
-            searchQuery={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.currentTarget.value);
-            }}
-          />
-        )}
-        <OptionsMenu
-          elements={options.map((o) => ({
-            el: o,
-            matches:
-              (highlightedCharactersWrapper &&
-                highlightedCharactersWrapper[o.value]) ??
-              [],
-            score: 0,
-          }))}
-          selectedElements={new Set(tempSelectedOptions[option.value])}
-          flipOption={flipOption}
-        />
-      </div>
-      {!disableFooter && (
-        <Footer
-          onCancelClick={(e) => {
-            if (onClose) onClose(e, 'escapeKeyDown');
-            resetTempOptions();
+      {enableSearchInput && (
+        <SearchInput
+          searchInput={searchInput}
+          searchQuery={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.currentTarget.value);
           }}
-          onApplyClick={confirmTempOptions}
         />
+      )}
+      {isLoading ? (
+        <MenuSkeleton
+          itemCount={Math.min(options.length, 30)}
+          maxHeight={maxHeight}
+          disableFooter={disableFooter}
+        />
+      ) : (
+        [
+          <div
+            css={{
+              maxHeight: maxHeight,
+              overflow: 'hidden',
+              width: 300,
+            }}
+            tabIndex={-1}
+            key="options-menu-container"
+          >
+            <OptionsMenu
+              elements={options.map((o) => ({
+                el: o,
+                matches:
+                  (highlightedCharactersWrapper &&
+                    highlightedCharactersWrapper[o.value]) ??
+                  [],
+                score: 0,
+              }))}
+              selectedElements={new Set(tempSelectedOptions[option.value])}
+              flipOption={flipOption}
+            />
+          </div>,
+          !disableFooter && (
+            <Footer
+              onCancelClick={(e) => {
+                if (onClose) onClose(e, 'escapeKeyDown');
+                resetTempOptions();
+              }}
+              onApplyClick={confirmTempOptions}
+              key="options-menu-footer"
+            />
+          ),
+        ]
       )}
     </Menu>
   );

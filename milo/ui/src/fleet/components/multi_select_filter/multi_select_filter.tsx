@@ -22,10 +22,12 @@ export const MultiSelectFilter = ({
   filterOptions,
   selectedOptions,
   setSelectedOptions,
+  isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  isLoading?: boolean;
 }) => {
   return (
     <div css={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -39,6 +41,7 @@ export const MultiSelectFilter = ({
               key={`selected-chip-${idx}`}
               selectedOptions={selectedOptions}
               setSelectedOptions={setSelectedOptions}
+              isLoading={isLoading}
             />
           ),
       )}
@@ -46,6 +49,7 @@ export const MultiSelectFilter = ({
         filterOptions={filterOptions}
         selectedOptions={selectedOptions}
         setSelectedOptions={setSelectedOptions}
+        isLoading={isLoading}
       />
     </div>
   );

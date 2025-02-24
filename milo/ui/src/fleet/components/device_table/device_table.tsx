@@ -26,6 +26,7 @@ import {
   PagerContext,
 } from '@/common/components/params_pager';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
+import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import {
@@ -67,6 +68,11 @@ function getRow(device: Device): Record<string, string> {
   }
 
   return row;
+}
+
+function getVisibleColumnIds(params: URLSearchParams) {
+  const visibleColumns = params.getAll(COLUMNS_PARAM_KEY);
+  return visibleColumns.length === 0 ? DEFAULT_DEVICE_COLUMNS : visibleColumns;
 }
 
 interface DeviceTableProps {
@@ -114,18 +120,20 @@ export function DeviceTable({
 
   const columns = useMemo(
     () =>
-      dimensionsQuery.data
-        ? getColumns(
-            // We need to avoid duplicates
+      getColumns(
+        dimensionsQuery.data
+          ? // We need to avoid duplicates
             // E.g. `dut_id` is in both base dimensions and labels
             _.uniq(
               Object.keys(dimensionsQuery.data.baseDimensions).concat(
                 Object.keys(dimensionsQuery.data.labels),
               ),
-            ),
-          )
-        : [],
-    [dimensionsQuery.data],
+            )
+          : // Instead of waiting, we can show the
+            // visible columns until the data is loaded
+            getVisibleColumnIds(searchParams),
+      ),
+    [dimensionsQuery.data, searchParams],
   );
 
   return (
@@ -139,7 +147,7 @@ export function DeviceTable({
         <DataTable
           gridRef={gridRef}
           nextPageToken={nextPageToken}
-          isLoading={devicesQuery.isLoading || dimensionsQuery.isLoading}
+          isLoading={devicesQuery.isLoading}
           pagerCtx={pagerCtx}
           columns={columns}
           sortModel={sortModel}
@@ -153,6 +161,7 @@ export function DeviceTable({
             {} as GridColumnVisibilityModel,
           )}
           totalRowCount={totalRowCount}
+          isLoadingColumns={dimensionsQuery.isLoading}
         />
       )}
     </>

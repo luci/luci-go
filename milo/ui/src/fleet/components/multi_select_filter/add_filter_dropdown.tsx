@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import { Backdrop, Card, MenuItem, MenuList } from '@mui/material';
+import {
+  Backdrop,
+  Box,
+  Card,
+  MenuItem,
+  MenuList,
+  Skeleton,
+} from '@mui/material';
 import _ from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -34,12 +41,14 @@ export function AddFilterDropdown({
   setSelectedOptions,
   anchorEl,
   setAnchorEL,
+  isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
   setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
+  isLoading?: boolean;
 }) {
   const [anchorElInner, setAnchorELInner] = useState<HTMLElement | null>(null);
   const [openCategory, setOpenCategory] = useState<string | undefined>(
@@ -211,49 +220,71 @@ export function AddFilterDropdown({
               onChange={(e) => {
                 setSearchQuery(e.currentTarget.value);
               }}
+              key="search-input"
             />
-            {filterResults.map((searchResult, idx) => {
-              const parent = searchResult.parent;
-              const parentMatches = parent.matches;
+            {isLoading ? (
+              <Box
+                sx={{
+                  height: 300,
+                  width: 258,
+                  px: '10px',
+                }}
+              >
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <Skeleton
+                    key={`item-skeleton-${index}`}
+                    variant="text"
+                    height={36}
+                    sx={{ width: '100%' }}
+                  />
+                ))}
+              </Box>
+            ) : (
+              [
+                filterResults.map((searchResult, idx) => {
+                  const parent = searchResult.parent;
+                  const parentMatches = parent.matches;
 
-              return (
-                <MenuItem
-                  onClick={(event) => {
-                    // The onClick fires also when closing the menu
-                    if (openCategory !== parent.el.value) {
-                      setOpenCategory(parent.el.value);
-                      setAnchorELInner(event.currentTarget);
-                    } else {
-                      setOpenCategory(undefined);
-                      setAnchorELInner(null);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowRight') {
-                      e.currentTarget.click();
-                    }
-                  }}
-                  key={`item-${parent.el.value}-${idx}`}
-                  disableRipple
-                  selected={openCategory === parent.el.value}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    minHeight: 'auto',
-                  }}
-                >
-                  <HighlightCharacter
-                    variant="body2"
-                    highlightIndexes={parentMatches}
-                  >
-                    {parent.el.label}
-                  </HighlightCharacter>
-                  <ArrowRightIcon />
-                </MenuItem>
-              );
-            })}
+                  return (
+                    <MenuItem
+                      onClick={(event) => {
+                        // The onClick fires also when closing the menu
+                        if (openCategory !== parent.el.value) {
+                          setOpenCategory(parent.el.value);
+                          setAnchorELInner(event.currentTarget);
+                        } else {
+                          setOpenCategory(undefined);
+                          setAnchorELInner(null);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowRight') {
+                          e.currentTarget.click();
+                        }
+                      }}
+                      key={`item-${parent.el.value}-${idx}`}
+                      disableRipple
+                      selected={openCategory === parent.el.value}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        minHeight: 'auto',
+                      }}
+                    >
+                      <HighlightCharacter
+                        variant="body2"
+                        highlightIndexes={parentMatches}
+                      >
+                        {parent.el.label}
+                      </HighlightCharacter>
+                      <ArrowRightIcon />
+                    </MenuItem>
+                  );
+                }),
+              ]
+            )}
           </MenuList>
         </Card>
         <div ref={innerCardRef} css={{ position: 'absolute' }}>
