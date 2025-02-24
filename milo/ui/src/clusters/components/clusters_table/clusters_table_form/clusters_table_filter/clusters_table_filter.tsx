@@ -171,7 +171,7 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
 
   const schema = useMemo(() => {
     const ret: FieldDef = {
-      fields: {
+      staticFields: {
         test_id: {
           fetchValues: (...params) => fetchTestIdsRef.current(...params),
         },
@@ -234,36 +234,34 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
   }, []);
 
   return (
-    <>
-      <Aip160Autocomplete
-        schema={schema}
-        value={failureFilter}
-        onValueCommit={(newVal) => updateFailureFilterParam(newVal)}
-        placeholder="Filter test failures used in clusters"
-        slotProps={{
-          textField: {
-            slotProps: {
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <CommitOrClear />
-                    <FilterHelp />
-                  </InputAdornment>
-                ),
-                inputProps: {
-                  'data-testid': 'failure_filter_input',
-                },
+    <Aip160Autocomplete
+      schema={schema}
+      value={failureFilter}
+      onValueCommit={(newVal) => updateFailureFilterParam(newVal)}
+      placeholder="Filter test failures used in clusters"
+      slotProps={{
+        textField: {
+          slotProps: {
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <CommitOrClear />
+                  <FilterHelp />
+                </InputAdornment>
+              ),
+              inputProps: {
+                'data-testid': 'failure_filter_input',
               },
             },
           },
-        }}
-      />
-    </>
+        },
+      }}
+    />
   );
 };
 

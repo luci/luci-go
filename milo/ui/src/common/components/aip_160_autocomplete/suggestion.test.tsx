@@ -40,7 +40,7 @@ describe('useSuggestions', () => {
 
   it('should suggest fields', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         project: {},
         projectWithSuffix: {},
         builder: {},
@@ -74,11 +74,11 @@ describe('useSuggestions', () => {
 
   it('should suggest nested fields', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         build: {
-          fields: {
+          staticFields: {
             builderId: {
-              fields: {
+              staticFields: {
                 project: {},
               },
             },
@@ -111,11 +111,53 @@ describe('useSuggestions', () => {
     ]);
   });
 
+  it('should suggest dynamic fields', () => {
+    const schema: FieldDef = {
+      staticFields: {
+        build: {
+          staticFields: {
+            tags: {
+              dynamicFields: {
+                getKeys: (partial) => {
+                  return [
+                    {
+                      text: 'custom-key-' + partial,
+                    },
+                  ];
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const { result } = renderHook(
+      () => useSuggestions(schema, 'build.tags.experimental', 3),
+      {
+        wrapper: Wrapper,
+      },
+    );
+    expect(result.current).toEqual([
+      {
+        id: 'custom-key-experimental',
+        value: {
+          text: 'custom-key-experimental',
+          apply: expect.any(Function),
+        },
+      },
+    ]);
+    expect(result.current[0]!.value.apply()).toEqual([
+      'build.tags.custom-key-experimental',
+      34,
+    ]);
+  });
+
   it('should not suggest anything when the parent field does not exist', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         builderId: {
-          fields: {
+          staticFields: {
             project: {},
           },
         },
@@ -134,7 +176,7 @@ describe('useSuggestions', () => {
 
   it('should be case insensitive when suggesting fields', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         Project: {},
         project: {},
       },
@@ -157,7 +199,7 @@ describe('useSuggestions', () => {
 
   it('should not suggest field with the exact match', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         project: {},
         projectWithSuffix: {},
       },
@@ -180,7 +222,7 @@ describe('useSuggestions', () => {
 
   it('should suggest values', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         project: {
           getValues: (partial) =>
             ['chromium', 'chromeos']
@@ -222,11 +264,11 @@ describe('useSuggestions', () => {
 
   it('should suggest value of a nested field', () => {
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         build: {
-          fields: {
+          staticFields: {
             builderId: {
-              fields: {
+              staticFields: {
                 project: {
                   getValues: (partial) =>
                     ['chromium', 'chromeos']
@@ -270,10 +312,52 @@ describe('useSuggestions', () => {
     ]);
   });
 
+  it('should suggest value for dynamic fields', () => {
+    const schema: FieldDef = {
+      staticFields: {
+        build: {
+          staticFields: {
+            tags: {
+              dynamicFields: {
+                getValues: (key, partial) => {
+                  return [
+                    {
+                      text: 'value-for-key-' + key + '-' + partial,
+                    },
+                  ];
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const { result } = renderHook(
+      () => useSuggestions(schema, 'build.tags.experimental = true', 28),
+      {
+        wrapper: Wrapper,
+      },
+    );
+    expect(result.current).toEqual([
+      {
+        id: 'value-for-key-experimental-true',
+        value: {
+          text: 'value-for-key-experimental-true',
+          apply: expect.any(Function),
+        },
+      },
+    ]);
+    expect(result.current[0]!.value.apply()).toEqual([
+      'build.tags.experimental = value-for-key-experimental-true',
+      57,
+    ]);
+  });
+
   it('should suggest values asynchronously', async () => {
     const [blocker, resolveBlocker] = deferred();
     const schema: FieldDef = {
-      fields: {
+      staticFields: {
         project: {
           fetchValues: (partial: string) => ({
             queryKey: [partial],

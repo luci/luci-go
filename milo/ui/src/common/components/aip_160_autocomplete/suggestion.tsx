@@ -279,36 +279,56 @@ function suggestField(
   input: string,
   fieldToken: Token,
 ): readonly OptionDef<Suggestion>[] {
-  const lastDotIndex = fieldToken.text.lastIndexOf('.');
-  const prev = fieldToken.text.slice(0, Math.max(lastDotIndex, 0));
-  const suffix = fieldToken.text.slice(lastDotIndex + 1);
-  const suffixLower = suffix.toLowerCase();
-  const targetSchema = prev === '' ? schema : getField(schema, prev);
+  const [targetSchema, suffix] = probField(
+    schema,
+    fieldToken.text,
+    fieldToken.text.match(/\./g)?.length ?? 0,
+  );
+  const prefixEnd =
+    fieldToken.startPos + fieldToken.text.length - suffix.length;
+  const suffixStart = prefixEnd + fieldToken.text.length;
 
-  return Object.keys(targetSchema?.fields || {})
-    .filter(
-      (name) => name.toLowerCase().includes(suffixLower) && name !== suffix,
-    )
-    .map((name) => ({
-      id: name,
-      value: {
-        text: name,
-        display: (
-          <td>
-            <HighlightedText text={name} highlight={suffix} />
-          </td>
-        ),
-        apply: () => {
-          const prefixEnd = fieldToken.startPos + lastDotIndex + 1;
-          const suffixStart =
-            prefixEnd + fieldToken.text.length - lastDotIndex - 1;
-          return [
-            input.slice(0, prefixEnd) + name + input.slice(suffixStart),
-            prefixEnd + name.length,
-          ] as const;
+  const suffixLower = suffix.toLowerCase();
+  const staticFieldOptions = suffix.includes('.')
+    ? []
+    : Object.keys(targetSchema?.staticFields || {})
+        .filter(
+          (name) => name.toLowerCase().includes(suffixLower) && name !== suffix,
+        )
+        .map<OptionDef<Suggestion>>((name) => ({
+          id: name,
+          value: {
+            text: name,
+            display: (
+              <td>
+                <HighlightedText text={name} highlight={suffix} />
+              </td>
+            ),
+            apply: () => [
+              input.slice(0, prefixEnd) + name + input.slice(suffixStart),
+              prefixEnd + name.length,
+            ],
+          },
+        }));
+
+  const dynamicFieldOptions =
+    targetSchema.dynamicFields
+      ?.getKeys?.(suffix)
+      .map<OptionDef<Suggestion>>((valueDef) => ({
+        id: valueDef.text,
+        value: {
+          text: valueDef.text,
+          display: valueDef.display,
+          apply: () => [
+            input.slice(0, prefixEnd) +
+              valueDef.text +
+              input.slice(suffixStart),
+            prefixEnd + valueDef.text.length,
+          ],
         },
-      },
-    }));
+      })) || [];
+
+  return [...staticFieldOptions, ...dynamicFieldOptions];
 }
 
 function suggestValue(
@@ -317,39 +337,86 @@ function suggestValue(
   fieldToken: Token,
   valueToken: Token,
 ): readonly OptionDef<Suggestion>[] {
-  const field = getField(schema, fieldToken.text);
+  const [field, suffix] = probField(schema, fieldToken.text);
+  const prefixEnd = valueToken.startPos;
+  const suffixStart = valueToken.startPos + valueToken.text.length;
+
+  // Suggest value for a statically known field.
+  if (suffix === '') {
+    return (
+      field
+        ?.getValues?.(valueToken.text)
+        .map<OptionDef<Suggestion>>((valueDef) => ({
+          id: valueDef.text,
+          value: {
+            text: valueDef.text,
+            display: valueDef.display,
+            apply: () => {
+              return [
+                input.slice(0, prefixEnd) +
+                  valueDef.text +
+                  input.slice(suffixStart),
+                prefixEnd + valueDef.text.length,
+              ] as const;
+            },
+          },
+        })) || []
+    );
+  }
+
+  // Suggest value for a dynamic field.
   return (
-    field?.getValues?.(valueToken.text).map((valueDef) => ({
-      id: valueDef.text,
-      value: {
-        text: valueDef.text,
-        display: valueDef.display,
-        apply: () => {
-          const prefixEnd = valueToken.startPos;
-          const suffixStart = valueToken.startPos + valueToken.text.length;
-          return [
+    field?.dynamicFields
+      ?.getValues?.(suffix, valueToken.text)
+      .map<OptionDef<Suggestion>>((valueDef) => ({
+        id: valueDef.text,
+        value: {
+          text: valueDef.text,
+          display: valueDef.display,
+          apply: () => [
             input.slice(0, prefixEnd) +
               valueDef.text +
               input.slice(suffixStart),
             prefixEnd + valueDef.text.length,
-          ] as const;
+          ],
         },
-      },
-    })) || []
+      })) || []
   );
 }
 
 function getField(schema: FieldDef, fieldPath: string): FieldDef | null {
+  const [field, remaining] = probField(schema, fieldPath);
+  if (remaining) {
+    return null;
+  }
+  return field;
+}
+
+/**
+ * Get the last field when traversing the field def via the specified
+ * `fieldPath`.
+ *
+ * Also return the remaining field path segments that were not traversed due to
+ * unmatched field names or reaching maximum depth limit.
+ */
+function probField(
+  schema: FieldDef,
+  fieldPath: string,
+  maxDepth = Infinity,
+): readonly [FieldDef, string] {
   const fieldNames = fieldPath.split('.');
+  const limit = Math.min(fieldNames.length, maxDepth);
 
   let pivot = schema;
-  for (let i = 0; i < fieldNames.length; ++i) {
+  let visitedCount = 0;
+  for (let i = 0; i < limit; ++i) {
     const fieldName = fieldNames[i];
-    const fieldDef = pivot.fields?.[fieldName];
+    const fieldDef = pivot.staticFields?.[fieldName];
     if (!fieldDef) {
-      return null;
+      break;
     }
     pivot = fieldDef;
+    visitedCount = i + 1;
   }
-  return pivot;
+  return [pivot, fieldNames.slice(visitedCount).join('.')];
 }

@@ -21,7 +21,9 @@ import { NonNullableProps } from '@/generic_libs/types';
  * The definition of a single field (of a larger object).
  */
 export interface FieldDef {
-  readonly fields?: FieldsSchema;
+  readonly staticFields?: StaticFieldsSchema;
+  readonly dynamicFields?: DynamicFieldsSchema;
+
   /**
    * A function that returns the values to be suggested to the users.
    */
@@ -36,9 +38,9 @@ export interface FieldDef {
 }
 
 /**
- * The schema of a set of fields.
+ * Defines the static fields (of a larger object).
  */
-export interface FieldsSchema {
+export interface StaticFieldsSchema {
   /**
    * A map of fields.
    *
@@ -47,6 +49,14 @@ export interface FieldsSchema {
    * Exact match (case-sensitive) are not suggested.
    */
   readonly [field: string]: FieldDef;
+}
+
+/**
+ * Defines the dynamic fields (of a larger object).
+ */
+export interface DynamicFieldsSchema {
+  readonly getKeys?: (partial: string) => readonly ValueDef[];
+  readonly getValues?: (key: string, partial: string) => readonly ValueDef[];
 }
 
 /**
