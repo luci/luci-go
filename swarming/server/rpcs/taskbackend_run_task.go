@@ -16,12 +16,20 @@ package rpcs
 
 import (
 	"context"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 )
@@ -41,6 +49,10 @@ func (srv *TaskBackend) RunTask(ctx context.Context, req *bbpb.RunTaskRequest) (
 		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 	}
 
+	_, err = computeNewTaskRequest(ctx, req, cfg)
+	if err != nil {
+		return nil, err
+	}
 	return nil, status.Error(codes.Unimplemented, "not implemented yet")
 }
 
@@ -53,9 +65,156 @@ func (srv *TaskBackend) validateRunTaskRequest(ctx context.Context, req *bbpb.Ru
 		return errors.New("pubsub_topic is required")
 	case teeErr(srv.validateTarget(req.Target), &err) != nil:
 		return errors.Annotate(err, "target").Err()
+	case req.StartDeadline.AsTime().Before(clock.Now(ctx)):
+		return errors.New("start_deadline must be in the future")
 	case cfg.GetAgentBinaryCipdFilename() == "":
 		return errors.New("agent_binary_cipd_filename: required")
 	default:
 		return nil
 	}
+}
+
+// computeNewTaskRequest converts *bbpb.RunTaskRequest to apipb.NewTaskRequest.
+//
+// If there's an issue, returns a grpc error.
+func computeNewTaskRequest(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb.SwarmingTaskBackendConfig) (*apipb.NewTaskRequest, error) {
+	name := cfg.TaskName
+	if name == "" {
+		name = fmt.Sprintf("bb-%s", req.BuildId)
+	}
+
+	slices, err := computeTaskSlices(ctx, req, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apipb.NewTaskRequest{
+		Name:                 name,
+		ParentTaskId:         cfg.ParentRunId,
+		Priority:             cfg.Priority,
+		ServiceAccount:       cfg.ServiceAccount,
+		BotPingToleranceSecs: int32(cfg.BotPingTolerance),
+		Tags:                 cfg.Tags,
+		Realm:                req.Realm,
+		TaskSlices:           slices,
+		RequestUuid:          req.RequestId,
+	}, nil
+}
+
+func computeTaskSlices(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb.SwarmingTaskBackendConfig) ([]*apipb.TaskSlice, error) {
+	cmd := []string{cfg.AgentBinaryCipdFilename}
+	cmd = append(cmd, req.AgentArgs...)
+
+	caches := make([]*apipb.CacheEntry, 0, len(req.Caches))
+	for _, c := range req.Caches {
+		caches = append(caches, &apipb.CacheEntry{
+			Name: c.Name,
+			Path: c.Path,
+		})
+	}
+
+	dimsByExp, exps, err := computeDimsByExp(req)
+	if err != nil {
+		return nil, err
+	}
+	if len(exps) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "dimensions are required")
+	}
+
+	secretBytes, err := proto.Marshal(req.Secrets)
+	if err != nil {
+		logging.Errorf(ctx, "failed to marshal secrets: %s", err)
+		return nil, status.Errorf(codes.Internal, "failed to marshal secrets")
+	}
+
+	genSlice := func(dims []*apipb.StringPair, exp time.Duration) *apipb.TaskSlice {
+		return &apipb.TaskSlice{
+			ExpirationSecs: int32(exp.Seconds()),
+			Properties: &apipb.TaskProperties{
+				GracePeriodSecs:      int32(req.GracePeriod.Seconds),
+				ExecutionTimeoutSecs: int32(req.ExecutionTimeout.Seconds),
+				Command:              cmd,
+				Caches:               caches,
+				Dimensions:           dims,
+				CipdInput: &apipb.CipdInput{
+					Packages: []*apipb.CipdPackage{
+						{
+							PackageName: cfg.AgentBinaryCipdPkg,
+							Version:     cfg.AgentBinaryCipdVers,
+							Path:        ".",
+						},
+					},
+					Server: cfg.AgentBinaryCipdServer,
+				},
+				SecretBytes: secretBytes,
+			},
+		}
+	}
+
+	baseExp := req.StartDeadline.AsTime().Sub(clock.Now(ctx))
+
+	var lastExp time.Duration
+	slices := make([]*apipb.TaskSlice, 0, len(exps))
+	for i := 1; i < len(exps); i++ {
+		curExp := exps[i] - lastExp
+		slices = append(slices, genSlice(dimsByExp[exps[i]], curExp))
+		lastExp = exps[i]
+	}
+
+	baseExp = max(baseExp-lastExp, 60*time.Second)
+	slices = append(slices, genSlice(dimsByExp[exps[0]], baseExp))
+	return slices, nil
+}
+
+// computeDimsByExp returns dimensions grouped by expirations and a sorted list
+// of expirations.
+// Dimensions in each group have been sorted by key and value.
+//
+// If there's an issue, returns a grpc error.
+func computeDimsByExp(req *bbpb.RunTaskRequest) (map[time.Duration][]*apipb.StringPair, []time.Duration, error) {
+	dimsByExp := make(map[time.Duration][]*apipb.StringPair)
+	for i, cache := range req.Caches {
+		exp := cache.WaitForWarmCache.AsDuration()
+		if exp == 0 {
+			continue
+		}
+		if exp%time.Minute != 0 {
+			return nil, nil, status.Errorf(
+				codes.InvalidArgument,
+				"cache %d: wait_for_warm_cache must be a multiple of a minute", i)
+		}
+		dimsByExp[exp] = append(dimsByExp[exp], &apipb.StringPair{
+			Key:   "caches",
+			Value: cache.Name,
+		})
+	}
+
+	for _, dim := range req.Dimensions {
+		exp := dim.Expiration.AsDuration()
+		dimsByExp[exp] = append(dimsByExp[exp], &apipb.StringPair{
+			Key:   dim.Key,
+			Value: dim.Value,
+		})
+	}
+	exps := slices.Sorted(maps.Keys(dimsByExp))
+
+	for i, exp := range exps {
+		if exp == 0 {
+			continue
+		}
+		// Add base dimensions if any.
+		dimsByExp[exp] = append(dimsByExp[exp], dimsByExp[0]...)
+		// Add dimensions with longer expirations.
+		for j := i + 1; j < len(exps); j++ {
+			dimsByExp[exp] = append(dimsByExp[exp], dimsByExp[exps[j]]...)
+		}
+		slices.SortFunc(dimsByExp[exp], func(a, b *apipb.StringPair) int {
+			if n := strings.Compare(a.Key, b.Key); n != 0 {
+				return n
+			}
+			return strings.Compare(a.Value, b.Value)
+		})
+	}
+
+	return dimsByExp, exps, nil
 }

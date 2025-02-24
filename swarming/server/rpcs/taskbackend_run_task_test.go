@@ -16,18 +16,24 @@ package rpcs
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
+	apipb "go.chromium.org/luci/swarming/proto/api_v2"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
 
@@ -35,6 +41,8 @@ func TestTaskBackendRunTask(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+	now := testclock.TestRecentTimeUTC
+	ctx, _ = testclock.UseTime(ctx, now)
 	lt := tasks.MockTQTasks()
 	srv := &TaskBackend{
 		BuildbucketTarget:       "swarming://target",
@@ -77,12 +85,25 @@ func TestTaskBackendRunTask(t *testing.T) {
 			assert.That(t, err, should.ErrLike(`Expected "swarming://target", got "wrong"`))
 		})
 
+		t.Run("past_start_deadline", func(t *ftt.Test) {
+
+			req := &bbpb.RunTaskRequest{
+				BuildId:       "12345678",
+				PubsubTopic:   "pubsub_topic",
+				Target:        "swarming://target",
+				StartDeadline: timestamppb.New(now.Add(-1 * time.Minute)),
+			}
+			_, err := srv.RunTask(ctx, req)
+			assert.That(t, err, should.ErrLike("start_deadline must be in the future"))
+		})
+
 		t.Run("backend_config", func(t *ftt.Test) {
 			call := func(cfgMap any) (*bbpb.RunTaskResponse, error) {
 				req := &bbpb.RunTaskRequest{
 					BuildId:       "12345678",
 					PubsubTopic:   "pubsub_topic",
 					Target:        srv.BuildbucketTarget,
+					StartDeadline: timestamppb.New(now.Add(10 * time.Minute)),
 					BackendConfig: toBackendCfg(cfgMap),
 				}
 				return srv.RunTask(ctx, req)
@@ -119,6 +140,258 @@ func TestTaskBackendRunTask(t *testing.T) {
 			}
 		})
 	})
+
+	ftt.Run("failed_to_convert_request", t, func(t *ftt.Test) {
+		now := testclock.TestRecentTimeUTC
+		ctx, _ := testclock.UseTime(context.Background(), now)
+
+		req := validRequest(now)
+		req.Caches = append(req.Caches, &bbpb.CacheEntry{
+			Name:             "cache2",
+			Path:             "path2",
+			WaitForWarmCache: durationpb.New(37 * time.Second),
+		})
+		_, err := srv.RunTask(ctx, req)
+		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+	})
+}
+
+func TestComputeDimsByExp(t *testing.T) {
+	t.Parallel()
+
+	t.Run("invalid_wait_for_warm_cache", func(t *testing.T) {
+		req := &bbpb.RunTaskRequest{
+			Caches: []*bbpb.CacheEntry{
+				{
+					Name:             "cache",
+					Path:             "path",
+					WaitForWarmCache: durationpb.New(15 * time.Second),
+				},
+			},
+		}
+		_, _, err := computeDimsByExp(req)
+		assert.That(t, err, should.ErrLike("cache 0: wait_for_warm_cache must be a multiple of a minute"))
+	})
+
+	t.Run("no_dims", func(t *testing.T) {
+		dimsByExp, exps, err := computeDimsByExp(&bbpb.RunTaskRequest{})
+		assert.NoErr(t, err)
+		assert.That(t, len(dimsByExp), should.Equal(0))
+		assert.That(t, len(exps), should.Equal(0))
+	})
+
+	t.Run("only_base", func(t *testing.T) {
+		req := &bbpb.RunTaskRequest{
+			Dimensions: []*bbpb.RequestedDimension{
+				{
+					Key:   "pool",
+					Value: "pool",
+				},
+			},
+			Caches: []*bbpb.CacheEntry{
+				{
+					Name: "cache",
+					Path: "path",
+				},
+			},
+		}
+		dimsByExp, exps, err := computeDimsByExp(req)
+		assert.NoErr(t, err)
+
+		expectedMap := map[time.Duration][]*apipb.StringPair{
+			0: {
+				{Key: "pool", Value: "pool"},
+			},
+		}
+		assert.That(t, dimsByExp, should.Match(expectedMap))
+		assert.That(t, exps, should.Match([]time.Duration{0}))
+	})
+
+	t.Run("no_base", func(t *testing.T) {
+		req := &bbpb.RunTaskRequest{
+			Dimensions: []*bbpb.RequestedDimension{
+				{
+					Key:        "pool",
+					Value:      "pool",
+					Expiration: durationpb.New(time.Minute),
+				},
+				{
+					Key:        "dim",
+					Value:      "dim2",
+					Expiration: durationpb.New(5 * time.Minute),
+				},
+				{
+					Key:        "dim",
+					Value:      "dim1",
+					Expiration: durationpb.New(time.Minute),
+				},
+			},
+			Caches: []*bbpb.CacheEntry{
+				{
+					Name:             "cache",
+					Path:             "path",
+					WaitForWarmCache: durationpb.New(10 * time.Minute),
+				},
+			},
+		}
+		dimsByExp, exps, err := computeDimsByExp(req)
+		assert.NoErr(t, err)
+
+		expectedMap := map[time.Duration][]*apipb.StringPair{
+			time.Minute: {
+				{Key: "caches", Value: "cache"},
+				{Key: "dim", Value: "dim1"},
+				{Key: "dim", Value: "dim2"},
+				{Key: "pool", Value: "pool"},
+			},
+			5 * time.Minute: {
+				{Key: "caches", Value: "cache"},
+				{Key: "dim", Value: "dim2"},
+			},
+			10 * time.Minute: {
+				{Key: "caches", Value: "cache"},
+			},
+		}
+		assert.That(t, dimsByExp, should.Match(expectedMap))
+		assert.That(t, exps, should.Match([]time.Duration{time.Minute, 5 * time.Minute, 10 * time.Minute}))
+	})
+
+	t.Run("full_example", func(t *testing.T) {
+		req := &bbpb.RunTaskRequest{
+			Dimensions: []*bbpb.RequestedDimension{
+				{
+					Key:   "pool",
+					Value: "pool",
+				},
+				{
+					Key:        "dim",
+					Value:      "dim2",
+					Expiration: durationpb.New(5 * time.Minute),
+				},
+				{
+					Key:        "dim",
+					Value:      "dim1",
+					Expiration: durationpb.New(time.Minute),
+				},
+			},
+			Caches: []*bbpb.CacheEntry{
+				{
+					Name:             "cache",
+					Path:             "path",
+					WaitForWarmCache: durationpb.New(10 * time.Minute),
+				},
+			},
+		}
+		dimsByExp, exps, err := computeDimsByExp(req)
+		assert.NoErr(t, err)
+
+		expectedMap := map[time.Duration][]*apipb.StringPair{
+			0: {
+				{Key: "pool", Value: "pool"},
+			},
+			time.Minute: {
+				{Key: "caches", Value: "cache"},
+				{Key: "dim", Value: "dim1"},
+				{Key: "dim", Value: "dim2"},
+				{Key: "pool", Value: "pool"},
+			},
+			5 * time.Minute: {
+				{Key: "caches", Value: "cache"},
+				{Key: "dim", Value: "dim2"},
+				{Key: "pool", Value: "pool"},
+			},
+			10 * time.Minute: {
+				{Key: "caches", Value: "cache"},
+				{Key: "pool", Value: "pool"},
+			},
+		}
+		assert.That(t, dimsByExp, should.Match(expectedMap))
+		assert.That(t, exps, should.Match([]time.Duration{0, time.Minute, 5 * time.Minute, 10 * time.Minute}))
+	})
+}
+
+func TestComputeNewTaskRequest(t *testing.T) {
+	t.Parallel()
+
+	now := testclock.TestRecentTimeUTC
+	ctx, _ := testclock.UseTime(context.Background(), now)
+
+	t.Run("no_dims", func(t *testing.T) {
+		req := validRequest(now)
+		req.Dimensions = nil
+		req.Caches = nil
+
+		cfg, err := ingestBackendConfigWithDefaults(req.GetBackendConfig())
+		assert.NoErr(t, err)
+
+		_, err = computeNewTaskRequest(ctx, req, cfg)
+		assert.That(t, err, should.ErrLike("dimensions are required"))
+	})
+
+	t.Run("OK", func(t *testing.T) {
+		req := validRequest(now)
+
+		cfg, err := ingestBackendConfigWithDefaults(req.GetBackendConfig())
+		assert.NoErr(t, err)
+
+		newReq, err := computeNewTaskRequest(ctx, req, cfg)
+		assert.NoErr(t, err)
+
+		sb, err := hex.DecodeString("1a05746f6b656e")
+		assert.NoErr(t, err)
+
+		slice := func(dims []*apipb.StringPair, exp time.Duration) *apipb.TaskSlice {
+			return &apipb.TaskSlice{
+				ExpirationSecs: int32(exp.Seconds()),
+				Properties: &apipb.TaskProperties{
+					GracePeriodSecs:      int32(req.GracePeriod.Seconds),
+					ExecutionTimeoutSecs: int32(req.ExecutionTimeout.Seconds),
+					Command:              []string{"bbagent", "arg1", "arg2"},
+					Caches: []*apipb.CacheEntry{
+						{Name: "cache", Path: "path"},
+					},
+					Dimensions: dims,
+					CipdInput: &apipb.CipdInput{
+						Packages: []*apipb.CipdPackage{
+							{
+								PackageName: cfg.AgentBinaryCipdPkg,
+								Version:     cfg.AgentBinaryCipdVers,
+								Path:        ".",
+							},
+						},
+						Server: cfg.AgentBinaryCipdServer,
+					},
+					SecretBytes: sb,
+				},
+			}
+		}
+
+		dims1 := []*apipb.StringPair{
+			{Key: "caches", Value: "cache"},
+			{Key: "dim", Value: "dim1"},
+			{Key: "pool", Value: "pool"},
+		}
+		dims2 := []*apipb.StringPair{
+			{Key: "pool", Value: "pool"},
+		}
+		expected := &apipb.NewTaskRequest{
+			Name:                 "bb-12345678",
+			Priority:             50,
+			ServiceAccount:       "sa@service-accounts.com",
+			BotPingToleranceSecs: 1200,
+			Tags: []string{
+				"tag1:v1",
+				"tag2:v2",
+			},
+			Realm:       "project:bucket",
+			RequestUuid: "req-bb-12345678",
+			TaskSlices: []*apipb.TaskSlice{
+				slice(dims1, time.Minute),
+				slice(dims2, 240*time.Second),
+			},
+		}
+		assert.That(t, newReq, should.Match(expected))
+	})
 }
 
 func toBackendCfg(raw any) *structpb.Struct {
@@ -126,4 +399,56 @@ func toBackendCfg(raw any) *structpb.Struct {
 	cfgStruct := &structpb.Struct{}
 	_ = cfgStruct.UnmarshalJSON(cfgJSON)
 	return cfgStruct
+}
+
+func validRequest(now time.Time) *bbpb.RunTaskRequest {
+	cfgMap := map[string]any{
+		"priority":                   50,
+		"service_account":            "sa@service-accounts.com",
+		"agent_binary_cipd_pkg":      "pkg",
+		"agent_binary_cipd_vers":     "latest",
+		"agent_binary_cipd_filename": "bbagent",
+		"agent_binary_cipd_server":   "https://cipd.example.com",
+		"tags": []any{
+			"tag1:v1",
+			"tag2:v2",
+		},
+	}
+	return &bbpb.RunTaskRequest{
+		Target:           "swarming://target",
+		BuildId:          "12345678",
+		BuildbucketHost:  "buildbucket.example.com",
+		BackendConfig:    toBackendCfg(cfgMap),
+		GracePeriod:      durationpb.New(time.Minute),
+		ExecutionTimeout: durationpb.New(10 * time.Minute),
+		StartDeadline:    timestamppb.New(now.Add(5 * time.Minute)),
+		Realm:            "project:bucket",
+		PubsubTopic:      "pubsub_topic",
+		AgentArgs: []string{
+			"arg1",
+			"arg2",
+		},
+		Dimensions: []*bbpb.RequestedDimension{
+			{
+				Key:   "pool",
+				Value: "pool",
+			},
+			{
+				Key:        "dim",
+				Value:      "dim1",
+				Expiration: durationpb.New(time.Minute),
+			},
+		},
+		Caches: []*bbpb.CacheEntry{
+			{
+				Name:             "cache",
+				Path:             "path",
+				WaitForWarmCache: durationpb.New(time.Minute),
+			},
+		},
+		Secrets: &bbpb.BuildSecrets{
+			StartBuildToken: "token",
+		},
+		RequestId: "req-bb-12345678",
+	}
 }
