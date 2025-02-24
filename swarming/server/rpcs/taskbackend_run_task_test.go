@@ -26,29 +26,37 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/acls"
 	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 func TestTaskBackendRunTask(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx := memory.Use(context.Background())
 	now := testclock.TestRecentTimeUTC
 	ctx, _ = testclock.UseTime(ctx, now)
 	lt := tasks.MockTQTasks()
+
 	srv := &TaskBackend{
 		BuildbucketTarget:       "swarming://target",
 		BuildbucketAccount:      "ignored-in-the-test",
 		DisableBuildbucketCheck: true,
-		TasksServer:             &TasksServer{TaskLifecycleTasks: lt},
+		TasksServer: &TasksServer{
+			TaskLifecycleTasks: lt,
+			SwarmingProject:    "swarming",
+		},
 	}
 
 	ftt.Run("validate", t, func(t *ftt.Test) {
@@ -152,7 +160,60 @@ func TestTaskBackendRunTask(t *testing.T) {
 			WaitForWarmCache: durationpb.New(37 * time.Second),
 		})
 		_, err := srv.RunTask(ctx, req)
+		assert.That(t, err, should.ErrLike("cache 1: wait_for_warm_cache must be a multiple of a minute"))
 		assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+	})
+
+	ftt.Run("RunTask", t, func(t *ftt.Test) {
+		t.Run("fail_to_create_task", func(t *ftt.Test) {
+			req := validRequest(now)
+			req.Dimensions = append(req.Dimensions, &bbpb.RequestedDimension{
+				Key:   "pool",
+				Value: "pool2",
+			})
+			_, err := srv.RunTask(ctx, req)
+			assert.That(t, err, should.ErrLike("pool cannot be specified more than once"))
+			assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+		})
+
+		t.Run("OK", func(t *ftt.Test) {
+			state := NewMockedRequestState()
+			state.Configs.MockPool("pool", "project:pool-realm")
+			state.MockPerm("project:pool-realm", acls.PermPoolsCreateTask)
+			state.MockPerm("project:bucket", acls.PermTasksCreateInRealm)
+			state.MockPermWithIdentity("project:bucket",
+				identity.Identity("user:sa@service-accounts.com"), acls.PermTasksActAs)
+			ctx = MockRequestState(ctx, state)
+			ctx = cryptorand.MockForTest(ctx, 0)
+
+			req := validRequest(now)
+			res, err := srv.RunTask(ctx, req)
+			assert.NoErr(t, err)
+
+			expected := &bbpb.RunTaskResponse{
+				Task: &bbpb.Task{
+					Id: &bbpb.TaskID{
+						Id:     "2cbe1fa55012fa10",
+						Target: srv.BuildbucketTarget,
+					},
+					Link:     "https://swarming.appspot.com/task?id=2cbe1fa55012fa10",
+					Status:   bbpb.Status_SCHEDULED,
+					UpdateId: now.UnixNano(),
+					Details: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"bot_dimensions": {
+								Kind: &structpb.Value_StructValue{
+									StructValue: &structpb.Struct{
+										Fields: map[string]*structpb.Value{},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			assert.That(t, res, should.Match(expected))
+		})
 	})
 }
 

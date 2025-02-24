@@ -80,7 +80,7 @@ var (
 
 // NewTask implements the corresponding RPC method.
 func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) (*apipb.TaskRequestMetadataResponse, error) {
-	res, err := srv.newTask(ctx, req)
+	res, err := srv.newTask(ctx, req, nil)
 	switch {
 	case err != nil:
 		return nil, err
@@ -97,7 +97,7 @@ func (srv *TasksServer) NewTask(ctx context.Context, req *apipb.NewTaskRequest) 
 	}
 }
 
-func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) (*tasks.CreatedTask, error) {
+func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest, bt *model.BuildTask) (*tasks.CreatedTask, error) {
 	logNewRequest(ctx, req)
 
 	pool, err := validateNewTask(ctx, req)
@@ -147,6 +147,8 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		}, nil
 	}
 
+	ents.request.HasBuildTask = bt != nil
+
 	var requestID string
 	if req.RequestUuid != "" {
 		requestID = fmt.Sprintf("%s:%s", State(ctx).ACL.Caller(), req.RequestUuid)
@@ -155,6 +157,7 @@ func (srv *TasksServer) newTask(ctx context.Context, req *apipb.NewTaskRequest) 
 		RequestID:             requestID,
 		Request:               ents.request,
 		SecretBytes:           ents.secretBytes,
+		BuildTask:             bt,
 		ServerVersion:         srv.ServerVersion,
 		Config:                state.Config,
 		SwarmingProject:       srv.SwarmingProject,

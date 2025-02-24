@@ -32,6 +32,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	apipb "go.chromium.org/luci/swarming/proto/api_v2"
+	"go.chromium.org/luci/swarming/server/model"
+	"go.chromium.org/luci/swarming/server/tasks"
 )
 
 // RunTask implements bbpb.TaskBackendServer.
@@ -49,11 +51,24 @@ func (srv *TaskBackend) RunTask(ctx context.Context, req *bbpb.RunTaskRequest) (
 		return nil, status.Errorf(codes.InvalidArgument, "bad request: %s", err)
 	}
 
-	_, err = computeNewTaskRequest(ctx, req, cfg)
+	newTaskReq, err := computeNewTaskRequest(ctx, req, cfg)
 	if err != nil {
 		return nil, err
 	}
-	return nil, status.Error(codes.Unimplemented, "not implemented yet")
+
+	bt := &model.BuildTask{
+		BuildID:          req.BuildId,
+		BuildbucketHost:  req.BuildbucketHost,
+		PubSubTopic:      req.PubsubTopic,
+		LatestTaskStatus: apipb.TaskState_PENDING,
+		UpdateID:         clock.Now(ctx).UnixNano(),
+	}
+	res, err := srv.TasksServer.newTask(ctx, newTaskReq, bt)
+	if err != nil {
+		return nil, err
+	}
+
+	return srv.convertNewTaskToRunTaskResponse(ctx, res), nil
 }
 
 func (srv *TaskBackend) validateRunTaskRequest(ctx context.Context, req *bbpb.RunTaskRequest, cfg *apipb.SwarmingTaskBackendConfig) error {
@@ -217,4 +232,27 @@ func computeDimsByExp(req *bbpb.RunTaskRequest) (map[time.Duration][]*apipb.Stri
 	}
 
 	return dimsByExp, exps, nil
+}
+
+func (srv *TaskBackend) convertNewTaskToRunTaskResponse(ctx context.Context, res *tasks.CreatedTask) *bbpb.RunTaskResponse {
+	taskID := model.RequestKeyToTaskID(res.Result.TaskRequestKey(), model.AsRequest)
+
+	var task *bbpb.Task
+	if res.BuildTask != nil {
+		task = res.BuildTask.ToProto(res.Result, srv.BuildbucketTarget)
+	} else {
+		// res.BuildTask can be nil when the task is dedupped by properties hash.
+		// As of Feb 2025, we don't have plan to dedup build tasks by properties
+		// hash, so this code should never be reached.
+		task = &bbpb.Task{
+			Id: &bbpb.TaskID{
+				Id:     taskID,
+				Target: srv.BuildbucketTarget,
+			},
+		}
+	}
+	task.Link = fmt.Sprintf("https://%s.appspot.com/task?id=%s", srv.TasksServer.SwarmingProject, taskID)
+	return &bbpb.RunTaskResponse{
+		Task: task,
+	}
 }

@@ -206,8 +206,7 @@ func main() {
 		// bugs in the WIP code.
 		srv.RegisterUnifiedServerInterceptors(rpcacl.Interceptor(rpcacl.Map{
 			// Protect WIP or unimplemented Swarming APIs.
-			"/swarming.v2.Bots/TerminateBot":      devAPIAccessGroup,
-			"/buildbucket.v2.TaskBackend/RunTask": devAPIAccessGroup,
+			"/swarming.v2.Bots/TerminateBot": devAPIAccessGroup,
 
 			// Fully implemented APIs allowed to receive external traffic.
 			"/swarming.v2.Bots/CountBots":                 rpcacl.All,
@@ -234,6 +233,7 @@ func main() {
 			"/buildbucket.v2.TaskBackend/CancelTasks":     rpcacl.All,
 			"/buildbucket.v2.TaskBackend/FetchTasks":      rpcacl.All,
 			"/buildbucket.v2.TaskBackend/ValidateConfigs": rpcacl.All,
+			"/buildbucket.v2.TaskBackend/RunTask":         rpcacl.All,
 
 			// Leave other gRPC services open, they do they own authorization already.
 			"/discovery.Discovery/*": rpcacl.All,
