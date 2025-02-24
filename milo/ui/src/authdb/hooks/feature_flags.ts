@@ -29,3 +29,11 @@ export const FullListingTabFlag = createFeatureFlag({
   percentage: 0,
   trackingBug: '350848877',
 });
+
+export const AncestorsTabFlag = createFeatureFlag({
+  description: 'Flag for the ancestors tab in group details',
+  namespace: 'authService',
+  name: 'ancestorsFlag',
+  percentage: 0,
+  trackingBug: '350849077',
+});

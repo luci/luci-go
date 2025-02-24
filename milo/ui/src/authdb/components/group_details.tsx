@@ -22,7 +22,10 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 import { GroupForm } from '@/authdb/components/group_form';
 import { GroupListing } from '@/authdb/components/group_listing';
+import { GroupLookup } from '@/authdb/components/group_lookup';
 import { GroupPermissions } from '@/authdb/components/group_permissions';
+import { AncestorsTabFlag } from '@/authdb/hooks/feature_flags';
+import { useFeatureFlag } from '@/common/feature_flags';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 interface GroupDetailsProps {
@@ -60,6 +63,8 @@ const theme = createTheme({
 export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
 
+  const ancestorsFlag = useFeatureFlag(AncestorsTabFlag);
+
   const handleTabChange = (newValue: string) => {
     setSearchParams(
       (params) => {
@@ -71,6 +76,9 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
   };
 
   const validValues = ['overview', 'permissions', 'listing'];
+  if (ancestorsFlag) {
+    validValues.push('ancestors');
+  }
 
   let value = searchParams.get('tab');
   if (!value || validValues.indexOf(value) === -1) {
@@ -98,6 +106,9 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
                 <Tab label="Overview" {...a11yProps('overview')} />
                 <Tab label="Permissions" {...a11yProps('permissions')} />
                 <Tab label="Full Listing" {...a11yProps('listing')} />
+                {ancestorsFlag && (
+                  <Tab label="Ancestors" {...a11yProps('ancestors')} />
+                )}
               </TabList>
             </Box>
             <TabPanel value="overview" role="tabpanel" id="tabpanel-overview">
@@ -113,6 +124,15 @@ export function GroupDetails({ name, refetchList }: GroupDetailsProps) {
             <TabPanel value="listing" role="tabpanel" id="tabpanel-listing">
               <GroupListing name={name}></GroupListing>
             </TabPanel>
+            {ancestorsFlag && (
+              <TabPanel
+                value="ancestors"
+                role="tabpanel"
+                id="tabpanel-ancestors"
+              >
+                <GroupLookup name={name}></GroupLookup>
+              </TabPanel>
+            )}
           </Box>
         </TabContext>
       </ThemeProvider>

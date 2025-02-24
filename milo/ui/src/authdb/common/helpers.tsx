@@ -15,6 +15,8 @@
 
 import validator from 'validator';
 
+import { AuthGroup } from '@/proto/go.chromium.org/luci/auth_service/api/rpcpb/groups.pb';
+
 // Pattern for a valid group name.
 export const nameRe = /^([a-z\-]+\/)?[0-9a-z_\-\.@]{1,100}$/;
 
@@ -80,3 +82,29 @@ export function stripPrefix(prefix: string, value: string) {
   }
   return value;
 }
+
+export const toComparableGroupName = (group: AuthGroup) => {
+  // Note: callerCanModify is optional; it can be undefined.
+  const prefix = group.callerCanModify ? 'A' : 'B';
+  const name = group.name;
+  if (name.indexOf('/') !== -1) {
+    return prefix + 'C' + name;
+  }
+  if (name.indexOf('-') !== -1) {
+    return prefix + 'B' + name;
+  }
+  return prefix + 'A' + name;
+};
+
+export const sortGroupsByName = (groups: AuthGroup[]) => {
+  return groups.sort((a: AuthGroup, b: AuthGroup) => {
+    const aName = toComparableGroupName(a);
+    const bName = toComparableGroupName(b);
+    if (aName < bName) {
+      return -1;
+    } else if (aName > bName) {
+      return 1;
+    }
+    return 0;
+  });
+};
