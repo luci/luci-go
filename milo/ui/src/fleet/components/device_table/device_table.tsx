@@ -14,7 +14,8 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
-import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
+import { GridSortModel } from '@mui/x-data-grid';
+import { GridColumnVisibilityModel } from '@mui/x-data-grid';
 import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
@@ -24,6 +25,7 @@ import {
   getPageSize,
   getPageToken,
   PagerContext,
+  emptyPageTokenUpdater,
 } from '@/common/components/params_pager';
 import { DEFAULT_DEVICE_COLUMNS } from '@/fleet/config/device_config';
 import { COLUMNS_PARAM_KEY } from '@/fleet/constants/param_keys';
@@ -38,6 +40,7 @@ import { DataTable } from '../data_table';
 import { getFilterValue } from '../multi_select_filter/search_param_utils/search_param_utils';
 
 import { BASE_DIMENSIONS, getColumns } from './columns';
+import { useOrderByParam } from './order_by';
 import { useDevices } from './use_devices';
 
 function getErrorMessage(error: unknown): string {
@@ -75,6 +78,19 @@ function getVisibleColumnIds(params: URLSearchParams) {
   return visibleColumns.length === 0 ? DEFAULT_DEVICE_COLUMNS : visibleColumns;
 }
 
+const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
+  if (sortModel.length !== 1) {
+    return '';
+  }
+
+  const sortItem = sortModel[0];
+  const baseDimension = BASE_DIMENSIONS.filter(
+    (dim) => dim.id === sortItem.field,
+  )[0];
+  const sortKey = baseDimension ? baseDimension.id : `labels.${sortItem.field}`;
+  return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
+};
+
 interface DeviceTableProps {
   gridRef: React.MutableRefObject<GridApiCommunity>;
   pagerCtx: PagerContext;
@@ -86,30 +102,22 @@ export function DeviceTable({
   pagerCtx,
   totalRowCount,
 }: DeviceTableProps) {
-  const [searchParams] = useSyncedSearchParams();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
+  const [orderByParam, setOrderByParam] = useOrderByParam();
 
-  const getOrderByFromSortModel = () => {
-    if (sortModel.length !== 1) {
-      return '';
-    }
-    const sortItem = sortModel[0];
-    const baseDimension = BASE_DIMENSIONS.filter(
-      (dim) => dim.id === sortItem.field,
-    )[0];
-
-    const sortKey = baseDimension
-      ? baseDimension.id
-      : `labels.${sortItem.field}`;
-
-    return sortItem.sort === 'desc' ? `${sortKey} desc` : sortKey;
+  const updateSortModel = (newSortModel: GridSortModel) => {
+    // Update order by param and clear pagination token when the sort model changes.
+    setSortModel(newSortModel);
+    setOrderByParam(getOrderByFromSortModel(newSortModel));
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
   };
 
   const client = useFleetConsoleClient();
   const request = ListDevicesRequest.fromPartial({
     pageSize: getPageSize(pagerCtx, searchParams),
     pageToken: getPageToken(pagerCtx, searchParams),
-    orderBy: getOrderByFromSortModel(),
+    orderBy: orderByParam,
     filter: getFilterValue(searchParams),
   });
 
@@ -151,7 +159,7 @@ export function DeviceTable({
           pagerCtx={pagerCtx}
           columns={columns}
           sortModel={sortModel}
-          onSortModelChange={setSortModel}
+          onSortModelChange={updateSortModel}
           rows={devices.map(getRow)}
           defaultColumnVisibilityModel={columns.reduce(
             (visibilityModel, column) => ({
