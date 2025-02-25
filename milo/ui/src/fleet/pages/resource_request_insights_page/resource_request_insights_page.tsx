@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
   getCurrentPageIndex,
+  getPageToken,
   usePagerContext,
 } from '@/common/components/params_pager';
 import { Pagination } from '@/fleet/components/data_table/pagination';
@@ -16,6 +17,7 @@ import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -30,6 +32,8 @@ export const ResourceRequestListPage = () => {
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
+  const [searchParams, _setSearchParams] = useSyncedSearchParams();
+
   const client = useFleetConsoleClient();
 
   const query = useQuery(
@@ -37,7 +41,7 @@ export const ResourceRequestListPage = () => {
       filter: '', // TODO: b/396079336 add filtering
       orderBy: '', // TODO: b/397392558 add sorting
       pageSize: pagerCtx.options.defaultPageSize,
-      pageToken: '', // TODO: b/396079903 add pagination
+      pageToken: getPageToken(pagerCtx, searchParams),
     }),
   );
 
@@ -115,12 +119,12 @@ export const ResourceRequestListPage = () => {
         slotProps={{
           pagination: {
             pagerCtx: pagerCtx,
-            nextPageToken: '',
+            nextPageToken: query.data.nextPageToken,
           },
         }}
         paginationMode="server"
         pageSizeOptions={pagerCtx.options.pageSizeOptions}
-        rowCount={-1} // TODO: b/396079903 handle pagination
+        rowCount={-1}
         paginationModel={{
           page: getCurrentPageIndex(pagerCtx),
           pageSize: pagerCtx.options.defaultPageSize,
