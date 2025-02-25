@@ -36,6 +36,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const bbClient = useBuildsClient();
   const [open, setOpen] = useState<boolean>(false);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo>({});
+  const [deepRepair, setDeepRepair] = useState<boolean>(false);
 
   // TODO: b/394429368 - Stop filtering out ready devices once we have moved
   // admin tasks off of Buildbucket.
@@ -75,6 +76,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         requests: autorepairRequestsFromDuts(
           validDuts || [],
           sessionInfo.sessionId || '',
+          deepRepair,
         ),
       }),
     );
@@ -102,6 +104,8 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         open={open}
         handleClose={() => setOpen(false)}
         handleOk={runAutorepair}
+        deepRepair={deepRepair}
+        handleDeepRepairChange={(checked) => setDeepRepair(checked)}
       />
     </>
   );

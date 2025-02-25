@@ -14,23 +14,40 @@
 
 import { getByRole, render, screen } from '@testing-library/react';
 
-import AutorepairDialog from './autorepair_dialog';
+import AutorepairDialog, { AutorepairDialogProps } from './autorepair_dialog';
 
 describe('<AutorepairDialog />', () => {
   let handleCloseMock: jest.Mock;
   let handleOkMock: jest.Mock;
+  let handleDeepRepairChangeMock: jest.Mock;
+  let sharedTestProps: AutorepairDialogProps = {
+    open: true,
+    handleClose: () => undefined,
+    handleOk: () => undefined,
+    deepRepair: false,
+    handleDeepRepairChange: () => undefined,
+    sessionInfo: {},
+  };
 
   beforeEach(() => {
     handleCloseMock = jest.fn();
     handleOkMock = jest.fn();
+    handleDeepRepairChangeMock = jest.fn();
+
+    sharedTestProps = {
+      open: true,
+      handleClose: handleCloseMock,
+      handleOk: handleOkMock,
+      deepRepair: false,
+      handleDeepRepairChange: handleDeepRepairChangeMock,
+      sessionInfo: {},
+    };
   });
 
   it('renders confirmation', async () => {
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{ dutNames: ['test-dut'] }}
       />,
     );
@@ -49,9 +66,7 @@ describe('<AutorepairDialog />', () => {
   it('renders shivas command', async () => {
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{ dutNames: ['test-dut', 'dut1', 'dut2', 'dut3'] }}
       />,
     );
@@ -64,9 +79,7 @@ describe('<AutorepairDialog />', () => {
   it('confirms on click', async () => {
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{ dutNames: ['test-dut'] }}
       />,
     );
@@ -81,9 +94,7 @@ describe('<AutorepairDialog />', () => {
   it('renders completion step', async () => {
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{
           dutNames: ['test-dut'],
           sessionId: 'fake-session-info',
@@ -118,9 +129,7 @@ describe('<AutorepairDialog />', () => {
   it('confirm button not visible if only invalid DUTs selected', async () => {
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{
           invalidDutNames: ['invalid-test-dut1', 'invalid-test-dut2'],
         }}
@@ -136,9 +145,7 @@ describe('<AutorepairDialog />', () => {
     const invalidDuts = ['invalid-test-dut1', 'invalid-test-dut2'];
     render(
       <AutorepairDialog
-        open={true}
-        handleClose={handleCloseMock}
-        handleOk={handleOkMock}
+        {...sharedTestProps}
         sessionInfo={{
           dutNames: ['test-dut1', 'test-dut2'],
           invalidDutNames: invalidDuts,

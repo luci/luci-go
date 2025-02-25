@@ -14,10 +14,12 @@
 import {
   Alert,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
 } from '@mui/material';
 
 import {
@@ -35,11 +37,13 @@ export interface SessionInfo {
   invalidDutNames?: string[];
 }
 
-interface AutorepairDialogProps {
+export interface AutorepairDialogProps {
   open: boolean;
   sessionInfo: SessionInfo;
   handleClose: () => void;
   handleOk: () => void;
+  deepRepair: boolean;
+  handleDeepRepairChange: (checked: boolean) => void;
 }
 
 const plurifyDevices = (count: number) => {
@@ -65,7 +69,10 @@ export default function AutorepairDialog({
   sessionInfo: { dutNames = [], builds, sessionId, invalidDutNames = [] },
   handleClose,
   handleOk,
+  deepRepair,
+  handleDeepRepairChange,
 }: AutorepairDialogProps) {
+  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''} ${dutNames.join(' ')}`;
   const confirmationScreen = (
     <>
       <DialogTitle>Running autorepair</DialogTitle>
@@ -104,10 +111,23 @@ export default function AutorepairDialog({
             <ul>
               {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
             </ul>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={deepRepair}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    handleDeepRepairChange(e.target.checked)
+                  }
+                />
+              }
+              style={{ marginBottom: '8px', marginLeft: '24px' }}
+              label="Deep repair these devices"
+            />
+
             <p>Equivalent shivas command:</p>
             <CodeSnippet
-              displayText={'$ shivas repair ' + dutNames.join(' ')}
-              copyText={'shivas repair ' + dutNames.join(' ')}
+              displayText={'$ ' + shivasCommand}
+              copyText={shivasCommand}
             />
           </>
         )}

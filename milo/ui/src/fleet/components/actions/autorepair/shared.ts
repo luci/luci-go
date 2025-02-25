@@ -19,7 +19,11 @@ import {
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
 
 // Based on: https://source.chromium.org/chromium/infra/infra_superproject/+/main:infra/go/src/infra/libs/skylab/buildbucket/bb.go;l=26
-const TASK_PRIORITY = 4;
+export const TASK_PRIORITY = 4;
+
+// See: https://source.chromium.org/chromium/_/chromium/infra/infra/+/f9b80a6c0bb478f5fb0a3b813579088408ca18dc:go/src/infra/libs/skylab/buildbucket/tasknames.go;l=27
+export const REPAIR_TASK_NAME = 'recovery';
+export const REPAIR_DEEP_TASK_NAME = 'deep_recovery';
 
 const PROD_BUILDER = {
   project: 'chromeos',
@@ -52,6 +56,7 @@ export interface DutNameAndState {
 export function autorepairRequestsFromDuts(
   duts: DutNameAndState[],
   sessionId: string,
+  deep: boolean = false,
 ): BatchRequest_Request[] {
   // Combine all build requests into one Swarming view using a session ID.
 
@@ -97,7 +102,7 @@ export function autorepairRequestsFromDuts(
           },
           {
             key: 'task',
-            value: 'recovery',
+            value: deep ? REPAIR_DEEP_TASK_NAME : REPAIR_TASK_NAME,
           },
           {
             key: 'client',
