@@ -45,14 +45,14 @@ const sharedTestCases: [SelectedOptions, string][] = [
       key1: ['value1', 'value2'],
       key2: ['value1', 'value2'],
     },
-    'key1 = (value1 AND value2) key2 = (value1 AND value2)',
+    'key1 = (value1 OR value2) key2 = (value1 OR value2)',
   ],
   [
     {
       key1: ['value1', 'value2'],
       key2: ['value'],
     },
-    'key1 = (value1 AND value2) key2 = value',
+    'key1 = (value1 OR value2) key2 = value',
   ],
 ];
 
@@ -77,7 +77,7 @@ const justParseCases: [SelectedOptions, string][] = [
     {
       key1: ['value1', 'value2'],
     },
-    'key1= ( value1 AND value2)',
+    'key1= ( value1 OR value2)',
   ],
   [
     {
@@ -121,8 +121,8 @@ describe('multi_select_search_param_utils', () => {
       );
     });
     it('throws on a hanging OR', () => {
-      expect(() => parseFilters('labels.key = ( value AND )')).toThrow(
-        'Found a hanging ANDs',
+      expect(() => parseFilters('labels.key = ( value OR )')).toThrow(
+        'Found a hanging ORs',
       );
     });
   });

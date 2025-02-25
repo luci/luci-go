@@ -18,9 +18,9 @@ const FILTERS_PARAM_KEY = 'filters';
 
 /** The input is expected to follow AIP - 160.
  * For now it's limited to inputs following the format:
- *   "key1 = (value1 AND value2) key = value".
+ *   "key1 = (value1 OR value2) key = value".
  * Nested parentheses are not supported.
- * E.g.: "fleet_labels.pool = (default AND test)"
+ * E.g.: "fleet_labels.pool = (default OR test)"
  * TODO: Consider moving this to a shared location
  */
 export const parseFilters = (
@@ -44,10 +44,10 @@ export const parseFilters = (
 
     values = rest
       .substring(1, rhsEndIdx)
-      .split('AND')
+      .split('OR')
       .map((s) => s.trim());
     if (values.some((v) => v === '')) {
-      throw Error('Found a hanging ANDs');
+      throw Error('Found a hanging ORs');
     }
   } else {
     rhsEndIdx = rest.match(/\s/)?.index ?? rest.length;
@@ -63,8 +63,8 @@ export const parseFilters = (
 /**
  * The output is expected to follow AIP - 160.
  * For now it's limited to outputs following the format:
- *   "key1 = (value1 AND value2) key = value".
- * E.g.: "fleet_labels.pool = (default AND test)"
+ *   "key1 = (value1 OR value2) key = value".
+ * E.g.: "fleet_labels.pool = (default OR test)"
  * TODO: Consider moving this to a shared location
  */
 export const stringifyFilters = (filters: SelectedOptions): string =>
@@ -72,7 +72,7 @@ export const stringifyFilters = (filters: SelectedOptions): string =>
     .filter(([_key, values]) => values && values[0])
     .map(([key, values]) =>
       values.length > 1
-        ? `${key} = (${values.join(' AND ')})`
+        ? `${key} = (${values.join(' OR ')})`
         : `${key} = ${values[0]}`,
     )
     .join(' ');
