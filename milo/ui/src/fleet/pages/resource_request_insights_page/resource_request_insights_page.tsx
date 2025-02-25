@@ -1,11 +1,11 @@
 import styled from '@emotion/styled';
 import { Alert, CircularProgress } from '@mui/material';
-import { GridColDef, GridSortModel } from '@mui/x-data-grid';
+import { GridColDef, GridSortItem, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
+  emptyPageTokenUpdater,
   getCurrentPageIndex,
   getPageToken,
   usePagerContext,
@@ -13,11 +13,13 @@ import {
 import { Pagination } from '@/fleet/components/data_table/pagination';
 import { StyledGrid } from '@/fleet/components/data_table/styled_data_grid';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { useOrderByParam } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { toIsoString } from '@/fleet/utils/dates';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
+import { ResourceRequest } from '@/proto/infra/fleetconsole/api/fleetconsolerpc/service.pb';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50];
 const DEFAULT_PAGE_SIZE = 25;
@@ -26,61 +28,138 @@ const Container = styled.div`
   margin: 24px;
 `;
 
+interface ColumnDescriptor {
+  id: string;
+  gridColDef: GridColDef;
+  valueGetter: (rr: ResourceRequest) => string;
+}
+
+const columns: ColumnDescriptor[] = [
+  {
+    id: 'rr_id',
+    gridColDef: {
+      field: 'id',
+      headerName: 'RR ID',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.rrId,
+  },
+  {
+    id: 'resource_details',
+    gridColDef: {
+      field: 'resource_details',
+      headerName: 'Resource Details',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => rr.resourceDetails,
+  },
+  {
+    id: 'procurement_end_date',
+    gridColDef: {
+      field: 'procurement_end_date',
+      headerName: 'Procurement End Date',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.procurementEndDate),
+  },
+  {
+    id: 'build_end_date',
+    gridColDef: {
+      field: 'build_end_date',
+      headerName: 'Build End Date',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.buildEndDate),
+  },
+  {
+    id: 'qa_end_date',
+    gridColDef: {
+      field: 'qa_end_date',
+      headerName: 'QA End Date',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.qaEndDate),
+  },
+  {
+    id: 'config_end_date',
+    gridColDef: {
+      field: 'config_end_date',
+      headerName: 'Config End Date',
+      flex: 1,
+    },
+    valueGetter: (rr: ResourceRequest) => toIsoString(rr.configEndDate),
+  },
+];
+
+const DEFAULT_SORT_COLUMN: ColumnDescriptor =
+  columns.find((c) => c.id === 'rr_id') ?? columns[0];
+
+const getColumnByField = (field: string): ColumnDescriptor | undefined => {
+  return columns.find((c) => c.gridColDef.field === field);
+};
+
+const getOrderByParamFromSortModel = (sortModel: GridSortModel) => {
+  if (sortModel.length !== 1) {
+    return '';
+  }
+  const sortColumn = sortModel[0];
+  if (sortColumn.sort === 'asc') {
+    return sortColumn.field;
+  }
+  return `${sortColumn.field} ${sortColumn.sort}`;
+};
+
+const getSortModelFromOrderByParam = (orderByParam: string): GridSortItem[] => {
+  if (orderByParam === '') {
+    return [];
+  }
+  const [field, sort] = orderByParam.split(' ');
+  let actualSort: 'asc' | 'desc' = 'asc';
+  if (sort === 'desc') {
+    actualSort = 'desc';
+  }
+  return [
+    {
+      field: field,
+      sort: actualSort,
+    },
+  ];
+};
+
+const getOrderByDto = (sortModel: GridSortModel) => {
+  if (sortModel.length !== 1) {
+    return `${DEFAULT_SORT_COLUMN.id}`;
+  }
+  const sortColumn = sortModel[0];
+  return `${getColumnByField(sortColumn.field)?.id ?? DEFAULT_SORT_COLUMN.id} ${sortColumn.sort}`;
+};
+
 export const ResourceRequestListPage = () => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: DEFAULT_PAGE_SIZE_OPTIONS,
     defaultPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const [searchParams, _setSearchParams] = useSyncedSearchParams();
+  const [orderByParam, updateOrderByParam] = useOrderByParam();
+  const [searchParams, setSearchParams] = useSyncedSearchParams();
+
+  const sortModel = getSortModelFromOrderByParam(orderByParam);
+
+  const handleSortModelChange = (newSortModel: GridSortModel) => {
+    updateOrderByParam(getOrderByParamFromSortModel(newSortModel));
+    setSearchParams(emptyPageTokenUpdater(pagerCtx));
+  };
 
   const client = useFleetConsoleClient();
 
   const query = useQuery(
     client.ListResourceRequests.query({
       filter: '', // TODO: b/396079336 add filtering
-      orderBy: '', // TODO: b/397392558 add sorting
+      orderBy: getOrderByDto(sortModel),
       pageSize: pagerCtx.options.defaultPageSize,
       pageToken: getPageToken(pagerCtx, searchParams),
     }),
   );
-
-  const [sortModel, setSortModel] = useState<GridSortModel>([
-    { field: 'id', sort: 'asc' },
-  ]);
-
-  const columns: GridColDef[] = [
-    {
-      field: 'id',
-      headerName: 'RR ID',
-      flex: 1,
-    },
-    {
-      field: 'resource_details',
-      headerName: 'Resource Details',
-      flex: 1,
-    },
-    {
-      field: 'procurement_end_date',
-      headerName: 'Procurement End Date',
-      flex: 1,
-    },
-    {
-      field: 'build_end_date',
-      headerName: 'Build End Date',
-      flex: 1,
-    },
-    {
-      field: 'qa_end_date',
-      headerName: 'QA End Date',
-      flex: 1,
-    },
-    {
-      field: 'config_end_date',
-      headerName: 'Config End Date',
-      flex: 1,
-    },
-  ];
 
   if (query.isError) {
     return <Alert severity="error">Something went wrong</Alert>; // TODO: b/397421370 add nice error handling
@@ -111,7 +190,7 @@ export const ResourceRequestListPage = () => {
     <Container>
       {/* TODO: this piece of code is similar to data_table.tsx and could probably be separated to a shared component */}
       <StyledGrid
-        columns={columns}
+        columns={columns.map((column) => column.gridColDef)}
         rows={rows}
         slots={{
           pagination: Pagination,
@@ -131,7 +210,8 @@ export const ResourceRequestListPage = () => {
         }}
         rowSelection={false}
         sortModel={sortModel}
-        onSortModelChange={setSortModel}
+        sortingMode="server"
+        onSortModelChange={handleSortModelChange}
       />
     </Container>
   );
