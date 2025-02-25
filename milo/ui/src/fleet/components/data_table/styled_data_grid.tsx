@@ -15,7 +15,7 @@
 import { colors } from '@mui/material';
 import { DataGrid, DataGridProps, gridClasses } from '@mui/x-data-grid';
 
-export const StyledGrid = (props: DataGridProps) => {
+export const StyledGrid = ({ sx, ...props }: DataGridProps) => {
   return (
     <DataGrid
       sx={{
@@ -34,6 +34,7 @@ export const StyledGrid = (props: DataGridProps) => {
         [`& .${gridClasses.columnHeaderTitle}`]: {
           whiteSpace: 'normal',
         },
+        ...sx,
       }}
       {...props}
     />
