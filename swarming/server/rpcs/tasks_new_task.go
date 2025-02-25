@@ -793,13 +793,6 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 		RelativeCwd:          p.RelativeCwd,
 		Outputs:              p.Outputs,
 		HasSecretBytes:       len(p.SecretBytes) > 0,
-		CASInputRoot: model.CASReference{
-			CASInstance: p.GetCasInputRoot().GetCasInstance(),
-			Digest: model.CASDigest{
-				Hash:      p.GetCasInputRoot().GetDigest().GetHash(),
-				SizeBytes: p.GetCasInputRoot().GetDigest().GetSizeBytes(),
-			},
-		},
 		CIPDInput: model.CIPDInput{
 			Server: p.GetCipdInput().GetServer(),
 			ClientPackage: model.CIPDPackage{
@@ -813,6 +806,17 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 			LimitProcesses:            p.GetContainment().GetLimitProcesses(),
 			LimitTotalCommittedMemory: p.GetContainment().GetLimitTotalCommittedMemory(),
 		},
+	}
+
+	// CASInputRoot
+	if p.GetCasInputRoot().GetCasInstance() != "" {
+		props.CASInputRoot = model.CASReference{
+			CASInstance: p.GetCasInputRoot().GetCasInstance(),
+			Digest: model.CASDigest{
+				Hash:      p.GetCasInputRoot().GetDigest().GetHash(),
+				SizeBytes: p.GetCasInputRoot().GetDigest().GetSizeBytes(),
+			},
+		}
 	}
 
 	// Dimensions
@@ -865,6 +869,7 @@ func toTaskProperties(p *apipb.TaskProperties) (model.TaskProperties, []string) 
 			}
 		}
 	}
+
 	return props, tags
 }
 

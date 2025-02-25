@@ -1449,6 +1449,57 @@ func TestToTaskRequestEntities(t *testing.T) {
 			assert.That(t, ents.request.TaskSlices[0].Properties.CIPDInput.ClientPackage.Version, should.Equal("latest"))
 		})
 
+		t.Run("from_simple_request", func(t *ftt.Test) {
+			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
+			ctx, _ = testclock.UseTime(ctx, now)
+
+			req := simpliestValidRequest("pool")
+
+			ents, err := toTaskRequestEntities(ctx, req, "pool")
+			assert.NoErr(t, err)
+			fmt.Println(ents.request.ToProto())
+			expectedTR := &model.TaskRequest{
+				Name:                 "new",
+				Created:              now,
+				Authenticated:        DefaultFakeCaller,
+				ServiceAccount:       "none",
+				Priority:             int64(40),
+				BotPingToleranceSecs: int64(1200),
+				Expiration:           now.Add(time.Duration(300) * time.Second),
+				Tags: []string{
+					"authenticated:user:test@example.com",
+					"pool:pool",
+					"priority:40",
+					"realm:",
+					"service_account:none",
+					"swarming.pool.task_template:prod",
+					fmt.Sprintf("swarming.pool.version:%s", State(ctx).Config.VersionInfo.Revision),
+					"user:none",
+				},
+				TaskSlices: []model.TaskSlice{
+					{
+						ExpirationSecs: int64(300),
+						Properties: model.TaskProperties{
+							ExecutionTimeoutSecs: int64(300),
+							Command:              []string{"command", "arg"},
+							Dimensions: model.TaskDimensions{
+								"pool": []string{"pool"},
+							},
+							// Applied default CIPD.
+							CIPDInput: model.CIPDInput{
+								Server: cfgtest.MockedCIPDServer,
+								ClientPackage: model.CIPDPackage{
+									PackageName: "client/pkg",
+									Version:     "latest",
+								},
+							},
+						},
+					},
+				},
+			}
+			assert.That(t, ents.request.ToProto(), should.Match(expectedTR.ToProto()))
+		})
+
 		t.Run("from_full_request", func(t *ftt.Test) {
 			now := time.Date(2024, time.January, 1, 2, 3, 4, 0, time.UTC)
 			ctx, _ = testclock.UseTime(ctx, now)
