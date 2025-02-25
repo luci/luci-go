@@ -14,6 +14,7 @@
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { act } from 'react';
 
 import { TextAutocomplete } from './text_autocomplete';
 import { OptionDef } from './types';
@@ -177,6 +178,9 @@ describe('TextAutocomplete', () => {
     // Clicking on an unselectable option.
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     await user.click(screen.getByText('Option 2'));
+
+    // Wait a short period to let UI updates (if any) apply.
+    await act(() => jest.advanceTimersByTimeAsync(100));
     expect(screen.getByText('Option 2')).toBeVisible();
   });
 });
