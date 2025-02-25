@@ -13,15 +13,12 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
-import ResizeObserver from 'resize-observer-polyfill';
 
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { QueuedStickyScrollingBase } from './queued_sticky_scrolling_base';
 import { Sticky } from './sticky';
 import { StickyOffset } from './sticky_offset';
-
-global.ResizeObserver = ResizeObserver;
 
 describe('<StickyOffset />', () => {
   beforeEach(() => {

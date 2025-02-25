@@ -24,6 +24,7 @@ import { matchers as emotionMatchers } from '@emotion/jest';
 import * as dotenv from 'dotenv';
 import * as idbKeyVal from 'idb-keyval';
 import { configure } from 'mobx';
+import ResizeObserver from 'resize-observer-polyfill';
 
 import { assertNonNullable } from '@/generic_libs/tools/utils';
 
@@ -110,6 +111,8 @@ self.createSelectiveSpiesFromModule = createSelectiveSpiesFromModule;
 
 self.TextEncoder = TextEncoder;
 self.TextDecoder = TextDecoder as typeof self.TextDecoder;
+
+self.ResizeObserver = ResizeObserver;
 
 self.CSSStyleSheet.prototype.replace = () => Promise.race([]);
 

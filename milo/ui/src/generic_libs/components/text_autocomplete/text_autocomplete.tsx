@@ -17,8 +17,10 @@ import {
   FormControl,
   FormControlProps,
   InputAdornment,
+  SxProps,
   TextField,
   TextFieldProps,
+  Theme,
   styled,
 } from '@mui/material';
 import { debounce } from 'lodash-es';
@@ -33,38 +35,59 @@ import { OptionDef } from './types';
 const RootContainer = styled(Box)`
   display: inline-block;
   width: 100%;
+
+  & .MuiInputBase-root {
+    border: 0px;
+  }
+  & .MuiInputBase-root fieldset {
+    border: 0px;
+  }
+  & .MuiInputBase-root.Mui-focused fieldset {
+    border-color: rgba(0, 0, 0, 0.23);
+    border-width: 1px;
+  }
+
+  &:not(.showing-options) .options-container {
+    display: none;
+  }
 `;
 
 const InputContainer = styled(FormControl)`
   width: 100%;
+  z-index: 2;
 `;
 
 const OptionsAnchor = styled(Box)`
   position: relative;
-  height: 1px;
+  height: 0px;
 `;
 
-const OptionsContainer = styled(Box)(
-  ({ theme }) => `
-    position: absolute;
-    top: 0px;
-    width: 100%;
-    border: 1px solid var(--divider-color);
-    box-sizing: border-box;
-    border-radius: 0.25rem;
-    background: white;
-    padding: 2px;
-    z-index: ${theme.zIndex.tooltip - 1};
-    max-height: 200px;
-    overflow-y: auto;
-`,
-);
+const OptionsDropdown = styled(Box)`
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.23);
+  box-sizing: border-box;
+  border-radius: 4px;
+  background: white;
+  z-index: 1;
+`;
+
+const OptionsContainer = styled(Box)`
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 0px 10px 6px 10px;
+`;
 
 const OptionTable = styled('table')`
   border-spacing: 0 1px;
   table-layout: fixed;
   width: 100%;
   word-break: break-word;
+
+  & td {
+    padding: 2px 5px;
+  }
 `;
 
 export interface TextAutocompleteProps<T> {
@@ -120,6 +143,8 @@ export interface TextAutocompleteProps<T> {
       | 'value'
     >;
   };
+
+  readonly sx?: SxProps<Theme>;
 }
 
 export function TextAutocomplete<T>({
@@ -134,16 +159,31 @@ export function TextAutocomplete<T>({
   initOptionsUpdateDelayMs = 200,
   placeholder = '',
   slotProps = {},
+  sx,
 }: TextAutocompleteProps<T>) {
   const [highlightOptionId, setHighlightOptionId] = useState<string | null>(
     null,
   );
-  const [showOptions, setShowOptions] = useState(false);
+  const [shouldShowOptions, setShouldShowOptions] = useState(false);
   const [focused, setFocused] = useState(false);
   const [uncommittedValue, setUncommittedValue] = useState(value);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target !== containerRef.current) {
+          continue;
+        }
+        setHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(containerRef.current!);
+    return () => observer.disconnect();
+  }, []);
 
   // Keep the value in sync.
   const valueRef = useRef(value);
@@ -199,12 +239,12 @@ export function TextAutocomplete<T>({
     [],
   );
 
-  function toggleShowOptions(newShowOptions: boolean) {
-    setShowOptions(newShowOptions);
+  function toggleShouldShowOptions(newShowOptions: boolean) {
+    setShouldShowOptions(newShowOptions);
 
     // When the options dropdown was toggled from hidden to show, we do not want
     // to render the old options. Request new options immediately.
-    if (!showOptions && newShowOptions) {
+    if (!shouldShowOptions && newShowOptions) {
       updateGenOptionsParams();
       updateGenOptionsParams.flush();
     }
@@ -212,7 +252,7 @@ export function TextAutocomplete<T>({
 
   // Dismiss options when the user clicks away.
   useClickAway(containerRef, () => {
-    toggleShowOptions(false);
+    toggleShouldShowOptions(false);
     setHighlightOptionId(null);
   });
 
@@ -237,8 +277,9 @@ export function TextAutocomplete<T>({
     inputRef.current!.focus();
   }
 
-  const toggleShowOptionsRef = useRef(toggleShowOptions);
-  toggleShowOptionsRef.current = toggleShowOptions;
+  // Build setters context.
+  const toggleShowOptionsRef = useRef(toggleShouldShowOptions);
+  toggleShowOptionsRef.current = toggleShouldShowOptions;
   const commitValueRef = useRef(commitValue);
   commitValueRef.current = commitValue;
   const setters = useMemo(
@@ -250,6 +291,7 @@ export function TextAutocomplete<T>({
     [],
   );
 
+  // Build input state context.
   const hasUncommitted = uncommittedValue !== value;
   const isEmpty = uncommittedValue === '';
   const inputState = useMemo(
@@ -264,14 +306,14 @@ export function TextAutocomplete<T>({
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     switch (e.code) {
       case 'ArrowDown': {
-        toggleShowOptions(true);
+        toggleShouldShowOptions(true);
         setHighlightOptionId(
           nextSelectableOptionId(options, highlightOptionId, 'down'),
         );
         break;
       }
       case 'ArrowUp': {
-        if (showOptions) {
+        if (shouldShowOptions) {
           setHighlightOptionId(
             nextSelectableOptionId(options, highlightOptionId, 'up'),
           );
@@ -279,7 +321,7 @@ export function TextAutocomplete<T>({
         break;
       }
       case 'Escape': {
-        toggleShowOptions(false);
+        toggleShouldShowOptions(false);
         setHighlightOptionId(null);
         break;
       }
@@ -294,7 +336,7 @@ export function TextAutocomplete<T>({
         if (implicitCommit || selectedEntry === null) {
           commitValue();
         }
-        toggleShowOptions(false);
+        toggleShouldShowOptions(false);
         setHighlightOptionId(null);
         break;
       }
@@ -308,16 +350,22 @@ export function TextAutocomplete<T>({
 
   const hint =
     focused && options.length > 0
-      ? showOptions
+      ? shouldShowOptions
         ? 'Use ↑ and ↓ to navigate, ⏎ to confirm, esc to dismiss options'
         : 'Press ↓ or start typing to see options'
       : placeholder;
 
+  const showingOptions = shouldShowOptions && options.length > 0;
+
   return (
     <SettersCtx.Provider value={setters}>
       <InputStateCtx.Provider value={inputState}>
-        <RootContainer ref={containerRef}>
-          <InputContainer {...slotProps.formControl}>
+        <RootContainer
+          ref={containerRef}
+          className={showingOptions ? 'showing-options' : ''}
+          sx={sx}
+        >
+          <InputContainer {...slotProps.formControl} focused>
             <TextField
               {...slotProps.textField}
               slotProps={{
@@ -352,7 +400,7 @@ export function TextAutocomplete<T>({
                       setFocused(false);
                     },
                     onClick: () => {
-                      toggleShowOptions(true);
+                      toggleShouldShowOptions(true);
                       updateGenOptionsParams();
                     },
                   },
@@ -365,41 +413,46 @@ export function TextAutocomplete<T>({
               onKeyUp={() => updateGenOptionsParams()}
               onChange={(e) => setUncommittedValue(e.target.value)}
               onInput={() => {
-                toggleShowOptions(true);
+                toggleShouldShowOptions(true);
                 updateGenOptionsParams();
               }}
               autoComplete={slotProps.textField?.autoComplete ?? 'off'}
             />
           </InputContainer>
           <OptionsAnchor>
-            <OptionsContainer
+            <OptionsDropdown
+              className="options-dropdown"
               sx={{
-                display: showOptions && options.length > 0 ? '' : 'none',
+                boxShadow: focused || showingOptions ? 10 : 0,
+                top: `-${height}px`,
+                paddingTop: `${height - 2}px`,
               }}
             >
-              <OptionTable>
-                <tbody>
-                  {options.map((option) => (
-                    <OptionRow
-                      key={option.id}
-                      def={option}
-                      selected={option.id === highlightOptionId}
-                      onClick={() => {
-                        setHighlightOptionId(null);
-                        toggleShowOptions(false);
-                        handleOptionConfirmed(option);
-                        if (implicitCommit) {
-                          commitValue();
-                        }
-                        inputRef.current!.focus();
-                      }}
-                    >
-                      {renderOption(option)}
-                    </OptionRow>
-                  ))}
-                </tbody>
-              </OptionTable>
-            </OptionsContainer>
+              <OptionsContainer className="options-container">
+                <OptionTable className="options-table">
+                  <tbody>
+                    {options.map((option) => (
+                      <OptionRow
+                        key={option.id}
+                        def={option}
+                        selected={option.id === highlightOptionId}
+                        onClick={() => {
+                          setHighlightOptionId(null);
+                          toggleShouldShowOptions(false);
+                          handleOptionConfirmed(option);
+                          if (implicitCommit) {
+                            commitValue();
+                          }
+                          inputRef.current!.focus();
+                        }}
+                      >
+                        {renderOption(option)}
+                      </OptionRow>
+                    ))}
+                  </tbody>
+                </OptionTable>
+              </OptionsContainer>
+            </OptionsDropdown>
           </OptionsAnchor>
         </RootContainer>
       </InputStateCtx.Provider>

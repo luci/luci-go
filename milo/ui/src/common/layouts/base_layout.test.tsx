@@ -15,7 +15,6 @@
 import { render, screen } from '@testing-library/react';
 import { destroy } from 'mobx-state-tree';
 import { useMatches } from 'react-router-dom';
-import ResizeObserver from 'resize-observer-polyfill';
 
 import { UiPage } from '@/common/constants/view';
 import { Store, StoreInstance, StoreProvider } from '@/common/store';
@@ -24,8 +23,6 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import { SIDE_BAR_OPEN_CACHE_KEY } from './base_layout';
 import { BaseLayout } from './base_layout';
 import { PAGE_LABEL_MAP } from './constants';
-
-global.ResizeObserver = ResizeObserver;
 
 jest.mock('react-router-dom', () => {
   return self.createSelectiveSpiesFromModule<typeof import('react-router-dom')>(

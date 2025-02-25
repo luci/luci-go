@@ -28,17 +28,6 @@ import { OverviewTabContextProvider } from '../overview_tab_context';
 
 import { HistoryChartsSection } from './history_charts_section';
 
-// Mock the window.ResizeObserver that is needed by recharts.
-class ResizeObserver {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  observe() {}
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  unobserve() {}
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  disconnect() {}
-}
-window.ResizeObserver = ResizeObserver;
-
 describe('test HistoryChartsSection component', () => {
   beforeEach(() => {
     mockFetchAuthState();

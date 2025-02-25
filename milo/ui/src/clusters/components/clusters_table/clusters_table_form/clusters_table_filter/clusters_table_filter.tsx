@@ -281,6 +281,11 @@ const ClustersTableFilter = ({ project }: ClustersTableFilterProps) => {
           },
         },
       }}
+      sx={{
+        '& .options-table': {
+          fontSize: '16px',
+        },
+      }}
     />
   );
 };
