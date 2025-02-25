@@ -149,6 +149,21 @@ var (
 		FilterSQL:    "attrs.attributed_filtered_run_count > 0",
 	}.Build()
 
+	// The number of builds that had flakes in presubmit in this cluster.
+	BuildsWithFlakesInPresubmit = metricBuilder{
+		ID:                "builds-with-flakes-in-presubmit",
+		HumanReadableName: "Builds with Flakes in Presubmit",
+		Description: "The total number of builds with at least one flaky test verdict in presubmit, due to this cluster.",
+		DefaultConfig: Configuration{
+			SortPriority: 250,
+		},
+		// Criteria:
+		// - A test fails and then passes upon retry in the same invocation
+		FilterSQL: `not f.is_ingested_invocation_blocked AND f.presubmit_run_id.id is not null`,
+		// Count distinct builds.
+		CountSQL: `f.ingested_invocation_id`,
+	}.Build()
+
 	// ComputedMetrics is the set of metrics computed for each cluster and
 	// stored on the cluster summaries table.
 	ComputedMetrics = []BaseDefinition{
@@ -158,6 +173,7 @@ var (
 		Failures,
 		BuildsWithTestRunsFailedDueToFlakyTests,
 		FailuresWithAttributedFilteredTestRuns,
+		BuildsWithFlakesInPresubmit,
 	}
 )
 
