@@ -17,8 +17,8 @@ import {
   gridColumnDefinitionsSelector,
   GridColumnIcon,
   gridColumnVisibilityModelSelector,
+  useGridApiContext,
 } from '@mui/x-data-grid';
-import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import { useState } from 'react';
 
 import { OptionCategory, SelectedOptions } from '@/fleet/types';
@@ -26,16 +26,16 @@ import { OptionCategory, SelectedOptions } from '@/fleet/types';
 import { OptionsDropdown } from '../options_dropdown';
 
 interface ColumnsButtonProps {
-  gridRef: React.MutableRefObject<GridApiCommunity>;
   isLoading?: boolean;
 }
 
 /**
  * Component for displaying a menu to customize the columns on a table.
  */
-export function ColumnsButton({ gridRef, isLoading }: ColumnsButtonProps) {
-  const columnVisibilityModel = gridColumnVisibilityModelSelector(gridRef);
-  const columnDefinitions = gridColumnDefinitionsSelector(gridRef);
+export function ColumnsButton({ isLoading }: ColumnsButtonProps) {
+  const apiRef = useGridApiContext();
+  const columnVisibilityModel = gridColumnVisibilityModelSelector(apiRef);
+  const columnDefinitions = gridColumnDefinitionsSelector(apiRef);
 
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
 
@@ -44,7 +44,7 @@ export function ColumnsButton({ gridRef, isLoading }: ColumnsButtonProps) {
       return;
     }
 
-    gridRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
+    apiRef.current.setColumnVisibility(field, !columnVisibilityModel[field]);
   };
 
   const columns: OptionCategory = {

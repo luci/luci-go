@@ -19,7 +19,6 @@ import {
   GridRowSelectionModel,
   GridSortModel,
 } from '@mui/x-data-grid';
-import { GridApiCommunity } from '@mui/x-data-grid/internals';
 import _ from 'lodash';
 import * as React from 'react';
 
@@ -47,7 +46,6 @@ const computeSelectedRows = (
 };
 
 interface DataTableProps {
-  gridRef: React.MutableRefObject<GridApiCommunity>;
   defaultColumnVisibilityModel: GridColumnVisibilityModel;
   columns: GridColDef[];
   rows: {
@@ -70,7 +68,6 @@ declare module '@mui/x-data-grid' {
 
 // TODO: b/393601163 - Consider combining this directly into Device Table.
 export const DataTable = ({
-  gridRef: apiRef,
   defaultColumnVisibilityModel,
   columns,
   rows,
@@ -101,7 +98,6 @@ export const DataTable = ({
 
   return (
     <StyledGrid
-      apiRef={apiRef}
       slots={{
         pagination: Pagination,
         columnMenu: ColumnMenu,
@@ -114,7 +110,6 @@ export const DataTable = ({
           totalRowCount: totalRowCount,
         },
         toolbar: {
-          gridRef: apiRef,
           selectedRows: computeSelectedRows(rowSelectionModel, rows),
           isLoadingColumns: isLoadingColumns,
         },

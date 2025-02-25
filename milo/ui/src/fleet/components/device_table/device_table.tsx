@@ -14,9 +14,7 @@
 
 import { GrpcError } from '@chopsui/prpc-client';
 import { Alert } from '@mui/material';
-import { GridSortModel } from '@mui/x-data-grid';
-import { GridColumnVisibilityModel } from '@mui/x-data-grid';
-import { GridApiCommunity } from '@mui/x-data-grid/internals';
+import { GridColumnVisibilityModel, GridSortModel } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import { useMemo, useState } from 'react';
@@ -92,16 +90,11 @@ const getOrderByFromSortModel = (sortModel: GridSortModel): string => {
 };
 
 interface DeviceTableProps {
-  gridRef: React.MutableRefObject<GridApiCommunity>;
   pagerCtx: PagerContext;
   totalRowCount: number | undefined;
 }
 
-export function DeviceTable({
-  gridRef,
-  pagerCtx,
-  totalRowCount,
-}: DeviceTableProps) {
+export function DeviceTable({ pagerCtx, totalRowCount }: DeviceTableProps) {
   const [searchParams, setSearchParams] = useSyncedSearchParams();
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
   const [orderByParam, setOrderByParam] = useOrderByParam();
@@ -153,7 +146,6 @@ export function DeviceTable({
         </Alert>
       ) : (
         <DataTable
-          gridRef={gridRef}
           nextPageToken={nextPageToken}
           isLoading={devicesQuery.isLoading}
           pagerCtx={pagerCtx}

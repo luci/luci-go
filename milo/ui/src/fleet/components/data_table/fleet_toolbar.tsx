@@ -18,15 +18,12 @@ import {
   GridToolbarContainer,
   GridToolbarExport,
 } from '@mui/x-data-grid';
-import { GridApiCommunity } from '@mui/x-data-grid/internals';
-import React from 'react';
 
 import { RunAutorepair } from '../actions/autorepair/run_autorepair';
 
 import { ColumnsButton } from './columns_button';
 
 export interface FleetToolbarProps {
-  gridRef: React.MutableRefObject<GridApiCommunity>;
   selectedRows: GridRowModel[];
   isLoadingColumns?: boolean;
 }
@@ -35,7 +32,6 @@ export interface FleetToolbarProps {
  * Custom data table toolbar styled for Fleet's expected usage.
  */
 export function FleetToolbar({
-  gridRef,
   selectedRows = [],
   isLoadingColumns,
 }: FleetToolbarProps) {
@@ -53,7 +49,7 @@ export function FleetToolbar({
       )}
       <GridToolbarExport printOptions={{ disableToolbarButton: true }} />
       <Box sx={{ flexGrow: 1 }} />
-      <ColumnsButton gridRef={gridRef} isLoading={isLoadingColumns} />
+      <ColumnsButton isLoading={isLoadingColumns} />
     </GridToolbarContainer>
   );
 }
