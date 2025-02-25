@@ -21,12 +21,12 @@ import { SelectedChip } from './selected_chip';
 export const MultiSelectFilter = ({
   filterOptions,
   selectedOptions,
-  setSelectedOptions,
+  onSelectedOptionsChange,
   isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) => {
   return (
@@ -40,7 +40,7 @@ export const MultiSelectFilter = ({
               option={option}
               key={`selected-chip-${idx}`}
               selectedOptions={selectedOptions}
-              setSelectedOptions={setSelectedOptions}
+              onSelectedOptionsChange={onSelectedOptionsChange}
               isLoading={isLoading}
             />
           ),
@@ -48,7 +48,7 @@ export const MultiSelectFilter = ({
       <AddFilterButton
         filterOptions={filterOptions}
         selectedOptions={selectedOptions}
-        setSelectedOptions={setSelectedOptions}
+        onSelectedOptionsChange={onSelectedOptionsChange}
         isLoading={isLoading}
       />
     </div>

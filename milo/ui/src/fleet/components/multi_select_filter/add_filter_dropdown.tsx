@@ -38,14 +38,14 @@ import { OptionsMenu } from './options_menu';
 export function AddFilterDropdown({
   filterOptions,
   selectedOptions: initSelectedOptions,
-  setSelectedOptions,
+  onSelectedOptionsChange,
   anchorEl,
   setAnchorEL,
   isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   anchorEl: HTMLElement | null;
   setAnchorEL: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
   isLoading?: boolean;
@@ -152,7 +152,7 @@ export function AddFilterDropdown({
 
   const applyOptions = () => {
     closeMenu();
-    setSelectedOptions(tempSelectedOptions);
+    onSelectedOptionsChange(tempSelectedOptions);
   };
 
   const handleRandomTextInput: (

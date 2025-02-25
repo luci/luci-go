@@ -14,7 +14,7 @@
 
 import { useGridApiRef } from '@mui/x-data-grid';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import {
@@ -54,14 +54,15 @@ export const DeviceListPage = () => {
     getFilters(searchParams),
   );
 
-  useEffect(() => {
-    setSearchParams(filtersUpdater(selectedOptions));
+  const onSelectedOptionsChange = (newSelectedOptions: SelectedOptions) => {
+    setSelectedOptions(newSelectedOptions);
+    setSearchParams(filtersUpdater(newSelectedOptions));
 
     // Clear out all the page tokens when the filter changes.
     // An AIP-158 page token is only valid for the filter
     // option that generated it.
     setSearchParams(emptyPageTokenUpdater(pagerCtx));
-  }, [selectedOptions, setSearchParams, pagerCtx]);
+  };
 
   const client = useFleetConsoleClient();
   const dimensionsQuery = useQuery(client.GetDeviceDimensions.query({}));
@@ -98,7 +99,7 @@ export const DeviceListPage = () => {
               : filterOptionsPlaceholder(selectedOptions)
           }
           selectedOptions={selectedOptions}
-          setSelectedOptions={setSelectedOptions}
+          onSelectedOptionsChange={onSelectedOptionsChange}
           isLoading={dimensionsQuery.isLoading}
         />
       </div>

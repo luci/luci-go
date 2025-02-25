@@ -40,9 +40,7 @@ const TestComponent = () => {
     <MultiSelectFilter
       filterOptions={TEST_FILTER_OPTIONS}
       selectedOptions={selectedOptions}
-      setSelectedOptions={(...args) => {
-        setSelectedOptions(...args);
-      }}
+      onSelectedOptionsChange={setSelectedOptions}
     />
   );
 };

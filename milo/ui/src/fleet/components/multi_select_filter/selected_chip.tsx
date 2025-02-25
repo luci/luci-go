@@ -23,12 +23,12 @@ import { OptionsDropdown } from '../options_dropdown';
 export function SelectedChip({
   option,
   selectedOptions,
-  setSelectedOptions,
+  onSelectedOptionsChange,
   isLoading,
 }: {
   option: OptionCategory;
   selectedOptions: SelectedOptions;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
@@ -60,10 +60,10 @@ export function SelectedChip({
         }}
         variant="filter"
         onDelete={(_) =>
-          setSelectedOptions((currentFilters: SelectedOptions) => ({
-            ...currentFilters,
+          onSelectedOptionsChange({
+            ...selectedOptions,
             [option.value]: [],
-          }))
+          })
         }
       />
       <OptionsDropdown
@@ -72,7 +72,7 @@ export function SelectedChip({
         open={anchorEl !== null}
         option={option}
         selectedOptions={selectedOptions}
-        setSelectedOptions={setSelectedOptions}
+        onSelectedOptionsChange={onSelectedOptionsChange}
         anchorOrigin={{
           vertical: 'bottom',
           horizontal: 'left',

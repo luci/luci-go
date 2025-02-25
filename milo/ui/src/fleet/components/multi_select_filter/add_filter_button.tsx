@@ -23,12 +23,12 @@ import { AddFilterDropdown } from './add_filter_dropdown';
 export function AddFilterButton({
   filterOptions,
   selectedOptions,
-  setSelectedOptions,
+  onSelectedOptionsChange,
   isLoading,
 }: {
   filterOptions: OptionCategory[];
   selectedOptions: SelectedOptions;
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  onSelectedOptionsChange: (newSelectedOptions: SelectedOptions) => void;
   isLoading?: boolean;
 }) {
   const [anchorEl, setAnchorEL] = useState<HTMLElement | null>(null);
@@ -44,7 +44,7 @@ export function AddFilterButton({
       <AddFilterDropdown
         filterOptions={filterOptions}
         selectedOptions={selectedOptions}
-        setSelectedOptions={setSelectedOptions}
+        onSelectedOptionsChange={onSelectedOptionsChange}
         anchorEl={anchorEl}
         setAnchorEL={setAnchorEL}
         isLoading={isLoading}

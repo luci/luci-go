@@ -38,7 +38,7 @@ type OptionsDropdownProps = MenuProps & {
   open: boolean;
   option: OptionCategory;
   selectedOptions: SelectedOptions;
-  setSelectedOptions?: React.Dispatch<React.SetStateAction<SelectedOptions>>;
+  onSelectedOptionsChange?: (newSelectedOptions: SelectedOptions) => void;
   anchorOrigin?: PopoverOrigin | undefined;
   highlightedCharacters?: Record<string, number[]>;
   disableFooter?: boolean;
@@ -136,7 +136,7 @@ export function OptionsDropdown({
   open,
   option,
   selectedOptions,
-  setSelectedOptions,
+  onSelectedOptionsChange,
   anchorOrigin = {
     vertical: 'top',
     horizontal: 'right',
@@ -170,8 +170,8 @@ export function OptionsDropdown({
 
   const resetTempOptions = () => setTempSelectedOptions(selectedOptions);
   const confirmTempOptions = () => {
-    if (setSelectedOptions) {
-      setSelectedOptions(tempSelectedOptions);
+    if (onSelectedOptionsChange) {
+      onSelectedOptionsChange(tempSelectedOptions);
     }
     if (onClose) onClose({}, 'backdropClick');
   };
